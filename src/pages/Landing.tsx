@@ -2,8 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, DollarSign } from "lucide-react";
+import { useState } from "react";
+import { SignupForm } from "@/components/ui/signup-form";
 
 const Landing = () => {
+  const [showSignupForm, setShowSignupForm] = useState(false);
+
   const features = [
     {
       icon: <ShoppingCart className="h-6 w-6" />,
@@ -203,8 +207,8 @@ const Landing = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" className="bg-gradient-primary text-lg px-8">
-                Start 14-Day Free Trial
+              <Button size="lg" className="bg-gradient-primary text-lg px-8" onClick={() => setShowSignupForm(true)}>
+                Start 7-Day Free Trial
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button variant="outline" size="lg" className="text-lg px-8">
@@ -360,8 +364,9 @@ const Landing = () => {
                   <Button 
                     className={`w-full ${plan.popular ? 'bg-gradient-primary' : ''}`}
                     variant={plan.popular ? "default" : "outline"}
+                    onClick={() => plan.name === "Enterprise" ? null : setShowSignupForm(true)}
                   >
-                    {plan.price === "Custom" ? "Contact Sales" : "Start Free Trial"}
+                    {plan.name === "Enterprise" ? "Contact Sales" : "Start Free Trial"}
                   </Button>
                 </CardContent>
               </Card>
@@ -414,7 +419,7 @@ const Landing = () => {
             to manage their finances and scale their businesses.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" variant="secondary" className="text-lg px-8">
+            <Button size="lg" variant="secondary" className="text-lg px-8" onClick={() => setShowSignupForm(true)}>
               Start Your Free Trial
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
@@ -423,7 +428,7 @@ const Landing = () => {
             </Button>
           </div>
           <p className="text-sm opacity-75">
-            14-day free trial • No credit card required • Cancel anytime
+            7-day free trial • No credit card required • Cancel anytime
           </p>
         </div>
       </section>
@@ -476,6 +481,8 @@ const Landing = () => {
           </div>
         </div>
       </footer>
+
+      <SignupForm open={showSignupForm} onOpenChange={setShowSignupForm} />
     </div>
   );
 };
