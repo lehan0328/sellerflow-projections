@@ -22,6 +22,7 @@ interface SalesOrderFormProps {
     paymentTerms: string;
     netTermsDays?: string;
   }>;
+  onSubmitOrder: (orderData: any) => void;
 }
 
 interface PaymentSchedule {
@@ -31,7 +32,7 @@ interface PaymentSchedule {
   description: string;
 }
 
-export const SalesOrderForm = ({ open, onOpenChange, customers }: SalesOrderFormProps) => {
+export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }: SalesOrderFormProps) => {
   const [formData, setFormData] = useState({
     soName: "",
     customer: "",
@@ -89,11 +90,8 @@ export const SalesOrderForm = ({ open, onOpenChange, customers }: SalesOrderForm
       paymentSchedule: formData.paymentType === "preorder" ? paymentSchedule : undefined
     };
     
-    console.log("Sales Order submitted:", salesOrder);
-    
-    // Show success toast
+    onSubmitOrder(salesOrder);
     toast.success(`Sales Order "${formData.soName}" created successfully!`);
-    
     onOpenChange(false);
     
     // Reset form

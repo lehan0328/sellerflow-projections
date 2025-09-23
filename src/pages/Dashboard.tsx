@@ -252,6 +252,50 @@ const Dashboard = () => {
     setVendors(updatedVendors);
   };
 
+  // Handle purchase order submission
+  const handlePurchaseOrderSubmit = (orderData: any) => {
+    const amount = parseFloat(orderData.amount);
+    
+    // Deduct from total cash if payment is immediate
+    if (orderData.paymentType === 'total') {
+      setTotalCash(prev => prev - amount);
+    }
+    
+    // Create new cash flow event
+    const newEvent: CashFlowEvent = {
+      id: `po-${Date.now()}`,
+      type: 'purchase-order',
+      amount: amount,
+      description: orderData.description,
+      vendor: orderData.vendor,
+      poName: orderData.poName,
+      date: orderData.dueDate || new Date()
+    };
+    
+    setEvents(prev => [...prev, newEvent]);
+  };
+
+  // Handle sales order submission
+  const handleSalesOrderSubmit = (orderData: any) => {
+    const amount = parseFloat(orderData.amount);
+    
+    // Add to total cash if payment is immediate
+    if (orderData.paymentType === 'total') {
+      setTotalCash(prev => prev + amount);
+    }
+    
+    // Create new cash flow event
+    const newEvent: CashFlowEvent = {
+      id: `so-${Date.now()}`,
+      type: 'inflow',
+      amount: amount,
+      description: orderData.description,
+      date: orderData.dueDate || new Date()
+    };
+    
+    setEvents(prev => [...prev, newEvent]);
+  };
+
   // Add vendor order editing functionality
   const [editingVendorOrder, setEditingVendorOrder] = useState<Vendor | null>(null);
   
@@ -316,6 +360,7 @@ const Dashboard = () => {
         open={showPurchaseOrderForm}
         onOpenChange={setShowPurchaseOrderForm}
         vendors={formVendors}
+        onSubmitOrder={handlePurchaseOrderSubmit}
       />
       
       <CustomerForm
@@ -331,6 +376,7 @@ const Dashboard = () => {
         open={showSalesOrderForm}
         onOpenChange={setShowSalesOrderForm}
         customers={formCustomers}
+        onSubmitOrder={handleSalesOrderSubmit}
       />
       
       <VendorOrderEditModal

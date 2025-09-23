@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CalendarIcon, Plus, Trash2 } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
 
 interface PurchaseOrderFormProps {
   open: boolean;
@@ -21,6 +22,7 @@ interface PurchaseOrderFormProps {
     paymentType: string;
     netTermsDays?: string;
   }>;
+  onSubmitOrder: (orderData: any) => void;
 }
 
 interface PaymentSchedule {
@@ -30,7 +32,7 @@ interface PaymentSchedule {
   description: string;
 }
 
-export const PurchaseOrderForm = ({ open, onOpenChange, vendors }: PurchaseOrderFormProps) => {
+export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }: PurchaseOrderFormProps) => {
   const [formData, setFormData] = useState({
     poName: "",
     vendor: "",
@@ -82,10 +84,14 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors }: PurchaseOrder
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Purchase Order submitted:", {
+    
+    const orderData = {
       ...formData,
       paymentSchedule: formData.paymentType === "preorder" ? paymentSchedule : undefined
-    });
+    };
+    
+    onSubmitOrder(orderData);
+    toast.success(`Purchase Order "${formData.poName}" created successfully!`);
     onOpenChange(false);
     // Reset form
     setFormData({
