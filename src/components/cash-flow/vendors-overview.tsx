@@ -86,15 +86,12 @@ export const VendorsOverview = ({ onAddVendor }: VendorsOverviewProps) => {
     <Card className="shadow-card">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center space-x-2">
-            <Building2 className="h-5 w-5" />
-            <span>Vendors Overview</span>
-          </CardTitle>
-          <Button size="sm" onClick={onAddVendor} className="bg-gradient-primary">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Vendor
-          </Button>
-          <div className="flex items-center space-x-4 text-sm">
+          <div className="flex items-center space-x-2">
+            <CardTitle className="text-lg flex items-center space-x-2">
+              <Building2 className="h-5 w-5" />
+              <span>Vendors Overview</span>
+            </CardTitle>
+            <div className="flex items-center space-x-4 text-sm">
             <div className="flex items-center space-x-2">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Total Owed:</span>
@@ -108,7 +105,12 @@ export const VendorsOverview = ({ onAddVendor }: VendorsOverviewProps) => {
                 </span>
               </div>
             )}
+            </div>
           </div>
+          <Button size="sm" onClick={onAddVendor} className="bg-gradient-primary">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Vendor
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -149,7 +151,7 @@ export const VendorsOverview = ({ onAddVendor }: VendorsOverviewProps) => {
               </div>
               <div className="flex items-center space-x-2">
                 <Button variant="outline" size="sm">
-                  View Details
+                  Edit
                 </Button>
                 <Button size="sm" className="bg-gradient-primary">
                   Pay Now

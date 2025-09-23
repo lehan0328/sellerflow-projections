@@ -42,12 +42,13 @@ export const PurchaseOrderForm = ({ open, onOpenChange }: PurchaseOrderFormProps
     { id: "1", amount: "", dueDate: undefined, description: "Initial deposit" }
   ]);
 
+  // Mock vendor data with payment terms
   const vendors = [
-    "Global Vendor Co.",
-    "Amazon Advertising",
-    "Inventory Plus LLC",
-    "Packaging Solutions Inc.",
-    "Logistics Partners",
+    { id: '1', name: 'Global Vendor Co.', paymentType: 'net-terms', netTermsDays: '30' },
+    { id: '2', name: 'Amazon Advertising', paymentType: 'total' },
+    { id: '3', name: 'Inventory Plus LLC', paymentType: 'preorder', depositAmount: '2500' },
+    { id: '4', name: 'Packaging Solutions Inc.', paymentType: 'preorder', depositAmount: '1500' },
+    { id: '5', name: 'Logistics Partners', paymentType: 'net-terms', netTermsDays: '60' }
   ];
 
   const categories = [
@@ -108,6 +109,30 @@ export const PurchaseOrderForm = ({ open, onOpenChange }: PurchaseOrderFormProps
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleVendorChange = (vendorName: string) => {
+    const selectedVendor = vendors.find(v => v.name === vendorName);
+    if (selectedVendor) {
+      setFormData(prev => ({ 
+        ...prev, 
+        vendor: vendorName,
+        paymentType: selectedVendor.paymentType as "total" | "preorder" | "net-terms",
+        netTermsDays: (selectedVendor.netTermsDays || "30") as "30" | "60" | "90" | "custom",
+      }));
+      
+      // Set default deposit for preorder vendors
+      if (selectedVendor.paymentType === 'preorder' && selectedVendor.depositAmount) {
+        setPaymentSchedule([{ 
+          id: "1", 
+          amount: selectedVendor.depositAmount, 
+          dueDate: undefined, 
+          description: "Initial deposit" 
+        }]);
+      }
+    } else {
+      setFormData(prev => ({ ...prev, vendor: vendorName }));
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
@@ -119,6 +144,22 @@ export const PurchaseOrderForm = ({ open, onOpenChange }: PurchaseOrderFormProps
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
+            <Label htmlFor="vendor">Vendor</Label>
+            <Select onValueChange={handleVendorChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select vendor" />
+              </SelectTrigger>
+              <SelectContent>
+                {vendors.map(vendor => (
+                  <SelectItem key={vendor.id} value={vendor.name}>
+                    {vendor.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="poName">PO Name (Optional)</Label>
             <Input
               id="poName"
@@ -126,22 +167,6 @@ export const PurchaseOrderForm = ({ open, onOpenChange }: PurchaseOrderFormProps
               value={formData.poName}
               onChange={(e) => handleInputChange("poName", e.target.value)}
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="vendor">Vendor</Label>
-            <Select onValueChange={(value) => handleInputChange("vendor", value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select or enter vendor" />
-              </SelectTrigger>
-              <SelectContent>
-                {vendors.map(vendor => (
-                  <SelectItem key={vendor} value={vendor}>
-                    {vendor}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
           
           <div className="space-y-3">

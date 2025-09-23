@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface VendorFormProps {
   open: boolean;
@@ -18,7 +19,10 @@ export const VendorForm = ({ open, onOpenChange }: VendorFormProps) => {
     phone: "",
     address: "",
     category: "",
-    paymentTerms: "",
+    paymentType: "total",
+    depositAmount: "",
+    netTermsDays: "30",
+    customNetDays: "",
     taxId: "",
     notes: ""
   });
@@ -32,13 +36,17 @@ export const VendorForm = ({ open, onOpenChange }: VendorFormProps) => {
     "Other"
   ];
 
-  const paymentTermsOptions = [
-    "Net 15",
-    "Net 30", 
-    "Net 60",
-    "Net 90",
-    "Cash on Delivery",
-    "Prepayment Required"
+  const paymentTypeOptions = [
+    { value: 'total', label: 'Total Amount Due' },
+    { value: 'preorder', label: 'Pre-order w/ Deposit' },
+    { value: 'net', label: 'Net Terms' }
+  ];
+
+  const netTermsOptions = [
+    { value: '30', label: '30 Days' },
+    { value: '60', label: '60 Days' },
+    { value: '90', label: '90 Days' },
+    { value: 'custom', label: 'Custom Days' }
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -52,7 +60,10 @@ export const VendorForm = ({ open, onOpenChange }: VendorFormProps) => {
       phone: "",
       address: "",
       category: "",
-      paymentTerms: "",
+      paymentType: "total",
+      depositAmount: "",
+      netTermsDays: "30",
+      customNetDays: "",
       taxId: "",
       notes: ""
     });
@@ -121,20 +132,76 @@ export const VendorForm = ({ open, onOpenChange }: VendorFormProps) => {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="paymentTerms">Payment Terms</Label>
-            <Select onValueChange={(value) => handleInputChange("paymentTerms", value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select payment terms" />
-              </SelectTrigger>
-              <SelectContent>
-                {paymentTermsOptions.map(term => (
-                  <SelectItem key={term} value={term}>
-                    {term}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-4">
+            <Label>Payment Type</Label>
+            <div className="space-y-3">
+              {paymentTypeOptions.map((option) => (
+                <div key={option.value} className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id={option.value}
+                    name="paymentType"
+                    value={option.value}
+                    checked={formData.paymentType === option.value}
+                    onChange={(e) => handleInputChange("paymentType", e.target.value)}
+                    className="w-4 h-4 text-primary bg-gray-100 border-gray-300 focus:ring-primary"
+                  />
+                  <Label htmlFor={option.value} className="text-sm font-normal cursor-pointer">
+                    {option.label}
+                  </Label>
+                </div>
+              ))}
+            </div>
+
+            {formData.paymentType === 'preorder' && (
+              <div className="space-y-2 pl-6">
+                <Label htmlFor="depositAmount">Deposit Amount ($)</Label>
+                <Input
+                  id="depositAmount"
+                  type="number"
+                  placeholder="0.00"
+                  value={formData.depositAmount}
+                  onChange={(e) => handleInputChange("depositAmount", e.target.value)}
+                />
+              </div>
+            )}
+
+            {formData.paymentType === 'net' && (
+              <div className="space-y-2 pl-6">
+                <Label htmlFor="netTermsDays">Net Terms</Label>
+                <div className="space-y-3">
+                  {netTermsOptions.map((option) => (
+                    <div key={option.value} className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id={`net-${option.value}`}
+                        name="netTermsDays"
+                        value={option.value}
+                        checked={formData.netTermsDays === option.value}
+                        onChange={(e) => handleInputChange("netTermsDays", e.target.value)}
+                        className="w-4 h-4 text-primary bg-gray-100 border-gray-300 focus:ring-primary"
+                      />
+                      <Label htmlFor={`net-${option.value}`} className="text-sm font-normal cursor-pointer">
+                        {option.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                
+                {formData.netTermsDays === 'custom' && (
+                  <div className="mt-2">
+                    <Label htmlFor="customNetDays">Custom Days</Label>
+                    <Input
+                      id="customNetDays"
+                      type="number"
+                      placeholder="Enter number of days"
+                      value={formData.customNetDays}
+                      onChange={(e) => handleInputChange("customNetDays", e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
