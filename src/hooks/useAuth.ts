@@ -1,4 +1,4 @@
-import React from "react";
+import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -9,13 +9,13 @@ interface AuthState {
 }
 
 export const useAuth = () => {
-  const [authState, setAuthState] = React.useState<AuthState>({
+  const [authState, setAuthState] = useState<AuthState>({
     user: null,
     session: null,
     loading: true,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
