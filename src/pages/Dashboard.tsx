@@ -37,6 +37,10 @@ interface CashFlowEvent {
 const Dashboard = () => {
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showVendorForm, setShowVendorForm] = useState(false);
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const [showSalesOrderForm, setShowSalesOrderForm] = useState(false);
+  
+  // State for vendors used in forms
   const [formVendors, setFormVendors] = useState([
     { id: '1', name: 'Global Vendor Co.', paymentType: 'net-terms', netTermsDays: '30' },
     { id: '2', name: 'Amazon Advertising', paymentType: 'total' },
@@ -44,7 +48,7 @@ const Dashboard = () => {
     { id: '4', name: 'Packaging Solutions Inc.', paymentType: 'preorder' },
     { id: '5', name: 'Logistics Partners', paymentType: 'net-terms', netTermsDays: '60' }
   ]);
-  
+
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([
     {
@@ -303,7 +307,10 @@ const Dashboard = () => {
       <VendorForm 
         open={showVendorForm}
         onOpenChange={setShowVendorForm}
-        onAddVendor={(vendor) => setFormVendors([...formVendors, vendor])}
+        onAddVendor={(vendor) => {
+          const newVendors = [...formVendors, vendor];
+          setFormVendors(newVendors);
+        }}
       />
       
       <VendorOrderEditModal
