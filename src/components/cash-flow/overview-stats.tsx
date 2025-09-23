@@ -6,7 +6,7 @@ export function OverviewStats() {
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
         title="Total Available Cash"
-        value="$14,273.68"
+        value="$145,750"
         trend="up"
         trendValue="+8.2% from last month"
         variant="positive"

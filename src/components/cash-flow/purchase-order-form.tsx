@@ -160,12 +160,13 @@ export const PurchaseOrderForm = ({ open, onOpenChange }: PurchaseOrderFormProps
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="poName">PO Name (Optional)</Label>
+            <Label htmlFor="poName">PO Name *</Label>
             <Input
               id="poName"
               placeholder="e.g., Q1 Inventory Restock"
               value={formData.poName}
               onChange={(e) => handleInputChange("poName", e.target.value)}
+              required
             />
           </div>
           

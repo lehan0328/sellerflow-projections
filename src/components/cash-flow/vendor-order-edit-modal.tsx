@@ -178,12 +178,13 @@ export const VendorOrderEditModal = ({ vendor, open, onOpenChange, onSave }: Ven
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="poName">Order Name (Optional)</Label>
+            <Label htmlFor="poName">Order Name *</Label>
             <Input
               id="poName"
               placeholder="e.g., Q1 Inventory Restock"
               value={formData.poName}
               onChange={(e) => handleInputChange("poName", e.target.value)}
+              required
             />
           </div>
           
