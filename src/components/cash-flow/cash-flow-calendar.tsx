@@ -127,8 +127,17 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
   };
 
   const getTotalCashForDay = (date: Date) => {
-    // For current display, show the actual available cash without complex projections
-    return totalAvailableCash;
+    // For today's date, always show the exact total available cash
+    if (isToday(date)) {
+      return totalAvailableCash;
+    }
+    
+    // For other dates, calculate based on events
+    const eventsUpToDate = events.filter(event => event.date <= date);
+    const cumulativeChange = eventsUpToDate.reduce((total, event) => {
+      return total + (event.type === 'inflow' ? event.amount : -event.amount);
+    }, 0);
+    return totalAvailableCash + cumulativeChange;
   };
 
   const getEventIcon = (event: CashFlowEvent) => {
@@ -342,70 +351,101 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
                     className={`
                       min-h-[120px] p-2 border rounded-lg relative flex flex-col
                       ${!isSameMonth(day, currentDate) ? 'opacity-30' : ''}
-                      ${isToday(day) ? 'ring-2 ring-primary bg-primary/5' : 'bg-background'}
+                      ${isToday(day) ? 'ring-2 ring-primary bg-primary/5 cursor-pointer hover:bg-primary/10' : 'bg-background'}
                       ${hasEvents ? 'border-primary/30' : 'border-border'}
                     `}
+                    onClick={() => {
+                      if (isToday(day) && hasEvents) {
+                        // Show first transaction for today
+                        setSelectedTransaction(dayEvents[0]);
+                        setShowTransactionModal(true);
+                      }
+                    }}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-sm font-medium">
                         {format(day, 'd')}
                       </div>
-                      <div className="text-xs text-finance-positive font-semibold">
-                        ${(totalCash / 1000).toFixed(0)}k
-                      </div>
-                    </div>
-                    
-                    <div className="flex-1 space-y-1">
-                       {hasEvents && (
-                        <>
-                          {dayEvents.slice(0, 2).map(event => (
-                            <div
-                              key={event.id}
-                              className={`
-                                text-xs px-1 py-0.5 rounded truncate flex items-center space-x-1 border cursor-pointer hover:opacity-80 transition-opacity
-                                ${getEventColor(event)}
-                              `}
-                              title={`${event.poName ? `${event.poName} - ` : ''}${event.description}${event.vendor ? ` - ${event.vendor}` : ''}${event.creditCard ? ` - ${event.creditCard}` : ''}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedTransaction(event);
-                                setShowTransactionModal(true);
-                              }}
-                            >
-                              {getEventIcon(event)}
-                              <span className="truncate">
-                                {event.vendor ? event.vendor : event.description} ${event.amount.toLocaleString()}
-                              </span>
-                            </div>
-                          ))}
-                          {dayEvents.length > 2 && (
-                            <div 
-                              className="text-xs text-muted-foreground cursor-pointer hover:text-primary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Show the first of the remaining transactions
-                                const remainingTransactions = dayEvents.slice(2);
-                                if (remainingTransactions.length > 0) {
-                                  setSelectedTransaction(remainingTransactions[0]);
-                                  setShowTransactionModal(true);
-                                }
-                              }}
-                            >
-                              +{dayEvents.length - 2} more (click to view)
-                            </div>
-                          )}
-                          
-                          {dayBalance !== 0 && (
-                            <div className={`
-                              text-xs font-semibold mt-1
-                              ${dayBalance > 0 ? 'text-finance-positive' : 'text-finance-negative'}
-                            `}>
-                              Net: ${dayBalance > 0 ? '+' : ''}${dayBalance.toLocaleString()}
-                            </div>
-                          )}
-                        </>
+                      {isToday(day) ? (
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-finance-positive">
+                            ${Math.round(totalCash / 1000)}k
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Available
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-finance-positive font-semibold">
+                          ${(totalCash / 1000).toFixed(0)}k
+                        </div>
                       )}
                     </div>
+                    
+                     <div className="flex-1 space-y-1">
+                        {hasEvents && (
+                         <>
+                           {isToday(day) ? (
+                             <div className="space-y-1 mt-2">
+                               <div className="text-sm text-muted-foreground font-medium">
+                                 {dayEvents.length} transaction{dayEvents.length > 1 ? 's' : ''} today
+                               </div>
+                               <div className="text-xs text-muted-foreground">
+                                 Click to view details
+                               </div>
+                             </div>
+                           ) : (
+                             <>
+                               {dayEvents.slice(0, 2).map(event => (
+                                 <div
+                                   key={event.id}
+                                   className={`
+                                     text-xs px-1 py-0.5 rounded truncate flex items-center space-x-1 border cursor-pointer hover:opacity-80 transition-opacity
+                                     ${getEventColor(event)}
+                                   `}
+                                   title={`${event.poName ? `${event.poName} - ` : ''}${event.description}${event.vendor ? ` - ${event.vendor}` : ''}${event.creditCard ? ` - ${event.creditCard}` : ''}`}
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     setSelectedTransaction(event);
+                                     setShowTransactionModal(true);
+                                   }}
+                                 >
+                                   {getEventIcon(event)}
+                                   <span className="truncate">
+                                     {event.vendor ? event.vendor : event.description} ${event.amount.toLocaleString()}
+                                   </span>
+                                 </div>
+                               ))}
+                               {dayEvents.length > 2 && (
+                                 <div 
+                                   className="text-xs text-muted-foreground cursor-pointer hover:text-primary"
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     // Show the first of the remaining transactions
+                                     const remainingTransactions = dayEvents.slice(2);
+                                     if (remainingTransactions.length > 0) {
+                                       setSelectedTransaction(remainingTransactions[0]);
+                                       setShowTransactionModal(true);
+                                     }
+                                   }}
+                                 >
+                                   +{dayEvents.length - 2} more (click to view)
+                                 </div>
+                               )}
+                               
+                               {dayBalance !== 0 && (
+                                 <div className={`
+                                   text-xs font-semibold mt-1
+                                   ${dayBalance > 0 ? 'text-finance-positive' : 'text-finance-negative'}
+                                 `}>
+                                   Net: ${dayBalance > 0 ? '+' : ''}${dayBalance.toLocaleString()}
+                                 </div>
+                               )}
+                             </>
+                           )}
+                         </>
+                       )}
+                     </div>
                   </div>
                 );
               })}
