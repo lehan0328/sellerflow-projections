@@ -138,11 +138,14 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
       return totalAvailableCash;
     }
     
-    // For other dates, calculate based on events
+    // For other dates, calculate cumulative cash flow from base amount
+    // Only include events that occurred on or before this date
     const eventsUpToDate = events.filter(event => event.date <= date);
     const cumulativeChange = eventsUpToDate.reduce((total, event) => {
       return total + (event.type === 'inflow' ? event.amount : -event.amount);
     }, 0);
+    
+    // Start from base cash and add cumulative changes
     return totalAvailableCash + cumulativeChange;
   };
 
