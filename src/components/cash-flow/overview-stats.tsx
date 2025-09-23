@@ -30,15 +30,16 @@ export function OverviewStats({ totalCash = 145750, events = [] }: OverviewStats
   
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <StatCard
-        key={`cash-${totalCash}`}
-        title="Total Available Cash"
-        value={formatCurrency(totalCash)}
-        trend="up"
-        trendValue="+8.2% from last month"
-        variant="positive"
-        icon={<DollarSign className="h-6 w-6 text-success" />}
-      />
+      <div className="bg-card border rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">Total Available Cash</p>
+            <p className="text-2xl font-bold text-success">${totalCash.toLocaleString()}</p>
+            <p className="text-sm text-muted-foreground">+8.2% from last month</p>
+          </div>
+          <DollarSign className="h-8 w-8 text-success" />
+        </div>
+      </div>
       <StatCard
         title="Credit Utilization"
         value="$18,450.00"
