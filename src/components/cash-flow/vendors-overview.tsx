@@ -187,7 +187,7 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 flex-1 overflow-hidden max-h-[500px]">
+      <CardContent className="p-4 flex-1 overflow-hidden max-h-[580px]">
         <div className="h-full overflow-y-auto space-y-4 pr-2">
           {filteredAndSortedVendors.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
