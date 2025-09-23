@@ -149,18 +149,24 @@ export const Auth = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/auth?mode=reset`,
+      // Call our custom edge function for password reset
+      const { error } = await supabase.functions.invoke('send-password-reset', {
+        body: {
+          email: resetEmail,
+          resetUrl: `${window.location.origin}/auth?mode=reset&email=${encodeURIComponent(resetEmail)}`
+        }
       });
 
       if (error) {
-        toast.error(error.message);
+        console.error('Password reset error:', error);
+        toast.error('Failed to send reset email. Please try again.');
       } else {
-        toast.success('Password reset email sent! Check your inbox.');
+        toast.success('Password reset email sent! Check your inbox for instructions.');
         setShowResetForm(false);
         setResetEmail('');
       }
     } catch (error) {
+      console.error('Password reset error:', error);
       toast.error('An unexpected error occurred');
     } finally {
       setLoading(false);
