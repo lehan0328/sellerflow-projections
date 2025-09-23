@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -29,8 +30,9 @@ interface CashFlowCalendarProps {
 export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'calendar' | 'chart'>('calendar');
+  const [dateRangeOption, setDateRangeOption] = useState<'next30' | 'thisMonth' | 'nextMonth' | 'custom'>('next30');
   const [dateRange, setDateRange] = useState({
-    start: subDays(new Date(), 30),
+    start: new Date(),
     end: addDays(new Date(), 30)
   });
   const [selectedTransaction, setSelectedTransaction] = useState<CashFlowEvent | null>(null);
@@ -163,6 +165,36 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
     setCurrentDate(prev => direction === 'prev' ? subMonths(prev, 1) : addMonths(prev, 1));
   };
 
+  const handleDateRangeOptionChange = (option: 'next30' | 'thisMonth' | 'nextMonth' | 'custom') => {
+    setDateRangeOption(option);
+    const now = new Date();
+    
+    switch (option) {
+      case 'next30':
+        setDateRange({
+          start: now,
+          end: addDays(now, 30)
+        });
+        break;
+      case 'thisMonth':
+        setDateRange({
+          start: startOfMonth(now),
+          end: endOfMonth(now)
+        });
+        break;
+      case 'nextMonth':
+        const nextMonth = addMonths(now, 1);
+        setDateRange({
+          start: startOfMonth(nextMonth),
+          end: endOfMonth(nextMonth)
+        });
+        break;
+      case 'custom':
+        // Keep current date range for custom
+        break;
+    }
+  };
+
   // Generate chart data for line chart view
   const generateChartData = () => {
     const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
@@ -253,76 +285,94 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
           
           <div className="flex items-center space-x-4">
             {viewType === 'calendar' && (
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <h3 className="text-lg font-semibold min-w-[140px] text-center">
-                  {format(currentDate, 'MMMM yyyy')}
-                </h3>
-                <Button variant="outline" size="sm" onClick={() => navigateMonth('next')}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+              <>
+                <div className="flex items-center space-x-2">
+                  <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <h3 className="text-lg font-semibold min-w-[140px] text-center">
+                    {format(currentDate, 'MMMM yyyy')}
+                  </h3>
+                  <Button variant="outline" size="sm" onClick={() => navigateMonth('next')}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </>
             )}
             
             {viewType === 'chart' && (
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium">From:</span>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          "w-[140px] justify-start text-left font-normal",
-                          !dateRange.start && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateRange.start ? format(dateRange.start, "MMM dd, yyyy") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dateRange.start}
-                        onSelect={(date) => date && setDateRange(prev => ({...prev, start: date}))}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium">To:</span>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          "w-[140px] justify-start text-left font-normal",
-                          !dateRange.end && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateRange.end ? format(dateRange.end, "MMM dd, yyyy") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dateRange.end}
-                        onSelect={(date) => date && setDateRange(prev => ({...prev, end: date}))}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
+              <>
+                <Select value={dateRangeOption} onValueChange={handleDateRangeOptionChange}>
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="Select range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="next30">Next 30 Days</SelectItem>
+                    <SelectItem value="thisMonth">This Month</SelectItem>
+                    <SelectItem value="nextMonth">Next Month</SelectItem>
+                    <SelectItem value="custom">Custom Range</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                {dateRangeOption === 'custom' && (
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium">From:</span>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                              "w-[140px] justify-start text-left font-normal",
+                              !dateRange.start && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateRange.start ? format(dateRange.start, "MMM dd, yyyy") : <span>Pick a date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={dateRange.start}
+                            onSelect={(date) => date && setDateRange(prev => ({...prev, start: date}))}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium">To:</span>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                              "w-[140px] justify-start text-left font-normal",
+                              !dateRange.end && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateRange.end ? format(dateRange.end, "MMM dd, yyyy") : <span>Pick a date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={dateRange.end}
+                            onSelect={(date) => date && setDateRange(prev => ({...prev, end: date}))}
+                            initialFocus
+                            className="p-3 pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -368,16 +418,16 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
                       </div>
                       {isToday(day) ? (
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-finance-positive">
-                            ${Math.round(totalCash / 1000)}k
+                          <div className="text-lg font-bold text-finance-positive">
+                            ${totalCash.toLocaleString()}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             Available
                           </div>
                         </div>
                       ) : (
-                        <div className="text-xs text-finance-positive font-semibold">
-                          ${(totalCash / 1000).toFixed(0)}k
+                        <div className="text-sm text-finance-positive font-semibold">
+                          ${totalCash.toLocaleString()}
                         </div>
                       )}
                     </div>
