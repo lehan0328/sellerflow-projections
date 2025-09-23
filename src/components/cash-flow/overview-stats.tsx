@@ -31,6 +31,7 @@ export function OverviewStats({ totalCash = 145750, events = [] }: OverviewStats
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
+        key={`cash-${totalCash}`}
         title="Total Available Cash"
         value={formatCurrency(totalCash)}
         trend="up"
