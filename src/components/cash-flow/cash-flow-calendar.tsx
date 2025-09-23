@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, Calenda
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { TransactionDetailModal } from "./transaction-detail-modal";
 import { cn } from "@/lib/utils";
 
 interface CashFlowEvent {
@@ -32,6 +33,8 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
     start: subDays(new Date(), 30),
     end: addDays(new Date(), 30)
   });
+  const [selectedTransaction, setSelectedTransaction] = useState<CashFlowEvent | null>(null);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
   
   // Total available cash (this would come from bank integrations)
   const totalAvailableCash = 145750;
@@ -178,8 +181,26 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
         dailyChange,
         inflow: dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0),
         outflow: dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0),
+        transactions: dayEvents, // Include actual transaction data
       };
     });
+  };
+
+  const handleChartClick = (data: any) => {
+    if (data && data.activePayload && data.activePayload[0]) {
+      const dayData = data.activePayload[0].payload;
+      const transactions = dayData.transactions || [];
+      
+      if (transactions.length === 1) {
+        // If only one transaction, show it directly
+        setSelectedTransaction(transactions[0]);
+        setShowTransactionModal(true);
+      } else if (transactions.length > 1) {
+        // If multiple transactions, show the first one (could be enhanced to show a list)
+        setSelectedTransaction(transactions[0]);
+        setShowTransactionModal(true);
+      }
+    }
   };
 
   const chartData = generateChartData();
@@ -356,16 +377,21 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
                     </div>
                     
                     <div className="flex-1 space-y-1">
-                      {hasEvents && (
+                       {hasEvents && (
                         <>
                           {dayEvents.slice(0, 2).map(event => (
                             <div
                               key={event.id}
                               className={`
-                                text-xs px-1 py-0.5 rounded truncate flex items-center space-x-1 border
+                                text-xs px-1 py-0.5 rounded truncate flex items-center space-x-1 border cursor-pointer hover:opacity-80 transition-opacity
                                 ${getEventColor(event)}
                               `}
                               title={`${event.poName ? `${event.poName} - ` : ''}${event.description}${event.vendor ? ` - ${event.vendor}` : ''}${event.creditCard ? ` - ${event.creditCard}` : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedTransaction(event);
+                                setShowTransactionModal(true);
+                              }}
                             >
                               {getEventIcon(event)}
                               <span className="truncate">
@@ -374,8 +400,19 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
                             </div>
                           ))}
                           {dayEvents.length > 2 && (
-                            <div className="text-xs text-muted-foreground">
-                              +{dayEvents.length - 2} more
+                            <div 
+                              className="text-xs text-muted-foreground cursor-pointer hover:text-primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                // Show the first of the remaining transactions
+                                const remainingTransactions = dayEvents.slice(2);
+                                if (remainingTransactions.length > 0) {
+                                  setSelectedTransaction(remainingTransactions[0]);
+                                  setShowTransactionModal(true);
+                                }
+                              }}
+                            >
+                              +{dayEvents.length - 2} more (click to view)
                             </div>
                           )}
                           
@@ -399,7 +436,7 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
           <div className="h-[400px]">
             <ChartContainer config={chartConfig}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
+                <LineChart data={chartData} onClick={handleChartClick}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="date" 
@@ -419,6 +456,7 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
                     labelFormatter={(label, payload) => {
                       if (payload && payload[0]) {
                         const data = payload[0].payload;
+                        const hasTransactions = data.transactions && data.transactions.length > 0;
                         return (
                           <div className="space-y-1">
                             <p className="font-semibold">{label}</p>
@@ -434,6 +472,11 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
                               {data.outflow > 0 && (
                                 <p className="text-red-600">Outflow: -${data.outflow.toLocaleString()}</p>
                               )}
+                              {hasTransactions && (
+                                <p className="text-blue-600 font-medium">
+                                  💡 Click to view transaction details
+                                </p>
+                              )}
                             </div>
                           </div>
                         );
@@ -446,8 +489,8 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
                     dataKey="cashFlow" 
                     stroke="hsl(var(--primary))" 
                     strokeWidth={2}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
+                    dot={{ r: 4, cursor: 'pointer' }}
+                    activeDot={{ r: 6, cursor: 'pointer' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -489,6 +532,12 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
           </div>
         </div>
       </CardContent>
+      
+      <TransactionDetailModal
+        transaction={selectedTransaction}
+        open={showTransactionModal}
+        onOpenChange={setShowTransactionModal}
+      />
     </Card>
   );
 };
