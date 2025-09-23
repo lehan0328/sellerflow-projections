@@ -30,7 +30,7 @@ interface CashFlowCalendarProps {
 export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'calendar' | 'chart'>('calendar');
-  const [dateRangeOption, setDateRangeOption] = useState<'next30' | 'thisMonth' | 'nextMonth' | 'custom'>('next30');
+  const [dateRangeOption, setDateRangeOption] = useState<'next30' | 'thisMonth' | 'nextMonth'>('next30');
   const [dateRange, setDateRange] = useState({
     start: new Date(),
     end: addDays(new Date(), 30)
@@ -169,7 +169,7 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
     setCurrentDate(prev => direction === 'prev' ? subMonths(prev, 1) : addMonths(prev, 1));
   };
 
-  const handleDateRangeOptionChange = (option: 'next30' | 'thisMonth' | 'nextMonth' | 'custom') => {
+  const handleDateRangeOptionChange = (option: 'next30' | 'thisMonth' | 'nextMonth') => {
     setDateRangeOption(option);
     const now = new Date();
     
@@ -202,9 +202,6 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
           end: nextMonthEnd
         });
         setCurrentDate(nextMonth);
-        break;
-      case 'custom':
-        // Keep current date range for custom
         break;
     }
   };
@@ -299,70 +296,16 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
             </div>
             
             <div className="flex items-center space-x-4">
-              <Select value={dateRangeOption} onValueChange={handleDateRangeOptionChange}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Select range" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border shadow-lg z-50">
-                  <SelectItem value="next30">Next 30 Days</SelectItem>
-                  <SelectItem value="thisMonth">This Month</SelectItem>
-                  <SelectItem value="nextMonth">Next Month</SelectItem>
-                  <SelectItem value="custom">Custom Range</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              {dateRangeOption === 'custom' && (
-                <div className="flex items-center space-x-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          "w-[120px] justify-start text-left font-normal",
-                          !dateRange.start && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateRange.start ? format(dateRange.start, "MMM dd") : <span>From</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-background border shadow-lg z-50" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dateRange.start}
-                        onSelect={(date) => date && setDateRange(prev => ({...prev, start: date}))}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          "w-[120px] justify-start text-left font-normal",
-                          !dateRange.end && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateRange.end ? format(dateRange.end, "MMM dd") : <span>To</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-background border shadow-lg z-50" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dateRange.end}
-                        onSelect={(date) => date && setDateRange(prev => ({...prev, end: date}))}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              )}
+                <Select value={dateRangeOption} onValueChange={handleDateRangeOptionChange}>
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="Select range" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border shadow-lg z-50">
+                    <SelectItem value="next30">Next 30 Days</SelectItem>
+                    <SelectItem value="thisMonth">This Month</SelectItem>
+                    <SelectItem value="nextMonth">Next Month</SelectItem>
+                  </SelectContent>
+                </Select>
             </div>
           </div>
           
