@@ -8,14 +8,19 @@ import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
 import { VendorsOverview } from "@/components/cash-flow/vendors-overview";
 import { VendorForm } from "@/components/cash-flow/vendor-form";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
+import { AddAccountModal } from "@/components/cash-flow/add-account-modal";
 
 const Dashboard = () => {
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showVendorForm, setShowVendorForm] = useState(false);
+  const [showAddAccountModal, setShowAddAccountModal] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader onAddVendor={() => setShowVendorForm(true)} />
+      <DashboardHeader 
+        onAddVendor={() => setShowVendorForm(true)} 
+        onAddAccount={() => setShowAddAccountModal(true)}
+      />
       
       <div className="container mx-auto px-4 py-8 space-y-8">
         <OverviewStats />
@@ -46,6 +51,11 @@ const Dashboard = () => {
       <VendorForm 
         open={showVendorForm}
         onOpenChange={setShowVendorForm}
+      />
+      
+      <AddAccountModal
+        open={showAddAccountModal}
+        onOpenChange={setShowAddAccountModal}
       />
     </div>
   );

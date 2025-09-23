@@ -14,10 +14,10 @@ export function OverviewStats() {
       />
       <StatCard
         title="Credit Utilization"
-        value="$25,959.18"
+        value="$18,450.00"
         subtitle="of $24,700.00 limit"
         trend="down"
-        trendValue="93.4% utilization"
+        trendValue="74.7% utilization"
         variant="warning"
         icon={<CreditCard className="h-6 w-6 text-warning" />}
       />
@@ -27,8 +27,8 @@ export function OverviewStats() {
         subtitle="Amazon - Sep 25"
         trend="up"
         trendValue="2 days"
-        variant="primary"
-        icon={<TrendingUp className="h-6 w-6 text-primary-foreground" />}
+        variant="default"
+        icon={<TrendingUp className="h-6 w-6 text-primary" />}
       />
       <StatCard
         title="Upcoming Payments"

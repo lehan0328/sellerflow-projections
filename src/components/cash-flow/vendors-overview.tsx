@@ -1,7 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Calendar, DollarSign, AlertTriangle, Plus } from "lucide-react";
+import { Building2, Calendar, DollarSign, AlertTriangle, Plus, Edit, CreditCard } from "lucide-react";
+import { useState } from "react";
+import { VendorEditModal } from "./vendor-edit-modal";
+import { toast } from "sonner";
 
 interface Vendor {
   id: string;
@@ -16,7 +19,8 @@ interface Vendor {
 interface VendorsOverviewProps {}
 
 export const VendorsOverview = ({}: VendorsOverviewProps) => {
-  const vendors: Vendor[] = [
+  const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
+  const [vendors, setVendors] = useState<Vendor[]>([
     {
       id: '1',
       name: 'Global Vendor Co.',
@@ -53,7 +57,19 @@ export const VendorsOverview = ({}: VendorsOverviewProps) => {
       status: 'upcoming',
       category: 'Shipping'
     }
-  ];
+  ]);
+
+  const handleEditVendor = (vendor: Vendor) => {
+    setEditingVendor(vendor);
+  };
+
+  const handleSaveVendor = (updatedVendor: Vendor) => {
+    setVendors(prev => prev.map(v => v.id === updatedVendor.id ? updatedVendor : v));
+  };
+
+  const handlePayNow = (vendor: Vendor) => {
+    toast.success(`Payment initiated for ${vendor.name} - $${vendor.nextPaymentAmount.toLocaleString()}`);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -149,16 +165,33 @@ export const VendorsOverview = ({}: VendorsOverviewProps) => {
                 </div>
               </div>
               <div className="flex justify-end space-x-3 pt-3 border-t">
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleEditVendor(vendor)}
+                >
+                  <Edit className="mr-2 h-4 w-4" />
                   Edit
                 </Button>
-                <Button size="sm" className="bg-gradient-primary px-6">
+                <Button 
+                  size="sm" 
+                  className="bg-gradient-primary px-6"
+                  onClick={() => handlePayNow(vendor)}
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
                   Pay Now
                 </Button>
               </div>
             </div>
           ))}
         </div>
+        
+        <VendorEditModal
+          vendor={editingVendor}
+          open={!!editingVendor}
+          onOpenChange={(open) => !open && setEditingVendor(null)}
+          onSave={handleSaveVendor}
+        />
       </CardContent>
     </Card>
   );
