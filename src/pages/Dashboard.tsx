@@ -355,6 +355,7 @@ const Dashboard = () => {
           <div className="lg:col-span-2">
             <CashFlowCalendar 
               events={events}
+              totalCash={totalCash}
             />
           </div>
           <div className="lg:col-span-1">

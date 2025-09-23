@@ -25,9 +25,10 @@ interface CashFlowEvent {
 
 interface CashFlowCalendarProps {
   events?: CashFlowEvent[];
+  totalCash?: number;
 }
 
-export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) => {
+export const CashFlowCalendar = ({ events: propEvents, totalCash = 145750 }: CashFlowCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'calendar' | 'chart'>('calendar');
   const [dateRangeOption, setDateRangeOption] = useState<'next30' | 'thisMonth' | 'nextMonth'>('next30');
@@ -38,17 +39,17 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
   const [selectedTransaction, setSelectedTransaction] = useState<CashFlowEvent | null>(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   
-  // Total available cash (this would come from bank integrations)
-  const totalAvailableCash = 145750;
+  // Total available cash passed from parent component
+  const totalAvailableCash = totalCash;
   
-  // Sample cash flow events (including credit card payments and purchase orders)
+  // Sample cash flow events with current dates
   const defaultEvents: CashFlowEvent[] = [
     {
       id: '1',
       type: 'inflow',
       amount: 25000,
       description: 'Amazon Payout',
-      date: new Date(2024, 0, 15)
+      date: addDays(new Date(), 5)
     },
     {
       id: '2',
@@ -57,14 +58,14 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
       description: 'Inventory Purchase',
       vendor: 'Global Vendor Co.',
       poName: 'Q1 Inventory Restock',
-      date: new Date(2024, 0, 18)
+      date: addDays(new Date(), 8)
     },
     {
       id: '3',
       type: 'inflow',
       amount: 28000,
       description: 'Amazon Payout',
-      date: new Date(2024, 0, 30)
+      date: addDays(new Date(), 20)
     },
     {
       id: '4',
@@ -73,7 +74,7 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
       description: 'PPC Campaign',
       vendor: 'Amazon Advertising',
       poName: 'January PPC Budget',
-      date: new Date(2024, 0, 25)
+      date: addDays(new Date(), 15)
     },
     {
       id: '5',
@@ -81,7 +82,7 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
       amount: 2500,
       description: 'Chase Sapphire Payment Due',
       creditCard: 'Chase Sapphire Business',
-      date: new Date(2024, 0, 22)
+      date: addDays(new Date(), 12)
     },
     {
       id: '6',
@@ -89,14 +90,14 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
       amount: 1800,
       description: 'American Express Payment Due',
       creditCard: 'Amex Gold Business',
-      date: new Date(2024, 0, 28)
+      date: addDays(new Date(), 18)
     },
     {
       id: '7',
       type: 'inflow',
       amount: 32000,
       description: 'Amazon Payout',
-      date: new Date(2024, 1, 14)
+      date: addDays(new Date(), 25)
     },
     {
       id: '8',
@@ -105,7 +106,7 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
       description: 'Inventory Restock',
       vendor: 'Inventory Plus LLC',
       poName: 'February Bulk Order',
-      date: new Date(2024, 1, 5)
+      date: subDays(new Date(), 5)
     }
   ];
 
