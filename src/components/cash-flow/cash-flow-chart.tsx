@@ -129,27 +129,19 @@ export const CashFlowChart = ({
 
   return (
     <Card className="shadow-card">
-      {/* Cash Display */}
-      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 rounded-t-lg border-b">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-primary/10 rounded-full">
-              <TrendingUp className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Available Cash</p>
-              <p className="text-2xl font-bold text-finance-positive">
-                ${totalAvailableCash.toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <CardHeader className="pb-4">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
           <div className="flex items-center space-x-4">
             <CardTitle className="text-lg">Cash Flow Visualization</CardTitle>
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-muted-foreground">
+                Updated now
+              </div>
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-green-600 font-medium">Healthy</span>
+              </div>
+            </div>
             <div className="flex items-center space-x-2 bg-muted rounded-lg p-1">
               <Button
                 variant={viewType === 'calendar' ? 'default' : 'ghost'}
