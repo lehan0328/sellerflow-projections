@@ -4,7 +4,7 @@ import { BankAccounts } from "@/components/cash-flow/bank-accounts";
 import { CreditCards } from "@/components/cash-flow/credit-cards";
 import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
 
-const Index = () => {
+const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 space-y-8">
@@ -24,4 +24,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Dashboard;
