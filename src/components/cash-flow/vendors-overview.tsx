@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Building2, Calendar, DollarSign, AlertTriangle, Plus, Edit, CreditCard } from "lucide-react";
 import { useState } from "react";
 import { VendorEditModal } from "./vendor-edit-modal";
@@ -16,9 +17,11 @@ interface Vendor {
   category: string;
 }
 
-interface VendorsOverviewProps {}
+interface VendorsOverviewProps {
+  onPayToday?: (vendor: Vendor) => void;
+}
 
-export const VendorsOverview = ({}: VendorsOverviewProps) => {
+export const VendorsOverview = ({ onPayToday }: VendorsOverviewProps) => {
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([
     {
@@ -67,8 +70,9 @@ export const VendorsOverview = ({}: VendorsOverviewProps) => {
     setVendors(prev => prev.map(v => v.id === updatedVendor.id ? updatedVendor : v));
   };
 
-  const handlePayNow = (vendor: Vendor) => {
-    toast.success(`Payment initiated for ${vendor.name} - $${vendor.nextPaymentAmount.toLocaleString()}`);
+  const handlePayToday = (vendor: Vendor) => {
+    onPayToday?.(vendor);
+    toast.success(`Payment moved to today for ${vendor.name} - $${vendor.nextPaymentAmount.toLocaleString()}`);
   };
 
   const getStatusColor = (status: string) => {
@@ -173,14 +177,31 @@ export const VendorsOverview = ({}: VendorsOverviewProps) => {
                   <Edit className="mr-2 h-4 w-4" />
                   Edit
                 </Button>
-                <Button 
-                  size="sm" 
-                  className="bg-gradient-primary px-6"
-                  onClick={() => handlePayNow(vendor)}
-                >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  Pay Now
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      size="sm" 
+                      className="bg-gradient-primary px-6"
+                    >
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Pay Today
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to move the payment for {vendor.name} (${vendor.nextPaymentAmount.toLocaleString()}) to today's date?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handlePayToday(vendor)}>
+                        Yes, Pay Today
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           ))}

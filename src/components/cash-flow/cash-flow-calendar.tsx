@@ -18,16 +18,17 @@ interface CashFlowEvent {
 
 interface CashFlowCalendarProps {
   onAddPurchaseOrder: () => void;
+  events?: CashFlowEvent[];
 }
 
-export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) => {
+export const CashFlowCalendar = ({ onAddPurchaseOrder, events: propEvents }: CashFlowCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   
   // Total available cash (this would come from bank integrations)
   const totalAvailableCash = 145750;
   
   // Sample cash flow events (including credit card payments and purchase orders)
-  const [events] = useState<CashFlowEvent[]>([
+  const defaultEvents: CashFlowEvent[] = [
     {
       id: '1',
       type: 'inflow',
@@ -92,7 +93,9 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
       poName: 'February Bulk Order',
       date: new Date(2024, 1, 5)
     }
-  ]);
+  ];
+
+  const events = propEvents || defaultEvents;
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
