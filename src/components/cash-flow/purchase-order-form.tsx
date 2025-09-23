@@ -90,6 +90,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
       paymentSchedule: formData.paymentType === "preorder" ? paymentSchedule : undefined
     };
     
+    console.log("Submitting purchase order:", orderData);
     onSubmitOrder(orderData);
     toast.success(`Purchase Order "${formData.poName}" created successfully!`);
     onOpenChange(false);

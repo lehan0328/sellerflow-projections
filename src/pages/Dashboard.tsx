@@ -254,11 +254,18 @@ const Dashboard = () => {
 
   // Handle purchase order submission
   const handlePurchaseOrderSubmit = (orderData: any) => {
+    console.log("Purchase order received in Dashboard:", orderData);
     const amount = parseFloat(orderData.amount);
+    console.log("Deducting cash amount:", amount);
     
     // Deduct from total cash if payment is immediate
     if (orderData.paymentType === 'total') {
-      setTotalCash(prev => prev - amount);
+      console.log("Previous total cash:", totalCash);
+      setTotalCash(prev => {
+        const newTotal = prev - amount;
+        console.log("New total cash:", newTotal);
+        return newTotal;
+      });
     }
     
     // Create new cash flow event
@@ -277,11 +284,18 @@ const Dashboard = () => {
 
   // Handle sales order submission
   const handleSalesOrderSubmit = (orderData: any) => {
+    console.log("Sales order received in Dashboard:", orderData);
     const amount = parseFloat(orderData.amount);
+    console.log("Adding cash amount:", amount);
     
     // Add to total cash if payment is immediate
     if (orderData.paymentType === 'total') {
-      setTotalCash(prev => prev + amount);
+      console.log("Previous total cash:", totalCash);
+      setTotalCash(prev => {
+        const newTotal = prev + amount;
+        console.log("New total cash:", newTotal);
+        return newTotal;
+      });
     }
     
     // Create new cash flow event
