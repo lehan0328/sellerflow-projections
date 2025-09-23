@@ -22,11 +22,10 @@ interface CashFlowEvent {
 }
 
 interface CashFlowCalendarProps {
-  onAddPurchaseOrder: () => void;
   events?: CashFlowEvent[];
 }
 
-export const CashFlowCalendar = ({ onAddPurchaseOrder, events: propEvents }: CashFlowCalendarProps) => {
+export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'calendar' | 'chart'>('calendar');
   const [dateRange, setDateRange] = useState({
@@ -316,11 +315,6 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder, events: propEvents }: Cas
                 </div>
               </div>
             )}
-            
-            <Button size="sm" onClick={onAddPurchaseOrder} className="bg-gradient-primary">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Purchase Order
-            </Button>
           </div>
         </div>
       </CardHeader>

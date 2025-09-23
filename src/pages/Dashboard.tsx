@@ -243,6 +243,7 @@ const Dashboard = () => {
       <FloatingMenu 
         onAddVendor={() => setShowVendorForm(true)}
         onAddAccount={() => setShowAddAccountModal(true)}
+        onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)}
       />
       
       <div className="container mx-auto px-4 pb-8 space-y-8">
@@ -252,7 +253,6 @@ const Dashboard = () => {
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <CashFlowCalendar 
-              onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)} 
               events={events}
             />
           </div>
