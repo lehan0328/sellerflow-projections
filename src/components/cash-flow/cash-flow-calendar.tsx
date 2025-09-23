@@ -133,20 +133,40 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
   };
 
   const getTotalCashForDay = (date: Date) => {
-    // For today's date, always show the exact total available cash
-    if (isToday(date)) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dateToCheck = new Date(date);
+    dateToCheck.setHours(0, 0, 0, 0);
+    
+    // For today, always show the exact available cash
+    if (dateToCheck.getTime() === today.getTime()) {
       return totalAvailableCash;
     }
     
-    // For other dates, calculate cumulative cash flow from base amount
-    // Only include events that occurred on or before this date
+    // For future dates, only include transactions that occur on or before that specific date
+    // But don't include historical transactions that already affect the current balance
+    if (dateToCheck > today) {
+      // For future dates, start with current balance and only add future transactions up to that date
+      const futureEventsToDate = events.filter(event => {
+        const eventDate = new Date(event.date);
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate > today && eventDate <= dateToCheck;
+      });
+      
+      const futureChange = futureEventsToDate.reduce((total, event) => {
+        return total + (event.type === 'inflow' ? event.amount : -event.amount);
+      }, 0);
+      
+      return totalAvailableCash + futureChange;
+    }
+    
+    // For past dates, calculate what the balance would have been
     const eventsUpToDate = events.filter(event => event.date <= date);
-    const cumulativeChange = eventsUpToDate.reduce((total, event) => {
+    const netChange = eventsUpToDate.reduce((total, event) => {
       return total + (event.type === 'inflow' ? event.amount : -event.amount);
     }, 0);
     
-    // Start from base cash and add cumulative changes
-    return totalAvailableCash + cumulativeChange;
+    return totalAvailableCash + netChange;
   };
 
   const getEventIcon = (event: CashFlowEvent) => {
