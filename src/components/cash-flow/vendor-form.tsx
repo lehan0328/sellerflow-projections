@@ -15,16 +15,11 @@ interface VendorFormProps {
 export const VendorForm = ({ open, onOpenChange }: VendorFormProps) => {
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
-    phone: "",
-    address: "",
     category: "",
     paymentType: "total",
     depositAmount: "",
     netTermsDays: "30",
-    customNetDays: "",
-    taxId: "",
-    notes: ""
+    customNetDays: ""
   });
 
   const categories = [
@@ -56,16 +51,11 @@ export const VendorForm = ({ open, onOpenChange }: VendorFormProps) => {
     // Reset form
     setFormData({
       name: "",
-      email: "",
-      phone: "",
-      address: "",
       category: "",
       paymentType: "total",
       depositAmount: "",
       netTermsDays: "30",
-      customNetDays: "",
-      taxId: "",
-      notes: ""
+      customNetDays: ""
     });
   };
 
@@ -91,28 +81,6 @@ export const VendorForm = ({ open, onOpenChange }: VendorFormProps) => {
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
               required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="vendor@company.com"
-              value={formData.email}
-              onChange={(e) => handleInputChange("email", e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone</Label>
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="(555) 123-4567"
-              value={formData.phone}
-              onChange={(e) => handleInputChange("phone", e.target.value)}
             />
           </div>
 
@@ -202,38 +170,6 @@ export const VendorForm = ({ open, onOpenChange }: VendorFormProps) => {
                 )}
               </div>
             )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="taxId">Tax ID (Optional)</Label>
-            <Input
-              id="taxId"
-              placeholder="Enter tax ID number"
-              value={formData.taxId}
-              onChange={(e) => handleInputChange("taxId", e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address">Address (Optional)</Label>
-            <Textarea
-              id="address"
-              placeholder="Enter full address"
-              value={formData.address}
-              onChange={(e) => handleInputChange("address", e.target.value)}
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (Optional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Additional notes about this vendor"
-              value={formData.notes}
-              onChange={(e) => handleInputChange("notes", e.target.value)}
-              rows={3}
-            />
           </div>
           
           <div className="flex space-x-3 pt-4">

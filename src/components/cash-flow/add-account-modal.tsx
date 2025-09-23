@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { CreditCard, Building, Wallet, Plus } from "lucide-react";
+import { CreditCard, Building, Wallet, Plus, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 
 interface AddAccountModalProps {
@@ -26,16 +26,16 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
 
   const accountTypes = [
     {
-      id: "checking",
-      name: "Checking Account",
+      id: "plaid",
+      name: "Bank Account (Plaid)",
       icon: <Building className="h-6 w-6" />,
-      description: "Connect your business checking account",
+      description: "Securely connect your bank account via Plaid",
     },
     {
-      id: "savings",
-      name: "Savings Account", 
-      icon: <Wallet className="h-6 w-6" />,
-      description: "Connect your business savings account",
+      id: "amazon",
+      name: "Amazon Account", 
+      icon: <ShoppingCart className="h-6 w-6" />,
+      description: "Connect your Amazon Seller Central account",
     },
     {
       id: "credit",
@@ -58,8 +58,22 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
       return;
     }
 
-    // Here you would typically integrate with a service like Plaid or manually add the account
-    toast.success("Account added successfully! It may take a few minutes to sync.");
+    if (selectedType === 'plaid') {
+      // Simulate Plaid Link flow
+      toast.success("Redirecting to Plaid for secure bank connection...");
+      setTimeout(() => {
+        toast.success("Bank account connected successfully via Plaid!");
+      }, 2000);
+    } else if (selectedType === 'amazon') {
+      // Simulate Amazon connection
+      toast.success("Connecting to Amazon Seller Central...");
+      setTimeout(() => {
+        toast.success("Amazon account connected successfully!");
+      }, 2000);
+    } else {
+      toast.success("Credit card added successfully!");
+    }
+    
     onOpenChange(false);
     
     // Reset form
@@ -164,6 +178,37 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
                       />
                     </div>
                   </>
+                ) : selectedType === "plaid" ? (
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-800 mb-2">
+                      <strong>Plaid Integration:</strong> You'll be redirected to Plaid's secure interface to connect your bank account.
+                    </p>
+                    <p className="text-xs text-blue-600">
+                      Plaid uses bank-level security to protect your information and never stores your login credentials.
+                    </p>
+                  </div>
+                ) : selectedType === "amazon" ? (
+                  <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                    <p className="text-sm text-orange-800 mb-2">
+                      <strong>Amazon Integration:</strong> Connect your Amazon Seller Central account to automatically sync payouts and expenses.
+                    </p>
+                    <div className="space-y-2 mt-3">
+                      <div>
+                        <Label htmlFor="marketplace">Marketplace</Label>
+                        <Select onValueChange={(value) => handleInputChange('marketplace', value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select marketplace" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="us">United States (amazon.com)</SelectItem>
+                            <SelectItem value="ca">Canada (amazon.ca)</SelectItem>
+                            <SelectItem value="uk">United Kingdom (amazon.co.uk)</SelectItem>
+                            <SelectItem value="de">Germany (amazon.de)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <>
                     <div className="space-y-2">
@@ -194,13 +239,13 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
                         value={formData.routingNumber}
                         onChange={(e) => handleInputChange('routingNumber', e.target.value)}
                       />
-                    </div>
-                  </>
-                )}
+                     </div>
+                   </>
+                 )}
 
                 <div className="bg-muted/50 p-4 rounded-lg">
                   <p className="text-sm text-muted-foreground">
-                    <strong>Note:</strong> This is a demo version. In production, we'd integrate with Plaid or similar services for secure bank connections.
+                    <strong>Note:</strong> This is a demo version. In production, we'd integrate with the actual services for secure connections.
                   </p>
                 </div>
 
@@ -215,7 +260,9 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
                     onClick={handleSubmit}
                     className="bg-gradient-primary"
                   >
-                    Add Account
+                    {selectedType === 'plaid' ? 'Connect via Plaid' : 
+                     selectedType === 'amazon' ? 'Connect Amazon Account' : 
+                     'Add Account'}
                   </Button>
                 </div>
               </div>

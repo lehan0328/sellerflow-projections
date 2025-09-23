@@ -15,17 +15,44 @@ import {
   ArrowLeft,
   Save,
   Download,
-  FileText
+  FileText,
+  Sun,
+  Moon,
+  Monitor,
+  Palette
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleExport = (type: string) => {
     toast.success(`Exporting ${type} data...`);
     // Here you would implement the actual export functionality
+  };
+
+  const getThemeIcon = (themeType: string) => {
+    switch (themeType) {
+      case 'light':
+        return <Sun className="h-4 w-4" />;
+      case 'dark':
+        return <Moon className="h-4 w-4" />;
+      default:
+        return <Monitor className="h-4 w-4" />;
+    }
+  };
+
+  if (!mounted) {
+    return null;
   };
 
   return (
@@ -91,6 +118,53 @@ const Settings = () => {
                 <div>
                   <Label htmlFor="company">Company Name</Label>
                   <Input id="company" defaultValue="Andy's Amazon Business" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Appearance Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Palette className="h-5 w-5" />
+                  <span>Appearance</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium">Theme</Label>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Choose how the dashboard appears to you
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <Button
+                      variant={theme === 'light' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setTheme('light')}
+                      className="justify-start"
+                    >
+                      {getThemeIcon('light')}
+                      <span className="ml-2">Light</span>
+                    </Button>
+                    <Button
+                      variant={theme === 'dark' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setTheme('dark')}
+                      className="justify-start"
+                    >
+                      {getThemeIcon('dark')}
+                      <span className="ml-2">Dark</span>
+                    </Button>
+                    <Button
+                      variant={theme === 'system' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setTheme('system')}
+                      className="justify-start"
+                    >
+                      {getThemeIcon('system')}
+                      <span className="ml-2">System</span>
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
