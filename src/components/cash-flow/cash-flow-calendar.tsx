@@ -113,7 +113,11 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
-  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  
+  // Use date range for calendar view when specific ranges are selected
+  const calendarStart = dateRangeOption === 'next30' ? dateRange.start : monthStart;
+  const calendarEnd = dateRangeOption === 'next30' ? dateRange.end : monthEnd;
+  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const getEventsForDay = (date: Date) => {
     return events.filter(event => 
@@ -171,23 +175,33 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
     
     switch (option) {
       case 'next30':
+        const next30Start = now;
+        const next30End = addDays(now, 30);
         setDateRange({
-          start: now,
-          end: addDays(now, 30)
+          start: next30Start,
+          end: next30End
         });
+        // Update the calendar view to show the range
+        setCurrentDate(next30Start);
         break;
       case 'thisMonth':
+        const thisMonthStart = startOfMonth(now);
+        const thisMonthEnd = endOfMonth(now);
         setDateRange({
-          start: startOfMonth(now),
-          end: endOfMonth(now)
+          start: thisMonthStart,
+          end: thisMonthEnd
         });
+        setCurrentDate(now);
         break;
       case 'nextMonth':
         const nextMonth = addMonths(now, 1);
+        const nextMonthStart = startOfMonth(nextMonth);
+        const nextMonthEnd = endOfMonth(nextMonth);
         setDateRange({
-          start: startOfMonth(nextMonth),
-          end: endOfMonth(nextMonth)
+          start: nextMonthStart,
+          end: nextMonthEnd
         });
+        setCurrentDate(nextMonth);
         break;
       case 'custom':
         // Keep current date range for custom
@@ -353,13 +367,13 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
           </div>
           
           {viewType === 'calendar' && (
-            <div className="flex items-center justify-center mt-4">
+            <div className="flex items-center justify-center mt-6 mb-4">
               <div className="flex items-center space-x-2">
                 <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <h3 className="text-lg font-semibold min-w-[140px] text-center">
-                  {format(currentDate, 'MMMM yyyy')}
+                <h3 className="text-xl font-semibold min-w-[180px] text-center">
+                  {dateRangeOption === 'next30' ? `${format(dateRange.start, 'MMM dd')} - ${format(dateRange.end, 'MMM dd, yyyy')}` : format(currentDate, 'MMMM yyyy')}
                 </h3>
                 <Button variant="outline" size="sm" onClick={() => navigateMonth('next')}>
                   <ChevronRight className="h-4 w-4" />
@@ -390,12 +404,12 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`
-                      min-h-[120px] p-2 border rounded-lg relative flex flex-col
-                      ${!isSameMonth(day, currentDate) ? 'opacity-30' : ''}
-                      ${isToday(day) ? 'ring-2 ring-primary bg-primary/5 cursor-pointer hover:bg-primary/10' : 'bg-background'}
-                      ${hasEvents ? 'border-primary/30' : 'border-border'}
-                    `}
+                     className={`
+                       min-h-[120px] p-2 border rounded-lg relative flex flex-col
+                       ${dateRangeOption === 'next30' ? '' : (!isSameMonth(day, currentDate) ? 'opacity-30' : '')}
+                       ${isToday(day) ? 'ring-2 ring-primary bg-primary/5 cursor-pointer hover:bg-primary/10' : 'bg-background'}
+                       ${hasEvents ? 'border-primary/30' : 'border-border'}
+                     `}
                     onClick={() => {
                       if (isToday(day) && hasEvents) {
                         // Show first transaction for today
