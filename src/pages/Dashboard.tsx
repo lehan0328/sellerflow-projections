@@ -10,7 +10,6 @@ import { VendorsOverview } from "@/components/cash-flow/vendors-overview";
 import { VendorForm } from "@/components/cash-flow/vendor-form";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { TransactionLog, Transaction } from "@/components/cash-flow/transaction-log";
-import { AddAccountModal } from "@/components/cash-flow/add-account-modal";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
 
 interface Vendor {
@@ -37,7 +36,6 @@ interface CashFlowEvent {
 const Dashboard = () => {
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showVendorForm, setShowVendorForm] = useState(false);
-  const [showAddAccountModal, setShowAddAccountModal] = useState(false);
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([
@@ -242,7 +240,6 @@ const Dashboard = () => {
       
       <FloatingMenu 
         onAddVendor={() => setShowVendorForm(true)}
-        onAddAccount={() => setShowAddAccountModal(true)}
         onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)}
       />
       
@@ -287,11 +284,6 @@ const Dashboard = () => {
       <VendorForm 
         open={showVendorForm}
         onOpenChange={setShowVendorForm}
-      />
-      
-      <AddAccountModal
-        open={showAddAccountModal}
-        onOpenChange={setShowAddAccountModal}
       />
       
       <VendorOrderEditModal

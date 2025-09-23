@@ -21,19 +21,22 @@ import {
   Moon,
   Monitor,
   Palette,
-  ShoppingBag
+  ShoppingBag,
+  Plus
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { PurchaseAddonsModal } from "@/components/cash-flow/purchase-addons-modal";
+import { AddAccountModal } from "@/components/cash-flow/add-account-modal";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [showPurchaseAddonsModal, setShowPurchaseAddonsModal] = useState(false);
+  const [showAddAccountModal, setShowAddAccountModal] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -285,6 +288,14 @@ const Settings = () => {
                     <ShoppingBag className="h-4 w-4 mr-2" />
                     Purchase Add-ons
                   </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setShowAddAccountModal(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Account
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -392,6 +403,11 @@ const Settings = () => {
       <PurchaseAddonsModal
         open={showPurchaseAddonsModal}
         onOpenChange={setShowPurchaseAddonsModal}
+      />
+      
+      <AddAccountModal
+        open={showAddAccountModal}
+        onOpenChange={setShowAddAccountModal}
       />
     </div>
   );
