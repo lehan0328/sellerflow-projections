@@ -170,9 +170,15 @@ const Dashboard = () => {
 
   const handlePayToday = (vendor: Vendor, amount?: number) => {
     const paymentAmount = amount || vendor.nextPaymentAmount;
+    console.log("Pay today called for vendor:", vendor.name, "amount:", paymentAmount);
     
     // Deduct from total cash
-    setTotalCash(prev => prev - paymentAmount);
+    console.log("Previous total cash:", totalCash);
+    setTotalCash(prev => {
+      const newTotal = prev - paymentAmount;
+      console.log("New total cash after payment:", newTotal);
+      return newTotal;
+    });
     
     // Add new event for today's payment
     const newEvent: CashFlowEvent = {
@@ -195,6 +201,7 @@ const Dashboard = () => {
       status: 'completed'
     };
     
+    console.log("Adding event and transaction for payment");
     setEvents(prev => [...prev, newEvent]);
     setTransactions(prev => [...prev, newTransaction]);
   };
@@ -285,17 +292,20 @@ const Dashboard = () => {
   // Handle sales order submission
   const handleSalesOrderSubmit = (orderData: any) => {
     console.log("Sales order received in Dashboard:", orderData);
+    console.log("Payment type:", orderData.paymentType);
     const amount = parseFloat(orderData.amount);
     console.log("Adding cash amount:", amount);
     
-    // Add to total cash if payment is immediate
-    if (orderData.paymentType === 'total') {
+    // Add to total cash if payment is immediate (checking both 'total' and 'immediate')
+    if (orderData.paymentType === 'total' || orderData.paymentType === 'immediate') {
       console.log("Previous total cash:", totalCash);
       setTotalCash(prev => {
         const newTotal = prev + amount;
         console.log("New total cash:", newTotal);
         return newTotal;
       });
+    } else {
+      console.log("Not adding cash - payment type is:", orderData.paymentType);
     }
     
     // Create new cash flow event
