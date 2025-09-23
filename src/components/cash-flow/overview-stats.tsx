@@ -11,6 +11,8 @@ interface OverviewStatsProps {
 }
 
 export function OverviewStats({ totalCash = 145750, events = [] }: OverviewStatsProps) {
+  console.log("OverviewStats render - totalCash:", totalCash);
+  
   // Calculate dynamic values based on events
   const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
   
