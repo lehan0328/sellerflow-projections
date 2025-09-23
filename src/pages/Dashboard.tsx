@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
+import { FloatingMenu } from "@/components/cash-flow/floating-menu";
 import { OverviewStats } from "@/components/cash-flow/overview-stats";
 import { BankAccounts } from "@/components/cash-flow/bank-accounts";
 import { CreditCards } from "@/components/cash-flow/credit-cards";
@@ -17,12 +18,14 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader 
-        onAddVendor={() => setShowVendorForm(true)} 
+      <DashboardHeader userName="Andy" />
+      
+      <FloatingMenu 
+        onAddVendor={() => setShowVendorForm(true)}
         onAddAccount={() => setShowAddAccountModal(true)}
       />
       
-      <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="container mx-auto px-4 pb-8 space-y-8">
         <OverviewStats />
         
         

@@ -13,12 +13,20 @@ import {
   Shield, 
   Database,
   ArrowLeft,
-  Save
+  Save,
+  Download,
+  FileText
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const Settings = () => {
   const navigate = useNavigate();
+
+  const handleExport = (type: string) => {
+    toast.success(`Exporting ${type} data...`);
+    // Here you would implement the actual export functionality
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -69,20 +77,20 @@ const Settings = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="first-name">First Name</Label>
-                    <Input id="first-name" placeholder="John" />
+                    <Input id="first-name" defaultValue="Andy" />
                   </div>
                   <div>
                     <Label htmlFor="last-name">Last Name</Label>
-                    <Input id="last-name" placeholder="Doe" />
+                    <Input id="last-name" defaultValue="Johnson" />
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" type="email" placeholder="john.doe@example.com" />
+                  <Input id="email" type="email" defaultValue="andy@example.com" />
                 </div>
                 <div>
                   <Label htmlFor="company">Company Name</Label>
-                  <Input id="company" placeholder="Your Company LLC" />
+                  <Input id="company" defaultValue="Andy's Amazon Business" />
                 </div>
               </CardContent>
             </Card>
@@ -188,18 +196,66 @@ const Settings = () => {
               </CardContent>
             </Card>
 
-            {/* Data & Security */}
+            {/* Data Export & Security */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <Database className="h-5 w-5" />
-                  <span>Data & Security</span>
+                  <Download className="h-5 w-5" />
+                  <span>Data Export</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start"
+                  onClick={() => handleExport('Cash Flow')}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Export Cash Flow (CSV)
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start"
+                  onClick={() => handleExport('Vendors')}
+                >
+                  <Database className="mr-2 h-4 w-4" />
+                  Export Vendor Data (CSV)
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start"
+                  onClick={() => handleExport('Transactions')}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Export Transactions (PDF)
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full justify-start"
+                  onClick={() => handleExport('All Data')}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Export All Data (ZIP)
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Exports include data from the last 12 months
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Security */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Shield className="h-5 w-5" />
+                  <span>Security</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button variant="outline" size="sm" className="w-full">
-                  Export Data
-                </Button>
                 <Button variant="outline" size="sm" className="w-full">
                   Change Password
                 </Button>

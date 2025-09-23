@@ -1,63 +1,35 @@
 import { Button } from "@/components/ui/button";
-import { Calendar, Download, Plus, Settings, Building2, LogOut } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
+import { DollarSign } from "lucide-react";
 
 interface DashboardHeaderProps {
-  onAddVendor: () => void;
-  onAddAccount: () => void;
+  userName?: string;
 }
 
-export function DashboardHeader({ onAddVendor, onAddAccount }: DashboardHeaderProps) {
-  const navigate = useNavigate();
-  const { signOut } = useAuth();
-
-  const handleSignOut = async () => {
-    const error = await signOut();
-    if (!error) {
-      toast.success('Signed out successfully');
-      navigate('/');
-    } else {
-      toast.error('Failed to sign out');
-    }
-  };
-
+export function DashboardHeader({ userName = "Andy" }: DashboardHeaderProps) {
   return (
-    <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-          Dashboard
-        </h1>
-        <p className="text-muted-foreground">
-          Real-time insights and financial management
-        </p>
+    <div className="relative w-full">
+      {/* Logo - Top Left */}
+      <div className="absolute top-6 left-6 z-40">
+        <div className="flex items-center space-x-3">
+          <div className="h-10 w-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg">
+            <DollarSign className="h-6 w-6 text-primary-foreground" />
+          </div>
+          <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            CashFlow Pro
+          </span>
+        </div>
       </div>
-      <div className="flex items-center space-x-2">
-        <Button variant="outline" size="sm">
-          <Calendar className="mr-2 h-4 w-4" />
-          Last 30 days
-        </Button>
-        <Button variant="outline" size="sm">
-          <Download className="mr-2 h-4 w-4" />
-          Export
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => navigate('/settings')}>
-          <Settings className="mr-2 h-4 w-4" />
-          Settings
-        </Button>
-        <Button variant="outline" size="sm" onClick={onAddVendor}>
-          <Building2 className="mr-2 h-4 w-4" />
-          Add Vendor
-        </Button>
-        <Button size="sm" className="bg-gradient-primary" onClick={onAddAccount}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Account
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleSignOut}>
-          <LogOut className="mr-2 h-4 w-4" />
-          Sign Out
-        </Button>
+
+      {/* Centered Dashboard Title */}
+      <div className="flex justify-center items-center pt-8 pb-6">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            {userName}'s Dashboard
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Real-time insights and financial management
+          </p>
+        </div>
       </div>
     </div>
   );
