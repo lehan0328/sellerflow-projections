@@ -10,9 +10,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 interface VendorFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onAddVendor: (vendor: any) => void;
 }
 
-export const VendorForm = ({ open, onOpenChange }: VendorFormProps) => {
+export const VendorForm = ({ open, onOpenChange, onAddVendor }: VendorFormProps) => {
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -46,8 +47,20 @@ export const VendorForm = ({ open, onOpenChange }: VendorFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Vendor submitted:", formData);
+    
+    const vendor = {
+      id: Date.now().toString(),
+      name: formData.name,
+      category: formData.category,
+      paymentType: formData.paymentType,
+      netTermsDays: formData.paymentType === 'net' ? 
+        (formData.netTermsDays === 'custom' ? formData.customNetDays : formData.netTermsDays) : 
+        undefined
+    };
+    
+    onAddVendor(vendor);
     onOpenChange(false);
+    
     // Reset form
     setFormData({
       name: "",
@@ -121,18 +134,6 @@ export const VendorForm = ({ open, onOpenChange }: VendorFormProps) => {
               ))}
             </div>
 
-            {formData.paymentType === 'preorder' && (
-              <div className="space-y-2 pl-6">
-                <Label htmlFor="depositAmount">Deposit Amount ($)</Label>
-                <Input
-                  id="depositAmount"
-                  type="number"
-                  placeholder="0.00"
-                  value={formData.depositAmount}
-                  onChange={(e) => handleInputChange("depositAmount", e.target.value)}
-                />
-              </div>
-            )}
 
             {formData.paymentType === 'net' && (
               <div className="space-y-2 pl-6">

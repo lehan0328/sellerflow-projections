@@ -15,6 +15,12 @@ import { Card, CardContent } from "@/components/ui/card";
 interface PurchaseOrderFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  vendors: Array<{
+    id: string;
+    name: string;
+    paymentType: string;
+    netTermsDays?: string;
+  }>;
 }
 
 interface PaymentSchedule {
@@ -24,7 +30,7 @@ interface PaymentSchedule {
   description: string;
 }
 
-export const PurchaseOrderForm = ({ open, onOpenChange }: PurchaseOrderFormProps) => {
+export const PurchaseOrderForm = ({ open, onOpenChange, vendors }: PurchaseOrderFormProps) => {
   const [formData, setFormData] = useState({
     poName: "",
     vendor: "",
@@ -42,14 +48,6 @@ export const PurchaseOrderForm = ({ open, onOpenChange }: PurchaseOrderFormProps
     { id: "1", amount: "", dueDate: undefined, description: "Initial deposit" }
   ]);
 
-  // Mock vendor data with payment terms
-  const vendors = [
-    { id: '1', name: 'Global Vendor Co.', paymentType: 'net-terms', netTermsDays: '30' },
-    { id: '2', name: 'Amazon Advertising', paymentType: 'total' },
-    { id: '3', name: 'Inventory Plus LLC', paymentType: 'preorder', depositAmount: '2500' },
-    { id: '4', name: 'Packaging Solutions Inc.', paymentType: 'preorder', depositAmount: '1500' },
-    { id: '5', name: 'Logistics Partners', paymentType: 'net-terms', netTermsDays: '60' }
-  ];
 
   const categories = [
     "Inventory Purchase",
@@ -120,10 +118,10 @@ export const PurchaseOrderForm = ({ open, onOpenChange }: PurchaseOrderFormProps
       }));
       
       // Set default deposit for preorder vendors
-      if (selectedVendor.paymentType === 'preorder' && selectedVendor.depositAmount) {
+      if (selectedVendor.paymentType === 'preorder') {
         setPaymentSchedule([{ 
           id: "1", 
-          amount: selectedVendor.depositAmount, 
+          amount: "", 
           dueDate: undefined, 
           description: "Initial deposit" 
         }]);
