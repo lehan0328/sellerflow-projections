@@ -262,55 +262,56 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
 
   return (
     <Card className="shadow-card h-fit">
-      <CardHeader className="pb-4">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <CardTitle className="text-lg">Cash Flow Visualization</CardTitle>
+      <div className="relative">
+        <div className="absolute top-4 right-4 z-10">
+          <Select value={dateRangeOption} onValueChange={handleDateRangeOptionChange}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Select range" />
+            </SelectTrigger>
+            <SelectContent className="bg-background border shadow-lg z-50">
+              <SelectItem value="next30">Next 30 Days</SelectItem>
+              <SelectItem value="thisMonth">This Month</SelectItem>
+              <SelectItem value="nextMonth">Next Month</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <CardHeader className="pb-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+            <div className="flex items-center justify-start">
               <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-xs text-green-600 font-medium">Healthy</span>
+                <CardTitle className="text-lg">Cash Flow Visualization</CardTitle>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs text-green-600 font-medium">Healthy</span>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2 bg-muted rounded-lg p-1">
+                  <Button
+                    variant={viewType === 'calendar' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewType('calendar')}
+                    className="px-3"
+                  >
+                    <CalendarIcon className="h-4 w-4 mr-1" />
+                    Calendar
+                  </Button>
+                  <Button
+                    variant={viewType === 'chart' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewType('chart')}
+                    className="px-3"
+                  >
+                    <TrendingUp className="h-4 w-4 mr-1" />
+                    Chart
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center space-x-2 bg-muted rounded-lg p-1">
-                <Button
-                  variant={viewType === 'calendar' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewType('calendar')}
-                  className="px-3"
-                >
-                  <CalendarIcon className="h-4 w-4 mr-1" />
-                  Calendar
-                </Button>
-                <Button
-                  variant={viewType === 'chart' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewType('chart')}
-                  className="px-3"
-                >
-                  <TrendingUp className="h-4 w-4 mr-1" />
-                  Chart
-                </Button>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Select value={dateRangeOption} onValueChange={handleDateRangeOptionChange}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Select range" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border shadow-lg z-50">
-                  <SelectItem value="next30">Next 30 Days</SelectItem>
-                  <SelectItem value="thisMonth">This Month</SelectItem>
-                  <SelectItem value="nextMonth">Next Month</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
-          
-        </div>
-      </CardHeader>
+        </CardHeader>
+      </div>
       
       {viewType === 'calendar' && (
         <div className="flex items-center justify-center px-6 pb-4">
