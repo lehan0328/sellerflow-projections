@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +58,32 @@ export const VendorOrderEditModal = ({ vendor, open, onOpenChange, onSave }: Ven
   ]);
 
   const [editedVendor, setEditedVendor] = useState<Vendor | null>(vendor);
+
+  // Update editedVendor when vendor prop changes
+  useEffect(() => {
+    console.log('VendorOrderEditModal: vendor prop changed to:', vendor);
+    setEditedVendor(vendor);
+  }, [vendor]);
+
+  // Update form data when vendor changes
+  useEffect(() => {
+    if (vendor) {
+      console.log('VendorOrderEditModal: updating form data for vendor:', vendor);
+      setFormData(prev => ({
+        ...prev,
+        category: vendor.category || "",
+      }));
+      
+      setPaymentSchedule([
+        { 
+          id: "1", 
+          amount: vendor.nextPaymentAmount.toString(), 
+          dueDate: vendor.nextPaymentDate, 
+          description: "Next payment" 
+        }
+      ]);
+    }
+  }, [vendor]);
 
   const categories = [
     "Inventory",
@@ -125,7 +151,12 @@ export const VendorOrderEditModal = ({ vendor, open, onOpenChange, onSave }: Ven
     onOpenChange(false);
   };
 
-  if (!vendor || !editedVendor) return null;
+  if (!vendor || !editedVendor) {
+    console.log('VendorOrderEditModal: returning null because vendor or editedVendor is null', { vendor, editedVendor });
+    return null;
+  }
+
+  console.log('VendorOrderEditModal: rendering modal for vendor:', vendor.name);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
