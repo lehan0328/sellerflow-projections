@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,7 @@ interface SignupFormProps {
 }
 
 export const SignupForm = ({ open, onOpenChange }: SignupFormProps) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -27,6 +29,8 @@ export const SignupForm = ({ open, onOpenChange }: SignupFormProps) => {
     // Handle form submission here
     console.log("Form submitted:", formData);
     onOpenChange(false);
+    // Redirect to dashboard
+    navigate('/dashboard');
   };
 
   const handleInputChange = (field: string, value: string) => {
