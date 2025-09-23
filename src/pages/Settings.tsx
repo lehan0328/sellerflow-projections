@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -19,17 +20,20 @@ import {
   Sun,
   Moon,
   Monitor,
-  Palette
+  Palette,
+  ShoppingBag
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { PurchaseAddonsModal } from "@/components/cash-flow/purchase-addons-modal";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [showPurchaseAddonsModal, setShowPurchaseAddonsModal] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -243,30 +247,45 @@ const Settings = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Account Status */}
+            {/* Account Status & Billing */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Shield className="h-5 w-5" />
-                  <span>Account Status</span>
+                  <span>Account & Billing</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Plan</span>
-                  <Badge className="bg-gradient-primary">Pro</Badge>
+                  <Badge className="bg-gradient-primary">Starter - $29/mo</Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Storage Used</span>
                   <span className="text-sm text-muted-foreground">2.4 GB / 10 GB</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Connected Accounts</span>
-                  <span className="text-sm text-muted-foreground">3 of 5</span>
+                  <span className="text-sm">Bank Connections</span>
+                  <span className="text-sm text-muted-foreground">1 of 2</span>
                 </div>
-                <Button variant="outline" size="sm" className="w-full">
-                  Upgrade Plan
-                </Button>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Amazon Connections</span>
+                  <span className="text-sm text-muted-foreground">0 of 1</span>
+                </div>
+                <Separator />
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="sm">
+                    Upgrade Plan
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    className="bg-gradient-primary"
+                    onClick={() => setShowPurchaseAddonsModal(true)}
+                  >
+                    <ShoppingBag className="h-4 w-4 mr-2" />
+                    Purchase Add-ons
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
@@ -369,6 +388,11 @@ const Settings = () => {
           </div>
         </div>
       </div>
+      
+      <PurchaseAddonsModal
+        open={showPurchaseAddonsModal}
+        onOpenChange={setShowPurchaseAddonsModal}
+      />
     </div>
   );
 };

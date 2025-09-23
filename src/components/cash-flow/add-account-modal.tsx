@@ -13,10 +13,9 @@ import { usePlanLimits } from "@/hooks/usePlanLimits";
 interface AddAccountModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPurchaseAddons?: () => void;
 }
 
-export const AddAccountModal = ({ open, onOpenChange, onPurchaseAddons }: AddAccountModalProps) => {
+export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) => {
   const [selectedType, setSelectedType] = useState<string>("");
   const [formData, setFormData] = useState({
     accountName: "",
@@ -175,22 +174,7 @@ export const AddAccountModal = ({ open, onOpenChange, onPurchaseAddons }: AddAcc
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
                     You've reached your plan limits for some connection types. 
-                    {onPurchaseAddons && (
-                      <Button
-                        variant="link"
-                        size="sm"
-                        className="p-0 h-auto font-semibold text-warning"
-                        onClick={() => {
-                          onOpenChange(false);
-                          onPurchaseAddons();
-                        }}
-                      >
-                        Purchase add-ons or upgrade your plan
-                      </Button>
-                    )}
-                    {!onPurchaseAddons && (
-                      <span className="font-semibold">Purchase add-ons or upgrade your plan to add more connections.</span>
-                    )}
+                    <span className="font-semibold">Go to Settings to purchase add-ons or upgrade your plan.</span>
                   </AlertDescription>
                 </Alert>
               )}
