@@ -161,7 +161,11 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => onEditOrder?.(vendor)}
+                  onClick={() => {
+                    console.log('Edit button clicked for vendor:', vendor);
+                    console.log('onEditOrder function:', onEditOrder);
+                    onEditOrder?.(vendor);
+                  }}
                 >
                   <Edit className="mr-2 h-4 w-4" />
                   Edit

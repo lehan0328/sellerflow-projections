@@ -224,7 +224,9 @@ const Dashboard = () => {
   const [editingVendorOrder, setEditingVendorOrder] = useState<Vendor | null>(null);
   
   const handleEditVendorOrder = (vendor: Vendor) => {
+    console.log('handleEditVendorOrder called with vendor:', vendor);
     setEditingVendorOrder(vendor);
+    console.log('editingVendorOrder state should be set to:', vendor);
   };
 
   const handleSaveVendorOrder = (updatedVendor: Vendor) => {
@@ -289,7 +291,13 @@ const Dashboard = () => {
       <VendorOrderEditModal
         vendor={editingVendorOrder}
         open={!!editingVendorOrder}
-        onOpenChange={(open) => !open && setEditingVendorOrder(null)}
+        onOpenChange={(open) => {
+          console.log('VendorOrderEditModal onOpenChange called with:', open);
+          if (!open) {
+            console.log('Closing modal, setting editingVendorOrder to null');
+            setEditingVendorOrder(null);
+          }
+        }}
         onSave={handleSaveVendorOrder}
       />
     </div>
