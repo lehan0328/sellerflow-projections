@@ -13,7 +13,7 @@ import { toast } from "sonner";
 export const Auth = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(true);
+  const [isSignUp, setIsSignUp] = useState(false);
 
   // Sign up form data
   const [signUpData, setSignUpData] = useState({
@@ -177,16 +177,71 @@ export const Auth = () => {
                 : 'Sign in to your account to continue'
               }
             </p>
+            <div className="mt-2 text-sm text-muted-foreground">
+              {isSignUp ? (
+                <span>
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => setIsSignUp(false)}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Sign in instead
+                  </button>
+                </span>
+              ) : (
+                <span>
+                  Don't have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => setIsSignUp(true)}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Sign up for free
+                  </button>
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
         <Card className="shadow-elevated">
           <CardContent className="p-6">
-            <Tabs value={isSignUp ? 'signup' : 'signin'} onValueChange={(value) => setIsSignUp(value === 'signup')}>
+            <Tabs value={isSignUp ? 'signup' : 'signin'} onValueChange={(value) => setIsSignUp(value === 'signup')} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
               </TabsList>
+
+              <TabsContent value="signin" className="space-y-4">
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signInEmail">Email Address</Label>
+                    <Input
+                      id="signInEmail"
+                      type="email"
+                      value={signInData.email}
+                      onChange={(e) => setSignInData(prev => ({ ...prev, email: e.target.value }))}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signInPassword">Password</Label>
+                    <Input
+                      id="signInPassword"
+                      type="password"
+                      value={signInData.password}
+                      onChange={(e) => setSignInData(prev => ({ ...prev, password: e.target.value }))}
+                      required
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full bg-gradient-primary" disabled={loading}>
+                    {loading ? 'Signing In...' : 'Sign In'}
+                  </Button>
+                </form>
+              </TabsContent>
 
               <TabsContent value="signup" className="space-y-4">
                 <form onSubmit={handleSignUp} className="space-y-4">
@@ -293,37 +348,7 @@ export const Auth = () => {
                   <Button type="submit" className="w-full bg-gradient-primary" disabled={loading}>
                     {loading ? 'Creating Account...' : 'Start Free Trial'}
                   </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="signin" className="space-y-4">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signInEmail">Email Address</Label>
-                    <Input
-                      id="signInEmail"
-                      type="email"
-                      value={signInData.email}
-                      onChange={(e) => setSignInData(prev => ({ ...prev, email: e.target.value }))}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signInPassword">Password</Label>
-                    <Input
-                      id="signInPassword"
-                      type="password"
-                      value={signInData.password}
-                      onChange={(e) => setSignInData(prev => ({ ...prev, password: e.target.value }))}
-                      required
-                    />
-                  </div>
-
-                  <Button type="submit" className="w-full bg-gradient-primary" disabled={loading}>
-                    {loading ? 'Signing In...' : 'Sign In'}
-                  </Button>
-                </form>
+                 </form>
               </TabsContent>
             </Tabs>
 
