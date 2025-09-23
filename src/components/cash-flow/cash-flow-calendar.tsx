@@ -6,7 +6,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp } from "lucide-react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays, startOfWeek, endOfWeek, getDay } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { TransactionDetailModal } from "./transaction-detail-modal";
@@ -118,7 +118,17 @@ export const CashFlowCalendar = ({ events: propEvents, totalCash = 145750 }: Cas
   // Use date range for calendar view when specific ranges are selected
   const calendarStart = dateRangeOption === 'next30' ? dateRange.start : monthStart;
   const calendarEnd = dateRangeOption === 'next30' ? dateRange.end : monthEnd;
-  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  
+  // For proper calendar display, we need to include the full weeks
+  const calendarStartWithWeek = dateRangeOption === 'next30' ? 
+    startOfWeek(calendarStart, { weekStartsOn: 0 }) : // Sunday = 0
+    startOfWeek(monthStart, { weekStartsOn: 0 });
+    
+  const calendarEndWithWeek = dateRangeOption === 'next30' ? 
+    endOfWeek(calendarEnd, { weekStartsOn: 0 }) :
+    endOfWeek(monthEnd, { weekStartsOn: 0 });
+    
+  const days = eachDayOfInterval({ start: calendarStartWithWeek, end: calendarEndWithWeek });
 
   const getEventsForDay = (date: Date) => {
     return events.filter(event => 
@@ -376,12 +386,20 @@ export const CashFlowCalendar = ({ events: propEvents, totalCash = 145750 }: Cas
                     key={day.toISOString()}
                      className={`
                        min-h-[120px] p-2 border rounded-lg relative flex flex-col
-                       ${dateRangeOption === 'next30' ? '' : (!isSameMonth(day, currentDate) ? 'opacity-30' : '')}
+                       ${dateRangeOption === 'next30' ? 
+                         (day >= dateRange.start && day <= dateRange.end ? '' : 'opacity-30') : 
+                         (!isSameMonth(day, currentDate) ? 'opacity-30' : '')
+                       }
                        ${isToday(day) ? 'ring-2 ring-primary bg-primary/5 cursor-pointer hover:bg-primary/10' : 'bg-background'}
                        ${hasEvents ? 'border-primary/30' : 'border-border'}
                      `}
                     onClick={() => {
-                      if (isToday(day) && hasEvents) {
+                      // Only allow clicks on days within the current range
+                      const isInRange = dateRangeOption === 'next30' ? 
+                        (day >= dateRange.start && day <= dateRange.end) :
+                        isSameMonth(day, currentDate);
+                        
+                      if (isToday(day) && hasEvents && isInRange) {
                         // Show first transaction for today
                         setSelectedTransaction(dayEvents[0]);
                         setShowTransactionModal(true);
