@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Calendar, Settings, Building2, LogOut, Plus } from "lucide-react";
+import { Calendar, Settings, Building2, LogOut, Plus, ShoppingBag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -7,9 +7,10 @@ import { toast } from "sonner";
 interface FloatingMenuProps {
   onAddVendor: () => void;
   onAddAccount: () => void;
+  onPurchaseAddons: () => void;
 }
 
-export function FloatingMenu({ onAddVendor, onAddAccount }: FloatingMenuProps) {
+export function FloatingMenu({ onAddVendor, onAddAccount, onPurchaseAddons }: FloatingMenuProps) {
   const navigate = useNavigate();
   const { signOut } = useAuth();
 
@@ -35,6 +36,11 @@ export function FloatingMenu({ onAddVendor, onAddAccount }: FloatingMenuProps) {
         <Button variant="ghost" size="sm" className="rounded-full" onClick={onAddVendor}>
           <Building2 className="h-4 w-4" />
           <span className="ml-2 hidden md:inline">Add Vendor</span>
+        </Button>
+        
+        <Button variant="ghost" size="sm" className="rounded-full" onClick={onPurchaseAddons}>
+          <ShoppingBag className="h-4 w-4" />
+          <span className="ml-2 hidden lg:inline">Purchase Add-ons</span>
         </Button>
         
         <Button size="sm" className="bg-gradient-primary rounded-full" onClick={onAddAccount}>

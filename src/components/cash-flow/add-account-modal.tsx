@@ -5,15 +5,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { CreditCard, Building, Wallet, Plus, ShoppingCart } from "lucide-react";
+import { CreditCard, Building, Wallet, Plus, ShoppingCart, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 interface AddAccountModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onPurchaseAddons?: () => void;
 }
 
-export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) => {
+export const AddAccountModal = ({ open, onOpenChange, onPurchaseAddons }: AddAccountModalProps) => {
   const [selectedType, setSelectedType] = useState<string>("");
   const [formData, setFormData] = useState({
     accountName: "",
@@ -23,6 +26,8 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
     creditLimit: "",
     interestRate: "",
   });
+
+  const { canAddBankConnection, canAddAmazonConnection, addBankConnection, addAmazonConnection } = usePlanLimits();
 
   const accountTypes = [
     {
@@ -58,18 +63,31 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
       return;
     }
 
+    // Check plan limits
+    if (selectedType === 'plaid' && !canAddBankConnection) {
+      toast.error("You've reached your bank connection limit. Please upgrade your plan or purchase add-ons.");
+      return;
+    }
+
+    if (selectedType === 'amazon' && !canAddAmazonConnection) {
+      toast.error("You've reached your Amazon connection limit. Please upgrade your plan or purchase add-ons.");
+      return;
+    }
+
     if (selectedType === 'plaid') {
-      // Simulate Plaid Link flow
-      toast.success("Redirecting to Plaid for secure bank connection...");
-      setTimeout(() => {
-        toast.success("Bank account connected successfully via Plaid!");
-      }, 2000);
+      if (addBankConnection()) {
+        toast.success("Redirecting to Plaid for secure bank connection...");
+        setTimeout(() => {
+          toast.success("Bank account connected successfully via Plaid!");
+        }, 2000);
+      }
     } else if (selectedType === 'amazon') {
-      // Simulate Amazon connection
-      toast.success("Connecting to Amazon Seller Central...");
-      setTimeout(() => {
-        toast.success("Amazon account connected successfully!");
-      }, 2000);
+      if (addAmazonConnection()) {
+        toast.success("Connecting to Amazon Seller Central...");
+        setTimeout(() => {
+          toast.success("Amazon account connected successfully!");
+        }, 2000);
+      }
     } else {
       toast.success("Credit card added successfully!");
     }
@@ -86,6 +104,12 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
       creditLimit: "",
       interestRate: "",
     });
+  };
+
+  const canSelectType = (type: string) => {
+    if (type === 'plaid') return canAddBankConnection;
+    if (type === 'amazon') return canAddAmazonConnection;
+    return true; // Credit cards have no limits
   };
 
   return (
@@ -105,28 +129,71 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
                 Choose the type of account you'd like to add:
               </p>
               <div className="space-y-3">
-                {accountTypes.map((type) => (
-                  <Card
-                    key={type.id}
-                    className="cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => setSelectedType(type.id)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                          {type.icon}
+                {accountTypes.map((type) => {
+                  const canSelect = canSelectType(type.id);
+                  return (
+                    <Card
+                      key={type.id}
+                      className={`transition-colors ${
+                        canSelect 
+                          ? "cursor-pointer hover:bg-muted/50" 
+                          : "opacity-50 cursor-not-allowed"
+                      }`}
+                      onClick={() => canSelect && setSelectedType(type.id)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-2 rounded-lg ${canSelect ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                            {type.icon}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <h3 className="font-medium">{type.name}</h3>
+                              {!canSelect && (
+                                <AlertTriangle className="h-4 w-4 text-warning" />
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {type.description}
+                            </p>
+                            {!canSelect && (
+                              <p className="text-xs text-warning mt-1">
+                                Limit reached
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-medium">{type.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {type.description}
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
+              
+              {/* Plan limits warning */}
+              {(!canAddBankConnection || !canAddAmazonConnection) && (
+                <Alert className="border-warning/30 bg-warning/5">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    You've reached your plan limits for some connection types. 
+                    {onPurchaseAddons && (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="p-0 h-auto font-semibold text-warning"
+                        onClick={() => {
+                          onOpenChange(false);
+                          onPurchaseAddons();
+                        }}
+                      >
+                        Purchase add-ons or upgrade your plan
+                      </Button>
+                    )}
+                    {!onPurchaseAddons && (
+                      <span className="font-semibold">Purchase add-ons or upgrade your plan to add more connections.</span>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           ) : (
             <div className="space-y-4">

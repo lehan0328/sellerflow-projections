@@ -6,12 +6,14 @@ import { BankAccounts } from "@/components/cash-flow/bank-accounts";
 import { CreditCards } from "@/components/cash-flow/credit-cards";
 import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
 import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
+import { CashFlowChart } from "@/components/cash-flow/cash-flow-chart";
 import { VendorsOverview } from "@/components/cash-flow/vendors-overview";
 import { VendorForm } from "@/components/cash-flow/vendor-form";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { TransactionLog, Transaction } from "@/components/cash-flow/transaction-log";
 import { AddAccountModal } from "@/components/cash-flow/add-account-modal";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
+import { PurchaseAddonsModal } from "@/components/cash-flow/purchase-addons-modal";
 
 interface Vendor {
   id: string;
@@ -38,6 +40,8 @@ const Dashboard = () => {
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showVendorForm, setShowVendorForm] = useState(false);
   const [showAddAccountModal, setShowAddAccountModal] = useState(false);
+  const [showPurchaseAddonsModal, setShowPurchaseAddonsModal] = useState(false);
+  const [chartViewType, setChartViewType] = useState<'calendar' | 'chart'>('calendar');
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([
@@ -243,6 +247,7 @@ const Dashboard = () => {
       <FloatingMenu 
         onAddVendor={() => setShowVendorForm(true)}
         onAddAccount={() => setShowAddAccountModal(true)}
+        onPurchaseAddons={() => setShowPurchaseAddonsModal(true)}
       />
       
       <div className="container mx-auto px-4 pb-8 space-y-8">
@@ -251,10 +256,19 @@ const Dashboard = () => {
         
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <CashFlowCalendar 
-              onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)} 
-              events={events}
-            />
+            {chartViewType === 'calendar' ? (
+              <CashFlowCalendar 
+                onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)} 
+                events={events}
+              />
+            ) : (
+              <CashFlowChart 
+                onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)} 
+                events={events}
+                viewType={chartViewType}
+                onViewTypeChange={setChartViewType}
+              />
+            )}
           </div>
           <div className="lg:col-span-1">
             <VendorsOverview 
@@ -266,15 +280,15 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className="grid gap-6 lg:grid-cols-2">
-          <BankAccounts />
-          <CreditCards />
-        </div>
-        
         <TransactionLog 
           transactions={transactions}
           onUndoTransaction={handleUndoTransaction}
         />
+        
+        <div className="grid gap-6 lg:grid-cols-2">
+          <BankAccounts />
+          <CreditCards />
+        </div>
         
         <AmazonPayouts />
       </div>
@@ -292,6 +306,15 @@ const Dashboard = () => {
       <AddAccountModal
         open={showAddAccountModal}
         onOpenChange={setShowAddAccountModal}
+        onPurchaseAddons={() => {
+          setShowAddAccountModal(false);
+          setShowPurchaseAddonsModal(true);
+        }}
+      />
+      
+      <PurchaseAddonsModal
+        open={showPurchaseAddonsModal}
+        onOpenChange={setShowPurchaseAddonsModal}
       />
       
       <VendorOrderEditModal
