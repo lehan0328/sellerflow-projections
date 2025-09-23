@@ -39,16 +39,31 @@ const Landing = () => {
 
   const pricingPlans = [
     {
-      name: "Starter",
-      price: "$29",
+      name: "Free",
+      price: "$0",
       period: "/month",
-      description: "Perfect for new Amazon sellers",
+      description: "For new Amazon sellers (0-$9k revenue/month)",
       features: [
-        "Up to 2 Amazon accounts",
+        "Up to 1 Amazon account",
         "Basic payout forecasting", 
-        "3 bank account connections",
+        "2 bank account connections",
         "Email support",
         "Mobile app access",
+      ],
+      popular: false,
+    },
+    {
+      name: "Starter",
+      price: "$39",
+      period: "/month",
+      description: "For growing sellers ($10k-$50k revenue/month)",
+      features: [
+        "Up to 3 Amazon accounts",
+        "Advanced forecasting & scenarios",
+        "5 bank account connections",
+        "Priority email support",
+        "Custom integrations",
+        "Team collaboration (up to 2 users)",
       ],
       popular: false,
     },
@@ -56,9 +71,9 @@ const Landing = () => {
       name: "Professional",
       price: "$79",
       period: "/month",
-      description: "For growing Amazon businesses",
+      description: "For established sellers ($51k-$99k revenue/month)",
       features: [
-        "Unlimited Amazon accounts",
+        "Up to 5 Amazon accounts",
         "Advanced forecasting & scenarios",
         "Unlimited bank connections",
         "Priority support",
@@ -69,18 +84,36 @@ const Landing = () => {
       popular: true,
     },
     {
-      name: "Enterprise",
-      price: "Custom",
-      period: "",
-      description: "For large Amazon operations",
+      name: "Scale",
+      price: "$149",
+      period: "/month",
+      description: "For scaling businesses ($100k-$199k revenue/month)",
       features: [
-        "Everything in Professional",
+        "Unlimited Amazon accounts",
+        "Advanced analytics & reporting",
+        "Unlimited bank connections",
+        "Priority phone support",
+        "Custom integrations",
+        "Team collaboration (up to 10 users)",
+        "API access",
+        "Dedicated account manager",
+      ],
+      popular: false,
+    },
+    {
+      name: "Enterprise",
+      price: "$279",
+      period: "/month",
+      description: "For large operations ($200k+ revenue/month)",
+      features: [
+        "Everything in Scale",
         "White-label solution",
         "Dedicated account manager",
-        "Custom reporting",
-        "Advanced analytics",
+        "Custom reporting & analytics",
+        "Advanced integrations",
         "Unlimited team members",
         "24/7 phone support",
+        "Custom SLA",
       ],
       popular: false,
     },
@@ -160,7 +193,7 @@ const Landing = () => {
             </h1>
             
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Stop guessing when your next Amazon payout arrives. Get accurate forecasting, 
+              Forecast your Amazon cash flow months in advance. Get accurate payout predictions, 
               optimize your credit utilization, and never run out of cash for inventory again.
             </p>
             
