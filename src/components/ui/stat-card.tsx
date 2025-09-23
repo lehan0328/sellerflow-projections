@@ -13,6 +13,8 @@ const statCardVariants = cva(
         warning: "border-warning/20 bg-gradient-to-br from-warning/5 to-warning/10",
         primary: "border-primary/20 bg-gradient-primary text-primary-foreground",
         accent: "border-accent/20 bg-gradient-accent text-accent-foreground",
+        info: "border-blue-200/50 bg-gradient-to-br from-blue-50/50 to-blue-100/50",
+        danger: "border-red-200/50 bg-gradient-to-br from-red-50/50 to-red-100/50",
       },
       size: {
         default: "p-6",

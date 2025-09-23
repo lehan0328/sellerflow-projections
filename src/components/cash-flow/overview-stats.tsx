@@ -27,8 +27,8 @@ export function OverviewStats() {
         subtitle="Amazon - Sep 25"
         trend="up"
         trendValue="2 days"
-        variant="default"
-        icon={<TrendingUp className="h-6 w-6 text-primary" />}
+        variant="info"
+        icon={<TrendingUp className="h-6 w-6 text-blue-600" />}
       />
       <StatCard
         title="Upcoming Payments"
@@ -36,8 +36,8 @@ export function OverviewStats() {
         subtitle="Next 7 days"
         trend="neutral"
         trendValue="4 payments due"
-        variant="default"
-        icon={<Calendar className="h-6 w-6 text-primary" />}
+        variant="danger"
+        icon={<Calendar className="h-6 w-6 text-red-600" />}
       />
     </div>
   );

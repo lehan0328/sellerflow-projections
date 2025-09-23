@@ -3,9 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Building2, Calendar, DollarSign, AlertTriangle, Plus, Edit, CreditCard } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { VendorEditModal } from "./vendor-edit-modal";
 import { toast } from "sonner";
+import * as React from "react";
 
 interface Vendor {
   id: string;
@@ -18,50 +19,20 @@ interface Vendor {
 }
 
 interface VendorsOverviewProps {
+  vendors: Vendor[];
   onPayToday?: (vendor: Vendor, amount?: number) => void;
   onVendorUpdate?: (vendors: Vendor[]) => void;
+  onEditOrder?: (vendor: Vendor) => void;
 }
 
-export const VendorsOverview = ({ onPayToday, onVendorUpdate }: VendorsOverviewProps) => {
+export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpdate, onEditOrder }: VendorsOverviewProps) => {
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
-  const [vendors, setVendors] = useState<Vendor[]>([
-    {
-      id: '1',
-      name: 'Global Vendor Co.',
-      totalOwed: 28500,
-      nextPaymentDate: new Date(2024, 0, 18),
-      nextPaymentAmount: 8500,
-      status: 'upcoming',
-      category: 'Inventory'
-    },
-    {
-      id: '2',
-      name: 'Amazon Advertising',
-      totalOwed: 3200,
-      nextPaymentDate: new Date(2024, 0, 25),
-      nextPaymentAmount: 3200,
-      status: 'current',
-      category: 'Marketing'
-    },
-    {
-      id: '3',
-      name: 'Packaging Solutions Inc.',
-      totalOwed: 5400,
-      nextPaymentDate: new Date(2024, 0, 12),
-      nextPaymentAmount: 2700,
-      status: 'overdue',
-      category: 'Packaging'
-    },
-    {
-      id: '4',
-      name: 'Logistics Partners',
-      totalOwed: 1800,
-      nextPaymentDate: new Date(2024, 0, 28),
-      nextPaymentAmount: 1800,
-      status: 'upcoming',
-      category: 'Shipping'
-    }
-  ]);
+  const [vendors, setVendors] = useState<Vendor[]>(propVendors);
+
+  // Update local state when props change
+  React.useEffect(() => {
+    setVendors(propVendors);
+  }, [propVendors]);
 
   const handleEditVendor = (vendor: Vendor) => {
     setEditingVendor(vendor);
@@ -199,7 +170,15 @@ export const VendorsOverview = ({ onPayToday, onVendorUpdate }: VendorsOverviewP
                   onClick={() => handleEditVendor(vendor)}
                 >
                   <Edit className="mr-2 h-4 w-4" />
-                  Edit
+                  Edit Vendor
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => onEditOrder?.(vendor)}
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Order
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>

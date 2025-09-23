@@ -11,6 +11,7 @@ import { VendorForm } from "@/components/cash-flow/vendor-form";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { TransactionLog, Transaction } from "@/components/cash-flow/transaction-log";
 import { AddAccountModal } from "@/components/cash-flow/add-account-modal";
+import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
 
 interface Vendor {
   id: string;
@@ -39,7 +40,44 @@ const Dashboard = () => {
   const [showAddAccountModal, setShowAddAccountModal] = useState(false);
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([
+    {
+      id: '1',
+      name: 'Global Vendor Co.',
+      totalOwed: 28500,
+      nextPaymentDate: new Date(2024, 0, 18),
+      nextPaymentAmount: 8500,
+      status: 'upcoming',
+      category: 'Inventory'
+    },
+    {
+      id: '2',
+      name: 'Amazon Advertising',
+      totalOwed: 3200,
+      nextPaymentDate: new Date(2024, 0, 25),
+      nextPaymentAmount: 3200,
+      status: 'current',
+      category: 'Marketing'
+    },
+    {
+      id: '3',
+      name: 'Packaging Solutions Inc.',
+      totalOwed: 5400,
+      nextPaymentDate: new Date(2024, 0, 12),
+      nextPaymentAmount: 2700,
+      status: 'overdue',
+      category: 'Packaging'
+    },
+    {
+      id: '4',
+      name: 'Logistics Partners',
+      totalOwed: 1800,
+      nextPaymentDate: new Date(2024, 0, 28),
+      nextPaymentAmount: 1800,
+      status: 'upcoming',
+      category: 'Shipping'
+    }
+  ]);
   
   const [events, setEvents] = useState<CashFlowEvent[]>([
     {
@@ -149,11 +187,21 @@ const Dashboard = () => {
         Math.abs(e.date.getTime() - transaction.date.getTime()) < 1000)
     ));
     
-    // If it was a payment, potentially restore the vendor
+    // If it was a payment, restore the amount to the original vendor
     if (transaction.type === 'payment' && transaction.vendor) {
       const existingVendor = vendors.find(v => v.name === transaction.vendor);
-      if (!existingVendor) {
-        // Restore vendor with the payment amount added back
+      if (existingVendor) {
+        // Add amount back to existing vendor's total owed
+        const updatedVendor = {
+          ...existingVendor,
+          totalOwed: existingVendor.totalOwed + transaction.amount,
+          nextPaymentAmount: Math.min(existingVendor.nextPaymentAmount + transaction.amount, existingVendor.totalOwed + transaction.amount)
+        };
+        const updatedVendors = vendors.map(v => v.id === existingVendor.id ? updatedVendor : v);
+        setVendors(updatedVendors);
+        handleVendorUpdate(updatedVendors);
+      } else {
+        // Restore vendor if it was completely removed after full payment
         const restoredVendor: Vendor = {
           id: `restored-${Date.now()}`,
           name: transaction.vendor,
@@ -163,20 +211,29 @@ const Dashboard = () => {
           status: 'current',
           category: 'Restored'
         };
-        setVendors(prev => [...prev, restoredVendor]);
-      } else {
-        // Add amount back to existing vendor
-        const updatedVendor = {
-          ...existingVendor,
-          totalOwed: existingVendor.totalOwed + transaction.amount
-        };
-        setVendors(prev => prev.map(v => v.id === existingVendor.id ? updatedVendor : v));
+        const updatedVendors = [...vendors, restoredVendor];
+        setVendors(updatedVendors);
+        handleVendorUpdate(updatedVendors);
       }
     }
   };
 
   const handleVendorUpdate = (updatedVendors: Vendor[]) => {
     setVendors(updatedVendors);
+  };
+
+  // Add vendor order editing functionality
+  const [editingVendorOrder, setEditingVendorOrder] = useState<Vendor | null>(null);
+  
+  const handleEditVendorOrder = (vendor: Vendor) => {
+    setEditingVendorOrder(vendor);
+  };
+
+  const handleSaveVendorOrder = (updatedVendor: Vendor) => {
+    const updatedVendors = vendors.map(v => v.id === updatedVendor.id ? updatedVendor : v);
+    setVendors(updatedVendors);
+    handleVendorUpdate(updatedVendors);
+    setEditingVendorOrder(null);
   };
 
   return (
@@ -201,8 +258,10 @@ const Dashboard = () => {
           </div>
           <div className="lg:col-span-1">
             <VendorsOverview 
+              vendors={vendors}
               onPayToday={handlePayToday} 
               onVendorUpdate={handleVendorUpdate}
+              onEditOrder={handleEditVendorOrder}
             />
           </div>
         </div>
@@ -233,6 +292,13 @@ const Dashboard = () => {
       <AddAccountModal
         open={showAddAccountModal}
         onOpenChange={setShowAddAccountModal}
+      />
+      
+      <VendorOrderEditModal
+        vendor={editingVendorOrder}
+        open={!!editingVendorOrder}
+        onOpenChange={(open) => !open && setEditingVendorOrder(null)}
+        onSave={handleSaveVendorOrder}
       />
     </div>
   );
