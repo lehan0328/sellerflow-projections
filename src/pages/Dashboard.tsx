@@ -18,16 +18,16 @@ const Dashboard = () => {
       <div className="container mx-auto px-4 py-8 space-y-8">
         <OverviewStats />
         
+        <SuppliersOverview />
+        
+        <CashFlowCalendar onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)} />
+        
         <div className="grid gap-6 lg:grid-cols-2">
           <BankAccounts />
           <CreditCards />
         </div>
         
         <AmazonPayouts />
-        
-        <CashFlowCalendar onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)} />
-        
-        <SuppliersOverview />
       </div>
       
       <PurchaseOrderForm 

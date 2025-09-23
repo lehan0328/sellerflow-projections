@@ -2,15 +2,16 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths } from "date-fns";
 
 interface CashFlowEvent {
   id: string;
-  type: 'inflow' | 'outflow';
+  type: 'inflow' | 'outflow' | 'credit-payment';
   amount: number;
   description: string;
   supplier?: string;
+  creditCard?: string;
   date: Date;
 }
 
@@ -21,7 +22,10 @@ interface CashFlowCalendarProps {
 export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   
-  // Sample cash flow events
+  // Total available cash (this would come from bank integrations)
+  const totalAvailableCash = 145750;
+  
+  // Sample cash flow events (including credit card payments)
   const [events] = useState<CashFlowEvent[]>([
     {
       id: '1',
@@ -52,6 +56,37 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
       description: 'PPC Campaign',
       supplier: 'Amazon Advertising',
       date: new Date(2024, 0, 25)
+    },
+    {
+      id: '5',
+      type: 'credit-payment',
+      amount: 2500,
+      description: 'Chase Sapphire Payment Due',
+      creditCard: 'Chase Sapphire Business',
+      date: new Date(2024, 0, 22)
+    },
+    {
+      id: '6',
+      type: 'credit-payment',
+      amount: 1800,
+      description: 'American Express Payment Due',
+      creditCard: 'Amex Gold Business',
+      date: new Date(2024, 0, 28)
+    },
+    {
+      id: '7',
+      type: 'inflow',
+      amount: 32000,
+      description: 'Amazon Payout',
+      date: new Date(2024, 1, 14)
+    },
+    {
+      id: '8',
+      type: 'outflow',
+      amount: 12000,
+      description: 'Inventory Restock',
+      supplier: 'Inventory Plus LLC',
+      date: new Date(2024, 1, 5)
     }
   ]);
 
@@ -72,6 +107,22 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
     }, 0);
   };
 
+  const getEventIcon = (event: CashFlowEvent) => {
+    if (event.type === 'credit-payment') return <CreditCard className="h-3 w-3" />;
+    if (event.supplier) return <Building2 className="h-3 w-3" />;
+    return <Wallet className="h-3 w-3" />;
+  };
+
+  const getEventColor = (event: CashFlowEvent) => {
+    if (event.type === 'inflow') {
+      return 'bg-finance-positive/20 text-finance-positive border-finance-positive/30';
+    }
+    if (event.type === 'credit-payment') {
+      return 'bg-warning/20 text-warning-foreground border-warning/30';
+    }
+    return 'bg-finance-negative/20 text-finance-negative border-finance-negative/30';
+  };
+
   const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentDate(prev => direction === 'prev' ? subMonths(prev, 1) : addMonths(prev, 1));
   };
@@ -79,7 +130,16 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
   return (
     <Card className="shadow-card">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg">Cash Flow Calendar</CardTitle>
+        <div>
+          <CardTitle className="text-lg">Cash Flow Calendar</CardTitle>
+          <div className="flex items-center space-x-2 mt-2">
+            <Wallet className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Available Cash:</span>
+            <span className="text-lg font-bold text-finance-positive">
+              ${totalAvailableCash.toLocaleString()}
+            </span>
+          </div>
+        </div>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
@@ -133,15 +193,13 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
                       <div
                         key={event.id}
                         className={`
-                          text-xs px-1 py-0.5 rounded truncate
-                          ${event.type === 'inflow' 
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
-                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                          }
+                          text-xs px-1 py-0.5 rounded truncate flex items-center space-x-1 border
+                          ${getEventColor(event)}
                         `}
-                        title={`${event.description}${event.supplier ? ` - ${event.supplier}` : ''}`}
+                        title={`${event.description}${event.supplier ? ` - ${event.supplier}` : ''}${event.creditCard ? ` - ${event.creditCard}` : ''}`}
                       >
-                        ${event.amount.toLocaleString()}
+                        {getEventIcon(event)}
+                        <span>${event.amount.toLocaleString()}</span>
                       </div>
                     ))}
                     {dayEvents.length > 2 && (
@@ -153,7 +211,7 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
                     {dayBalance !== 0 && (
                       <div className={`
                         text-xs font-semibold
-                        ${dayBalance > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}
+                        ${dayBalance > 0 ? 'text-finance-positive' : 'text-finance-negative'}
                       `}>
                         Net: ${dayBalance > 0 ? '+' : ''}${dayBalance.toLocaleString()}
                       </div>
@@ -168,12 +226,16 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
         <div className="flex items-center justify-between mt-6 pt-4 border-t">
           <div className="flex items-center space-x-4 text-sm">
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded bg-green-500"></div>
+              <div className="w-3 h-3 rounded bg-finance-positive"></div>
               <span>Inflows</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded bg-red-500"></div>
+              <div className="w-3 h-3 rounded bg-finance-negative"></div>
               <span>Outflows</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 rounded bg-warning"></div>
+              <span>Credit Payments</span>
             </div>
           </div>
           
