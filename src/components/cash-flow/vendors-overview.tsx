@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Building2, Calendar, DollarSign, AlertTriangle, Plus, Edit, CreditCard } from "lucide-react";
 import { useState, useEffect } from "react";
-import { VendorEditModal } from "./vendor-edit-modal";
 import { toast } from "sonner";
 import * as React from "react";
 
@@ -26,17 +25,12 @@ interface VendorsOverviewProps {
 }
 
 export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpdate, onEditOrder }: VendorsOverviewProps) => {
-  const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>(propVendors);
 
   // Update local state when props change
   React.useEffect(() => {
     setVendors(propVendors);
   }, [propVendors]);
-
-  const handleEditVendor = (vendor: Vendor) => {
-    setEditingVendor(vendor);
-  };
 
   const handleSaveVendor = (updatedVendor: Vendor) => {
     const updatedVendors = vendors.map(v => v.id === updatedVendor.id ? updatedVendor : v);
@@ -167,18 +161,10 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => handleEditVendor(vendor)}
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit Vendor
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
                   onClick={() => onEditOrder?.(vendor)}
                 >
                   <Edit className="mr-2 h-4 w-4" />
-                  Edit Order
+                  Edit
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -209,13 +195,6 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
             </div>
           ))}
         </div>
-        
-        <VendorEditModal
-          vendor={editingVendor}
-          open={!!editingVendor}
-          onOpenChange={(open) => !open && setEditingVendor(null)}
-          onSave={handleSaveVendor}
-        />
       </CardContent>
     </Card>
   );
