@@ -126,7 +126,7 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
     .reduce((sum, vendor) => sum + vendor.totalOwed, 0);
 
   return (
-    <Card className="shadow-card h-[800px] flex flex-col">
+    <Card className="shadow-card h-fit flex flex-col">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -187,7 +187,7 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 flex-1 overflow-hidden">
+      <CardContent className="p-4 flex-1 overflow-hidden min-h-[400px]">
         <div className="h-full overflow-y-auto space-y-4 pr-2">
           {filteredAndSortedVendors.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
