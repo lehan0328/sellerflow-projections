@@ -8,6 +8,8 @@ import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
 import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
 import { VendorsOverview } from "@/components/cash-flow/vendors-overview";
 import { VendorForm } from "@/components/cash-flow/vendor-form";
+import { CustomerForm } from "@/components/cash-flow/customer-form";
+import { SalesOrderForm } from "@/components/cash-flow/sales-order-form";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { TransactionLog, Transaction } from "@/components/cash-flow/transaction-log";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
@@ -47,6 +49,14 @@ const Dashboard = () => {
     { id: '3', name: 'Inventory Plus LLC', paymentType: 'preorder' },
     { id: '4', name: 'Packaging Solutions Inc.', paymentType: 'preorder' },
     { id: '5', name: 'Logistics Partners', paymentType: 'net-terms', netTermsDays: '60' }
+  ]);
+
+  // State for customers used in forms
+  const [formCustomers, setFormCustomers] = useState([
+    { id: '1', name: 'ABC Retail Co.', paymentTerms: 'net', netTermsDays: '30' },
+    { id: '2', name: 'Direct Sales', paymentTerms: 'immediate' },
+    { id: '3', name: 'Wholesale Partners LLC', paymentTerms: 'net', netTermsDays: '45' },
+    { id: '4', name: 'B2B Solutions Inc.', paymentTerms: 'net', netTermsDays: '60' }
   ]);
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -255,14 +265,8 @@ const Dashboard = () => {
       <FloatingMenu 
         onAddVendor={() => setShowVendorForm(true)}
         onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)}
-        onAddSalesOrder={() => {
-          // TODO: Implement sales order functionality
-          toast.info('Sales Order functionality coming soon!');
-        }}
-        onAddCustomer={() => {
-          // TODO: Implement add customer functionality  
-          toast.info('Add Customer functionality coming soon!');
-        }}
+        onAddSalesOrder={() => setShowSalesOrderForm(true)}
+        onAddCustomer={() => setShowCustomerForm(true)}
       />
       
       <div className="container mx-auto px-4 pb-8 space-y-8">
@@ -304,13 +308,19 @@ const Dashboard = () => {
         vendors={formVendors}
       />
       
-      <VendorForm 
-        open={showVendorForm}
-        onOpenChange={setShowVendorForm}
-        onAddVendor={(vendor) => {
-          const newVendors = [...formVendors, vendor];
-          setFormVendors(newVendors);
+      <CustomerForm
+        open={showCustomerForm}
+        onOpenChange={setShowCustomerForm}
+        onAddCustomer={(customer) => {
+          const newCustomers = [...formCustomers, customer];
+          setFormCustomers(newCustomers);
         }}
+      />
+      
+      <SalesOrderForm
+        open={showSalesOrderForm}
+        onOpenChange={setShowSalesOrderForm}
+        customers={formCustomers}
       />
       
       <VendorOrderEditModal

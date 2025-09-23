@@ -8,72 +8,82 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 
-interface VendorFormProps {
+interface CustomerFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddVendor: (vendor: any) => void;
+  onAddCustomer: (customer: any) => void;
 }
 
-export const VendorForm = ({ open, onOpenChange, onAddVendor }: VendorFormProps) => {
+export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerFormProps) => {
   const [formData, setFormData] = useState({
     name: "",
+    email: "",
+    phone: "",
     category: "",
-    paymentType: "total",
-    depositAmount: "",
+    paymentTerms: "immediate",
     netTermsDays: "30",
-    customNetDays: ""
+    customNetDays: "",
+    address: "",
+    notes: ""
   });
 
   const categories = [
-    "Inventory",
-    "Packaging Materials", 
-    "Marketing/PPC",
-    "Shipping & Logistics",
-    "Professional Services",
+    "Retail Partner",
+    "Wholesale Client", 
+    "Direct Consumer",
+    "B2B Customer",
+    "Distributor",
     "Other"
   ];
 
-  const paymentTypeOptions = [
-    { value: 'total', label: 'Total Amount Due' },
-    { value: 'preorder', label: 'Pre-order w/ Deposit' },
+  const paymentTermsOptions = [
+    { value: 'immediate', label: 'Immediate Payment' },
     { value: 'net', label: 'Net Terms' }
   ];
 
   const netTermsOptions = [
+    { value: '15', label: '15 Days' },
     { value: '30', label: '30 Days' },
+    { value: '45', label: '45 Days' },
     { value: '60', label: '60 Days' },
-    { value: '90', label: '90 Days' },
     { value: 'custom', label: 'Custom Days' }
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const vendor = {
+    const customer = {
       id: Date.now().toString(),
       name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
       category: formData.category,
-      paymentType: formData.paymentType,
-      netTermsDays: formData.paymentType === 'net' ? 
+      paymentTerms: formData.paymentTerms,
+      netTermsDays: formData.paymentTerms === 'net' ? 
         (formData.netTermsDays === 'custom' ? formData.customNetDays : formData.netTermsDays) : 
-        undefined
+        undefined,
+      address: formData.address,
+      notes: formData.notes
     };
     
-    onAddVendor(vendor);
+    onAddCustomer(customer);
     
     // Show success toast
-    toast.success(`Vendor "${formData.name}" added successfully!`);
+    toast.success(`Customer "${formData.name}" added successfully!`);
     
     onOpenChange(false);
     
     // Reset form
     setFormData({
       name: "",
+      email: "",
+      phone: "",
       category: "",
-      paymentType: "total",
-      depositAmount: "",
+      paymentTerms: "immediate",
       netTermsDays: "30",
-      customNetDays: ""
+      customNetDays: "",
+      address: "",
+      notes: ""
     });
   };
 
@@ -86,19 +96,41 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor }: VendorFormProps)
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
-            Add New Vendor
+            Add New Customer
           </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Vendor Name</Label>
+            <Label htmlFor="name">Customer Name</Label>
             <Input
               id="name"
-              placeholder="Enter vendor name"
+              placeholder="Enter customer name"
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
               required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="Enter email address"
+              value={formData.email}
+              onChange={(e) => handleInputChange("email", e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input
+              id="phone"
+              placeholder="Enter phone number"
+              value={formData.phone}
+              onChange={(e) => handleInputChange("phone", e.target.value)}
             />
           </div>
 
@@ -119,17 +151,17 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor }: VendorFormProps)
           </div>
 
           <div className="space-y-4">
-            <Label>Payment Type</Label>
+            <Label>Payment Terms</Label>
             <div className="space-y-3">
-              {paymentTypeOptions.map((option) => (
+              {paymentTermsOptions.map((option) => (
                 <div key={option.value} className="flex items-center space-x-2">
                   <input
                     type="radio"
                     id={option.value}
-                    name="paymentType"
+                    name="paymentTerms"
                     value={option.value}
-                    checked={formData.paymentType === option.value}
-                    onChange={(e) => handleInputChange("paymentType", e.target.value)}
+                    checked={formData.paymentTerms === option.value}
+                    onChange={(e) => handleInputChange("paymentTerms", e.target.value)}
                     className="w-4 h-4 text-primary bg-gray-100 border-gray-300 focus:ring-primary"
                   />
                   <Label htmlFor={option.value} className="text-sm font-normal cursor-pointer">
@@ -139,8 +171,7 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor }: VendorFormProps)
               ))}
             </div>
 
-
-            {formData.paymentType === 'net' && (
+            {formData.paymentTerms === 'net' && (
               <div className="space-y-2 pl-6">
                 <Label htmlFor="netTermsDays">Net Terms</Label>
                 <div className="space-y-3">
@@ -177,13 +208,35 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor }: VendorFormProps)
               </div>
             )}
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="address">Address (Optional)</Label>
+            <Textarea
+              id="address"
+              placeholder="Enter customer address"
+              value={formData.address}
+              onChange={(e) => handleInputChange("address", e.target.value)}
+              rows={2}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes (Optional)</Label>
+            <Textarea
+              id="notes"
+              placeholder="Additional notes about customer"
+              value={formData.notes}
+              onChange={(e) => handleInputChange("notes", e.target.value)}
+              rows={3}
+            />
+          </div>
           
           <div className="flex space-x-3 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Cancel
             </Button>
             <Button type="submit" className="flex-1 bg-gradient-primary">
-              Add Vendor
+              Add Customer
             </Button>
           </div>
         </form>
