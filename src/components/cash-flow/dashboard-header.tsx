@@ -1,7 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { Calendar, Download, Plus, Settings } from "lucide-react";
+import { Calendar, Download, Plus, Settings, Building2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  onAddVendor: () => void;
+}
+
+export function DashboardHeader({ onAddVendor }: DashboardHeaderProps) {
+  const navigate = useNavigate();
+
   return (
     <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
       <div>
@@ -21,9 +28,13 @@ export function DashboardHeader() {
           <Download className="mr-2 h-4 w-4" />
           Export
         </Button>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={() => navigate('/settings')}>
           <Settings className="mr-2 h-4 w-4" />
           Settings
+        </Button>
+        <Button variant="outline" size="sm" onClick={onAddVendor}>
+          <Building2 className="mr-2 h-4 w-4" />
+          Add Vendor
         </Button>
         <Button size="sm" className="bg-gradient-primary">
           <Plus className="mr-2 h-4 w-4" />

@@ -15,7 +15,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader />
+      <DashboardHeader onAddVendor={() => setShowVendorForm(true)} />
       
       <div className="container mx-auto px-4 py-8 space-y-8">
         <OverviewStats />
@@ -26,7 +26,7 @@ const Dashboard = () => {
             <CashFlowCalendar onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)} />
           </div>
           <div className="lg:col-span-1">
-            <VendorsOverview onAddVendor={() => setShowVendorForm(true)} />
+            <VendorsOverview />
           </div>
         </div>
         

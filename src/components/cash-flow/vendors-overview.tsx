@@ -13,11 +13,9 @@ interface Vendor {
   category: string;
 }
 
-interface VendorsOverviewProps {
-  onAddVendor: () => void;
-}
+interface VendorsOverviewProps {}
 
-export const VendorsOverview = ({ onAddVendor }: VendorsOverviewProps) => {
+export const VendorsOverview = ({}: VendorsOverviewProps) => {
   const vendors: Vendor[] = [
     {
       id: '1',
@@ -107,10 +105,6 @@ export const VendorsOverview = ({ onAddVendor }: VendorsOverviewProps) => {
             )}
             </div>
           </div>
-          <Button size="sm" onClick={onAddVendor} className="bg-gradient-primary">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Vendor
-          </Button>
         </div>
       </CardHeader>
       <CardContent className="p-4">
