@@ -296,16 +296,16 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
             </div>
             
             <div className="flex items-center space-x-4">
-                <Select value={dateRangeOption} onValueChange={handleDateRangeOptionChange}>
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="Select range" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border shadow-lg z-50">
-                    <SelectItem value="next30">Next 30 Days</SelectItem>
-                    <SelectItem value="thisMonth">This Month</SelectItem>
-                    <SelectItem value="nextMonth">Next Month</SelectItem>
-                  </SelectContent>
-                </Select>
+              <Select value={dateRangeOption} onValueChange={handleDateRangeOptionChange}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Select range" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border shadow-lg z-50">
+                  <SelectItem value="next30">Next 30 Days</SelectItem>
+                  <SelectItem value="thisMonth">This Month</SelectItem>
+                  <SelectItem value="nextMonth">Next Month</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           
