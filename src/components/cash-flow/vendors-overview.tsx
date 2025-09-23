@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Calendar, DollarSign, AlertTriangle } from "lucide-react";
+import { Building2, Calendar, DollarSign, AlertTriangle, Plus } from "lucide-react";
 
-interface Supplier {
+interface Vendor {
   id: string;
   name: string;
   totalOwed: number;
@@ -13,11 +13,15 @@ interface Supplier {
   category: string;
 }
 
-export const SuppliersOverview = () => {
-  const suppliers: Supplier[] = [
+interface VendorsOverviewProps {
+  onAddVendor: () => void;
+}
+
+export const VendorsOverview = ({ onAddVendor }: VendorsOverviewProps) => {
+  const vendors: Vendor[] = [
     {
       id: '1',
-      name: 'Global Supplier Co.',
+      name: 'Global Vendor Co.',
       totalOwed: 28500,
       nextPaymentDate: new Date(2024, 0, 18),
       nextPaymentAmount: 8500,
@@ -73,10 +77,10 @@ export const SuppliersOverview = () => {
     return <Calendar className="h-4 w-4" />;
   };
 
-  const totalOwed = suppliers.reduce((sum, supplier) => sum + supplier.totalOwed, 0);
-  const overdueAmount = suppliers
-    .filter(s => s.status === 'overdue')
-    .reduce((sum, supplier) => sum + supplier.totalOwed, 0);
+  const totalOwed = vendors.reduce((sum, vendor) => sum + vendor.totalOwed, 0);
+  const overdueAmount = vendors
+    .filter(v => v.status === 'overdue')
+    .reduce((sum, vendor) => sum + vendor.totalOwed, 0);
 
   return (
     <Card className="shadow-card">
@@ -84,8 +88,12 @@ export const SuppliersOverview = () => {
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center space-x-2">
             <Building2 className="h-5 w-5" />
-            <span>Suppliers Overview</span>
+            <span>Vendors Overview</span>
           </CardTitle>
+          <Button size="sm" onClick={onAddVendor} className="bg-gradient-primary">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Vendor
+          </Button>
           <div className="flex items-center space-x-4 text-sm">
             <div className="flex items-center space-x-2">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -105,36 +113,36 @@ export const SuppliersOverview = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {suppliers.map((supplier) => (
+          {vendors.map((vendor) => (
             <div
-              key={supplier.id}
+              key={vendor.id}
               className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
             >
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-2">
-                  <h4 className="font-semibold">{supplier.name}</h4>
+                  <h4 className="font-semibold">{vendor.name}</h4>
                   <Badge variant="outline" className="text-xs">
-                    {supplier.category}
+                    {vendor.category}
                   </Badge>
-                  <Badge variant={getStatusColor(supplier.status)} className="text-xs">
-                    {getStatusIcon(supplier.status)}
-                    <span className="ml-1 capitalize">{supplier.status}</span>
+                  <Badge variant={getStatusColor(vendor.status)} className="text-xs">
+                    {getStatusIcon(vendor.status)}
+                    <span className="ml-1 capitalize">{vendor.status}</span>
                   </Badge>
                 </div>
                 <div className="flex items-center space-x-6 text-sm text-muted-foreground">
                   <span>
                     Total Owed: <span className="font-medium text-foreground">
-                      ${supplier.totalOwed.toLocaleString()}
+                      ${vendor.totalOwed.toLocaleString()}
                     </span>
                   </span>
                   <span>
                     Next Payment: <span className="font-medium text-foreground">
-                      ${supplier.nextPaymentAmount.toLocaleString()}
+                      ${vendor.nextPaymentAmount.toLocaleString()}
                     </span>
                   </span>
                   <span>
                     Due: <span className="font-medium text-foreground">
-                      {supplier.nextPaymentDate.toLocaleDateString()}
+                      {vendor.nextPaymentDate.toLocaleDateString()}
                     </span>
                   </span>
                 </div>

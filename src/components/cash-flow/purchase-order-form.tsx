@@ -7,8 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CalendarIcon, Plus, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface PurchaseOrderFormProps {
@@ -26,21 +27,23 @@ interface PaymentSchedule {
 export const PurchaseOrderForm = ({ open, onOpenChange }: PurchaseOrderFormProps) => {
   const [formData, setFormData] = useState({
     poName: "",
-    supplier: "",
+    vendor: "",
     amount: "",
     dueDate: undefined as Date | undefined,
     description: "",
     category: "",
     notes: "",
-    paymentType: "total" as "total" | "preorder"
+    paymentType: "total" as "total" | "preorder" | "net-terms",
+    netTermsDays: "30" as "30" | "60" | "90" | "custom",
+    customDays: ""
   });
   
   const [paymentSchedule, setPaymentSchedule] = useState<PaymentSchedule[]>([
     { id: "1", amount: "", dueDate: undefined, description: "Initial deposit" }
   ]);
 
-  const suppliers = [
-    "Global Supplier Co.",
+  const vendors = [
+    "Global Vendor Co.",
     "Amazon Advertising",
     "Inventory Plus LLC",
     "Packaging Solutions Inc.",
@@ -88,13 +91,15 @@ export const PurchaseOrderForm = ({ open, onOpenChange }: PurchaseOrderFormProps
     // Reset form
     setFormData({
       poName: "",
-      supplier: "",
+      vendor: "",
       amount: "",
       dueDate: undefined,
       description: "",
       category: "",
       notes: "",
-      paymentType: "total"
+      paymentType: "total",
+      netTermsDays: "30",
+      customDays: ""
     });
     setPaymentSchedule([{ id: "1", amount: "", dueDate: undefined, description: "Initial deposit" }]);
   };
@@ -124,32 +129,41 @@ export const PurchaseOrderForm = ({ open, onOpenChange }: PurchaseOrderFormProps
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="supplier">Supplier</Label>
-            <Select onValueChange={(value) => handleInputChange("supplier", value)}>
+            <Label htmlFor="vendor">Vendor</Label>
+            <Select onValueChange={(value) => handleInputChange("vendor", value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select or enter supplier" />
+                <SelectValue placeholder="Select or enter vendor" />
               </SelectTrigger>
               <SelectContent>
-                {suppliers.map(supplier => (
-                  <SelectItem key={supplier} value={supplier}>
-                    {supplier}
+                {vendors.map(vendor => (
+                  <SelectItem key={vendor} value={vendor}>
+                    {vendor}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label>Payment Type</Label>
-            <Select onValueChange={(value) => handleInputChange("paymentType", value)} defaultValue="total">
-              <SelectTrigger>
-                <SelectValue placeholder="Select payment type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="total">Total Amount Due</SelectItem>
-                <SelectItem value="preorder">Pre-order w/ Deposit</SelectItem>
-              </SelectContent>
-            </Select>
+            <RadioGroup 
+              value={formData.paymentType} 
+              onValueChange={(value) => handleInputChange("paymentType", value)}
+              className="flex flex-col space-y-2"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="total" id="total" />
+                <Label htmlFor="total">Total Amount Due</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="preorder" id="preorder" />
+                <Label htmlFor="preorder">Pre-order w/ Deposit</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="net-terms" id="net-terms" />
+                <Label htmlFor="net-terms">Net Terms</Label>
+              </div>
+            </RadioGroup>
           </div>
 
           {formData.paymentType === "total" ? (
@@ -187,6 +201,70 @@ export const PurchaseOrderForm = ({ open, onOpenChange }: PurchaseOrderFormProps
                     />
                   </PopoverContent>
                 </Popover>
+              </div>
+            </>
+          ) : formData.paymentType === "net-terms" ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="amount">Total Amount ($)</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  placeholder="0.00"
+                  value={formData.amount}
+                  onChange={(e) => handleInputChange("amount", e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label>Net Terms</Label>
+                <RadioGroup 
+                  value={formData.netTermsDays} 
+                  onValueChange={(value) => handleInputChange("netTermsDays", value)}
+                  className="flex flex-wrap gap-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="30" id="net30" />
+                    <Label htmlFor="net30">Net 30</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="60" id="net60" />
+                    <Label htmlFor="net60">Net 60</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="90" id="net90" />
+                    <Label htmlFor="net90">Net 90</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="custom" id="custom" />
+                    <Label htmlFor="custom">Custom</Label>
+                  </div>
+                </RadioGroup>
+
+                {formData.netTermsDays === "custom" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="customDays">Custom Days</Label>
+                    <Input
+                      id="customDays"
+                      type="number"
+                      placeholder="Enter days"
+                      value={formData.customDays}
+                      onChange={(e) => handleInputChange("customDays", e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
+
+                <div className="text-sm text-muted-foreground">
+                  Due Date: {(() => {
+                    const days = formData.netTermsDays === "custom" 
+                      ? parseInt(formData.customDays) || 0 
+                      : parseInt(formData.netTermsDays);
+                    const dueDate = addDays(new Date(), days);
+                    return format(dueDate, "PPP");
+                  })()}
+                </div>
               </div>
             </>
           ) : (

@@ -5,11 +5,13 @@ import { BankAccounts } from "@/components/cash-flow/bank-accounts";
 import { CreditCards } from "@/components/cash-flow/credit-cards";
 import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
 import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
-import { SuppliersOverview } from "@/components/cash-flow/suppliers-overview";
+import { VendorsOverview } from "@/components/cash-flow/vendors-overview";
+import { VendorForm } from "@/components/cash-flow/vendor-form";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 
 const Dashboard = () => {
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
+  const [showVendorForm, setShowVendorForm] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
@@ -18,7 +20,7 @@ const Dashboard = () => {
       <div className="container mx-auto px-4 py-8 space-y-8">
         <OverviewStats />
         
-        <SuppliersOverview />
+        <VendorsOverview onAddVendor={() => setShowVendorForm(true)} />
         
         <CashFlowCalendar onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)} />
         
@@ -31,8 +33,13 @@ const Dashboard = () => {
       </div>
       
       <PurchaseOrderForm 
-        open={showPurchaseOrderForm} 
-        onOpenChange={setShowPurchaseOrderForm} 
+        open={showPurchaseOrderForm}
+        onOpenChange={setShowPurchaseOrderForm}
+      />
+      
+      <VendorForm 
+        open={showVendorForm}
+        onOpenChange={setShowVendorForm}
       />
     </div>
   );

@@ -7,11 +7,12 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isTod
 
 interface CashFlowEvent {
   id: string;
-  type: 'inflow' | 'outflow' | 'credit-payment';
+  type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order';
   amount: number;
   description: string;
-  supplier?: string;
+  vendor?: string;
   creditCard?: string;
+  poName?: string;
   date: Date;
 }
 
@@ -25,7 +26,7 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
   // Total available cash (this would come from bank integrations)
   const totalAvailableCash = 145750;
   
-  // Sample cash flow events (including credit card payments)
+  // Sample cash flow events (including credit card payments and purchase orders)
   const [events] = useState<CashFlowEvent[]>([
     {
       id: '1',
@@ -36,10 +37,11 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
     },
     {
       id: '2',
-      type: 'outflow',
+      type: 'purchase-order',
       amount: 8500,
       description: 'Inventory Purchase',
-      supplier: 'Global Supplier Co.',
+      vendor: 'Global Vendor Co.',
+      poName: 'Q1 Inventory Restock',
       date: new Date(2024, 0, 18)
     },
     {
@@ -51,10 +53,11 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
     },
     {
       id: '4',
-      type: 'outflow',
+      type: 'purchase-order',
       amount: 3200,
       description: 'PPC Campaign',
-      supplier: 'Amazon Advertising',
+      vendor: 'Amazon Advertising',
+      poName: 'January PPC Budget',
       date: new Date(2024, 0, 25)
     },
     {
@@ -82,10 +85,11 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
     },
     {
       id: '8',
-      type: 'outflow',
+      type: 'purchase-order',
       amount: 12000,
       description: 'Inventory Restock',
-      supplier: 'Inventory Plus LLC',
+      vendor: 'Inventory Plus LLC',
+      poName: 'February Bulk Order',
       date: new Date(2024, 1, 5)
     }
   ]);
@@ -109,7 +113,7 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
 
   const getEventIcon = (event: CashFlowEvent) => {
     if (event.type === 'credit-payment') return <CreditCard className="h-3 w-3" />;
-    if (event.supplier) return <Building2 className="h-3 w-3" />;
+    if (event.type === 'purchase-order' || event.vendor) return <Building2 className="h-3 w-3" />;
     return <Wallet className="h-3 w-3" />;
   };
 
@@ -119,6 +123,9 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
     }
     if (event.type === 'credit-payment') {
       return 'bg-warning/20 text-warning-foreground border-warning/30';
+    }
+    if (event.type === 'purchase-order') {
+      return 'bg-primary/20 text-primary border-primary/30';
     }
     return 'bg-finance-negative/20 text-finance-negative border-finance-negative/30';
   };
@@ -196,10 +203,12 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
                           text-xs px-1 py-0.5 rounded truncate flex items-center space-x-1 border
                           ${getEventColor(event)}
                         `}
-                        title={`${event.description}${event.supplier ? ` - ${event.supplier}` : ''}${event.creditCard ? ` - ${event.creditCard}` : ''}`}
+                        title={`${event.poName ? `${event.poName} - ` : ''}${event.description}${event.vendor ? ` - ${event.vendor}` : ''}${event.creditCard ? ` - ${event.creditCard}` : ''}`}
                       >
                         {getEventIcon(event)}
-                        <span>${event.amount.toLocaleString()}</span>
+                        <span className="truncate">
+                          {event.vendor ? event.vendor : event.description} ${event.amount.toLocaleString()}
+                        </span>
                       </div>
                     ))}
                     {dayEvents.length > 2 && (
@@ -236,6 +245,10 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 rounded bg-warning"></div>
               <span>Credit Payments</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 rounded bg-primary"></div>
+              <span>Purchase Orders</span>
             </div>
           </div>
           
