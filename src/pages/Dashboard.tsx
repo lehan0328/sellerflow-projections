@@ -20,9 +20,15 @@ const Dashboard = () => {
       <div className="container mx-auto px-4 py-8 space-y-8">
         <OverviewStats />
         
-        <VendorsOverview onAddVendor={() => setShowVendorForm(true)} />
         
-        <CashFlowCalendar onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)} />
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <CashFlowCalendar onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)} />
+          </div>
+          <div className="lg:col-span-1">
+            <VendorsOverview onAddVendor={() => setShowVendorForm(true)} />
+          </div>
+        </div>
         
         <div className="grid gap-6 lg:grid-cols-2">
           <BankAccounts />

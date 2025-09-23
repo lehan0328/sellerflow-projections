@@ -136,17 +136,31 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
 
   return (
     <Card className="shadow-card">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle className="text-lg">Cash Flow Calendar</CardTitle>
-          <div className="flex items-center space-x-2 mt-2">
-            <Wallet className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Available Cash:</span>
-            <span className="text-lg font-bold text-finance-positive">
-              ${totalAvailableCash.toLocaleString()}
-            </span>
+      {/* Modern Cash Display */}
+      <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 rounded-t-lg border-b">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-primary/10 rounded-full">
+              <Wallet className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Available Cash</p>
+              <p className="text-2xl font-bold text-finance-positive">
+                ${totalAvailableCash.toLocaleString()}
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-muted-foreground">Updated now</p>
+            <Badge variant="secondary" className="text-xs">
+              💰 Healthy
+            </Badge>
           </div>
         </div>
+      </div>
+
+      <CardHeader className="flex flex-row items-center justify-between pb-4">
+        <CardTitle className="text-lg">Cash Flow Calendar</CardTitle>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
