@@ -219,9 +219,6 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
           <div className="flex items-center space-x-4">
             <CardTitle className="text-lg">Cash Flow Visualization</CardTitle>
             <div className="flex items-center space-x-4">
-              <div className="text-xs text-muted-foreground">
-                Updated now
-              </div>
               <div className="flex items-center space-x-1">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="text-xs text-green-600 font-medium">Healthy</span>
