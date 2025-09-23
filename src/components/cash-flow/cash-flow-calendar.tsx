@@ -127,12 +127,8 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
   };
 
   const getTotalCashForDay = (date: Date) => {
-    // Calculate cumulative cash flow up to this date
-    const eventsUpToDate = events.filter(event => event.date <= date);
-    const cumulativeChange = eventsUpToDate.reduce((total, event) => {
-      return total + (event.type === 'inflow' ? event.amount : -event.amount);
-    }, 0);
-    return totalAvailableCash + cumulativeChange;
+    // For current display, show the actual available cash without complex projections
+    return totalAvailableCash;
   };
 
   const getEventIcon = (event: CashFlowEvent) => {
