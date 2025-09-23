@@ -256,19 +256,10 @@ const Dashboard = () => {
         
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            {chartViewType === 'calendar' ? (
-              <CashFlowCalendar 
-                onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)} 
-                events={events}
-              />
-            ) : (
-              <CashFlowChart 
-                onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)} 
-                events={events}
-                viewType={chartViewType}
-                onViewTypeChange={setChartViewType}
-              />
-            )}
+            <CashFlowCalendar 
+              onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)} 
+              events={events}
+            />
           </div>
           <div className="lg:col-span-1">
             <VendorsOverview 
