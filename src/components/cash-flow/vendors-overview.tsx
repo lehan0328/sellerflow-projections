@@ -18,10 +18,11 @@ interface Vendor {
 }
 
 interface VendorsOverviewProps {
-  onPayToday?: (vendor: Vendor) => void;
+  onPayToday?: (vendor: Vendor, amount?: number) => void;
+  onVendorUpdate?: (vendors: Vendor[]) => void;
 }
 
-export const VendorsOverview = ({ onPayToday }: VendorsOverviewProps) => {
+export const VendorsOverview = ({ onPayToday, onVendorUpdate }: VendorsOverviewProps) => {
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [vendors, setVendors] = useState<Vendor[]>([
     {
@@ -67,12 +68,35 @@ export const VendorsOverview = ({ onPayToday }: VendorsOverviewProps) => {
   };
 
   const handleSaveVendor = (updatedVendor: Vendor) => {
-    setVendors(prev => prev.map(v => v.id === updatedVendor.id ? updatedVendor : v));
+    const updatedVendors = vendors.map(v => v.id === updatedVendor.id ? updatedVendor : v);
+    setVendors(updatedVendors);
+    onVendorUpdate?.(updatedVendors);
   };
 
-  const handlePayToday = (vendor: Vendor) => {
-    onPayToday?.(vendor);
-    toast.success(`Payment moved to today for ${vendor.name} - $${vendor.nextPaymentAmount.toLocaleString()}`);
+  const handlePayToday = (vendor: Vendor, customAmount?: number) => {
+    const paymentAmount = customAmount || vendor.nextPaymentAmount;
+    const newTotalOwed = vendor.totalOwed - paymentAmount;
+    
+    if (newTotalOwed <= 0) {
+      // Full payment - remove vendor from list
+      const updatedVendors = vendors.filter(v => v.id !== vendor.id);
+      setVendors(updatedVendors);
+      onVendorUpdate?.(updatedVendors);
+      toast.success(`Full payment completed for ${vendor.name}. Vendor removed from overview.`);
+    } else {
+      // Partial payment - update vendor
+      const updatedVendor = {
+        ...vendor,
+        totalOwed: newTotalOwed,
+        nextPaymentAmount: Math.min(newTotalOwed, vendor.nextPaymentAmount)
+      };
+      const updatedVendors = vendors.map(v => v.id === vendor.id ? updatedVendor : v);
+      setVendors(updatedVendors);
+      onVendorUpdate?.(updatedVendors);
+      toast.success(`Partial payment of $${paymentAmount.toLocaleString()} made to ${vendor.name}. Remaining: $${newTotalOwed.toLocaleString()}`);
+    }
+    
+    onPayToday?.(vendor, paymentAmount);
   };
 
   const getStatusColor = (status: string) => {

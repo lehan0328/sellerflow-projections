@@ -9,6 +9,7 @@ import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
 import { VendorsOverview } from "@/components/cash-flow/vendors-overview";
 import { VendorForm } from "@/components/cash-flow/vendor-form";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
+import { TransactionLog, Transaction } from "@/components/cash-flow/transaction-log";
 import { AddAccountModal } from "@/components/cash-flow/add-account-modal";
 
 interface Vendor {
@@ -36,6 +37,9 @@ const Dashboard = () => {
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showVendorForm, setShowVendorForm] = useState(false);
   const [showAddAccountModal, setShowAddAccountModal] = useState(false);
+  
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   
   const [events, setEvents] = useState<CashFlowEvent[]>([
     {
@@ -104,18 +108,75 @@ const Dashboard = () => {
     }
   ]);
 
-  const handlePayToday = (vendor: Vendor) => {
+  const handlePayToday = (vendor: Vendor, amount?: number) => {
+    const paymentAmount = amount || vendor.nextPaymentAmount;
+    
     // Add new event for today's payment
     const newEvent: CashFlowEvent = {
       id: `payment-${vendor.id}-${Date.now()}`,
       type: 'purchase-order',
-      amount: vendor.nextPaymentAmount,
+      amount: paymentAmount,
       description: `Payment to ${vendor.name}`,
       vendor: vendor.name,
       date: new Date()
     };
     
+    // Add transaction to log
+    const newTransaction: Transaction = {
+      id: `transaction-${vendor.id}-${Date.now()}`,
+      type: 'payment',
+      vendor: vendor.name,
+      amount: paymentAmount,
+      description: `Payment to ${vendor.name}`,
+      date: new Date(),
+      status: 'completed'
+    };
+    
     setEvents(prev => [...prev, newEvent]);
+    setTransactions(prev => [...prev, newTransaction]);
+  };
+
+  const handleUndoTransaction = (transactionId: string) => {
+    const transaction = transactions.find(t => t.id === transactionId);
+    if (!transaction) return;
+
+    // Remove the transaction
+    setTransactions(prev => prev.filter(t => t.id !== transactionId));
+    
+    // Remove corresponding event
+    setEvents(prev => prev.filter(e => 
+      !(e.description === transaction.description && 
+        Math.abs(e.date.getTime() - transaction.date.getTime()) < 1000)
+    ));
+    
+    // If it was a payment, potentially restore the vendor
+    if (transaction.type === 'payment' && transaction.vendor) {
+      const existingVendor = vendors.find(v => v.name === transaction.vendor);
+      if (!existingVendor) {
+        // Restore vendor with the payment amount added back
+        const restoredVendor: Vendor = {
+          id: `restored-${Date.now()}`,
+          name: transaction.vendor,
+          totalOwed: transaction.amount,
+          nextPaymentDate: new Date(),
+          nextPaymentAmount: transaction.amount,
+          status: 'current',
+          category: 'Restored'
+        };
+        setVendors(prev => [...prev, restoredVendor]);
+      } else {
+        // Add amount back to existing vendor
+        const updatedVendor = {
+          ...existingVendor,
+          totalOwed: existingVendor.totalOwed + transaction.amount
+        };
+        setVendors(prev => prev.map(v => v.id === existingVendor.id ? updatedVendor : v));
+      }
+    }
+  };
+
+  const handleVendorUpdate = (updatedVendors: Vendor[]) => {
+    setVendors(updatedVendors);
   };
 
   return (
@@ -139,7 +200,10 @@ const Dashboard = () => {
             />
           </div>
           <div className="lg:col-span-1">
-            <VendorsOverview onPayToday={handlePayToday} />
+            <VendorsOverview 
+              onPayToday={handlePayToday} 
+              onVendorUpdate={handleVendorUpdate}
+            />
           </div>
         </div>
         
@@ -147,6 +211,11 @@ const Dashboard = () => {
           <BankAccounts />
           <CreditCards />
         </div>
+        
+        <TransactionLog 
+          transactions={transactions}
+          onUndoTransaction={handleUndoTransaction}
+        />
         
         <AmazonPayouts />
       </div>
