@@ -17,13 +17,10 @@ interface CustomerFormProps {
 export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerFormProps) => {
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
-    phone: "",
     category: "",
     paymentTerms: "immediate",
     netTermsDays: "30",
     customNetDays: "",
-    address: "",
     notes: ""
   });
 
@@ -55,14 +52,11 @@ export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerForm
     const customer = {
       id: Date.now().toString(),
       name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
       category: formData.category,
       paymentTerms: formData.paymentTerms,
       netTermsDays: formData.paymentTerms === 'net' ? 
         (formData.netTermsDays === 'custom' ? formData.customNetDays : formData.netTermsDays) : 
         undefined,
-      address: formData.address,
       notes: formData.notes
     };
     
@@ -76,13 +70,10 @@ export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerForm
     // Reset form
     setFormData({
       name: "",
-      email: "",
-      phone: "",
       category: "",
       paymentTerms: "immediate",
       netTermsDays: "30",
       customNetDays: "",
-      address: "",
       notes: ""
     });
   };
@@ -109,28 +100,6 @@ export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerForm
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
               required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter email address"
-              value={formData.email}
-              onChange={(e) => handleInputChange("email", e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input
-              id="phone"
-              placeholder="Enter phone number"
-              value={formData.phone}
-              onChange={(e) => handleInputChange("phone", e.target.value)}
             />
           </div>
 
@@ -209,17 +178,6 @@ export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerForm
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="address">Address (Optional)</Label>
-            <Textarea
-              id="address"
-              placeholder="Enter customer address"
-              value={formData.address}
-              onChange={(e) => handleInputChange("address", e.target.value)}
-              rows={2}
-            />
-          </div>
-          
           <div className="space-y-2">
             <Label htmlFor="notes">Notes (Optional)</Label>
             <Textarea

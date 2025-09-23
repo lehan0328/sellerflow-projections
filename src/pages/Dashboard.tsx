@@ -99,6 +99,8 @@ const Dashboard = () => {
     }
   ]);
   
+  const [totalCash, setTotalCash] = useState(145750); // Initial cash amount
+  
   const [events, setEvents] = useState<CashFlowEvent[]>([
     {
       id: '1',
@@ -169,6 +171,9 @@ const Dashboard = () => {
   const handlePayToday = (vendor: Vendor, amount?: number) => {
     const paymentAmount = amount || vendor.nextPaymentAmount;
     
+    // Deduct from total cash
+    setTotalCash(prev => prev - paymentAmount);
+    
     // Add new event for today's payment
     const newEvent: CashFlowEvent = {
       id: `payment-${vendor.id}-${Date.now()}`,
@@ -197,6 +202,11 @@ const Dashboard = () => {
   const handleUndoTransaction = (transactionId: string) => {
     const transaction = transactions.find(t => t.id === transactionId);
     if (!transaction) return;
+
+    // Add back to total cash if it was a payment
+    if (transaction.type === 'payment') {
+      setTotalCash(prev => prev + transaction.amount);
+    }
 
     // Remove the transaction
     setTransactions(prev => prev.filter(t => t.id !== transactionId));
@@ -270,7 +280,7 @@ const Dashboard = () => {
       />
       
       <div className="container mx-auto px-4 pb-8 space-y-8">
-        <OverviewStats />
+        <OverviewStats totalCash={totalCash} events={events} />
         
         
         <div className="grid gap-6 lg:grid-cols-3">

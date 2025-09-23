@@ -1,12 +1,36 @@
 import { StatCard } from "@/components/ui/stat-card";
 import { DollarSign, CreditCard, TrendingUp, Calendar } from "lucide-react";
 
-export function OverviewStats() {
+interface OverviewStatsProps {
+  totalCash?: number;
+  events?: Array<{
+    type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order';
+    amount: number;
+    date: Date;
+  }>;
+}
+
+export function OverviewStats({ totalCash = 145750, events = [] }: OverviewStatsProps) {
+  // Calculate dynamic values based on events
+  const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
+  
+  // Calculate upcoming payments in next 7 days
+  const nextWeek = new Date();
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  
+  const upcomingPayments = events.filter(event => 
+    (event.type === 'outflow' || event.type === 'purchase-order' || event.type === 'credit-payment') &&
+    event.date >= new Date() && 
+    event.date <= nextWeek
+  );
+  
+  const upcomingTotal = upcomingPayments.reduce((sum, payment) => sum + payment.amount, 0);
+  
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
         title="Total Available Cash"
-        value="$145,750"
+        value={formatCurrency(totalCash)}
         trend="up"
         trendValue="+8.2% from last month"
         variant="positive"
@@ -32,10 +56,10 @@ export function OverviewStats() {
       />
       <StatCard
         title="Upcoming Payments"
-        value="$8,450.00"
+        value={formatCurrency(upcomingTotal)}
         subtitle="Next 7 days"
         trend="neutral"
-        trendValue="4 payments due"
+        trendValue={`${upcomingPayments.length} payments due`}
         variant="danger"
         icon={<Calendar className="h-6 w-6 text-red-600" />}
       />
