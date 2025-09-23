@@ -366,23 +366,25 @@ export const CashFlowCalendar = ({ events: propEvents }: CashFlowCalendarProps) 
             </div>
           </div>
           
-          {viewType === 'calendar' && (
-            <div className="flex items-center justify-center mt-6 mb-4">
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <h3 className="text-xl font-semibold min-w-[180px] text-center">
-                  {dateRangeOption === 'next30' ? `${format(dateRange.start, 'MMM dd')} - ${format(dateRange.end, 'MMM dd, yyyy')}` : format(currentDate, 'MMMM yyyy')}
-                </h3>
-                <Button variant="outline" size="sm" onClick={() => navigateMonth('next')}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       </CardHeader>
+      
+      {viewType === 'calendar' && (
+        <div className="flex items-center justify-center px-6 pb-4">
+          <div className="flex items-center space-x-4">
+            <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <h3 className="text-xl font-semibold min-w-[200px] text-center">
+              {dateRangeOption === 'next30' ? `${format(dateRange.start, 'MMM dd')} - ${format(dateRange.end, 'MMM dd, yyyy')}` : format(currentDate, 'MMMM yyyy')}
+            </h3>
+            <Button variant="outline" size="sm" onClick={() => navigateMonth('next')}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+      
       <CardContent>
         {viewType === 'calendar' ? (
           <>
