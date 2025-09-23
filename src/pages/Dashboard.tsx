@@ -11,6 +11,7 @@ import { VendorForm } from "@/components/cash-flow/vendor-form";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { TransactionLog, Transaction } from "@/components/cash-flow/transaction-log";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
+import { toast } from "sonner";
 
 interface Vendor {
   id: string;
@@ -243,6 +244,14 @@ const Dashboard = () => {
       <FloatingMenu 
         onAddVendor={() => setShowVendorForm(true)}
         onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)}
+        onAddSalesOrder={() => {
+          // TODO: Implement sales order functionality
+          toast.info('Sales Order functionality coming soon!');
+        }}
+        onAddCustomer={() => {
+          // TODO: Implement add customer functionality  
+          toast.info('Add Customer functionality coming soon!');
+        }}
       />
       
       <div className="container mx-auto px-4 pb-8 space-y-8">

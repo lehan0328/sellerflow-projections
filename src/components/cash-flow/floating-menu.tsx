@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Settings, Building2, LogOut, Plus, ShoppingCart } from "lucide-react";
+import { Building2, LogOut, Plus, ShoppingCart, FileText, UserPlus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -8,9 +8,11 @@ import { toast } from "sonner";
 interface FloatingMenuProps {
   onAddVendor: () => void;
   onAddPurchaseOrder: () => void;
+  onAddSalesOrder?: () => void;
+  onAddCustomer?: () => void;
 }
 
-export function FloatingMenu({ onAddVendor, onAddPurchaseOrder }: FloatingMenuProps) {
+export function FloatingMenu({ onAddVendor, onAddPurchaseOrder, onAddSalesOrder, onAddCustomer }: FloatingMenuProps) {
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -50,19 +52,6 @@ export function FloatingMenu({ onAddVendor, onAddPurchaseOrder }: FloatingMenuPr
               className="rounded-full" 
               onClick={(e) => {
                 e.stopPropagation();
-                navigate('/settings');
-              }}
-            >
-              <Settings className="h-4 w-4" />
-              <span className="ml-2 hidden md:inline">Settings</span>
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="rounded-full" 
-              onClick={(e) => {
-                e.stopPropagation();
                 onAddVendor();
               }}
             >
@@ -76,11 +65,37 @@ export function FloatingMenu({ onAddVendor, onAddPurchaseOrder }: FloatingMenuPr
               className="rounded-full" 
               onClick={(e) => {
                 e.stopPropagation();
+                onAddCustomer?.();
+              }}
+            >
+              <UserPlus className="h-4 w-4" />
+              <span className="ml-2 hidden md:inline">Add Customer</span>
+            </Button>
+            
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="rounded-full" 
+              onClick={(e) => {
+                e.stopPropagation();
                 onAddPurchaseOrder();
               }}
             >
               <ShoppingCart className="h-4 w-4" />
               <span className="ml-2 hidden lg:inline">Purchase Order</span>
+            </Button>
+
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="rounded-full" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddSalesOrder?.();
+              }}
+            >
+              <FileText className="h-4 w-4" />
+              <span className="ml-2 hidden lg:inline">Sales Order</span>
             </Button>
             
             <div className="w-px h-6 bg-border/50" />

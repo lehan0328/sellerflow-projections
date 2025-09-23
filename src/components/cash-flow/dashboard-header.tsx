@@ -1,11 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { DollarSign } from "lucide-react";
+import { DollarSign, Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardHeaderProps {
   userName?: string;
 }
 
 export function DashboardHeader({ userName = "Andy" }: DashboardHeaderProps) {
+  const navigate = useNavigate();
+
   return (
     <div className="relative w-full">
       {/* Logo - Top Left */}
@@ -18,6 +21,19 @@ export function DashboardHeader({ userName = "Andy" }: DashboardHeaderProps) {
             CashFlow Pro
           </span>
         </div>
+      </div>
+
+      {/* Settings - Top Right */}
+      <div className="absolute top-6 right-6 z-40">
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => navigate('/settings')}
+          className="rounded-full"
+        >
+          <Settings className="h-4 w-4 mr-2" />
+          Settings
+        </Button>
       </div>
 
       {/* Centered Dashboard Title */}
