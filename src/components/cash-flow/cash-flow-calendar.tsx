@@ -209,6 +209,7 @@ export const CashFlowCalendar = ({ events: propEvents, totalCash = 145750 }: Cas
     
     switch (option) {
       case 'next30':
+        // Ensure today is always included in the range
         const next30Start = now;
         const next30End = addDays(now, 30);
         setDateRange({
@@ -386,11 +387,11 @@ export const CashFlowCalendar = ({ events: propEvents, totalCash = 145750 }: Cas
                     key={day.toISOString()}
                      className={`
                        min-h-[120px] p-2 border rounded-lg relative flex flex-col
-                       ${dateRangeOption === 'next30' ? 
-                         (day >= dateRange.start && day <= dateRange.end ? '' : 'opacity-30') : 
-                         (!isSameMonth(day, currentDate) ? 'opacity-30' : '')
+                       ${isToday(day) ? 'ring-2 ring-primary bg-primary/5 cursor-pointer hover:bg-primary/10' : 
+                         dateRangeOption === 'next30' ? 
+                           (day >= dateRange.start && day <= dateRange.end ? 'bg-background' : 'opacity-30 bg-background') : 
+                           (!isSameMonth(day, currentDate) ? 'opacity-30 bg-background' : 'bg-background')
                        }
-                       ${isToday(day) ? 'ring-2 ring-primary bg-primary/5 cursor-pointer hover:bg-primary/10' : 'bg-background'}
                        ${hasEvents ? 'border-primary/30' : 'border-border'}
                      `}
                     onClick={() => {
