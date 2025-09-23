@@ -2,11 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, DollarSign } from "lucide-react";
-import { useState } from "react";
-import { SignupForm } from "@/components/ui/signup-form";
+import { useNavigate } from "react-router-dom";
 
 const Landing = () => {
-  const [showSignupForm, setShowSignupForm] = useState(false);
+  const navigate = useNavigate();
 
   const features = [
     {
@@ -173,10 +172,10 @@ const Landing = () => {
               <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">
                 Reviews
               </a>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => navigate('/auth')}>
                 Sign In
               </Button>
-              <Button size="sm" className="bg-gradient-primary">
+              <Button size="sm" className="bg-gradient-primary" onClick={() => navigate('/auth')}>
                 Start Free Trial
               </Button>
             </div>
@@ -207,7 +206,7 @@ const Landing = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" className="bg-gradient-primary text-lg px-8" onClick={() => setShowSignupForm(true)}>
+              <Button size="lg" className="bg-gradient-primary text-lg px-8" onClick={() => navigate('/auth')}>
                 Start 7-Day Free Trial
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -364,7 +363,7 @@ const Landing = () => {
                   <Button 
                     className={`w-full ${plan.popular ? 'bg-gradient-primary' : ''}`}
                     variant={plan.popular ? "default" : "outline"}
-                    onClick={() => plan.name === "Enterprise" ? null : setShowSignupForm(true)}
+                    onClick={() => plan.name === "Enterprise" ? null : navigate('/auth')}
                   >
                     {plan.name === "Enterprise" ? "Contact Sales" : "Start Free Trial"}
                   </Button>
@@ -419,7 +418,7 @@ const Landing = () => {
             to manage their finances and scale their businesses.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" variant="secondary" className="text-lg px-8" onClick={() => setShowSignupForm(true)}>
+            <Button size="lg" variant="secondary" className="text-lg px-8" onClick={() => navigate('/auth')}>
               Start Your Free Trial
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
@@ -481,8 +480,6 @@ const Landing = () => {
           </div>
         </div>
       </footer>
-
-      <SignupForm open={showSignupForm} onOpenChange={setShowSignupForm} />
     </div>
   );
 };

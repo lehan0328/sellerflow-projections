@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { Calendar, Download, Plus, Settings, Building2 } from "lucide-react";
+import { Calendar, Download, Plus, Settings, Building2, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface DashboardHeaderProps {
   onAddVendor: () => void;
@@ -8,6 +10,17 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ onAddVendor }: DashboardHeaderProps) {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    const error = await signOut();
+    if (!error) {
+      toast.success('Signed out successfully');
+      navigate('/');
+    } else {
+      toast.error('Failed to sign out');
+    }
+  };
 
   return (
     <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
@@ -39,6 +52,10 @@ export function DashboardHeader({ onAddVendor }: DashboardHeaderProps) {
         <Button size="sm" className="bg-gradient-primary">
           <Plus className="mr-2 h-4 w-4" />
           Add Account
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleSignOut}>
+          <LogOut className="mr-2 h-4 w-4" />
+          Sign Out
         </Button>
       </div>
     </div>

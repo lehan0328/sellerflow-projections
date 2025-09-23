@@ -7,6 +7,8 @@ import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import { Auth } from "./pages/Auth";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -18,8 +20,17 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
