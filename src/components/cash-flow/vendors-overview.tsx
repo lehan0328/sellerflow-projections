@@ -1,9 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Building2, Calendar, DollarSign, AlertTriangle, Plus, Edit, CreditCard } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Building2, Calendar, DollarSign, AlertTriangle, Plus, Edit, CreditCard, Search, ArrowUpDown } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import * as React from "react";
 
@@ -26,11 +28,45 @@ interface VendorsOverviewProps {
 
 export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpdate, onEditOrder }: VendorsOverviewProps) => {
   const [vendors, setVendors] = useState<Vendor[]>(propVendors);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'totalOwed' | 'nextPaymentDate' | 'nextPaymentAmount'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Update local state when props change
   React.useEffect(() => {
     setVendors(propVendors);
   }, [propVendors]);
+
+  // Filter and sort vendors
+  const filteredAndSortedVendors = useMemo(() => {
+    let filtered = vendors.filter(vendor => 
+      vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      vendor.totalOwed.toString().includes(searchTerm) ||
+      vendor.nextPaymentAmount.toString().includes(searchTerm)
+    );
+
+    return filtered.sort((a, b) => {
+      let aValue = a[sortBy];
+      let bValue = b[sortBy];
+
+      if (sortBy === 'nextPaymentDate') {
+        aValue = a.nextPaymentDate.getTime();
+        bValue = b.nextPaymentDate.getTime();
+      }
+
+      if (typeof aValue === 'string') {
+        return sortOrder === 'asc' 
+          ? aValue.localeCompare(bValue as string)
+          : (bValue as string).localeCompare(aValue);
+      }
+
+      if (typeof aValue === 'number') {
+        return sortOrder === 'asc' ? aValue - (bValue as number) : (bValue as number) - aValue;
+      }
+
+      return 0;
+    });
+  }, [vendors, searchTerm, sortBy, sortOrder]);
 
   const handleSaveVendor = (updatedVendor: Vendor) => {
     const updatedVendors = vendors.map(v => v.id === updatedVendor.id ? updatedVendor : v);
@@ -84,8 +120,8 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
     return <Calendar className="h-4 w-4" />;
   };
 
-  const totalOwed = vendors.reduce((sum, vendor) => sum + vendor.totalOwed, 0);
-  const overdueAmount = vendors
+  const totalOwed = filteredAndSortedVendors.reduce((sum, vendor) => sum + vendor.totalOwed, 0);
+  const overdueAmount = filteredAndSortedVendors
     .filter(v => v.status === 'overdue')
     .reduce((sum, vendor) => sum + vendor.totalOwed, 0);
 
@@ -115,10 +151,50 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
             </div>
           </div>
         </div>
+        
+        <div className="flex items-center space-x-4 mt-4">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search vendors or amounts..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="totalOwed">Total Owed</SelectItem>
+                <SelectItem value="nextPaymentAmount">Next Payment</SelectItem>
+                <SelectItem value="nextPaymentDate">Due Date</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            >
+              {sortOrder === 'asc' ? '↑' : '↓'}
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="p-4">
         <div className="max-h-[600px] overflow-y-auto space-y-4 pr-2">
-          {vendors.map((vendor) => (
+          {filteredAndSortedVendors.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {searchTerm ? 'No vendors found matching your search.' : 'No vendors to display.'}
+            </div>
+          ) : (
+            filteredAndSortedVendors.map((vendor) => (
             <div
               key={vendor.id}
               className="p-5 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:shadow-md"
@@ -197,7 +273,7 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
                 </AlertDialog>
               </div>
             </div>
-          ))}
+          )))}
         </div>
       </CardContent>
     </Card>
