@@ -113,47 +113,52 @@ export const VendorsOverview = ({ onAddVendor }: VendorsOverviewProps) => {
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+      <CardContent className="p-4">
+        <div className="max-h-[600px] overflow-y-auto space-y-4 pr-2">
           {vendors.map((vendor) => (
             <div
               key={vendor.id}
-              className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+              className="p-5 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:shadow-md"
             >
-              <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-2">
-                  <h4 className="font-semibold">{vendor.name}</h4>
-                  <Badge variant="outline" className="text-xs">
-                    {vendor.category}
-                  </Badge>
-                  <Badge variant={getStatusColor(vendor.status)} className="text-xs">
-                    {getStatusIcon(vendor.status)}
-                    <span className="ml-1 capitalize">{vendor.status}</span>
-                  </Badge>
-                </div>
-                <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-                  <span>
-                    Total Owed: <span className="font-medium text-foreground">
-                      ${vendor.totalOwed.toLocaleString()}
-                    </span>
-                  </span>
-                  <span>
-                    Next Payment: <span className="font-medium text-foreground">
-                      ${vendor.nextPaymentAmount.toLocaleString()}
-                    </span>
-                  </span>
-                  <span>
-                    Due: <span className="font-medium text-foreground">
-                      {vendor.nextPaymentDate.toLocaleDateString()}
-                    </span>
-                  </span>
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <h4 className="font-semibold text-lg">{vendor.name}</h4>
+                    <Badge variant="outline" className="text-xs">
+                      {vendor.category}
+                    </Badge>
+                    <Badge variant={getStatusColor(vendor.status)} className="text-xs">
+                      {getStatusIcon(vendor.status)}
+                      <span className="ml-1 capitalize">{vendor.status}</span>
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Total Owed:</span>
+                      <span className="font-medium text-foreground text-lg">
+                        ${vendor.totalOwed.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Next Payment:</span>
+                      <span className="font-medium text-foreground">
+                        ${vendor.nextPaymentAmount.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Due Date:</span>
+                      <span className="font-medium text-foreground">
+                        {vendor.nextPaymentDate.toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex justify-end space-x-3 pt-3 border-t">
                 <Button variant="outline" size="sm">
                   Edit
                 </Button>
-                <Button size="sm" className="bg-gradient-primary">
+                <Button size="sm" className="bg-gradient-primary px-6">
                   Pay Now
                 </Button>
               </div>

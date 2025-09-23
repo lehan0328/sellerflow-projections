@@ -111,6 +111,15 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
     }, 0);
   };
 
+  const getTotalCashForDay = (date: Date) => {
+    // Calculate cumulative cash flow up to this date
+    const eventsUpToDate = events.filter(event => event.date <= date);
+    const cumulativeChange = eventsUpToDate.reduce((total, event) => {
+      return total + (event.type === 'inflow' ? event.amount : -event.amount);
+    }, 0);
+    return totalAvailableCash + cumulativeChange;
+  };
+
   const getEventIcon = (event: CashFlowEvent) => {
     if (event.type === 'credit-payment') return <CreditCard className="h-3 w-3" />;
     if (event.type === 'purchase-order' || event.vendor) return <Building2 className="h-3 w-3" />;
@@ -192,55 +201,63 @@ export const CashFlowCalendar = ({ onAddPurchaseOrder }: CashFlowCalendarProps) 
           {days.map(day => {
             const dayEvents = getEventsForDay(day);
             const dayBalance = getDayBalance(day);
+            const totalCash = getTotalCashForDay(day);
             const hasEvents = dayEvents.length > 0;
             
             return (
               <div
                 key={day.toISOString()}
                 className={`
-                  min-h-[80px] p-2 border rounded-lg relative
+                  min-h-[120px] p-2 border rounded-lg relative flex flex-col
                   ${!isSameMonth(day, currentDate) ? 'opacity-30' : ''}
                   ${isToday(day) ? 'ring-2 ring-primary bg-primary/5' : 'bg-background'}
                   ${hasEvents ? 'border-primary/30' : 'border-border'}
                 `}
               >
-                <div className="text-sm font-medium mb-1">
-                  {format(day, 'd')}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium">
+                    {format(day, 'd')}
+                  </div>
+                  <div className="text-xs text-finance-positive font-semibold">
+                    ${(totalCash / 1000).toFixed(0)}k
+                  </div>
                 </div>
                 
-                {hasEvents && (
-                  <div className="space-y-1">
-                    {dayEvents.slice(0, 2).map(event => (
-                      <div
-                        key={event.id}
-                        className={`
-                          text-xs px-1 py-0.5 rounded truncate flex items-center space-x-1 border
-                          ${getEventColor(event)}
-                        `}
-                        title={`${event.poName ? `${event.poName} - ` : ''}${event.description}${event.vendor ? ` - ${event.vendor}` : ''}${event.creditCard ? ` - ${event.creditCard}` : ''}`}
-                      >
-                        {getEventIcon(event)}
-                        <span className="truncate">
-                          {event.vendor ? event.vendor : event.description} ${event.amount.toLocaleString()}
-                        </span>
-                      </div>
-                    ))}
-                    {dayEvents.length > 2 && (
-                      <div className="text-xs text-muted-foreground">
-                        +{dayEvents.length - 2} more
-                      </div>
-                    )}
-                    
-                    {dayBalance !== 0 && (
-                      <div className={`
-                        text-xs font-semibold
-                        ${dayBalance > 0 ? 'text-finance-positive' : 'text-finance-negative'}
-                      `}>
-                        Net: ${dayBalance > 0 ? '+' : ''}${dayBalance.toLocaleString()}
-                      </div>
-                    )}
-                  </div>
-                )}
+                <div className="flex-1 space-y-1">
+                  {hasEvents && (
+                    <>
+                      {dayEvents.slice(0, 2).map(event => (
+                        <div
+                          key={event.id}
+                          className={`
+                            text-xs px-1 py-0.5 rounded truncate flex items-center space-x-1 border
+                            ${getEventColor(event)}
+                          `}
+                          title={`${event.poName ? `${event.poName} - ` : ''}${event.description}${event.vendor ? ` - ${event.vendor}` : ''}${event.creditCard ? ` - ${event.creditCard}` : ''}`}
+                        >
+                          {getEventIcon(event)}
+                          <span className="truncate">
+                            {event.vendor ? event.vendor : event.description} ${event.amount.toLocaleString()}
+                          </span>
+                        </div>
+                      ))}
+                      {dayEvents.length > 2 && (
+                        <div className="text-xs text-muted-foreground">
+                          +{dayEvents.length - 2} more
+                        </div>
+                      )}
+                      
+                      {dayBalance !== 0 && (
+                        <div className={`
+                          text-xs font-semibold mt-1
+                          ${dayBalance > 0 ? 'text-finance-positive' : 'text-finance-negative'}
+                        `}>
+                          Net: ${dayBalance > 0 ? '+' : ''}${dayBalance.toLocaleString()}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             );
           })}
