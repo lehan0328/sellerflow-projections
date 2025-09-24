@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { addDays } from "date-fns";
+import { addDays, isToday, isBefore, startOfDay } from "date-fns";
 import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
 import { OverviewStats } from "@/components/cash-flow/overview-stats";
@@ -233,20 +233,29 @@ const Dashboard = () => {
     const amount = typeof incomeData.amount === 'string' ? 
       parseFloat(incomeData.amount) : incomeData.amount;
     
+    const paymentDate = incomeData.paymentDate || new Date();
+    const today = startOfDay(new Date());
+    const paymentDateStartOfDay = startOfDay(paymentDate);
+    
     console.info("Adding income amount:", amount);
+    console.info("Payment date:", paymentDate);
     console.info("Previous total cash:", totalCash);
     
-    const newTotalCash = totalCash + amount;
-    await updateTotalCash(newTotalCash);
-    
-    console.info("New total cash:", newTotalCash);
+    // Only update total cash if payment date is today or in the past
+    if (isToday(paymentDate) || isBefore(paymentDateStartOfDay, today)) {
+      const newTotalCash = totalCash + amount;
+      await updateTotalCash(newTotalCash);
+      console.info("Updated total cash to:", newTotalCash);
+    } else {
+      console.info("Future-dated income - not updating total cash immediately");
+    }
 
     // Add to income items
     const newIncomeItem = {
       ...incomeData,
       id: Date.now().toString(),
       amount: amount,
-      paymentDate: incomeData.paymentDate || new Date(),
+      paymentDate: paymentDate,
       status: 'received' as const
     };
     setIncomeItems(prev => [newIncomeItem, ...prev]);
@@ -256,8 +265,8 @@ const Dashboard = () => {
       type: 'sales_order',
       amount: amount,
       description: incomeData.description || 'Income',
-      transactionDate: incomeData.paymentDate || new Date(),
-      status: 'completed'
+      transactionDate: paymentDate,
+      status: paymentDateStartOfDay <= today ? 'completed' : 'pending'
     });
 
     // Create cash flow event
@@ -266,7 +275,7 @@ const Dashboard = () => {
       type: 'income',
       amount: amount,
       description: incomeData.description || 'Income',
-      date: incomeData.paymentDate || new Date()
+      date: paymentDate
     };
     setCashFlowEvents(prev => [newEvent, ...prev]);
 
