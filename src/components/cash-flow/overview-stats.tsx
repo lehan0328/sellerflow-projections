@@ -84,12 +84,12 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
   };
   
   return (
-    <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-      <div className="bg-gradient-to-br from-emerald-50 to-green-100 border border-emerald-200 rounded-lg p-6 animate-fade-in">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="bg-card border rounded-lg p-6">
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <p className="text-sm text-emerald-700 font-medium">Total Available Cash</p>
+              <p className="text-sm text-muted-foreground">Total Available Cash</p>
               {!balanceMatches && (
                 <Button
                   variant="ghost"
@@ -102,50 +102,41 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
                 </Button>
               )}
             </div>
-            <p className="text-2xl font-bold text-emerald-800">${totalCash.toLocaleString()}</p>
-            <p className="text-sm text-emerald-600">
+            <p className="text-2xl font-bold text-success">${totalCash.toLocaleString()}</p>
+            <p className="text-sm text-muted-foreground">
               {balanceMatches ? "Synced with bank accounts" : `Bank balance: $${bankAccountBalance.toLocaleString()}`}
             </p>
           </div>
-          <DollarSign className="h-8 w-8 text-emerald-600" />
+          <DollarSign className="h-8 w-8 text-success" />
         </div>
       </div>
-      
-      <div className="bg-gradient-to-br from-purple-50 to-violet-100 border border-purple-200 rounded-lg p-6 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <p className="text-sm text-purple-700 font-medium">Credit Utilization</p>
-            <p className="text-2xl font-bold text-purple-800">{formatCurrency(totalCreditBalance)}</p>
-            <p className="text-sm text-purple-600">of {formatCurrency(totalCreditLimit)} limit</p>
-            <p className="text-xs text-purple-500 mt-1">{creditUtilization.toFixed(1)}% utilization</p>
-          </div>
-          <CreditCard className="h-8 w-8 text-purple-600" />
-        </div>
-      </div>
-      
-      <div className="bg-gradient-to-br from-blue-50 to-sky-100 border border-blue-200 rounded-lg p-6 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <p className="text-sm text-blue-700 font-medium">Incoming $</p>
-            <p className="text-2xl font-bold text-blue-800">$0.00</p>
-            <p className="text-sm text-blue-600">No scheduled payouts</p>
-            <p className="text-xs text-blue-500 mt-1">--</p>
-          </div>
-          <TrendingUp className="h-8 w-8 text-blue-600" />
-        </div>
-      </div>
-      
-      <div className="bg-gradient-to-br from-rose-50 to-pink-100 border border-rose-200 rounded-lg p-6 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <p className="text-sm text-rose-700 font-medium">Upcoming Payments</p>
-            <p className="text-2xl font-bold text-rose-800">{formatCurrency(upcomingTotal)}</p>
-            <p className="text-sm text-rose-600">Next 7 days</p>
-            <p className="text-xs text-rose-500 mt-1">{upcomingPayments.length} payments due</p>
-          </div>
-          <Calendar className="h-8 w-8 text-rose-600" />
-        </div>
-      </div>
+      <StatCard
+        title="Credit Utilization"
+        value={formatCurrency(totalCreditBalance)}
+        subtitle={`of ${formatCurrency(totalCreditLimit)} limit`}
+        trend="neutral"
+        trendValue={`${creditUtilization.toFixed(1)}% utilization`}
+        variant={getCreditVariant()}
+        icon={<CreditCard className="h-6 w-6 text-muted-foreground" />}
+      />
+      <StatCard
+        title="Incoming $"
+        value="$0.00"
+        subtitle="No scheduled payouts"
+        trend="neutral"
+        trendValue="--"
+        variant="default"
+        icon={<TrendingUp className="h-6 w-6 text-muted-foreground" />}
+      />
+      <StatCard
+        title="Upcoming Payments"
+        value={formatCurrency(upcomingTotal)}
+        subtitle="Next 7 days"
+        trend="neutral"
+        trendValue={`${upcomingPayments.length} payments due`}
+        variant="danger"
+        icon={<Calendar className="h-6 w-6 text-red-600" />}
+      />
     </div>
   );
 }
