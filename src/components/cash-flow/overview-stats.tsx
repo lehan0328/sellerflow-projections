@@ -84,66 +84,65 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
   };
   
   return (
-    <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-      <div className="bg-gradient-to-br from-emerald-50 to-green-100 border border-emerald-200 rounded-lg p-6 animate-fade-in">
+    <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+      <div className="bg-gradient-to-br from-emerald-50 to-green-100 border border-emerald-200 rounded-lg p-4 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <p className="text-sm text-emerald-700 font-medium">Total Available Cash</p>
+              <p className="text-xs text-emerald-700 font-medium">Total Available Cash</p>
               {!balanceMatches && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={onUpdateCashBalance}
-                  className="h-6 w-6 p-0 text-warning hover:text-warning-foreground"
+                  className="h-4 w-4 p-0 text-warning hover:text-warning-foreground"
                   title={`The cash available does not match your synced bank account. Do you want to update?`}
                 >
-                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTriangle className="h-3 w-3" />
                 </Button>
               )}
             </div>
-            <p className="text-2xl font-bold text-emerald-800">${totalCash.toLocaleString()}</p>
-            <p className="text-sm text-emerald-600">
-              {balanceMatches ? "Synced with bank accounts" : `Bank balance: $${bankAccountBalance.toLocaleString()}`}
+            <p className="text-lg font-bold text-emerald-800">${totalCash.toLocaleString()}</p>
+            <p className="text-xs text-emerald-600">
+              {balanceMatches ? "Synced" : `Bank: $${bankAccountBalance.toLocaleString()}`}
             </p>
           </div>
-          <DollarSign className="h-8 w-8 text-emerald-600" />
+          <DollarSign className="h-6 w-6 text-emerald-600" />
         </div>
       </div>
       
-      <div className="bg-gradient-to-br from-purple-50 to-violet-100 border border-purple-200 rounded-lg p-6 animate-fade-in">
+      <div className="bg-gradient-to-br from-purple-50 to-violet-100 border border-purple-200 rounded-lg p-4 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-sm text-purple-700 font-medium">Credit Utilization</p>
-            <p className="text-2xl font-bold text-purple-800">{formatCurrency(totalCreditBalance)}</p>
-            <p className="text-sm text-purple-600">of {formatCurrency(totalCreditLimit)} limit</p>
-            <p className="text-xs text-purple-500 mt-1">{creditUtilization.toFixed(1)}% utilization</p>
+            <p className="text-xs text-purple-700 font-medium">Credit Utilization</p>
+            <p className="text-lg font-bold text-purple-800">{formatCurrency(totalCreditBalance)}</p>
+            <p className="text-xs text-purple-600">of {formatCurrency(totalCreditLimit)} limit</p>
+            <p className="text-xs text-purple-500">{creditUtilization.toFixed(1)}%</p>
           </div>
-          <CreditCard className="h-8 w-8 text-purple-600" />
+          <CreditCard className="h-6 w-6 text-purple-600" />
         </div>
       </div>
       
-      <div className="bg-gradient-to-br from-blue-50 to-sky-100 border border-blue-200 rounded-lg p-6 animate-fade-in">
+      <div className="bg-gradient-to-br from-blue-50 to-sky-100 border border-blue-200 rounded-lg p-4 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-sm text-blue-700 font-medium">Incoming $</p>
-            <p className="text-2xl font-bold text-blue-800">$0.00</p>
-            <p className="text-sm text-blue-600">No scheduled payouts</p>
-            <p className="text-xs text-blue-500 mt-1">--</p>
+            <p className="text-xs text-blue-700 font-medium">Incoming $</p>
+            <p className="text-lg font-bold text-blue-800">$0.00</p>
+            <p className="text-xs text-blue-600">No payouts</p>
           </div>
-          <TrendingUp className="h-8 w-8 text-blue-600" />
+          <TrendingUp className="h-6 w-6 text-blue-600" />
         </div>
       </div>
       
-      <div className="bg-gradient-to-br from-rose-50 to-pink-100 border border-rose-200 rounded-lg p-6 animate-fade-in">
+      <div className="bg-gradient-to-br from-rose-50 to-pink-100 border border-rose-200 rounded-lg p-4 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-sm text-rose-700 font-medium">Upcoming Payments</p>
-            <p className="text-2xl font-bold text-rose-800">{formatCurrency(upcomingTotal)}</p>
-            <p className="text-sm text-rose-600">Next 7 days</p>
-            <p className="text-xs text-rose-500 mt-1">{upcomingPayments.length} payments due</p>
+            <p className="text-xs text-rose-700 font-medium">Upcoming Payments</p>
+            <p className="text-lg font-bold text-rose-800">{formatCurrency(upcomingTotal)}</p>
+            <p className="text-xs text-rose-600">Next 7 days</p>
+            <p className="text-xs text-rose-500">{upcomingPayments.length} payments</p>
           </div>
-          <Calendar className="h-8 w-8 text-rose-600" />
+          <Calendar className="h-6 w-6 text-rose-600" />
         </div>
       </div>
     </div>
