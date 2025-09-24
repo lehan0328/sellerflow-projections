@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp, ShoppingBag } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays, startOfWeek, endOfWeek, getDay } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -20,6 +20,7 @@ interface CashFlowEvent {
   vendor?: string;
   creditCard?: string;
   poName?: string;
+  source?: string; // Added to identify Amazon payouts
   date: Date;
 }
 
@@ -181,12 +182,17 @@ export const CashFlowCalendar = ({ events: propEvents, totalCash = 145750 }: Cas
   };
 
   const getEventIcon = (event: CashFlowEvent) => {
+    if (event.source === 'amazon') return <ShoppingBag className="h-3 w-3" />;
     if (event.type === 'credit-payment') return <CreditCard className="h-3 w-3" />;
     if (event.type === 'purchase-order' || event.vendor) return <Building2 className="h-3 w-3" />;
     return <Wallet className="h-3 w-3" />;
   };
 
   const getEventColor = (event: CashFlowEvent) => {
+    // Amazon payouts get special orange color
+    if (event.source === 'amazon' && event.type === 'inflow') {
+      return 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-700/30';
+    }
     if (event.type === 'inflow') {
       return 'bg-finance-positive/20 text-finance-positive border-finance-positive/30';
     }

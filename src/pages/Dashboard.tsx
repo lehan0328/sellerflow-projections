@@ -253,6 +253,7 @@ const Dashboard = () => {
       type: 'inflow' as const,
       amount: 25000,
       description: 'Amazon Payout',
+      source: 'amazon',
       date: new Date()
     },
     {
@@ -268,6 +269,7 @@ const Dashboard = () => {
       type: 'inflow' as const,
       amount: 32000,
       description: 'Amazon Payout - Holiday Sales',
+      source: 'amazon',
       date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     },
     {
@@ -275,6 +277,7 @@ const Dashboard = () => {
       type: 'inflow' as const,
       amount: 18500,
       description: 'Amazon Payout - Q1 Performance',
+      source: 'amazon',
       date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
     }
   ];
