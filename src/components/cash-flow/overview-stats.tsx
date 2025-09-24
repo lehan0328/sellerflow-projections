@@ -2,6 +2,43 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle } from "lucide-react";
 
+// Credit card data (matching credit-cards.tsx)
+const creditCards = [
+  {
+    id: "1",
+    name: "Bank of America CORP Account - Business Adv Unlimited Cash Rewards",
+    accountNumber: "2678",
+    balance: 1893.22,
+    limit: 4500.00,
+    availableCredit: 2606.78,
+    priority: 1,
+    paymentDue: "4th of the month",
+    statementClose: "8th of the month",
+  },
+  {
+    id: "2",
+    name: "American Express Blue Business Plus Card",
+    accountNumber: "6008",
+    balance: 13049.91,
+    limit: 13000.00,
+    availableCredit: -49.91,
+    priority: 1,
+    paymentDue: "7th of the month",
+    statementClose: "13th of the month",
+  },
+  {
+    id: "3",
+    name: "American Express Business Gold Card",
+    accountNumber: "1002",
+    balance: 7098.73,
+    limit: 4200.00,
+    availableCredit: 0,
+    priority: 2,
+    paymentDue: "12th of the month",
+    statementClose: "14th of the month",
+  },
+];
+
 interface OverviewStatsProps {
   totalCash?: number;
   events?: Array<{
@@ -34,6 +71,18 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
   const bankAccountBalance = 14269.39 + 4.29; // Total from Bank of America + Bluevine
   const balanceMatches = Math.abs(totalCash - bankAccountBalance) < 0.01;
   
+  // Calculate credit card totals
+  const totalCreditBalance = creditCards.reduce((sum, card) => sum + card.balance, 0);
+  const totalCreditLimit = creditCards.reduce((sum, card) => sum + card.limit, 0);
+  const totalAvailableCredit = creditCards.reduce((sum, card) => sum + Math.max(0, card.availableCredit), 0);
+  const creditUtilization = totalCreditLimit > 0 ? (totalCreditBalance / totalCreditLimit) * 100 : 0;
+  
+  const getCreditVariant = () => {
+    if (creditUtilization >= 90) return "danger";
+    if (creditUtilization >= 70) return "warning";
+    return "positive";
+  };
+  
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <div className="bg-card border rounded-lg p-6">
@@ -63,12 +112,12 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
       </div>
       <StatCard
         title="Credit Utilization"
-        value="$0.00"
-        subtitle="of $0.00 limit"
+        value={formatCurrency(totalCreditBalance)}
+        subtitle={`of ${formatCurrency(totalCreditLimit)} limit`}
         trend="neutral"
-        trendValue="0% utilization"
-        variant="positive"
-        icon={<CreditCard className="h-6 w-6 text-success" />}
+        trendValue={`${creditUtilization.toFixed(1)}% utilization`}
+        variant={getCreditVariant()}
+        icon={<CreditCard className="h-6 w-6 text-muted-foreground" />}
       />
       <StatCard
         title="Incoming $"
