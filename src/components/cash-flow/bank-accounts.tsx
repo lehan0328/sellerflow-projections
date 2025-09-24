@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, Eye, MoreVertical } from "lucide-react";
+import { Building2, MoreVertical } from "lucide-react";
 
 interface BankAccount {
   id: string;
@@ -45,6 +45,8 @@ export function BankAccounts() {
     return "destructive";
   };
 
+  const totalBalance = bankAccounts.reduce((sum, account) => sum + account.balance, 0);
+
   return (
     <Card className="shadow-card">
       <CardHeader>
@@ -53,10 +55,12 @@ export function BankAccounts() {
             <Building2 className="h-5 w-5 text-primary" />
             <CardTitle>Bank Accounts</CardTitle>
           </div>
-          <Button variant="outline" size="sm">
-            <Eye className="mr-2 h-4 w-4" />
-            View All
-          </Button>
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">Total Balance</p>
+            <p className="text-xl font-bold text-primary">
+              {formatCurrency(totalBalance)}
+            </p>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
