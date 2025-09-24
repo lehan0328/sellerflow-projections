@@ -17,12 +17,6 @@ export const LiveDashboardShowcase = () => {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    // Apply theme changes to the iframe content
-    const theme = isDark ? 'dark' : 'light';
-    document.documentElement.classList.toggle('dark', isDark);
-  }, [isDark]);
-
   return (
     <div className="relative max-w-6xl mx-auto">
       <div className="text-center mb-8">
@@ -77,14 +71,15 @@ export const LiveDashboardShowcase = () => {
             </div>
 
             {/* Dashboard Content Preview */}
-            <div className={`h-full transition-all duration-1000 ${isDark ? 'dark bg-background' : 'bg-background'}`}>
+            <div className={`h-full transition-all duration-1000 ${isDark ? 'dark' : ''}`}>
               <iframe
-                src="/dashboard"
-                className="w-full h-full border-0 scale-75 origin-top-left"
+                src={`/dashboard${isDark ? '?theme=dark' : '?theme=light'}`}
+                className={`w-full h-full border-0 scale-75 origin-top-left transition-all duration-1000 ${
+                  isDark ? 'bg-gray-900' : 'bg-white'
+                }`}
                 style={{ 
                   width: '133.33%', 
-                  height: '133.33%',
-                  pointerEvents: 'none'
+                  height: '133.33%'
                 }}
                 title="Dashboard Preview"
               />
