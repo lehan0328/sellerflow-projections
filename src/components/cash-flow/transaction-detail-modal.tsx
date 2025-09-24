@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, DollarSign, Building2, CreditCard, ShoppingCart, Wallet, Clock, FileText } from "lucide-react";
+import { Calendar, DollarSign, Building2, CreditCard, ShoppingCart, Wallet, Clock, FileText, Edit } from "lucide-react";
 import { format } from "date-fns";
 
 interface CashFlowEvent {
@@ -20,9 +20,10 @@ interface TransactionDetailModalProps {
   transaction: CashFlowEvent | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit?: (transaction: CashFlowEvent) => void;
 }
 
-export const TransactionDetailModal = ({ transaction, open, onOpenChange }: TransactionDetailModalProps) => {
+export const TransactionDetailModal = ({ transaction, open, onOpenChange, onEdit }: TransactionDetailModalProps) => {
   if (!transaction) return null;
 
   const getTypeIcon = (type: string) => {
@@ -172,8 +173,21 @@ export const TransactionDetailModal = ({ transaction, open, onOpenChange }: Tran
           </div>
         </div>
 
-        <div className="flex justify-end pt-4">
-          <Button onClick={() => onOpenChange(false)}>
+        <div className="flex justify-between space-x-3 pt-4">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              if (onEdit && transaction) {
+                onEdit(transaction);
+                onOpenChange(false);
+              }
+            }}
+            className="flex-1"
+          >
+            <Edit className="mr-2 h-4 w-4" />
+            Edit
+          </Button>
+          <Button onClick={() => onOpenChange(false)} className="flex-1">
             Close
           </Button>
         </div>

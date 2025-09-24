@@ -372,6 +372,14 @@ const Dashboard = () => {
     setEditingVendor(null);
   };
 
+  const handleEditTransaction = (transaction: any) => {
+    console.log("Editing transaction:", transaction);
+    // TODO: Implement transaction editing based on transaction type
+    // This could open different forms based on transaction.type
+    // For now, we'll just log the transaction
+    alert(`Edit transaction: ${transaction.description}\nAmount: $${transaction.amount}\nType: ${transaction.type}`);
+  };
+
   const handleAddVendor = async (vendorData: any) => {
     await addVendor({
       name: vendorData.name,
@@ -438,7 +446,11 @@ const Dashboard = () => {
         />
         
         {/* Row 1: Cash Flow Calendar (Full Width) */}
-        <CashFlowCalendar events={allCalendarEvents} totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash} />
+        <CashFlowCalendar 
+          events={allCalendarEvents} 
+          totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash}
+          onEditTransaction={handleEditTransaction}
+        />
 
         {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

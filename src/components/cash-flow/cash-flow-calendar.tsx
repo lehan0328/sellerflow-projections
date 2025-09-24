@@ -28,9 +28,10 @@ interface CashFlowEvent {
 interface CashFlowCalendarProps {
   events?: CashFlowEvent[];
   totalCash?: number;
+  onEditTransaction?: (transaction: CashFlowEvent) => void;
 }
 
-export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0 }: CashFlowCalendarProps) => {
+export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEditTransaction }: CashFlowCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'calendar' | 'chart'>('calendar');
   const [dateRangeOption, setDateRangeOption] = useState<'next30' | 'thisMonth' | 'nextMonth'>('next30');
@@ -566,6 +567,7 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0 }: Cas
         transaction={selectedTransaction}
         open={showTransactionModal}
         onOpenChange={setShowTransactionModal}
+        onEdit={onEditTransaction}
       />
       
       <DayTransactionsModal
