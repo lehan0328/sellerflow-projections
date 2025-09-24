@@ -85,7 +85,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
   
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <div className="bg-card border rounded-lg p-6">
+      <div className="bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/20 rounded-lg p-6">
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2">
@@ -102,12 +102,12 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
                 </Button>
               )}
             </div>
-            <p className="text-2xl font-bold text-success">${totalCash.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-primary">${totalCash.toLocaleString()}</p>
             <p className="text-sm text-muted-foreground">
               {balanceMatches ? "Synced with bank accounts" : `Bank balance: $${bankAccountBalance.toLocaleString()}`}
             </p>
           </div>
-          <DollarSign className="h-8 w-8 text-success" />
+          <DollarSign className="h-8 w-8 text-primary" />
         </div>
       </div>
       <StatCard
@@ -116,8 +116,8 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
         subtitle={`of ${formatCurrency(totalCreditLimit)} limit`}
         trend="neutral"
         trendValue={`${creditUtilization.toFixed(1)}% utilization`}
-        variant={getCreditVariant()}
-        icon={<CreditCard className="h-6 w-6 text-muted-foreground" />}
+        variant="accent"
+        icon={<CreditCard className="h-6 w-6 text-accent" />}
       />
       <StatCard
         title="Incoming $"
@@ -125,8 +125,8 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
         subtitle="No scheduled payouts"
         trend="neutral"
         trendValue="--"
-        variant="default"
-        icon={<TrendingUp className="h-6 w-6 text-muted-foreground" />}
+        variant="info"
+        icon={<TrendingUp className="h-6 w-6 text-info" />}
       />
       <StatCard
         title="Upcoming Payments"
@@ -134,8 +134,8 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
         subtitle="Next 7 days"
         trend="neutral"
         trendValue={`${upcomingPayments.length} payments due`}
-        variant="danger"
-        icon={<Calendar className="h-6 w-6 text-red-600" />}
+        variant="warning"
+        icon={<Calendar className="h-6 w-6 text-warning" />}
       />
     </div>
   );
