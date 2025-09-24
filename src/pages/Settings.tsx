@@ -22,7 +22,8 @@ import {
   Monitor,
   Palette,
   ShoppingBag,
-  Plus
+  Plus,
+  LogOut
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -30,10 +31,12 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { PurchaseAddonsModal } from "@/components/cash-flow/purchase-addons-modal";
 import { AddAccountModal } from "@/components/cash-flow/add-account-modal";
+import { useAuth } from "@/hooks/useAuth";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { signOut } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [showPurchaseAddonsModal, setShowPurchaseAddonsModal] = useState(false);
   const [showAddAccountModal, setShowAddAccountModal] = useState(false);
@@ -41,6 +44,16 @@ const Settings = () => {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleSignOut = async () => {
+    const error = await signOut();
+    if (!error) {
+      toast.success('Signed out successfully');
+      navigate('/');
+    } else {
+      toast.error('Failed to sign out');
+    }
+  };
 
   const handleExport = (type: string) => {
     toast.success(`Exporting ${type} data...`);
@@ -365,6 +378,16 @@ const Settings = () => {
                 </Button>
                 <Button variant="outline" size="sm" className="w-full">
                   Two-Factor Auth
+                </Button>
+                <Separator />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
                 </Button>
                 <Separator />
                 <Button variant="destructive" size="sm" className="w-full">

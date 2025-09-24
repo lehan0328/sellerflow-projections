@@ -9,8 +9,6 @@ import { BankAccounts } from "@/components/cash-flow/bank-accounts";
 import { CreditCards } from "@/components/cash-flow/credit-cards";
 import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
-import { CustomerForm } from "@/components/cash-flow/customer-form";
-import { SalesOrderForm } from "@/components/cash-flow/sales-order-form";
 import { VendorForm } from "@/components/cash-flow/vendor-form";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
@@ -33,8 +31,7 @@ interface CashFlowEvent {
 const Dashboard = () => {
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showVendorForm, setShowVendorForm] = useState(false);
-  const [showCustomerForm, setShowCustomerForm] = useState(false);
-  const [showSalesOrderForm, setShowSalesOrderForm] = useState(false);
+  const [showIncomeForm, setShowIncomeForm] = useState(false);
   
   // Use database hooks
   const { vendors, addVendor, updateVendor } = useVendors();
@@ -48,14 +45,6 @@ const Dashboard = () => {
     paymentType: v.paymentType || 'total', 
     netTermsDays: v.netTermsDays || '30' 
   }));
-
-  // State for customers used in forms
-  const [formCustomers, setFormCustomers] = useState([
-    { id: '1', name: 'ABC Retail Co.', paymentTerms: 'net', netTermsDays: '30' },
-    { id: '2', name: 'Direct Sales', paymentTerms: 'immediate' },
-    { id: '3', name: 'Wholesale Partners LLC', paymentTerms: 'net', netTermsDays: '45' },
-    { id: '4', name: 'B2B Solutions Inc.', paymentTerms: 'net', netTermsDays: '60' }
-  ]);
 
   const [cashFlowEvents, setCashFlowEvents] = useState<CashFlowEvent[]>([]);
 
@@ -174,12 +163,11 @@ const Dashboard = () => {
     setShowPurchaseOrderForm(false);
   };
 
-  const handleSalesOrderSubmit = async (orderData: any) => {
-    const amount = typeof orderData.amount === 'string' ? 
-      parseFloat(orderData.amount) : orderData.amount;
+  const handleIncomeSubmit = async (incomeData: any) => {
+    const amount = typeof incomeData.amount === 'string' ? 
+      parseFloat(incomeData.amount) : incomeData.amount;
     
-    console.info("Payment type:", orderData.paymentType);
-    console.info("Adding cash amount:", amount);
+    console.info("Adding income amount:", amount);
     console.info("Previous total cash:", totalCash);
     
     const newTotalCash = totalCash + amount;
@@ -191,9 +179,8 @@ const Dashboard = () => {
     await addTransaction({
       type: 'sales_order',
       amount: amount,
-      description: `${orderData.soName} - ${orderData.customer}`,
+      description: incomeData.description || 'Income',
       transactionDate: new Date(),
-      dueDate: orderData.dueDate,
       status: 'completed'
     });
 
@@ -202,12 +189,13 @@ const Dashboard = () => {
       id: Date.now().toString(),
       type: 'income',
       amount: amount,
-      description: `${orderData.soName} - ${orderData.customer}`,
+      description: incomeData.description || 'Income',
+      source: incomeData.source,
       date: new Date()
     };
     setCashFlowEvents(prev => [newEvent, ...prev]);
 
-    setShowSalesOrderForm(false);
+    setShowIncomeForm(false);
   };
 
   const handleEditVendorOrder = (vendor: Vendor) => {
@@ -327,8 +315,7 @@ const Dashboard = () => {
       <FloatingMenu
         onAddVendor={() => setShowVendorForm(true)}
         onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)}
-        onAddCustomer={() => setShowCustomerForm(true)}
-        onAddSalesOrder={() => setShowSalesOrderForm(true)}
+        onAddIncome={() => setShowIncomeForm(true)}
       />
 
       {showPurchaseOrderForm && (
@@ -348,23 +335,69 @@ const Dashboard = () => {
         />
       )}
 
-      {showCustomerForm && (
-        <CustomerForm
-          open={showCustomerForm}
-          onOpenChange={setShowCustomerForm}
-          onAddCustomer={(customerData) => {
-            setFormCustomers(prev => [...prev, { ...customerData, id: Date.now().toString() }]);
-          }}
-        />
-      )}
-
-      {showSalesOrderForm && (
-        <SalesOrderForm
-          customers={formCustomers}
-          open={showSalesOrderForm}
-          onOpenChange={setShowSalesOrderForm}
-          onSubmitOrder={handleSalesOrderSubmit}
-        />
+      {showIncomeForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg max-w-md w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">Add Income</h2>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              handleIncomeSubmit({
+                amount: parseFloat(formData.get('amount') as string),
+                description: formData.get('description') as string,
+                source: formData.get('source') as string
+              });
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Amount</label>
+                  <input
+                    name="amount"
+                    type="number"
+                    step="0.01"
+                    required
+                    className="w-full px-3 py-2 border rounded-md"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <input
+                    name="description"
+                    type="text"
+                    required
+                    className="w-full px-3 py-2 border rounded-md"
+                    placeholder="Income description"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Source (optional)</label>
+                  <select name="source" className="w-full px-3 py-2 border rounded-md">
+                    <option value="">Select source</option>
+                    <option value="amazon">Amazon</option>
+                    <option value="sales">Direct Sales</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90"
+                  >
+                    Add Income
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowIncomeForm(false)}
+                    className="flex-1 bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:bg-secondary/90"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {editingVendor && (

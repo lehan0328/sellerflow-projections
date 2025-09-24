@@ -1,31 +1,15 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Building2, LogOut, Plus, ShoppingCart, FileText, UserPlus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
+import { Building2, Plus, ShoppingCart, DollarSign } from "lucide-react";
 
 interface FloatingMenuProps {
   onAddVendor: () => void;
   onAddPurchaseOrder: () => void;
-  onAddSalesOrder?: () => void;
-  onAddCustomer?: () => void;
+  onAddIncome: () => void;
 }
 
-export function FloatingMenu({ onAddVendor, onAddPurchaseOrder, onAddSalesOrder, onAddCustomer }: FloatingMenuProps) {
-  const navigate = useNavigate();
-  const { signOut } = useAuth();
+export function FloatingMenu({ onAddVendor, onAddPurchaseOrder, onAddIncome }: FloatingMenuProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-
-  const handleSignOut = async () => {
-    const error = await signOut();
-    if (!error) {
-      toast.success('Signed out successfully');
-      navigate('/');
-    } else {
-      toast.error('Failed to sign out');
-    }
-  };
 
   const toggleMenu = () => {
     setIsExpanded(!isExpanded);
@@ -65,19 +49,6 @@ export function FloatingMenu({ onAddVendor, onAddPurchaseOrder, onAddSalesOrder,
               className="rounded-full" 
               onClick={(e) => {
                 e.stopPropagation();
-                onAddCustomer?.();
-              }}
-            >
-              <UserPlus className="h-4 w-4" />
-              <span className="ml-2 hidden md:inline">Add Customer</span>
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="rounded-full" 
-              onClick={(e) => {
-                e.stopPropagation();
                 onAddPurchaseOrder();
               }}
             >
@@ -91,26 +62,11 @@ export function FloatingMenu({ onAddVendor, onAddPurchaseOrder, onAddSalesOrder,
               className="rounded-full" 
               onClick={(e) => {
                 e.stopPropagation();
-                onAddSalesOrder?.();
+                onAddIncome();
               }}
             >
-              <FileText className="h-4 w-4" />
-              <span className="ml-2 hidden lg:inline">Sales Order</span>
-            </Button>
-            
-            <div className="w-px h-6 bg-border/50" />
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="rounded-full" 
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSignOut();
-              }}
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="ml-2 hidden lg:inline">Sign Out</span>
+              <DollarSign className="h-4 w-4" />
+              <span className="ml-2 hidden lg:inline">Add Income</span>
             </Button>
           </div>
         </div>
