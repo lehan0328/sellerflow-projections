@@ -12,6 +12,8 @@ import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { VendorForm } from "@/components/cash-flow/vendor-form";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
+import { IncomeOverview } from "@/components/cash-flow/income-overview";
+import { IncomeForm } from "@/components/cash-flow/income-form";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useUserSettings } from "@/hooks/useUserSettings";
@@ -33,6 +35,7 @@ const Dashboard = () => {
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showVendorForm, setShowVendorForm] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
+  const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
   
   // Use database hooks
   const { vendors, addVendor, updateVendor } = useVendors();
@@ -48,6 +51,39 @@ const Dashboard = () => {
   }));
 
   const [cashFlowEvents, setCashFlowEvents] = useState<CashFlowEvent[]>([]);
+  
+  // Sample income data - in real app this would come from database
+  const [incomeItems, setIncomeItems] = useState<Array<{
+    id: string;
+    description: string;
+    amount: number;
+    paymentDate: Date;
+    source: string;
+    status: 'received' | 'pending' | 'overdue';
+    category: string;
+    isRecurring: boolean;
+  }>>([
+    {
+      id: '1',
+      description: 'Amazon Quarterly Payout',
+      amount: 25000,
+      paymentDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      source: 'Amazon',
+      status: 'pending' as const,
+      category: 'Product Sales',
+      isRecurring: false
+    },
+    {
+      id: '2',
+      description: 'Monthly Subscription Revenue',
+      amount: 5000,
+      paymentDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      source: 'Stripe',
+      status: 'pending' as const,
+      category: 'Subscription',
+      isRecurring: true
+    }
+  ]);
 
   // State for vendor editing modal
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
@@ -225,12 +261,22 @@ const Dashboard = () => {
     
     console.info("New total cash:", newTotalCash);
 
+    // Add to income items
+    const newIncomeItem = {
+      ...incomeData,
+      id: Date.now().toString(),
+      amount: amount,
+      paymentDate: incomeData.paymentDate || new Date(),
+      status: 'received' as const
+    };
+    setIncomeItems(prev => [newIncomeItem, ...prev]);
+
     // Create transaction
     await addTransaction({
       type: 'sales_order',
       amount: amount,
       description: incomeData.description || 'Income',
-      transactionDate: new Date(),
+      transactionDate: incomeData.paymentDate || new Date(),
       status: 'completed'
     });
 
@@ -241,11 +287,39 @@ const Dashboard = () => {
       amount: amount,
       description: incomeData.description || 'Income',
       source: incomeData.source,
-      date: new Date()
+      date: incomeData.paymentDate || new Date()
     };
     setCashFlowEvents(prev => [newEvent, ...prev]);
 
     setShowIncomeForm(false);
+    setShowRecurringIncomeForm(false);
+  };
+
+  const handleCollectIncome = async (income: any) => {
+    console.info("Collecting income amount:", income.amount);
+    
+    const newTotalCash = totalCash + income.amount;
+    await updateTotalCash(newTotalCash);
+
+    // Create transaction
+    await addTransaction({
+      type: 'sales_order',
+      amount: income.amount,
+      description: income.description,
+      transactionDate: new Date(),
+      status: 'completed'
+    });
+
+    // Create cash flow event
+    const newEvent: CashFlowEvent = {
+      id: Date.now().toString(),
+      type: 'income',
+      amount: income.amount,
+      description: income.description,
+      source: income.source,
+      date: new Date()
+    };
+    setCashFlowEvents(prev => [newEvent, ...prev]);
   };
 
   const handleEditVendorOrder = (vendor: Vendor) => {
@@ -355,6 +429,11 @@ const Dashboard = () => {
               onPayToday={handlePayToday}
               onEditOrder={handleEditVendorOrder}
             />
+            <IncomeOverview
+              incomeItems={incomeItems}
+              onCollectToday={handleCollectIncome}
+              onIncomeUpdate={setIncomeItems}
+            />
             <BankAccounts />
             <CreditCards />
             <AmazonPayouts />
@@ -366,6 +445,7 @@ const Dashboard = () => {
         onAddVendor={() => setShowVendorForm(true)}
         onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)}
         onAddIncome={() => setShowIncomeForm(true)}
+        onAddRecurringIncome={() => setShowRecurringIncomeForm(true)}
       />
 
       {showPurchaseOrderForm && (
@@ -386,68 +466,20 @@ const Dashboard = () => {
       )}
 
       {showIncomeForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-card p-6 rounded-lg max-w-md w-full mx-4">
-            <h2 className="text-lg font-semibold mb-4">Add Income</h2>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              handleIncomeSubmit({
-                amount: parseFloat(formData.get('amount') as string),
-                description: formData.get('description') as string,
-                source: formData.get('source') as string
-              });
-            }}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Amount</label>
-                  <input
-                    name="amount"
-                    type="number"
-                    step="0.01"
-                    required
-                    className="w-full px-3 py-2 border rounded-md"
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Description</label>
-                  <input
-                    name="description"
-                    type="text"
-                    required
-                    className="w-full px-3 py-2 border rounded-md"
-                    placeholder="Income description"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Source (optional)</label>
-                  <select name="source" className="w-full px-3 py-2 border rounded-md">
-                    <option value="">Select source</option>
-                    <option value="amazon">Amazon</option>
-                    <option value="sales">Direct Sales</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    className="flex-1 bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90"
-                  >
-                    Add Income
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowIncomeForm(false)}
-                    className="flex-1 bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:bg-secondary/90"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
+        <IncomeForm
+          open={showIncomeForm}
+          onOpenChange={setShowIncomeForm}
+          onSubmitIncome={handleIncomeSubmit}
+        />
+      )}
+
+      {showRecurringIncomeForm && (
+        <IncomeForm
+          open={showRecurringIncomeForm}
+          onOpenChange={setShowRecurringIncomeForm}
+          onSubmitIncome={handleIncomeSubmit}
+          isRecurring={true}
+        />
       )}
 
       {editingVendor && (

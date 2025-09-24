@@ -1,0 +1,245 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DollarSign, Calendar, TrendingUp, Plus, Edit, Search, ArrowUpDown } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import * as React from "react";
+
+interface IncomeItem {
+  id: string;
+  description: string;
+  amount: number;
+  paymentDate: Date;
+  source: string;
+  status: 'received' | 'pending' | 'overdue';
+  category: string;
+  isRecurring: boolean;
+}
+
+interface IncomeOverviewProps {
+  incomeItems: IncomeItem[];
+  onCollectToday?: (income: IncomeItem) => void;
+  onIncomeUpdate?: (incomes: IncomeItem[]) => void;
+  onEditIncome?: (income: IncomeItem) => void;
+}
+
+export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, onIncomeUpdate, onEditIncome }: IncomeOverviewProps) => {
+  const [incomeItems, setIncomeItems] = useState<IncomeItem[]>(propIncomeItems);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'description' | 'amount' | 'paymentDate' | 'source'>('paymentDate');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  // Update local state when props change
+  React.useEffect(() => {
+    setIncomeItems(propIncomeItems);
+  }, [propIncomeItems]);
+
+  // Filter and sort income items
+  const filteredAndSortedIncomes = useMemo(() => {
+    let filtered = incomeItems.filter(income => 
+      income.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      income.amount.toString().includes(searchTerm) ||
+      income.source.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return filtered.sort((a, b) => {
+      let aValue = a[sortBy];
+      let bValue = b[sortBy];
+
+      if (sortBy === 'paymentDate') {
+        aValue = a.paymentDate.getTime();
+        bValue = b.paymentDate.getTime();
+      }
+
+      if (typeof aValue === 'string') {
+        return sortOrder === 'asc' 
+          ? aValue.localeCompare(bValue as string)
+          : (bValue as string).localeCompare(aValue);
+      }
+
+      if (typeof aValue === 'number') {
+        return sortOrder === 'asc' ? aValue - (bValue as number) : (bValue as number) - aValue;
+      }
+
+      return 0;
+    });
+  }, [incomeItems, searchTerm, sortBy, sortOrder]);
+
+  const handleCollectToday = (income: IncomeItem) => {
+    // Update income status to received
+    const updatedIncomes = incomeItems.map(i => 
+      i.id === income.id ? { ...i, status: 'received' as const, paymentDate: new Date() } : i
+    );
+    setIncomeItems(updatedIncomes);
+    onIncomeUpdate?.(updatedIncomes);
+    onCollectToday?.(income);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'received':
+        return 'secondary';
+      case 'pending':
+        return 'default';
+      case 'overdue':
+        return 'destructive';
+      default:
+        return 'default';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    if (status === 'overdue') {
+      return <Calendar className="h-4 w-4" />;
+    }
+    return <TrendingUp className="h-4 w-4" />;
+  };
+
+  const totalExpected = filteredAndSortedIncomes.reduce((sum, income) => sum + income.amount, 0);
+  const pendingAmount = filteredAndSortedIncomes
+    .filter(i => i.status === 'pending')
+    .reduce((sum, income) => sum + income.amount, 0);
+
+  return (
+    <Card className="shadow-card h-fit flex flex-col">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <CardTitle className="text-lg flex items-center space-x-2">
+              <TrendingUp className="h-5 w-5" />
+              <span>Income Overview</span>
+            </CardTitle>
+            <div className="flex items-center space-x-4 text-sm">
+              <div className="flex items-center space-x-2">
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Expected:</span>
+                <span className="font-semibold">${totalExpected.toLocaleString()}</span>
+              </div>
+              {pendingAmount > 0 && (
+                <div className="flex items-center space-x-2">
+                  <Calendar className="h-4 w-4 text-orange-500" />
+                  <span className="text-orange-500 font-semibold">
+                    ${pendingAmount.toLocaleString()} Pending
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-4 mt-4">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search income or amounts..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="description">Description</SelectItem>
+                <SelectItem value="amount">Amount</SelectItem>
+                <SelectItem value="source">Source</SelectItem>
+                <SelectItem value="paymentDate">Payment Date</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            >
+              {sortOrder === 'asc' ? '↑' : '↓'}
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-4">
+        <div className="max-h-[620px] overflow-y-auto space-y-4 pr-2">
+          {filteredAndSortedIncomes.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {searchTerm ? 'No income items found matching your search.' : 'No income items to display.'}
+            </div>
+          ) : (
+            filteredAndSortedIncomes.map((income) => (
+              <div
+                key={income.id}
+                className="p-5 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:shadow-md"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <h4 className="font-semibold text-lg">{income.description}</h4>
+                      <Badge variant="outline" className="text-xs">
+                        {income.category}
+                      </Badge>
+                      <Badge variant={getStatusColor(income.status)} className="text-xs">
+                        {getStatusIcon(income.status)}
+                        <span className="ml-1 capitalize">{income.status}</span>
+                      </Badge>
+                      {income.isRecurring && (
+                        <Badge variant="secondary" className="text-xs">
+                          Recurring
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Amount:</span>
+                        <span className="font-medium text-foreground text-lg">
+                          ${income.amount.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Source:</span>
+                        <span className="font-medium text-foreground">
+                          {income.source}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Payment Date:</span>
+                        <span className="font-medium text-foreground">
+                          {income.paymentDate.toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-3 pt-3 border-t">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => onEditIncome?.(income)}
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                  </Button>
+                  {income.status === 'pending' && (
+                    <Button 
+                      size="sm" 
+                      className="bg-gradient-primary px-6"
+                      onClick={() => handleCollectToday(income)}
+                    >
+                      <DollarSign className="mr-2 h-4 w-4" />
+                      Collect Today
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};

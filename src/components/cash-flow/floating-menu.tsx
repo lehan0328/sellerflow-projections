@@ -6,9 +6,10 @@ interface FloatingMenuProps {
   onAddVendor: () => void;
   onAddPurchaseOrder: () => void;
   onAddIncome: () => void;
+  onAddRecurringIncome: () => void;
 }
 
-export function FloatingMenu({ onAddVendor, onAddPurchaseOrder, onAddIncome }: FloatingMenuProps) {
+export function FloatingMenu({ onAddVendor, onAddPurchaseOrder, onAddIncome, onAddRecurringIncome }: FloatingMenuProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const toggleMenu = () => {
@@ -67,6 +68,19 @@ export function FloatingMenu({ onAddVendor, onAddPurchaseOrder, onAddIncome }: F
             >
               <DollarSign className="h-4 w-4" />
               <span className="ml-2 hidden lg:inline">Add Income</span>
+            </Button>
+
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="rounded-full" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddRecurringIncome();
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              <span className="ml-2 hidden lg:inline">Add Recurring</span>
             </Button>
           </div>
         </div>
