@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { DashboardShowcase } from "@/components/DashboardShowcase";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -230,6 +231,13 @@ const Landing = () => {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Dashboard Showcase Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <DashboardShowcase />
         </div>
       </section>
 
