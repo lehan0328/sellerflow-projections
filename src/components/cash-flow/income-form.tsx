@@ -7,8 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -46,17 +44,6 @@ export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense
     "Other"
   ];
 
-  const expenseCategories = [
-    "Office Supplies",
-    "Marketing",
-    "Software & Tools",
-    "Professional Services",
-    "Utilities",
-    "Travel",
-    "Equipment",
-    "Other"
-  ];
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -68,15 +55,11 @@ export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense
       status: 'pending'
     };
     
-    console.log(`Submitting ${formData.type}:`, data);
+    console.log("Submitting income:", data);
     
-    if (formData.type === "income") {
-      onSubmitIncome(data);
-    } else {
-      onSubmitExpense?.(data);
-    }
+    onSubmitIncome(data);
     
-    toast.success(`${isRecurring ? 'Recurring ' : ''}${formData.type === 'income' ? 'Income' : 'Expense'} "${formData.description}" added successfully!`);
+    toast.success(`${isRecurring ? 'Recurring ' : ''}Income "${formData.description}" added successfully!`);
     onOpenChange(false);
     
     // Reset form
@@ -101,33 +84,16 @@ export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
-            {isRecurring ? 'Add Recurring Transaction' : 'Add Transaction'}
+            {isRecurring ? 'Add Recurring Income' : 'Add Income'}
           </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-3">
-            <Label>Transaction Type</Label>
-            <RadioGroup 
-              value={formData.type} 
-              onValueChange={(value) => handleInputChange("type", value)}
-              className="flex flex-row space-x-6"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="income" id="income" />
-                <Label htmlFor="income">Income (Credit)</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="expense" id="expense" />
-                <Label htmlFor="expense">Expense (Debit)</Label>
-              </div>
-            </RadioGroup>
-          </div>
           <div className="space-y-2">
             <Label htmlFor="description">Description *</Label>
             <Input
               id="description"
-              placeholder={formData.type === 'income' ? "e.g., Monthly subscription revenue" : "e.g., Monthly office rent"}
+              placeholder="e.g., Monthly subscription revenue"
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
               required
@@ -178,13 +144,13 @@ export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
+            <Label htmlFor="category">Category (Optional)</Label>
             <Select onValueChange={(value) => handleInputChange("category", value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                {(formData.type === 'income' ? incomeCategories : expenseCategories).map(category => (
+                {incomeCategories.map(category => (
                   <SelectItem key={category} value={category}>
                     {category}
                   </SelectItem>
@@ -192,17 +158,6 @@ export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense
               </SelectContent>
             </Select>
           </div>
-
-          {!isRecurring && (
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="isRecurring"
-                checked={formData.isRecurring}
-                onCheckedChange={(checked) => handleInputChange("isRecurring", checked as boolean)}
-              />
-              <Label htmlFor="isRecurring">Make this a recurring transaction</Label>
-            </div>
-          )}
 
           {(formData.isRecurring || isRecurring) && (
             <div className="space-y-2">
@@ -242,7 +197,7 @@ export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense
               Cancel
             </Button>
             <Button type="submit" className="flex-1 bg-gradient-primary">
-              Add {isRecurring ? 'Recurring ' : ''}{formData.type === 'income' ? 'Income' : 'Expense'}
+              Add {isRecurring ? 'Recurring ' : ''}Income
             </Button>
           </div>
         </form>
