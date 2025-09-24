@@ -109,7 +109,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
   // Calculate credit card totals
   const totalCreditBalance = creditCards.reduce((sum, card) => sum + card.balance, 0);
   const totalCreditLimit = creditCards.reduce((sum, card) => sum + card.limit, 0);
-  const totalAvailableCredit = creditCards.reduce((sum, card) => sum + Math.max(0, card.availableCredit), 0);
+  const totalAvailableCredit = creditCards.reduce((sum, card) => sum + Math.max(0, card.limit - card.balance), 0);
   const creditUtilization = totalCreditLimit > 0 ? (totalCreditBalance / totalCreditLimit) * 100 : 0;
   
   const getCreditVariant = () => {
