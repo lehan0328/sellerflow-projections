@@ -41,9 +41,10 @@ interface VendorOrderEditModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (vendor: Vendor) => void;
+  onDelete: (vendor: Vendor) => void;
 }
 
-export const VendorOrderEditModal = ({ vendor, open, onOpenChange, onSave }: VendorOrderEditModalProps) => {
+export const VendorOrderEditModal = ({ vendor, open, onOpenChange, onSave, onDelete }: VendorOrderEditModalProps) => {
   const [formData, setFormData] = useState({
     poName: "",
     description: "",
@@ -478,25 +479,21 @@ export const VendorOrderEditModal = ({ vendor, open, onOpenChange, onSave }: Ven
               rows={3}
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select
-              value={editedVendor.status}
-              onValueChange={(value: 'current' | 'overdue' | 'upcoming') => handleVendorChange('status', value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="current">Current</SelectItem>
-                <SelectItem value="upcoming">Upcoming</SelectItem>
-                <SelectItem value="overdue">Overdue</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
           
           <div className="flex space-x-3 pt-4">
+            <Button 
+              type="button" 
+              variant="destructive" 
+              onClick={() => {
+                if (editedVendor) {
+                  onDelete(editedVendor);
+                  onOpenChange(false);
+                }
+              }}
+              className="flex-1"
+            >
+              Delete Transaction
+            </Button>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Cancel
             </Button>

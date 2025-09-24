@@ -163,6 +163,31 @@ export const useVendors = () => {
     }
   };
 
+  const deleteVendor = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('vendors')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setVendors(prev => prev.filter(vendor => vendor.id !== id));
+
+      toast({
+        title: "Success",
+        description: "Vendor transaction deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting vendor:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete vendor transaction",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     fetchVendors();
   }, []);
@@ -172,6 +197,7 @@ export const useVendors = () => {
     loading,
     addVendor,
     updateVendor,
+    deleteVendor,
     refetch: fetchVendors
   };
 };

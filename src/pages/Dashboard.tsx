@@ -37,7 +37,7 @@ const Dashboard = () => {
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
   
   // Use database hooks
-  const { vendors, addVendor, updateVendor } = useVendors();
+  const { vendors, addVendor, updateVendor, deleteVendor } = useVendors();
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { totalCash, updateTotalCash } = useUserSettings();
   
@@ -358,6 +358,11 @@ const Dashboard = () => {
     setEditingVendor(null);
   };
 
+  const handleDeleteVendorOrder = async (vendor: Vendor) => {
+    await deleteVendor(vendor.id);
+    setEditingVendor(null);
+  };
+
   const handleAddVendor = async (vendorData: any) => {
     await addVendor({
       name: vendorData.name,
@@ -499,6 +504,7 @@ const Dashboard = () => {
           open={!!editingVendor}
           onOpenChange={(open) => !open && setEditingVendor(null)}
           onSave={handleSaveVendorOrder}
+          onDelete={handleDeleteVendorOrder}
         />
       )}
     </div>
