@@ -10,6 +10,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isTod
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { TransactionDetailModal } from "./transaction-detail-modal";
+import { DayTransactionsModal } from "./day-transactions-modal";
 import { cn } from "@/lib/utils";
 
 interface CashFlowEvent {
@@ -39,6 +40,9 @@ export const CashFlowCalendar = ({ events: propEvents, totalCash = 145750 }: Cas
   });
   const [selectedTransaction, setSelectedTransaction] = useState<CashFlowEvent | null>(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [selectedDayTransactions, setSelectedDayTransactions] = useState<CashFlowEvent[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [showDayTransactionsModal, setShowDayTransactionsModal] = useState(false);
   
   // Total available cash passed from parent component
   const totalAvailableCash = totalCash;
@@ -281,13 +285,14 @@ export const CashFlowCalendar = ({ events: propEvents, totalCash = 145750 }: Cas
       const transactions = dayData.transactions || [];
       
       if (transactions.length === 1) {
-        // If only one transaction, show it directly
+        // Single transaction - show individual transaction modal
         setSelectedTransaction(transactions[0]);
         setShowTransactionModal(true);
       } else if (transactions.length > 1) {
-        // If multiple transactions, show the first one (could be enhanced to show a list)
-        setSelectedTransaction(transactions[0]);
-        setShowTransactionModal(true);
+        // Multiple transactions - show day transactions modal
+        setSelectedDayTransactions(transactions);
+        setSelectedDate(dayData.fullDate);
+        setShowDayTransactionsModal(true);
       }
     }
   };
@@ -401,15 +406,17 @@ export const CashFlowCalendar = ({ events: propEvents, totalCash = 145750 }: Cas
                        ${hasEvents ? 'border-primary/30' : 'border-border'}
                      `}
                     onClick={() => {
-                      // Only allow clicks on days within the current range
-                      const isInRange = dateRangeOption === 'next30' ? 
-                        (day >= dateRange.start && day <= dateRange.end) :
-                        isSameMonth(day, currentDate);
-                        
-                      if (isToday(day) && hasEvents && isInRange) {
-                        // Show first transaction for today
-                        setSelectedTransaction(dayEvents[0]);
-                        setShowTransactionModal(true);
+                      if (hasEvents) {
+                        if (dayEvents.length === 1) {
+                          // Single transaction - show individual transaction modal
+                          setSelectedTransaction(dayEvents[0]);
+                          setShowTransactionModal(true);
+                        } else {
+                          // Multiple transactions - show day transactions modal
+                          setSelectedDayTransactions(dayEvents);
+                          setSelectedDate(day);
+                          setShowDayTransactionsModal(true);
+                        }
                       }
                     }}
                   >
@@ -436,16 +443,27 @@ export const CashFlowCalendar = ({ events: propEvents, totalCash = 145750 }: Cas
                      <div className="flex-1 space-y-1">
                         {hasEvents && (
                          <>
-                           {isToday(day) ? (
-                             <div className="space-y-1 mt-2">
-                               <div className="text-sm text-muted-foreground font-medium">
-                                 {dayEvents.length} transaction{dayEvents.length > 1 ? 's' : ''} today
-                               </div>
-                               <div className="text-xs text-muted-foreground">
-                                 Click to view details
-                               </div>
-                             </div>
-                           ) : (
+                            {isToday(day) ? (
+                              <div className="space-y-1 mt-2 cursor-pointer hover:bg-muted/50 p-1 rounded"
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     if (dayEvents.length === 1) {
+                                       setSelectedTransaction(dayEvents[0]);
+                                       setShowTransactionModal(true);
+                                     } else {
+                                       setSelectedDayTransactions(dayEvents);
+                                       setSelectedDate(day);
+                                       setShowDayTransactionsModal(true);
+                                     }
+                                   }}>
+                                <div className="text-sm text-muted-foreground font-medium">
+                                  {dayEvents.length} transaction{dayEvents.length > 1 ? 's' : ''} today
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Click to view {dayEvents.length > 1 ? 'all' : 'details'}
+                                </div>
+                              </div>
+                            ) : (
                              <>
                                {dayEvents.slice(0, 2).map(event => (
                                  <div
@@ -467,22 +485,20 @@ export const CashFlowCalendar = ({ events: propEvents, totalCash = 145750 }: Cas
                                    </span>
                                  </div>
                                ))}
-                               {dayEvents.length > 2 && (
-                                 <div 
-                                   className="text-xs text-muted-foreground cursor-pointer hover:text-primary"
-                                   onClick={(e) => {
-                                     e.stopPropagation();
-                                     // Show the first of the remaining transactions
-                                     const remainingTransactions = dayEvents.slice(2);
-                                     if (remainingTransactions.length > 0) {
-                                       setSelectedTransaction(remainingTransactions[0]);
-                                       setShowTransactionModal(true);
-                                     }
-                                   }}
-                                 >
-                                   +{dayEvents.length - 2} more (click to view)
-                                 </div>
-                               )}
+                                {dayEvents.length > 2 && (
+                                  <div 
+                                    className="text-xs text-muted-foreground cursor-pointer hover:text-primary"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // Show all transactions for this day
+                                      setSelectedDayTransactions(dayEvents);
+                                      setSelectedDate(day);
+                                      setShowDayTransactionsModal(true);
+                                    }}
+                                  >
+                                    +{dayEvents.length - 2} more (click to view all)
+                                  </div>
+                                )}
                                
                                {dayBalance !== 0 && (
                                  <div className={`
@@ -607,6 +623,13 @@ export const CashFlowCalendar = ({ events: propEvents, totalCash = 145750 }: Cas
         transaction={selectedTransaction}
         open={showTransactionModal}
         onOpenChange={setShowTransactionModal}
+      />
+      
+      <DayTransactionsModal
+        transactions={selectedDayTransactions}
+        date={selectedDate}
+        open={showDayTransactionsModal}
+        onOpenChange={setShowDayTransactionsModal}
       />
     </Card>
   );
