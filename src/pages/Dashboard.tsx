@@ -414,39 +414,36 @@ const Dashboard = () => {
       <div className="p-6 space-y-6">
         <OverviewStats totalCash={totalCash} />
         
-        {/* Row 1: Cash Flow Calendar and Overview Components */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2">
-            <CashFlowCalendar events={[...sampleEvents, ...calendarEvents]} totalCash={totalCash} />
-          </div>
-          
-          <div className="space-y-6">
-            <VendorsOverview 
-              vendors={activeVendors as any}
-              onPayToday={handlePayToday}
-              onEditOrder={handleEditVendorOrder}
-            />
-            <IncomeOverview
-              incomeItems={incomeItems}
-              onCollectToday={handleCollectIncome}
-              onIncomeUpdate={setIncomeItems}
-            />
-          </div>
+        {/* Row 1: Cash Flow Calendar (Full Width) */}
+        <CashFlowCalendar events={[...sampleEvents, ...calendarEvents]} totalCash={totalCash} />
+
+        {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <VendorsOverview 
+            vendors={activeVendors as any}
+            onPayToday={handlePayToday}
+            onEditOrder={handleEditVendorOrder}
+          />
+          <IncomeOverview
+            incomeItems={incomeItems}
+            onCollectToday={handleCollectIncome}
+            onIncomeUpdate={setIncomeItems}
+          />
         </div>
 
-        {/* Row 2: Transaction Log (Full Width) */}
+        {/* Row 3: Transaction Log (Full Width) */}
         <TransactionLog 
           transactions={formattedTransactions}
           onUndoTransaction={handleUndoTransaction}
         />
 
-        {/* Row 3: Bank Accounts and Credit Cards (Side by Side) */}
+        {/* Row 4: Bank Accounts and Credit Cards (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <BankAccounts />
           <CreditCards />
         </div>
 
-        {/* Row 4: Amazon Payouts (Full Width) */}
+        {/* Row 5: Amazon Payouts (Full Width) */}
         <AmazonPayouts />
       </div>
 
