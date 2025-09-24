@@ -359,7 +359,8 @@ const Dashboard = () => {
             {
               id: 'cash-flow-calendar',
               content: <CashFlowCalendar events={allCalendarEvents} totalCash={totalCash} />,
-              className: 'xl:col-span-2'
+              width: 800,
+              height: 400
             },
             {
               id: 'transaction-log',
@@ -367,7 +368,8 @@ const Dashboard = () => {
                 transactions={formattedTransactions}
                 onUndoTransaction={handleUndoTransaction}
               />,
-              className: 'xl:col-span-2'
+              width: 800,
+              height: 350
             },
             {
               id: 'vendors-overview',
@@ -375,19 +377,27 @@ const Dashboard = () => {
                 vendors={activeVendors as any}
                 onPayToday={handlePayToday}
                 onEditOrder={handleEditVendorOrder}
-              />
+              />,
+              width: 400,
+              height: 400
             },
             {
               id: 'bank-accounts',
-              content: <BankAccounts />
+              content: <BankAccounts />,
+              width: 400,
+              height: 300
             },
             {
               id: 'credit-cards',
-              content: <CreditCards />
+              content: <CreditCards />,
+              width: 400,
+              height: 300
             },
             {
               id: 'amazon-payouts',
-              content: <AmazonPayouts />
+              content: <AmazonPayouts />,
+              width: 400,
+              height: 300
             }
           ]}
         />
