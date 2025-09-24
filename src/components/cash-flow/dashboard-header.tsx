@@ -1,11 +1,14 @@
-import { DollarSign } from "lucide-react";
+import { DollarSign, History } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { UserMenu } from "./user-menu";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 
 export function DashboardHeader() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   // Fetch user profile for display name
   const { data: profile } = useQuery({
@@ -52,8 +55,17 @@ export function DashboardHeader() {
         </div>
       </div>
 
-      {/* User Menu - Top Right */}
-      <div className="absolute top-6 right-6 z-40">
+      {/* Navigation and User Menu - Top Right */}
+      <div className="absolute top-6 right-6 z-40 flex items-center space-x-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/transactions')}
+          className="h-10 w-10 p-0"
+          title="View Transaction Log"
+        >
+          <History className="h-4 w-4" />
+        </Button>
         <UserMenu />
       </div>
 

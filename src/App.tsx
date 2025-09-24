@@ -7,6 +7,7 @@ import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 import UpgradePlan from "./pages/UpgradePlan";
+import TransactionLog from "./pages/TransactionLog";
 import NotFound from "./pages/NotFound";
 import { Auth } from "./pages/Auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -35,6 +36,11 @@ const App = () => (
           <Route path="/upgrade-plan" element={
             <ProtectedRoute>
               <UpgradePlan />
+            </ProtectedRoute>
+          } />
+          <Route path="/transactions" element={
+            <ProtectedRoute>
+              <TransactionLog />
             </ProtectedRoute>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

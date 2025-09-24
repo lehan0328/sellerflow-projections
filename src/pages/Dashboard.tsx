@@ -5,7 +5,6 @@ import { FloatingMenu } from "@/components/cash-flow/floating-menu";
 import { OverviewStats } from "@/components/cash-flow/overview-stats";
 import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
 import { VendorsOverview } from "@/components/cash-flow/vendors-overview";
-import { TransactionLog, Transaction } from "@/components/cash-flow/transaction-log";
 import { BankAccounts } from "@/components/cash-flow/bank-accounts";
 import { CreditCards, getCreditCardDueDates } from "@/components/cash-flow/credit-cards";
 import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
@@ -441,13 +440,7 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Row 3: Transaction Log (Full Width) */}
-        <TransactionLog 
-          transactions={formattedTransactions}
-          onUndoTransaction={handleUndoTransaction}
-        />
-
-        {/* Row 4: Bank Accounts and Credit Cards (Side by Side) */}
+        {/* Row 3: Bank Accounts and Credit Cards (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <BankAccounts />
           <CreditCards />
