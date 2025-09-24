@@ -21,6 +21,12 @@ interface Vendor {
   nextPaymentAmount: number;
   status: 'current' | 'overdue' | 'upcoming';
   category: string;
+  paymentType?: 'total' | 'preorder' | 'net-terms';
+  netTermsDays?: string;
+  poName?: string;
+  description?: string;
+  notes?: string;
+  paymentSchedule?: any[];
 }
 
 interface PaymentSchedule {
@@ -69,19 +75,43 @@ export const VendorOrderEditModal = ({ vendor, open, onOpenChange, onSave }: Ven
   useEffect(() => {
     if (vendor) {
       console.log('VendorOrderEditModal: updating form data for vendor:', vendor);
+      
+      // Preserve original purchase order details
       setFormData(prev => ({
         ...prev,
+        poName: vendor.poName || "",
+        description: vendor.description || "",
         category: vendor.category || "",
+        notes: vendor.notes || "",
+        paymentType: vendor.paymentType || "total",
+        netTermsDays: (vendor.netTermsDays === "30" || vendor.netTermsDays === "60" || 
+                      vendor.netTermsDays === "90" || vendor.netTermsDays === "custom") 
+                      ? vendor.netTermsDays : "30",
+        customDays: ""
       }));
       
-      setPaymentSchedule([
-        { 
-          id: "1", 
-          amount: vendor.nextPaymentAmount.toString(), 
-          dueDate: vendor.nextPaymentDate, 
-          description: "Next payment" 
-        }
-      ]);
+      // Set up payment schedule from stored data or default
+      let initialSchedule: PaymentSchedule[] = [];
+      
+      if (vendor.paymentSchedule && Array.isArray(vendor.paymentSchedule) && vendor.paymentSchedule.length > 0) {
+        initialSchedule = vendor.paymentSchedule.map((payment: any, index: number) => ({
+          id: payment.id || (index + 1).toString(),
+          amount: payment.amount?.toString() || "",
+          dueDate: payment.dueDate ? new Date(payment.dueDate) : undefined,
+          description: payment.description || ""
+        }));
+      } else {
+        initialSchedule = [
+          { 
+            id: "1", 
+            amount: vendor.nextPaymentAmount.toString(), 
+            dueDate: vendor.nextPaymentDate, 
+            description: "Next payment" 
+          }
+        ];
+      }
+      
+      setPaymentSchedule(initialSchedule);
     }
   }, [vendor]);
 
@@ -132,18 +162,39 @@ export const VendorOrderEditModal = ({ vendor, open, onOpenChange, onSave }: Ven
     e.preventDefault();
     if (!editedVendor) return;
 
-    // Calculate new total owed based on payment schedule
-    const totalScheduledPayments = paymentSchedule.reduce((sum, payment) => 
-      sum + (parseFloat(payment.amount) || 0), 0
-    );
+    // Calculate new total owed based on payment schedule and payment type
+    let totalScheduledPayments = 0;
+    
+    if (formData.paymentType === "preorder" && paymentSchedule.length > 0) {
+      totalScheduledPayments = paymentSchedule.reduce((sum, payment) => 
+        sum + (parseFloat(payment.amount) || 0), 0
+      );
+    } else if (formData.paymentType === "total" || formData.paymentType === "net-terms") {
+      totalScheduledPayments = editedVendor.totalOwed;
+    }
 
-    // Update vendor with new payment structure
+    // For preorder, set next payment info from first scheduled payment
+    let nextPaymentAmount = editedVendor.nextPaymentAmount;
+    let nextPaymentDate = editedVendor.nextPaymentDate;
+    
+    if (formData.paymentType === "preorder" && paymentSchedule.length > 0) {
+      nextPaymentAmount = parseFloat(paymentSchedule[0]?.amount || "0");
+      nextPaymentDate = paymentSchedule[0]?.dueDate || new Date();
+    }
+
+    // Update vendor with new payment structure and preserve PO details
     const updatedVendor = {
       ...editedVendor,
       totalOwed: totalScheduledPayments,
-      nextPaymentAmount: parseFloat(paymentSchedule[0]?.amount || "0"),
-      nextPaymentDate: paymentSchedule[0]?.dueDate || new Date(),
-      category: formData.category
+      nextPaymentAmount: nextPaymentAmount,
+      nextPaymentDate: nextPaymentDate,
+      category: formData.category,
+      poName: formData.poName,
+      description: formData.description,
+      notes: formData.notes,
+      paymentType: formData.paymentType,
+      netTermsDays: formData.netTermsDays,
+      paymentSchedule: formData.paymentType === "preorder" ? paymentSchedule : []
     };
 
     onSave(updatedVendor);

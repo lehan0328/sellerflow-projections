@@ -225,12 +225,16 @@ export type Database = {
         Row: {
           category: string | null
           created_at: string
+          description: string | null
           id: string
           name: string
           net_terms_days: number | null
           next_payment_amount: number | null
           next_payment_date: string | null
+          notes: string | null
+          payment_schedule: Json | null
           payment_type: string | null
+          po_name: string | null
           status: string | null
           total_owed: number | null
           updated_at: string
@@ -239,12 +243,16 @@ export type Database = {
         Insert: {
           category?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           name: string
           net_terms_days?: number | null
           next_payment_amount?: number | null
           next_payment_date?: string | null
+          notes?: string | null
+          payment_schedule?: Json | null
           payment_type?: string | null
+          po_name?: string | null
           status?: string | null
           total_owed?: number | null
           updated_at?: string
@@ -253,12 +261,16 @@ export type Database = {
         Update: {
           category?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           name?: string
           net_terms_days?: number | null
           next_payment_amount?: number | null
           next_payment_date?: string | null
+          notes?: string | null
+          payment_schedule?: Json | null
           payment_type?: string | null
+          po_name?: string | null
           status?: string | null
           total_owed?: number | null
           updated_at?: string

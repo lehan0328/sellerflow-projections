@@ -12,6 +12,10 @@ export interface Vendor {
   category: string;
   paymentType?: 'total' | 'preorder' | 'net-terms';
   netTermsDays?: string;
+  poName?: string;
+  description?: string;
+  notes?: string;
+  paymentSchedule?: any[];
 }
 
 export const useVendors = () => {
@@ -37,7 +41,11 @@ export const useVendors = () => {
         status: vendor.status as Vendor['status'],
         category: vendor.category || '',
         paymentType: vendor.payment_type as Vendor['paymentType'],
-        netTermsDays: vendor.net_terms_days?.toString()
+        netTermsDays: vendor.net_terms_days?.toString(),
+        poName: vendor.po_name || '',
+        description: vendor.description || '',
+        notes: vendor.notes || '',
+        paymentSchedule: Array.isArray(vendor.payment_schedule) ? vendor.payment_schedule : []
       })) || [];
 
       setVendors(formattedVendors);
@@ -69,7 +77,11 @@ export const useVendors = () => {
           status: vendorData.status,
           category: vendorData.category,
           payment_type: vendorData.paymentType,
-          net_terms_days: vendorData.netTermsDays ? parseInt(vendorData.netTermsDays) : null
+          net_terms_days: vendorData.netTermsDays ? parseInt(vendorData.netTermsDays) : null,
+          po_name: vendorData.poName || null,
+          description: vendorData.description || null,
+          notes: vendorData.notes || null,
+          payment_schedule: vendorData.paymentSchedule || null
         })
         .select()
         .single();
@@ -85,7 +97,11 @@ export const useVendors = () => {
         status: data.status as Vendor['status'],
         category: data.category || '',
         paymentType: data.payment_type as Vendor['paymentType'],
-        netTermsDays: data.net_terms_days?.toString()
+        netTermsDays: data.net_terms_days?.toString(),
+        poName: data.po_name || '',
+        description: data.description || '',
+        notes: data.notes || '',
+        paymentSchedule: Array.isArray(data.payment_schedule) ? data.payment_schedule : []
       };
 
       setVendors(prev => [newVendor, ...prev]);
@@ -117,6 +133,10 @@ export const useVendors = () => {
       if (updates.category) dbUpdates.category = updates.category;
       if (updates.paymentType) dbUpdates.payment_type = updates.paymentType;
       if (updates.netTermsDays) dbUpdates.net_terms_days = parseInt(updates.netTermsDays);
+      if (updates.poName !== undefined) dbUpdates.po_name = updates.poName;
+      if (updates.description !== undefined) dbUpdates.description = updates.description;
+      if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+      if (updates.paymentSchedule !== undefined) dbUpdates.payment_schedule = updates.paymentSchedule;
 
       const { error } = await supabase
         .from('vendors')

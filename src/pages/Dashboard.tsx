@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { addDays } from "date-fns";
 import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
 import { OverviewStats } from "@/components/cash-flow/overview-stats";
@@ -137,8 +138,57 @@ const Dashboard = () => {
     
     console.info("New total cash:", newTotalCash);
 
-    // Find vendor by name and create transaction
-    const vendor = vendors.find(v => v.name === orderData.vendor);
+    // Find existing vendor or create new one with PO details
+    let vendor = vendors.find(v => v.name === orderData.vendor);
+    
+    if (!vendor) {
+      // Create new vendor with purchase order details
+      const paymentSchedule = orderData.paymentSchedule || [];
+      let nextPaymentDate = orderData.dueDate;
+      let nextPaymentAmount = amount;
+      
+      // For net terms, calculate due date
+      if (orderData.paymentType === 'net-terms') {
+        const days = orderData.netTermsDays === 'custom' ? 
+          parseInt(orderData.customDays) : parseInt(orderData.netTermsDays);
+        nextPaymentDate = addDays(new Date(), days);
+      }
+      
+      // For preorder, use first payment
+      if (orderData.paymentType === 'preorder' && paymentSchedule.length > 0) {
+        nextPaymentDate = paymentSchedule[0].dueDate;
+        nextPaymentAmount = parseFloat(paymentSchedule[0].amount);
+      }
+
+      vendor = await addVendor({
+        name: orderData.vendor,
+        totalOwed: amount,
+        nextPaymentDate: nextPaymentDate || new Date(),
+        nextPaymentAmount: nextPaymentAmount,
+        status: 'upcoming',
+        category: orderData.category || '',
+        paymentType: orderData.paymentType,
+        netTermsDays: orderData.netTermsDays,
+        poName: orderData.poName,
+        description: orderData.description,
+        notes: orderData.notes,
+        paymentSchedule: paymentSchedule
+      });
+    } else {
+      // Update existing vendor with new order details
+      const updatedTotalOwed = vendor.totalOwed + amount;
+      await updateVendor(vendor.id, {
+        totalOwed: updatedTotalOwed,
+        poName: orderData.poName,
+        description: orderData.description,
+        notes: orderData.notes,
+        paymentType: orderData.paymentType,
+        netTermsDays: orderData.netTermsDays,
+        paymentSchedule: orderData.paymentSchedule || []
+      });
+      vendor = { ...vendor, totalOwed: updatedTotalOwed };
+    }
+
     await addTransaction({
       type: 'purchase_order',
       amount: amount,
