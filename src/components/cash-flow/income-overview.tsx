@@ -165,7 +165,7 @@ export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, o
         </div>
       </CardHeader>
       <CardContent className="p-4 flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto space-y-4 pr-2">
+        <div className="h-full overflow-y-auto space-y-2 pr-2">
           {filteredAndSortedIncomes.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {searchTerm ? 'No income items found matching your search.' : 'No income items to display.'}
@@ -174,12 +174,12 @@ export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, o
             filteredAndSortedIncomes.map((income) => (
               <div
                 key={income.id}
-                className="p-5 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:shadow-md"
+                className="p-3 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:shadow-md"
               >
-                <div className="flex items-start justify-between mb-4">
+                <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <h4 className="font-semibold text-lg">{income.description}</h4>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <h4 className="font-semibold text-base">{income.description}</h4>
                       <Badge variant="outline" className="text-xs">
                         {income.category}
                       </Badge>
@@ -193,10 +193,10 @@ export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, o
                         </Badge>
                       )}
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Amount:</span>
-                        <span className="font-medium text-foreground text-lg">
+                        <span className="font-medium text-foreground">
                           ${income.amount.toLocaleString()}
                         </span>
                       </div>
@@ -215,7 +215,7 @@ export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, o
                     </div>
                   </div>
                 </div>
-                <div className="flex justify-end space-x-3 pt-3 border-t">
+                <div className="flex justify-end space-x-2 pt-2 border-t">
                   <Button 
                     variant="outline" 
                     size="sm"

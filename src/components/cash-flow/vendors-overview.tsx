@@ -188,7 +188,7 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
         </div>
       </CardHeader>
       <CardContent className="p-4 flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto space-y-4 pr-2">
+        <div className="h-full overflow-y-auto space-y-2 pr-2">
           {filteredAndSortedVendors.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {searchTerm ? 'No vendors found matching your search.' : 'No vendors to display.'}
@@ -197,12 +197,12 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
             filteredAndSortedVendors.map((vendor) => (
             <div
               key={vendor.id}
-              className="p-5 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:shadow-md"
+              className="p-3 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:shadow-md"
             >
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <h4 className="font-semibold text-lg">{vendor.name}</h4>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <h4 className="font-semibold text-base">{vendor.name}</h4>
                     <Badge variant="outline" className="text-xs">
                       {vendor.category}
                     </Badge>
@@ -211,10 +211,10 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
                       <span className="ml-1 capitalize">{vendor.status}</span>
                     </Badge>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Total Owed:</span>
-                      <span className="font-medium text-foreground text-lg">
+                      <span className="font-medium text-foreground">
                         ${vendor.totalOwed.toLocaleString()}
                       </span>
                     </div>
@@ -233,7 +233,7 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
                   </div>
                 </div>
               </div>
-              <div className="flex justify-end space-x-3 pt-3 border-t">
+              <div className="flex justify-end space-x-2 pt-2 border-t">
                 <Button 
                   variant="outline" 
                   size="sm"
