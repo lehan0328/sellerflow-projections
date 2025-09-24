@@ -62,28 +62,36 @@ const Dashboard = () => {
     status: 'received' | 'pending' | 'overdue';
     category: string;
     isRecurring: boolean;
-  }>>([
-    {
-      id: '1',
-      description: 'Amazon Quarterly Payout',
-      amount: 25000,
-      paymentDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      source: 'Amazon',
-      status: 'pending' as const,
-      category: 'Product Sales',
-      isRecurring: false
-    },
-    {
-      id: '2',
-      description: 'Monthly Subscription Revenue',
-      amount: 5000,
-      paymentDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-      source: 'Stripe',
-      status: 'pending' as const,
-      category: 'Subscription',
-      isRecurring: true
+  }>>([]);
+
+  // Initialize sample data only if user has no real data yet
+  React.useEffect(() => {
+    if (vendors.length === 0 && transactions.length === 0 && incomeItems.length === 0) {
+      // Only show sample data for demo purposes if no real data exists
+      setIncomeItems([
+        {
+          id: 'sample-1',
+          description: 'Amazon Quarterly Payout',
+          amount: 25000,
+          paymentDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          source: 'Amazon',
+          status: 'pending' as const,
+          category: 'Product Sales',
+          isRecurring: false
+        },
+        {
+          id: 'sample-2',
+          description: 'Monthly Subscription Revenue',
+          amount: 5000,
+          paymentDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+          source: 'Stripe',
+          status: 'pending' as const,
+          category: 'Subscription',
+          isRecurring: true
+        }
+      ]);
     }
-  ]);
+  }, [vendors.length, transactions.length]);
 
   // State for vendor editing modal
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
@@ -406,10 +414,10 @@ const Dashboard = () => {
   // Filter vendors to exclude 'paid' status for VendorsOverview component
   const activeVendors = vendors.filter(v => v.status !== 'paid');
 
-  // Sample cash flow events for calendar visualization with Amazon payouts
-  const sampleEvents = [
+  // Sample cash flow events for calendar visualization with Amazon payouts (only show if no real data)
+  const sampleEvents = vendors.length === 0 && transactions.length === 0 ? [
     {
-      id: '1',
+      id: 'sample-event-1',
       type: 'inflow' as const,
       amount: 25000,
       description: 'Amazon Payout',
@@ -417,7 +425,7 @@ const Dashboard = () => {
       date: new Date()
     },
     {
-      id: '2', 
+      id: 'sample-event-2', 
       type: 'outflow' as const,
       amount: 8500,
       description: 'Inventory Purchase',
@@ -425,7 +433,7 @@ const Dashboard = () => {
       date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
     },
     {
-      id: '3',
+      id: 'sample-event-3',
       type: 'inflow' as const,
       amount: 32000,
       description: 'Amazon Payout - Holiday Sales',
@@ -433,14 +441,14 @@ const Dashboard = () => {
       date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     },
     {
-      id: '4',
+      id: 'sample-event-4',
       type: 'inflow' as const,
       amount: 18500,
       description: 'Amazon Payout - Q1 Performance',
       source: 'amazon',
       date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
     }
-  ];
+  ] : [];
 
   // Convert cash flow events to calendar format
   const calendarEvents = cashFlowEvents.map(event => ({

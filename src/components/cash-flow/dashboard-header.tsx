@@ -1,11 +1,42 @@
 import { DollarSign } from "lucide-react";
 import { UserMenu } from "./user-menu";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
-interface DashboardHeaderProps {
-  userName?: string;
-}
-
-export function DashboardHeader({ userName = "Andy Johnson" }: DashboardHeaderProps) {
+export function DashboardHeader() {
+  const { user } = useAuth();
+  
+  // Fetch user profile for display name
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+  
+  // Get user display name for dashboard title
+  const getUserDisplayName = () => {
+    if (profile?.first_name) {
+      return profile.first_name;
+    }
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'Your';
+  };
 
   return (
     <div className="relative w-full">
@@ -23,14 +54,14 @@ export function DashboardHeader({ userName = "Andy Johnson" }: DashboardHeaderPr
 
       {/* User Menu - Top Right */}
       <div className="absolute top-6 right-6 z-40">
-        <UserMenu userName={userName} />
+        <UserMenu />
       </div>
 
       {/* Centered Dashboard Title */}
       <div className="flex justify-center items-center pt-8 pb-6">
         <div className="text-center">
           <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            {userName.split(' ')[0]}'s Dashboard
+            {getUserDisplayName()}'s Dashboard
           </h1>
           <p className="text-muted-foreground mt-2">
             Real-time insights and financial management
