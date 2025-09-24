@@ -50,6 +50,9 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
     { id: "1", amount: "", dueDate: undefined, description: "Initial payment" }
   ]);
 
+  const [isMainDatePickerOpen, setIsMainDatePickerOpen] = useState(false);
+  const [openPaymentDatePickers, setOpenPaymentDatePickers] = useState<Record<string, boolean>>({});
+
   const categories = [
     "Product Sales",
     "Service Revenue",
@@ -204,7 +207,7 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
 
               <div className="space-y-2">
                 <Label>Due Date</Label>
-                <Popover>
+                <Popover open={isMainDatePickerOpen} onOpenChange={setIsMainDatePickerOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -218,8 +221,12 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
                     <Calendar
                       mode="single"
                       selected={formData.dueDate}
-                      onSelect={(date) => handleInputChange("dueDate", date || new Date())}
+                      onSelect={(date) => {
+                        handleInputChange("dueDate", date || new Date());
+                        setIsMainDatePickerOpen(false);
+                      }}
                       initialFocus
+                      className="p-3 pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
@@ -342,7 +349,10 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
                         </div>
                         <div>
                           <Label>Due Date</Label>
-                          <Popover>
+                          <Popover 
+                            open={openPaymentDatePickers[payment.id] || false} 
+                            onOpenChange={(open) => setOpenPaymentDatePickers(prev => ({ ...prev, [payment.id]: open }))}
+                          >
                             <PopoverTrigger asChild>
                               <Button
                                 type="button"
@@ -357,8 +367,12 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
                               <Calendar
                                 mode="single"
                                 selected={payment.dueDate}
-                                onSelect={(date) => updatePayment(payment.id, "dueDate", date)}
+                                onSelect={(date) => {
+                                  updatePayment(payment.id, "dueDate", date);
+                                  setOpenPaymentDatePickers(prev => ({ ...prev, [payment.id]: false }));
+                                }}
                                 initialFocus
+                                className="p-3 pointer-events-auto"
                               />
                             </PopoverContent>
                           </Popover>

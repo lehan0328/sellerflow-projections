@@ -34,6 +34,8 @@ export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense
     recurringFrequency: "monthly" as "weekly" | "bi-weekly" | "monthly" | "quarterly" | "yearly" | "weekdays"
   });
 
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
   const incomeCategories = [
     "Product Sales",
     "Service Revenue", 
@@ -147,7 +149,7 @@ export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense
 
           <div className="space-y-2">
             <Label>Payment Date *</Label>
-            <Popover>
+            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -164,7 +166,10 @@ export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense
                 <Calendar
                   mode="single"
                   selected={formData.paymentDate}
-                  onSelect={(date) => handleInputChange("paymentDate", date || new Date())}
+                  onSelect={(date) => {
+                    handleInputChange("paymentDate", date || new Date());
+                    setIsDatePickerOpen(false);
+                  }}
                   initialFocus
                   className={cn("p-3 pointer-events-auto")}
                 />
