@@ -1,6 +1,8 @@
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle } from "lucide-react";
+import { useState } from "react";
 
 // Credit card data (matching credit-cards.tsx)
 const creditCards = [
@@ -49,22 +51,55 @@ interface OverviewStatsProps {
   onUpdateCashBalance?: () => void;
 }
 
+const timeRangeOptions = [
+  { value: "today", label: "Today", days: 0 },
+  { value: "3days", label: "Next 3 Days", days: 3 },
+  { value: "7days", label: "Next 7 Days", days: 7 },
+  { value: "14days", label: "Next 14 Days", days: 14 },
+  { value: "30days", label: "Next 30 Days", days: 30 },
+  { value: "60days", label: "Next 60 Days", days: 60 },
+  { value: "90days", label: "Next 90 Days", days: 90 },
+];
+
 export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance }: OverviewStatsProps) {
   console.log("OverviewStats render - totalCash:", totalCash);
+  
+  const [incomingTimeRange, setIncomingTimeRange] = useState("7days");
+  const [upcomingTimeRange, setUpcomingTimeRange] = useState("7days");
   
   // Calculate dynamic values based on events
   const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
   
-  // Calculate upcoming payments in next 7 days
-  const nextWeek = new Date();
-  nextWeek.setDate(nextWeek.getDate() + 7);
+  // Helper function to get end date based on time range
+  const getEndDate = (timeRange: string) => {
+    const option = timeRangeOptions.find(opt => opt.value === timeRange);
+    const days = option?.days || 7;
+    const endDate = new Date();
+    if (days === 0) {
+      // For "today", set to end of day
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      endDate.setDate(endDate.getDate() + days);
+    }
+    return endDate;
+  };
   
+  // Calculate incoming payments (inflow events)
+  const incomingEndDate = getEndDate(incomingTimeRange);
+  const incomingPayments = events.filter(event => 
+    event.type === 'inflow' &&
+    event.date >= new Date() && 
+    event.date <= incomingEndDate
+  );
+  const incomingTotal = incomingPayments.reduce((sum, payment) => sum + payment.amount, 0);
+  
+  // Calculate upcoming payments (outflows)
+  const upcomingEndDate = getEndDate(upcomingTimeRange);
   const upcomingPayments = events.filter(event => 
     (event.type === 'outflow' || event.type === 'purchase-order' || event.type === 'credit-payment') &&
     event.date >= new Date() && 
-    event.date <= nextWeek
+    event.date <= upcomingEndDate
   );
-  
   const upcomingTotal = upcomingPayments.reduce((sum, payment) => sum + payment.amount, 0);
   
   // Bank account balance (from bank-accounts.tsx sample data)
@@ -124,10 +159,28 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
       <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-6">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-sm text-slate-600">Incoming $</p>
-            <p className="text-2xl font-bold text-green-700">$0.00</p>
-            <p className="text-sm text-slate-600">No scheduled payouts</p>
-            <p className="text-xs text-green-600">--</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm text-slate-600">Incoming $</p>
+              <Select value={incomingTimeRange} onValueChange={setIncomingTimeRange}>
+                <SelectTrigger className="w-32 h-6 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeRangeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-2xl font-bold text-green-700">{formatCurrency(incomingTotal)}</p>
+            <p className="text-sm text-slate-600">
+              {incomingPayments.length > 0 ? `${incomingPayments.length} scheduled payouts` : "No scheduled payouts"}
+            </p>
+            <p className="text-xs text-green-600">
+              {timeRangeOptions.find(opt => opt.value === incomingTimeRange)?.label}
+            </p>
           </div>
           <TrendingUp className="h-8 w-8 text-green-500" />
         </div>
@@ -135,10 +188,28 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
       <div className="bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-lg p-6">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-sm text-slate-600">Upcoming Payments</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm text-slate-600">Upcoming Payments</p>
+              <Select value={upcomingTimeRange} onValueChange={setUpcomingTimeRange}>
+                <SelectTrigger className="w-32 h-6 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeRangeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <p className="text-2xl font-bold text-amber-700">{formatCurrency(upcomingTotal)}</p>
-            <p className="text-sm text-slate-600">Next 7 days</p>
-            <p className="text-xs text-amber-600">{upcomingPayments.length} payments due</p>
+            <p className="text-sm text-slate-600">
+              {upcomingPayments.length > 0 ? `${upcomingPayments.length} payments due` : "No payments due"}
+            </p>
+            <p className="text-xs text-amber-600">
+              {timeRangeOptions.find(opt => opt.value === upcomingTimeRange)?.label}
+            </p>
           </div>
           <Calendar className="h-8 w-8 text-amber-500" />
         </div>
