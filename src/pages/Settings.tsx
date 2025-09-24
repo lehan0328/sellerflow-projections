@@ -14,7 +14,6 @@ import {
   Shield, 
   Database,
   ArrowLeft,
-  Save,
   Download,
   FileText,
   Sun,
@@ -100,12 +99,9 @@ const Settings = () => {
     }
   };
 
-  const handleSaveProfile = () => {
-    const formData = new FormData(document.getElementById('profile-form') as HTMLFormElement);
+  const handleProfileChange = (field: string, value: string) => {
     const profileData = {
-      first_name: formData.get('first-name') as string,
-      last_name: formData.get('last-name') as string,
-      company: formData.get('company') as string,
+      [field]: value,
     };
     updateProfileMutation.mutate(profileData);
   };
@@ -155,14 +151,6 @@ const Settings = () => {
                 </p>
               </div>
             </div>
-            <Button 
-              className="bg-gradient-primary"
-              onClick={handleSaveProfile}
-              disabled={updateProfileMutation.isPending}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </Button>
           </div>
         </div>
       </div>
@@ -190,24 +178,24 @@ const Settings = () => {
                     <div className="h-10 bg-muted animate-pulse rounded"></div>
                   </div>
                 ) : (
-                  <form id="profile-form">
+                  <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="first-name">First Name</Label>
                         <Input 
                           id="first-name" 
-                          name="first-name"
                           defaultValue={profile?.first_name || ""} 
                           placeholder="Enter your first name"
+                          onBlur={(e) => handleProfileChange('first_name', e.target.value)}
                         />
                       </div>
                       <div>
                         <Label htmlFor="last-name">Last Name</Label>
                         <Input 
                           id="last-name" 
-                          name="last-name"
                           defaultValue={profile?.last_name || ""} 
                           placeholder="Enter your last name"
+                          onBlur={(e) => handleProfileChange('last_name', e.target.value)}
                         />
                       </div>
                     </div>
@@ -228,12 +216,12 @@ const Settings = () => {
                       <Label htmlFor="company">Company Name</Label>
                       <Input 
                         id="company" 
-                        name="company"
                         defaultValue={profile?.company || ""} 
                         placeholder="Enter your company name"
+                        onBlur={(e) => handleProfileChange('company', e.target.value)}
                       />
                     </div>
-                  </form>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -309,6 +297,10 @@ const Settings = () => {
                 <div className="flex items-center space-x-2">
                   <Switch id="smart-forecasting" defaultChecked />
                   <Label htmlFor="smart-forecasting">Enable smart cash flow forecasting</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch id="auto-sync-cash" defaultChecked />
+                  <Label htmlFor="auto-sync-cash">Automatically sync cash balance with bank accounts</Label>
                 </div>
               </CardContent>
             </Card>

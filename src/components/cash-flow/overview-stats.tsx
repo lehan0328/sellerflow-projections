@@ -47,7 +47,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
                   size="sm"
                   onClick={onUpdateCashBalance}
                   className="h-6 w-6 p-0 text-warning hover:text-warning-foreground"
-                  title={`Cash ($${totalCash.toLocaleString()}) doesn't match bank balance ($${bankAccountBalance.toLocaleString()}). Click to sync.`}
+                  title={`The cash available does not match your synced bank account. Do you want to update?`}
                 >
                   <AlertTriangle className="h-4 w-4" />
                 </Button>
