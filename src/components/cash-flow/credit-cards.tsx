@@ -81,6 +81,36 @@ export function CreditCards() {
     }
   };
 
+  // Export function to get credit card due date events
+  const getCreditCardDueDates = () => {
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+    const events = [];
+
+    creditCards.forEach(card => {
+      // Parse payment due day from string like "4th of the month"
+      const dayMatch = card.paymentDue.match(/(\d+)/);
+      if (dayMatch) {
+        const dueDay = parseInt(dayMatch[1]);
+        
+        // Add events for next 3 months
+        for (let monthOffset = 0; monthOffset < 3; monthOffset++) {
+          const dueDate = new Date(currentYear, currentMonth + monthOffset, dueDay);
+          events.push({
+            id: `cc-due-${card.id}-${monthOffset}`,
+            type: 'credit-payment' as const,
+            amount: card.balance,
+            description: `${card.name} Payment Due`,
+            creditCard: card.name,
+            date: dueDate
+          });
+        }
+      }
+    });
+
+    return events;
+  };
+
   return (
     <Card className="shadow-card">
       <CardHeader>
@@ -175,3 +205,33 @@ export function CreditCards() {
     </Card>
   );
 }
+
+// Export the credit card due date events generator
+export const getCreditCardDueDates = () => {
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
+  const events = [];
+
+  creditCards.forEach(card => {
+    // Parse payment due day from string like "4th of the month"
+    const dayMatch = card.paymentDue.match(/(\d+)/);
+    if (dayMatch) {
+      const dueDay = parseInt(dayMatch[1]);
+      
+      // Add events for next 3 months
+      for (let monthOffset = 0; monthOffset < 3; monthOffset++) {
+        const dueDate = new Date(currentYear, currentMonth + monthOffset, dueDay);
+        events.push({
+          id: `cc-due-${card.id}-${monthOffset}`,
+          type: 'credit-payment' as const,
+          amount: card.balance,
+          description: `${card.name} Payment Due`,
+          creditCard: card.name,
+          date: dueDate
+        });
+      }
+    }
+  });
+
+  return events;
+};

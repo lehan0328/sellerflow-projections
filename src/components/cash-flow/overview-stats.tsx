@@ -1,5 +1,6 @@
 import { StatCard } from "@/components/ui/stat-card";
-import { DollarSign, CreditCard, TrendingUp, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle } from "lucide-react";
 
 interface OverviewStatsProps {
   totalCash?: number;
@@ -8,9 +9,10 @@ interface OverviewStatsProps {
     amount: number;
     date: Date;
   }>;
+  onUpdateCashBalance?: () => void;
 }
 
-export function OverviewStats({ totalCash = 0, events = [] }: OverviewStatsProps) {
+export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance }: OverviewStatsProps) {
   console.log("OverviewStats render - totalCash:", totalCash);
   
   // Calculate dynamic values based on events
@@ -28,14 +30,33 @@ export function OverviewStats({ totalCash = 0, events = [] }: OverviewStatsProps
   
   const upcomingTotal = upcomingPayments.reduce((sum, payment) => sum + payment.amount, 0);
   
+  // Bank account balance (from bank-accounts.tsx sample data)
+  const bankAccountBalance = 14269.39 + 4.29; // Total from Bank of America + Bluevine
+  const balanceMatches = Math.abs(totalCash - bankAccountBalance) < 0.01;
+  
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <div className="bg-card border rounded-lg p-6">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">Total Available Cash</p>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-muted-foreground">Total Available Cash</p>
+              {!balanceMatches && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onUpdateCashBalance}
+                  className="h-6 w-6 p-0 text-warning hover:text-warning-foreground"
+                  title={`Cash ($${totalCash.toLocaleString()}) doesn't match bank balance ($${bankAccountBalance.toLocaleString()}). Click to sync.`}
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
             <p className="text-2xl font-bold text-success">${totalCash.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground">Ready to start tracking</p>
+            <p className="text-sm text-muted-foreground">
+              {balanceMatches ? "Synced with bank accounts" : `Bank balance: $${bankAccountBalance.toLocaleString()}`}
+            </p>
           </div>
           <DollarSign className="h-8 w-8 text-success" />
         </div>

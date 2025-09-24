@@ -7,7 +7,7 @@ import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
 import { VendorsOverview } from "@/components/cash-flow/vendors-overview";
 import { TransactionLog, Transaction } from "@/components/cash-flow/transaction-log";
 import { BankAccounts } from "@/components/cash-flow/bank-accounts";
-import { CreditCards } from "@/components/cash-flow/credit-cards";
+import { CreditCards, getCreditCardDueDates } from "@/components/cash-flow/credit-cards";
 import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { VendorForm } from "@/components/cash-flow/vendor-form";
@@ -372,6 +372,12 @@ const Dashboard = () => {
     });
   };
 
+  const handleUpdateCashBalance = async () => {
+    // Bank account balance (from bank-accounts.tsx sample data)
+    const bankAccountBalance = 14269.39 + 4.29; // Total from Bank of America + Bluevine
+    await updateTotalCash(bankAccountBalance);
+  };
+
   // Convert database transactions to component format
   const formattedTransactions = transactions.map(t => ({
     id: t.id,
@@ -403,14 +409,23 @@ const Dashboard = () => {
     date: event.date
   }));
 
+  // Get credit card due date events
+  const creditCardEvents = getCreditCardDueDates();
+
+  // Combine all events for calendar
+  const allCalendarEvents = [...sampleEvents, ...calendarEvents, ...creditCardEvents];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
       <DashboardHeader />
       <div className="p-6 space-y-6">
-        <OverviewStats totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash} />
+        <OverviewStats 
+          totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash} 
+          onUpdateCashBalance={handleUpdateCashBalance}
+        />
         
         {/* Row 1: Cash Flow Calendar (Full Width) */}
-        <CashFlowCalendar events={[...sampleEvents, ...calendarEvents]} totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash} />
+        <CashFlowCalendar events={allCalendarEvents} totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash} />
 
         {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
