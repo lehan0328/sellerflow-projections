@@ -173,6 +173,18 @@ export const useVendors = () => {
 
   const deleteVendor = async (id: string) => {
     try {
+      // First delete all associated transactions to avoid foreign key constraint error
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('vendor_id', id);
+
+      if (transactionError) {
+        console.error('Error deleting vendor transactions:', transactionError);
+        // Continue with vendor deletion even if transaction deletion fails
+      }
+
+      // Then delete the vendor
       const { error } = await supabase
         .from('vendors')
         .delete()

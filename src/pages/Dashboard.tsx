@@ -21,7 +21,7 @@ import { useUserSettings } from "@/hooks/useUserSettings";
 
 interface CashFlowEvent {
   id: string;
-  type: 'income' | 'expense' | 'vendor_payment' | 'purchase-order';
+  type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order';
   amount: number;
   description: string;
   vendor?: string;
@@ -99,7 +99,7 @@ const Dashboard = () => {
     // Add cash flow event
     const newEvent: CashFlowEvent = {
       id: Date.now().toString(),
-      type: 'vendor_payment',
+      type: 'outflow',
       amount: paymentAmount,
       description: `Payment to ${vendor.name}`,
       vendor: vendor.name,
@@ -272,7 +272,7 @@ const Dashboard = () => {
     // Create cash flow event
     const newEvent: CashFlowEvent = {
       id: Date.now().toString(),
-      type: 'income',
+      type: 'inflow',
       amount: amount,
       description: incomeData.description || 'Income',
       date: paymentDate
@@ -320,7 +320,7 @@ const Dashboard = () => {
     // Create cash flow event
     const newEvent: CashFlowEvent = {
       id: Date.now().toString(),
-      type: 'expense',
+      type: 'outflow',
       amount: amount,
       description: expenseData.description || 'Expense',
       date: expenseData.paymentDate || new Date()
@@ -349,7 +349,7 @@ const Dashboard = () => {
     // Create cash flow event
     const newEvent: CashFlowEvent = {
       id: Date.now().toString(),
-      type: 'income',
+      type: 'inflow',
       amount: income.amount,
       description: income.description,
       source: income.source,
@@ -368,7 +368,14 @@ const Dashboard = () => {
   };
 
   const handleDeleteVendorOrder = async (vendor: Vendor) => {
+    // Delete vendor and associated transactions
     await deleteVendor(vendor.id);
+    
+    // Remove any cash flow events associated with this vendor
+    setCashFlowEvents(prev => prev.filter(event => 
+      !(event.vendor === vendor.name || event.description?.includes(vendor.name))
+    ));
+    
     setEditingVendor(null);
   };
 
@@ -376,7 +383,7 @@ const Dashboard = () => {
     console.log("Editing transaction:", transaction);
     
     // Route to appropriate edit form based on transaction type
-    if (transaction.type === 'inflow' || transaction.type === 'income') {
+    if (transaction.type === 'inflow') {
       // For income transactions, we need to find the corresponding income item
       const incomeItem = incomeItems.find(item => 
         item.description === transaction.description && 
@@ -444,19 +451,8 @@ const Dashboard = () => {
   // No sample events for new users
   const sampleEvents: any[] = [];
 
-  // Convert cash flow events to calendar format
-  const calendarEvents = cashFlowEvents.map(event => ({
-    id: event.id,
-    type: event.type === 'income' ? 'inflow' as const : 
-          event.type === 'purchase-order' ? 'purchase-order' as const :
-          event.type === 'vendor_payment' ? 'outflow' as const : 
-          event.type === 'expense' ? 'outflow' as const : 'outflow' as const,
-    amount: event.amount,
-    description: event.description,
-    vendor: event.vendor,
-    source: event.source,
-    date: event.date
-  }));
+  // Convert cash flow events to calendar format (no conversion needed since types now match)
+  const calendarEvents = cashFlowEvents;
 
   // Get credit card due date events
   const creditCardEvents = getCreditCardDueDates();
