@@ -418,13 +418,19 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
       <DashboardHeader />
       <div className="p-6 space-y-6">
-        <OverviewStats 
-          totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash} 
-          onUpdateCashBalance={handleUpdateCashBalance}
-        />
         
-        {/* Row 1: Cash Flow Calendar (Full Width) */}
-        <CashFlowCalendar events={allCalendarEvents} totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash} />
+        {/* Row 1: Overview Stats and Cash Flow Calendar (Side by Side) */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-2">
+            <OverviewStats 
+              totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash} 
+              onUpdateCashBalance={handleUpdateCashBalance}
+            />
+          </div>
+          <div className="lg:col-span-3">
+            <CashFlowCalendar events={allCalendarEvents} totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash} />
+          </div>
+        </div>
 
         {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
