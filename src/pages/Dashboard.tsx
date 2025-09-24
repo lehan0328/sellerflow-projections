@@ -64,34 +64,7 @@ const Dashboard = () => {
     isRecurring: boolean;
   }>>([]);
 
-  // Initialize sample data only if user has no real data yet
-  React.useEffect(() => {
-    if (vendors.length === 0 && transactions.length === 0 && incomeItems.length === 0) {
-      // Only show sample data for demo purposes if no real data exists
-      setIncomeItems([
-        {
-          id: 'sample-1',
-          description: 'Amazon Quarterly Payout',
-          amount: 25000,
-          paymentDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-          source: 'Amazon',
-          status: 'pending' as const,
-          category: 'Product Sales',
-          isRecurring: false
-        },
-        {
-          id: 'sample-2',
-          description: 'Monthly Subscription Revenue',
-          amount: 5000,
-          paymentDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-          source: 'Stripe',
-          status: 'pending' as const,
-          category: 'Subscription',
-          isRecurring: true
-        }
-      ]);
-    }
-  }, [vendors.length, transactions.length]);
+  // No sample data for new users
 
   // State for vendor editing modal
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
@@ -414,41 +387,8 @@ const Dashboard = () => {
   // Filter vendors to exclude 'paid' status for VendorsOverview component
   const activeVendors = vendors.filter(v => v.status !== 'paid');
 
-  // Sample cash flow events for calendar visualization with Amazon payouts (only show if no real data)
-  const sampleEvents = vendors.length === 0 && transactions.length === 0 ? [
-    {
-      id: 'sample-event-1',
-      type: 'inflow' as const,
-      amount: 25000,
-      description: 'Amazon Payout',
-      source: 'amazon',
-      date: new Date()
-    },
-    {
-      id: 'sample-event-2', 
-      type: 'outflow' as const,
-      amount: 8500,
-      description: 'Inventory Purchase',
-      vendor: 'Global Vendor Co.',
-      date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: 'sample-event-3',
-      type: 'inflow' as const,
-      amount: 32000,
-      description: 'Amazon Payout - Holiday Sales',
-      source: 'amazon',
-      date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-    },
-    {
-      id: 'sample-event-4',
-      type: 'inflow' as const,
-      amount: 18500,
-      description: 'Amazon Payout - Q1 Performance',
-      source: 'amazon',
-      date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-    }
-  ] : [];
+  // No sample events for new users
+  const sampleEvents: any[] = [];
 
   // Convert cash flow events to calendar format
   const calendarEvents = cashFlowEvents.map(event => ({
@@ -467,10 +407,10 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
       <DashboardHeader />
       <div className="p-6 space-y-6">
-        <OverviewStats totalCash={totalCash} />
+        <OverviewStats totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash} />
         
         {/* Row 1: Cash Flow Calendar (Full Width) */}
-        <CashFlowCalendar events={[...sampleEvents, ...calendarEvents]} totalCash={totalCash} />
+        <CashFlowCalendar events={[...sampleEvents, ...calendarEvents]} totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash} />
 
         {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -499,7 +439,7 @@ const Dashboard = () => {
         </div>
 
         {/* Row 5: Amazon Payouts (Full Width) */}
-        <AmazonPayouts />
+        {(vendors.length > 0 || transactions.length > 0) && <AmazonPayouts />}
       </div>
 
       <FloatingMenu

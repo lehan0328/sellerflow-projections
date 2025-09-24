@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 export const useUserSettings = () => {
-  const [totalCash, setTotalCash] = useState(100000);
+  const [totalCash, setTotalCash] = useState(0);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -46,11 +46,11 @@ export const useUserSettings = () => {
         .from('user_settings')
         .insert({
           user_id: userId,
-          total_cash: 100000
+          total_cash: 0
         });
 
       if (error) throw error;
-      setTotalCash(100000);
+      setTotalCash(0);
     } catch (error) {
       console.error('Error creating default settings:', error);
     }
