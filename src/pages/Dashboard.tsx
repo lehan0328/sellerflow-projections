@@ -305,11 +305,6 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <div className="xl:col-span-2 space-y-6">
             <CashFlowCalendar events={[...sampleEvents, ...calendarEvents]} totalCash={totalCash} />
-            <VendorsOverview 
-              vendors={activeVendors as any}
-              onPayToday={handlePayToday}
-              onEditOrder={handleEditVendorOrder}
-            />
             <TransactionLog 
               transactions={formattedTransactions}
               onUndoTransaction={handleUndoTransaction}
@@ -317,6 +312,11 @@ const Dashboard = () => {
           </div>
           
           <div className="space-y-6">
+            <VendorsOverview 
+              vendors={activeVendors as any}
+              onPayToday={handlePayToday}
+              onEditOrder={handleEditVendorOrder}
+            />
             <BankAccounts />
             <CreditCards />
             <AmazonPayouts />
