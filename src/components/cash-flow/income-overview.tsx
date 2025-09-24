@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DollarSign, Calendar, TrendingUp, Plus, Edit, Search, ArrowUpDown } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import * as React from "react";
@@ -30,6 +31,10 @@ export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, o
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'description' | 'amount' | 'paymentDate' | 'source'>('paymentDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  
+  // State for confirmation dialog
+  const [confirmingIncome, setConfirmingIncome] = useState<IncomeItem | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Update local state when props change
   React.useEffect(() => {
@@ -75,6 +80,24 @@ export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, o
     setIncomeItems(updatedIncomes);
     onIncomeUpdate?.(updatedIncomes);
     onCollectToday?.(income);
+  };
+
+  const handleReceiveTodayClick = (income: IncomeItem) => {
+    setConfirmingIncome(income);
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmReceiveToday = () => {
+    if (confirmingIncome) {
+      handleCollectToday(confirmingIncome);
+    }
+    setShowConfirmDialog(false);
+    setConfirmingIncome(null);
+  };
+
+  const handleCancelReceiveToday = () => {
+    setShowConfirmDialog(false);
+    setConfirmingIncome(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -228,10 +251,10 @@ export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, o
                     <Button 
                       size="sm" 
                       className="bg-gradient-primary px-6"
-                      onClick={() => handleCollectToday(income)}
+                      onClick={() => handleReceiveTodayClick(income)}
                     >
                       <DollarSign className="mr-2 h-4 w-4" />
-                      Collect Today
+                      Receive Today
                     </Button>
                   )}
                 </div>
@@ -240,6 +263,33 @@ export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, o
           )}
         </div>
       </CardContent>
+      
+      {/* Confirmation Dialog */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Payment Receipt</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to mark this income as received today? This will:
+              <br />
+              • Move the payment date to today ({new Date().toLocaleDateString()})
+              • Add ${confirmingIncome?.amount.toLocaleString() || 0} to your available cash
+              • Mark the payment as completed
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelReceiveToday}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmReceiveToday}
+              className="bg-gradient-primary"
+            >
+              Yes, Receive Today
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
