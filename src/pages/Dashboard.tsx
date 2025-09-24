@@ -286,8 +286,55 @@ const Dashboard = () => {
       type: 'income',
       amount: amount,
       description: incomeData.description || 'Income',
-      source: incomeData.source,
       date: incomeData.paymentDate || new Date()
+    };
+    setCashFlowEvents(prev => [newEvent, ...prev]);
+
+    setShowIncomeForm(false);
+    setShowRecurringIncomeForm(false);
+  };
+
+  const handleExpenseSubmit = async (expenseData: any) => {
+    const amount = typeof expenseData.amount === 'string' ? 
+      parseFloat(expenseData.amount) : expenseData.amount;
+    
+    console.info("Adding expense amount:", amount);
+    console.info("Previous total cash:", totalCash);
+    
+    const newTotalCash = totalCash - amount;
+    await updateTotalCash(newTotalCash);
+    
+    console.info("New total cash:", newTotalCash);
+
+    // Create vendor for expense
+    await addVendor({
+      name: expenseData.description,
+      totalOwed: amount,
+      nextPaymentDate: expenseData.paymentDate || new Date(),
+      nextPaymentAmount: amount,
+      status: 'upcoming',
+      category: expenseData.category || 'Other',
+      paymentType: 'total',
+      description: expenseData.description,
+      notes: expenseData.notes
+    });
+
+    // Create transaction
+    await addTransaction({
+      type: 'purchase_order',
+      amount: amount,
+      description: expenseData.description || 'Expense',
+      transactionDate: expenseData.paymentDate || new Date(),
+      status: 'completed'
+    });
+
+    // Create cash flow event
+    const newEvent: CashFlowEvent = {
+      id: Date.now().toString(),
+      type: 'expense',
+      amount: amount,
+      description: expenseData.description || 'Expense',
+      date: expenseData.paymentDate || new Date()
     };
     setCashFlowEvents(prev => [newEvent, ...prev]);
 
@@ -476,6 +523,7 @@ const Dashboard = () => {
           open={showIncomeForm}
           onOpenChange={setShowIncomeForm}
           onSubmitIncome={handleIncomeSubmit}
+          onSubmitExpense={handleExpenseSubmit}
         />
       )}
 
@@ -484,6 +532,7 @@ const Dashboard = () => {
           open={showRecurringIncomeForm}
           onOpenChange={setShowRecurringIncomeForm}
           onSubmitIncome={handleIncomeSubmit}
+          onSubmitExpense={handleExpenseSubmit}
           isRecurring={true}
         />
       )}
