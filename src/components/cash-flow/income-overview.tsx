@@ -103,8 +103,8 @@ export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, o
     .reduce((sum, income) => sum + income.amount, 0);
 
   return (
-    <Card className="shadow-card h-[600px] flex flex-col">
-      <CardHeader>
+    <Card className="shadow-card h-[700px] flex flex-col">
+      <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <CardTitle className="text-lg flex items-center space-x-2">

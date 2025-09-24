@@ -307,8 +307,8 @@ export const CashFlowCalendar = ({ events: propEvents, totalCash = 145750 }: Cas
   };
 
   return (
-    <Card className="shadow-card h-fit">
-      <div className="relative">
+    <Card className="shadow-card h-[700px] flex flex-col">
+      <div className="relative flex-shrink-0">
         <div className="absolute top-4 right-4 z-10">
           <Select value={dateRangeOption} onValueChange={handleDateRangeOptionChange}>
             <SelectTrigger className="w-[150px]">
@@ -322,7 +322,7 @@ export const CashFlowCalendar = ({ events: propEvents, totalCash = 145750 }: Cas
           </Select>
         </div>
         
-        <CardHeader className="pb-4">
+        <CardHeader className="pb-4 flex-shrink-0">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             <div className="flex items-center justify-start">
               <div className="flex items-center space-x-4">
@@ -375,10 +375,11 @@ export const CashFlowCalendar = ({ events: propEvents, totalCash = 145750 }: Cas
         </div>
       )}
       
-      <CardContent>
-        {viewType === 'calendar' ? (
-          <>
-            <div className="grid grid-cols-7 gap-2 mb-4">
+      <CardContent className="flex-1 overflow-hidden">
+        <div className="h-full flex flex-col">
+          {viewType === 'calendar' ? (
+            <div className="flex-1 overflow-auto">
+              <div className="grid grid-cols-7 gap-2 mb-4">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                 <div key={day} className="text-center text-sm font-medium text-muted-foreground p-2">
                   {day}
@@ -516,105 +517,106 @@ export const CashFlowCalendar = ({ events: propEvents, totalCash = 145750 }: Cas
                   </div>
                 );
               })}
+              </div>
             </div>
-          </>
-        ) : (
-          <div className="h-[400px]">
-            <ChartContainer config={chartConfig}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} onClick={handleChartClick}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fontSize: 12 }}
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis 
-                    tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                  />
-                  <ChartTooltip 
-                    content={<ChartTooltipContent />}
-                    formatter={(value: number, name: string) => [
-                      `$${value.toLocaleString()}`,
-                      'Cash Flow'
-                    ]}
-                    labelFormatter={(label, payload) => {
-                      if (payload && payload[0]) {
-                        const data = payload[0].payload;
-                        const hasTransactions = data.transactions && data.transactions.length > 0;
-                        return (
-                          <div className="space-y-1">
-                            <p className="font-semibold">{label}</p>
-                            <div className="text-sm space-y-1">
-                              {data.dailyChange !== 0 && (
-                                <p className={data.dailyChange > 0 ? 'text-green-600' : 'text-red-600'}>
-                                  Daily Change: ${data.dailyChange > 0 ? '+' : ''}${data.dailyChange.toLocaleString()}
-                                </p>
-                              )}
-                              {data.inflow > 0 && (
-                                <p className="text-green-600">Inflow: +${data.inflow.toLocaleString()}</p>
-                              )}
-                              {data.outflow > 0 && (
-                                <p className="text-red-600">Outflow: -${data.outflow.toLocaleString()}</p>
-                              )}
-                              {hasTransactions && (
-                                <p className="text-blue-600 font-medium">
-                                  💡 Click to view transaction details
-                                </p>
-                              )}
+          ) : (
+            <div className="h-[400px] flex-shrink-0">
+              <ChartContainer config={chartConfig}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} onClick={handleChartClick}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 12 }}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                    />
+                    <ChartTooltip 
+                      content={<ChartTooltipContent />}
+                      formatter={(value: number, name: string) => [
+                        `$${value.toLocaleString()}`,
+                        'Cash Flow'
+                      ]}
+                      labelFormatter={(label, payload) => {
+                        if (payload && payload[0]) {
+                          const data = payload[0].payload;
+                          const hasTransactions = data.transactions && data.transactions.length > 0;
+                          return (
+                            <div className="space-y-1">
+                              <p className="font-semibold">{label}</p>
+                              <div className="text-sm space-y-1">
+                                {data.dailyChange !== 0 && (
+                                  <p className={data.dailyChange > 0 ? 'text-green-600' : 'text-red-600'}>
+                                    Daily Change: ${data.dailyChange > 0 ? '+' : ''}${data.dailyChange.toLocaleString()}
+                                  </p>
+                                )}
+                                {data.inflow > 0 && (
+                                  <p className="text-green-600">Inflow: +${data.inflow.toLocaleString()}</p>
+                                )}
+                                {data.outflow > 0 && (
+                                  <p className="text-red-600">Outflow: -${data.outflow.toLocaleString()}</p>
+                                )}
+                                {hasTransactions && (
+                                  <p className="text-blue-600 font-medium">
+                                    💡 Click to view transaction details
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      }
-                      return label;
-                    }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="cashFlow" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    dot={{ r: 4, cursor: 'pointer' }}
-                    activeDot={{ r: 6, cursor: 'pointer' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </div>
-        )}
-        
-        <div className="flex items-center justify-between mt-6 pt-4 border-t">
-          <div className="flex items-center space-x-4 text-sm">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded bg-finance-positive"></div>
-              <span>Inflows</span>
+                          );
+                        }
+                        return label;
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="cashFlow" 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={2}
+                      dot={{ r: 4, cursor: 'pointer' }}
+                      activeDot={{ r: 6, cursor: 'pointer' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded bg-finance-negative"></div>
-              <span>Outflows</span>
-            </div>
-            {viewType === 'calendar' && (
-              <>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 rounded bg-warning"></div>
-                  <span>Credit Payments</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 rounded bg-primary"></div>
-                  <span>Purchase Orders</span>
-                </div>
-              </>
-            )}
-          </div>
+          )}
           
-          <div className="text-sm text-muted-foreground">
-            {viewType === 'calendar' ? 'Monthly Net:' : 'Period Net:'} <span className="font-semibold text-foreground">
-              {viewType === 'calendar' 
-                ? '+$41,300' 
-                : `+$${chartData.reduce((sum, day) => sum + day.dailyChange, 0).toLocaleString()}`
-              }
-            </span>
+          <div className="flex items-center justify-between mt-6 pt-4 border-t flex-shrink-0">
+            <div className="flex items-center space-x-4 text-sm">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded bg-finance-positive"></div>
+                <span>Inflows</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded bg-finance-negative"></div>
+                <span>Outflows</span>
+              </div>
+              {viewType === 'calendar' && (
+                <>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 rounded bg-warning"></div>
+                    <span>Credit Payments</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-3 h-3 rounded bg-primary"></div>
+                    <span>Purchase Orders</span>
+                  </div>
+                </>
+              )}
+            </div>
+            
+            <div className="text-sm text-muted-foreground">
+              {viewType === 'calendar' ? 'Monthly Net:' : 'Period Net:'} <span className="font-semibold text-foreground">
+                {viewType === 'calendar' 
+                  ? '+$41,300' 
+                  : `+$${chartData.reduce((sum, day) => sum + day.dailyChange, 0).toLocaleString()}`
+                }
+              </span>
+            </div>
           </div>
         </div>
       </CardContent>
