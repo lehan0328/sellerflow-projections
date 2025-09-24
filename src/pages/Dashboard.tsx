@@ -43,8 +43,12 @@ const Dashboard = () => {
   
   // Delete all vendor overview transactions on component mount (one-time cleanup)
   React.useEffect(() => {
-    deleteAllTransactions();
-  }, [deleteAllTransactions]);
+    const hasCleanedUp = localStorage.getItem('transactionsCleanedUp');
+    if (!hasCleanedUp) {
+      deleteAllTransactions();
+      localStorage.setItem('transactionsCleanedUp', 'true');
+    }
+  }, []); // Remove dependency to prevent loop
   
   // State for vendors used in forms (derived from database vendors)
   const formVendors = vendors.map(v => ({ 

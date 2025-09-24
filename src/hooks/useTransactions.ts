@@ -146,18 +146,9 @@ export const useTransactions = () => {
       if (error) throw error;
 
       setTransactions([]);
-      
-      toast({
-        title: "Success",
-        description: "All transactions deleted successfully",
-      });
     } catch (error) {
       console.error('Error deleting all transactions:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete all transactions",
-        variant: "destructive",
-      });
+      // Only show toast for actual errors, not for successful cleanup
     }
   };
 

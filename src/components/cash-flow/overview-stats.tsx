@@ -4,42 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 
-// Credit card data (matching credit-cards.tsx)
-const creditCards = [
-  {
-    id: "1",
-    name: "Bank of America CORP Account - Business Adv Unlimited Cash Rewards",
-    accountNumber: "2678",
-    balance: 1893.22,
-    limit: 4500.00,
-    availableCredit: 2606.78,
-    priority: 1,
-    paymentDue: "4th of the month",
-    statementClose: "8th of the month",
-  },
-  {
-    id: "2",
-    name: "American Express Blue Business Plus Card",
-    accountNumber: "6008",
-    balance: 13049.91,
-    limit: 13000.00,
-    availableCredit: -49.91,
-    priority: 1,
-    paymentDue: "7th of the month",
-    statementClose: "13th of the month",
-  },
-  {
-    id: "3",
-    name: "American Express Business Gold Card",
-    accountNumber: "1002",
-    balance: 7098.73,
-    limit: 4200.00,
-    availableCredit: 0,
-    priority: 2,
-    paymentDue: "12th of the month",
-    statementClose: "14th of the month",
-  },
-];
+import { creditCards } from "./credit-cards";
 
 interface OverviewStatsProps {
   totalCash?: number;
@@ -62,8 +27,6 @@ const timeRangeOptions = [
 ];
 
 export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance }: OverviewStatsProps) {
-  console.log("OverviewStats render - totalCash:", totalCash);
-  
   const [incomingTimeRange, setIncomingTimeRange] = useState("7days");
   const [upcomingTimeRange, setUpcomingTimeRange] = useState("7days");
   

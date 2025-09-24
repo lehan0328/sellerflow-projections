@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp, ShoppingBag } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp, ShoppingBag, AlertTriangle } from "lucide-react";
 import { creditCards } from "./credit-cards";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays, startOfWeek, endOfWeek, getDay } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -345,7 +345,8 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                     key={day.toISOString()}
                      className={`
                        min-h-[120px] p-2 border rounded-lg relative flex flex-col
-                       ${isToday(day) ? 'ring-2 ring-primary bg-primary/5 cursor-pointer hover:bg-primary/10' : 
+                       ${totalCash < 0 ? 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800' : 
+                         isToday(day) ? 'ring-2 ring-primary bg-primary/5 cursor-pointer hover:bg-primary/10' : 
                          dateRangeOption === 'next30' ? 
                            (day >= dateRange.start && day <= dateRange.end ? 'bg-background' : 'opacity-30 bg-background') : 
                            (!isSameMonth(day, currentDate) ? 'opacity-30 bg-background' : 'bg-background')
@@ -368,12 +369,17 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                     }}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <div className="text-sm font-medium">
-                        {format(day, 'd')}
+                      <div className="flex items-center space-x-1">
+                        <div className="text-sm font-medium">
+                          {format(day, 'd')}
+                        </div>
+                        {totalCash < 0 && (
+                          <AlertTriangle className="h-3 w-3 text-red-500" />
+                        )}
                       </div>
                       {isToday(day) ? (
                         <div className="text-right">
-                          <div className="text-lg font-bold text-finance-positive">
+                          <div className={`text-lg font-bold ${totalCash < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
                             ${totalCash.toLocaleString()}
                           </div>
                           <div className="text-xs text-muted-foreground">
@@ -388,7 +394,7 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                         </div>
                       ) : (
                         <div className="text-right">
-                          <div className="text-sm text-finance-positive font-semibold">
+                          <div className={`text-sm font-semibold ${totalCash < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
                             ${totalCash.toLocaleString()}
                           </div>
                           <div className="text-xs text-blue-600 font-medium">
