@@ -85,58 +85,64 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
   
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <div className="bg-gradient-to-br from-primary/10 to-primary/20 border border-primary/20 rounded-lg p-6">
+      <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <p className="text-sm text-muted-foreground">Total Available Cash</p>
+              <p className="text-sm text-slate-600">Total Available Cash</p>
               {!balanceMatches && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={onUpdateCashBalance}
-                  className="h-6 w-6 p-0 text-warning hover:text-warning-foreground"
+                  className="h-6 w-6 p-0 text-orange-400 hover:text-orange-600"
                   title={`The cash available does not match your synced bank account. Do you want to update?`}
                 >
                   <AlertTriangle className="h-4 w-4" />
                 </Button>
               )}
             </div>
-            <p className="text-2xl font-bold text-primary">${totalCash.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-2xl font-bold text-blue-700">${totalCash.toLocaleString()}</p>
+            <p className="text-sm text-slate-600">
               {balanceMatches ? "Synced with bank accounts" : `Bank balance: $${bankAccountBalance.toLocaleString()}`}
             </p>
           </div>
-          <DollarSign className="h-8 w-8 text-primary" />
+          <DollarSign className="h-8 w-8 text-blue-500" />
         </div>
       </div>
-      <StatCard
-        title="Credit Utilization"
-        value={formatCurrency(totalCreditBalance)}
-        subtitle={`of ${formatCurrency(totalCreditLimit)} limit`}
-        trend="neutral"
-        trendValue={`${creditUtilization.toFixed(1)}% utilization`}
-        variant="accent"
-        icon={<CreditCard className="h-6 w-6 text-accent" />}
-      />
-      <StatCard
-        title="Incoming $"
-        value="$0.00"
-        subtitle="No scheduled payouts"
-        trend="neutral"
-        trendValue="--"
-        variant="info"
-        icon={<TrendingUp className="h-6 w-6 text-info" />}
-      />
-      <StatCard
-        title="Upcoming Payments"
-        value={formatCurrency(upcomingTotal)}
-        subtitle="Next 7 days"
-        trend="neutral"
-        trendValue={`${upcomingPayments.length} payments due`}
-        variant="warning"
-        icon={<Calendar className="h-6 w-6 text-warning" />}
-      />
+      <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <p className="text-sm text-slate-600">Credit Utilization</p>
+            <p className="text-2xl font-bold text-purple-700">{formatCurrency(totalCreditBalance)}</p>
+            <p className="text-sm text-slate-600">of {formatCurrency(totalCreditLimit)} limit</p>
+            <p className="text-xs text-purple-600">{creditUtilization.toFixed(1)}% utilization</p>
+          </div>
+          <CreditCard className="h-8 w-8 text-purple-500" />
+        </div>
+      </div>
+      <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <p className="text-sm text-slate-600">Incoming $</p>
+            <p className="text-2xl font-bold text-green-700">$0.00</p>
+            <p className="text-sm text-slate-600">No scheduled payouts</p>
+            <p className="text-xs text-green-600">--</p>
+          </div>
+          <TrendingUp className="h-8 w-8 text-green-500" />
+        </div>
+      </div>
+      <div className="bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <p className="text-sm text-slate-600">Upcoming Payments</p>
+            <p className="text-2xl font-bold text-amber-700">{formatCurrency(upcomingTotal)}</p>
+            <p className="text-sm text-slate-600">Next 7 days</p>
+            <p className="text-xs text-amber-600">{upcomingPayments.length} payments due</p>
+          </div>
+          <Calendar className="h-8 w-8 text-amber-500" />
+        </div>
+      </div>
     </div>
   );
 }
