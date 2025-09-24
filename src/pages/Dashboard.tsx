@@ -414,13 +414,10 @@ const Dashboard = () => {
       <div className="p-6 space-y-6">
         <OverviewStats totalCash={totalCash} />
         
+        {/* Row 1: Cash Flow Calendar and Overview Components */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2 space-y-6">
+          <div className="xl:col-span-2">
             <CashFlowCalendar events={[...sampleEvents, ...calendarEvents]} totalCash={totalCash} />
-            <TransactionLog 
-              transactions={formattedTransactions}
-              onUndoTransaction={handleUndoTransaction}
-            />
           </div>
           
           <div className="space-y-6">
@@ -434,11 +431,23 @@ const Dashboard = () => {
               onCollectToday={handleCollectIncome}
               onIncomeUpdate={setIncomeItems}
             />
-            <BankAccounts />
-            <CreditCards />
-            <AmazonPayouts />
           </div>
         </div>
+
+        {/* Row 2: Transaction Log (Full Width) */}
+        <TransactionLog 
+          transactions={formattedTransactions}
+          onUndoTransaction={handleUndoTransaction}
+        />
+
+        {/* Row 3: Bank Accounts and Credit Cards (Side by Side) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <BankAccounts />
+          <CreditCards />
+        </div>
+
+        {/* Row 4: Amazon Payouts (Full Width) */}
+        <AmazonPayouts />
       </div>
 
       <FloatingMenu
