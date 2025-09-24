@@ -10,7 +10,7 @@ interface OverviewStatsProps {
   }>;
 }
 
-export function OverviewStats({ totalCash = 145750, events = [] }: OverviewStatsProps) {
+export function OverviewStats({ totalCash = 0, events = [] }: OverviewStatsProps) {
   console.log("OverviewStats render - totalCash:", totalCash);
   
   // Calculate dynamic values based on events
@@ -35,28 +35,28 @@ export function OverviewStats({ totalCash = 145750, events = [] }: OverviewStats
           <div>
             <p className="text-sm text-muted-foreground">Total Available Cash</p>
             <p className="text-2xl font-bold text-success">${totalCash.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground">+8.2% from last month</p>
+            <p className="text-sm text-muted-foreground">Ready to start tracking</p>
           </div>
           <DollarSign className="h-8 w-8 text-success" />
         </div>
       </div>
       <StatCard
         title="Credit Utilization"
-        value="$18,450.00"
-        subtitle="of $24,700.00 limit"
-        trend="down"
-        trendValue="74.7% utilization"
-        variant="warning"
-        icon={<CreditCard className="h-6 w-6 text-warning" />}
+        value="$0.00"
+        subtitle="of $0.00 limit"
+        trend="neutral"
+        trendValue="0% utilization"
+        variant="positive"
+        icon={<CreditCard className="h-6 w-6 text-success" />}
       />
       <StatCard
         title="Next Payout"
-        value="$4,250.00"
-        subtitle="Amazon - Sep 25"
-        trend="up"
-        trendValue="2 days"
-        variant="info"
-        icon={<TrendingUp className="h-6 w-6 text-blue-600" />}
+        value="$0.00"
+        subtitle="No scheduled payouts"
+        trend="neutral"
+        trendValue="--"
+        variant="default"
+        icon={<TrendingUp className="h-6 w-6 text-muted-foreground" />}
       />
       <StatCard
         title="Upcoming Payments"
