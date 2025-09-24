@@ -20,6 +20,7 @@ import { useUserSettings } from "@/hooks/useUserSettings";
 // ========== Type Definitions ==========
 
 interface CashFlowEvent {
+  id: string;
   type: 'income' | 'expense' | 'vendor_payment';
   amount: number;
   description: string;
@@ -90,6 +91,7 @@ const Dashboard = () => {
 
     // Add cash flow event
     const newEvent: CashFlowEvent = {
+      id: Date.now().toString(),
       type: 'vendor_payment',
       amount: paymentAmount,
       description: `Payment to ${vendor.name}`,
@@ -159,6 +161,7 @@ const Dashboard = () => {
 
     // Create cash flow event
     const newEvent: CashFlowEvent = {
+      id: Date.now().toString(),
       type: 'expense',
       amount: amount,
       description: `${orderData.poName} - ${orderData.vendor}`,
@@ -195,6 +198,7 @@ const Dashboard = () => {
 
     // Create cash flow event
     const newEvent: CashFlowEvent = {
+      id: Date.now().toString(),
       type: 'income',
       amount: amount,
       description: `${orderData.soName} - ${orderData.customer}`,
@@ -227,24 +231,63 @@ const Dashboard = () => {
     });
   };
 
-  // Sample cash flow events for calendar visualization
+  // Convert database transactions to component format
+  const formattedTransactions = transactions.map(t => ({
+    id: t.id,
+    type: t.type === 'vendor_payment' ? 'payment' as const : 
+          t.type === 'purchase_order' ? 'purchase' as const : 'adjustment' as const,
+    amount: t.amount,
+    description: t.description,
+    date: t.transactionDate,
+    status: t.status,
+    vendor: t.vendorId ? vendors.find(v => v.id === t.vendorId)?.name : undefined
+  }));
+
+  // Filter vendors to exclude 'paid' status for VendorsOverview component
+  const activeVendors = vendors.filter(v => v.status !== 'paid');
+
+  // Sample cash flow events for calendar visualization with Amazon payouts
   const sampleEvents = [
     {
       id: '1',
-      type: 'income' as const,
+      type: 'inflow' as const,
       amount: 25000,
       description: 'Amazon Payout',
       date: new Date()
     },
     {
       id: '2', 
-      type: 'expense' as const,
+      type: 'outflow' as const,
       amount: 8500,
       description: 'Inventory Purchase',
       vendor: 'Global Vendor Co.',
       date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+    },
+    {
+      id: '3',
+      type: 'inflow' as const,
+      amount: 32000,
+      description: 'Amazon Payout - Holiday Sales',
+      date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    },
+    {
+      id: '4',
+      type: 'inflow' as const,
+      amount: 18500,
+      description: 'Amazon Payout - Q1 Performance',
+      date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
     }
   ];
+
+  // Convert cash flow events to calendar format
+  const calendarEvents = cashFlowEvents.map(event => ({
+    id: event.id,
+    type: event.type === 'income' ? 'inflow' as const : 'outflow' as const,
+    amount: event.amount,
+    description: event.description,
+    vendor: event.vendor,
+    date: event.date
+  }));
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
@@ -254,14 +297,14 @@ const Dashboard = () => {
         
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <div className="xl:col-span-2 space-y-6">
-            <CashFlowCalendar events={[...sampleEvents, ...cashFlowEvents]} totalCash={totalCash} />
+            <CashFlowCalendar events={[...sampleEvents, ...calendarEvents]} totalCash={totalCash} />
             <VendorsOverview 
-              vendors={vendors}
+              vendors={activeVendors as any}
               onPayToday={handlePayToday}
               onEditOrder={handleEditVendorOrder}
             />
             <TransactionLog 
-              transactions={transactions}
+              transactions={formattedTransactions}
               onUndoTransaction={handleUndoTransaction}
             />
           </div>
@@ -313,13 +356,13 @@ const Dashboard = () => {
           customers={formCustomers}
           open={showSalesOrderForm}
           onOpenChange={setShowSalesOrderForm}
-          onSubmit={handleSalesOrderSubmit}
+          onSubmitOrder={handleSalesOrderSubmit}
         />
       )}
 
       {editingVendor && (
         <VendorOrderEditModal
-          vendor={editingVendor}
+          vendor={editingVendor as any}
           open={!!editingVendor}
           onOpenChange={(open) => !open && setEditingVendor(null)}
           onSave={handleSaveVendorOrder}
