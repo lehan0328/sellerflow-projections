@@ -53,12 +53,12 @@ interface OverviewStatsProps {
 
 const timeRangeOptions = [
   { value: "today", label: "Today", days: 0 },
-  { value: "3days", label: "Next 3 Days", days: 3 },
-  { value: "7days", label: "Next 7 Days", days: 7 },
-  { value: "14days", label: "Next 14 Days", days: 14 },
-  { value: "30days", label: "Next 30 Days", days: 30 },
-  { value: "60days", label: "Next 60 Days", days: 60 },
-  { value: "90days", label: "Next 90 Days", days: 90 },
+  { value: "3days", label: "3 Days", days: 3 },
+  { value: "7days", label: "7 Days", days: 7 },
+  { value: "14days", label: "14 Days", days: 14 },
+  { value: "30days", label: "30 Days", days: 30 },
+  { value: "60days", label: "60 Days", days: 60 },
+  { value: "90days", label: "90 Days", days: 90 },
 ];
 
 export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance }: OverviewStatsProps) {
@@ -84,7 +84,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
     return endDate;
   };
   
-  // Calculate incoming payments (inflow events)
+  // Calculate incoming payments (inflow events including Amazon payouts and additional income)
   const incomingEndDate = getEndDate(incomingTimeRange);
   const incomingPayments = events.filter(event => 
     event.type === 'inflow' &&
@@ -176,7 +176,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
             </div>
             <p className="text-2xl font-bold text-green-700">{formatCurrency(incomingTotal)}</p>
             <p className="text-sm text-slate-600">
-              {incomingPayments.length > 0 ? `${incomingPayments.length} scheduled payouts` : "No scheduled payouts"}
+              {incomingPayments.length > 0 ? `${incomingPayments.length} Amazon payouts & income` : "No Amazon payouts or income"}
             </p>
             <p className="text-xs text-green-600">
               {timeRangeOptions.find(opt => opt.value === incomingTimeRange)?.label}
