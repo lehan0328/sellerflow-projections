@@ -420,14 +420,14 @@ const Dashboard = () => {
       <div className="p-6 space-y-6">
         
         {/* Row 1: Overview Stats and Cash Flow Calendar (Side by Side) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-2">
             <OverviewStats 
               totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash} 
               onUpdateCashBalance={handleUpdateCashBalance}
             />
           </div>
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-3">
             <CashFlowCalendar events={allCalendarEvents} totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash} />
           </div>
         </div>
