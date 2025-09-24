@@ -19,6 +19,14 @@ export const useTransactions = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // Helper function to format date for database without timezone issues
+  const formatDateForDB = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const fetchTransactions = async () => {
     try {
       const { data, error } = await supabase
@@ -67,8 +75,8 @@ export const useTransactions = () => {
           description: transactionData.description,
           vendor_id: transactionData.vendorId,
           customer_id: transactionData.customerId,
-          transaction_date: transactionData.transactionDate.toISOString().split('T')[0],
-          due_date: transactionData.dueDate?.toISOString().split('T')[0],
+          transaction_date: formatDateForDB(transactionData.transactionDate),
+          due_date: transactionData.dueDate ? formatDateForDB(transactionData.dueDate) : null,
           status: transactionData.status
         })
         .select()

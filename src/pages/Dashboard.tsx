@@ -222,7 +222,7 @@ const Dashboard = () => {
       amount: amount,
       description: `${orderData.poName} - ${orderData.vendor}`,
       vendor: orderData.vendor,
-      date: new Date()
+      date: orderData.dueDate || new Date() // Use the actual due date, not today
     };
     setCashFlowEvents(prev => [newEvent, ...prev]);
 

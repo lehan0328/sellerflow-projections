@@ -23,6 +23,14 @@ export const useVendors = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // Helper function to format date for database without timezone issues
+  const formatDateForDB = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const fetchVendors = async () => {
     try {
       const { data, error } = await supabase
@@ -72,7 +80,7 @@ export const useVendors = () => {
           user_id: user.id,
           name: vendorData.name,
           total_owed: vendorData.totalOwed,
-          next_payment_date: vendorData.nextPaymentDate.toISOString().split('T')[0],
+          next_payment_date: formatDateForDB(vendorData.nextPaymentDate),
           next_payment_amount: vendorData.nextPaymentAmount,
           status: vendorData.status,
           category: vendorData.category,
@@ -127,7 +135,7 @@ export const useVendors = () => {
       const dbUpdates: any = {};
       if (updates.name) dbUpdates.name = updates.name;
       if (updates.totalOwed !== undefined) dbUpdates.total_owed = updates.totalOwed;
-      if (updates.nextPaymentDate) dbUpdates.next_payment_date = updates.nextPaymentDate.toISOString().split('T')[0];
+      if (updates.nextPaymentDate) dbUpdates.next_payment_date = formatDateForDB(updates.nextPaymentDate);
       if (updates.nextPaymentAmount !== undefined) dbUpdates.next_payment_amount = updates.nextPaymentAmount;
       if (updates.status) dbUpdates.status = updates.status;
       if (updates.category) dbUpdates.category = updates.category;
