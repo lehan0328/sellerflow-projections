@@ -172,7 +172,7 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
               <SelectContent>
                 <SelectItem value="name">Name</SelectItem>
                 <SelectItem value="totalOwed">Total Owed</SelectItem>
-                <SelectItem value="nextPaymentAmount">Next Payment</SelectItem>
+                <SelectItem value="nextPaymentAmount">Incoming $</SelectItem>
                 <SelectItem value="nextPaymentDate">Due Date</SelectItem>
               </SelectContent>
             </Select>
@@ -219,7 +219,7 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Next Payment:</span>
+                      <span className="text-muted-foreground">Incoming $:</span>
                       <span className="font-medium text-foreground">
                         ${vendor.nextPaymentAmount.toLocaleString()}
                       </span>

@@ -120,7 +120,7 @@ export function CreditCards() {
             <CardTitle>Credit Cards</CardTitle>
           </div>
           <div className="text-sm text-muted-foreground">
-            Total Owed: <span className="font-semibold">{formatCurrency(25959.18)}</span>
+            Total Available: <span className="font-semibold text-finance-positive">{formatCurrency(creditCards.reduce((sum, card) => sum + Math.max(0, card.availableCredit), 0))}</span>
           </div>
         </div>
       </CardHeader>

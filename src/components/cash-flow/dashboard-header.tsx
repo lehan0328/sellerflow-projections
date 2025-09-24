@@ -58,10 +58,10 @@ export function DashboardHeader() {
       {/* Navigation and User Menu - Top Right */}
       <div className="absolute top-6 right-6 z-40 flex items-center space-x-3">
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           onClick={() => navigate('/transactions')}
-          className="h-10 w-10 p-0"
+          className="h-10 w-10 p-0 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-accent hover:text-accent-foreground"
           title="View Transaction Log"
         >
           <History className="h-4 w-4" />

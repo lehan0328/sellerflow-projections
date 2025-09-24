@@ -71,7 +71,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
         icon={<CreditCard className="h-6 w-6 text-success" />}
       />
       <StatCard
-        title="Next Payout"
+        title="Incoming $"
         value="$0.00"
         subtitle="No scheduled payouts"
         trend="neutral"
