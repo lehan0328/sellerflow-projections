@@ -38,8 +38,13 @@ const Dashboard = () => {
   
   // Use database hooks
   const { vendors, addVendor, updateVendor, deleteVendor } = useVendors();
-  const { transactions, addTransaction, deleteTransaction } = useTransactions();
+  const { transactions, addTransaction, deleteTransaction, deleteAllTransactions } = useTransactions();
   const { totalCash, updateTotalCash } = useUserSettings();
+  
+  // Delete all vendor overview transactions on component mount (one-time cleanup)
+  React.useEffect(() => {
+    deleteAllTransactions();
+  }, [deleteAllTransactions]);
   
   // State for vendors used in forms (derived from database vendors)
   const formVendors = vendors.map(v => ({ 

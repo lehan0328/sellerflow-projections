@@ -133,6 +133,34 @@ export const useTransactions = () => {
     }
   };
 
+  const deleteAllTransactions = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setTransactions([]);
+      
+      toast({
+        title: "Success",
+        description: "All transactions deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting all transactions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete all transactions",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     fetchTransactions();
   }, []);
@@ -142,6 +170,7 @@ export const useTransactions = () => {
     loading,
     addTransaction,
     deleteTransaction,
+    deleteAllTransactions,
     refetch: fetchTransactions
   };
 };

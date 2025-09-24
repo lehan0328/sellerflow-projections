@@ -6,6 +6,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp, ShoppingBag } from "lucide-react";
+import { creditCards } from "./credit-cards";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays, startOfWeek, endOfWeek, getDay } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -47,6 +48,9 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
   
   // Total available cash passed from parent component
   const totalAvailableCash = totalCash;
+  
+  // Calculate total available credit
+  const totalAvailableCredit = creditCards.reduce((sum, card) => sum + Math.max(0, card.availableCredit), 0);
   
   // Use only real events from props, no default sample data
   const events = propEvents;
@@ -373,12 +377,23 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                             ${totalCash.toLocaleString()}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            Available
+                            Cash Available
+                          </div>
+                          <div className="text-sm font-semibold text-blue-600">
+                            ${totalAvailableCredit.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Credit Available
                           </div>
                         </div>
                       ) : (
-                        <div className="text-sm text-finance-positive font-semibold">
-                          ${totalCash.toLocaleString()}
+                        <div className="text-right">
+                          <div className="text-sm text-finance-positive font-semibold">
+                            ${totalCash.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-blue-600 font-medium">
+                            ${totalAvailableCredit.toLocaleString()}
+                          </div>
                         </div>
                       )}
                     </div>

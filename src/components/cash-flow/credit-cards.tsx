@@ -16,7 +16,7 @@ interface CreditCardAccount {
   statementClose: string;
 }
 
-const creditCards: CreditCardAccount[] = [
+export const creditCards: CreditCardAccount[] = [
   {
     id: "1",
     name: "Bank of America CORP Account - Business Adv Unlimited Cash Rewards",
