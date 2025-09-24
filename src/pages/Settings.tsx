@@ -32,14 +32,59 @@ import { useEffect, useState } from "react";
 import { PurchaseAddonsModal } from "@/components/cash-flow/purchase-addons-modal";
 import { AddAccountModal } from "@/components/cash-flow/add-account-modal";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [showPurchaseAddonsModal, setShowPurchaseAddonsModal] = useState(false);
   const [showAddAccountModal, setShowAddAccountModal] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Fetch user profile
+  const { data: profile, isLoading: profileLoading } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (profileData: { first_name?: string; last_name?: string; company?: string }) => {
+      if (!user?.id) throw new Error('No user ID');
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
+      toast.success('Profile updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    },
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -53,6 +98,16 @@ const Settings = () => {
     } else {
       toast.error('Failed to sign out');
     }
+  };
+
+  const handleSaveProfile = () => {
+    const formData = new FormData(document.getElementById('profile-form') as HTMLFormElement);
+    const profileData = {
+      first_name: formData.get('first-name') as string,
+      last_name: formData.get('last-name') as string,
+      company: formData.get('company') as string,
+    };
+    updateProfileMutation.mutate(profileData);
   };
 
   const handleExport = (type: string) => {
@@ -100,9 +155,13 @@ const Settings = () => {
                 </p>
               </div>
             </div>
-            <Button className="bg-gradient-primary">
+            <Button 
+              className="bg-gradient-primary"
+              onClick={handleSaveProfile}
+              disabled={updateProfileMutation.isPending}
+            >
               <Save className="h-4 w-4 mr-2" />
-              Save Changes
+              {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </div>
@@ -121,24 +180,61 @@ const Settings = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="first-name">First Name</Label>
-                    <Input id="first-name" defaultValue="Andy" />
+                {profileLoading ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="h-10 bg-muted animate-pulse rounded"></div>
+                      <div className="h-10 bg-muted animate-pulse rounded"></div>
+                    </div>
+                    <div className="h-10 bg-muted animate-pulse rounded"></div>
+                    <div className="h-10 bg-muted animate-pulse rounded"></div>
                   </div>
-                  <div>
-                    <Label htmlFor="last-name">Last Name</Label>
-                    <Input id="last-name" defaultValue="Johnson" />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" type="email" defaultValue="andy@example.com" />
-                </div>
-                <div>
-                  <Label htmlFor="company">Company Name</Label>
-                  <Input id="company" defaultValue="Andy's Amazon Business" />
-                </div>
+                ) : (
+                  <form id="profile-form">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="first-name">First Name</Label>
+                        <Input 
+                          id="first-name" 
+                          name="first-name"
+                          defaultValue={profile?.first_name || ""} 
+                          placeholder="Enter your first name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="last-name">Last Name</Label>
+                        <Input 
+                          id="last-name" 
+                          name="last-name"
+                          defaultValue={profile?.last_name || ""} 
+                          placeholder="Enter your last name"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        value={profile?.email || user?.email || ""} 
+                        disabled
+                        className="bg-muted"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Email cannot be changed here. Contact support if needed.
+                      </p>
+                    </div>
+                    <div>
+                      <Label htmlFor="company">Company Name</Label>
+                      <Input 
+                        id="company" 
+                        name="company"
+                        defaultValue={profile?.company || ""} 
+                        placeholder="Enter your company name"
+                      />
+                    </div>
+                  </form>
+                )}
               </CardContent>
             </Card>
 
