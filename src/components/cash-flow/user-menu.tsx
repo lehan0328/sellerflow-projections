@@ -8,15 +8,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Settings, CreditCard, LogOut } from "lucide-react";
+import { Settings, CreditCard, LogOut, RotateCcw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useUserSettings } from "@/hooks/useUserSettings";
 
 export function UserMenu() {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
+  const { resetAccount } = useUserSettings();
   
   // Fetch user profile
   const { data: profile } = useQuery({
@@ -90,6 +92,10 @@ export function UserMenu() {
         <DropdownMenuItem onClick={() => navigate('/upgrade-plan')}>
           <CreditCard className="mr-2 h-4 w-4" />
           <span>Upgrade Plan</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={resetAccount} className="text-orange-600">
+          <RotateCcw className="mr-2 h-4 w-4" />
+          <span>Reset Account Data</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="text-destructive">

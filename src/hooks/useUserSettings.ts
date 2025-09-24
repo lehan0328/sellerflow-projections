@@ -84,10 +84,53 @@ export const useUserSettings = () => {
     fetchUserSettings();
   }, []);
 
+  const resetAccount = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Reset user settings
+      await supabase
+        .from('user_settings')
+        .update({ total_cash: 0 })
+        .eq('user_id', user.id);
+
+      // Delete all transactions
+      await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', user.id);
+
+      // Delete all vendors
+      await supabase
+        .from('vendors')
+        .delete()
+        .eq('user_id', user.id);
+
+      setTotalCash(0);
+      
+      toast({
+        title: "Success",
+        description: "Account data has been reset",
+      });
+
+      // Refresh the page to show clean state
+      window.location.reload();
+    } catch (error) {
+      console.error('Error resetting account:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reset account data",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     totalCash,
     loading,
     updateTotalCash,
+    resetAccount,
     refetch: fetchUserSettings
   };
 };
