@@ -21,11 +21,12 @@ import { useUserSettings } from "@/hooks/useUserSettings";
 
 interface CashFlowEvent {
   id: string;
-  type: 'income' | 'expense' | 'vendor_payment';
+  type: 'income' | 'expense' | 'vendor_payment' | 'purchase-order';
   amount: number;
   description: string;
   vendor?: string;
   creditCard?: string;
+  source?: string;
   date: Date;
 }
 
@@ -162,7 +163,7 @@ const Dashboard = () => {
     // Create cash flow event
     const newEvent: CashFlowEvent = {
       id: Date.now().toString(),
-      type: 'expense',
+      type: 'purchase-order',
       amount: amount,
       description: `${orderData.poName} - ${orderData.vendor}`,
       vendor: orderData.vendor,
@@ -285,10 +286,13 @@ const Dashboard = () => {
   // Convert cash flow events to calendar format
   const calendarEvents = cashFlowEvents.map(event => ({
     id: event.id,
-    type: event.type === 'income' ? 'inflow' as const : 'outflow' as const,
+    type: event.type === 'income' ? 'inflow' as const : 
+          event.type === 'purchase-order' ? 'purchase-order' as const :
+          event.type === 'vendor_payment' ? 'outflow' as const : 'outflow' as const,
     amount: event.amount,
     description: event.description,
     vendor: event.vendor,
+    source: event.source,
     date: event.date
   }));
 
