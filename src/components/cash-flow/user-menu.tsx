@@ -1,0 +1,71 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Settings, CreditCard, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+
+interface UserMenuProps {
+  userName?: string;
+}
+
+export function UserMenu({ userName = "Andy Johnson" }: UserMenuProps) {
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+  
+  // Get initials from user name
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(part => part.charAt(0).toUpperCase())
+      .join('')
+      .slice(0, 2);
+  };
+
+  const handleSignOut = async () => {
+    const error = await signOut();
+    if (!error) {
+      toast.success('Signed out successfully');
+      navigate('/');
+    } else {
+      toast.error('Failed to sign out');
+    }
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+          <Avatar className="h-10 w-10">
+            <AvatarFallback className="bg-gradient-primary text-primary-foreground font-semibold">
+              {getInitials(userName)}
+            </AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuItem onClick={() => navigate('/settings')}>
+          <Settings className="mr-2 h-4 w-4" />
+          <span>Settings</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/upgrade-plan')}>
+          <CreditCard className="mr-2 h-4 w-4" />
+          <span>Upgrade Plan</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Sign out</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

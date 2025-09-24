@@ -263,55 +263,6 @@ const Settings = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Account Status & Billing */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Shield className="h-5 w-5" />
-                  <span>Account & Billing</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Plan</span>
-                  <Badge className="bg-gradient-primary">Starter - $29/mo</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Storage Used</span>
-                  <span className="text-sm text-muted-foreground">2.4 GB / 10 GB</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Bank Connections</span>
-                  <span className="text-sm text-muted-foreground">1 of 2</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Amazon Connections</span>
-                  <span className="text-sm text-muted-foreground">0 of 1</span>
-                </div>
-                <Separator />
-                <div className="flex space-x-2">
-                  <Button variant="outline" size="sm">
-                    Upgrade Plan
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    className="bg-gradient-primary"
-                    onClick={() => setShowPurchaseAddonsModal(true)}
-                  >
-                    <ShoppingBag className="h-4 w-4 mr-2" />
-                    Purchase Add-ons
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => setShowAddAccountModal(true)}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Account
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Data Export & Security */}
             <Card>
@@ -378,16 +329,6 @@ const Settings = () => {
                 </Button>
                 <Button variant="outline" size="sm" className="w-full">
                   Two-Factor Auth
-                </Button>
-                <Separator />
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={handleSignOut}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign Out
                 </Button>
                 <Separator />
                 <Button variant="destructive" size="sm" className="w-full">
