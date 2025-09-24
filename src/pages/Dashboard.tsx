@@ -12,7 +12,6 @@ import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { VendorForm } from "@/components/cash-flow/vendor-form";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
-import { DraggableGrid } from "@/components/ui/draggable-grid";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useUserSettings } from "@/hooks/useUserSettings";
@@ -335,72 +334,32 @@ const Dashboard = () => {
     date: event.date
   }));
 
-  // Convert vendor due dates to calendar events
-  const vendorDueDateEvents = activeVendors.map(vendor => ({
-    id: `vendor-${vendor.id}`,
-    type: 'outflow' as const,
-    amount: vendor.nextPaymentAmount,
-    description: `${vendor.name} - ${vendor.poName || 'Payment Due'}`,
-    vendor: vendor.name,
-    date: vendor.nextPaymentDate
-  }));
-
-  // Combine all events for calendar
-  const allCalendarEvents = [...sampleEvents, ...calendarEvents, ...vendorDueDateEvents];
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
       <DashboardHeader />
       <div className="p-6 space-y-6">
         <OverviewStats totalCash={totalCash} />
         
-        <DraggableGrid
-          items={[
-            {
-              id: 'cash-flow-calendar',
-              content: <CashFlowCalendar events={allCalendarEvents} totalCash={totalCash} />,
-              width: 800,
-              height: 400
-            },
-            {
-              id: 'transaction-log',
-              content: <TransactionLog 
-                transactions={formattedTransactions}
-                onUndoTransaction={handleUndoTransaction}
-              />,
-              width: 800,
-              height: 350
-            },
-            {
-              id: 'vendors-overview',
-              content: <VendorsOverview 
-                vendors={activeVendors as any}
-                onPayToday={handlePayToday}
-                onEditOrder={handleEditVendorOrder}
-              />,
-              width: 400,
-              height: 400
-            },
-            {
-              id: 'bank-accounts',
-              content: <BankAccounts />,
-              width: 400,
-              height: 300
-            },
-            {
-              id: 'credit-cards',
-              content: <CreditCards />,
-              width: 400,
-              height: 300
-            },
-            {
-              id: 'amazon-payouts',
-              content: <AmazonPayouts />,
-              width: 400,
-              height: 300
-            }
-          ]}
-        />
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="xl:col-span-2 space-y-6">
+            <CashFlowCalendar events={[...sampleEvents, ...calendarEvents]} totalCash={totalCash} />
+            <TransactionLog 
+              transactions={formattedTransactions}
+              onUndoTransaction={handleUndoTransaction}
+            />
+          </div>
+          
+          <div className="space-y-6">
+            <VendorsOverview 
+              vendors={activeVendors as any}
+              onPayToday={handlePayToday}
+              onEditOrder={handleEditVendorOrder}
+            />
+            <BankAccounts />
+            <CreditCards />
+            <AmazonPayouts />
+          </div>
+        </div>
       </div>
 
       <FloatingMenu
