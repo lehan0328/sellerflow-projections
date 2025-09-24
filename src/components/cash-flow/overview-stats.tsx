@@ -86,20 +86,29 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
   
   // Calculate incoming payments (inflow events including Amazon payouts and additional income)
   const incomingEndDate = getEndDate(incomingTimeRange);
-  const incomingPayments = events.filter(event => 
-    event.type === 'inflow' &&
-    event.date >= new Date() && 
-    event.date <= incomingEndDate
-  );
+  const now = new Date();
+  now.setHours(0, 0, 0, 0); // Start of today
+  
+  const incomingPayments = events.filter(event => {
+    const eventDate = new Date(event.date);
+    eventDate.setHours(0, 0, 0, 0); // Start of event day
+    
+    return event.type === 'inflow' &&
+           eventDate >= now && 
+           eventDate <= incomingEndDate;
+  });
   const incomingTotal = incomingPayments.reduce((sum, payment) => sum + payment.amount, 0);
   
   // Calculate upcoming payments (outflows)
   const upcomingEndDate = getEndDate(upcomingTimeRange);
-  const upcomingPayments = events.filter(event => 
-    (event.type === 'outflow' || event.type === 'purchase-order' || event.type === 'credit-payment') &&
-    event.date >= new Date() && 
-    event.date <= upcomingEndDate
-  );
+  const upcomingPayments = events.filter(event => {
+    const eventDate = new Date(event.date);
+    eventDate.setHours(0, 0, 0, 0); // Start of event day
+    
+    return (event.type === 'outflow' || event.type === 'purchase-order' || event.type === 'credit-payment') &&
+           eventDate >= now && 
+           eventDate <= upcomingEndDate;
+  });
   const upcomingTotal = upcomingPayments.reduce((sum, payment) => sum + payment.amount, 0);
   
   // Bank account balance (from bank-accounts.tsx sample data)

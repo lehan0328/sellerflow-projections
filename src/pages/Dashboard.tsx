@@ -374,10 +374,37 @@ const Dashboard = () => {
 
   const handleEditTransaction = (transaction: any) => {
     console.log("Editing transaction:", transaction);
-    // TODO: Implement transaction editing based on transaction type
-    // This could open different forms based on transaction.type
-    // For now, we'll just log the transaction
-    alert(`Edit transaction: ${transaction.description}\nAmount: $${transaction.amount}\nType: ${transaction.type}`);
+    
+    // Route to appropriate edit form based on transaction type
+    if (transaction.type === 'inflow' || transaction.type === 'income') {
+      // For income transactions, we need to find the corresponding income item
+      const incomeItem = incomeItems.find(item => 
+        item.description === transaction.description && 
+        Math.abs(item.amount - transaction.amount) < 0.01
+      );
+      
+      if (incomeItem) {
+        // TODO: Open income edit form - for now, show alert
+        alert(`Edit Income: ${incomeItem.description}\nAmount: $${incomeItem.amount}\nDate: ${incomeItem.paymentDate.toLocaleDateString()}`);
+      } else {
+        alert(`Income item not found for transaction: ${transaction.description}`);
+      }
+    } else if (transaction.type === 'purchase-order' || transaction.type === 'outflow' || transaction.vendor) {
+      // For vendor transactions, find the corresponding vendor
+      const vendor = vendors.find(v => 
+        v.name === transaction.vendor || 
+        transaction.description.includes(v.name) ||
+        v.poName === transaction.poName
+      );
+      
+      if (vendor) {
+        setEditingVendor(vendor);
+      } else {
+        alert(`Vendor not found for transaction: ${transaction.description}`);
+      }
+    } else {
+      alert(`Unknown transaction type: ${transaction.type}\nTransaction: ${transaction.description}`);
+    }
   };
 
   const handleAddVendor = async (vendorData: any) => {
@@ -422,7 +449,8 @@ const Dashboard = () => {
     id: event.id,
     type: event.type === 'income' ? 'inflow' as const : 
           event.type === 'purchase-order' ? 'purchase-order' as const :
-          event.type === 'vendor_payment' ? 'outflow' as const : 'outflow' as const,
+          event.type === 'vendor_payment' ? 'outflow' as const : 
+          event.type === 'expense' ? 'outflow' as const : 'outflow' as const,
     amount: event.amount,
     description: event.description,
     vendor: event.vendor,
@@ -442,6 +470,7 @@ const Dashboard = () => {
       <div className="p-6 space-y-6">
         <OverviewStats 
           totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash} 
+          events={allCalendarEvents}
           onUpdateCashBalance={handleUpdateCashBalance}
         />
         
