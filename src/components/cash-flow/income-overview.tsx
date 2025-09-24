@@ -103,7 +103,7 @@ export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, o
     .reduce((sum, income) => sum + income.amount, 0);
 
   return (
-    <Card className="shadow-card h-fit flex flex-col">
+    <Card className="shadow-card h-[600px] flex flex-col">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -164,8 +164,8 @@ export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, o
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4">
-        <div className="max-h-[620px] overflow-y-auto space-y-4 pr-2">
+      <CardContent className="p-4 flex-1 overflow-hidden">
+        <div className="h-full overflow-y-auto space-y-4 pr-2">
           {filteredAndSortedIncomes.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {searchTerm ? 'No income items found matching your search.' : 'No income items to display.'}
