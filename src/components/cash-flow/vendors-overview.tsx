@@ -240,12 +240,12 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
                     )}
                   </div>
                   <div className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center text-sm">
                       <span className="text-muted-foreground">Total Owed:</span>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium text-foreground">
-                          ${(vendor.totalOwed || 0).toLocaleString()}
-                        </span>
+                      <span className="font-medium text-foreground ml-2">
+                        ${(vendor.totalOwed || 0).toLocaleString()}
+                      </span>
+                      <div className="ml-auto">
                         <Button 
                           variant="outline" 
                           size="sm"
@@ -257,12 +257,12 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
                       </div>
                     </div>
                     {vendor.nextPaymentDate && (
-                      <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center text-sm">
                         <span className="text-muted-foreground">Due Date:</span>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-foreground">
-                            {new Date(vendor.nextPaymentDate).toLocaleDateString()}
-                          </span>
+                        <span className="font-medium text-foreground ml-2">
+                          {new Date(vendor.nextPaymentDate).toLocaleDateString()}
+                        </span>
+                        <div className="ml-auto">
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button 
