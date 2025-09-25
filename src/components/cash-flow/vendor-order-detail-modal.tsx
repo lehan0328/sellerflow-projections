@@ -197,7 +197,7 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
           <div className="flex space-x-3 pt-4">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button type="button" variant="destructive" className="flex-1 pointer-events-auto" onClick={() => console.debug('Delete trigger clicked', { selectedTxId })}>
+                <Button type="button" variant="destructive" className="flex-1" disabled={!selectedTxId}>
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete Transaction
                 </Button>
@@ -210,8 +210,8 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteTransactionClick} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={!selectedTxId}>
+                  <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+                  <AlertDialogAction type="button" onClick={handleDeleteTransactionClick} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={!selectedTxId}>
                     Delete Transaction
                   </AlertDialogAction>
                 </AlertDialogFooter>
