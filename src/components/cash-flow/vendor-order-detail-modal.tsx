@@ -32,8 +32,16 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
   const vendorTransactions = React.useMemo(() => transactions.filter(t => t.vendorId === vendor?.id), [transactions, vendor?.id]);
   const [selectedTxId, setSelectedTxId] = useState<string | undefined>(undefined);
   React.useEffect(() => {
-    setSelectedTxId(vendorTransactions[0]?.id);
-  }, [vendorTransactions, open]);
+    // Ensure a default selection if available and keep it in sync
+    if (!selectedTxId || !vendorTransactions.some((t) => t.id === selectedTxId)) {
+      setSelectedTxId(vendorTransactions[0]?.id);
+    }
+    console.debug("VendorOrderDetailModal", {
+      vendor: vendor?.name,
+      count: vendorTransactions.length,
+      selectedTxId,
+    });
+  }, [vendorTransactions, open, selectedTxId, vendor?.name]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,7 +197,7 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
           <div className="flex space-x-3 pt-4">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button type="button" variant="destructive" className="flex-1" disabled={!selectedTxId}>
+                <Button type="button" variant="destructive" className="flex-1 pointer-events-auto" onClick={() => console.debug('Delete trigger clicked', { selectedTxId })}>
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete Transaction
                 </Button>
