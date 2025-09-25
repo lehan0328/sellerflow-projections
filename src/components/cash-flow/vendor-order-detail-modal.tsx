@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
+import { useTransactions } from "@/hooks/useTransactions";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 
@@ -17,7 +18,8 @@ interface VendorOrderDetailModalProps {
 }
 
 export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrderDetailModalProps) => {
-  const { updateVendor, deleteVendor } = useVendors();
+  const { updateVendor } = useVendors();
+  const { transactions, deleteTransaction } = useTransactions();
   const [formData, setFormData] = useState({
     totalOwed: vendor?.totalOwed || 0,
     nextPaymentAmount: vendor?.nextPaymentAmount || 0,
@@ -48,15 +50,22 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeleteTransactions = async () => {
     if (!vendor) return;
 
     try {
-      await deleteVendor(vendor.id);
-      toast.success("Vendor deleted successfully");
+      // Find all transactions for this vendor
+      const vendorTransactions = transactions.filter(t => t.vendorId === vendor.id);
+      
+      // Delete all transactions for this vendor
+      for (const transaction of vendorTransactions) {
+        await deleteTransaction(transaction.id);
+      }
+
+      toast.success("Vendor transactions deleted successfully");
       onOpenChange(false);
     } catch (error) {
-      toast.error("Failed to delete vendor");
+      toast.error("Failed to delete vendor transactions");
     }
   };
 
@@ -161,20 +170,20 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
               <AlertDialogTrigger asChild>
                 <Button type="button" variant="destructive" className="flex-1">
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Vendor
+                  Delete Transactions
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Vendor</AlertDialogTitle>
+                  <AlertDialogTitle>Delete Vendor Transactions</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to delete "{vendor.name}"? This action cannot be undone and will remove all vendor data including purchase orders.
+                    Are you sure you want to delete all transactions for "{vendor.name}"? This action cannot be undone and will remove all transaction data for this vendor.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Delete
+                  <AlertDialogAction onClick={handleDeleteTransactions} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete Transactions
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
