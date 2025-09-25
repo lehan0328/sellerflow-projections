@@ -65,12 +65,13 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
   };
 
   const handleDeleteTransactionClick = async () => {
-    if (!selectedTxId) {
-      toast.error("Select a transaction to delete");
+    const targetId = selectedTxId || vendorTransactions[0]?.id;
+    if (!targetId) {
+      toast.error("No transactions available to delete");
       return;
     }
     try {
-      await deleteTransaction(selectedTxId);
+      await deleteTransaction(targetId);
       await refetch();
       onOpenChange(false);
     } catch (error) {
@@ -197,7 +198,7 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
           <div className="flex space-x-3 pt-4">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button type="button" variant="destructive" className="flex-1">
+                <Button type="button" variant="destructive" className="flex-1" onClick={() => setSelectedTxId(vendorTransactions[0]?.id)}>
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete Transaction
                 </Button>
