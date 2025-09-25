@@ -36,7 +36,7 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor }: VendorFormProps)
   const paymentTypeOptions = [
     { value: 'total', label: 'Total Amount Due' },
     { value: 'preorder', label: 'Pre-order w/ Deposit' },
-    { value: 'net', label: 'Net Terms' }
+    { value: 'net-terms', label: 'Net Terms' }
   ];
 
   const netTermsOptions = [
@@ -54,7 +54,7 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor }: VendorFormProps)
       name: formData.name,
       category: formData.category,
       paymentType: formData.paymentType,
-      netTermsDays: formData.paymentType === 'net' ? 
+      netTermsDays: formData.paymentType === 'net-terms' ? 
         (formData.netTermsDays === 'custom' ? formData.customNetDays : formData.netTermsDays) : 
         undefined
     };
@@ -140,7 +140,7 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor }: VendorFormProps)
             </div>
 
 
-            {formData.paymentType === 'net' && (
+            {formData.paymentType === 'net-terms' && (
               <div className="space-y-2 pl-6">
                 <Label htmlFor="netTermsDays">Net Terms</Label>
                 <div className="space-y-3">
