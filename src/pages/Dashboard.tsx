@@ -152,49 +152,31 @@ const Dashboard = () => {
     
     console.info("New total cash:", newTotalCash);
 
-    // Find existing vendor or create new one with PO details
-    let vendor = vendors.find(v => v.name === orderData.vendor);
+    // Always create a separate vendor entry for each purchase order
+    const paymentSchedule = orderData.paymentSchedule || [];
+    let nextPaymentDate = orderData.dueDate; // Use the calculated due date from form
+    let nextPaymentAmount = amount;
     
-    if (!vendor) {
-      // Create new vendor with purchase order details
-      const paymentSchedule = orderData.paymentSchedule || [];
-      let nextPaymentDate = orderData.dueDate; // Use the calculated due date from form
-      let nextPaymentAmount = amount;
-      
-      // For preorder, use first payment from schedule
-      if (orderData.paymentType === 'preorder' && paymentSchedule.length > 0) {
-        nextPaymentDate = paymentSchedule[0].dueDate;
-        nextPaymentAmount = parseFloat(paymentSchedule[0].amount);
-      }
-
-      vendor = await addVendor({
-        name: orderData.vendor,
-        totalOwed: amount,
-        nextPaymentDate: nextPaymentDate || orderData.poDate || new Date(),
-        nextPaymentAmount: nextPaymentAmount,
-        status: 'upcoming',
-        category: orderData.category || '',
-        paymentType: orderData.paymentType,
-        netTermsDays: orderData.netTermsDays,
-        poName: orderData.poName,
-        description: orderData.description,
-        notes: orderData.notes,
-        paymentSchedule: paymentSchedule
-      });
-    } else {
-      // Update existing vendor with new order details
-      const updatedTotalOwed = vendor.totalOwed + amount;
-      await updateVendor(vendor.id, {
-        totalOwed: updatedTotalOwed,
-        poName: orderData.poName,
-        description: orderData.description,
-        notes: orderData.notes,
-        paymentType: orderData.paymentType,
-        netTermsDays: orderData.netTermsDays,
-        paymentSchedule: orderData.paymentSchedule || []
-      });
-      vendor = { ...vendor, totalOwed: updatedTotalOwed };
+    // For preorder, use first payment from schedule
+    if (orderData.paymentType === 'preorder' && paymentSchedule.length > 0) {
+      nextPaymentDate = paymentSchedule[0].dueDate;
+      nextPaymentAmount = parseFloat(paymentSchedule[0].amount);
     }
+
+    const vendor = await addVendor({
+      name: orderData.vendor,
+      totalOwed: amount,
+      nextPaymentDate: nextPaymentDate || orderData.poDate || new Date(),
+      nextPaymentAmount: nextPaymentAmount,
+      status: 'upcoming',
+      category: orderData.category || '',
+      paymentType: orderData.paymentType,
+      netTermsDays: orderData.netTermsDays,
+      poName: orderData.poName,
+      description: orderData.description,
+      notes: orderData.notes,
+      paymentSchedule: paymentSchedule
+    });
 
     await addTransaction({
       type: 'purchase_order',
