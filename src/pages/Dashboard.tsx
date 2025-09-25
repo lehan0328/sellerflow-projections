@@ -178,6 +178,22 @@ const Dashboard = () => {
       nextPaymentAmount = parseFloat(paymentSchedule[0].amount);
     }
 
+    // Map form payment types to database payment types
+    let dbPaymentType: 'total' | 'preorder' | 'net-terms' = 'total'; // default
+    switch (orderData.paymentType) {
+      case 'net-terms':
+        dbPaymentType = 'net-terms';
+        break;
+      case 'preorder':
+        dbPaymentType = 'preorder';
+        break;
+      case 'due-upon-order':
+      case 'due-upon-delivery':
+      default:
+        dbPaymentType = 'total';
+        break;
+    }
+
     const vendor = await addVendor({
       name: orderData.vendor,
       totalOwed: amount,
@@ -185,7 +201,7 @@ const Dashboard = () => {
       nextPaymentAmount: nextPaymentAmount,
       status: 'upcoming',
       category: orderData.category || '',
-      paymentType: orderData.paymentType,
+      paymentType: dbPaymentType,
       netTermsDays: orderData.netTermsDays,
       poName: orderData.poName,
       description: orderData.description,
