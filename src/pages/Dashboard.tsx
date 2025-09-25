@@ -43,7 +43,7 @@ const Dashboard = () => {
   const formVendors = vendors.map(v => ({ 
     id: v.id, 
     name: v.name, 
-    paymentType: v.paymentType || 'total', 
+    paymentType: v.paymentType || 'due-upon-order', 
     netTermsDays: v.netTermsDays || '30' 
   }));
 
@@ -158,17 +158,10 @@ const Dashboard = () => {
     if (!vendor) {
       // Create new vendor with purchase order details
       const paymentSchedule = orderData.paymentSchedule || [];
-      let nextPaymentDate = orderData.dueDate;
+      let nextPaymentDate = orderData.dueDate; // Use the calculated due date from form
       let nextPaymentAmount = amount;
       
-      // For net terms, calculate due date
-      if (orderData.paymentType === 'net-terms') {
-        const days = orderData.netTermsDays === 'custom' ? 
-          parseInt(orderData.customDays) : parseInt(orderData.netTermsDays);
-        nextPaymentDate = addDays(new Date(), days);
-      }
-      
-      // For preorder, use first payment
+      // For preorder, use first payment from schedule
       if (orderData.paymentType === 'preorder' && paymentSchedule.length > 0) {
         nextPaymentDate = paymentSchedule[0].dueDate;
         nextPaymentAmount = parseFloat(paymentSchedule[0].amount);
@@ -177,7 +170,7 @@ const Dashboard = () => {
       vendor = await addVendor({
         name: orderData.vendor,
         totalOwed: amount,
-        nextPaymentDate: nextPaymentDate || new Date(),
+        nextPaymentDate: nextPaymentDate || orderData.poDate || new Date(),
         nextPaymentAmount: nextPaymentAmount,
         status: 'upcoming',
         category: orderData.category || '',
@@ -213,14 +206,15 @@ const Dashboard = () => {
       status: 'completed'
     });
 
-    // Create cash flow event
+    // Create cash flow event with proper due date
+    const eventDate = orderData.dueDate || orderData.poDate || new Date();
     const newEvent: CashFlowEvent = {
       id: Date.now().toString(),
       type: 'purchase-order',
       amount: amount,
       description: `${orderData.poName} - ${orderData.vendor}`,
       vendor: orderData.vendor,
-      date: orderData.dueDate || new Date() // Use the actual due date, not today
+      date: eventDate // Use the calculated due date for calendar display
     };
     setCashFlowEvents(prev => [newEvent, ...prev]);
 

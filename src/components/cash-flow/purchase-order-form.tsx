@@ -37,11 +37,13 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
     poName: "",
     vendor: "",
     amount: "",
+    poDate: new Date(),
     dueDate: undefined as Date | undefined,
+    deliveryDate: undefined as Date | undefined,
     description: "",
     category: "",
     notes: "",
-    paymentType: "total" as "total" | "preorder" | "net-terms",
+    paymentType: "due-upon-order" as "due-upon-order" | "net-terms" | "preorder" | "due-upon-delivery",
     netTermsDays: "30" as "30" | "60" | "90" | "custom",
     customDays: ""
   });
@@ -51,6 +53,8 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
   ]);
 
   const [isMainDatePickerOpen, setIsMainDatePickerOpen] = useState(false);
+  const [isPODatePickerOpen, setIsPODatePickerOpen] = useState(false);
+  const [isDeliveryDatePickerOpen, setIsDeliveryDatePickerOpen] = useState(false);
   const [openPaymentDatePickers, setOpenPaymentDatePickers] = useState<Record<string, boolean>>({});
 
 
@@ -85,11 +89,32 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
     ));
   };
 
+  const calculateDueDate = () => {
+    switch (formData.paymentType) {
+      case "due-upon-order":
+        return formData.poDate;
+      case "net-terms":
+        const days = formData.netTermsDays === "custom" 
+          ? parseInt(formData.customDays) || 0 
+          : parseInt(formData.netTermsDays);
+        return addDays(formData.poDate, days);
+      case "due-upon-delivery":
+        return formData.deliveryDate;
+      case "preorder":
+        return undefined; // For preorder, due dates are in payment schedule
+      default:
+        return formData.poDate;
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    const calculatedDueDate = calculateDueDate();
+    
     const orderData = {
       ...formData,
+      dueDate: calculatedDueDate,
       paymentSchedule: formData.paymentType === "preorder" ? paymentSchedule : undefined
     };
     
@@ -102,11 +127,13 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
       poName: "",
       vendor: "",
       amount: "",
+      poDate: new Date(),
       dueDate: undefined,
+      deliveryDate: undefined,
       description: "",
       category: "",
       notes: "",
-      paymentType: "total",
+      paymentType: "due-upon-order",
       netTermsDays: "30",
       customDays: ""
     });
@@ -123,7 +150,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
       setFormData(prev => ({ 
         ...prev, 
         vendor: vendorName,
-        paymentType: selectedVendor.paymentType as "total" | "preorder" | "net-terms",
+        paymentType: selectedVendor.paymentType as "due-upon-order" | "net-terms" | "preorder" | "due-upon-delivery",
         netTermsDays: (selectedVendor.netTermsDays || "30") as "30" | "60" | "90" | "custom",
       }));
       
@@ -178,133 +205,165 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
             />
           </div>
           
+          <div className="space-y-2">
+            <Label>PO Date *</Label>
+            <Popover open={isPODatePickerOpen} onOpenChange={setIsPODatePickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.poDate ? format(formData.poDate, "PPP") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={formData.poDate}
+                  onSelect={(date) => {
+                    handleInputChange("poDate", date || new Date());
+                    setIsPODatePickerOpen(false);
+                  }}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
           <div className="space-y-3">
-            <Label>Payment Type</Label>
+            <Label>Payment Terms</Label>
             <RadioGroup 
               value={formData.paymentType} 
               onValueChange={(value) => handleInputChange("paymentType", value)}
               className="flex flex-col space-y-2"
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="total" id="total" />
-                <Label htmlFor="total">Total Amount Due</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="preorder" id="preorder" />
-                <Label htmlFor="preorder">Pre-order w/ Deposit</Label>
+                <RadioGroupItem value="due-upon-order" id="due-upon-order" />
+                <Label htmlFor="due-upon-order">Due Upon Order</Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="net-terms" id="net-terms" />
-                <Label htmlFor="net-terms">Net Terms</Label>
+                <Label htmlFor="net-terms">Net Terms (30, 60, 90 days)</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="preorder" id="preorder" />
+                <Label htmlFor="preorder">Pre-order with Deposit</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="due-upon-delivery" id="due-upon-delivery" />
+                <Label htmlFor="due-upon-delivery">Due Upon Delivery</Label>
               </div>
             </RadioGroup>
           </div>
 
-          {formData.paymentType === "total" ? (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="amount">Total Amount ($)</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="0.00"
-                  value={formData.amount}
-                  onChange={(e) => handleInputChange("amount", e.target.value)}
-                  required
-                />
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="amount">Total Amount ($)</Label>
+            <Input
+              id="amount"
+              type="number"
+              placeholder="0.00"
+              value={formData.amount}
+              onChange={(e) => handleInputChange("amount", e.target.value)}
+              required
+            />
+          </div>
 
-              <div className="space-y-2">
-                <Label>Due Date</Label>
-                <Popover open={isMainDatePickerOpen} onOpenChange={setIsMainDatePickerOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-left font-normal"
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.dueDate ? format(formData.dueDate, "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={formData.dueDate}
-                      onSelect={(date) => {
-                        handleInputChange("dueDate", date || new Date());
-                        setIsMainDatePickerOpen(false);
-                      }}
-                      initialFocus
-                      className="p-3 pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </>
-          ) : formData.paymentType === "net-terms" ? (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="amount">Total Amount ($)</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="0.00"
-                  value={formData.amount}
-                  onChange={(e) => handleInputChange("amount", e.target.value)}
-                  required
-                />
-              </div>
+          {formData.paymentType === "due-upon-order" && (
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                <strong>Due Date:</strong> {format(formData.poDate, "PPP")} (same as PO date)
+              </p>
+            </div>
+          )}
 
-              <div className="space-y-3">
-                <Label>Net Terms</Label>
-                <RadioGroup 
-                  value={formData.netTermsDays} 
-                  onValueChange={(value) => handleInputChange("netTermsDays", value)}
-                  className="flex flex-wrap gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="30" id="net30" />
-                    <Label htmlFor="net30">Net 30</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="60" id="net60" />
-                    <Label htmlFor="net60">Net 60</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="90" id="net90" />
-                    <Label htmlFor="net90">Net 90</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="custom" id="custom" />
-                    <Label htmlFor="custom">Custom</Label>
-                  </div>
-                </RadioGroup>
+          {formData.paymentType === "net-terms" ? (
+            <div className="space-y-3">
+              <Label>Net Terms</Label>
+              <RadioGroup 
+                value={formData.netTermsDays} 
+                onValueChange={(value) => handleInputChange("netTermsDays", value)}
+                className="flex flex-wrap gap-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="30" id="net30" />
+                  <Label htmlFor="net30">Net 30</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="60" id="net60" />
+                  <Label htmlFor="net60">Net 60</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="90" id="net90" />
+                  <Label htmlFor="net90">Net 90</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="custom" id="custom" />
+                  <Label htmlFor="custom">Custom</Label>
+                </div>
+              </RadioGroup>
 
-                {formData.netTermsDays === "custom" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="customDays">Custom Days</Label>
-                    <Input
-                      id="customDays"
-                      type="number"
-                      placeholder="Enter days"
-                      value={formData.customDays}
-                      onChange={(e) => handleInputChange("customDays", e.target.value)}
-                      required
-                    />
-                  </div>
-                )}
+              {formData.netTermsDays === "custom" && (
+                <div className="space-y-2">
+                  <Label htmlFor="customDays">Custom Days</Label>
+                  <Input
+                    id="customDays"
+                    type="number"
+                    placeholder="Enter days"
+                    value={formData.customDays}
+                    onChange={(e) => handleInputChange("customDays", e.target.value)}
+                    required
+                  />
+                </div>
+              )}
 
-                <div className="text-sm text-muted-foreground">
-                  Due Date: {(() => {
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Due Date:</strong> {(() => {
                     const days = formData.netTermsDays === "custom" 
                       ? parseInt(formData.customDays) || 0 
                       : parseInt(formData.netTermsDays);
-                    const dueDate = addDays(new Date(), days);
+                    const dueDate = addDays(formData.poDate, days);
                     return format(dueDate, "PPP");
-                  })()}
-                </div>
+                  })()} ({formData.netTermsDays === "custom" ? formData.customDays : formData.netTermsDays} days from PO date)
+                </p>
               </div>
-            </>
+            </div>
+          ) : formData.paymentType === "due-upon-delivery" ? (
+            <div className="space-y-2">
+              <Label>Delivery Date *</Label>
+              <Popover open={isDeliveryDatePickerOpen} onOpenChange={setIsDeliveryDatePickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.deliveryDate ? format(formData.deliveryDate, "PPP") : "Pick delivery date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={formData.deliveryDate}
+                    onSelect={(date) => {
+                      handleInputChange("deliveryDate", date || new Date());
+                      setIsDeliveryDatePickerOpen(false);
+                    }}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+              {formData.deliveryDate && (
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Due Date:</strong> {format(formData.deliveryDate, "PPP")} (same as delivery date)
+                  </p>
+                </div>
+              )}
+            </div>
           ) : (
             <div className="space-y-4">
               <div className="space-y-2">
