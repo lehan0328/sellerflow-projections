@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 
 interface VendorOrderDetailModalProps {
   open: boolean;
@@ -15,7 +17,7 @@ interface VendorOrderDetailModalProps {
 }
 
 export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrderDetailModalProps) => {
-  const { updateVendor } = useVendors();
+  const { updateVendor, deleteVendor } = useVendors();
   const [formData, setFormData] = useState({
     totalOwed: vendor?.totalOwed || 0,
     nextPaymentAmount: vendor?.nextPaymentAmount || 0,
@@ -43,6 +45,18 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
       onOpenChange(false);
     } catch (error) {
       toast.error("Failed to update vendor order");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!vendor) return;
+
+    try {
+      await deleteVendor(vendor.id);
+      toast.success("Vendor deleted successfully");
+      onOpenChange(false);
+    } catch (error) {
+      toast.error("Failed to delete vendor");
     }
   };
 
@@ -143,6 +157,31 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
           </div>
           
           <div className="flex space-x-3 pt-4">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="destructive" className="flex-1">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Vendor
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Vendor</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{vendor.name}"? This action cannot be undone and will remove all vendor data including purchase orders.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+          
+          <div className="flex space-x-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Cancel
             </Button>

@@ -35,11 +35,6 @@ interface CashFlowCalendarProps {
 export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEditTransaction }: CashFlowCalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'calendar' | 'chart'>('calendar');
-  const [dateRangeOption, setDateRangeOption] = useState<'next30' | 'thisMonth' | 'nextMonth'>('next30');
-  const [dateRange, setDateRange] = useState({
-    start: new Date(),
-    end: addDays(new Date(), 30)
-  });
   const [selectedTransaction, setSelectedTransaction] = useState<CashFlowEvent | null>(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedDayTransactions, setSelectedDayTransactions] = useState<CashFlowEvent[]>([]);
@@ -58,19 +53,10 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   
-  // Use date range for calendar view when specific ranges are selected
-  const calendarStart = dateRangeOption === 'next30' ? dateRange.start : monthStart;
-  const calendarEnd = dateRangeOption === 'next30' ? dateRange.end : monthEnd;
-  
-  // For proper calendar display, we need to include the full weeks
-  const calendarStartWithWeek = dateRangeOption === 'next30' ? 
-    startOfWeek(calendarStart, { weekStartsOn: 0 }) : // Sunday = 0
-    startOfWeek(monthStart, { weekStartsOn: 0 });
-    
-  const calendarEndWithWeek = dateRangeOption === 'next30' ? 
-    endOfWeek(calendarEnd, { weekStartsOn: 0 }) :
-    endOfWeek(monthEnd, { weekStartsOn: 0 });
-    
+  // Always show current month view
+  const calendarStartWithWeek = startOfWeek(monthStart, { weekStartsOn: 0 }); // Sunday = 0
+  const calendarEndWithWeek = endOfWeek(monthEnd, { weekStartsOn: 0 });
+     
   const days = eachDayOfInterval({ start: calendarStartWithWeek, end: calendarEndWithWeek });
 
   const getEventsForDay = (date: Date) => {
@@ -151,47 +137,9 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
     setCurrentDate(prev => direction === 'prev' ? subMonths(prev, 1) : addMonths(prev, 1));
   };
 
-  const handleDateRangeOptionChange = (option: 'next30' | 'thisMonth' | 'nextMonth') => {
-    setDateRangeOption(option);
-    const now = new Date();
-    
-    switch (option) {
-      case 'next30':
-        // Ensure today is always included in the range
-        const next30Start = now;
-        const next30End = addDays(now, 30);
-        setDateRange({
-          start: next30Start,
-          end: next30End
-        });
-        // Update the calendar view to show the range
-        setCurrentDate(next30Start);
-        break;
-      case 'thisMonth':
-        const thisMonthStart = startOfMonth(now);
-        const thisMonthEnd = endOfMonth(now);
-        setDateRange({
-          start: thisMonthStart,
-          end: thisMonthEnd
-        });
-        setCurrentDate(now);
-        break;
-      case 'nextMonth':
-        const nextMonth = addMonths(now, 1);
-        const nextMonthStart = startOfMonth(nextMonth);
-        const nextMonthEnd = endOfMonth(nextMonth);
-        setDateRange({
-          start: nextMonthStart,
-          end: nextMonthEnd
-        });
-        setCurrentDate(nextMonth);
-        break;
-    }
-  };
-
-  // Generate chart data for line chart view
+  // Generate chart data for current month
   const generateChartData = () => {
-    const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
+    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
     let runningTotal = totalAvailableCash;
     
     return days.map(day => {
@@ -254,20 +202,7 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
 
   return (
     <Card className="shadow-card h-[700px] flex flex-col">
-      <div className="relative flex-shrink-0">
-        <div className="absolute top-4 right-4 z-10">
-          <Select value={dateRangeOption} onValueChange={handleDateRangeOptionChange}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Select range" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50">
-              <SelectItem value="next30">Next 30 Days</SelectItem>
-              <SelectItem value="thisMonth">This Month</SelectItem>
-              <SelectItem value="nextMonth">Next Month</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
+      <div className="relative flex-shrink-0">        
         <CardHeader className="pb-4 flex-shrink-0">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             <div className="flex items-center justify-start">
@@ -312,7 +247,7 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <h3 className="text-xl font-semibold min-w-[200px] text-center">
-              {dateRangeOption === 'next30' ? `${format(dateRange.start, 'MMM dd')} - ${format(dateRange.end, 'MMM dd, yyyy')}` : format(currentDate, 'MMMM yyyy')}
+              {format(currentDate, 'MMMM yyyy')}
             </h3>
             <Button variant="outline" size="sm" onClick={() => navigateMonth('next')}>
               <ChevronRight className="h-4 w-4" />
@@ -347,9 +282,7 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                        min-h-[120px] p-2 border rounded-lg relative flex flex-col
                        ${totalCash < 0 ? 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800' : 
                          isToday(day) ? 'ring-2 ring-primary bg-primary/5 cursor-pointer hover:bg-primary/10' : 
-                         dateRangeOption === 'next30' ? 
-                           (day >= dateRange.start && day <= dateRange.end ? 'bg-background' : 'opacity-30 bg-background') : 
-                           (!isSameMonth(day, currentDate) ? 'opacity-30 bg-background' : 'bg-background')
+                         (!isSameMonth(day, currentDate) ? 'opacity-30 bg-background' : 'bg-background')
                        }
                        ${hasEvents ? 'border-primary/30' : 'border-border'}
                      `}
