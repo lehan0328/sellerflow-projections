@@ -153,11 +153,11 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="vendor">Vendor</Label>
-            <Select onValueChange={handleVendorChange}>
+            <Select value={formData.vendor} onValueChange={handleVendorChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select vendor" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[70] bg-popover text-popover-foreground border border-border shadow-lg">
                 {vendors.map(vendor => (
                   <SelectItem key={vendor.id} value={vendor.name}>
                     {vendor.name}
