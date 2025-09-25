@@ -460,9 +460,9 @@ const Dashboard = () => {
         {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <VendorsOverview 
-            vendors={activeVendors as any}
-            onPayToday={handlePayToday}
-            onEditOrder={handleEditVendorOrder}
+            onTransactionUpdate={() => {
+              // Refresh transactions if needed
+            }}
           />
           <IncomeOverview
             incomeItems={incomeItems}

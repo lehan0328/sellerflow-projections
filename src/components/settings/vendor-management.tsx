@@ -16,6 +16,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface VendorEditFormData {
   name: string;
@@ -34,6 +36,7 @@ export function VendorManagement() {
     netTermsDays: "30"
   });
   const { vendors, loading, addVendor, updateVendor, deleteVendor } = useVendors();
+  const { toast } = useToast();
 
   const categories = [
     "Inventory",
@@ -88,7 +91,23 @@ export function VendorManagement() {
   };
 
   const handleDeleteVendor = async (vendorId: string) => {
-    if (confirm('Are you sure you want to delete this vendor? This will also delete all associated transactions.')) {
+    // Check if vendor has associated transactions
+    const { data: transactions } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('vendor_id', vendorId)
+      .limit(1);
+    
+    if (transactions && transactions.length > 0) {
+      toast({
+        title: "Cannot Delete Vendor",
+        description: "This vendor has associated transactions. Please remove all transactions first.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (confirm('Are you sure you want to delete this vendor?')) {
       await deleteVendor(vendorId);
     }
   };

@@ -4,54 +4,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Calendar, DollarSign, AlertTriangle, Plus, Edit, CreditCard, Search, ArrowUpDown } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
-import { toast } from "sonner";
-import * as React from "react";
-
-interface Vendor {
-  id: string;
-  name: string;
-  totalOwed: number;
-  nextPaymentDate: Date;
-  nextPaymentAmount: number;
-  status: 'current' | 'overdue' | 'upcoming';
-  category: string;
-}
+import { Building2, Calendar, DollarSign, AlertTriangle, CreditCard, Search, ArrowUpDown } from "lucide-react";
+import { useState, useMemo } from "react";
+import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 
 interface VendorsOverviewProps {
-  vendors: Vendor[];
-  onPayToday?: (vendor: Vendor, amount?: number) => void;
-  onVendorUpdate?: (vendors: Vendor[]) => void;
-  onEditOrder?: (vendor: Vendor) => void;
+  onTransactionUpdate?: () => void;
 }
 
-export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpdate, onEditOrder }: VendorsOverviewProps) => {
-  const [vendors, setVendors] = useState<Vendor[]>(propVendors);
+export const VendorsOverview = ({ onTransactionUpdate }: VendorsOverviewProps) => {
+  const { transactions, loading, markAsPaid } = useVendorTransactions();
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'totalOwed' | 'nextPaymentDate' | 'nextPaymentAmount'>('name');
+  const [sortBy, setSortBy] = useState<'vendorName' | 'amount' | 'dueDate'>('dueDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  // Update local state when props change
-  React.useEffect(() => {
-    setVendors(propVendors);
-  }, [propVendors]);
-
-  // Filter and sort vendors
-  const filteredAndSortedVendors = useMemo(() => {
-    let filtered = vendors.filter(vendor => 
-      vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vendor.totalOwed.toString().includes(searchTerm) ||
-      vendor.nextPaymentAmount.toString().includes(searchTerm)
+  // Filter and sort transactions
+  const filteredAndSortedTransactions = useMemo(() => {
+    let filtered = transactions.filter(transaction => 
+      transaction.status === 'pending' && (
+        transaction.vendorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        transaction.amount.toString().includes(searchTerm) ||
+        transaction.category.toLowerCase().includes(searchTerm.toLowerCase())
+      )
     );
 
     return filtered.sort((a, b) => {
       let aValue = a[sortBy];
       let bValue = b[sortBy];
 
-      if (sortBy === 'nextPaymentDate') {
-        aValue = a.nextPaymentDate.getTime();
-        bValue = b.nextPaymentDate.getTime();
+      if (sortBy === 'dueDate') {
+        aValue = a.dueDate.getTime();
+        bValue = b.dueDate.getTime();
       }
 
       if (typeof aValue === 'string') {
@@ -66,47 +49,20 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
 
       return 0;
     });
-  }, [vendors, searchTerm, sortBy, sortOrder]);
+  }, [transactions, searchTerm, sortBy, sortOrder]);
 
-  const handleSaveVendor = (updatedVendor: Vendor) => {
-    const updatedVendors = vendors.map(v => v.id === updatedVendor.id ? updatedVendor : v);
-    setVendors(updatedVendors);
-    onVendorUpdate?.(updatedVendors);
-  };
-
-  const handlePayToday = (vendor: Vendor, customAmount?: number) => {
-    const paymentAmount = customAmount || vendor.nextPaymentAmount;
-    const newTotalOwed = vendor.totalOwed - paymentAmount;
-    
-    if (newTotalOwed <= 0) {
-      // Full payment - remove vendor from list
-      const updatedVendors = vendors.filter(v => v.id !== vendor.id);
-      setVendors(updatedVendors);
-      onVendorUpdate?.(updatedVendors);
-      toast.success(`Full payment completed for ${vendor.name}. Vendor removed from overview.`);
-    } else {
-      // Partial payment - update vendor
-      const updatedVendor = {
-        ...vendor,
-        totalOwed: newTotalOwed,
-        nextPaymentAmount: Math.min(newTotalOwed, vendor.nextPaymentAmount)
-      };
-      const updatedVendors = vendors.map(v => v.id === vendor.id ? updatedVendor : v);
-      setVendors(updatedVendors);
-      onVendorUpdate?.(updatedVendors);
-      toast.success(`Partial payment of $${paymentAmount.toLocaleString()} made to ${vendor.name}. Remaining: $${newTotalOwed.toLocaleString()}`);
-    }
-    
-    onPayToday?.(vendor, paymentAmount);
+  const handleMarkAsPaid = async (transaction: any) => {
+    await markAsPaid(transaction.id);
+    onTransactionUpdate?.();
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'overdue':
         return 'destructive';
-      case 'upcoming':
+      case 'pending':
         return 'default';
-      case 'current':
+      case 'paid':
         return 'secondary';
       default:
         return 'secondary';
@@ -120,10 +76,14 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
     return <Calendar className="h-4 w-4" />;
   };
 
-  const totalOwed = filteredAndSortedVendors.reduce((sum, vendor) => sum + vendor.totalOwed, 0);
-  const overdueAmount = filteredAndSortedVendors
-    .filter(v => v.status === 'overdue')
-    .reduce((sum, vendor) => sum + vendor.totalOwed, 0);
+  const isOverdue = (dueDate: Date) => {
+    return dueDate < new Date() && dueDate.toDateString() !== new Date().toDateString();
+  };
+
+  const totalPending = filteredAndSortedTransactions.reduce((sum, transaction) => sum + transaction.amount, 0);
+  const overdueAmount = filteredAndSortedTransactions
+    .filter(t => isOverdue(t.dueDate))
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
 
   return (
     <Card className="shadow-card h-[700px] flex flex-col">
@@ -132,13 +92,13 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
           <div className="flex items-center space-x-2">
             <CardTitle className="text-lg flex items-center space-x-2">
               <Building2 className="h-5 w-5" />
-              <span>Vendors Overview</span>
+              <span>Vendor Payments Due</span>
             </CardTitle>
             <div className="flex items-center space-x-4 text-sm">
             <div className="flex items-center space-x-2">
               <DollarSign className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Total Owed:</span>
-              <span className="font-semibold">${totalOwed.toLocaleString()}</span>
+              <span className="text-muted-foreground">Pending:</span>
+              <span className="font-semibold">${totalPending.toLocaleString()}</span>
             </div>
             {overdueAmount > 0 && (
               <div className="flex items-center space-x-2">
@@ -156,7 +116,7 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder="Search vendors or amounts..."
+              placeholder="Search transactions..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -170,10 +130,9 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
                 <SelectValue placeholder="Sort by..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="totalOwed">Total Owed</SelectItem>
-                <SelectItem value="nextPaymentAmount">Incoming $</SelectItem>
-                <SelectItem value="nextPaymentDate">Due Date</SelectItem>
+                <SelectItem value="vendorName">Vendor</SelectItem>
+                <SelectItem value="amount">Amount</SelectItem>
+                <SelectItem value="dueDate">Due Date</SelectItem>
               </SelectContent>
             </Select>
             
@@ -189,63 +148,59 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
       </CardHeader>
       <CardContent className="p-4 flex-1 overflow-hidden">
         <div className="h-full overflow-y-auto space-y-2 pr-2">
-          {filteredAndSortedVendors.length === 0 ? (
+          {loading ? (
             <div className="text-center py-8 text-muted-foreground">
-              {searchTerm ? 'No vendors found matching your search.' : 'No vendors to display.'}
+              Loading transactions...
+            </div>
+          ) : filteredAndSortedTransactions.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {searchTerm ? 'No transactions found matching your search.' : 'No pending payments.'}
             </div>
           ) : (
-            filteredAndSortedVendors.map((vendor) => (
+            filteredAndSortedTransactions.map((transaction) => (
             <div
-              key={vendor.id}
+              key={transaction.id}
               className="p-3 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:shadow-md"
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
-                    <h4 className="font-semibold text-base">{vendor.name}</h4>
+                    <h4 className="font-semibold text-base">{transaction.vendorName}</h4>
                     <Badge variant="outline" className="text-xs">
-                      {vendor.category}
+                      {transaction.category}
                     </Badge>
-                    <Badge variant={getStatusColor(vendor.status)} className="text-xs">
-                      {getStatusIcon(vendor.status)}
-                      <span className="ml-1 capitalize">{vendor.status}</span>
+                    <Badge variant={getStatusColor(isOverdue(transaction.dueDate) ? 'overdue' : 'pending')} className="text-xs">
+                      {getStatusIcon(isOverdue(transaction.dueDate) ? 'overdue' : 'pending')}
+                      <span className="ml-1 capitalize">
+                        {isOverdue(transaction.dueDate) ? 'overdue' : 'pending'}
+                      </span>
                     </Badge>
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Total Owed:</span>
+                      <span className="text-muted-foreground">Amount:</span>
                       <span className="font-medium text-foreground">
-                        ${vendor.totalOwed.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Incoming $:</span>
-                      <span className="font-medium text-foreground">
-                        ${vendor.nextPaymentAmount.toLocaleString()}
+                        ${transaction.amount.toLocaleString()}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Due Date:</span>
                       <span className="font-medium text-foreground">
-                        {vendor.nextPaymentDate.toLocaleDateString()}
+                        {transaction.dueDate.toLocaleDateString()}
                       </span>
                     </div>
+                    {transaction.description && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Description:</span>
+                        <span className="font-medium text-foreground text-right max-w-[200px] truncate">
+                          {transaction.description}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
               <div className="flex justify-end space-x-2 pt-2 border-t">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    console.log('Edit button clicked for vendor:', vendor);
-                    console.log('onEditOrder function:', onEditOrder);
-                    onEditOrder?.(vendor);
-                  }}
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
-                </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button 
@@ -253,20 +208,20 @@ export const VendorsOverview = ({ vendors: propVendors, onPayToday, onVendorUpda
                       className="bg-gradient-primary px-6"
                     >
                       <CreditCard className="mr-2 h-4 w-4" />
-                      Pay Today
+                      Mark as Paid
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Are you sure you want to move the payment for {vendor.name} (${vendor.nextPaymentAmount.toLocaleString()}) to today's date?
+                        Mark this payment to {transaction.vendorName} (${transaction.amount.toLocaleString()}) as paid?
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handlePayToday(vendor)}>
-                        Yes, Pay Today
+                      <AlertDialogAction onClick={() => handleMarkAsPaid(transaction)}>
+                        Mark as Paid
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
