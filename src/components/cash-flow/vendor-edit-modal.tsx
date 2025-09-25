@@ -16,7 +16,7 @@ interface Vendor {
   totalOwed: number;
   nextPaymentDate: Date;
   nextPaymentAmount: number;
-  status: 'current' | 'overdue' | 'upcoming';
+  status: 'current' | 'overdue' | 'upcoming' | 'paid';
   category: string;
 }
 
@@ -138,7 +138,7 @@ export const VendorEditModal = ({ vendor, open, onOpenChange, onSave }: VendorEd
             <Label htmlFor="status">Status</Label>
             <Select
               value={formData.status}
-              onValueChange={(value: 'current' | 'overdue' | 'upcoming') => handleInputChange('status', value)}
+              onValueChange={(value: 'current' | 'overdue' | 'upcoming' | 'paid') => handleInputChange('status', value)}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -147,6 +147,7 @@ export const VendorEditModal = ({ vendor, open, onOpenChange, onSave }: VendorEd
                 <SelectItem value="current">Current</SelectItem>
                 <SelectItem value="upcoming">Upcoming</SelectItem>
                 <SelectItem value="overdue">Overdue</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
               </SelectContent>
             </Select>
           </div>

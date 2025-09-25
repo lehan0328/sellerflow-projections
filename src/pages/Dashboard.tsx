@@ -9,7 +9,6 @@ import { BankAccounts } from "@/components/cash-flow/bank-accounts";
 import { CreditCards, getCreditCardDueDates } from "@/components/cash-flow/credit-cards";
 import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
-import { VendorForm } from "@/components/cash-flow/vendor-form";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
 import { IncomeOverview } from "@/components/cash-flow/income-overview";
 import { IncomeForm } from "@/components/cash-flow/income-form";
@@ -32,7 +31,6 @@ interface CashFlowEvent {
 
 const Dashboard = () => {
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
-  const [showVendorForm, setShowVendorForm] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
   
@@ -414,18 +412,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleAddVendor = async (vendorData: any) => {
-    await addVendor({
-      name: vendorData.name,
-      totalOwed: 0,
-      nextPaymentDate: new Date(),
-      nextPaymentAmount: 0,
-      status: 'upcoming',
-      category: vendorData.category || '',
-      paymentType: vendorData.paymentType,
-      netTermsDays: vendorData.netTermsDays
-    });
-  };
 
   const handleUpdateCashBalance = async () => {
     // Bank account balance (from bank-accounts.tsx sample data)
@@ -502,7 +488,6 @@ const Dashboard = () => {
       </div>
 
       <FloatingMenu
-        onAddVendor={() => setShowVendorForm(true)}
         onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)}
         onAddIncome={() => setShowIncomeForm(true)}
         onAddRecurringIncome={() => setShowRecurringIncomeForm(true)}
@@ -517,13 +502,6 @@ const Dashboard = () => {
         />
       )}
 
-      {showVendorForm && (
-        <VendorForm
-          open={showVendorForm}
-          onOpenChange={setShowVendorForm}
-          onAddVendor={handleAddVendor}
-        />
-      )}
 
       {showIncomeForm && (
         <IncomeForm

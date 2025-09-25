@@ -1,15 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Building2, Plus, ShoppingCart, DollarSign } from "lucide-react";
+import { Plus, ShoppingCart, DollarSign } from "lucide-react";
 
 interface FloatingMenuProps {
-  onAddVendor: () => void;
   onAddPurchaseOrder: () => void;
   onAddIncome: () => void;
   onAddRecurringIncome: () => void;
 }
 
-export function FloatingMenu({ onAddVendor, onAddPurchaseOrder, onAddIncome, onAddRecurringIncome }: FloatingMenuProps) {
+export function FloatingMenu({ onAddPurchaseOrder, onAddIncome, onAddRecurringIncome }: FloatingMenuProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const toggleMenu = () => {
@@ -31,20 +30,7 @@ export function FloatingMenu({ onAddVendor, onAddPurchaseOrder, onAddIncome, onA
         <div className="absolute bottom-0 left-16 transform transition-all duration-300 animate-in slide-in-from-left-2">
           <div className="flex items-center space-x-2 bg-card/95 backdrop-blur-sm border border-border/50 rounded-full px-4 py-2 shadow-elevated">
             
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="rounded-full" 
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddVendor();
-              }}
-            >
-              <Building2 className="h-4 w-4" />
-              <span className="ml-2 hidden md:inline">Add Vendor</span>
-            </Button>
-            
-            <Button 
+            <Button
               variant="ghost" 
               size="sm" 
               className="rounded-full" 

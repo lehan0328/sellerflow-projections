@@ -93,10 +93,6 @@ export function UserMenu() {
           <CreditCard className="mr-2 h-4 w-4" />
           <span>Upgrade Plan</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={resetAccount} className="text-orange-600">
-          <RotateCcw className="mr-2 h-4 w-4" />
-          <span>Reset Account Data</span>
-        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
           <LogOut className="mr-2 h-4 w-4" />
