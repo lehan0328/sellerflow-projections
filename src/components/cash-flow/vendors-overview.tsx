@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Combobox } from "@/components/ui/combobox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter } from "lucide-react";
@@ -23,11 +24,20 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
 
+  // Vendor search options for autocomplete
+  const vendorSearchOptions = useMemo(() => {
+    return vendors.map(vendor => ({
+      value: vendor.name.toLowerCase(),
+      label: vendor.name
+    }));
+  }, [vendors]);
+
   // Filter and sort vendors
   const filteredAndSortedVendors = useMemo(() => {
     let filtered = vendors.filter(vendor => {
       // Text search filter
-      const matchesSearch = vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesSearch = !searchTerm || 
+        vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         vendor.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         vendor.totalOwed.toString().includes(searchTerm) ||
         vendor.nextPaymentAmount.toString().includes(searchTerm);
@@ -143,13 +153,14 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
         </div>
         
         <div className="flex items-center space-x-4 mt-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search vendors..."
+          <div className="flex-1 max-w-sm">
+            <Combobox
+              options={vendorSearchOptions}
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              onValueChange={setSearchTerm}
+              placeholder="Search vendors..."
+              emptyText="No vendors found."
+              className="w-full"
             />
           </div>
           

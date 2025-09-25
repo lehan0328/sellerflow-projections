@@ -259,16 +259,16 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
       <CardContent className="flex-1 overflow-hidden">
         <div className="h-full flex flex-col">
           {viewType === 'calendar' ? (
-            <div className="flex-1 overflow-auto">
-              <div className="grid grid-cols-7 gap-2 mb-4">
+            <div className="flex-1 min-h-0">
+              <div className="grid grid-cols-7 gap-1 mb-2">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="text-center text-sm font-medium text-muted-foreground p-2">
+                <div key={day} className="text-center text-sm font-medium text-muted-foreground p-1">
                   {day}
                 </div>
               ))}
             </div>
         
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1 h-full">
               {days.map(day => {
                 const dayEvents = getEventsForDay(day);
                 const dayBalance = getDayBalance(day);
@@ -279,9 +279,9 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                   <div
                     key={day.toISOString()}
                      className={`
-                       min-h-[120px] p-2 border rounded-lg relative flex flex-col
+                       h-[85px] p-1 border rounded-md relative flex flex-col text-xs
                        ${totalCash < 0 ? 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800' : 
-                         isToday(day) ? 'ring-2 ring-primary bg-primary/5 cursor-pointer hover:bg-primary/10' : 
+                         isToday(day) ? 'ring-1 ring-primary bg-primary/5 cursor-pointer hover:bg-primary/10' : 
                          (!isSameMonth(day, currentDate) ? 'opacity-30 bg-background' : 'bg-background')
                        }
                        ${hasEvents ? 'border-primary/30' : 'border-border'}
@@ -301,36 +301,36 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                       }
                     }}
                   >
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center space-x-1">
-                        <div className="text-sm font-medium">
+                        <div className="text-xs font-medium">
                           {format(day, 'd')}
                         </div>
                         {totalCash < 0 && (
-                          <AlertTriangle className="h-3 w-3 text-red-500" />
+                          <AlertTriangle className="h-2 w-2 text-red-500" />
                         )}
                       </div>
                       {isToday(day) ? (
                         <div className="text-right">
-                          <div className={`text-lg font-bold ${totalCash < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
+                          <div className={`text-sm font-bold ${totalCash < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
                             ${totalCash.toLocaleString()}
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            Cash Available
+                          <div className="text-[10px] text-muted-foreground">
+                            Cash
                           </div>
-                          <div className="text-sm font-semibold text-blue-600">
+                          <div className="text-xs font-semibold text-blue-600">
                             ${totalAvailableCredit.toLocaleString()}
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            Credit Available
+                          <div className="text-[10px] text-muted-foreground">
+                            Credit
                           </div>
                         </div>
                       ) : (
                         <div className="text-right">
-                          <div className={`text-sm font-semibold ${totalCash < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
+                          <div className={`text-xs font-semibold ${totalCash < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
                             ${totalCash.toLocaleString()}
                           </div>
-                          <div className="text-xs text-blue-600 font-medium">
+                          <div className="text-[10px] text-blue-600 font-medium">
                             ${totalAvailableCredit.toLocaleString()}
                           </div>
                         </div>
