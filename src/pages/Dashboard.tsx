@@ -113,6 +113,18 @@ const Dashboard = () => {
     // Restore cash based on transaction type
     if (transaction.type === 'purchase_order') {
       await updateTotalCash(totalCash + transaction.amount);
+      
+      // Reduce vendor's total owed when purchase order is deleted
+      if (transaction.vendorId) {
+        const vendor = vendors.find(v => v.id === transaction.vendorId);
+        if (vendor) {
+          const newTotalOwed = Math.max(0, vendor.totalOwed - transaction.amount);
+          await updateVendor(vendor.id, { 
+            totalOwed: newTotalOwed,
+            status: newTotalOwed === 0 ? 'paid' : vendor.status
+          });
+        }
+      }
     } else if (transaction.type === 'sales_order') {
       await updateTotalCash(totalCash - transaction.amount);
     } else if (transaction.type === 'vendor_payment') {
@@ -131,6 +143,9 @@ const Dashboard = () => {
 
     // Remove transaction
     await deleteTransaction(transactionId);
+    
+    // Refresh vendors to show updated data
+    refetchVendors();
     
     // Remove corresponding cash flow event
     setCashFlowEvents(prev => prev.filter(e => 

@@ -70,17 +70,35 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
       toast.error("No transactions available to delete");
       return;
     }
+    
+    // Find the transaction to get its amount
+    const transactionToDelete = vendorTransactions.find(t => t.id === targetId);
+    if (!transactionToDelete) {
+      toast.error("Transaction not found");
+      return;
+    }
+    
     try {
       await deleteTransaction(targetId);
       await refetch();
       
-      // Check if this was the last transaction and update vendor accordingly
-      if (vendorTransactions.length === 1 && vendor) {
-        await updateVendor(vendor.id, { 
-          totalOwed: 0,
-          nextPaymentAmount: 0,
-          status: 'paid'
-        });
+      // Always update vendor's total owed by reducing the deleted transaction amount
+      if (vendor) {
+        const newTotalOwed = Math.max(0, vendor.totalOwed - transactionToDelete.amount);
+        
+        if (vendorTransactions.length === 1) {
+          // This was the last transaction, mark as paid
+          await updateVendor(vendor.id, { 
+            totalOwed: 0,
+            nextPaymentAmount: 0,
+            status: 'paid'
+          });
+        } else {
+          // Reduce total owed by the deleted transaction amount
+          await updateVendor(vendor.id, { 
+            totalOwed: newTotalOwed
+          });
+        }
       }
       
       onOpenChange(false);
