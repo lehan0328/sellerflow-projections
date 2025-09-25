@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
@@ -168,6 +169,11 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
     }
   };
 
+  const vendorOptions = vendors.map(vendor => ({
+    value: vendor.name,
+    label: vendor.name
+  }));
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
@@ -180,18 +186,14 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="vendor">Vendor</Label>
-            <Select value={formData.vendor} onValueChange={handleVendorChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select vendor" />
-              </SelectTrigger>
-              <SelectContent className="z-[70] bg-popover text-popover-foreground border border-border shadow-lg">
-                {vendors.map(vendor => (
-                  <SelectItem key={vendor.id} value={vendor.name}>
-                    {vendor.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Combobox
+              options={vendorOptions}
+              value={formData.vendor}
+              onValueChange={handleVendorChange}
+              placeholder="Search or select vendor..."
+              emptyText="No vendor found."
+              className="w-full"
+            />
           </div>
 
           <div className="space-y-2">

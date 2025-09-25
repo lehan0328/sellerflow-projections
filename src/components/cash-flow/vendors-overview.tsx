@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown } from "lucide-react";
+import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { VendorOrderDetailModal } from "./vendor-order-detail-modal";
@@ -18,18 +18,30 @@ interface VendorsOverviewProps {
 export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverviewProps) => {
   const { vendors, loading } = useVendors();
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | 'paid'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'totalOwed' | 'nextPaymentDate' | 'nextPaymentAmount'>('nextPaymentDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
 
   // Filter and sort vendors
   const filteredAndSortedVendors = useMemo(() => {
-    let filtered = vendors.filter(vendor => 
-      vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vendor.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vendor.totalOwed.toString().includes(searchTerm) ||
-      vendor.nextPaymentAmount.toString().includes(searchTerm)
-    );
+    let filtered = vendors.filter(vendor => {
+      // Text search filter
+      const matchesSearch = vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vendor.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vendor.totalOwed.toString().includes(searchTerm) ||
+        vendor.nextPaymentAmount.toString().includes(searchTerm);
+      
+      // Status filter
+      let matchesStatus = true;
+      if (statusFilter === 'overdue') {
+        matchesStatus = vendor.nextPaymentDate && new Date(vendor.nextPaymentDate) < new Date();
+      } else if (statusFilter === 'paid') {
+        matchesStatus = vendor.totalOwed === 0 || vendor.status === 'paid';
+      }
+      
+      return matchesSearch && matchesStatus;
+    });
 
     return filtered.sort((a, b) => {
       let aValue = a[sortBy];
@@ -52,7 +64,7 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
 
       return 0;
     });
-  }, [vendors, searchTerm, sortBy, sortOrder]);
+  }, [vendors, searchTerm, statusFilter, sortBy, sortOrder]);
 
   const handleEditOrder = (vendor: Vendor) => {
     setEditingVendor(vendor);
@@ -142,12 +154,26 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
           </div>
           
           <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="overdue">Overdue</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-center space-x-2">
             <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
             <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Sort by..." />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
                 <SelectItem value="name">Name</SelectItem>
                 <SelectItem value="totalOwed">Total Owed</SelectItem>
                 <SelectItem value="nextPaymentAmount">Next Payment</SelectItem>

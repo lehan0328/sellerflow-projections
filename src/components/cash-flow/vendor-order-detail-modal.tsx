@@ -73,9 +73,21 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
     try {
       await deleteTransaction(targetId);
       await refetch();
+      
+      // Check if this was the last transaction and update vendor accordingly
+      if (vendorTransactions.length === 1 && vendor) {
+        await updateVendor(vendor.id, { 
+          totalOwed: 0,
+          nextPaymentAmount: 0,
+          status: 'paid'
+        });
+      }
+      
       onOpenChange(false);
+      toast.success("Transaction deleted successfully");
     } catch (error) {
-      // toast handled in hook
+      console.error('Error deleting transaction:', error);
+      toast.error("Failed to delete transaction");
     }
   };
 
