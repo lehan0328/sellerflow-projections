@@ -220,85 +220,80 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <h4 className="font-semibold text-base">{vendor.name}</h4>
-                    {vendor.category && (
-                      <Badge variant="outline" className="text-xs">
-                        {vendor.category}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <h4 className="font-semibold text-base">{vendor.name}</h4>
+                      {vendor.category && (
+                        <Badge variant="outline" className="text-xs">
+                          {vendor.category}
+                        </Badge>
+                      )}
+                      <Badge variant={getStatusColor(vendor)} className="text-xs">
+                        {getStatusIcon(vendor)}
+                        <span className="ml-1 capitalize">{getStatusText(vendor)}</span>
                       </Badge>
+                    </div>
+                    {vendor.poName && (
+                      <span className="font-medium text-sm text-right">
+                        {vendor.poName}
+                      </span>
                     )}
-                    <Badge variant={getStatusColor(vendor)} className="text-xs">
-                      {getStatusIcon(vendor)}
-                      <span className="ml-1 capitalize">{getStatusText(vendor)}</span>
-                    </Badge>
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Total Owed:</span>
-                      <span className="font-medium text-foreground">
-                        ${(vendor.totalOwed || 0).toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Next Payment:</span>
-                      <span className="font-medium text-foreground">
-                        ${(vendor.nextPaymentAmount || 0).toLocaleString()}
-                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-foreground">
+                          ${(vendor.totalOwed || 0).toLocaleString()}
+                        </span>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditOrder(vendor)}
+                        >
+                          <Edit className="mr-1 h-3 w-3" />
+                          Edit Order
+                        </Button>
+                      </div>
                     </div>
                     {vendor.nextPaymentDate && (
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Due Date:</span>
-                        <span className="font-medium text-foreground">
-                          {new Date(vendor.nextPaymentDate).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
-                    {vendor.poName && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">PO Name:</span>
-                        <span className="font-medium text-foreground text-right max-w-[200px] truncate">
-                          {vendor.poName}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium text-foreground">
+                            {new Date(vendor.nextPaymentDate).toLocaleDateString()}
+                          </span>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                className="bg-gradient-primary px-4"
+                                disabled={!vendor.totalOwed || vendor.totalOwed <= 0}
+                              >
+                                <CreditCard className="mr-1 h-3 w-3" />
+                                Pay Today
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Mark payment to {vendor.name} (${(vendor.totalOwed || 0).toLocaleString()}) as paid today?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => onVendorUpdate?.()}>
+                                  Mark as Paid
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
                     )}
                   </div>
                 </div>
-              </div>
-              <div className="flex justify-end space-x-2 pt-2 border-t">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handleEditOrder(vendor)}
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit Order
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button 
-                      size="sm" 
-                      className="bg-gradient-primary px-6"
-                      disabled={!vendor.nextPaymentAmount || vendor.nextPaymentAmount <= 0}
-                    >
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Pay Today
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Mark payment to {vendor.name} (${(vendor.nextPaymentAmount || 0).toLocaleString()}) as paid today?
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => onVendorUpdate?.()}>
-                        Mark as Paid
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
               </div>
             </div>
           )))}
