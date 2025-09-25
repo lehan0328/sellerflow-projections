@@ -35,7 +35,7 @@ const Dashboard = () => {
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
   
   // Use database hooks
-  const { vendors, addVendor, updateVendor, deleteVendor } = useVendors();
+  const { vendors, addVendor, updateVendor, deleteVendor, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { totalCash, updateTotalCash } = useUserSettings();
   
@@ -218,6 +218,8 @@ const Dashboard = () => {
     };
     setCashFlowEvents(prev => [newEvent, ...prev]);
 
+    // Refresh vendors to show updated data
+    refetchVendors();
     setShowPurchaseOrderForm(false);
   };
 
@@ -461,9 +463,7 @@ const Dashboard = () => {
         {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <VendorsOverview 
-            onVendorUpdate={() => {
-              // Refresh when vendor is updated
-            }}
+            onVendorUpdate={refetchVendors}
             onEditOrder={(vendor) => {
               console.log('Edit order for vendor:', vendor);
             }}
