@@ -6,19 +6,50 @@ import {
   Building2, 
   Plus, 
   Edit, 
-  Trash2, 
-  Calendar, 
-  DollarSign 
+  Trash2,
+  Tag,
+  CreditCard
 } from "lucide-react";
 import { VendorForm } from "@/components/cash-flow/vendor-form";
-import { VendorEditModal } from "@/components/cash-flow/vendor-edit-modal";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
-import { format } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+interface VendorEditFormData {
+  name: string;
+  category: string;
+  paymentType: string;
+  netTermsDays: string;
+}
 
 export function VendorManagement() {
   const [showAddVendor, setShowAddVendor] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
+  const [editFormData, setEditFormData] = useState<VendorEditFormData>({
+    name: "",
+    category: "",
+    paymentType: "due-upon-order",
+    netTermsDays: "30"
+  });
   const { vendors, loading, addVendor, updateVendor, deleteVendor } = useVendors();
+
+  const categories = [
+    "Inventory",
+    "Packaging Materials", 
+    "Marketing/PPC",
+    "Shipping & Logistics",
+    "Professional Services",
+    "Other"
+  ];
+
+  const paymentTypeOptions = [
+    { value: 'due-upon-order', label: 'Due Upon Order' },
+    { value: 'net-terms', label: 'Net Terms (30, 60, 90 days)' },
+    { value: 'preorder', label: 'Pre-order with Deposit' },
+    { value: 'due-upon-delivery', label: 'Due Upon Delivery' }
+  ];
 
   const handleAddVendor = async (vendorData: any) => {
     await addVendor({
@@ -34,8 +65,25 @@ export function VendorManagement() {
     setShowAddVendor(false);
   };
 
-  const handleUpdateVendor = async (updatedVendor: Vendor) => {
-    await updateVendor(updatedVendor.id, updatedVendor);
+  const openEditModal = (vendor: Vendor) => {
+    setEditFormData({
+      name: vendor.name,
+      category: vendor.category || '',
+      paymentType: vendor.paymentType || 'due-upon-order',
+      netTermsDays: vendor.netTermsDays || '30'
+    });
+    setEditingVendor(vendor);
+  };
+
+  const handleUpdateVendor = async () => {
+    if (!editingVendor) return;
+    
+    await updateVendor(editingVendor.id, {
+      name: editFormData.name,
+      category: editFormData.category,
+      paymentType: editFormData.paymentType as any,
+      netTermsDays: editFormData.netTermsDays
+    });
     setEditingVendor(null);
   };
 
@@ -45,19 +93,9 @@ export function VendorManagement() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'upcoming':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      case 'current':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'overdue':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      case 'paid':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
-    }
+  const getPaymentTypeLabel = (paymentType: string) => {
+    const option = paymentTypeOptions.find(opt => opt.value === paymentType);
+    return option ? option.label : paymentType;
   };
 
   if (loading) {
@@ -76,7 +114,7 @@ export function VendorManagement() {
         <div>
           <h3 className="text-lg font-medium">Vendor Management</h3>
           <p className="text-sm text-muted-foreground">
-            Manage your vendors and their payment information
+            Manage your vendor details and payment preferences
           </p>
         </div>
         <Button onClick={() => setShowAddVendor(true)}>
@@ -91,7 +129,7 @@ export function VendorManagement() {
             <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
             <h4 className="text-lg font-medium mb-2">No vendors yet</h4>
             <p className="text-sm text-muted-foreground mb-4 text-center">
-              Add your first vendor to start managing payments and purchase orders
+              Add your first vendor to start managing their details and payment preferences
             </p>
             <Button onClick={() => setShowAddVendor(true)}>
               <Plus className="mr-2 h-4 w-4" />
@@ -114,13 +152,10 @@ export function VendorManagement() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Badge className={getStatusColor(vendor.status)}>
-                    {vendor.status}
-                  </Badge>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setEditingVendor(vendor)}
+                    onClick={() => openEditModal(vendor)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -135,26 +170,20 @@ export function VendorManagement() {
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span>Total Owed: ${vendor.totalOwed.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      Next Payment: {format(vendor.nextPaymentDate, 'MMM d, yyyy')}
-                    </span>
-                  </div>
-                  {vendor.nextPaymentAmount > 0 && (
+                <div className="grid grid-cols-1 gap-3 text-sm">
+                  {vendor.category && (
                     <div className="flex items-center space-x-2">
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      <span>Next Amount: ${vendor.nextPaymentAmount.toLocaleString()}</span>
+                      <Tag className="h-4 w-4 text-muted-foreground" />
+                      <span>Category: {vendor.category}</span>
                     </div>
                   )}
                   {vendor.paymentType && (
                     <div className="flex items-center space-x-2">
-                      <span>Payment Type: {vendor.paymentType}</span>
+                      <CreditCard className="h-4 w-4 text-muted-foreground" />
+                      <span>Payment Terms: {getPaymentTypeLabel(vendor.paymentType)}</span>
+                      {vendor.paymentType === 'net-terms' && vendor.netTermsDays && (
+                        <Badge variant="outline">Net {vendor.netTermsDays}</Badge>
+                      )}
                     </div>
                   )}
                 </div>
@@ -171,12 +200,91 @@ export function VendorManagement() {
       />
 
       {editingVendor && (
-        <VendorEditModal
-          vendor={editingVendor}
-          open={!!editingVendor}
-          onOpenChange={(open) => !open && setEditingVendor(null)}
-          onSave={handleUpdateVendor}
-        />
+        <Dialog open={!!editingVendor} onOpenChange={(open) => !open && setEditingVendor(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Vendor Details</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="vendor-name">Vendor Name</Label>
+                <Input
+                  id="vendor-name"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData(prev => ({...prev, name: e.target.value}))}
+                  placeholder="Enter vendor name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="vendor-category">Category</Label>
+                <Select 
+                  value={editFormData.category} 
+                  onValueChange={(value) => setEditFormData(prev => ({...prev, category: value}))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(category => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="payment-type">Default Payment Terms</Label>
+                <Select 
+                  value={editFormData.paymentType} 
+                  onValueChange={(value) => setEditFormData(prev => ({...prev, paymentType: value}))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment terms" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentTypeOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {editFormData.paymentType === 'net-terms' && (
+                <div className="space-y-2">
+                  <Label htmlFor="net-terms">Net Terms (Days)</Label>
+                  <Select 
+                    value={editFormData.netTermsDays} 
+                    onValueChange={(value) => setEditFormData(prev => ({...prev, netTermsDays: value}))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select net terms" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="30">30 Days</SelectItem>
+                      <SelectItem value="60">60 Days</SelectItem>
+                      <SelectItem value="90">90 Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="flex space-x-3 pt-4">
+                <Button variant="outline" onClick={() => setEditingVendor(null)} className="flex-1">
+                  Cancel
+                </Button>
+                <Button onClick={handleUpdateVendor} className="flex-1">
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
