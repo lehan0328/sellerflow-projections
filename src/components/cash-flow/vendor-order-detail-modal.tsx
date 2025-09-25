@@ -197,7 +197,7 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
           <div className="flex space-x-3 pt-4">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button type="button" variant="destructive" className="flex-1" disabled={!selectedTxId}>
+                <Button type="button" variant="destructive" className="flex-1">
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete Transaction
                 </Button>
