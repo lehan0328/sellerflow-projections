@@ -211,7 +211,7 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
-                  <AlertDialogAction type="button" onClick={handleDeleteTransactionClick} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={!selectedTxId}>
+                  <AlertDialogAction type="button" onClick={handleDeleteTransactionClick} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                     Delete Transaction
                   </AlertDialogAction>
                 </AlertDialogFooter>
