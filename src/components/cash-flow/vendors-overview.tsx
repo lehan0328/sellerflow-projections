@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
+import { VendorOrderDetailModal } from "./vendor-order-detail-modal";
 import * as React from "react";
 
 interface VendorsOverviewProps {
@@ -19,6 +20,7 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'totalOwed' | 'nextPaymentDate' | 'nextPaymentAmount'>('nextPaymentDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
 
   // Filter and sort vendors
   const filteredAndSortedVendors = useMemo(() => {
@@ -53,7 +55,7 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
   }, [vendors, searchTerm, sortBy, sortOrder]);
 
   const handleEditOrder = (vendor: Vendor) => {
-    onEditOrder?.(vendor);
+    setEditingVendor(vendor);
   };
 
   const getStatusColor = (vendor: Vendor) => {
@@ -265,6 +267,12 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
           )))}
         </div>
       </CardContent>
+      
+      <VendorOrderDetailModal
+        open={!!editingVendor}
+        onOpenChange={(open) => !open && setEditingVendor(null)}
+        vendor={editingVendor}
+      />
     </Card>
   );
 };

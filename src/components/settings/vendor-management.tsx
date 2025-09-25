@@ -54,10 +54,18 @@ export function VendorManagement() {
   ];
 
   const handleAddVendor = async (vendorData: any) => {
+    // Calculate due date based on payment terms
+    let dueDate = new Date();
+    if (vendorData.paymentType === 'net-terms' && vendorData.netTermsDays) {
+      const days = parseInt(vendorData.netTermsDays);
+      dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + days);
+    }
+    
     await addVendor({
       name: vendorData.name,
       totalOwed: 0,
-      nextPaymentDate: new Date(),
+      nextPaymentDate: dueDate,
       nextPaymentAmount: 0,
       status: 'upcoming',
       category: vendorData.category || '',
