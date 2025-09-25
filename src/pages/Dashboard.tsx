@@ -288,7 +288,7 @@ const Dashboard = () => {
     console.info("New total cash:", newTotalCash);
 
     // Create vendor for expense
-    await addVendor({
+    const newVendor = await addVendor({
       name: expenseData.description,
       totalOwed: amount,
       nextPaymentDate: expenseData.paymentDate || new Date(),
@@ -300,11 +300,12 @@ const Dashboard = () => {
       notes: expenseData.notes
     });
 
-    // Create transaction
+    // Create transaction (link to the created vendor)
     await addTransaction({
       type: 'purchase_order',
       amount: amount,
       description: expenseData.description || 'Expense',
+      vendorId: newVendor?.id,
       transactionDate: expenseData.paymentDate || new Date(),
       status: 'completed'
     });
