@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +19,7 @@ interface VendorOrderDetailModalProps {
 
 export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrderDetailModalProps) => {
   const { updateVendor } = useVendors();
-  const { deleteTransactionsByVendor } = useTransactions();
+  const { transactions, deleteTransaction, refetch } = useTransactions();
   const [formData, setFormData] = useState({
     totalOwed: vendor?.totalOwed || 0,
     nextPaymentAmount: vendor?.nextPaymentAmount || 0,
@@ -28,6 +28,12 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
     description: vendor?.description || '',
     notes: vendor?.notes || ''
   });
+
+  const vendorTransactions = React.useMemo(() => transactions.filter(t => t.vendorId === vendor?.id), [transactions, vendor?.id]);
+  const [selectedTxId, setSelectedTxId] = useState<string | undefined>(undefined);
+  React.useEffect(() => {
+    setSelectedTxId(vendorTransactions[0]?.id);
+  }, [vendorTransactions, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,14 +56,17 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
     }
   };
 
-  const handleDeleteTransactions = async () => {
-    if (!vendor) return;
-
+  const handleDeleteTransactionClick = async () => {
+    if (!selectedTxId) {
+      toast.error("Select a transaction to delete");
+      return;
+    }
     try {
-      await deleteTransactionsByVendor(vendor.id);
+      await deleteTransaction(selectedTxId);
+      await refetch();
       onOpenChange(false);
     } catch (error) {
-      // Toast is handled in the hook
+      // toast handled in hook
     }
   };
 
@@ -85,9 +94,8 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
-            Edit Order - {vendor.name}
-          </DialogTitle>
+          <DialogTitle className="text-xl font-bold">Edit Order - {vendor.name}</DialogTitle>
+          <DialogDescription>Update order details or delete a specific transaction linked to this vendor.</DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -157,25 +165,46 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
             />
           </div>
           
+          {/* Transaction selection for deletion */}
+          {vendorTransactions.length > 0 ? (
+            <div className="space-y-2">
+              <Label htmlFor="transactionSelect">Select Transaction to Delete</Label>
+              <Select value={selectedTxId || ""} onValueChange={(v) => setSelectedTxId(v)}>
+                <SelectTrigger id="transactionSelect">
+                  <SelectValue placeholder="Choose a transaction" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vendorTransactions.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {`${new Date(t.transactionDate).toLocaleDateString()} • $${t.amount.toFixed(2)} • ${t.description}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No transactions linked to this vendor.</p>
+          )}
+
           <div className="flex space-x-3 pt-4">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button type="button" variant="destructive" className="flex-1">
+                <Button type="button" variant="destructive" className="flex-1" disabled={!selectedTxId}>
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Transactions
+                  Delete Transaction
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Vendor Transactions</AlertDialogTitle>
+                  <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Are you sure you want to delete all transactions for "{vendor.name}"? This action cannot be undone and will remove all transaction data for this vendor.
+                    Are you sure you want to delete this transaction? This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteTransactions} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Delete Transactions
+                  <AlertDialogAction onClick={handleDeleteTransactionClick} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={!selectedTxId}>
+                    Delete Transaction
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
