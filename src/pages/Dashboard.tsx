@@ -460,8 +460,11 @@ const Dashboard = () => {
         {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <VendorsOverview 
-            onTransactionUpdate={() => {
-              // Refresh transactions if needed
+            onVendorUpdate={() => {
+              // Refresh when vendor is updated
+            }}
+            onEditOrder={(vendor) => {
+              console.log('Edit order for vendor:', vendor);
             }}
           />
           <IncomeOverview
