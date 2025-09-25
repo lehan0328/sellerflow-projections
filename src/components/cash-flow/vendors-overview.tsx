@@ -32,9 +32,14 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
     }));
   }, [vendors]);
 
-  // Filter and sort vendors
+  // Filter and sort vendors - exclude vendors with $0 total owed
   const filteredAndSortedVendors = useMemo(() => {
     let filtered = vendors.filter(vendor => {
+      // Exclude vendors with no amount owed
+      if (!vendor.totalOwed || vendor.totalOwed <= 0) {
+        return false;
+      }
+      
       // Text search filter
       const matchesSearch = !searchTerm || 
         vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -85,11 +90,15 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
     
     const today = new Date();
     const dueDate = new Date(vendor.nextPaymentDate);
+    const timeDiff = dueDate.getTime() - today.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
     
-    if (dueDate < today) {
+    if (daysDiff < 0) {
       return 'destructive'; // overdue
-    } else if (dueDate.toDateString() === today.toDateString()) {
+    } else if (daysDiff === 0) {
       return 'secondary'; // due today
+    } else if (daysDiff <= 7) {
+      return 'secondary'; // due within a week
     }
     return 'default'; // upcoming
   };
@@ -99,8 +108,10 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
     
     const today = new Date();
     const dueDate = new Date(vendor.nextPaymentDate);
+    const timeDiff = dueDate.getTime() - today.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
     
-    if (dueDate < today) {
+    if (daysDiff < 0) {
       return <AlertTriangle className="h-4 w-4" />;
     }
     return <Calendar className="h-4 w-4" />;
@@ -112,12 +123,21 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
     const today = new Date();
     const dueDate = new Date(vendor.nextPaymentDate);
     
-    if (dueDate < today) {
-      return 'overdue';
-    } else if (dueDate.toDateString() === today.toDateString()) {
-      return 'due today';
+    // Calculate difference in days
+    const timeDiff = dueDate.getTime() - today.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    
+    if (daysDiff > 0) {
+      // Future date - show days remaining
+      return `${daysDiff} days`;
+    } else if (daysDiff === 0) {
+      // Due today
+      return 'Due Today';
+    } else {
+      // Past due - show overdue days
+      const overdueDays = Math.abs(daysDiff);
+      return overdueDays === 1 ? 'Overdue 1 day' : `Overdue ${overdueDays} days`;
     }
-    return 'upcoming';
   };
 
   const totalOwed = filteredAndSortedVendors.reduce((sum, vendor) => sum + (vendor.totalOwed || 0), 0);
