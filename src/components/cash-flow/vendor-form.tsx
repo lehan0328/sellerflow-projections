@@ -18,7 +18,7 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor }: VendorFormProps)
   const [formData, setFormData] = useState({
     name: "",
     category: "",
-    paymentType: "due-upon-order",
+    paymentType: "total",
     depositAmount: "",
     netTermsDays: "30",
     customNetDays: ""
@@ -34,10 +34,9 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor }: VendorFormProps)
   ];
 
   const paymentTypeOptions = [
-    { value: 'due-upon-order', label: 'Due Upon Order' },
+    { value: 'total', label: 'Due Upon Order' },
     { value: 'net-terms', label: 'Net Terms (30, 60, 90 days)' },
-    { value: 'preorder', label: 'Pre-order with Deposit' },
-    { value: 'due-upon-delivery', label: 'Due Upon Delivery' }
+    { value: 'preorder', label: 'Pre-order with Deposit' }
   ];
 
   const netTermsOptions = [
@@ -71,7 +70,7 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor }: VendorFormProps)
     setFormData({
       name: "",
       category: "",
-      paymentType: "due-upon-order",
+      paymentType: "total",
       depositAmount: "",
       netTermsDays: "30",
       customNetDays: ""

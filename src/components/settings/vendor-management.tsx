@@ -32,7 +32,7 @@ export function VendorManagement() {
   const [editFormData, setEditFormData] = useState<VendorEditFormData>({
     name: "",
     category: "",
-    paymentType: "due-upon-order",
+    paymentType: "total",
     netTermsDays: "30"
   });
   const { vendors, loading, addVendor, updateVendor, deleteVendor } = useVendors();
@@ -48,10 +48,9 @@ export function VendorManagement() {
   ];
 
   const paymentTypeOptions = [
-    { value: 'due-upon-order', label: 'Due Upon Order' },
+    { value: 'total', label: 'Due Upon Order' },
     { value: 'net-terms', label: 'Net Terms (30, 60, 90 days)' },
-    { value: 'preorder', label: 'Pre-order with Deposit' },
-    { value: 'due-upon-delivery', label: 'Due Upon Delivery' }
+    { value: 'preorder', label: 'Pre-order with Deposit' }
   ];
 
   const handleAddVendor = async (vendorData: any) => {
