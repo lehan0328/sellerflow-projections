@@ -133,35 +133,61 @@ export const useTransactions = () => {
     }
   };
 
-  const deleteAllTransactions = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      const { error } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      setTransactions([]);
-    } catch (error) {
-      console.error('Error deleting all transactions:', error);
-      // Only show toast for actual errors, not for successful cleanup
-    }
-  };
+   const deleteAllTransactions = async () => {
+     try {
+       const { data: { user } } = await supabase.auth.getUser();
+       if (!user) throw new Error('User not authenticated');
+ 
+       const { error } = await supabase
+         .from('transactions')
+         .delete()
+         .eq('user_id', user.id);
+ 
+       if (error) throw error;
+ 
+       setTransactions([]);
+     } catch (error) {
+       console.error('Error deleting all transactions:', error);
+       // Only show toast for actual errors, not for successful cleanup
+     }
+   };
+ 
+   // Delete all transactions associated with a specific vendor (server-side filter)
+   const deleteTransactionsByVendor = async (vendorId: string) => {
+     try {
+       const { error } = await supabase
+         .from('transactions')
+         .delete()
+         .eq('vendor_id', vendorId);
+ 
+       if (error) throw error;
+ 
+       setTransactions(prev => prev.filter(t => t.vendorId !== vendorId));
+       toast({
+         title: "Success",
+         description: "Vendor transactions deleted successfully",
+       });
+     } catch (error) {
+       console.error('Error deleting vendor transactions:', error);
+       toast({
+         title: "Error",
+         description: "Failed to delete vendor transactions",
+         variant: "destructive",
+       });
+     }
+   };
 
   useEffect(() => {
     fetchTransactions();
   }, []);
 
-  return {
-    transactions,
-    loading,
-    addTransaction,
-    deleteTransaction,
-    deleteAllTransactions,
-    refetch: fetchTransactions
-  };
+   return {
+     transactions,
+     loading,
+     addTransaction,
+     deleteTransaction,
+     deleteAllTransactions,
+     deleteTransactionsByVendor,
+     refetch: fetchTransactions
+   };
 };

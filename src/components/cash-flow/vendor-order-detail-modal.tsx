@@ -19,7 +19,7 @@ interface VendorOrderDetailModalProps {
 
 export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrderDetailModalProps) => {
   const { updateVendor } = useVendors();
-  const { transactions, deleteTransaction } = useTransactions();
+  const { deleteTransactionsByVendor } = useTransactions();
   const [formData, setFormData] = useState({
     totalOwed: vendor?.totalOwed || 0,
     nextPaymentAmount: vendor?.nextPaymentAmount || 0,
@@ -54,28 +54,10 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
     if (!vendor) return;
 
     try {
-      // Find all transactions for this vendor
-      console.log('All transactions:', transactions);
-      console.log('Looking for vendor ID:', vendor.id);
-      const vendorTransactions = transactions.filter(t => t.vendorId === vendor.id);
-      console.log('Found vendor transactions:', vendorTransactions);
-      
-      if (vendorTransactions.length === 0) {
-        toast.error("No transactions found for this vendor");
-        return;
-      }
-      
-      // Delete all transactions for this vendor
-      for (const transaction of vendorTransactions) {
-        console.log('Deleting transaction:', transaction.id);
-        await deleteTransaction(transaction.id);
-      }
-
-      toast.success(`Deleted ${vendorTransactions.length} transactions successfully`);
+      await deleteTransactionsByVendor(vendor.id);
       onOpenChange(false);
     } catch (error) {
-      console.error('Error deleting transactions:', error);
-      toast.error("Failed to delete vendor transactions");
+      // Toast is handled in the hook
     }
   };
 
