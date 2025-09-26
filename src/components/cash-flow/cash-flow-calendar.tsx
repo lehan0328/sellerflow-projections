@@ -348,11 +348,13 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                                      setSelectedDate(day);
                                      setShowDayTransactionsModal(true);
                                    }}>
-                                <div className="text-sm text-muted-foreground font-medium">
-                                  {dayEvents.length} transactions
-                                </div>
-                                <div className="text-xs font-semibold">
-                                  ${dayEvents.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
+                                <div className="flex items-center justify-between">
+                                  <div className="text-sm text-muted-foreground font-medium">
+                                    {dayEvents.length} transactions
+                                  </div>
+                                  <div className="text-xs font-semibold">
+                                    ${dayEvents.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
+                                  </div>
                                 </div>
                               </div>
                             ) : (
