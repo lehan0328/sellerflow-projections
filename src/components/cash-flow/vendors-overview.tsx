@@ -89,7 +89,11 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
     if (!vendor.nextPaymentDate) return 'default';
     
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+    
     const dueDate = new Date(vendor.nextPaymentDate);
+    dueDate.setHours(0, 0, 0, 0); // Reset time to start of day
+    
     const timeDiff = dueDate.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
     
@@ -107,7 +111,11 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
     if (!vendor.nextPaymentDate) return <Calendar className="h-4 w-4" />;
     
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+    
     const dueDate = new Date(vendor.nextPaymentDate);
+    dueDate.setHours(0, 0, 0, 0); // Reset time to start of day
+    
     const timeDiff = dueDate.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
     
@@ -121,7 +129,10 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
     if (!vendor.nextPaymentDate) return 'No due date';
     
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+    
     const dueDate = new Date(vendor.nextPaymentDate);
+    dueDate.setHours(0, 0, 0, 0); // Reset time to start of day
     
     // Calculate difference in days
     const timeDiff = dueDate.getTime() - today.getTime();
@@ -142,7 +153,14 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
 
   const totalOwed = filteredAndSortedVendors.reduce((sum, vendor) => sum + (vendor.totalOwed || 0), 0);
   const overdueAmount = filteredAndSortedVendors
-    .filter(v => v.nextPaymentDate && new Date(v.nextPaymentDate) < new Date())
+    .filter(v => {
+      if (!v.nextPaymentDate) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dueDate = new Date(v.nextPaymentDate);
+      dueDate.setHours(0, 0, 0, 0);
+      return dueDate < today;
+    })
     .reduce((sum, vendor) => sum + (vendor.totalOwed || 0), 0);
 
   return (
