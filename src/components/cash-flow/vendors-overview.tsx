@@ -19,16 +19,23 @@ interface VendorsOverviewProps {
 export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverviewProps) => {
   const { vendors, loading, deleteVendor, refetch } = useVendors();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedVendor, setSelectedVendor] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | 'paid'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'totalOwed' | 'nextPaymentDate' | 'nextPaymentAmount'>('nextPaymentDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
 
-  // Vendor search options for autocomplete
+  // Vendor search options for autocomplete - unique vendors only
   const vendorSearchOptions = useMemo(() => {
-    return vendors.map(vendor => ({
-      value: vendor.name.toLowerCase(),
-      label: vendor.name
+    const uniqueVendors = new Map();
+    vendors.forEach(vendor => {
+      if (!uniqueVendors.has(vendor.name.toLowerCase())) {
+        uniqueVendors.set(vendor.name.toLowerCase(), vendor.name);
+      }
+    });
+    return Array.from(uniqueVendors.entries()).map(([value, label]) => ({
+      value,
+      label
     }));
   }, [vendors]);
 
@@ -40,12 +47,18 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
         return false;
       }
       
-      // Text search filter
-      const matchesSearch = !searchTerm || 
-        vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vendor.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vendor.totalOwed.toString().includes(searchTerm) ||
-        vendor.nextPaymentAmount.toString().includes(searchTerm);
+      // If a specific vendor is selected, show only that vendor
+      if (selectedVendor) {
+        const matchesSelectedVendor = vendor.name.toLowerCase() === selectedVendor.toLowerCase();
+        if (!matchesSelectedVendor) return false;
+      } else if (searchTerm) {
+        // General text search filter when no specific vendor is selected
+        const matchesSearch = vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          vendor.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          vendor.totalOwed.toString().includes(searchTerm) ||
+          vendor.nextPaymentAmount.toString().includes(searchTerm);
+        if (!matchesSearch) return false;
+      }
       
       // Status filter
       let matchesStatus = true;
@@ -55,7 +68,7 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
         matchesStatus = vendor.totalOwed === 0 || vendor.status === 'paid';
       }
       
-      return matchesSearch && matchesStatus;
+      return matchesStatus;
     });
 
     return filtered.sort((a, b) => {
@@ -79,10 +92,25 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
 
       return 0;
     });
-  }, [vendors, searchTerm, statusFilter, sortBy, sortOrder]);
+  }, [vendors, searchTerm, selectedVendor, statusFilter, sortBy, sortOrder]);
 
   const handleEditOrder = (vendor: Vendor) => {
     setEditingVendor(vendor);
+  };
+
+  const handleVendorSearch = (value: string) => {
+    // Check if the value matches one of our vendor options exactly
+    const matchingOption = vendorSearchOptions.find(option => option.value === value);
+    
+    if (matchingOption) {
+      // User selected a specific vendor from dropdown
+      setSelectedVendor(value);
+      setSearchTerm('');
+    } else {
+      // User is typing/searching - clear selected vendor and use as search term
+      setSelectedVendor('');
+      setSearchTerm(value);
+    }
   };
 
   const handlePayToday = async (vendor: Vendor) => {
@@ -208,15 +236,28 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
         </div>
         
         <div className="flex items-center space-x-4 mt-4">
-          <div className="flex-1 max-w-sm">
+          <div className="flex-1 max-w-sm flex items-center space-x-2">
             <Combobox
               options={vendorSearchOptions}
-              value={searchTerm}
-              onValueChange={setSearchTerm}
+              value={selectedVendor || searchTerm}
+              onValueChange={handleVendorSearch}
               placeholder="Search vendors..."
               emptyText="No vendors found."
-              className="w-full"
+              className="flex-1"
             />
+            {(selectedVendor || searchTerm) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSelectedVendor('');
+                  setSearchTerm('');
+                }}
+                className="px-3"
+              >
+                Clear
+              </Button>
+            )}
           </div>
           
           <div className="flex items-center space-x-2">
@@ -265,7 +306,9 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
             </div>
           ) : filteredAndSortedVendors.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {searchTerm ? 'No vendors found matching your search.' : 'No vendors with purchase orders.'}
+              {selectedVendor ? `No purchase orders found for ${vendorSearchOptions.find(v => v.value === selectedVendor)?.label || selectedVendor}.` :
+               searchTerm ? 'No vendors found matching your search.' : 
+               'No vendors with purchase orders.'}
             </div>
           ) : (
             filteredAndSortedVendors.map((vendor) => (
