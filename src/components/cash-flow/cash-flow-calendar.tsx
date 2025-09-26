@@ -341,20 +341,20 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                         {hasEvents && (
                          <>
                             {dayEvents.length > 1 ? (
-                              <div className="space-y-1 mt-2 cursor-pointer hover:bg-muted/50 p-1 rounded"
+                              <div className="mt-1 cursor-pointer hover:bg-muted/30 p-1.5 rounded border border-muted-foreground/20 bg-muted/10"
                                    onClick={(e) => {
                                      e.stopPropagation();
                                      setSelectedDayTransactions(dayEvents);
                                      setSelectedDate(day);
                                      setShowDayTransactionsModal(true);
                                    }}>
-                                <div className="flex items-center justify-between">
-                                  <div className="text-sm text-muted-foreground font-medium">
+                                <div className="flex items-center justify-between w-full">
+                                  <span className="text-[10px] text-muted-foreground font-medium">
                                     {dayEvents.length} transactions
-                                  </div>
-                                  <div className="text-xs font-semibold">
+                                  </span>
+                                  <span className="text-[10px] font-semibold text-foreground">
                                     ${dayEvents.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
-                                  </div>
+                                  </span>
                                 </div>
                               </div>
                             ) : (
