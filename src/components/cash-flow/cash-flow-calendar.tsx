@@ -340,25 +340,45 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                      <div className="flex-1 space-y-1">
                         {hasEvents && (
                          <>
-                            {isToday(day) ? (
-                              <div className="space-y-1 mt-2 cursor-pointer hover:bg-muted/50 p-1 rounded"
-                                   onClick={(e) => {
-                                     e.stopPropagation();
-                                     if (dayEvents.length === 1) {
-                                       setSelectedTransaction(dayEvents[0]);
-                                       setShowTransactionModal(true);
-                                     } else {
-                                       setSelectedDayTransactions(dayEvents);
-                                       setSelectedDate(day);
-                                       setShowDayTransactionsModal(true);
-                                     }
-                                   }}>
-                                <div className="text-sm text-muted-foreground font-medium">
-                                  {dayEvents.length} transaction{dayEvents.length > 1 ? 's' : ''} today
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  Click to view {dayEvents.length > 1 ? 'all' : 'details'}
-                                </div>
+                     {isToday(day) ? (
+                              <div className="space-y-1">
+                                {dayEvents.length > 1 ? (
+                                  <div className="space-y-1 mt-2 cursor-pointer hover:bg-muted/50 p-1 rounded"
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         setSelectedDayTransactions(dayEvents);
+                                         setSelectedDate(day);
+                                         setShowDayTransactionsModal(true);
+                                       }}>
+                                    <div className="text-sm text-muted-foreground font-medium">
+                                      {dayEvents.length} transactions
+                                    </div>
+                                    <div className="text-xs font-semibold">
+                                      ${dayEvents.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  dayEvents.slice(0, 2).map(event => (
+                                    <div
+                                      key={event.id}
+                                      className={`
+                                        text-xs px-1 py-0.5 rounded truncate flex items-center space-x-1 border cursor-pointer hover:opacity-80 transition-opacity
+                                        ${getEventColor(event)}
+                                      `}
+                                      title={`${event.poName ? `${event.poName} - ` : ''}${event.description}${event.vendor ? ` - ${event.vendor}` : ''}${event.creditCard ? ` - ${event.creditCard}` : ''}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedTransaction(event);
+                                        setShowTransactionModal(true);
+                                      }}
+                                    >
+                                      {getEventIcon(event)}
+                                      <span className="truncate">
+                                        {event.vendor ? event.vendor : event.description} ${event.amount.toLocaleString()}
+                                      </span>
+                                    </div>
+                                  ))
+                                )}
                               </div>
                             ) : (
                              <>
