@@ -33,12 +33,24 @@ export const useVendors = () => {
 
   const fetchVendors = async () => {
     try {
+      // First check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('No authenticated user found, skipping vendor fetch');
+        setVendors([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('vendors')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error fetching vendors:', error);
+        throw error;
+      }
 
       const formattedVendors = data?.map(vendor => ({
         id: vendor.id,
@@ -211,6 +223,18 @@ export const useVendors = () => {
   useEffect(() => {
     fetchVendors();
   }, []);
+
+  // Also fetch vendors when auth state potentially changes
+  useEffect(() => {
+    const checkAuthAndFetch = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && vendors.length === 0) {
+        fetchVendors();
+      }
+    };
+    
+    checkAuthAndFetch();
+  }, [vendors.length]);
 
   return {
     vendors,
