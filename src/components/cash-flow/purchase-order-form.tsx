@@ -201,6 +201,8 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
         netTermsDays: selectedVendor.netTermsDays
       });
       
+      console.log("Form data before update:", formData.category);
+      
       setFormData(prev => ({ 
         ...prev, 
         vendor: vendorName,
@@ -208,6 +210,8 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
         paymentType: mappedPaymentType,
         netTermsDays: (selectedVendor.netTermsDays?.toString() || "30") as "30" | "60" | "90" | "custom",
       }));
+      
+      console.log("Category should be set to:", selectedVendor.category);
       
       // Set default deposit for preorder vendors
       if (mappedPaymentType === 'preorder') {
@@ -550,7 +554,13 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
           
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
-            <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
+            <Select 
+              value={formData.category} 
+              onValueChange={(value) => {
+                console.log("Category manually changed to:", value);
+                handleInputChange("category", value);
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
@@ -562,6 +572,11 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
                 ))}
               </SelectContent>
             </Select>
+            {formData.category && (
+              <p className="text-xs text-muted-foreground">
+                Current: {formData.category}
+              </p>
+            )}
           </div>
           
           <div className="space-y-2">
