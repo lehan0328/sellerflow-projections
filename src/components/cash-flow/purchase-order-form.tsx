@@ -36,16 +36,26 @@ interface PaymentSchedule {
 }
 
 export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, onAddVendor }: PurchaseOrderFormProps) => {
-  // Get unique vendors for dropdown (no duplicates)
+  // Get unique vendors for dropdown (no duplicates) - prefer net-terms payment type
   const uniqueVendors = useMemo(() => {
-    const vendorNames = new Set();
-    return vendors.filter(vendor => {
-      if (vendorNames.has(vendor.name)) {
-        return false;
-      }
-      vendorNames.add(vendor.name);
-      return true;
+    const vendorMap = new Map();
+    
+    // Sort vendors to prefer net-terms and preorder over total
+    const sortedVendors = [...vendors].sort((a, b) => {
+      const paymentPriority = { 'net-terms': 3, 'preorder': 2, 'total': 1 };
+      const aPriority = paymentPriority[a.paymentType as keyof typeof paymentPriority] || 0;
+      const bPriority = paymentPriority[b.paymentType as keyof typeof paymentPriority] || 0;
+      return bPriority - aPriority;
     });
+    
+    // Keep only the first (best) vendor for each name
+    sortedVendors.forEach(vendor => {
+      if (!vendorMap.has(vendor.name)) {
+        vendorMap.set(vendor.name, vendor);
+      }
+    });
+    
+    return Array.from(vendorMap.values());
   }, [vendors]);
 
   const [formData, setFormData] = useState({
