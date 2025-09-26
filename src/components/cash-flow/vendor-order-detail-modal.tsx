@@ -20,6 +20,15 @@ interface VendorOrderDetailModalProps {
 export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrderDetailModalProps) => {
   const { updateVendor } = useVendors();
   const { transactions, deleteTransaction, refetch } = useTransactions();
+  
+  // Refetch transactions when modal opens to ensure we have latest data
+  React.useEffect(() => {
+    if (open && vendor) {
+      console.log('Modal opened for vendor:', vendor.name, 'ID:', vendor.id);
+      refetch();
+    }
+  }, [open, vendor, refetch]);
+  
   const [formData, setFormData] = useState({
     totalOwed: vendor?.totalOwed || 0,
     nextPaymentAmount: vendor?.nextPaymentAmount || 0,
@@ -29,7 +38,17 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
     notes: vendor?.notes || ''
   });
 
-  const vendorTransactions = React.useMemo(() => transactions.filter(t => t.vendorId === vendor?.id), [transactions, vendor?.id]);
+  const vendorTransactions = React.useMemo(() => {
+    const filtered = transactions.filter(t => t.vendorId === vendor?.id);
+    console.log('VendorOrderDetailModal Debug:', {
+      vendorId: vendor?.id,
+      vendorName: vendor?.name,
+      totalTransactions: transactions.length,
+      vendorTransactions: filtered.length,
+      allTransactionVendorIds: transactions.map(t => ({ id: t.id, vendorId: t.vendorId, desc: t.description }))
+    });
+    return filtered;
+  }, [transactions, vendor?.id]);
   const [selectedTxId, setSelectedTxId] = useState<string | undefined>(undefined);
   React.useEffect(() => {
     // Ensure a default selection if available and keep it in sync
@@ -222,7 +241,17 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
               </Select>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No transactions linked to this vendor.</p>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                No transactions found for this vendor. 
+                {transactions.length === 0 ? ' (No transactions loaded)' : ` (Found ${transactions.length} total transactions)`}
+              </p>
+              {vendor && (
+                <p className="text-xs text-muted-foreground">
+                  Looking for vendor ID: {vendor.id}
+                </p>
+              )}
+            </div>
           )}
 
           <div className="flex space-x-3 pt-4">
