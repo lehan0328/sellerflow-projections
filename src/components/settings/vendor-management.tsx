@@ -36,6 +36,9 @@ export function VendorManagement() {
     netTermsDays: "30"
   });
   const { vendors, loading, addVendor, updateVendor, deleteVendor } = useVendors();
+  
+  // Filter to only show management vendors
+  const managementVendors = vendors.filter(vendor => vendor.source === 'management');
   const { toast } = useToast();
 
   const categories = [
@@ -70,7 +73,8 @@ export function VendorManagement() {
       status: 'upcoming',
       category: vendorData.category || '',
       paymentType: vendorData.paymentType,
-      netTermsDays: vendorData.netTermsDays
+      netTermsDays: vendorData.netTermsDays,
+      source: 'management'
     });
     setShowAddVendor(false);
   };
@@ -149,7 +153,7 @@ export function VendorManagement() {
         </Button>
       </div>
 
-      {vendors.length === 0 ? (
+      {managementVendors.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
@@ -165,7 +169,7 @@ export function VendorManagement() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {vendors.map((vendor) => (
+          {managementVendors.map((vendor) => (
             <Card key={vendor.id}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <div className="flex items-center space-x-3">

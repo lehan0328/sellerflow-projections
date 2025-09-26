@@ -207,7 +207,8 @@ const Dashboard = () => {
       poName: orderData.poName,
       description: orderData.description,
       notes: orderData.notes,
-      paymentSchedule: paymentSchedule
+      paymentSchedule: paymentSchedule,
+      source: 'purchase_order'
     });
 
     await addTransaction({

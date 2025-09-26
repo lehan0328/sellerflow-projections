@@ -16,6 +16,7 @@ export interface Vendor {
   description?: string;
   notes?: string;
   paymentSchedule?: any[];
+  source?: 'purchase_order' | 'management';
 }
 
 export const useVendors = () => {
@@ -65,7 +66,8 @@ export const useVendors = () => {
         poName: vendor.po_name || '',
         description: vendor.description || '',
         notes: vendor.notes || '',
-        paymentSchedule: Array.isArray(vendor.payment_schedule) ? vendor.payment_schedule : []
+        paymentSchedule: Array.isArray(vendor.payment_schedule) ? vendor.payment_schedule : [],
+        source: vendor.source as Vendor['source'] || 'management'
       })) || [];
 
       setVendors(formattedVendors);
@@ -101,7 +103,8 @@ export const useVendors = () => {
           po_name: vendorData.poName || null,
           description: vendorData.description || null,
           notes: vendorData.notes || null,
-          payment_schedule: vendorData.paymentSchedule || null
+          payment_schedule: vendorData.paymentSchedule || null,
+          source: vendorData.source || 'management'
         })
         .select()
         .single();
@@ -121,7 +124,8 @@ export const useVendors = () => {
         poName: data.po_name || '',
         description: data.description || '',
         notes: data.notes || '',
-        paymentSchedule: Array.isArray(data.payment_schedule) ? data.payment_schedule : []
+        paymentSchedule: Array.isArray(data.payment_schedule) ? data.payment_schedule : [],
+        source: data.source as Vendor['source'] || 'management'
       };
 
       setVendors(prev => [newVendor, ...prev]);
