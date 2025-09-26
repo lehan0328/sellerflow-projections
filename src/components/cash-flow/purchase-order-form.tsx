@@ -85,6 +85,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
   const [formData, setFormData] = useState({
     poName: "",
     vendor: "",
+    vendorId: "", // Add vendor ID tracking
     amount: "",
     poDate: new Date(),
     dueDate: undefined as Date | undefined,
@@ -176,6 +177,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
     setFormData({
       poName: "",
       vendor: "",
+      vendorId: "",
       amount: "",
       poDate: new Date(),
       dueDate: undefined,
@@ -195,6 +197,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
   };
 
   const handleVendorChange = (vendorId: string) => {
+    console.log("Vendor change triggered with ID:", vendorId);
     // Find vendor by ID (more reliable than name)
     const selectedVendor = uniqueVendors.find(v => v.id === vendorId) || vendors.find(v => v.id === vendorId);
     
@@ -274,6 +277,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
       setFormData(prev => ({ 
         ...prev, 
         vendor: selectedVendor.name, // Still use name for display
+        vendorId: selectedVendor.id, // Add ID for proper selection tracking
         category: mappedCategory,
         paymentType: mappedPaymentType,
         netTermsDays: netTermsDays,
@@ -299,7 +303,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
     } else {
       console.error("Vendor not found for ID:", vendorId);
       // Reset vendor field but keep other data
-      setFormData(prev => ({ ...prev, vendor: "" }));
+      setFormData(prev => ({ ...prev, vendor: "", vendorId: "" }));
     }
   };
 
@@ -376,6 +380,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
       setFormData(prev => ({ 
         ...prev, 
         vendor: vendorData.name,
+        vendorId: `temp-${Date.now()}`, // Temporary ID for new vendors
         category: mappedCategory,
         paymentType: mappedPaymentType,
         netTermsDays: netTermsDays,
@@ -401,7 +406,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
             <div className="flex gap-2">
               <Combobox
                 options={vendorOptions}
-                value={formData.vendor ? uniqueVendors.find(v => v.name === formData.vendor)?.id || "" : ""}
+                value={formData.vendorId}
                 onValueChange={handleVendorChange}
                 placeholder="Search vendors..."
                 emptyText="No vendors found."
