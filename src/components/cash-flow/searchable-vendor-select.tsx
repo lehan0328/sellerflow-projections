@@ -63,13 +63,15 @@ export const SearchableVendorSelect = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-popover border border-border shadow-lg z-[60]">
-        <div className="flex items-center border-b px-3">
+        <div className="flex items-center border-b px-3 py-2">
           <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
           <Input
             placeholder="Search vendors..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+            onKeyDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
         <ScrollArea className="max-h-64">
@@ -80,13 +82,18 @@ export const SearchableVendorSelect = ({
           ) : (
             <div className="p-1">
               {filteredVendors.map((vendor) => (
-                <div
+                <button
                   key={vendor.id}
+                  type="button"
                   className={cn(
-                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                    "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground transition-colors",
                     value === vendor.id && "bg-accent text-accent-foreground"
                   )}
-                  onClick={() => handleSelect(vendor.id)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleSelect(vendor.id);
+                  }}
                 >
                   <Check
                     className={cn(
@@ -95,7 +102,7 @@ export const SearchableVendorSelect = ({
                     )}
                   />
                   {vendor.name}
-                </div>
+                </button>
               ))}
             </div>
           )}
