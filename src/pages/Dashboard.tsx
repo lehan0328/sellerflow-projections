@@ -169,7 +169,8 @@ const Dashboard = () => {
 
     // Always create a separate vendor entry for each purchase order
     const paymentSchedule = orderData.paymentSchedule || [];
-    let nextPaymentDate = orderData.dueDate; // Use the calculated due date from form
+    // For due-upon-order, ensure due date is same as PO date
+    let nextPaymentDate = orderData.paymentType === 'due-upon-order' ? orderData.poDate : orderData.dueDate;
     let nextPaymentAmount = amount;
     
     // For preorder, use first payment from schedule
