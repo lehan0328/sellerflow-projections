@@ -182,11 +182,6 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
   };
 
   const handleVendorChange = (vendorId: string) => {
-    if (vendorId === "add-vendor") {
-      setShowVendorForm(true);
-      return;
-    }
-    
     // Find vendor by ID (more reliable than name)
     const selectedVendor = uniqueVendors.find(v => v.id === vendorId) || vendors.find(v => v.id === vendorId);
     
@@ -390,21 +385,28 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="vendor">Vendor</Label>
-            <Select value={formData.vendor ? uniqueVendors.find(v => v.name === formData.vendor)?.id || "" : ""} onValueChange={handleVendorChange}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select vendor..." />
-              </SelectTrigger>
-              <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
-                <SelectItem value="add-vendor" className="font-medium text-primary">
-                  + Add New Vendor
-                </SelectItem>
-                {uniqueVendors.map((vendor) => (
-                  <SelectItem key={vendor.id} value={vendor.id}>
-                    {vendor.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Select value={formData.vendor ? uniqueVendors.find(v => v.name === formData.vendor)?.id || "" : ""} onValueChange={handleVendorChange}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Select vendor..." />
+                </SelectTrigger>
+                <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
+                  {uniqueVendors.map((vendor) => (
+                    <SelectItem key={vendor.id} value={vendor.id}>
+                      {vendor.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setShowVendorForm(true)}
+                className="px-3"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2">
