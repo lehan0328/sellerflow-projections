@@ -20,11 +20,11 @@ export const LiveDashboardShowcase = () => {
         </p>
         <Button 
           variant="outline" 
-          onClick={() => navigate('/dashboard')}
+          onClick={() => navigate('/demo')}
           className="inline-flex items-center space-x-2"
         >
           <ExternalLink className="h-4 w-4" />
-          <span>Open Full Dashboard</span>
+          <span>Try Interactive Demo</span>
         </Button>
       </div>
 
@@ -49,13 +49,13 @@ export const LiveDashboardShowcase = () => {
             {/* Dashboard Content Preview */}
             <div className="h-full bg-background">
               <iframe
-                src="/dashboard"
+                src="/demo"
                 className="w-full h-full border-0 scale-75 origin-top-left"
                 style={{ 
                   width: '133.33%', 
                   height: '133.33%'
                 }}
-                title="Dashboard Preview"
+                title="Demo Dashboard Preview"
               />
             </div>
           </div>

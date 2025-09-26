@@ -211,7 +211,7 @@ const Landing = () => {
                 Start 7-Day Free Trial
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8">
+              <Button variant="outline" size="lg" className="text-lg px-8" onClick={() => navigate('/demo')}>
                 See Live Demo
               </Button>
             </div>

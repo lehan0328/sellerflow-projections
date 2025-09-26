@@ -94,29 +94,31 @@ const DemoPage = () => {
           onUpdateCashBalance={handleUpdateCashBalance}
         />
         
-        <div className="grid lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8 space-y-6">
-            <CashFlowCalendar 
-              events={allCalendarEvents}
-              onEditTransaction={handleEditTransaction}
-            />
-            
-            <VendorsOverview 
-              onEditOrder={() => alert('Demo: Vendor editing not available in demo')}
-            />
-            
-            <IncomeOverview 
-              incomeItems={demoIncomeItems}
-              onCollectToday={handleCollectIncome}
-            />
-          </div>
-          
-          <div className="lg:col-span-4 space-y-6">
-            <BankAccounts />
-            <CreditCards />
-            <AmazonPayouts />
-          </div>
+        {/* Row 1: Cash Flow Calendar (Full Width) */}
+        <CashFlowCalendar 
+          events={allCalendarEvents}
+          onEditTransaction={handleEditTransaction}
+        />
+
+        {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <VendorsOverview 
+            onEditOrder={() => alert('Demo: Vendor editing not available in demo')}
+          />
+          <IncomeOverview 
+            incomeItems={demoIncomeItems}
+            onCollectToday={handleCollectIncome}
+          />
         </div>
+
+        {/* Row 3: Bank Accounts and Credit Cards (Side by Side) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <BankAccounts />
+          <CreditCards />
+        </div>
+
+        {/* Row 4: Amazon Payouts (Full Width) */}
+        <AmazonPayouts />
       </div>
 
       <FloatingMenu 
