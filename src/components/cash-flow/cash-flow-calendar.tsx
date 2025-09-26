@@ -337,27 +337,29 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                       )}
                     </div>
                     
+                    {/* Show transaction summary in date box for multiple transactions */}
+                    {hasEvents && dayEvents.length > 1 && (
+                      <div className="mb-1 cursor-pointer hover:bg-muted/30 p-1 rounded border border-muted-foreground/20 bg-muted/10"
+                           onClick={() => {
+                             setSelectedDayTransactions(dayEvents);
+                             setSelectedDate(day);
+                             setShowDayTransactionsModal(true);
+                           }}>
+                        <div className="flex items-center justify-between w-full">
+                          <span className="text-[10px] text-muted-foreground font-medium">
+                            {dayEvents.length} transactions
+                          </span>
+                          <span className="text-[10px] font-semibold text-foreground">
+                            ${dayEvents.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    
                      <div className="flex-1 space-y-1">
                         {hasEvents && (
-                         <>
-                            {dayEvents.length > 1 ? (
-                              <div className="mt-1 cursor-pointer hover:bg-muted/30 p-1.5 rounded border border-muted-foreground/20 bg-muted/10"
-                                   onClick={(e) => {
-                                     e.stopPropagation();
-                                     setSelectedDayTransactions(dayEvents);
-                                     setSelectedDate(day);
-                                     setShowDayTransactionsModal(true);
-                                   }}>
-                                <div className="flex items-center justify-between w-full">
-                                  <span className="text-[10px] text-muted-foreground font-medium">
-                                    {dayEvents.length} transactions
-                                  </span>
-                                  <span className="text-[10px] font-semibold text-foreground">
-                                    ${dayEvents.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
-                                  </span>
-                                </div>
-                              </div>
-                            ) : (
+                          <>
+                            {dayEvents.length === 1 ? (
                               dayEvents.slice(0, 1).map(event => (
                                 <div
                                   key={event.id}  
@@ -378,8 +380,8 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                                   </span>
                                 </div>
                               ))
-                            )}
-                         </>
+                            ) : null}
+                          </>
                         )}
                       </div>
                    </div>
