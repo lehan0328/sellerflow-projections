@@ -340,101 +340,51 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                      <div className="flex-1 space-y-1">
                         {hasEvents && (
                          <>
-                     {isToday(day) ? (
-                              <div className="space-y-1">
-                                {dayEvents.length > 1 ? (
-                                  <div className="space-y-1 mt-2 cursor-pointer hover:bg-muted/50 p-1 rounded"
-                                       onClick={(e) => {
-                                         e.stopPropagation();
-                                         setSelectedDayTransactions(dayEvents);
-                                         setSelectedDate(day);
-                                         setShowDayTransactionsModal(true);
-                                       }}>
-                                    <div className="text-sm text-muted-foreground font-medium">
-                                      {dayEvents.length} transactions
-                                    </div>
-                                    <div className="text-xs font-semibold">
-                                      ${dayEvents.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
-                                    </div>
-                                  </div>
-                                ) : (
-                                  dayEvents.slice(0, 2).map(event => (
-                                    <div
-                                      key={event.id}
-                                      className={`
-                                        text-xs px-1 py-0.5 rounded truncate flex items-center space-x-1 border cursor-pointer hover:opacity-80 transition-opacity
-                                        ${getEventColor(event)}
-                                      `}
-                                      title={`${event.poName ? `${event.poName} - ` : ''}${event.description}${event.vendor ? ` - ${event.vendor}` : ''}${event.creditCard ? ` - ${event.creditCard}` : ''}`}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedTransaction(event);
-                                        setShowTransactionModal(true);
-                                      }}
-                                    >
-                                      {getEventIcon(event)}
-                                      <span className="truncate">
-                                        {event.vendor ? event.vendor : event.description} ${event.amount.toLocaleString()}
-                                      </span>
-                                    </div>
-                                  ))
-                                )}
-                              </div>
-                            ) : (
-                             <>
-                               {dayEvents.slice(0, 2).map(event => (
-                                 <div
-                                   key={event.id}
-                                   className={`
-                                     text-xs px-1 py-0.5 rounded truncate flex items-center space-x-1 border cursor-pointer hover:opacity-80 transition-opacity
-                                     ${getEventColor(event)}
-                                   `}
-                                   title={`${event.poName ? `${event.poName} - ` : ''}${event.description}${event.vendor ? ` - ${event.vendor}` : ''}${event.creditCard ? ` - ${event.creditCard}` : ''}`}
+                            {dayEvents.length > 1 ? (
+                              <div className="space-y-1 mt-2 cursor-pointer hover:bg-muted/50 p-1 rounded"
                                    onClick={(e) => {
                                      e.stopPropagation();
-                                     setSelectedTransaction(event);
-                                     setShowTransactionModal(true);
-                                   }}
-                                 >
-                                   {getEventIcon(event)}
-                                   <span className="truncate">
-                                     {event.vendor ? event.vendor : event.description} ${event.amount.toLocaleString()}
-                                   </span>
-                                 </div>
-                               ))}
-                                {dayEvents.length > 2 && (
-                                  <div 
-                                    className="text-xs text-muted-foreground cursor-pointer hover:text-primary"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      // Show all transactions for this day
-                                      setSelectedDayTransactions(dayEvents);
-                                      setSelectedDate(day);
-                                      setShowDayTransactionsModal(true);
-                                    }}
-                                  >
-                                    +{dayEvents.length - 2} more (click to view all)
-                                  </div>
-                                )}
-                               
-                               {dayBalance !== 0 && (
-                                 <div className={`
-                                   text-xs font-semibold mt-1
-                                   ${dayBalance > 0 ? 'text-finance-positive' : 'text-finance-negative'}
-                                 `}>
-                                   Net: ${dayBalance > 0 ? '+' : ''}${dayBalance.toLocaleString()}
-                                 </div>
-                               )}
-                             </>
-                           )}
+                                     setSelectedDayTransactions(dayEvents);
+                                     setSelectedDate(day);
+                                     setShowDayTransactionsModal(true);
+                                   }}>
+                                <div className="text-sm text-muted-foreground font-medium">
+                                  {dayEvents.length} transactions
+                                </div>
+                                <div className="text-xs font-semibold">
+                                  ${dayEvents.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
+                                </div>
+                              </div>
+                            ) : (
+                              dayEvents.slice(0, 1).map(event => (
+                                <div
+                                  key={event.id}  
+                                  className={`
+                                    text-xs px-1 py-0.5 rounded truncate flex items-center space-x-1 border cursor-pointer hover:opacity-80 transition-opacity
+                                    ${getEventColor(event)}
+                                  `}
+                                  title={`${event.poName ? `${event.poName} - ` : ""}${event.description}${event.vendor ? ` - ${event.vendor}` : ""}${event.creditCard ? ` - ${event.creditCard}` : ""}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedTransaction(event);
+                                    setShowTransactionModal(true);
+                                  }}
+                                >
+                                  {getEventIcon(event)}
+                                  <span className="truncate">
+                                    {event.vendor ? event.vendor : event.description} ${event.amount.toLocaleString()}
+                                  </span>
+                                </div>
+                              ))
+                            )}
                          </>
-                       )}
-                     </div>
-                  </div>
-                );
-              })}
-              </div>
-            </div>
+                        )}
+                      </div>
+                   </div>
+                 );
+               })}
+               </div>
+             </div>
           ) : (
             <div className="h-[400px] flex-shrink-0">
               <ChartContainer config={chartConfig}>
