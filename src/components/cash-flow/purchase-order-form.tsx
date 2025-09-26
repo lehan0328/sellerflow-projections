@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
@@ -66,8 +67,20 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
       }
     });
     
-    return Array.from(vendorMap.values());
+    // Convert to array and sort alphabetically by name
+    const uniqueVendorsList = Array.from(vendorMap.values());
+    uniqueVendorsList.sort((a, b) => a.name.localeCompare(b.name));
+    
+    return uniqueVendorsList;
   }, [vendors]);
+
+  // Format vendors for combobox
+  const vendorOptions = useMemo(() => {
+    return uniqueVendors.map(vendor => ({
+      value: vendor.id,
+      label: vendor.name
+    }));
+  }, [uniqueVendors]);
 
   const [formData, setFormData] = useState({
     poName: "",
@@ -386,18 +399,14 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
           <div className="space-y-2">
             <Label htmlFor="vendor">Vendor</Label>
             <div className="flex gap-2">
-              <Select value={formData.vendor ? uniqueVendors.find(v => v.name === formData.vendor)?.id || "" : ""} onValueChange={handleVendorChange}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select vendor..." />
-                </SelectTrigger>
-                <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
-                  {uniqueVendors.map((vendor) => (
-                    <SelectItem key={vendor.id} value={vendor.id}>
-                      {vendor.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={vendorOptions}
+                value={formData.vendor ? uniqueVendors.find(v => v.name === formData.vendor)?.id || "" : ""}
+                onValueChange={handleVendorChange}
+                placeholder="Search vendors..."
+                emptyText="No vendors found."
+                className="flex-1"
+              />
               <Button 
                 type="button" 
                 variant="outline" 
