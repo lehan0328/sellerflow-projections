@@ -312,26 +312,32 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                       </div>
                       {isToday(day) ? (
                         <div className="text-right">
-                          <div className={`text-sm font-bold ${totalCash < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
-                            ${totalCash.toLocaleString()}
+                          <div className="flex items-center justify-end gap-1">
+                            <span className="text-[10px] text-muted-foreground">Cash</span>
+                            <span className={`text-sm font-bold ${totalCash < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
+                              ${totalCash.toLocaleString()}
+                            </span>
                           </div>
-                          <div className="text-[10px] text-muted-foreground">
-                            Cash
-                          </div>
-                          <div className="text-xs font-semibold text-blue-600">
-                            ${totalAvailableCredit.toLocaleString()}
-                          </div>
-                          <div className="text-[10px] text-muted-foreground">
-                            Credit
+                          <div className="flex items-center justify-end gap-1">
+                            <span className="text-[10px] text-muted-foreground">Credit</span>
+                            <span className="text-xs font-semibold text-blue-600">
+                              ${totalAvailableCredit.toLocaleString()}
+                            </span>
                           </div>
                         </div>
                       ) : (
                         <div className="text-right">
-                          <div className={`text-xs font-semibold ${totalCash < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
-                            ${totalCash.toLocaleString()}
+                          <div className="flex items-center justify-end gap-1">
+                            <span className="text-[10px] text-muted-foreground">Cash</span>
+                            <span className={`text-xs font-semibold ${totalCash < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
+                              ${totalCash.toLocaleString()}
+                            </span>
                           </div>
-                          <div className="text-[10px] text-blue-600 font-medium">
-                            ${totalAvailableCredit.toLocaleString()}
+                          <div className="flex items-center justify-end gap-1">
+                            <span className="text-[10px] text-muted-foreground">Credit</span>
+                            <span className="text-[10px] text-blue-600 font-medium">
+                              ${totalAvailableCredit.toLocaleString()}
+                            </span>
                           </div>
                         </div>
                       )}
