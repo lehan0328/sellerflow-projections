@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Combobox } from "@/components/ui/combobox";
+import { SearchableVendorSelect } from "./searchable-vendor-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
@@ -73,16 +73,6 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
     
     return uniqueVendorsList;
   }, [vendors]);
-
-  // Format vendors for combobox
-  const vendorOptions = useMemo(() => {
-    const options = uniqueVendors.map(vendor => ({
-      value: vendor.id,
-      label: vendor.name
-    }));
-    console.log("Vendor options:", options);
-    return options;
-  }, [uniqueVendors]);
 
   const [formData, setFormData] = useState({
     poName: "",
@@ -200,7 +190,6 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
 
   const handleVendorChange = (vendorId: string) => {
     console.log("Vendor change triggered with ID:", vendorId);
-    console.log("Available vendor options:", vendorOptions);
     console.log("Current form vendorId:", formData.vendorId);
     
     // Find vendor by ID (more reliable than name)
@@ -409,15 +398,14 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
           <div className="space-y-2">
             <Label htmlFor="vendor">Vendor</Label>
             <div className="flex gap-2">
-              <Combobox
-                options={vendorOptions}
+              <SearchableVendorSelect
+                vendors={uniqueVendors}
                 value={formData.vendorId}
                 onValueChange={(value) => {
-                  console.log("Combobox onValueChange called with:", value);
+                  console.log("SearchableVendorSelect onValueChange called with:", value);
                   handleVendorChange(value);
                 }}
                 placeholder="Search vendors..."
-                emptyText="No vendors found."
                 className="flex-1"
               />
               <Button 
