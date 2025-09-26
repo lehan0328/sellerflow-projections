@@ -230,7 +230,31 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
 
   const handleAddVendorFromForm = (vendorData: any) => {
     if (onAddVendor) {
-      onAddVendor(vendorData);
+      // Calculate due date based on payment terms
+      let dueDate = new Date();
+      if (vendorData.paymentType === 'net-terms' && vendorData.netTermsDays) {
+        const days = parseInt(vendorData.netTermsDays);
+        dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + days);
+      }
+      
+      // Create complete vendor object with all required fields
+      const completeVendorData = {
+        name: vendorData.name,
+        category: vendorData.category || '',
+        paymentType: vendorData.paymentType,
+        netTermsDays: vendorData.netTermsDays,
+        totalOwed: 0,
+        nextPaymentDate: dueDate,
+        nextPaymentAmount: 0,
+        status: 'upcoming' as const,
+        source: 'purchase_order' as const
+      };
+      
+      console.log("Adding vendor with complete data:", completeVendorData);
+      
+      onAddVendor(completeVendorData);
+      
       // Map vendor payment type to form payment type
       let mappedPaymentType: "due-upon-order" | "net-terms" | "preorder" | "due-upon-delivery" = "due-upon-order";
       
@@ -248,7 +272,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
         vendor: vendorData.name,
         category: vendorData.category || "",
         paymentType: mappedPaymentType,
-        netTermsDays: (vendorData.netTermsDays || "30") as "30" | "60" | "90" | "custom",
+        netTermsDays: (vendorData.netTermsDays?.toString() || "30") as "30" | "60" | "90" | "custom",
       }));
     }
     setShowVendorForm(false);
