@@ -176,7 +176,11 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
       return;
     }
     
-    const selectedVendor = vendors.find(v => v.name === vendorName);
+    // Find vendor from uniqueVendors first (preferred), then fallback to all vendors
+    const selectedVendor = uniqueVendors.find(v => v.name === vendorName) || vendors.find(v => v.name === vendorName);
+    
+    console.log("Selected vendor:", vendorName, selectedVendor);
+    
     if (selectedVendor) {
       // Map vendor payment type to form payment type
       let mappedPaymentType: "due-upon-order" | "net-terms" | "preorder" | "due-upon-delivery" = "due-upon-order";
@@ -191,12 +195,18 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
         mappedPaymentType = "due-upon-delivery";
       }
       
+      console.log("Auto-populating:", {
+        category: selectedVendor.category,
+        paymentType: mappedPaymentType,
+        netTermsDays: selectedVendor.netTermsDays
+      });
+      
       setFormData(prev => ({ 
         ...prev, 
         vendor: vendorName,
         category: selectedVendor.category || "",
         paymentType: mappedPaymentType,
-        netTermsDays: (selectedVendor.netTermsDays || "30") as "30" | "60" | "90" | "custom",
+        netTermsDays: (selectedVendor.netTermsDays?.toString() || "30") as "30" | "60" | "90" | "custom",
       }));
       
       // Set default deposit for preorder vendors
@@ -209,6 +219,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
         }]);
       }
     } else {
+      console.log("Vendor not found:", vendorName);
       setFormData(prev => ({ ...prev, vendor: vendorName }));
     }
   };
