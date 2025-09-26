@@ -27,6 +27,12 @@ export const useTransactions = () => {
     return `${year}-${month}-${day}`;
   };
 
+  // Parse 'YYYY-MM-DD' into a local Date (avoids timezone shift)
+  const parseDateFromDB = (dateString: string) => {
+    const [y, m, d] = dateString.split('-').map(Number);
+    return new Date(y, (m || 1) - 1, d || 1);
+  };
+
   const fetchTransactions = async () => {
     try {
       const { data, error } = await supabase
@@ -43,8 +49,8 @@ export const useTransactions = () => {
         description: transaction.description || '',
         vendorId: transaction.vendor_id,
         customerId: transaction.customer_id,
-        transactionDate: new Date(transaction.transaction_date),
-        dueDate: transaction.due_date ? new Date(transaction.due_date) : undefined,
+        transactionDate: parseDateFromDB(transaction.transaction_date),
+        dueDate: transaction.due_date ? parseDateFromDB(transaction.due_date) : undefined,
         status: transaction.status as Transaction['status']
       })) || [];
 
@@ -91,8 +97,8 @@ export const useTransactions = () => {
         description: data.description || '',
         vendorId: data.vendor_id,
         customerId: data.customer_id,
-        transactionDate: new Date(data.transaction_date),
-        dueDate: data.due_date ? new Date(data.due_date) : undefined,
+        transactionDate: parseDateFromDB(data.transaction_date),
+        dueDate: data.due_date ? parseDateFromDB(data.due_date) : undefined,
         status: data.status as Transaction['status']
       };
 

@@ -32,6 +32,12 @@ export const useVendors = () => {
     return `${year}-${month}-${day}`;
   };
 
+  // Parse 'YYYY-MM-DD' into a local Date (avoids timezone shift)
+  const parseDateFromDB = (dateString: string) => {
+    const [y, m, d] = dateString.split('-').map(Number);
+    return new Date(y, (m || 1) - 1, d || 1);
+  };
+
   const fetchVendors = async () => {
     try {
       // First check if user is authenticated
@@ -57,7 +63,7 @@ export const useVendors = () => {
         id: vendor.id,
         name: vendor.name,
         totalOwed: Number(vendor.total_owed),
-        nextPaymentDate: vendor.next_payment_date ? new Date(vendor.next_payment_date) : new Date(),
+        nextPaymentDate: vendor.next_payment_date ? parseDateFromDB(vendor.next_payment_date) : new Date(),
         nextPaymentAmount: Number(vendor.next_payment_amount),
         status: vendor.status as Vendor['status'],
         category: vendor.category || '',
@@ -115,7 +121,7 @@ export const useVendors = () => {
         id: data.id,
         name: data.name,
         totalOwed: Number(data.total_owed),
-        nextPaymentDate: new Date(data.next_payment_date),
+        nextPaymentDate: parseDateFromDB(data.next_payment_date),
         nextPaymentAmount: Number(data.next_payment_amount),
         status: data.status as Vendor['status'],
         category: data.category || '',
