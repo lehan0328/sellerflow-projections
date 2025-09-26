@@ -226,6 +226,10 @@ const Dashboard = () => {
 
     // Refresh vendors to show updated data
     await refetchVendors();
+    // Force vendors overview to refresh immediately 
+    setTimeout(() => {
+      refetchVendors();
+    }, 100);
     setShowPurchaseOrderForm(false);
   };
 
