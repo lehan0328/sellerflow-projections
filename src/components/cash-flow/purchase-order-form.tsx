@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
@@ -13,6 +12,7 @@ import { CalendarIcon, Plus, Trash2 } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { VendorForm } from "./vendor-form";
 
 interface PurchaseOrderFormProps {
   open: boolean;
@@ -22,8 +22,10 @@ interface PurchaseOrderFormProps {
     name: string;
     paymentType: string;
     netTermsDays?: string;
+    category?: string;
   }>;
   onSubmitOrder: (orderData: any) => void;
+  onAddVendor?: (vendorData: any) => void;
 }
 
 interface PaymentSchedule {
@@ -33,7 +35,7 @@ interface PaymentSchedule {
   description: string;
 }
 
-export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }: PurchaseOrderFormProps) => {
+export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, onAddVendor }: PurchaseOrderFormProps) => {
   // Get unique vendors for dropdown (no duplicates)
   const uniqueVendors = useMemo(() => {
     const vendorNames = new Set();
@@ -69,6 +71,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
   const [isPODatePickerOpen, setIsPODatePickerOpen] = useState(false);
   const [isDeliveryDatePickerOpen, setIsDeliveryDatePickerOpen] = useState(false);
   const [openPaymentDatePickers, setOpenPaymentDatePickers] = useState<Record<string, boolean>>({});
+  const [showVendorForm, setShowVendorForm] = useState(false);
 
 
   const categories = [
@@ -158,17 +161,36 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
   };
 
   const handleVendorChange = (vendorName: string) => {
+    if (vendorName === "add-vendor") {
+      setShowVendorForm(true);
+      return;
+    }
+    
     const selectedVendor = vendors.find(v => v.name === vendorName);
     if (selectedVendor) {
+      // Map vendor payment type to form payment type
+      let mappedPaymentType: "due-upon-order" | "net-terms" | "preorder" | "due-upon-delivery" = "due-upon-order";
+      
+      if (selectedVendor.paymentType === 'total') {
+        mappedPaymentType = "due-upon-order";
+      } else if (selectedVendor.paymentType === 'net-terms') {
+        mappedPaymentType = "net-terms";
+      } else if (selectedVendor.paymentType === 'preorder') {
+        mappedPaymentType = "preorder";
+      } else if (selectedVendor.paymentType === 'due-upon-delivery') {
+        mappedPaymentType = "due-upon-delivery";
+      }
+      
       setFormData(prev => ({ 
         ...prev, 
         vendor: vendorName,
-        paymentType: selectedVendor.paymentType as "due-upon-order" | "net-terms" | "preorder" | "due-upon-delivery",
+        category: selectedVendor.category || "",
+        paymentType: mappedPaymentType,
         netTermsDays: (selectedVendor.netTermsDays || "30") as "30" | "60" | "90" | "custom",
       }));
       
       // Set default deposit for preorder vendors
-      if (selectedVendor.paymentType === 'preorder') {
+      if (mappedPaymentType === 'preorder') {
         setPaymentSchedule([{ 
           id: "1", 
           amount: "", 
@@ -179,6 +201,32 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
     } else {
       setFormData(prev => ({ ...prev, vendor: vendorName }));
     }
+  };
+
+  const handleAddVendorFromForm = (vendorData: any) => {
+    if (onAddVendor) {
+      onAddVendor(vendorData);
+      // Map vendor payment type to form payment type
+      let mappedPaymentType: "due-upon-order" | "net-terms" | "preorder" | "due-upon-delivery" = "due-upon-order";
+      
+      if (vendorData.paymentType === 'total') {
+        mappedPaymentType = "due-upon-order";
+      } else if (vendorData.paymentType === 'net-terms') {
+        mappedPaymentType = "net-terms";
+      } else if (vendorData.paymentType === 'preorder') {
+        mappedPaymentType = "preorder";
+      }
+      
+      // Auto-select the newly created vendor
+      setFormData(prev => ({ 
+        ...prev, 
+        vendor: vendorData.name,
+        category: vendorData.category || "",
+        paymentType: mappedPaymentType,
+        netTermsDays: (vendorData.netTermsDays || "30") as "30" | "60" | "90" | "custom",
+      }));
+    }
+    setShowVendorForm(false);
   };
 
 
@@ -199,6 +247,9 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
                 <SelectValue placeholder="Select vendor..." />
               </SelectTrigger>
               <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
+                <SelectItem value="add-vendor" className="font-medium text-primary">
+                  + Add New Vendor
+                </SelectItem>
                 {uniqueVendors.map((vendor) => (
                   <SelectItem key={vendor.id} value={vendor.name}>
                     {vendor.name}
@@ -524,6 +575,12 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
           </div>
         </form>
       </DialogContent>
+      
+      <VendorForm 
+        open={showVendorForm}
+        onOpenChange={setShowVendorForm}
+        onAddVendor={handleAddVendorFromForm}
+      />
     </Dialog>
   );
 };

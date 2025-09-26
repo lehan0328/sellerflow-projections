@@ -132,6 +132,7 @@ const DemoPage = () => {
         onOpenChange={setShowPurchaseOrderForm}
         vendors={[]}
         onSubmitOrder={() => alert('Demo: Form submission not available in demo')}
+        onAddVendor={() => alert('Demo: Vendor creation not available in demo')}
       />
 
       <IncomeForm 

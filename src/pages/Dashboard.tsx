@@ -544,6 +544,7 @@ const Dashboard = () => {
           open={showPurchaseOrderForm}
           onOpenChange={setShowPurchaseOrderForm}
           onSubmitOrder={handlePurchaseOrderSubmit}
+          onAddVendor={addVendor}
         />
       )}
 
