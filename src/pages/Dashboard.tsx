@@ -232,7 +232,7 @@ const Dashboard = () => {
     setCashFlowEvents(prev => [newEvent, ...prev]);
 
     // Refresh vendors to show updated data
-    refetchVendors();
+    await refetchVendors();
     setShowPurchaseOrderForm(false);
   };
 
@@ -450,11 +450,23 @@ const Dashboard = () => {
   // Convert cash flow events to calendar format (no conversion needed since types now match)
   const calendarEvents = cashFlowEvents;
 
+  // Convert vendor due dates to calendar events
+  const vendorEvents: CashFlowEvent[] = vendors
+    .filter(vendor => vendor.totalOwed > 0 && vendor.nextPaymentDate)
+    .map(vendor => ({
+      id: `vendor-${vendor.id}`,
+      type: 'outflow' as const,
+      amount: vendor.nextPaymentAmount,
+      description: `${vendor.name} - ${vendor.poName || 'Payment Due'}`,
+      vendor: vendor.name,
+      date: vendor.nextPaymentDate
+    }));
+
   // Get credit card due date events
   const creditCardEvents = getCreditCardDueDates();
 
   // Combine all events for calendar
-  const allCalendarEvents = [...sampleEvents, ...calendarEvents, ...creditCardEvents];
+  const allCalendarEvents = [...sampleEvents, ...calendarEvents, ...vendorEvents, ...creditCardEvents];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
