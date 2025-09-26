@@ -17,7 +17,7 @@ interface VendorsOverviewProps {
 }
 
 export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverviewProps) => {
-  const { vendors, loading } = useVendors();
+  const { vendors, loading, deleteVendor } = useVendors();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | 'paid'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'totalOwed' | 'nextPaymentDate' | 'nextPaymentAmount'>('nextPaymentDate');
@@ -85,6 +85,17 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
     setEditingVendor(vendor);
   };
 
+  const handlePayToday = async (vendor: Vendor) => {
+    try {
+      // Delete the vendor since payment is complete
+      await deleteVendor(vendor.id);
+      // Refresh the vendors list
+      onVendorUpdate?.();
+    } catch (error) {
+      console.error('Error processing payment:', error);
+    }
+  };
+
   const getStatusColor = (vendor: Vendor) => {
     if (!vendor.nextPaymentDate) return 'default';
     
@@ -134,9 +145,14 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
     const dueDate = new Date(vendor.nextPaymentDate);
     dueDate.setHours(0, 0, 0, 0); // Reset time to start of day
     
+    // Debug logging
+    console.log(`Vendor ${vendor.name}: Today=${today.toDateString()}, Due=${dueDate.toDateString()}`);
+    
     // Calculate difference in days
     const timeDiff = dueDate.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    
+    console.log(`Vendor ${vendor.name}: daysDiff=${daysDiff}`);
     
     if (daysDiff > 0) {
       // Future date - show days remaining
@@ -321,7 +337,7 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => onVendorUpdate?.()}>
+                                <AlertDialogAction onClick={() => handlePayToday(vendor)}>
                                   Mark as Paid
                                 </AlertDialogAction>
                               </AlertDialogFooter>
