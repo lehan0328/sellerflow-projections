@@ -89,7 +89,8 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
     try {
       // Delete the vendor since payment is complete
       await deleteVendor(vendor.id);
-      // Refresh the vendors list
+      // Refresh data to ensure both calendar and vendor list are updated
+      refetch();
       onVendorUpdate?.();
     } catch (error) {
       console.error('Error processing payment:', error);

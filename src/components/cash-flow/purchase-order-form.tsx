@@ -34,6 +34,18 @@ interface PaymentSchedule {
 }
 
 export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }: PurchaseOrderFormProps) => {
+  // Get unique vendors for dropdown (no duplicates)
+  const uniqueVendors = useMemo(() => {
+    const vendorNames = new Set();
+    return vendors.filter(vendor => {
+      if (vendorNames.has(vendor.name)) {
+        return false;
+      }
+      vendorNames.add(vendor.name);
+      return true;
+    });
+  }, [vendors]);
+
   const [formData, setFormData] = useState({
     poName: "",
     vendor: "",
@@ -187,7 +199,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
                 <SelectValue placeholder="Select vendor..." />
               </SelectTrigger>
               <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
-                {vendors.map((vendor) => (
+                {uniqueVendors.map((vendor) => (
                   <SelectItem key={vendor.id} value={vendor.name}>
                     {vendor.name}
                   </SelectItem>
@@ -366,7 +378,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
                 </div>
               )}
             </div>
-          ) : (
+          ) : formData.paymentType === "preorder" ? (
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="totalAmount">Total Order Amount ($)</Label>
@@ -462,7 +474,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder }
                 ))}
               </div>
             </div>
-          )}
+          ) : null}
           
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>

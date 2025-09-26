@@ -219,17 +219,8 @@ const Dashboard = () => {
       status: 'completed'
     });
 
-    // Create cash flow event with proper due date
-    const eventDate = orderData.dueDate || orderData.poDate || new Date();
-    const newEvent: CashFlowEvent = {
-      id: Date.now().toString(),
-      type: 'purchase-order',
-      amount: amount,
-      description: `${orderData.poName} - ${orderData.vendor}`,
-      vendor: orderData.vendor,
-      date: eventDate // Use the calculated due date for calendar display
-    };
-    setCashFlowEvents(prev => [newEvent, ...prev]);
+    // Don't create cash flow events since vendors automatically generate calendar events
+    // This prevents duplication in the calendar
 
     // Refresh vendors to show updated data
     await refetchVendors();
@@ -379,9 +370,11 @@ const Dashboard = () => {
     // Delete vendor and associated transactions
     await deleteVendor(vendor.id);
     
-    // Remove any cash flow events associated with this vendor
+    // Remove any cash flow events associated with this vendor by name or PO name
     setCashFlowEvents(prev => prev.filter(event => 
-      !(event.vendor === vendor.name || event.description?.includes(vendor.name))
+      !(event.vendor === vendor.name || 
+        event.description?.includes(vendor.name) ||
+        (vendor.poName && event.description?.includes(vendor.poName)))
     ));
     
     setEditingVendor(null);
@@ -462,14 +455,22 @@ const Dashboard = () => {
       date: vendor.nextPaymentDate
     }));
 
-  // Remove calendar events for vendors that were deleted or fully paid
+  // Clean up stale cash flow events when vendors change
   React.useEffect(() => {
     setCashFlowEvents(prev =>
       prev.filter(e => {
         if (!e.vendor) return true;
-        const v = vendors.find(v => v.name === e.vendor);
-        if (!v) return false; // vendor deleted
-        if ((v.totalOwed ?? 0) <= 0 || v.status === 'paid') return false; // fully paid
+        
+        // Check if vendor still exists by name
+        const vendorExists = vendors.some(v => v.name === e.vendor);
+        if (!vendorExists) return false; // vendor deleted
+        
+        // Check if vendor is fully paid
+        const vendor = vendors.find(v => v.name === e.vendor);
+        if (vendor && ((vendor.totalOwed ?? 0) <= 0 || vendor.status === 'paid')) {
+          return false; // fully paid
+        }
+        
         return true;
       })
     );
