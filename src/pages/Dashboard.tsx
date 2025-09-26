@@ -45,7 +45,8 @@ const Dashboard = () => {
     name: v.name, 
     paymentType: v.paymentType || 'total',
     netTermsDays: (v.netTermsDays ?? '30') as any,
-    category: v.category || ""
+    category: v.category || "",
+    source: v.source || 'unknown'
   })), [vendors]); // Recompute when vendors change
   
   // Force refresh vendors when opening Purchase Order form to ensure fresh data

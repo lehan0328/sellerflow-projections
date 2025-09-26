@@ -23,6 +23,7 @@ interface PurchaseOrderFormProps {
     paymentType: string;
     netTermsDays?: string;
     category?: string;
+    source?: string;
   }>;
   onSubmitOrder: (orderData: any) => void;
   onAddVendor?: (vendorData: any) => void;
@@ -36,12 +37,22 @@ interface PaymentSchedule {
 }
 
 export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, onAddVendor }: PurchaseOrderFormProps) => {
-  // Get unique vendors for dropdown (no duplicates) - prefer net-terms payment type
+  // Get unique vendors for dropdown (no duplicates) - prioritize management vendors
   const uniqueVendors = useMemo(() => {
     const vendorMap = new Map();
     
-    // Sort vendors to prefer net-terms and preorder over total
+    // Sort vendors to prioritize: 1) management over purchase_order, 2) latest updates
     const sortedVendors = [...vendors].sort((a, b) => {
+      // First priority: source (management > purchase_order)
+      const sourceWeight = { 'management': 2, 'purchase_order': 1 };
+      const aSourceWeight = sourceWeight[a.source as keyof typeof sourceWeight] || 0;
+      const bSourceWeight = sourceWeight[b.source as keyof typeof sourceWeight] || 0;
+      
+      if (aSourceWeight !== bSourceWeight) {
+        return bSourceWeight - aSourceWeight; // Higher weight first
+      }
+      
+      // Second priority: payment type preference (for same source)
       const paymentPriority = { 'net-terms': 3, 'preorder': 2, 'total': 1 };
       const aPriority = paymentPriority[a.paymentType as keyof typeof paymentPriority] || 0;
       const bPriority = paymentPriority[b.paymentType as keyof typeof paymentPriority] || 0;
