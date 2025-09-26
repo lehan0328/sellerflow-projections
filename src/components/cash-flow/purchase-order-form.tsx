@@ -529,7 +529,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
           
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
-            <Select onValueChange={(value) => handleInputChange("category", value)}>
+            <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
