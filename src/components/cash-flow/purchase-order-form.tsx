@@ -203,10 +203,29 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
       
       console.log("Form data before update:", formData.category);
       
+      // Map vendor category to available categories if needed
+      let mappedCategory = selectedVendor.category || "";
+      if (mappedCategory && !categories.includes(mappedCategory)) {
+        // Try to find a matching category
+        if (mappedCategory.toLowerCase().includes('inventory')) {
+          mappedCategory = "Inventory";
+        } else if (mappedCategory.toLowerCase().includes('packaging')) {
+          mappedCategory = "Packaging Materials";
+        } else if (mappedCategory.toLowerCase().includes('marketing') || mappedCategory.toLowerCase().includes('ppc')) {
+          mappedCategory = "Marketing/PPC";
+        } else if (mappedCategory.toLowerCase().includes('shipping') || mappedCategory.toLowerCase().includes('logistics')) {
+          mappedCategory = "Shipping & Logistics";
+        } else if (mappedCategory.toLowerCase().includes('professional') || mappedCategory.toLowerCase().includes('service')) {
+          mappedCategory = "Professional Services";
+        } else {
+          mappedCategory = "Other";
+        }
+      }
+
       setFormData(prev => ({ 
         ...prev, 
         vendor: vendorName,
-        category: selectedVendor.category || "",
+        category: mappedCategory,
         paymentType: mappedPaymentType,
         netTermsDays: (selectedVendor.netTermsDays?.toString() || "30") as "30" | "60" | "90" | "custom",
       }));
@@ -248,7 +267,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
         nextPaymentDate: dueDate,
         nextPaymentAmount: 0,
         status: 'upcoming' as const,
-        source: 'purchase_order' as const
+        source: 'management' as const  // Changed to 'management' so it appears in Vendor Management
       };
       
       console.log("Adding vendor with complete data:", completeVendorData);
@@ -266,11 +285,29 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
         mappedPaymentType = "preorder";
       }
       
-      // Auto-select the newly created vendor
+      // Auto-select the newly created vendor with proper category mapping
+      let mappedCategory = vendorData.category || "";
+      if (mappedCategory && !categories.includes(mappedCategory)) {
+        // Try to find a matching category
+        if (mappedCategory.toLowerCase().includes('inventory')) {
+          mappedCategory = "Inventory";
+        } else if (mappedCategory.toLowerCase().includes('packaging')) {
+          mappedCategory = "Packaging Materials";
+        } else if (mappedCategory.toLowerCase().includes('marketing') || mappedCategory.toLowerCase().includes('ppc')) {
+          mappedCategory = "Marketing/PPC";
+        } else if (mappedCategory.toLowerCase().includes('shipping') || mappedCategory.toLowerCase().includes('logistics')) {
+          mappedCategory = "Shipping & Logistics";
+        } else if (mappedCategory.toLowerCase().includes('professional') || mappedCategory.toLowerCase().includes('service')) {
+          mappedCategory = "Professional Services";
+        } else {
+          mappedCategory = "Other";
+        }
+      }
+
       setFormData(prev => ({ 
         ...prev, 
         vendor: vendorData.name,
-        category: vendorData.category || "",
+        category: mappedCategory,
         paymentType: mappedPaymentType,
         netTermsDays: (vendorData.netTermsDays?.toString() || "30") as "30" | "60" | "90" | "custom",
       }));

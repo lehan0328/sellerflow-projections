@@ -209,7 +209,7 @@ const Dashboard = () => {
       description: orderData.description,
       notes: orderData.notes,
       paymentSchedule: paymentSchedule,
-      source: 'purchase_order'
+      source: 'management'  // Changed to 'management' so vendor appears in Vendor Management
     });
 
     await addTransaction({
