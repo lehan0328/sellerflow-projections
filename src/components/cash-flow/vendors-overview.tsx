@@ -17,7 +17,7 @@ interface VendorsOverviewProps {
 }
 
 export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverviewProps) => {
-  const { vendors, loading, deleteVendor } = useVendors();
+  const { vendors, loading, deleteVendor, refetch } = useVendors();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | 'paid'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'totalOwed' | 'nextPaymentDate' | 'nextPaymentAmount'>('nextPaymentDate');
@@ -356,7 +356,13 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
       
       <VendorOrderDetailModal
         open={!!editingVendor}
-        onOpenChange={(open) => !open && setEditingVendor(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingVendor(null);
+            refetch();
+            onVendorUpdate?.();
+          }
+        }}
         vendor={editingVendor}
       />
     </Card>

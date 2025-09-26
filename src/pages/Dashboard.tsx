@@ -462,6 +462,19 @@ const Dashboard = () => {
       date: vendor.nextPaymentDate
     }));
 
+  // Remove calendar events for vendors that were deleted or fully paid
+  React.useEffect(() => {
+    setCashFlowEvents(prev =>
+      prev.filter(e => {
+        if (!e.vendor) return true;
+        const v = vendors.find(v => v.name === e.vendor);
+        if (!v) return false; // vendor deleted
+        if ((v.totalOwed ?? 0) <= 0 || v.status === 'paid') return false; // fully paid
+        return true;
+      })
+    );
+  }, [vendors]);
+
   // Get credit card due date events
   const creditCardEvents = getCreditCardDueDates();
 
