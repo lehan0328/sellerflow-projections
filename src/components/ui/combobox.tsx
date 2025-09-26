@@ -59,15 +59,12 @@ export function Combobox({
               <CommandItem
                 key={option.value}
                 value={option.label}
-                onSelect={(currentValue) => {
-                  console.log("CommandItem onSelect - currentValue:", currentValue, "option.value:", option.value, "option.label:", option.label);
-                  // Find the option by label since Command uses label for matching
-                  const selectedOption = options.find(opt => opt.label.toLowerCase() === currentValue.toLowerCase());
-                  if (selectedOption) {
-                    onValueChange(selectedOption.value === value ? "" : selectedOption.value);
-                  }
+                onSelect={() => {
+                  console.log("Item clicked:", option);
+                  onValueChange(option.value === value ? "" : option.value)
                   setOpen(false)
                 }}
+                className="cursor-pointer hover:bg-accent"
               >
                 <Check
                   className={cn(
