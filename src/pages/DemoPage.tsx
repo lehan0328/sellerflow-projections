@@ -11,6 +11,7 @@ import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { IncomeOverview } from "@/components/cash-flow/income-overview";
 import { IncomeForm } from "@/components/cash-flow/income-form";
+import { useDemoVendors, useDemoTransactions, useDemoUserSettings } from "@/hooks/useDemoData";
 
 // Demo data and types
 interface CashFlowEvent {
@@ -25,137 +26,48 @@ interface CashFlowEvent {
 }
 
 const DemoPage = () => {
-  // Demo state - simplified for demo purposes
+  // Demo state
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
   
-  // Demo data - static for demonstration
-  const [totalCash] = useState(15000);
-  
-  // Demo vendors
-  const demoVendors = [
-    {
-      id: 'demo-1',
-      name: 'Acme Corp',
-      totalOwed: 2500,
-      nextPaymentDate: addDays(new Date(), 3),
-      nextPaymentAmount: 2500,
-      status: 'upcoming' as const,
-      category: 'Supplies',
-      paymentType: 'net-terms' as const,
-      poName: 'Office Equipment',
-      description: 'Office supplies and equipment'
-    },
-    {
-      id: 'demo-2',
-      name: 'TechVendor LLC',
-      totalOwed: 5000,
-      nextPaymentDate: addDays(new Date(), 7),
-      nextPaymentAmount: 5000,
-      status: 'upcoming' as const,
-      category: 'Technology',
-      paymentType: 'total' as const,
-      poName: 'Software License',
-      description: 'Annual software licensing'
-    }
-  ];
+  // Use real data from demo user
+  const { vendors } = useDemoVendors();
+  const { transactions } = useDemoTransactions();
+  const { totalCash } = useDemoUserSettings();
 
-  // Demo transactions
-  const demoTransactions = [
-    {
-      id: 'demo-t1',
-      type: 'purchase' as const,
-      amount: 2500,
-      description: 'Office Equipment - Acme Corp',
-      date: new Date(),
-      status: 'completed' as const,
-      vendor: 'Acme Corp'
-    },
-    {
-      id: 'demo-t2',
-      type: 'payment' as const,
-      amount: 1200,
-      description: 'Client Payment Received',
-      date: addDays(new Date(), -1),
-      status: 'completed' as const
-    }
-  ];
+  // Demo cash flow events (minimal - most come from vendors)
+  const [demoCashFlowEvents] = useState<CashFlowEvent[]>([]);
 
-  // Demo income items
-  const demoIncomeItems = [
-    {
-      id: 'demo-i1',
-      description: 'Client Project Payment',
-      amount: 5000,
-      paymentDate: addDays(new Date(), 2),
-      source: 'Client A',
-      status: 'pending' as const,
+  // Demo event handlers (show alerts for demo)
+  const handleEditTransaction = (transaction: any) => {
+    alert(`Demo: Viewing transaction details for ${transaction.description}`);
+  };
+
+  const handleUpdateCashBalance = () => {
+    alert('Demo: This would sync with bank accounts in the full version');
+  };
+
+  // Demo income items - convert from transactions
+  const demoIncomeItems = transactions
+    .filter(t => t.type === 'sales_order')
+    .map(t => ({
+      id: t.id,
+      description: t.description,
+      amount: t.amount,
+      paymentDate: t.transactionDate,
+      source: 'Demo Source',
+      status: t.status === 'completed' ? 'received' as const : 'pending' as const,
       category: 'Service Revenue',
       isRecurring: false
-    }
-  ];
-
-  // Demo cash flow events
-  const demoCashFlowEvents: CashFlowEvent[] = [
-    {
-      id: 'demo-cf1',
-      type: 'inflow',
-      amount: 5000,
-      description: 'Client Project Payment',
-      source: 'Client A',
-      date: addDays(new Date(), 2)
-    },
-    {
-      id: 'demo-cf2',
-      type: 'outflow',
-      amount: 2500,
-      description: 'Acme Corp - Office Equipment',
-      vendor: 'Acme Corp',
-      date: addDays(new Date(), 3)
-    }
-  ];
-
-  // Demo event handlers (non-functional for demo)
-  const handlePayToday = (vendor: any) => {
-    alert(`Demo: Would pay $${vendor.nextPaymentAmount} to ${vendor.name}`);
-  };
-
-  const handleUndoTransaction = (transactionId: string) => {
-    alert(`Demo: Would undo transaction ${transactionId}`);
-  };
-
-  const handlePurchaseOrderSubmit = (orderData: any) => {
-    alert(`Demo: Would create purchase order for ${orderData.vendor}`);
-    setShowPurchaseOrderForm(false);
-  };
-
-  const handleIncomeSubmit = (incomeData: any) => {
-    alert(`Demo: Would add income of $${incomeData.amount}`);
-    setShowIncomeForm(false);
-    setShowRecurringIncomeForm(false);
-  };
-
-  const handleExpenseSubmit = (expenseData: any) => {
-    alert(`Demo: Would add expense of $${expenseData.amount}`);
-    setShowIncomeForm(false);
-    setShowRecurringIncomeForm(false);
-  };
+    }));
 
   const handleCollectIncome = (income: any) => {
     alert(`Demo: Would collect $${income.amount} from ${income.source}`);
   };
 
-  const handleEditTransaction = (transaction: any) => {
-    alert(`Demo: Would edit transaction ${transaction.description}`);
-  };
-
-  const handleUpdateCashBalance = () => {
-    alert('Demo: Would update cash balance from bank accounts');
-  };
-
   // Convert vendor due dates to calendar events
-  const vendorEvents: CashFlowEvent[] = demoVendors
+  const vendorEvents: CashFlowEvent[] = vendors
     .filter(vendor => vendor.totalOwed > 0 && vendor.nextPaymentDate)
     .map(vendor => ({
       id: `vendor-${vendor.id}`,
@@ -208,16 +120,16 @@ const DemoPage = () => {
       </div>
 
       <FloatingMenu 
-        onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)}
-        onAddIncome={() => setShowIncomeForm(true)}
-        onAddRecurringIncome={() => setShowRecurringIncomeForm(true)}
+        onAddPurchaseOrder={() => alert('Demo: Purchase order creation not available in demo')}
+        onAddIncome={() => alert('Demo: Income entry not available in demo')}
+        onAddRecurringIncome={() => alert('Demo: Recurring income setup not available in demo')}
       />
 
       <PurchaseOrderForm 
         open={showPurchaseOrderForm}
         onOpenChange={setShowPurchaseOrderForm}
         vendors={[]}
-        onSubmitOrder={handlePurchaseOrderSubmit}
+        onSubmitOrder={() => alert('Demo: Form submission not available in demo')}
       />
 
       <IncomeForm 
@@ -228,7 +140,7 @@ const DemoPage = () => {
             setShowRecurringIncomeForm(false);
           }
         }}
-        onSubmitIncome={handleIncomeSubmit}
+        onSubmitIncome={() => alert('Demo: Form submission not available in demo')}
       />
     </div>
   );
