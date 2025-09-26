@@ -76,10 +76,12 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
 
   // Format vendors for combobox
   const vendorOptions = useMemo(() => {
-    return uniqueVendors.map(vendor => ({
+    const options = uniqueVendors.map(vendor => ({
       value: vendor.id,
       label: vendor.name
     }));
+    console.log("Vendor options:", options);
+    return options;
   }, [uniqueVendors]);
 
   const [formData, setFormData] = useState({
@@ -198,6 +200,9 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
 
   const handleVendorChange = (vendorId: string) => {
     console.log("Vendor change triggered with ID:", vendorId);
+    console.log("Available vendor options:", vendorOptions);
+    console.log("Current form vendorId:", formData.vendorId);
+    
     // Find vendor by ID (more reliable than name)
     const selectedVendor = uniqueVendors.find(v => v.id === vendorId) || vendors.find(v => v.id === vendorId);
     
@@ -407,7 +412,10 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
               <Combobox
                 options={vendorOptions}
                 value={formData.vendorId}
-                onValueChange={handleVendorChange}
+                onValueChange={(value) => {
+                  console.log("Combobox onValueChange called with:", value);
+                  handleVendorChange(value);
+                }}
                 placeholder="Search vendors..."
                 emptyText="No vendors found."
                 className="flex-1"
