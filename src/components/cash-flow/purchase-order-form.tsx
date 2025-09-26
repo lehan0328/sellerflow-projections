@@ -85,7 +85,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
 
 
   const categories = [
-    "Inventory Purchase",
+    "Inventory",
     "Packaging Materials",
     "Marketing/PPC",
     "Shipping & Logistics",

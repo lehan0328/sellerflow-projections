@@ -43,8 +43,9 @@ const Dashboard = () => {
   const formVendors = vendors.map(v => ({ 
     id: v.id, 
     name: v.name, 
-    paymentType: v.paymentType || 'due-upon-order', 
-    netTermsDays: v.netTermsDays || '30' 
+    paymentType: v.paymentType || 'total',
+    netTermsDays: (v.netTermsDays ?? '30') as any,
+    category: v.category || ""
   }));
 
   const [cashFlowEvents, setCashFlowEvents] = useState<CashFlowEvent[]>([]);
