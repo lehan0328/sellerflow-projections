@@ -41,37 +41,6 @@ export function VendorManagement() {
   const managementVendors = vendors.filter(vendor => vendor.source === 'management');
   const { toast } = useToast();
 
-  // Add Kevin if he doesn't exist in management vendors
-  React.useEffect(() => {
-    const kevinExists = managementVendors.some(vendor => vendor.name.toLowerCase() === 'kevin');
-    if (!kevinExists && !loading && vendors.length > 0) {
-      // Check if Kevin exists in any vendors (from transactions)
-      const existingKevin = vendors.find(vendor => vendor.name.toLowerCase() === 'kevin');
-      if (existingKevin) {
-        // Update existing Kevin to be a management vendor
-        updateVendor(existingKevin.id, {
-          source: 'management',
-          category: existingKevin.category || 'Professional Services',
-          paymentType: 'net-terms',
-          netTermsDays: "21" // Based on console logs showing 21 day terms
-        });
-      } else {
-        // Add Kevin as a new management vendor
-        addVendor({
-          name: 'Kevin',
-          totalOwed: 0,
-          nextPaymentDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000), // 21 days from now
-          nextPaymentAmount: 0,
-          status: 'upcoming',
-          category: 'Professional Services',
-          paymentType: 'net-terms',
-          netTermsDays: "21",
-          source: 'management'
-        });
-      }
-    }
-  }, [vendors, managementVendors, loading, addVendor, updateVendor]);
-
   const categories = [
     "Inventory",
     "Packaging Materials", 
