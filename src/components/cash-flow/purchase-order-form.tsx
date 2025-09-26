@@ -170,67 +170,103 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleVendorChange = (vendorName: string) => {
-    if (vendorName === "add-vendor") {
+  const handleVendorChange = (vendorId: string) => {
+    if (vendorId === "add-vendor") {
       setShowVendorForm(true);
       return;
     }
     
-    // Find vendor from uniqueVendors first (preferred), then fallback to all vendors
-    const selectedVendor = uniqueVendors.find(v => v.name === vendorName) || vendors.find(v => v.name === vendorName);
+    // Find vendor by ID (more reliable than name)
+    const selectedVendor = uniqueVendors.find(v => v.id === vendorId) || vendors.find(v => v.id === vendorId);
     
-    console.log("Selected vendor:", vendorName, selectedVendor);
+    console.log("Selected vendor ID:", vendorId, selectedVendor);
     
     if (selectedVendor) {
-      // Map vendor payment type to form payment type
+      // Map vendor payment type to form payment type with comprehensive mapping
       let mappedPaymentType: "due-upon-order" | "net-terms" | "preorder" | "due-upon-delivery" = "due-upon-order";
       
-      if (selectedVendor.paymentType === 'total') {
-        mappedPaymentType = "due-upon-order";
-      } else if (selectedVendor.paymentType === 'net-terms') {
-        mappedPaymentType = "net-terms";
-      } else if (selectedVendor.paymentType === 'preorder') {
-        mappedPaymentType = "preorder";
-      } else if (selectedVendor.paymentType === 'due-upon-delivery') {
-        mappedPaymentType = "due-upon-delivery";
+      // Handle all possible database payment types
+      switch (selectedVendor.paymentType) {
+        case 'total':
+          mappedPaymentType = "due-upon-order";
+          break;
+        case 'net-terms':
+          mappedPaymentType = "net-terms";
+          break;
+        case 'preorder':
+          mappedPaymentType = "preorder";
+          break;
+        case 'due-upon-delivery':
+          mappedPaymentType = "due-upon-delivery";
+          break;
+        case 'due-upon-order':
+          mappedPaymentType = "due-upon-order";
+          break;
+        default:
+          // Fallback for any other values
+          mappedPaymentType = "due-upon-order";
+          console.warn("Unknown payment type:", selectedVendor.paymentType, "defaulting to due-upon-order");
       }
       
-      console.log("Auto-populating:", {
-        category: selectedVendor.category,
-        paymentType: mappedPaymentType,
+      console.log("Payment type mapping:", {
+        original: selectedVendor.paymentType,
+        mapped: mappedPaymentType,
         netTermsDays: selectedVendor.netTermsDays
       });
       
-      console.log("Form data before update:", formData.category);
-      
-      // Map vendor category to available categories if needed
+      // Map vendor category to available categories with better matching
       let mappedCategory = selectedVendor.category || "";
-      if (mappedCategory && !categories.includes(mappedCategory)) {
-        // Try to find a matching category
-        if (mappedCategory.toLowerCase().includes('inventory')) {
-          mappedCategory = "Inventory";
-        } else if (mappedCategory.toLowerCase().includes('packaging')) {
-          mappedCategory = "Packaging Materials";
-        } else if (mappedCategory.toLowerCase().includes('marketing') || mappedCategory.toLowerCase().includes('ppc')) {
-          mappedCategory = "Marketing/PPC";
-        } else if (mappedCategory.toLowerCase().includes('shipping') || mappedCategory.toLowerCase().includes('logistics')) {
-          mappedCategory = "Shipping & Logistics";
-        } else if (mappedCategory.toLowerCase().includes('professional') || mappedCategory.toLowerCase().includes('service')) {
-          mappedCategory = "Professional Services";
+      if (mappedCategory) {
+        // Only map if category is not already in the available list
+        if (!categories.includes(mappedCategory)) {
+          const categoryLower = mappedCategory.toLowerCase();
+          if (categoryLower.includes('inventory')) {
+            mappedCategory = "Inventory";
+          } else if (categoryLower.includes('packaging') || categoryLower.includes('material')) {
+            mappedCategory = "Packaging Materials";
+          } else if (categoryLower.includes('marketing') || categoryLower.includes('ppc') || categoryLower.includes('advertising')) {
+            mappedCategory = "Marketing/PPC";
+          } else if (categoryLower.includes('shipping') || categoryLower.includes('logistics') || categoryLower.includes('freight')) {
+            mappedCategory = "Shipping & Logistics";
+          } else if (categoryLower.includes('professional') || categoryLower.includes('service') || categoryLower.includes('consulting')) {
+            mappedCategory = "Professional Services";
+          } else {
+            mappedCategory = "Other";
+          }
+        }
+      }
+
+      console.log("Category mapping:", {
+        original: selectedVendor.category,
+        mapped: mappedCategory
+      });
+
+      // Ensure netTermsDays is properly mapped
+      let netTermsDays: "30" | "60" | "90" | "custom" = "30";
+      if (selectedVendor.netTermsDays) {
+        const days = selectedVendor.netTermsDays.toString();
+        if (["30", "60", "90"].includes(days)) {
+          netTermsDays = days as "30" | "60" | "90";
         } else {
-          mappedCategory = "Other";
+          netTermsDays = "custom";
         }
       }
 
       setFormData(prev => ({ 
         ...prev, 
-        vendor: vendorName,
+        vendor: selectedVendor.name, // Still use name for display
         category: mappedCategory,
         paymentType: mappedPaymentType,
-        netTermsDays: (selectedVendor.netTermsDays?.toString() || "30") as "30" | "60" | "90" | "custom",
+        netTermsDays: netTermsDays,
+        customDays: netTermsDays === "custom" ? selectedVendor.netTermsDays?.toString() || "" : ""
       }));
       
-      console.log("Category should be set to:", selectedVendor.category);
+      console.log("Form updated with:", {
+        vendor: selectedVendor.name,
+        category: mappedCategory,
+        paymentType: mappedPaymentType,
+        netTermsDays: netTermsDays
+      });
       
       // Set default deposit for preorder vendors
       if (mappedPaymentType === 'preorder') {
@@ -242,8 +278,9 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
         }]);
       }
     } else {
-      console.log("Vendor not found:", vendorName);
-      setFormData(prev => ({ ...prev, vendor: vendorName }));
+      console.error("Vendor not found for ID:", vendorId);
+      // Reset vendor field but keep other data
+      setFormData(prev => ({ ...prev, vendor: "" }));
     }
   };
 
@@ -288,19 +325,32 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
       // Auto-select the newly created vendor with proper category mapping
       let mappedCategory = vendorData.category || "";
       if (mappedCategory && !categories.includes(mappedCategory)) {
-        // Try to find a matching category
-        if (mappedCategory.toLowerCase().includes('inventory')) {
+        const categoryLower = mappedCategory.toLowerCase();
+        if (categoryLower.includes('inventory')) {
           mappedCategory = "Inventory";
-        } else if (mappedCategory.toLowerCase().includes('packaging')) {
+        } else if (categoryLower.includes('packaging') || categoryLower.includes('material')) {
           mappedCategory = "Packaging Materials";
-        } else if (mappedCategory.toLowerCase().includes('marketing') || mappedCategory.toLowerCase().includes('ppc')) {
+        } else if (categoryLower.includes('marketing') || categoryLower.includes('ppc') || categoryLower.includes('advertising')) {
           mappedCategory = "Marketing/PPC";
-        } else if (mappedCategory.toLowerCase().includes('shipping') || mappedCategory.toLowerCase().includes('logistics')) {
+        } else if (categoryLower.includes('shipping') || categoryLower.includes('logistics') || categoryLower.includes('freight')) {
           mappedCategory = "Shipping & Logistics";
-        } else if (mappedCategory.toLowerCase().includes('professional') || mappedCategory.toLowerCase().includes('service')) {
+        } else if (categoryLower.includes('professional') || categoryLower.includes('service') || categoryLower.includes('consulting')) {
           mappedCategory = "Professional Services";
         } else {
           mappedCategory = "Other";
+        }
+      }
+
+      // Ensure netTermsDays is properly mapped
+      let netTermsDays: "30" | "60" | "90" | "custom" = "30";
+      let customDays = "";
+      if (vendorData.netTermsDays) {
+        const days = vendorData.netTermsDays.toString();
+        if (["30", "60", "90"].includes(days)) {
+          netTermsDays = days as "30" | "60" | "90";
+        } else {
+          netTermsDays = "custom";
+          customDays = days;
         }
       }
 
@@ -309,7 +359,8 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
         vendor: vendorData.name,
         category: mappedCategory,
         paymentType: mappedPaymentType,
-        netTermsDays: (vendorData.netTermsDays?.toString() || "30") as "30" | "60" | "90" | "custom",
+        netTermsDays: netTermsDays,
+        customDays: customDays
       }));
     }
     setShowVendorForm(false);
@@ -328,7 +379,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="vendor">Vendor</Label>
-            <Select value={formData.vendor} onValueChange={handleVendorChange}>
+            <Select value={formData.vendor ? uniqueVendors.find(v => v.name === formData.vendor)?.id || "" : ""} onValueChange={handleVendorChange}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select vendor..." />
               </SelectTrigger>
@@ -337,7 +388,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
                   + Add New Vendor
                 </SelectItem>
                 {uniqueVendors.map((vendor) => (
-                  <SelectItem key={vendor.id} value={vendor.name}>
+                  <SelectItem key={vendor.id} value={vendor.id}>
                     {vendor.name}
                   </SelectItem>
                 ))}

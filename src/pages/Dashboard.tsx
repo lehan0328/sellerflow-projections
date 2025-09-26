@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { addDays, isToday, isBefore, startOfDay } from "date-fns";
 import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
@@ -39,14 +39,20 @@ const Dashboard = () => {
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { totalCash, updateTotalCash } = useUserSettings();
   
-  // State for vendors used in forms (derived from database vendors)
-  const formVendors = vendors.map(v => ({ 
+  // State for vendors used in forms (derived from database vendors) - always fresh data
+  const formVendors = useMemo(() => vendors.map(v => ({ 
     id: v.id, 
     name: v.name, 
     paymentType: v.paymentType || 'total',
     netTermsDays: (v.netTermsDays ?? '30') as any,
     category: v.category || ""
-  }));
+  })), [vendors]); // Recompute when vendors change
+  
+  // Force refresh vendors when opening Purchase Order form to ensure fresh data
+  const handleOpenPurchaseOrderForm = () => {
+    refetchVendors(); // Ensure we have the latest vendor data
+    setShowPurchaseOrderForm(true);
+  };
 
   const [cashFlowEvents, setCashFlowEvents] = useState<CashFlowEvent[]>([]);
   
@@ -534,7 +540,7 @@ const Dashboard = () => {
       </div>
 
       <FloatingMenu
-        onAddPurchaseOrder={() => setShowPurchaseOrderForm(true)}
+        onAddPurchaseOrder={handleOpenPurchaseOrderForm}
         onAddIncome={() => setShowIncomeForm(true)}
         onAddRecurringIncome={() => setShowRecurringIncomeForm(true)}
       />
