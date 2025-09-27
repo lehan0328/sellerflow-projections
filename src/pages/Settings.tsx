@@ -31,6 +31,7 @@ import { SidebarNavigation } from "@/components/settings/sidebar-navigation";
 import { CreditCardManagement } from "@/components/settings/credit-card-management";
 import { VendorManagement } from "@/components/settings/vendor-management";
 import { AmazonManagement } from "@/components/settings/amazon-management";
+import { BankAccountManagement } from "@/components/settings/bank-account-management";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -402,6 +403,8 @@ const Settings = () => {
     switch (activeSection) {
       case 'profile':
         return renderProfileSettings();
+      case 'bank-accounts':
+        return <BankAccountManagement />;
       case 'vendors':
         return <VendorManagement />;
       case 'amazon':

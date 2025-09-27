@@ -19,6 +19,11 @@ const navigationItems = [
     icon: User,
   },
   {
+    id: 'bank-accounts',
+    label: 'Bank Accounts',
+    icon: Building2,
+  },
+  {
     id: 'vendors',
     label: 'Vendor Management',
     icon: Building2,
