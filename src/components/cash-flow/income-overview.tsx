@@ -269,9 +269,9 @@ export const IncomeOverview = ({ incomeItems, onCollectToday, onEditIncome, onDe
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Payment Receipt</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to mark this income as received today? This will:
+              Are you sure you want to mark this income as received? This will:
               <br />
-              • Move the payment date to today ({new Date().toLocaleDateString()})
+              • Keep the original payment date ({confirmingIncome?.paymentDate.toLocaleDateString()})
               • Add ${confirmingIncome?.amount.toLocaleString() || 0} to your available cash
               • Mark the payment as completed
             </AlertDialogDescription>
