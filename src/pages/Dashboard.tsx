@@ -505,8 +505,8 @@ const Dashboard = () => {
   // Log cash values for debugging
   console.log("Dashboard - totalCash:", totalCash, "bankAccountBalance:", bankAccountBalance, "accounts connected:", accounts.length);
   
-  // Use bank account balance if no accounts connected, otherwise use totalCash
-  const displayCash = accounts.length === 0 ? 0 : (totalCash || bankAccountBalance);
+  // Show totalCash if it exists (from manual entries), otherwise show bank account balance
+  const displayCash = totalCash > 0 ? totalCash : bankAccountBalance;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
