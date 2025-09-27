@@ -211,48 +211,48 @@ export const IncomeOverview = ({ incomeItems, onCollectToday, onEditIncome, onDe
                         ${income.amount.toLocaleString()}
                       </span>
                     </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center text-xs">
-                        <span className="text-muted-foreground">Source:</span>
-                        <span className="font-medium text-foreground ml-2">
-                          {income.source}
-                        </span>
-                        <div className="ml-auto flex items-center space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => onEditIncome?.(income)}
-                          >
-                            <Edit className="mr-1 h-3 w-3" />
-                            Edit
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => onDeleteIncome?.(income)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center">
+                          <span className="text-muted-foreground">Source:</span>
+                          <span className="font-medium text-foreground ml-2">
+                            {income.source}
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-muted-foreground">Payment Date:</span>
+                          <span className="font-medium text-foreground ml-2">
+                            {income.paymentDate.toLocaleDateString()}
+                          </span>
                         </div>
                       </div>
-                      <div className="flex items-center text-xs">
-                        <span className="text-muted-foreground">Payment Date:</span>
-                        <span className="font-medium text-foreground ml-2">
-                          {income.paymentDate.toLocaleDateString()}
-                        </span>
-                        <div className="ml-auto">
-                          {income.status === 'pending' && (
-                            <Button 
-                              size="sm" 
-                              className="bg-gradient-primary px-4"
-                              onClick={() => handleReceiveTodayClick(income)}
-                            >
-                              <DollarSign className="mr-1 h-3 w-3" />
-                              Receive Today
-                            </Button>
-                          )}
-                        </div>
+                      <div className="flex items-center space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => onEditIncome?.(income)}
+                        >
+                          <Edit className="mr-1 h-3 w-3" />
+                          Edit
+                        </Button>
+                        {income.status === 'pending' && (
+                          <Button 
+                            size="sm" 
+                            className="bg-gradient-primary px-4"
+                            onClick={() => handleReceiveTodayClick(income)}
+                          >
+                            <DollarSign className="mr-1 h-3 w-3" />
+                            Receive Today
+                          </Button>
+                        )}
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => onDeleteIncome?.(income)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
                     </div>
                   </div>

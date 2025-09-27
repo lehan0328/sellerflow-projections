@@ -345,87 +345,89 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
                       ${(vendor.totalOwed || 0).toLocaleString()}
                     </span>
                   </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center text-xs">
-                      <span className="text-muted-foreground">Description:</span>
-                      <span className="font-medium text-foreground ml-2">
-                        {vendor.description || vendor.poName || 'No description'}
-                      </span>
-                      <div className="ml-auto flex items-center space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEditOrder(vendor)}
-                        >
-                          <Edit className="mr-1 h-3 w-3" />
-                          Edit
-                        </Button>
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center">
+                        <span className="text-muted-foreground">Description:</span>
+                        <span className="font-medium text-foreground ml-2">
+                          {vendor.description || vendor.poName || 'No description'}
+                        </span>
+                      </div>
+                      {vendor.nextPaymentDate && (
+                        <div className="flex items-center">
+                          <span className="text-muted-foreground">Due:</span>
+                          <span className="font-medium text-foreground ml-2">
+                            {new Date(vendor.nextPaymentDate).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditOrder(vendor)}
+                      >
+                        <Edit className="mr-1 h-3 w-3" />
+                        Edit
+                      </Button>
+                      {vendor.nextPaymentDate && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
+                              size="sm" 
+                              className="bg-gradient-primary px-4"
+                              disabled={!vendor.totalOwed || vendor.totalOwed <= 0}
                             >
-                              <Trash2 className="h-3 w-3" />
+                              <CreditCard className="mr-1 h-3 w-3" />
+                              Pay Today
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Vendor Order</AlertDialogTitle>
+                              <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to delete this vendor order for {vendor.name}? This action cannot be undone and will remove the ${(vendor.totalOwed || 0).toLocaleString()} transaction.
+                                Mark payment to {vendor.name} (${(vendor.totalOwed || 0).toLocaleString()}) as paid today?
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => handleDeleteVendor(vendor)}
-                                className="bg-destructive hover:bg-destructive/90"
-                              >
-                                Delete Order
+                              <AlertDialogAction onClick={() => handlePayToday(vendor)}>
+                                Mark as Paid
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
-                      </div>
+                      )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Vendor Order</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this vendor order for {vendor.name}? This action cannot be undone and will remove the ${(vendor.totalOwed || 0).toLocaleString()} transaction.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => handleDeleteVendor(vendor)}
+                              className="bg-destructive hover:bg-destructive/90"
+                            >
+                              Delete Order
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
-                    {vendor.nextPaymentDate && (
-                      <div className="flex items-center text-xs">
-                        <span className="text-muted-foreground">Due Date:</span>
-                        <span className="font-medium text-foreground ml-2">
-                          {new Date(vendor.nextPaymentDate).toLocaleDateString()}
-                        </span>
-                        <div className="ml-auto">
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                size="sm" 
-                                className="bg-gradient-primary px-4"
-                                disabled={!vendor.totalOwed || vendor.totalOwed <= 0}
-                              >
-                                <CreditCard className="mr-1 h-3 w-3" />
-                                Pay Today
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Mark payment to {vendor.name} (${(vendor.totalOwed || 0).toLocaleString()}) as paid today?
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handlePayToday(vendor)}>
-                                  Mark as Paid
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
