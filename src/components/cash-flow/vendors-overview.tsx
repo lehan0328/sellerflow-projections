@@ -341,17 +341,15 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
                         <span className="ml-1 capitalize">{getStatusText(vendor)}</span>
                       </Badge>
                     </div>
-                    {vendor.poName && (
-                      <span className="font-medium text-sm text-right">
-                        {vendor.poName}
-                      </span>
-                    )}
+                    <span className="font-medium text-sm text-right">
+                      ${(vendor.totalOwed || 0).toLocaleString()}
+                    </span>
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center text-xs">
-                      <span className="text-muted-foreground">Total Owed:</span>
+                      <span className="text-muted-foreground">Description:</span>
                       <span className="font-medium text-foreground ml-2">
-                        ${(vendor.totalOwed || 0).toLocaleString()}
+                        {vendor.description || vendor.poName || 'No description'}
                       </span>
                       <div className="ml-auto flex items-center space-x-2">
                         <Button 
