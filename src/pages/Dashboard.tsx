@@ -554,11 +554,12 @@ const Dashboard = () => {
     );
   }, [vendors]);
 
-  // Get credit card due date events
-  const creditCardEvents = getCreditCardDueDates();
+  // Get credit card due date events only if user has real data (vendors or transactions)
+  const hasRealData = vendors.length > 0 || transactions.length > 0;
+  const creditCardEvents = hasRealData ? getCreditCardDueDates() : [];
 
-  // Combine all events for calendar
-  const allCalendarEvents = [...sampleEvents, ...calendarEvents, ...vendorEvents, ...creditCardEvents];
+  // Combine all events for calendar - only include real user data
+  const allCalendarEvents = [...calendarEvents, ...vendorEvents, ...creditCardEvents];
 
   // Log cash values for debugging
   console.log("Dashboard - totalCash:", totalCash, "bankAccountBalance:", bankAccountBalance, "accounts connected:", accounts.length);
