@@ -8,10 +8,26 @@ import { buttonVariants } from "@/components/ui/button";
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
 function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn("p-3 pointer-events-auto", className)}
+      modifiers={{
+        past: (date) => {
+          const dateOnly = new Date(date);
+          dateOnly.setHours(0, 0, 0, 0);
+          return dateOnly < today;
+        },
+        today: (date) => {
+          const dateOnly = new Date(date);
+          dateOnly.setHours(0, 0, 0, 0);
+          return dateOnly.getTime() === today.getTime();
+        },
+        ...props.modifiers,
+      }}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
@@ -33,13 +49,18 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         day_range_end: "day-range-end",
         day_selected:
           "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-        day_today: "bg-accent text-accent-foreground",
+        day_today: "bg-primary/20 text-primary font-semibold border-2 border-primary/50",
         day_outside:
           "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
         day_disabled: "text-muted-foreground opacity-50",
         day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
         day_hidden: "invisible",
         ...classNames,
+      }}
+      modifiersClassNames={{
+        past: "text-muted-foreground/50 opacity-50 hover:bg-muted/30",
+        today: "bg-primary/20 text-primary font-semibold border-2 border-primary/50",
+        ...props.modifiersClassNames,
       }}
       components={{
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
