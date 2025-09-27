@@ -69,7 +69,7 @@ const Dashboard = () => {
   const [cashFlowEvents, setCashFlowEvents] = useState<CashFlowEvent[]>([]);
   
   // Sample income data - replaced with database hook
-  const { incomeItems, addIncome, updateIncome } = useIncome();
+  const { incomeItems, addIncome, updateIncome, deleteIncome } = useIncome();
 
   // No sample data for new users
 
@@ -354,16 +354,10 @@ const Dashboard = () => {
     
     // Note: In a real Plaid integration, this would add funds to connected account
 
-    // Update income status to 'received' and payment date to today
-    await updateIncome(income.id, {
-      status: 'received',
-      paymentDate: new Date()
-    });
-
     // Add amount to user's total cash
     await updateTotalCash(income.amount);
 
-    // Create transaction
+    // Create transaction for the transaction log
     await addTransaction({
       type: 'sales_order',
       amount: income.amount,
@@ -382,6 +376,9 @@ const Dashboard = () => {
       date: new Date()
     };
     setCashFlowEvents(prev => [newEvent, ...prev]);
+
+    // Remove income item from income overview now that it's processed
+    await deleteIncome(income.id);
   };
 
   const handleEditVendorOrder = (vendor: Vendor) => {
