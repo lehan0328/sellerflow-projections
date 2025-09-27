@@ -5,33 +5,21 @@ import { toast } from "sonner";
 
 export interface BankAccount {
   id: string;
-  account_id: string;
-  access_token?: string; // Optional - only available in secure context
+  access_token?: string;
   institution_name: string;
   account_name: string;
-  account_number?: string; // Optional - only available in secure context
+  account_number?: string;
   account_type: "depository" | "credit" | "loan" | "investment";
   balance: number;
   available_balance?: number;
   currency_code: string;
   last_sync: string;
   is_active: boolean;
-  plaid_item_id?: string; // Optional - only available in secure context
-  masked_account_number?: string; // For display purposes
+  plaid_item_id?: string;
+  masked_account_number?: string;
   created_at: string;
   updated_at: string;
-}
-
-export interface SecureBankAccountInput {
-  institution_name: string;
-  account_name: string;
-  account_type: "depository" | "credit" | "loan" | "investment";
-  balance?: number;
-  available_balance?: number;
-  currency_code?: string;
-  access_token: string;
-  account_number: string;
-  plaid_item_id: string;
+  user_id?: string;
 }
 
 export const useBankAccounts = () => {
@@ -46,7 +34,7 @@ export const useBankAccounts = () => {
     }
 
     try {
-      // Use the secure view that handles decryption automatically
+      // Use the secure view instead of direct table access
       const { data, error } = await supabase
         .from("secure_bank_accounts")
         .select("*")
@@ -68,19 +56,19 @@ export const useBankAccounts = () => {
     }
   };
 
-  const addAccount = async (accountData: SecureBankAccountInput) => {
+  const addAccount = async (accountData: Omit<BankAccount, "id" | "created_at" | "updated_at" | "user_id" | "masked_account_number">) => {
     if (!user) {
       toast.error("You must be logged in to add accounts");
       return false;
     }
 
     try {
-      // Use the secure insert function
+      // Use the secure insert function instead of direct insert
       const { data, error } = await supabase.rpc('insert_secure_bank_account', {
         p_institution_name: accountData.institution_name,
         p_account_name: accountData.account_name,
         p_account_type: accountData.account_type,
-        p_balance: accountData.balance || 0,
+        p_balance: accountData.balance,
         p_available_balance: accountData.available_balance,
         p_currency_code: accountData.currency_code || 'USD',
         p_access_token: accountData.access_token,
@@ -94,7 +82,7 @@ export const useBankAccounts = () => {
         return false;
       }
 
-      // Refresh accounts to get the new data
+      // Refresh accounts to show the new account
       await fetchAccounts();
       toast.success("Bank account added successfully!");
       return true;
@@ -105,14 +93,14 @@ export const useBankAccounts = () => {
     }
   };
 
-  const updateAccount = async (accountId: string, updates: Partial<SecureBankAccountInput & { balance: number; available_balance?: number }>) => {
+  const updateAccount = async (accountId: string, updates: Partial<BankAccount>) => {
     if (!user) {
       toast.error("You must be logged in to update accounts");
       return false;
     }
 
     try {
-      // Use the secure update function
+      // Use the secure update function instead of direct update
       const { data, error } = await supabase.rpc('update_secure_bank_account', {
         p_account_id: accountId,
         p_institution_name: updates.institution_name,
@@ -132,7 +120,7 @@ export const useBankAccounts = () => {
         return false;
       }
 
-      // Refresh accounts to get updated data
+      // Refresh accounts to show the updated data
       await fetchAccounts();
       return true;
     } catch (error) {
@@ -149,7 +137,7 @@ export const useBankAccounts = () => {
     }
 
     try {
-      // Directly update the is_active flag (this doesn't involve sensitive data)
+      // Still use direct update for deactivation as this doesn't involve sensitive data
       const { error } = await supabase
         .from("bank_accounts")
         .update({ is_active: false })
@@ -173,33 +161,9 @@ export const useBankAccounts = () => {
   };
 
   const syncAccount = async (accountId: string) => {
-    if (!user) {
-      toast.error("You must be logged in to sync accounts");
-      return false;
-    }
-
-    try {
-      // Update last_sync timestamp (this doesn't involve sensitive data)
-      const { error } = await supabase
-        .from("bank_accounts")
-        .update({ last_sync: new Date().toISOString() })
-        .eq("id", accountId)
-        .eq("user_id", user.id);
-
-      if (error) {
-        console.error("Error syncing bank account:", error);
-        toast.error("Failed to sync bank account");
-        return false;
-      }
-
-      // Refresh accounts to get updated data
-      await fetchAccounts();
-      return true;
-    } catch (error) {
-      console.error("Error:", error);
-      toast.error("Failed to sync bank account");
-      return false;
-    }
+    return await updateAccount(accountId, { 
+      last_sync: new Date().toISOString()
+    });
   };
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
@@ -208,7 +172,7 @@ export const useBankAccounts = () => {
     fetchAccounts();
   }, [user]);
 
-  // Set up real-time updates
+  // Set up real-time updates - use the secure view
   useEffect(() => {
     if (!user) return;
 
