@@ -505,8 +505,17 @@ const Dashboard = () => {
   // Log cash values for debugging
   console.log("Dashboard - totalCash:", totalCash, "bankAccountBalance:", bankAccountBalance, "accounts connected:", accounts.length);
   
-  // Show totalCash if it exists (from manual entries), otherwise show bank account balance
-  const displayCash = totalCash > 0 ? totalCash : bankAccountBalance;
+  // Calculate total transactions (income - expenses)
+  const transactionTotal = transactions.reduce((total, transaction) => {
+    const amount = Number(transaction.amount);
+    // Income: customer_payment, sales_order
+    // Expenses: purchase_order, vendor_payment
+    const isIncome = transaction.type === 'customer_payment' || transaction.type === 'sales_order';
+    return isIncome ? total + amount : total - amount;
+  }, 0);
+  
+  // Display cash = bank account balance + transaction total
+  const displayCash = bankAccountBalance + transactionTotal;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
