@@ -149,7 +149,9 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
                   </Button>
                 )}
               </div>
-              <p className="text-2xl font-bold text-blue-700">${totalCash.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-blue-700">
+                ${accounts.length === 0 ? '0' : totalCash.toLocaleString()}
+              </p>
               <p className="text-sm text-slate-600">
                 {accounts.length === 0 
                   ? "No bank accounts connected" 
