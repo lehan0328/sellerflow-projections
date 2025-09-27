@@ -176,7 +176,7 @@ const Landing = () => {
               <Button variant="outline" size="sm" className="hover-scale transition-all duration-200" onClick={() => navigate('/auth')}>
                 Sign In
               </Button>
-              <Button size="sm" className="bg-gradient-primary hover-scale animate-pulse hover:animate-none transition-all duration-200" onClick={() => navigate('/auth')}>
+              <Button size="sm" className="bg-gradient-primary hover-scale transition-all duration-200" onClick={() => navigate('/auth')}>
                 Start Free Trial
               </Button>
             </div>
@@ -200,14 +200,14 @@ const Landing = () => {
               variant="secondary" 
               className="inline-flex items-center space-x-2 animate-fade-in hover-scale transition-all duration-300 hover:bg-primary/10"
             >
-              <Star className="h-4 w-4 fill-current animate-pulse" />
+              <Star className="h-4 w-4 fill-current" />
               <span>Trusted by 1,000+ Amazon Sellers</span>
             </Badge>
             
             <div className="animate-fade-in space-y-6" style={{ animationDelay: '200ms' }}>
               <h1 className="text-4xl lg:text-7xl font-bold leading-tight">
                 <span className="inline-block hover:scale-105 transition-transform duration-300">Cash Flow Management</span>
-                <span className="block bg-gradient-primary bg-clip-text text-transparent animate-pulse hover:animate-none">
+                <span className="block bg-gradient-primary bg-clip-text text-transparent">
                   Built for Amazon Sellers
                 </span>
               </h1>
@@ -227,7 +227,7 @@ const Landing = () => {
             >
               <Button 
                 size="lg" 
-                className="bg-gradient-primary text-lg px-8 py-4 hover-scale animate-pulse hover:animate-none transition-all duration-300 hover:shadow-lg hover:shadow-primary/25" 
+                className="bg-gradient-primary text-lg px-8 py-4 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-primary/25" 
                 onClick={() => navigate('/auth')}
               >
                 Start 7-Day Free Trial
@@ -248,28 +248,17 @@ const Landing = () => {
               style={{ animationDelay: '800ms' }}
             >
               <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
-                <CheckCircle className="h-4 w-4 text-success animate-pulse" />
+                <CheckCircle className="h-4 w-4 text-success" />
                 <span>No credit card required</span>
               </div>
               <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
-                <CheckCircle className="h-4 w-4 text-success animate-pulse" style={{ animationDelay: '0.5s' }} />
+                <CheckCircle className="h-4 w-4 text-success" />
                 <span>Setup in 5 minutes</span>
               </div>
               <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
-                <CheckCircle className="h-4 w-4 text-success animate-pulse" style={{ animationDelay: '1s' }} />
+                <CheckCircle className="h-4 w-4 text-success" />
                 <span>Cancel anytime</span>
               </div>
-            </div>
-            
-            {/* Floating Elements */}
-            <div className="absolute top-10 left-10 animate-pulse opacity-20">
-              <DollarSign className="h-12 w-12 text-primary" />
-            </div>
-            <div className="absolute top-32 right-16 animate-pulse opacity-20" style={{ animationDelay: '1s' }}>
-              <TrendingUp className="h-16 w-16 text-accent" />
-            </div>
-            <div className="absolute bottom-20 left-16 animate-pulse opacity-20" style={{ animationDelay: '2s' }}>
-              <ShoppingCart className="h-14 w-14 text-primary" />
             </div>
           </div>
         </div>
