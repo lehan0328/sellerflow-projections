@@ -314,13 +314,13 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
             filteredAndSortedVendors.map((vendor) => (
             <div
               key={vendor.id}
-              className="p-3 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:shadow-md"
+              className="p-2 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:shadow-md"
             >
-              <div className="flex items-start justify-between mb-2">
+              <div className="flex items-start justify-between mb-1">
                 <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center space-x-2">
-                      <h4 className="font-semibold text-base">{vendor.name}</h4>
+                      <h4 className="font-semibold text-sm">{vendor.name}</h4>
                       {vendor.category && (
                         <Badge variant="outline" className="text-xs">
                           {vendor.category}
@@ -338,7 +338,7 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
                     )}
                   </div>
                   <div className="space-y-1">
-                    <div className="flex items-center text-sm">
+                    <div className="flex items-center text-xs">
                       <span className="text-muted-foreground">Total Owed:</span>
                       <span className="font-medium text-foreground ml-2">
                         ${(vendor.totalOwed || 0).toLocaleString()}
@@ -355,7 +355,7 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
                       </div>
                     </div>
                     {vendor.nextPaymentDate && (
-                      <div className="flex items-center text-sm">
+                      <div className="flex items-center text-xs">
                         <span className="text-muted-foreground">Due Date:</span>
                         <span className="font-medium text-foreground ml-2">
                           {new Date(vendor.nextPaymentDate).toLocaleDateString()}
