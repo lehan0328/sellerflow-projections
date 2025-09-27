@@ -1,7 +1,6 @@
-import { useState, useMemo } from "react";
-import { Check, ChevronDown, Search } from "lucide-react";
+import { useState } from "react";
+import { Check, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -23,31 +22,17 @@ export const SearchableVendorSelect = ({
   vendors, 
   value, 
   onValueChange, 
-  placeholder = "Search vendors...",
+  placeholder = "Select vendor...",
   className 
 }: SearchableVendorSelectProps) => {
   const [open, setOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  // Debug logs
-  console.log("SearchableVendorSelect render - vendors:", vendors.length, "value:", value);
-
-  // Filter vendors based on search term
-  const filteredVendors = useMemo(() => {
-    if (!searchTerm) return vendors;
-    return vendors.filter(vendor => 
-      vendor.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [vendors, searchTerm]);
 
   // Find selected vendor
   const selectedVendor = vendors.find(vendor => vendor.id === value);
 
   const handleSelect = (vendorId: string) => {
-    console.log("Vendor selected:", vendorId, "calling onValueChange");
     onValueChange(vendorId);
     setOpen(false);
-    setSearchTerm("");
   };
 
   return (
@@ -70,45 +55,22 @@ export const SearchableVendorSelect = ({
         className="w-[--radix-popover-trigger-width] p-0 bg-background text-foreground border border-border shadow-lg z-[200]"
         sideOffset={2}
         align="start"
-        onOpenAutoFocus={(e) => {
-          e.preventDefault();
-          const target = e.currentTarget as HTMLElement;
-          const searchInput = target.querySelector('input');
-          if (searchInput) {
-            setTimeout(() => searchInput.focus(), 0);
-          }
-        }}
       >
-        <div className="flex items-center border-b px-3 py-2 bg-background">
-          <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-          <Input
-            placeholder="Search vendors..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
-            autoFocus
-          />
-        </div>
         <ScrollArea className="max-h-64">
           <div className="p-1">
-            {filteredVendors.length === 0 ? (
+            {vendors.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
                 No vendors found.
               </div>
             ) : (
-              filteredVendors.map((vendor) => (
+              vendors.map((vendor) => (
                 <div
                   key={vendor.id}
                   className={cn(
                     "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground transition-colors",
                     value === vendor.id && "bg-accent text-accent-foreground"
                   )}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log("Item clicked:", vendor.id, vendor.name);
-                    handleSelect(vendor.id);
-                  }}
+                  onClick={() => handleSelect(vendor.id)}
                 >
                   <Check
                     className={cn(
