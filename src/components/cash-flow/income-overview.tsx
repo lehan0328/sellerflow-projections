@@ -22,11 +22,10 @@ interface IncomeItem {
 interface IncomeOverviewProps {
   incomeItems: IncomeItem[];
   onCollectToday?: (income: IncomeItem) => void;
-  onIncomeUpdate?: (incomes: IncomeItem[]) => void;
   onEditIncome?: (income: IncomeItem) => void;
 }
 
-export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, onIncomeUpdate, onEditIncome }: IncomeOverviewProps) => {
+export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, onEditIncome }: IncomeOverviewProps) => {
   const [incomeItems, setIncomeItems] = useState<IncomeItem[]>(propIncomeItems);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'description' | 'amount' | 'paymentDate' | 'source'>('paymentDate');
@@ -73,12 +72,8 @@ export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, o
   }, [incomeItems, searchTerm, sortBy, sortOrder]);
 
   const handleCollectToday = (income: IncomeItem) => {
-    // Update income status to received
-    const updatedIncomes = incomeItems.map(i => 
-      i.id === income.id ? { ...i, status: 'received' as const, paymentDate: new Date() } : i
-    );
-    setIncomeItems(updatedIncomes);
-    onIncomeUpdate?.(updatedIncomes);
+    // Update income status to received - this will be handled by the parent component
+    // which will update the database and refresh the data
     onCollectToday?.(income);
   };
 

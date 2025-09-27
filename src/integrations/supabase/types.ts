@@ -155,6 +155,54 @@ export type Database = {
         }
         Relationships: []
       }
+      income: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string
+          description: string
+          id: string
+          is_recurring: boolean
+          notes: string | null
+          payment_date: string
+          recurring_frequency: string | null
+          source: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          is_recurring?: boolean
+          notes?: string | null
+          payment_date: string
+          recurring_frequency?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          is_recurring?: boolean
+          notes?: string | null
+          payment_date?: string
+          recurring_frequency?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           amazon_marketplaces: string[] | null

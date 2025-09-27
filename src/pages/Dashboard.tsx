@@ -12,6 +12,7 @@ import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
 import { IncomeOverview } from "@/components/cash-flow/income-overview";
 import { IncomeForm } from "@/components/cash-flow/income-form";
+import { useIncome } from "@/hooks/useIncome";
 
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -67,53 +68,12 @@ const Dashboard = () => {
 
   const [cashFlowEvents, setCashFlowEvents] = useState<CashFlowEvent[]>([]);
   
-  // Sample income data - in real app this would come from database
-  const [incomeItems, setIncomeItems] = useState<Array<{
-    id: string;
-    description: string;
-    amount: number;
-    paymentDate: Date;
-    source: string;
-    status: 'received' | 'pending' | 'overdue';
-    category: string;
-    isRecurring: boolean;
-  }>>([]);
+  // Sample income data - replaced with database hook
+  const { incomeItems, addIncome, updateIncome } = useIncome();
 
   // No sample data for new users
 
-  // Update income statuses based on current date
-  useEffect(() => {
-    const updateIncomeStatuses = () => {
-      const today = startOfDay(new Date());
-      
-      setIncomeItems(prev => prev.map(item => {
-        const paymentDateStartOfDay = startOfDay(item.paymentDate);
-        
-        // Don't change already received items
-        if (item.status === 'received') return item;
-        
-        // Update status based on payment date
-        let newStatus: 'received' | 'pending' | 'overdue' = item.status;
-        
-        if (isBefore(paymentDateStartOfDay, today)) {
-          newStatus = 'overdue';
-        } else if (isToday(item.paymentDate)) {
-          // Keep pending items as pending even on their due date until manually collected
-          newStatus = 'pending';
-        } else {
-          newStatus = 'pending';
-        }
-        
-        return newStatus !== item.status ? { ...item, status: newStatus } : item;
-      }));
-    };
-
-    // Update statuses immediately and then every hour
-    updateIncomeStatuses();
-    const interval = setInterval(updateIncomeStatuses, 60 * 60 * 1000); // Every hour
-    
-    return () => clearInterval(interval);
-  }, []);
+  // No sample data for new users
 
   // State for vendor editing modal
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
@@ -300,32 +260,35 @@ const Dashboard = () => {
     const today = startOfDay(new Date());
     const paymentDateStartOfDay = startOfDay(paymentDate);
     
-    // Update the income item in the list
-    setIncomeItems(prev => prev.map(item => 
-      item.id === updatedIncomeData.id 
-        ? {
-            ...updatedIncomeData,
-            amount,
-            paymentDate,
-            status: paymentDateStartOfDay <= today ? 'received' as const : 'pending' as const
-          }
-        : item
-    ));
+    // Update the income item in the database
+    const success = await updateIncome(updatedIncomeData.id, {
+      description: updatedIncomeData.description,
+      amount,
+      paymentDate,
+      source: updatedIncomeData.source || 'Manual Entry',
+      status: paymentDateStartOfDay <= today ? 'received' as const : 'pending' as const,
+      category: updatedIncomeData.category,
+      isRecurring: updatedIncomeData.isRecurring || false,
+      recurringFrequency: updatedIncomeData.recurringFrequency,
+      notes: updatedIncomeData.notes
+    });
 
-    // If this income was previously received and the amount changed, adjust total cash
-    const originalIncome = incomeItems.find(item => item.id === updatedIncomeData.id);
-    if (originalIncome && originalIncome.status === 'received') {
-      const amountDifference = amount - originalIncome.amount;
-      const newTotalCash = totalCash + amountDifference;
-      await updateTotalCash(newTotalCash);
-    } else if (paymentDateStartOfDay <= today && originalIncome && originalIncome.status !== 'received') {
-      // If payment date is now in the past/today and wasn't received before, add to cash
-      const newTotalCash = totalCash + amount;
-      await updateTotalCash(newTotalCash);
+    if (success) {
+      // If this income was previously received and the amount changed, adjust total cash
+      const originalIncome = incomeItems.find(item => item.id === updatedIncomeData.id);
+      if (originalIncome && originalIncome.status === 'received') {
+        const amountDifference = amount - originalIncome.amount;
+        const newTotalCash = totalCash + amountDifference;
+        await updateTotalCash(newTotalCash);
+      } else if (paymentDateStartOfDay <= today && originalIncome && originalIncome.status !== 'received') {
+        // If payment date is now in the past/today and wasn't received before, add to cash
+        const newTotalCash = totalCash + amount;
+        await updateTotalCash(newTotalCash);
+      }
+
+      setShowEditIncomeForm(false);
+      setEditingIncome(null);
     }
-
-    setShowEditIncomeForm(false);
-    setEditingIncome(null);
   };
 
   const handleIncomeSubmit = async (incomeData: any) => {
@@ -349,15 +312,18 @@ const Dashboard = () => {
       console.info("Future-dated income - not updating total cash immediately");
     }
 
-    // Add to income items
-    const newIncomeItem = {
-      ...incomeData,
-      id: Date.now().toString(),
+    // Add to database
+    await addIncome({
+      description: incomeData.description || 'Income',
       amount: amount,
       paymentDate: paymentDate,
-      status: paymentDateStartOfDay <= today ? 'received' as const : 'pending' as const
-    };
-    setIncomeItems(prev => [newIncomeItem, ...prev]);
+      source: incomeData.source || 'Manual Entry',
+      status: paymentDateStartOfDay <= today ? 'received' as const : 'pending' as const,
+      category: incomeData.category || '',
+      isRecurring: incomeData.isRecurring || false,
+      recurringFrequency: incomeData.recurringFrequency,
+      notes: incomeData.notes
+    });
 
     // Create transaction
     await addTransaction({
@@ -637,7 +603,7 @@ const Dashboard = () => {
           <IncomeOverview
             incomeItems={incomeItems}
             onCollectToday={handleCollectIncome}
-            onIncomeUpdate={setIncomeItems}
+            onEditIncome={handleEditIncome}
           />
         </div>
 
