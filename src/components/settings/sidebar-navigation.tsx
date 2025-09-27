@@ -9,7 +9,8 @@ import {
   Building2,
   Bell,
   Settings,
-  ShoppingCart
+  ShoppingCart,
+  MessageSquare
 } from "lucide-react";
 
 const navigationItems = [
@@ -62,6 +63,11 @@ const navigationItems = [
     id: 'security',
     label: 'Security',
     icon: Shield,
+  },
+  {
+    id: 'feature-request',
+    label: 'Feature Request',
+    icon: MessageSquare,
   },
 ];
 

@@ -32,6 +32,7 @@ import { CreditCardManagement } from "@/components/settings/credit-card-manageme
 import { VendorManagement } from "@/components/settings/vendor-management";
 import { AmazonManagement } from "@/components/settings/amazon-management";
 import { BankAccountManagement } from "@/components/settings/bank-account-management";
+import { FeatureRequest } from "@/components/settings/feature-request";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -421,6 +422,8 @@ const Settings = () => {
         return renderDataExportSettings();
       case 'security':
         return renderSecuritySettings();
+      case 'feature-request':
+        return <FeatureRequest />;
       default:
         return renderProfileSettings();
     }
