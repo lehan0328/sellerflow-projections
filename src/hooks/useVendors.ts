@@ -255,12 +255,53 @@ export const useVendors = () => {
     checkAuthAndFetch();
   }, [vendors.length]);
 
+  const deleteAllVendors = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // First delete all associated transactions to avoid foreign key constraint error
+      const { error: transactionError } = await supabase
+        .from('transactions')
+        .delete()
+        .neq('vendor_id', null); // Delete all transactions that have a vendor_id
+
+      if (transactionError) {
+        console.error('Error deleting vendor transactions:', transactionError);
+        // Continue with vendor deletion even if transaction deletion fails
+      }
+
+      // Then delete all vendors for this user
+      const { error } = await supabase
+        .from('vendors')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setVendors([]);
+
+      toast({
+        title: "Success",
+        description: "All vendors deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting all vendors:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete all vendors",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     vendors,
     loading,
     addVendor,
     updateVendor,
     deleteVendor,
+    deleteAllVendors,
     refetch: fetchVendors
   };
 };

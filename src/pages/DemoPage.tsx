@@ -133,6 +133,7 @@ const DemoPage = () => {
         vendors={[]}
         onSubmitOrder={() => alert('Demo: Form submission not available in demo')}
         onAddVendor={() => alert('Demo: Vendor creation not available in demo')}
+        onDeleteAllVendors={() => alert('Demo: Delete all vendors not available in demo')}
       />
 
       <IncomeForm 

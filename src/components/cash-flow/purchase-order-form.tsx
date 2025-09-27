@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -31,6 +32,7 @@ interface PurchaseOrderFormProps {
   vendors: Vendor[];
   onSubmitOrder: (orderData: any) => void;
   onAddVendor?: (vendorData: any) => void;
+  onDeleteAllVendors?: () => void;
 }
 
 interface PaymentSchedule {
@@ -45,7 +47,8 @@ export const PurchaseOrderForm = ({
   onOpenChange, 
   vendors, 
   onSubmitOrder, 
-  onAddVendor 
+  onAddVendor,
+  onDeleteAllVendors
 }: PurchaseOrderFormProps) => {
   const { creditCards } = useCreditCards();
   
@@ -73,6 +76,7 @@ export const PurchaseOrderForm = ({
 
   const [showVendorForm, setShowVendorForm] = useState(false);
   const [showVendorDropdown, setShowVendorDropdown] = useState(false);
+  const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
   const [vendorSearchTerm, setVendorSearchTerm] = useState("");
 
   // Date picker states
@@ -90,10 +94,12 @@ export const PurchaseOrderForm = ({
     "Other"
   ];
 
-  // Filter vendors based on search term
-  const filteredVendors = vendors.filter(vendor =>
-    vendor.name.toLowerCase().includes(vendorSearchTerm.toLowerCase())
-  );
+  // Filter vendors based on search term and sort alphabetically
+  const filteredVendors = vendors
+    .filter(vendor =>
+      vendor.name.toLowerCase().includes(vendorSearchTerm.toLowerCase())
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   // Reset form when dialog opens/closes
   useEffect(() => {
@@ -242,6 +248,14 @@ export const PurchaseOrderForm = ({
     onOpenChange(false);
   };
 
+  const handleDeleteAllVendors = () => {
+    if (onDeleteAllVendors) {
+      onDeleteAllVendors();
+      toast.success("All vendors deleted successfully!");
+    }
+    setShowDeleteAllDialog(false);
+  };
+
   const handleAddVendorFromForm = (vendorData: any) => {
     if (onAddVendor) {
       const completeVendorData = {
@@ -281,7 +295,7 @@ export const PurchaseOrderForm = ({
       <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
         "max-h-[90vh] overflow-y-auto",
-        !formData.vendorId ? "max-w-lg" : "max-w-md"
+        !formData.vendorId ? "max-w-lg" : "max-w-2xl w-full"
       )}>
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
@@ -298,7 +312,21 @@ export const PurchaseOrderForm = ({
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="vendor">Vendor *</Label>
+                <div className="flex items-center justify-between mb-2">
+                  <Label htmlFor="vendor">Vendor *</Label>
+                  {vendors.length > 0 && (
+                    <Button 
+                      type="button" 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => setShowDeleteAllDialog(true)}
+                      className="text-xs px-2 py-1 h-auto"
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Delete All
+                    </Button>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <div className="relative">
@@ -319,7 +347,7 @@ export const PurchaseOrderForm = ({
                       <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
                         {filteredVendors.length === 0 ? (
                           <div className="p-3 text-sm text-muted-foreground text-center">
-                            No vendors found
+                            {vendorSearchTerm ? 'No vendors found matching your search' : 'No vendors available'}
                           </div>
                         ) : (
                           filteredVendors.map((vendor) => (
@@ -802,10 +830,31 @@ export const PurchaseOrderForm = ({
                 Create Purchase Order
               </Button>
             </div>
-          </form>
-        )}
-        </DialogContent>
-      </Dialog>
+        </form>
+      )}
+    </DialogContent>
+  </Dialog>
+
+  {/* Delete All Vendors Confirmation Dialog */}
+  <AlertDialog open={showDeleteAllDialog} onOpenChange={setShowDeleteAllDialog}>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Delete All Vendors?</AlertDialogTitle>
+        <AlertDialogDescription>
+          This action cannot be undone. This will permanently delete all vendors and their associated data.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Cancel</AlertDialogCancel>
+        <AlertDialogAction 
+          onClick={handleDeleteAllVendors}
+          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        >
+          Delete All Vendors
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
 
       {/* Add Vendor Dialog */}
       {showVendorForm && (

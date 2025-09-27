@@ -39,7 +39,7 @@ const Dashboard = () => {
   const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
   
   // Use database hooks
-  const { vendors, addVendor, updateVendor, deleteVendor, refetch: refetchVendors } = useVendors();
+  const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   
@@ -578,6 +578,7 @@ const Dashboard = () => {
           onOpenChange={setShowPurchaseOrderForm}
           onSubmitOrder={handlePurchaseOrderSubmit}
           onAddVendor={addVendor}
+          onDeleteAllVendors={deleteAllVendors}
         />
       )}
 
