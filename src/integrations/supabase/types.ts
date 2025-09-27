@@ -25,6 +25,9 @@ export type Database = {
           balance: number
           created_at: string
           currency_code: string | null
+          encrypted_access_token: string | null
+          encrypted_account_number: string | null
+          encrypted_plaid_item_id: string | null
           id: string
           institution_name: string
           is_active: boolean
@@ -43,6 +46,9 @@ export type Database = {
           balance?: number
           created_at?: string
           currency_code?: string | null
+          encrypted_access_token?: string | null
+          encrypted_account_number?: string | null
+          encrypted_plaid_item_id?: string | null
           id?: string
           institution_name: string
           is_active?: boolean
@@ -61,6 +67,9 @@ export type Database = {
           balance?: number
           created_at?: string
           currency_code?: string | null
+          encrypted_access_token?: string | null
+          encrypted_account_number?: string | null
+          encrypted_plaid_item_id?: string | null
           id?: string
           institution_name?: string
           is_active?: boolean
@@ -340,10 +349,102 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      secure_bank_accounts: {
+        Row: {
+          access_token: string | null
+          account_name: string | null
+          account_number: string | null
+          account_type: string | null
+          available_balance: number | null
+          balance: number | null
+          created_at: string | null
+          currency_code: string | null
+          id: string | null
+          institution_name: string | null
+          is_active: boolean | null
+          last_sync: string | null
+          masked_account_number: string | null
+          plaid_item_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          access_token?: never
+          account_name?: string | null
+          account_number?: never
+          account_type?: string | null
+          available_balance?: number | null
+          balance?: number | null
+          created_at?: string | null
+          currency_code?: string | null
+          id?: string | null
+          institution_name?: string | null
+          is_active?: boolean | null
+          last_sync?: string | null
+          masked_account_number?: never
+          plaid_item_id?: never
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          access_token?: never
+          account_name?: string | null
+          account_number?: never
+          account_type?: string | null
+          available_balance?: number | null
+          balance?: number | null
+          created_at?: string | null
+          currency_code?: string | null
+          id?: string | null
+          institution_name?: string | null
+          is_active?: boolean | null
+          last_sync?: string | null
+          masked_account_number?: never
+          plaid_item_id?: never
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      decrypt_banking_credential: {
+        Args: { encrypted_text: string }
+        Returns: string
+      }
+      encrypt_banking_credential: {
+        Args: { plain_text: string }
+        Returns: string
+      }
+      insert_secure_bank_account: {
+        Args: {
+          p_access_token?: string
+          p_account_name?: string
+          p_account_number?: string
+          p_account_type?: string
+          p_available_balance?: number
+          p_balance?: number
+          p_currency_code?: string
+          p_institution_name?: string
+          p_plaid_item_id?: string
+        }
+        Returns: string
+      }
+      update_secure_bank_account: {
+        Args: {
+          p_access_token?: string
+          p_account_id: string
+          p_account_name?: string
+          p_account_number?: string
+          p_account_type?: string
+          p_available_balance?: number
+          p_balance?: number
+          p_currency_code?: string
+          p_institution_name?: string
+          p_plaid_item_id?: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
