@@ -169,49 +169,99 @@ const Dashboard = () => {
       console.info("Due date is in the future - payment scheduled for:", format(dueDate, "PPP"));
     }
 
-    // Always create a separate vendor entry for each purchase order
-    const paymentSchedule = orderData.paymentSchedule || [];
-    // For due-upon-order, ensure due date is same as PO date
-    let nextPaymentDate = orderData.paymentType === 'due-upon-order' ? orderData.poDate : orderData.dueDate;
-    let nextPaymentAmount = amount;
+    // Check if vendor already exists by name (case-insensitive)
+    const existingVendor = vendors.find(v => 
+      v.name.toLowerCase().trim() === orderData.vendor.toLowerCase().trim()
+    );
     
-    // For preorder, use first payment from schedule
-    if (orderData.paymentType === 'preorder' && paymentSchedule.length > 0) {
-      nextPaymentDate = paymentSchedule[0].dueDate;
-      nextPaymentAmount = parseFloat(paymentSchedule[0].amount);
-    }
+    let vendor;
+    if (existingVendor) {
+      // Update existing vendor with new order details
+      const paymentSchedule = orderData.paymentSchedule || [];
+      let nextPaymentDate = orderData.paymentType === 'due-upon-order' ? orderData.poDate : orderData.dueDate;
+      let nextPaymentAmount = amount;
+      
+      // For preorder, use first payment from schedule
+      if (orderData.paymentType === 'preorder' && paymentSchedule.length > 0) {
+        nextPaymentDate = paymentSchedule[0].dueDate;
+        nextPaymentAmount = parseFloat(paymentSchedule[0].amount);
+      }
 
-    // Map form payment types to database payment types
-    let dbPaymentType: 'total' | 'preorder' | 'net-terms' = 'total'; // default
-    switch (orderData.paymentType) {
-      case 'net-terms':
-        dbPaymentType = 'net-terms';
-        break;
-      case 'preorder':
-        dbPaymentType = 'preorder';
-        break;
-      case 'due-upon-order':
-      case 'due-upon-delivery':
-      default:
-        dbPaymentType = 'total';
-        break;
-    }
+      // Map form payment types to database payment types
+      let dbPaymentType: 'total' | 'preorder' | 'net-terms' = 'total';
+      switch (orderData.paymentType) {
+        case 'net-terms':
+          dbPaymentType = 'net-terms';
+          break;
+        case 'preorder':
+          dbPaymentType = 'preorder';
+          break;
+        case 'due-upon-order':
+        case 'due-upon-delivery':
+        default:
+          dbPaymentType = 'total';
+          break;
+      }
 
-    const vendor = await addVendor({
-      name: orderData.vendor,
-      totalOwed: amount,
-      nextPaymentDate: nextPaymentDate || orderData.poDate || new Date(),
-      nextPaymentAmount: nextPaymentAmount,
-      status: 'upcoming',
-      category: orderData.category || '',
-      paymentType: dbPaymentType,
-      netTermsDays: orderData.netTermsDays,
-      poName: orderData.poName,
-      description: orderData.description,
-      notes: orderData.notes,
-      paymentSchedule: paymentSchedule,
-      source: 'management'  // Changed to 'management' so vendor appears in Vendor Management
-    });
+      // Update existing vendor with combined total owed and latest order details
+      await updateVendor(existingVendor.id, {
+        totalOwed: existingVendor.totalOwed + amount,
+        nextPaymentDate: nextPaymentDate || orderData.poDate || new Date(),
+        nextPaymentAmount: existingVendor.nextPaymentAmount + nextPaymentAmount,
+        category: orderData.category || existingVendor.category,
+        paymentType: dbPaymentType,
+        netTermsDays: orderData.netTermsDays,
+        poName: orderData.poName || existingVendor.poName,
+        description: orderData.description || existingVendor.description,
+        notes: orderData.notes || existingVendor.notes,
+        paymentSchedule: [...(existingVendor.paymentSchedule || []), ...paymentSchedule],
+        source: 'management'
+      });
+      vendor = existingVendor;
+    } else {
+      // Create new vendor
+      const paymentSchedule = orderData.paymentSchedule || [];
+      let nextPaymentDate = orderData.paymentType === 'due-upon-order' ? orderData.poDate : orderData.dueDate;
+      let nextPaymentAmount = amount;
+      
+      // For preorder, use first payment from schedule
+      if (orderData.paymentType === 'preorder' && paymentSchedule.length > 0) {
+        nextPaymentDate = paymentSchedule[0].dueDate;
+        nextPaymentAmount = parseFloat(paymentSchedule[0].amount);
+      }
+
+      // Map form payment types to database payment types
+      let dbPaymentType: 'total' | 'preorder' | 'net-terms' = 'total';
+      switch (orderData.paymentType) {
+        case 'net-terms':
+          dbPaymentType = 'net-terms';
+          break;
+        case 'preorder':
+          dbPaymentType = 'preorder';
+          break;
+        case 'due-upon-order':
+        case 'due-upon-delivery':
+        default:
+          dbPaymentType = 'total';
+          break;
+      }
+
+      vendor = await addVendor({
+        name: orderData.vendor,
+        totalOwed: amount,
+        nextPaymentDate: nextPaymentDate || orderData.poDate || new Date(),
+        nextPaymentAmount: nextPaymentAmount,
+        status: 'upcoming',
+        category: orderData.category || '',
+        paymentType: dbPaymentType,
+        netTermsDays: orderData.netTermsDays,
+        poName: orderData.poName,
+        description: orderData.description,
+        notes: orderData.notes,
+        paymentSchedule: paymentSchedule,
+        source: 'management'
+      });
+    }
 
     await addTransaction({
       type: 'purchase_order',
@@ -264,6 +314,9 @@ const Dashboard = () => {
     const today = startOfDay(new Date());
     const paymentDateStartOfDay = startOfDay(paymentDate);
     
+    // Find the original income item to compare dates
+    const originalIncome = incomeItems.find(item => item.id === updatedIncomeData.id);
+    
     // Note: In a real Plaid integration, this would update connected account balances
     const success = await updateIncome(updatedIncomeData.id, {
       description: updatedIncomeData.description,
@@ -276,6 +329,24 @@ const Dashboard = () => {
       recurringFrequency: updatedIncomeData.recurringFrequency,
       notes: updatedIncomeData.notes
     });
+
+    // Update cash flow events if payment date changed
+    if (success && originalIncome && originalIncome.paymentDate.getTime() !== paymentDate.getTime()) {
+      setCashFlowEvents(prev => prev.map(event => {
+        // Find and update the cash flow event for this income
+        if (event.type === 'inflow' && 
+            event.description === originalIncome.description && 
+            Math.abs(event.amount - originalIncome.amount) < 0.01) {
+          return {
+            ...event,
+            date: paymentDate,
+            amount,
+            description: updatedIncomeData.description || originalIncome.description
+          };
+        }
+        return event;
+      }));
+    }
 
     if (success) {
       setShowEditIncomeForm(false);
@@ -416,7 +487,27 @@ const Dashboard = () => {
   };
 
   const handleSaveVendorOrder = async (updatedVendor: Vendor) => {
+    const originalVendor = vendors.find(v => v.id === updatedVendor.id);
+    
     await updateVendor(updatedVendor.id, updatedVendor);
+    
+    // Update cash flow events if payment date changed
+    if (originalVendor && originalVendor.nextPaymentDate.getTime() !== updatedVendor.nextPaymentDate.getTime()) {
+      setCashFlowEvents(prev => prev.map(event => {
+        // Find and update the cash flow event for this vendor
+        if (event.type === 'outflow' && 
+            (event.vendor === updatedVendor.name || 
+             event.description?.includes(updatedVendor.name) ||
+             (updatedVendor.poName && event.description?.includes(updatedVendor.poName)))) {
+          return {
+            ...event,
+            date: updatedVendor.nextPaymentDate
+          };
+        }
+        return event;
+      }));
+    }
+    
     setEditingVendor(null);
   };
 
