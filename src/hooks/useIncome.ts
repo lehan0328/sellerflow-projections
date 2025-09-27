@@ -23,6 +23,20 @@ export const useIncome = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
+  // Helper function to format date for database without timezone issues
+  const formatDateForDB = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Parse 'YYYY-MM-DD' into a local Date (avoids timezone shift)
+  const parseDateFromDB = (dateString: string) => {
+    const [y, m, d] = dateString.split('-').map(Number);
+    return new Date(y, (m || 1) - 1, d || 1);
+  };
+
   // Fetch income items from database
   const fetchIncome = async () => {
     if (!user) {
@@ -47,7 +61,7 @@ export const useIncome = () => {
         id: item.id,
         description: item.description,
         amount: Number(item.amount),
-        paymentDate: new Date(item.payment_date),
+        paymentDate: parseDateFromDB(item.payment_date),
         source: item.source,
         status: item.status as 'received' | 'pending' | 'overdue',
         category: item.category || '',
@@ -81,7 +95,7 @@ export const useIncome = () => {
           user_id: user.id,
           description: incomeData.description,
           amount: incomeData.amount,
-          payment_date: incomeData.paymentDate.toISOString().split('T')[0],
+          payment_date: formatDateForDB(incomeData.paymentDate),
           source: incomeData.source,
           status: incomeData.status,
           category: incomeData.category,
@@ -102,7 +116,7 @@ export const useIncome = () => {
         id: data.id,
         description: data.description,
         amount: Number(data.amount),
-        paymentDate: new Date(data.payment_date),
+        paymentDate: parseDateFromDB(data.payment_date),
         source: data.source,
         status: data.status as 'received' | 'pending' | 'overdue',
         category: data.category || '',
@@ -135,7 +149,7 @@ export const useIncome = () => {
       
       if (updates.description !== undefined) updateData.description = updates.description;
       if (updates.amount !== undefined) updateData.amount = updates.amount;
-      if (updates.paymentDate !== undefined) updateData.payment_date = updates.paymentDate.toISOString().split('T')[0];
+      if (updates.paymentDate !== undefined) updateData.payment_date = formatDateForDB(updates.paymentDate);
       if (updates.source !== undefined) updateData.source = updates.source;
       if (updates.status !== undefined) updateData.status = updates.status;
       if (updates.category !== undefined) updateData.category = updates.category;
@@ -160,7 +174,7 @@ export const useIncome = () => {
         id: data.id,
         description: data.description,
         amount: Number(data.amount),
-        paymentDate: new Date(data.payment_date),
+        paymentDate: parseDateFromDB(data.payment_date),
         source: data.source,
         status: data.status as 'received' | 'pending' | 'overdue',
         category: data.category || '',
