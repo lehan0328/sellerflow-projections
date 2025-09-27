@@ -14,6 +14,202 @@ export type Database = {
   }
   public: {
     Tables: {
+      amazon_accounts: {
+        Row: {
+          account_name: string
+          created_at: string
+          encrypted_access_token: string | null
+          encrypted_client_id: string | null
+          encrypted_client_secret: string | null
+          encrypted_refresh_token: string | null
+          id: string
+          is_active: boolean
+          last_sync: string | null
+          marketplace_id: string
+          marketplace_name: string
+          seller_id: string
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_name: string
+          created_at?: string
+          encrypted_access_token?: string | null
+          encrypted_client_id?: string | null
+          encrypted_client_secret?: string | null
+          encrypted_refresh_token?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync?: string | null
+          marketplace_id: string
+          marketplace_name: string
+          seller_id: string
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_name?: string
+          created_at?: string
+          encrypted_access_token?: string | null
+          encrypted_client_id?: string | null
+          encrypted_client_secret?: string | null
+          encrypted_refresh_token?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync?: string | null
+          marketplace_id?: string
+          marketplace_name?: string
+          seller_id?: string
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      amazon_payouts: {
+        Row: {
+          amazon_account_id: string
+          created_at: string
+          currency_code: string
+          fees_total: number | null
+          id: string
+          marketplace_name: string
+          orders_total: number | null
+          other_total: number | null
+          payout_date: string
+          payout_type: string
+          raw_settlement_data: Json | null
+          refunds_total: number | null
+          settlement_id: string
+          status: string
+          total_amount: number
+          transaction_count: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amazon_account_id: string
+          created_at?: string
+          currency_code?: string
+          fees_total?: number | null
+          id?: string
+          marketplace_name: string
+          orders_total?: number | null
+          other_total?: number | null
+          payout_date: string
+          payout_type?: string
+          raw_settlement_data?: Json | null
+          refunds_total?: number | null
+          settlement_id: string
+          status?: string
+          total_amount?: number
+          transaction_count?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amazon_account_id?: string
+          created_at?: string
+          currency_code?: string
+          fees_total?: number | null
+          id?: string
+          marketplace_name?: string
+          orders_total?: number | null
+          other_total?: number | null
+          payout_date?: string
+          payout_type?: string
+          raw_settlement_data?: Json | null
+          refunds_total?: number | null
+          settlement_id?: string
+          status?: string
+          total_amount?: number
+          transaction_count?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "amazon_payouts_amazon_account_id_fkey"
+            columns: ["amazon_account_id"]
+            isOneToOne: false
+            referencedRelation: "amazon_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      amazon_transactions: {
+        Row: {
+          amazon_account_id: string
+          amount: number
+          created_at: string
+          currency_code: string
+          description: string | null
+          fee_description: string | null
+          fee_type: string | null
+          id: string
+          marketplace_name: string | null
+          order_id: string | null
+          raw_data: Json | null
+          settlement_id: string | null
+          sku: string | null
+          transaction_date: string
+          transaction_id: string
+          transaction_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amazon_account_id: string
+          amount?: number
+          created_at?: string
+          currency_code?: string
+          description?: string | null
+          fee_description?: string | null
+          fee_type?: string | null
+          id?: string
+          marketplace_name?: string | null
+          order_id?: string | null
+          raw_data?: Json | null
+          settlement_id?: string | null
+          sku?: string | null
+          transaction_date: string
+          transaction_id: string
+          transaction_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amazon_account_id?: string
+          amount?: number
+          created_at?: string
+          currency_code?: string
+          description?: string | null
+          fee_description?: string | null
+          fee_type?: string | null
+          id?: string
+          marketplace_name?: string | null
+          order_id?: string | null
+          raw_data?: Json | null
+          settlement_id?: string | null
+          sku?: string | null
+          transaction_date?: string
+          transaction_id?: string
+          transaction_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "amazon_transactions_amazon_account_id_fkey"
+            columns: ["amazon_account_id"]
+            isOneToOne: false
+            referencedRelation: "amazon_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_accounts: {
         Row: {
           account_id: string
@@ -533,6 +729,19 @@ export type Database = {
         Args: { plain_text: string }
         Returns: string
       }
+      insert_secure_amazon_account: {
+        Args: {
+          p_access_token?: string
+          p_account_name: string
+          p_client_id?: string
+          p_client_secret?: string
+          p_marketplace_id: string
+          p_marketplace_name: string
+          p_refresh_token?: string
+          p_seller_id: string
+        }
+        Returns: string
+      }
       insert_secure_bank_account: {
         Args: {
           p_access_token?: string
@@ -567,6 +776,18 @@ export type Database = {
           p_statement_close_date?: string
         }
         Returns: string
+      }
+      update_secure_amazon_account: {
+        Args: {
+          p_access_token?: string
+          p_account_id: string
+          p_account_name?: string
+          p_client_id?: string
+          p_client_secret?: string
+          p_refresh_token?: string
+          p_token_expires_at?: string
+        }
+        Returns: boolean
       }
       update_secure_bank_account: {
         Args: {
