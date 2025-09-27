@@ -116,6 +116,10 @@ export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense
           </DialogTitle>
         </DialogHeader>
         
+        <div className="text-sm text-muted-foreground mb-4">
+          Track your expected income to better manage your cash flow and financial planning.
+        </div>
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="description">Description (Optional)</Label>
