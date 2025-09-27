@@ -62,7 +62,7 @@ export const SearchableVendorSelect = ({
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-popover border border-border shadow-lg z-[60]">
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-background border border-border shadow-elevated z-[100] backdrop-blur-sm">
         <div className="flex items-center border-b px-3 py-2">
           <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
           <Input
