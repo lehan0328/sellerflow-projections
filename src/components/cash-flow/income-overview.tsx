@@ -195,7 +195,7 @@ export const IncomeOverview = ({ incomeItems, onCollectToday, onEditIncome, onDe
                       <div className="flex items-center space-x-2">
                         <h4 className="font-semibold text-sm">{income.description}</h4>
                         <Badge variant="outline" className="text-xs">
-                          {income.category}
+                          Category: {income.category || 'Uncategorized'}
                         </Badge>
                         <Badge variant={getStatusColor(income.status)} className="text-xs">
                           {getStatusIcon(income.status)}
