@@ -45,7 +45,7 @@ const Dashboard = () => {
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { updateTotalCash } = useUserSettings();
-  const { customers, addCustomer } = useCustomers();
+  const { customers, addCustomer, deleteAllCustomers } = useCustomers();
   
   // State for vendors used in forms (derived from database vendors) - always fresh data
   const formVendors = useMemo(() => {
@@ -723,6 +723,7 @@ const Dashboard = () => {
           onSubmitExpense={handleExpenseSubmit}
           customers={customers}
           onAddCustomer={addCustomer}
+          onDeleteAllCustomers={deleteAllCustomers}
         />
       )}
 
@@ -735,6 +736,7 @@ const Dashboard = () => {
           isRecurring={true}
           customers={customers}
           onAddCustomer={addCustomer}
+          onDeleteAllCustomers={deleteAllCustomers}
         />
       )}
 
@@ -747,6 +749,7 @@ const Dashboard = () => {
           editingIncome={editingIncome}
           customers={customers}
           onAddCustomer={addCustomer}
+          onDeleteAllCustomers={deleteAllCustomers}
         />
       )}
 

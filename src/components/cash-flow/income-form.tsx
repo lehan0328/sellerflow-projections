@@ -5,9 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Search, Plus } from "lucide-react";
+import { CalendarIcon, Search, Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ interface IncomeFormProps {
   editingIncome?: any;
   customers?: Customer[];
   onAddCustomer?: (customerData: any) => void;
+  onDeleteAllCustomers?: () => void;
 }
 
 export const IncomeForm = ({ 
@@ -40,7 +42,8 @@ export const IncomeForm = ({
   isRecurring = false, 
   editingIncome,
   customers = [],
-  onAddCustomer 
+  onAddCustomer,
+  onDeleteAllCustomers
 }: IncomeFormProps) => {
   const [formData, setFormData] = useState({
     type: "income" as "income" | "expense",
@@ -241,16 +244,49 @@ export const IncomeForm = ({
                   )}
                 </div>
                 
-                {onAddCustomer && (
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setShowCustomerForm(true)}
-                    className="px-3"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {onAddCustomer && (
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setShowCustomerForm(true)}
+                      className="px-3"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  )}
+                  
+                  {onDeleteAllCustomers && customers.length > 0 && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="px-3 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete All Customers</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete all {customers.length} customers? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={onDeleteAllCustomers}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            Delete All
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
               </div>
             </div>
             
