@@ -505,9 +505,17 @@ const Dashboard = () => {
   // Log cash values for debugging
   console.log("Dashboard - totalCash:", totalCash, "bankAccountBalance:", bankAccountBalance, "accounts connected:", accounts.length);
   
-  // Calculate total transactions (income - expenses)
+  // Calculate total transactions (income - expenses) - only count transactions on or before today
+  const today = startOfDay(new Date());
   const transactionTotal = transactions.reduce((total, transaction) => {
     const amount = Number(transaction.amount);
+    const transactionDate = startOfDay(transaction.transactionDate);
+    
+    // Only count transactions on or before today
+    if (transactionDate > today) {
+      return total;
+    }
+    
     // Income: customer_payment, sales_order
     // Expenses: purchase_order, vendor_payment
     const isIncome = transaction.type === 'customer_payment' || transaction.type === 'sales_order';
