@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { History, Undo2, DollarSign } from "lucide-react";
+import { History, Trash2, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 
 export interface Transaction {
@@ -21,9 +21,9 @@ interface TransactionLogProps {
 }
 
 export const TransactionLog = ({ transactions, onUndoTransaction }: TransactionLogProps) => {
-  const handleUndo = (transaction: Transaction) => {
+  const handleDelete = (transaction: Transaction) => {
     onUndoTransaction(transaction.id);
-    toast.success(`Undid ${transaction.description}`);
+    toast.success(`Deleted transaction: ${transaction.description}`);
   };
 
   const getTypeColor = (type: string) => {
@@ -130,16 +130,15 @@ export const TransactionLog = ({ transactions, onUndoTransaction }: TransactionL
                       </div>
                     </div>
                     <div className="ml-4">
-                      {transaction.status === 'completed' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleUndo(transaction)}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Undo2 className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(transaction)}
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        title="Delete transaction"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 </div>
