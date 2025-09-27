@@ -42,7 +42,6 @@ const Dashboard = () => {
   // Use database hooks
   const { vendors, addVendor, updateVendor, deleteVendor, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
-  const { totalCash, updateTotalCash } = useUserSettings();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   
   // State for vendors used in forms (derived from database vendors) - always fresh data
@@ -83,13 +82,10 @@ const Dashboard = () => {
   const handlePayToday = async (vendor: Vendor, amount?: number) => {
     const paymentAmount = amount || vendor.nextPaymentAmount;
     
-    console.info("Deducting cash amount:", paymentAmount);
-    console.info("Previous total cash:", totalCash);
+    console.info("Processing payment:", paymentAmount, "Bank balance:", bankAccountBalance);
     
-    const newTotalCash = totalCash - paymentAmount;
-    await updateTotalCash(newTotalCash);
-    
-    console.info("New total cash:", newTotalCash);
+    // Note: In a real Plaid integration, this would trigger an actual bank transaction
+    // For now, we just update the vendor status
 
     // Update vendor
     await updateVendor(vendor.id, { 
@@ -122,36 +118,8 @@ const Dashboard = () => {
     const transaction = transactions.find(t => t.id === transactionId);
     if (!transaction) return;
 
-    // Restore cash based on transaction type
-    if (transaction.type === 'purchase_order') {
-      await updateTotalCash(totalCash + transaction.amount);
-      
-      // Reduce vendor's total owed when purchase order is deleted
-      if (transaction.vendorId) {
-        const vendor = vendors.find(v => v.id === transaction.vendorId);
-        if (vendor) {
-          const newTotalOwed = Math.max(0, vendor.totalOwed - transaction.amount);
-          await updateVendor(vendor.id, { 
-            totalOwed: newTotalOwed,
-            status: newTotalOwed === 0 ? 'paid' : vendor.status
-          });
-        }
-      }
-    } else if (transaction.type === 'sales_order') {
-      await updateTotalCash(totalCash - transaction.amount);
-    } else if (transaction.type === 'vendor_payment') {
-      await updateTotalCash(totalCash + transaction.amount);
-      
-      // Restore vendor balance if it was a vendor payment
-      if (transaction.vendorId) {
-        const vendor = vendors.find(v => v.id === transaction.vendorId);
-        if (vendor) {
-          await updateVendor(vendor.id, { 
-            totalOwed: vendor.totalOwed + transaction.amount 
-          });
-        }
-      }
-    }
+    // Note: In a real Plaid integration, this would reverse the bank transaction
+    // For now, we just update vendor status and remove the transaction
 
     // Remove transaction
     await deleteTransaction(transactionId);
@@ -175,17 +143,13 @@ const Dashboard = () => {
     const today = startOfDay(new Date());
     const dueDateStartOfDay = startOfDay(dueDate);
     
-    // Only deduct cash if due date is today or in the past
+    // Only deduct cash if due date is today or in the past (for display purposes only)
+    // Note: In a real Plaid integration, this would schedule/execute the payment
     if (dueDateStartOfDay <= today) {
-      console.info("Due date is today or past - deducting cash amount:", amount);
-      console.info("Previous total cash:", totalCash);
-      
-      const newTotalCash = totalCash - amount;
-      await updateTotalCash(newTotalCash);
-      
-      console.info("New total cash:", newTotalCash);
+      console.info("Due date is today or past - payment would be processed:", amount);
+      console.info("Current bank balance:", bankAccountBalance);
     } else {
-      console.info("Due date is in the future - not deducting cash yet. Due:", format(dueDate, "PPP"));
+      console.info("Due date is in the future - payment scheduled for:", format(dueDate, "PPP"));
     }
 
     // Always create a separate vendor entry for each purchase order
@@ -269,7 +233,7 @@ const Dashboard = () => {
     const today = startOfDay(new Date());
     const paymentDateStartOfDay = startOfDay(paymentDate);
     
-    // Update the income item in the database
+    // Note: In a real Plaid integration, this would update connected account balances
     const success = await updateIncome(updatedIncomeData.id, {
       description: updatedIncomeData.description,
       amount,
@@ -281,23 +245,6 @@ const Dashboard = () => {
       recurringFrequency: updatedIncomeData.recurringFrequency,
       notes: updatedIncomeData.notes
     });
-
-    if (success) {
-      // If this income was previously received and the amount changed, adjust total cash
-      const originalIncome = incomeItems.find(item => item.id === updatedIncomeData.id);
-      if (originalIncome && originalIncome.status === 'received') {
-        const amountDifference = amount - originalIncome.amount;
-        const newTotalCash = totalCash + amountDifference;
-        await updateTotalCash(newTotalCash);
-      } else if (paymentDateStartOfDay <= today && originalIncome && originalIncome.status !== 'received') {
-        // If payment date is now in the past/today and wasn't received before, add to cash
-        const newTotalCash = totalCash + amount;
-        await updateTotalCash(newTotalCash);
-      }
-
-      setShowEditIncomeForm(false);
-      setEditingIncome(null);
-    }
   };
 
   const handleIncomeSubmit = async (incomeData: any) => {
@@ -310,16 +257,9 @@ const Dashboard = () => {
     
     console.info("Adding income amount:", amount);
     console.info("Payment date:", paymentDate);
-    console.info("Previous total cash:", totalCash);
+    console.info("Current bank balance:", bankAccountBalance);
     
-    // Only update total cash if payment date is today or in the past
-    if (isToday(paymentDate) || isBefore(paymentDateStartOfDay, today)) {
-      const newTotalCash = totalCash + amount;
-      await updateTotalCash(newTotalCash);
-      console.info("Updated total cash to:", newTotalCash);
-    } else {
-      console.info("Future-dated income - not updating total cash immediately");
-    }
+    // Note: In a real Plaid integration, this would add funds to connected account
 
     // Add to database
     await addIncome({
@@ -362,12 +302,9 @@ const Dashboard = () => {
       parseFloat(expenseData.amount) : expenseData.amount;
     
     console.info("Adding expense amount:", amount);
-    console.info("Previous total cash:", totalCash);
+    console.info("Current bank balance:", bankAccountBalance);
     
-    const newTotalCash = totalCash - amount;
-    await updateTotalCash(newTotalCash);
-    
-    console.info("New total cash:", newTotalCash);
+    // Note: In a real Plaid integration, this would deduct from connected account
 
     // Create vendor for expense
     const newVendor = await addVendor({
@@ -409,8 +346,7 @@ const Dashboard = () => {
   const handleCollectIncome = async (income: any) => {
     console.info("Collecting income amount:", income.amount);
     
-    const newTotalCash = totalCash + income.amount;
-    await updateTotalCash(newTotalCash);
+    // Note: In a real Plaid integration, this would add funds to connected account
 
     // Create transaction
     await addTransaction({
@@ -493,11 +429,9 @@ const Dashboard = () => {
 
 
   const handleUpdateCashBalance = async () => {
-    // Use real bank account balance from connected accounts
+    // This function syncs with real bank account balance from connected accounts
     console.log("Syncing cash balance - Bank account balance:", bankAccountBalance);
-    console.log("Previous total cash:", totalCash);
-    await updateTotalCash(bankAccountBalance);
-    console.log("Cash balance updated to bank account balance");
+    console.log("Cash balance is now managed through Plaid integration");
   };
 
   // Convert database transactions to component format
@@ -562,7 +496,7 @@ const Dashboard = () => {
   const allCalendarEvents = [...calendarEvents, ...vendorEvents, ...creditCardEvents];
 
   // Log cash values for debugging
-  console.log("Dashboard - totalCash:", totalCash, "bankAccountBalance:", bankAccountBalance, "accounts connected:", accounts.length);
+  console.log("Dashboard - bankAccountBalance:", bankAccountBalance, "accounts connected:", accounts.length);
   
   // Calculate total transactions (income - expenses) - only count transactions on or before today
   const today = startOfDay(new Date());
@@ -581,8 +515,8 @@ const Dashboard = () => {
     return isIncome ? total + amount : total - amount;
   }, 0);
   
-  // Display cash = bank account balance + transaction total
-  const displayCash = bankAccountBalance + transactionTotal;
+  // Display only the real bank account balance from Plaid
+  const displayCash = bankAccountBalance;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
