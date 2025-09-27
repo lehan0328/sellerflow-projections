@@ -39,7 +39,7 @@ const Dashboard = () => {
   const { vendors, addVendor, updateVendor, deleteVendor, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { totalCash, updateTotalCash } = useUserSettings();
-  const { totalBalance: bankAccountBalance } = useBankAccounts();
+  const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   
   // State for vendors used in forms (derived from database vendors) - always fresh data
   const formVendors = useMemo(() => vendors.map(v => ({ 
@@ -503,14 +503,17 @@ const Dashboard = () => {
   const allCalendarEvents = [...sampleEvents, ...calendarEvents, ...vendorEvents, ...creditCardEvents];
 
   // Log cash values for debugging
-  console.log("Dashboard - totalCash:", totalCash, "bankAccountBalance:", bankAccountBalance, "final cash value:", totalCash || bankAccountBalance);
+  console.log("Dashboard - totalCash:", totalCash, "bankAccountBalance:", bankAccountBalance, "accounts connected:", accounts.length);
+  
+  // Use bank account balance if no accounts connected, otherwise use totalCash
+  const displayCash = accounts.length === 0 ? 0 : (totalCash || bankAccountBalance);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
       <DashboardHeader />
       <div className="p-6 space-y-6">
         <OverviewStats 
-          totalCash={totalCash || bankAccountBalance} 
+          totalCash={displayCash} 
           events={allCalendarEvents}
           onUpdateCashBalance={handleUpdateCashBalance}
         />
@@ -518,7 +521,7 @@ const Dashboard = () => {
         {/* Row 1: Cash Flow Calendar (Full Width) */}
         <CashFlowCalendar 
           events={allCalendarEvents} 
-          totalCash={totalCash || bankAccountBalance}
+          totalCash={displayCash}
           onEditTransaction={handleEditTransaction}
         />
 
