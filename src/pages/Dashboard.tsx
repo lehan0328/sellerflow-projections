@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { addDays, isToday, isBefore, startOfDay } from "date-fns";
 import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
@@ -78,6 +78,40 @@ const Dashboard = () => {
   }>>([]);
 
   // No sample data for new users
+
+  // Update income statuses based on current date
+  useEffect(() => {
+    const updateIncomeStatuses = () => {
+      const today = startOfDay(new Date());
+      
+      setIncomeItems(prev => prev.map(item => {
+        const paymentDateStartOfDay = startOfDay(item.paymentDate);
+        
+        // Don't change already received items
+        if (item.status === 'received') return item;
+        
+        // Update status based on payment date
+        let newStatus: 'received' | 'pending' | 'overdue' = item.status;
+        
+        if (isBefore(paymentDateStartOfDay, today)) {
+          newStatus = 'overdue';
+        } else if (isToday(item.paymentDate)) {
+          // Keep pending items as pending even on their due date until manually collected
+          newStatus = 'pending';
+        } else {
+          newStatus = 'pending';
+        }
+        
+        return newStatus !== item.status ? { ...item, status: newStatus } : item;
+      }));
+    };
+
+    // Update statuses immediately and then every hour
+    updateIncomeStatuses();
+    const interval = setInterval(updateIncomeStatuses, 60 * 60 * 1000); // Every hour
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // State for vendor editing modal
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
@@ -278,7 +312,7 @@ const Dashboard = () => {
       id: Date.now().toString(),
       amount: amount,
       paymentDate: paymentDate,
-      status: 'received' as const
+      status: paymentDateStartOfDay <= today ? 'received' as const : 'pending' as const
     };
     setIncomeItems(prev => [newIncomeItem, ...prev]);
 
