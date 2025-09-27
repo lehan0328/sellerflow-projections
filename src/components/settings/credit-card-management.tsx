@@ -36,24 +36,10 @@ export function CreditCardManagement() {
     syncCreditCard 
   } = useCreditCards();
   
-  const [showAddDialog, setShowAddDialog] = useState(false);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
-
-  const [newCardData, setNewCardData] = useState({
-    institution_name: "",
-    account_name: "",
-    account_type: "credit" as const,
-    balance: 0,
-    credit_limit: 0,
-    available_credit: 0,
-    currency_code: "USD",
-    minimum_payment: 0,
-    annual_fee: 0,
-    interest_rate: 0
-  });
 
   const handleConnectPlaid = async () => {
     setIsConnecting(true);
@@ -69,35 +55,6 @@ export function CreditCardManagement() {
     }
   };
 
-  const handleAddManualCard = async () => {
-    if (!newCardData.institution_name || !newCardData.account_name) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    const success = await addCreditCard({
-      ...newCardData,
-      available_credit: newCardData.credit_limit - newCardData.balance,
-      last_sync: new Date().toISOString(),
-      is_active: true
-    });
-
-    if (success) {
-      setShowAddDialog(false);
-      setNewCardData({
-        institution_name: "",
-        account_name: "",
-        account_type: "credit",
-        balance: 0,
-        credit_limit: 0,
-        available_credit: 0,
-        currency_code: "USD",
-        minimum_payment: 0,
-        annual_fee: 0,
-        interest_rate: 0
-      });
-    }
-  };
 
   const handleRemoveCard = async () => {
     if (!selectedCard) return;
@@ -208,12 +165,12 @@ export function CreditCardManagement() {
             </Card>
           </div>
 
-          {/* Add Credit Card Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          {/* Add Credit Card Button */}
+          <div className="flex justify-center">
             <Button 
               onClick={handleConnectPlaid} 
               disabled={isConnecting}
-              className="flex-1"
+              className="w-full max-w-xs"
             >
               {isConnecting ? (
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -221,14 +178,6 @@ export function CreditCardManagement() {
                 <ExternalLink className="mr-2 h-4 w-4" />
               )}
               Connect with Plaid
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowAddDialog(true)}
-              className="flex-1"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Manually
             </Button>
           </div>
 
@@ -361,110 +310,6 @@ export function CreditCardManagement() {
         </CardContent>
       </Card>
 
-      {/* Add Manual Credit Card Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Credit Card Manually</DialogTitle>
-            <DialogDescription>
-              Enter your credit card details to track spending and payments.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="institution">Institution Name *</Label>
-                <Input
-                  id="institution"
-                  value={newCardData.institution_name}
-                  onChange={(e) => setNewCardData(prev => ({ ...prev, institution_name: e.target.value }))}
-                  placeholder="e.g., Chase, American Express"
-                />
-              </div>
-              <div>
-                <Label htmlFor="account-name">Account Name *</Label>
-                <Input
-                  id="account-name"
-                  value={newCardData.account_name}
-                  onChange={(e) => setNewCardData(prev => ({ ...prev, account_name: e.target.value }))}
-                  placeholder="e.g., Freedom Unlimited"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="balance">Current Balance</Label>
-                <Input
-                  id="balance"
-                  type="number"
-                  step="0.01"
-                  value={newCardData.balance}
-                  onChange={(e) => setNewCardData(prev => ({ ...prev, balance: parseFloat(e.target.value) || 0 }))}
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <Label htmlFor="credit-limit">Credit Limit</Label>
-                <Input
-                  id="credit-limit"
-                  type="number"
-                  step="0.01"
-                  value={newCardData.credit_limit}
-                  onChange={(e) => setNewCardData(prev => ({ ...prev, credit_limit: parseFloat(e.target.value) || 0 }))}
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="min-payment">Min Payment</Label>
-                <Input
-                  id="min-payment"
-                  type="number"
-                  step="0.01"
-                  value={newCardData.minimum_payment}
-                  onChange={(e) => setNewCardData(prev => ({ ...prev, minimum_payment: parseFloat(e.target.value) || 0 }))}
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <Label htmlFor="annual-fee">Annual Fee</Label>
-                <Input
-                  id="annual-fee"
-                  type="number"
-                  step="0.01"
-                  value={newCardData.annual_fee}
-                  onChange={(e) => setNewCardData(prev => ({ ...prev, annual_fee: parseFloat(e.target.value) || 0 }))}
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <Label htmlFor="interest-rate">APR (%)</Label>
-                <Input
-                  id="interest-rate"
-                  type="number"
-                  step="0.01"
-                  value={newCardData.interest_rate}
-                  onChange={(e) => setNewCardData(prev => ({ ...prev, interest_rate: parseFloat(e.target.value) || 0 }))}
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddManualCard}>
-              Add Credit Card
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Remove Credit Card Dialog */}
       <Dialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
