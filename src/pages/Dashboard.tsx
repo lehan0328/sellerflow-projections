@@ -35,6 +35,8 @@ const Dashboard = () => {
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
+  const [editingIncome, setEditingIncome] = useState<any>(null);
+  const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
   
   // Use database hooks
   const { vendors, addVendor, updateVendor, deleteVendor, refetch: refetchVendors } = useVendors();
@@ -285,6 +287,47 @@ const Dashboard = () => {
     setShowPurchaseOrderForm(false);
   };
 
+  const handleEditIncome = (income: any) => {
+    setEditingIncome(income);
+    setShowEditIncomeForm(true);
+  };
+
+  const handleUpdateIncome = async (updatedIncomeData: any) => {
+    const amount = typeof updatedIncomeData.amount === 'string' ? 
+      parseFloat(updatedIncomeData.amount) : updatedIncomeData.amount;
+    
+    const paymentDate = updatedIncomeData.paymentDate || new Date();
+    const today = startOfDay(new Date());
+    const paymentDateStartOfDay = startOfDay(paymentDate);
+    
+    // Update the income item in the list
+    setIncomeItems(prev => prev.map(item => 
+      item.id === updatedIncomeData.id 
+        ? {
+            ...updatedIncomeData,
+            amount,
+            paymentDate,
+            status: paymentDateStartOfDay <= today ? 'received' as const : 'pending' as const
+          }
+        : item
+    ));
+
+    // If this income was previously received and the amount changed, adjust total cash
+    const originalIncome = incomeItems.find(item => item.id === updatedIncomeData.id);
+    if (originalIncome && originalIncome.status === 'received') {
+      const amountDifference = amount - originalIncome.amount;
+      const newTotalCash = totalCash + amountDifference;
+      await updateTotalCash(newTotalCash);
+    } else if (paymentDateStartOfDay <= today && originalIncome && originalIncome.status !== 'received') {
+      // If payment date is now in the past/today and wasn't received before, add to cash
+      const newTotalCash = totalCash + amount;
+      await updateTotalCash(newTotalCash);
+    }
+
+    setShowEditIncomeForm(false);
+    setEditingIncome(null);
+  };
+
   const handleIncomeSubmit = async (incomeData: any) => {
     const amount = typeof incomeData.amount === 'string' ? 
       parseFloat(incomeData.amount) : incomeData.amount;
@@ -451,7 +494,7 @@ const Dashboard = () => {
       
       if (incomeItem) {
         // TODO: Open income edit form - for now, show alert
-        alert(`Edit Income: ${incomeItem.description}\nAmount: $${incomeItem.amount}\nDate: ${incomeItem.paymentDate.toLocaleDateString()}`);
+        handleEditIncome(incomeItem);
       } else {
         alert(`Income item not found for transaction: ${transaction.description}`);
       }
@@ -641,6 +684,16 @@ const Dashboard = () => {
           onSubmitIncome={handleIncomeSubmit}
           onSubmitExpense={handleExpenseSubmit}
           isRecurring={true}
+        />
+      )}
+
+      {showEditIncomeForm && (
+        <IncomeForm
+          open={showEditIncomeForm}
+          onOpenChange={setShowEditIncomeForm}
+          onSubmitIncome={handleUpdateIncome}
+          onSubmitExpense={handleExpenseSubmit}
+          editingIncome={editingIncome}
         />
       )}
 

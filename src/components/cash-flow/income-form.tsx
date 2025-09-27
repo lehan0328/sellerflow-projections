@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,21 +18,49 @@ interface IncomeFormProps {
   onSubmitIncome: (incomeData: any) => void;
   onSubmitExpense?: (expenseData: any) => void;
   isRecurring?: boolean;
+  editingIncome?: any;
 }
 
-export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense, isRecurring = false }: IncomeFormProps) => {
+export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense, isRecurring = false, editingIncome }: IncomeFormProps) => {
   const [formData, setFormData] = useState({
     type: "income" as "income" | "expense",
-    description: "",
-    amount: "",
-    paymentDate: undefined as Date | undefined,
-    category: "",
-    notes: "",
-    isRecurring: isRecurring,
-    recurringFrequency: "monthly" as "weekly" | "bi-weekly" | "monthly" | "quarterly" | "yearly" | "weekdays"
+    description: editingIncome?.description || "",
+    amount: editingIncome?.amount ? editingIncome.amount.toString() : "",
+    paymentDate: editingIncome?.paymentDate || undefined as Date | undefined,
+    category: editingIncome?.category || "",
+    notes: editingIncome?.notes || "",
+    isRecurring: editingIncome?.isRecurring || isRecurring,
+    recurringFrequency: editingIncome?.recurringFrequency || "monthly" as "weekly" | "bi-weekly" | "monthly" | "quarterly" | "yearly" | "weekdays"
   });
 
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
+  // Reset form when editingIncome changes
+  useEffect(() => {
+    if (editingIncome) {
+      setFormData({
+        type: "income",
+        description: editingIncome.description || "",
+        amount: editingIncome.amount ? editingIncome.amount.toString() : "",
+        paymentDate: editingIncome.paymentDate || undefined,
+        category: editingIncome.category || "",
+        notes: editingIncome.notes || "",
+        isRecurring: editingIncome.isRecurring || isRecurring,
+        recurringFrequency: editingIncome.recurringFrequency || "monthly"
+      });
+    } else {
+      setFormData({
+        type: "income",
+        description: "",
+        amount: "",
+        paymentDate: undefined,
+        category: "",
+        notes: "",
+        isRecurring: isRecurring,
+        recurringFrequency: "monthly"
+      });
+    }
+  }, [editingIncome, isRecurring]);
 
   const incomeCategories = [
     "Product Sales",
@@ -48,18 +76,18 @@ export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense
     e.preventDefault();
     
     const data = {
-      id: Date.now().toString(),
+      id: editingIncome?.id || Date.now().toString(),
       ...formData,
       amount: parseFloat(formData.amount),
       paymentDate: formData.paymentDate || new Date(),
-      status: 'pending'
+      status: editingIncome?.status || 'pending'
     };
     
     console.log("Submitting income:", data);
     
     onSubmitIncome(data);
     
-    toast.success(`${isRecurring ? 'Recurring ' : ''}Income "${formData.description}" added successfully!`);
+    toast.success(`${isRecurring ? 'Recurring ' : ''}Income "${formData.description}" ${editingIncome ? 'updated' : 'added'} successfully!`);
     onOpenChange(false);
     
     // Reset form
@@ -84,7 +112,7 @@ export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
-            {isRecurring ? 'Add Recurring Income' : 'Add Income'}
+            {editingIncome ? 'Edit Income' : (isRecurring ? 'Add Recurring Income' : 'Add Income')}
           </DialogTitle>
         </DialogHeader>
         
@@ -143,12 +171,12 @@ export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense
             </Popover>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="category">Category (Optional)</Label>
-            <Select onValueChange={(value) => handleInputChange("category", value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
+            <div className="space-y-2">
+              <Label htmlFor="category">Category (Optional)</Label>
+              <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
               <SelectContent>
                 {incomeCategories.map(category => (
                   <SelectItem key={category} value={category}>
@@ -197,7 +225,7 @@ export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense
               Cancel
             </Button>
             <Button type="submit" className="flex-1 bg-gradient-primary">
-              Add {isRecurring ? 'Recurring ' : ''}Income
+              {editingIncome ? 'Update' : 'Add'} {isRecurring ? 'Recurring ' : ''}Income
             </Button>
           </div>
         </form>
