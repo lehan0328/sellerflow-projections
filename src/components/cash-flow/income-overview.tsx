@@ -25,8 +25,7 @@ interface IncomeOverviewProps {
   onEditIncome?: (income: IncomeItem) => void;
 }
 
-export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, onEditIncome }: IncomeOverviewProps) => {
-  const [incomeItems, setIncomeItems] = useState<IncomeItem[]>(propIncomeItems);
+export const IncomeOverview = ({ incomeItems, onCollectToday, onEditIncome }: IncomeOverviewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'description' | 'amount' | 'paymentDate' | 'source'>('paymentDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -34,11 +33,6 @@ export const IncomeOverview = ({ incomeItems: propIncomeItems, onCollectToday, o
   // State for confirmation dialog
   const [confirmingIncome, setConfirmingIncome] = useState<IncomeItem | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-
-  // Update local state when props change
-  React.useEffect(() => {
-    setIncomeItems(propIncomeItems);
-  }, [propIncomeItems]);
 
   // Filter and sort income items
   const filteredAndSortedIncomes = useMemo(() => {
