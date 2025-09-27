@@ -186,66 +186,67 @@ export const IncomeOverview = ({ incomeItems, onCollectToday, onEditIncome }: In
             filteredAndSortedIncomes.map((income) => (
               <div
                 key={income.id}
-                className="p-3 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:shadow-md"
+                className="p-2 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:shadow-md"
               >
-                <div className="flex items-start justify-between mb-2">
+                <div className="flex items-start justify-between mb-1">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <h4 className="font-semibold text-base">{income.description}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {income.category}
-                      </Badge>
-                      <Badge variant={getStatusColor(income.status)} className="text-xs">
-                        {getStatusIcon(income.status)}
-                        <span className="ml-1 capitalize">{income.status}</span>
-                      </Badge>
-                      {income.isRecurring && (
-                        <Badge variant="secondary" className="text-xs">
-                          Recurring
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center space-x-2">
+                        <h4 className="font-semibold text-sm">{income.description}</h4>
+                        <Badge variant="outline" className="text-xs">
+                          {income.category}
                         </Badge>
-                      )}
+                        <Badge variant={getStatusColor(income.status)} className="text-xs">
+                          {getStatusIcon(income.status)}
+                          <span className="ml-1 capitalize">{income.status}</span>
+                        </Badge>
+                        {income.isRecurring && (
+                          <Badge variant="secondary" className="text-xs">
+                            Recurring
+                          </Badge>
+                        )}
+                      </div>
+                      <span className="font-medium text-sm text-right">
+                        ${income.amount.toLocaleString()}
+                      </span>
                     </div>
                     <div className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Amount:</span>
-                        <span className="font-medium text-foreground">
-                          ${income.amount.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center text-xs">
                         <span className="text-muted-foreground">Source:</span>
-                        <span className="font-medium text-foreground">
+                        <span className="font-medium text-foreground ml-2">
                           {income.source}
                         </span>
+                        <div className="ml-auto">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => onEditIncome?.(income)}
+                          >
+                            <Edit className="mr-1 h-3 w-3" />
+                            Edit
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center text-xs">
                         <span className="text-muted-foreground">Payment Date:</span>
-                        <span className="font-medium text-foreground">
+                        <span className="font-medium text-foreground ml-2">
                           {income.paymentDate.toLocaleDateString()}
                         </span>
+                        <div className="ml-auto">
+                          {income.status === 'pending' && (
+                            <Button 
+                              size="sm" 
+                              className="bg-gradient-primary px-4"
+                              onClick={() => handleReceiveTodayClick(income)}
+                            >
+                              <DollarSign className="mr-1 h-3 w-3" />
+                              Receive Today
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex justify-end space-x-2 pt-2 border-t">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => onEditIncome?.(income)}
-                  >
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </Button>
-                  {income.status === 'pending' && (
-                    <Button 
-                      size="sm" 
-                      className="bg-gradient-primary px-6"
-                      onClick={() => handleReceiveTodayClick(income)}
-                    >
-                      <DollarSign className="mr-2 h-4 w-4" />
-                      Receive Today
-                    </Button>
-                  )}
                 </div>
               </div>
             ))
