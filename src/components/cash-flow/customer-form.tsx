@@ -17,11 +17,7 @@ interface CustomerFormProps {
 export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerFormProps) => {
   const [formData, setFormData] = useState({
     name: "",
-    category: "",
-    paymentTerms: "immediate",
-    netTermsDays: "30",
-    customNetDays: "",
-    notes: ""
+    category: ""
   });
 
   const categories = [
@@ -33,31 +29,13 @@ export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerForm
     "Other"
   ];
 
-  const paymentTermsOptions = [
-    { value: 'immediate', label: 'Immediate Payment' },
-    { value: 'net', label: 'Net Terms' }
-  ];
-
-  const netTermsOptions = [
-    { value: '15', label: '15 Days' },
-    { value: '30', label: '30 Days' },
-    { value: '45', label: '45 Days' },
-    { value: '60', label: '60 Days' },
-    { value: 'custom', label: 'Custom Days' }
-  ];
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     const customer = {
       id: Date.now().toString(),
       name: formData.name,
-      category: formData.category,
-      paymentTerms: formData.paymentTerms,
-      netTermsDays: formData.paymentTerms === 'net' ? 
-        (formData.netTermsDays === 'custom' ? formData.customNetDays : formData.netTermsDays) : 
-        undefined,
-      notes: formData.notes
+      category: formData.category
     };
     
     onAddCustomer(customer);
@@ -70,11 +48,7 @@ export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerForm
     // Reset form
     setFormData({
       name: "",
-      category: "",
-      paymentTerms: "immediate",
-      netTermsDays: "30",
-      customNetDays: "",
-      notes: ""
+      category: ""
     });
   };
 
@@ -93,7 +67,7 @@ export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerForm
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Customer Name</Label>
+            <Label htmlFor="name">Customer Name *</Label>
             <Input
               id="name"
               placeholder="Enter customer name"
@@ -117,76 +91,6 @@ export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerForm
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          <div className="space-y-4">
-            <Label>Payment Terms</Label>
-            <div className="space-y-3">
-              {paymentTermsOptions.map((option) => (
-                <div key={option.value} className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id={option.value}
-                    name="paymentTerms"
-                    value={option.value}
-                    checked={formData.paymentTerms === option.value}
-                    onChange={(e) => handleInputChange("paymentTerms", e.target.value)}
-                    className="w-4 h-4 text-primary bg-gray-100 border-gray-300 focus:ring-primary"
-                  />
-                  <Label htmlFor={option.value} className="text-sm font-normal cursor-pointer">
-                    {option.label}
-                  </Label>
-                </div>
-              ))}
-            </div>
-
-            {formData.paymentTerms === 'net' && (
-              <div className="space-y-2 pl-6">
-                <Label htmlFor="netTermsDays">Net Terms</Label>
-                <div className="space-y-3">
-                  {netTermsOptions.map((option) => (
-                    <div key={option.value} className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        id={`net-${option.value}`}
-                        name="netTermsDays"
-                        value={option.value}
-                        checked={formData.netTermsDays === option.value}
-                        onChange={(e) => handleInputChange("netTermsDays", e.target.value)}
-                        className="w-4 h-4 text-primary bg-gray-100 border-gray-300 focus:ring-primary"
-                      />
-                      <Label htmlFor={`net-${option.value}`} className="text-sm font-normal cursor-pointer">
-                        {option.label}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-                
-                {formData.netTermsDays === 'custom' && (
-                  <div className="mt-2">
-                    <Label htmlFor="customNetDays">Custom Days</Label>
-                    <Input
-                      id="customNetDays"
-                      type="number"
-                      placeholder="Enter number of days"
-                      value={formData.customNetDays}
-                      onChange={(e) => handleInputChange("customNetDays", e.target.value)}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (Optional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Additional notes about customer"
-              value={formData.notes}
-              onChange={(e) => handleInputChange("notes", e.target.value)}
-              rows={3}
-            />
           </div>
           
           <div className="flex space-x-3 pt-4">
