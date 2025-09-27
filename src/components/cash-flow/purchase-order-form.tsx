@@ -259,64 +259,100 @@ export const PurchaseOrderForm = ({
             </DialogTitle>
           </DialogHeader>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Vendor Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="vendor">Vendor *</Label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <div className="relative">
-                    <Input
-                      placeholder="Search or select vendor..."
-                      value={vendorSearchTerm}
-                      onChange={(e) => {
-                        setVendorSearchTerm(e.target.value);
-                        setShowVendorDropdown(true);
-                        // Clear selection if user is typing
-                        if (e.target.value !== formData.vendor) {
-                          setFormData(prev => ({ ...prev, vendor: "", vendorId: "" }));
-                        }
-                      }}
-                      onFocus={() => setShowVendorDropdown(true)}
-                      className="pr-8"
-                    />
-                    <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          {/* Step 1: Vendor Selection */}
+          {!formData.vendorId && (
+            <div className="space-y-4">
+              <div className="text-center py-4">
+                <h3 className="text-lg font-semibold mb-2">Select a Vendor</h3>
+                <p className="text-sm text-muted-foreground">Choose a vendor to create a purchase order</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="vendor">Vendor *</Label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <div className="relative">
+                      <Input
+                        placeholder="Search or select vendor..."
+                        value={vendorSearchTerm}
+                        onChange={(e) => {
+                          setVendorSearchTerm(e.target.value);
+                          setShowVendorDropdown(true);
+                        }}
+                        onFocus={() => setShowVendorDropdown(true)}
+                        className="pr-8"
+                      />
+                      <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    </div>
+                    
+                    {showVendorDropdown && (
+                      <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                        {filteredVendors.length === 0 ? (
+                          <div className="p-3 text-sm text-muted-foreground text-center">
+                            No vendors found
+                          </div>
+                        ) : (
+                          filteredVendors.map((vendor) => (
+                            <div
+                              key={vendor.id}
+                              className="p-2 hover:bg-accent cursor-pointer text-sm border-b last:border-b-0"
+                              onClick={() => handleVendorSelect(vendor)}
+                            >
+                              <div className="font-medium">{vendor.name}</div>
+                              {vendor.category && (
+                                <div className="text-xs text-muted-foreground">{vendor.category}</div>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </div>
                   
-                  {showVendorDropdown && (
-                    <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                      {filteredVendors.length === 0 ? (
-                        <div className="p-3 text-sm text-muted-foreground text-center">
-                          No vendors found
-                        </div>
-                      ) : (
-                        filteredVendors.map((vendor) => (
-                          <div
-                            key={vendor.id}
-                            className="p-2 hover:bg-accent cursor-pointer text-sm border-b last:border-b-0"
-                            onClick={() => handleVendorSelect(vendor)}
-                          >
-                            <div className="font-medium">{vendor.name}</div>
-                            {vendor.category && (
-                              <div className="text-xs text-muted-foreground">{vendor.category}</div>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setShowVendorForm(true)}
+                    className="px-3"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-                
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setShowVendorForm(true)}
-                  className="px-3"
-                >
-                  <Plus className="h-4 w-4" />
+              </div>
+              
+              <div className="flex justify-end pt-4">
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancel
                 </Button>
               </div>
             </div>
+          )}
+
+          {/* Step 2: Purchase Order Details */}
+          {formData.vendorId && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Selected Vendor Display */}
+              <div className="p-3 bg-accent/20 rounded-lg border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{formData.vendor}</div>
+                    {formData.category && (
+                      <div className="text-sm text-muted-foreground">{formData.category}</div>
+                    )}
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, vendor: "", vendorId: "" }));
+                      setVendorSearchTerm("");
+                    }}
+                  >
+                    Change Vendor
+                  </Button>
+                </div>
+              </div>
 
             {/* PO Name */}
             <div className="space-y-2">
@@ -581,6 +617,7 @@ export const PurchaseOrderForm = ({
               </Button>
             </div>
           </form>
+        )}
         </DialogContent>
       </Dialog>
 
