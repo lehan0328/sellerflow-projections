@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { addDays, isToday, isBefore, startOfDay } from "date-fns";
+import { addDays, isToday, isBefore, startOfDay, format } from "date-fns";
 import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
 import { OverviewStats } from "@/components/cash-flow/overview-stats";
@@ -171,13 +171,22 @@ const Dashboard = () => {
     const amount = typeof orderData.amount === 'string' ? 
       parseFloat(orderData.amount) : orderData.amount;
     
-    console.info("Deducting cash amount:", amount);
-    console.info("Previous total cash:", totalCash);
+    const dueDate = orderData.dueDate || new Date();
+    const today = startOfDay(new Date());
+    const dueDateStartOfDay = startOfDay(dueDate);
     
-    const newTotalCash = totalCash - amount;
-    await updateTotalCash(newTotalCash);
-    
-    console.info("New total cash:", newTotalCash);
+    // Only deduct cash if due date is today or in the past
+    if (dueDateStartOfDay <= today) {
+      console.info("Due date is today or past - deducting cash amount:", amount);
+      console.info("Previous total cash:", totalCash);
+      
+      const newTotalCash = totalCash - amount;
+      await updateTotalCash(newTotalCash);
+      
+      console.info("New total cash:", newTotalCash);
+    } else {
+      console.info("Due date is in the future - not deducting cash yet. Due:", format(dueDate, "PPP"));
+    }
 
     // Always create a separate vendor entry for each purchase order
     const paymentSchedule = orderData.paymentSchedule || [];
@@ -230,7 +239,7 @@ const Dashboard = () => {
       vendorId: vendor?.id,
       transactionDate: new Date(),
       dueDate: orderData.dueDate,
-      status: 'completed'
+      status: dueDateStartOfDay <= today ? 'completed' : 'pending'
     });
 
     // Don't create cash flow events since vendors automatically generate calendar events
