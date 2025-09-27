@@ -16,7 +16,6 @@ import { useIncome } from "@/hooks/useIncome";
 
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
-import { useUserSettings } from "@/hooks/useUserSettings";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 
 // ========== Type Definitions ==========
@@ -245,6 +244,11 @@ const Dashboard = () => {
       recurringFrequency: updatedIncomeData.recurringFrequency,
       notes: updatedIncomeData.notes
     });
+
+    if (success) {
+      setShowEditIncomeForm(false);
+      setEditingIncome(null);
+    }
   };
 
   const handleIncomeSubmit = async (incomeData: any) => {
