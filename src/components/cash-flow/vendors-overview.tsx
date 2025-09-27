@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter } from "lucide-react";
+import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { VendorOrderDetailModal } from "./vendor-order-detail-modal";
@@ -110,6 +110,16 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
       // User is typing/searching - clear selected vendor and use as search term
       setSelectedVendor('');
       setSearchTerm(value);
+    }
+  };
+
+  const handleDeleteVendor = async (vendor: Vendor) => {
+    try {
+      await deleteVendor(vendor.id);
+      refetch();
+      onVendorUpdate?.();
+    } catch (error) {
+      console.error('Error deleting vendor:', error);
     }
   };
 
@@ -343,7 +353,7 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
                       <span className="font-medium text-foreground ml-2">
                         ${(vendor.totalOwed || 0).toLocaleString()}
                       </span>
-                      <div className="ml-auto">
+                      <div className="ml-auto flex items-center space-x-2">
                         <Button 
                           variant="outline" 
                           size="sm"
@@ -352,6 +362,34 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
                           <Edit className="mr-1 h-3 w-3" />
                           Edit Order
                         </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Vendor Order</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this vendor order for {vendor.name}? This action cannot be undone and will remove the ${(vendor.totalOwed || 0).toLocaleString()} transaction.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteVendor(vendor)}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                Delete Order
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                     {vendor.nextPaymentDate && (
