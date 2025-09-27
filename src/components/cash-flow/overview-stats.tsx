@@ -1,12 +1,12 @@
+import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
-import { creditCards } from "./credit-cards";
+import { useCreditCards } from "@/hooks/useCreditCards";
 
 interface OverviewStatsProps {
   totalCash?: number;
@@ -35,6 +35,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
   const [isSyncing, setIsSyncing] = useState(false);
   
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
+  const { totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
   
   // Calculate dynamic values based on events
   const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
@@ -112,10 +113,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
   });
   const upcomingTotal = upcomingPayments.reduce((sum, payment) => sum + payment.amount, 0);
   
-  // Calculate credit card totals
-  const totalCreditBalance = creditCards.reduce((sum, card) => sum + card.balance, 0);
-  const totalCreditLimit = creditCards.reduce((sum, card) => sum + card.limit, 0);
-  const totalAvailableCredit = creditCards.reduce((sum, card) => sum + Math.max(0, card.limit - card.balance), 0);
+  // Calculate credit utilization
   const creditUtilization = totalCreditLimit > 0 ? (totalCreditBalance / totalCreditLimit) * 100 : 0;
   
   const getCreditVariant = () => {

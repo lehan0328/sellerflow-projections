@@ -2,57 +2,44 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { CreditCard, Calendar, AlertTriangle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CreditCard, Calendar, AlertTriangle, Settings, Plus, Edit, Trash2 } from "lucide-react";
+import { useCreditCards } from "@/hooks/useCreditCards";
+import { useState } from "react";
+import { toast } from "sonner";
 
-interface CreditCardAccount {
-  id: string;
-  name: string;
-  accountNumber: string;
+interface CreditCardFormData {
+  institution_name: string;
+  account_name: string;
   balance: number;
-  limit: number;
-  availableCredit: number;
-  priority: number;
-  paymentDue: string;
-  statementClose: string;
+  credit_limit: number;
+  minimum_payment: number;
+  payment_due_date?: string;
+  statement_close_date?: string;
+  annual_fee: number;
+  interest_rate: number;
 }
 
-export const creditCards: CreditCardAccount[] = [
-  {
-    id: "1",
-    name: "Bank of America CORP Account - Business Adv Unlimited Cash Rewards",
-    accountNumber: "2678",
-    balance: 1893.22,
-    limit: 4500.00,
-    availableCredit: 2606.78,
-    priority: 1,
-    paymentDue: "4th of the month",
-    statementClose: "8th of the month",
-  },
-  {
-    id: "2",
-    name: "American Express Blue Business Plus Card",
-    accountNumber: "6008",
-    balance: 13049.91,
-    limit: 13000.00,
-    availableCredit: -49.91,
-    priority: 1,
-    paymentDue: "7th of the month",
-    statementClose: "13th of the month",
-  },
-  {
-    id: "3",
-    name: "American Express Business Gold Card",
-    accountNumber: "1002",
-    balance: 7098.73,
-    limit: 4200.00,
-    availableCredit: 0,
-    priority: 2,
-    paymentDue: "12th of the month",
-    statementClose: "14th of the month",
-  },
-];
-
 export function CreditCards() {
+  const { creditCards, isLoading, totalCreditLimit, totalBalance, totalAvailableCredit, addCreditCard, updateCreditCard, removeCreditCard } = useCreditCards();
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingCard, setEditingCard] = useState<any>(null);
+  const [formData, setFormData] = useState<CreditCardFormData>({
+    institution_name: '',
+    account_name: '',
+    balance: 0,
+    credit_limit: 0,
+    minimum_payment: 0,
+    payment_due_date: '',
+    statement_close_date: '',
+    annual_fee: 0,
+    interest_rate: 0,
+  });
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -70,60 +57,88 @@ export function CreditCards() {
     return "default";
   };
 
-  const getPriorityColor = (priority: number) => {
-    switch (priority) {
-      case 1:
-        return "destructive";
-      case 2:
-        return "secondary";
-      default:
-        return "default";
+  const resetForm = () => {
+    setFormData({
+      institution_name: '',
+      account_name: '',
+      balance: 0,
+      credit_limit: 0,
+      minimum_payment: 0,
+      payment_due_date: '',
+      statement_close_date: '',
+      annual_fee: 0,
+      interest_rate: 0,
+    });
+  };
+
+  const handleAddCard = async () => {
+    const success = await addCreditCard({
+      ...formData,
+      available_credit: formData.credit_limit - formData.balance,
+      account_type: 'credit',
+      currency_code: 'USD',
+      last_sync: new Date().toISOString(),
+      is_active: true,
+    });
+
+    if (success) {
+      setShowAddDialog(false);
+      resetForm();
     }
   };
 
-  // Export function to get credit card due date events
-  const getCreditCardDueDates = () => {
-    const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth();
-    const events = [];
+  const handleEditCard = (card: any) => {
+    setEditingCard(card);
+    setFormData({
+      institution_name: card.institution_name,
+      account_name: card.account_name,
+      balance: card.balance,
+      credit_limit: card.credit_limit,
+      minimum_payment: card.minimum_payment,
+      payment_due_date: card.payment_due_date || '',
+      statement_close_date: card.statement_close_date || '',
+      annual_fee: card.annual_fee,
+      interest_rate: card.interest_rate,
+    });
+    setShowEditDialog(true);
+  };
 
-    creditCards.forEach(card => {
-      // Parse payment due day from string like "4th of the month"
-      const dayMatch = card.paymentDue.match(/(\d+)/);
-      if (dayMatch) {
-        const dueDay = parseInt(dayMatch[1]);
-        
-        // Calculate realistic minimum payment (2.5% of balance or $25, whichever is higher)
-        const baseMinPayment = Math.max(card.balance * 0.025, 25);
-        
-        // Add events for next 6 months with varying amounts
-        for (let monthOffset = 0; monthOffset < 6; monthOffset++) {
-          const dueDate = new Date(currentYear, currentMonth + monthOffset, dueDay);
-          
-          // Add some realistic monthly variation to minimum payments
-          const variationFactor = 0.8 + (Math.sin(monthOffset * 0.5) * 0.3); // Varies between 0.8x to 1.1x
-          const monthlyPayment = Math.round(baseMinPayment * variationFactor);
-          
-          // Occasionally make larger payments (25% chance)
-          const isLargerPayment = Math.random() < 0.25;
-          const finalPayment = isLargerPayment 
-            ? Math.round(monthlyPayment * (2 + Math.random())) // 2x to 3x larger payment
-            : monthlyPayment;
+  const handleUpdateCard = async () => {
+    if (!editingCard) return;
 
-          events.push({
-            id: `cc-due-${card.id}-${monthOffset}`,
-            type: 'credit-payment' as const,
-            amount: finalPayment,
-            description: `${card.name.split(' ')[0]} ${card.name.split(' ')[1] || 'Card'} Min Payment`,
-            creditCard: card.name,
-            date: dueDate
-          });
-        }
-      }
+    const success = await updateCreditCard(editingCard.id, {
+      ...formData,
+      available_credit: formData.credit_limit - formData.balance,
     });
 
-    return events;
+    if (success) {
+      setShowEditDialog(false);
+      setEditingCard(null);
+      resetForm();
+    }
   };
+
+  const handleDeleteCard = async (cardId: string) => {
+    if (confirm('Are you sure you want to remove this credit card?')) {
+      await removeCreditCard(cardId);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Card className="shadow-card">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <CreditCard className="h-5 w-5 text-primary" />
+            <span>Credit Cards</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">Loading credit cards...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="shadow-card">
@@ -133,137 +148,311 @@ export function CreditCards() {
             <CreditCard className="h-5 w-5 text-primary" />
             <CardTitle>Credit Cards</CardTitle>
           </div>
-          <div className="text-sm text-muted-foreground">
-            Total Available: <span className="font-semibold text-finance-positive">{formatCurrency(creditCards.reduce((sum, card) => sum + Math.max(0, card.availableCredit), 0))}</span>
+          <div className="flex items-center space-x-4">
+            <div className="text-sm text-muted-foreground">
+              Total Available: <span className="font-semibold text-finance-positive">{formatCurrency(totalAvailableCredit)}</span>
+            </div>
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Card
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Credit Card</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="institution_name">Institution</Label>
+                      <Input
+                        id="institution_name"
+                        value={formData.institution_name}
+                        onChange={(e) => setFormData({...formData, institution_name: e.target.value})}
+                        placeholder="Chase, American Express, etc."
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="account_name">Account Name</Label>
+                      <Input
+                        id="account_name"
+                        value={formData.account_name}
+                        onChange={(e) => setFormData({...formData, account_name: e.target.value})}
+                        placeholder="Business Card, Rewards Card, etc."
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="balance">Current Balance</Label>
+                      <Input
+                        id="balance"
+                        type="number"
+                        value={formData.balance}
+                        onChange={(e) => setFormData({...formData, balance: parseFloat(e.target.value) || 0})}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="credit_limit">Credit Limit</Label>
+                      <Input
+                        id="credit_limit"
+                        type="number"
+                        value={formData.credit_limit}
+                        onChange={(e) => setFormData({...formData, credit_limit: parseFloat(e.target.value) || 0})}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="minimum_payment">Minimum Payment</Label>
+                      <Input
+                        id="minimum_payment"
+                        type="number"
+                        value={formData.minimum_payment}
+                        onChange={(e) => setFormData({...formData, minimum_payment: parseFloat(e.target.value) || 0})}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="interest_rate">Interest Rate (%)</Label>
+                      <Input
+                        id="interest_rate"
+                        type="number"
+                        step="0.01"
+                        value={formData.interest_rate}
+                        onChange={(e) => setFormData({...formData, interest_rate: parseFloat(e.target.value) || 0})}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="payment_due_date">Payment Due Date</Label>
+                      <Input
+                        id="payment_due_date"
+                        type="date"
+                        value={formData.payment_due_date}
+                        onChange={(e) => setFormData({...formData, payment_due_date: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="annual_fee">Annual Fee</Label>
+                      <Input
+                        id="annual_fee"
+                        type="number"
+                        value={formData.annual_fee}
+                        onChange={(e) => setFormData({...formData, annual_fee: parseFloat(e.target.value) || 0})}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleAddCard}>
+                      Add Card
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {creditCards.map((card) => {
-          const utilizationPercentage = getUtilizationPercentage(card.balance, card.limit);
-          const isOverLimit = card.availableCredit < 0;
-          
-          return (
-            <div
-              key={card.id}
-              className="rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card"
-            >
-              <div className="space-y-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <h4 className="font-semibold text-sm leading-tight">
-                        {card.name}
-                      </h4>
-                      <Badge variant="outline" className="text-xs">
-                        {card.accountNumber}
-                      </Badge>
-                      {card.priority && (
-                        <Badge variant={getPriorityColor(card.priority)} className="text-xs">
-                          Priority {card.priority}
-                        </Badge>
-                      )}
+        {creditCards.length === 0 ? (
+          <div className="text-center py-8">
+            <CreditCard className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground mb-4">No credit cards added yet</p>
+            <Button onClick={() => setShowAddDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Your First Card
+            </Button>
+          </div>
+        ) : (
+          creditCards.map((card) => {
+            const utilizationPercentage = getUtilizationPercentage(card.balance, card.credit_limit);
+            const isOverLimit = card.available_credit < 0;
+            
+            return (
+              <div
+                key={card.id}
+                className="rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <h4 className="font-semibold text-sm leading-tight">
+                          {card.institution_name} - {card.account_name}
+                        </h4>
+                        {card.masked_account_number && (
+                          <Badge variant="outline" className="text-xs">
+                            *{card.masked_account_number.slice(-4)}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                        {card.payment_due_date && (
+                          <span className="flex items-center">
+                            <Calendar className="mr-1 h-3 w-3" />
+                            Due: {new Date(card.payment_due_date).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                      <span className="flex items-center">
-                        <Calendar className="mr-1 h-3 w-3" />
-                        Due: {card.paymentDue}
+                    <div className="flex items-center space-x-2">
+                      {isOverLimit && (
+                        <AlertTriangle className="h-5 w-5 text-destructive" />
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEditCard(card)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteCard(card.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Utilization</span>
+                      <span className="text-sm text-muted-foreground">
+                        {utilizationPercentage.toFixed(1)}%
                       </span>
                     </div>
+                    <Progress 
+                      value={utilizationPercentage} 
+                      className="h-2"
+                    />
                   </div>
-                  {isOverLimit && (
-                    <AlertTriangle className="h-5 w-5 text-destructive" />
-                  )}
-                </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Utilization</span>
-                    <span className="text-sm text-muted-foreground">
-                      {utilizationPercentage.toFixed(1)}%
-                    </span>
-                  </div>
-                  <Progress 
-                    value={utilizationPercentage} 
-                    className="h-2"
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Balance</p>
-                    <p className="font-semibold text-finance-negative">
-                      {formatCurrency(card.balance)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Limit</p>
-                    <p className="font-semibold">
-                      {formatCurrency(card.limit)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Available</p>
-                    <p className={`font-semibold ${
-                      card.availableCredit < 0 ? 'text-finance-negative' : 'text-finance-positive'
-                    }`}>
-                      {formatCurrency(card.availableCredit)}
-                    </p>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Balance</p>
+                      <p className="font-semibold text-finance-negative">
+                        {formatCurrency(card.balance)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Limit</p>
+                      <p className="font-semibold">
+                        {formatCurrency(card.credit_limit)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Available</p>
+                      <p className={`font-semibold ${
+                        card.available_credit < 0 ? 'text-finance-negative' : 'text-finance-positive'
+                      }`}>
+                        {formatCurrency(card.available_credit)}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
+            );
+          })
+        )}
+
+        {/* Edit Dialog */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Credit Card</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit_institution_name">Institution</Label>
+                  <Input
+                    id="edit_institution_name"
+                    value={formData.institution_name}
+                    onChange={(e) => setFormData({...formData, institution_name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_account_name">Account Name</Label>
+                  <Input
+                    id="edit_account_name"
+                    value={formData.account_name}
+                    onChange={(e) => setFormData({...formData, account_name: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit_balance">Current Balance</Label>
+                  <Input
+                    id="edit_balance"
+                    type="number"
+                    value={formData.balance}
+                    onChange={(e) => setFormData({...formData, balance: parseFloat(e.target.value) || 0})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_credit_limit">Credit Limit</Label>
+                  <Input
+                    id="edit_credit_limit"
+                    type="number"
+                    value={formData.credit_limit}
+                    onChange={(e) => setFormData({...formData, credit_limit: parseFloat(e.target.value) || 0})}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit_minimum_payment">Minimum Payment</Label>
+                  <Input
+                    id="edit_minimum_payment"
+                    type="number"
+                    value={formData.minimum_payment}
+                    onChange={(e) => setFormData({...formData, minimum_payment: parseFloat(e.target.value) || 0})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_interest_rate">Interest Rate (%)</Label>
+                  <Input
+                    id="edit_interest_rate"
+                    type="number"
+                    step="0.01"
+                    value={formData.interest_rate}
+                    onChange={(e) => setFormData({...formData, interest_rate: parseFloat(e.target.value) || 0})}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleUpdateCard}>
+                  Update Card
+                </Button>
+              </div>
             </div>
-          );
-        })}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
 }
 
-// Export the credit card due date events generator
+// Export the credit card due date events generator - now uses database data
 export const getCreditCardDueDates = () => {
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth();
-  const events = [];
-
-  creditCards.forEach(card => {
-    // Parse payment due day from string like "4th of the month"
-    const dayMatch = card.paymentDue.match(/(\d+)/);
-    if (dayMatch) {
-      const dueDay = parseInt(dayMatch[1]);
-      
-      // Calculate realistic minimum payment (2.5% of balance or $25, whichever is higher)
-      const baseMinPayment = Math.max(card.balance * 0.025, 25);
-      
-      // Add events for next 6 months with varying amounts
-      for (let monthOffset = 0; monthOffset < 6; monthOffset++) {
-        const dueDate = new Date(currentYear, currentMonth + monthOffset, dueDay);
-        
-        // Add some realistic monthly variation to minimum payments
-        const variationFactor = 0.8 + (Math.sin(monthOffset * 0.5) * 0.3); // Varies between 0.8x to 1.1x
-        const monthlyPayment = Math.round(baseMinPayment * variationFactor);
-        
-        // Occasionally make larger payments (25% chance)
-        const isLargerPayment = Math.random() < 0.25;
-        const finalPayment = isLargerPayment 
-          ? Math.round(monthlyPayment * (2 + Math.random())) // 2x to 3x larger payment
-          : monthlyPayment;
-
-        events.push({
-          id: `cc-due-${card.id}-${monthOffset}`,
-          type: 'credit-payment' as const,
-          amount: finalPayment,
-          description: `${card.name.split(' ')[0]} ${card.name.split(' ')[1] || 'Card'} Min Payment`,
-          creditCard: card.name,
-          date: dueDate
-        });
-        
-        // Debug log to verify correct date and amount calculation
-        console.log(`Credit Card Payment: ${card.name.split(' ')[0]} due ${dueDate.toDateString()} - $${finalPayment}`);
-      }
-    }
-  });
-
-  console.log(`Generated ${events.length} credit card payment events for next 6 months`);
-  return events;
+  // This will need to be called from a component that has access to the creditCards data
+  // For now, return empty array as this functionality should be moved to the dashboard
+  return [];
 };
