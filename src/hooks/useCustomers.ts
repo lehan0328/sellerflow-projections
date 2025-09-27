@@ -76,6 +76,27 @@ export const useCustomers = () => {
     }
   };
 
+  const deleteAllCustomers = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('customers')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setCustomers([]);
+      toast.success('All customers deleted successfully');
+    } catch (error) {
+      console.error('Error deleting all customers:', error);
+      toast.error('Failed to delete all customers');
+      throw error;
+    }
+  };
+
   useEffect(() => {
     fetchCustomers();
   }, []);
@@ -84,6 +105,7 @@ export const useCustomers = () => {
     customers,
     loading,
     addCustomer,
+    deleteAllCustomers,
     refetch: fetchCustomers
   };
 };

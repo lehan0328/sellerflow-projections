@@ -10,7 +10,8 @@ import {
   Bell,
   Settings,
   ShoppingCart,
-  MessageSquare
+  MessageSquare,
+  Users
 } from "lucide-react";
 
 const navigationItems = [
@@ -33,6 +34,11 @@ const navigationItems = [
     id: 'vendors',
     label: 'Vendor Management',
     icon: Building2,
+  },
+  {
+    id: 'customers',
+    label: 'Customer Management',
+    icon: Users,
   },
   {
     id: 'amazon',

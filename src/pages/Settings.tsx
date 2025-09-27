@@ -32,6 +32,7 @@ import { CreditCardManagement } from "@/components/settings/credit-card-manageme
 import { VendorManagement } from "@/components/settings/vendor-management";
 import { AmazonManagement } from "@/components/settings/amazon-management";
 import { BankAccountManagement } from "@/components/settings/bank-account-management";
+import { CustomerManagement } from "@/components/settings/customer-management";
 import { FeatureRequest } from "@/components/settings/feature-request";
 
 const Settings = () => {
@@ -408,6 +409,8 @@ const Settings = () => {
         return <BankAccountManagement />;
       case 'vendors':
         return <VendorManagement />;
+      case 'customers':
+        return <CustomerManagement />;
       case 'amazon':
         return <AmazonManagement />;
       case 'credit-cards':
