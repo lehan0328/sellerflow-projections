@@ -25,9 +25,9 @@ const navigationItems = [
     icon: Building2,
   },
   {
-    id: 'feature-request',
-    label: 'Feature Request',
-    icon: MessageSquare,
+    id: 'credit-cards',
+    label: 'Credit Cards',
+    icon: CreditCard,
   },
   {
     id: 'vendors',
@@ -43,11 +43,6 @@ const navigationItems = [
     id: 'appearance',
     label: 'Appearance',
     icon: Palette,
-  },
-  {
-    id: 'credit-cards',
-    label: 'Credit Cards',
-    icon: CreditCard,
   },
   {
     id: 'financial',
@@ -68,6 +63,11 @@ const navigationItems = [
     id: 'security',
     label: 'Security',
     icon: Shield,
+  },
+  {
+    id: 'feature-request',
+    label: 'Feature Request',
+    icon: MessageSquare,
   },
 ];
 
