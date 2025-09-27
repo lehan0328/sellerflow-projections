@@ -18,11 +18,17 @@ export interface Transaction {
 interface TransactionLogProps {
   transactions: Transaction[];
   onUndoTransaction: (transactionId: string) => void;
+  onDeleteTransaction?: (transactionId: string) => void;
 }
 
-export const TransactionLog = ({ transactions, onUndoTransaction }: TransactionLogProps) => {
+export const TransactionLog = ({ transactions, onUndoTransaction, onDeleteTransaction }: TransactionLogProps) => {
   const handleDelete = (transaction: Transaction) => {
-    onUndoTransaction(transaction.id);
+    // Use dedicated delete function if provided, otherwise fall back to undo
+    if (onDeleteTransaction) {
+      onDeleteTransaction(transaction.id);
+    } else {
+      onUndoTransaction(transaction.id);
+    }
     toast.success(`Deleted transaction: ${transaction.description}`);
   };
 

@@ -8,6 +8,10 @@ export default function TransactionLog() {
   const navigate = useNavigate();
   const { transactions, deleteTransaction } = useTransactions();
 
+  const handleDeleteTransaction = async (transactionId: string) => {
+    await deleteTransaction(transactionId);
+  };
+
   const handleUndoTransaction = (transactionId: string) => {
     deleteTransaction(transactionId);
   };
@@ -43,6 +47,7 @@ export default function TransactionLog() {
           <TransactionLogComponent
             transactions={formattedTransactions}
             onUndoTransaction={handleUndoTransaction}
+            onDeleteTransaction={handleDeleteTransaction}
           />
         </div>
       </div>

@@ -120,17 +120,33 @@ const Dashboard = () => {
     if (!transaction) return;
 
     // Note: In a real Plaid integration, this would reverse the bank transaction
-    // For now, we just update vendor status and remove the transaction
+    
+    // If this was an income transaction, deduct from total cash
+    if (transaction.type === 'sales_order') {
+      await updateTotalCash(-transaction.amount);
+    }
+    
+    // If this was a vendor payment, restore vendor balance
+    if (transaction.type === 'vendor_payment' && transaction.vendorId) {
+      const vendor = vendors.find(v => v.id === transaction.vendorId);
+      if (vendor) {
+        await updateVendor(transaction.vendorId, {
+          totalOwed: vendor.totalOwed + transaction.amount
+        });
+      }
+    }
 
-    // Remove transaction
+    // Remove transaction from database
     await deleteTransaction(transactionId);
     
     // Refresh vendors to show updated data
     refetchVendors();
     
-    // Remove corresponding cash flow event
+    // Remove corresponding cash flow event from calendar
     setCashFlowEvents(prev => prev.filter(e => 
-      !(e.description === transaction.description && e.amount === transaction.amount)
+      !(e.description === transaction.description && 
+        e.amount === transaction.amount &&
+        Math.abs(e.date.getTime() - transaction.transactionDate.getTime()) < 86400000) // Within 24 hours
     ));
   };
 
