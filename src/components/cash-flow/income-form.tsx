@@ -136,12 +136,11 @@ export const IncomeForm = ({
   };
 
   const incomeCategories = [
-    "Product Sales",
-    "Service Revenue", 
-    "Subscription",
-    "Consulting",
-    "License Fees",
-    "Investment Returns",
+    "Retail Partner",
+    "Wholesale Client", 
+    "Direct Consumer",
+    "B2B Customer",
+    "Distributor",
     "Other"
   ];
 
