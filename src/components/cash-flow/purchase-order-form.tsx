@@ -439,6 +439,40 @@ export const PurchaseOrderForm = ({
                 </div>
               </RadioGroup>
 
+              {/* Payment Due Date Display */}
+              {(() => {
+                const calculatedDueDate = calculateDueDate();
+                if (calculatedDueDate) {
+                  return (
+                    <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Payment Due Date:</span>
+                        <span className="text-sm font-semibold text-accent-foreground">
+                          {format(calculatedDueDate, "PPP")}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                } else if (formData.paymentType === "preorder") {
+                  return (
+                    <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
+                      <div className="text-sm font-medium text-center text-muted-foreground">
+                        Due dates will be set in payment schedule below
+                      </div>
+                    </div>
+                  );
+                } else if (formData.paymentType === "due-upon-delivery" && !formData.deliveryDate) {
+                  return (
+                    <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
+                      <div className="text-sm font-medium text-center text-muted-foreground">
+                        Select delivery date below to calculate due date
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
               {/* Net Terms Days */}
               {formData.paymentType === "net-terms" && (
                 <div className="space-y-2">
