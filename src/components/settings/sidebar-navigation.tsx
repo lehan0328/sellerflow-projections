@@ -25,6 +25,11 @@ const navigationItems = [
     icon: Building2,
   },
   {
+    id: 'feature-request',
+    label: 'Feature Request',
+    icon: MessageSquare,
+  },
+  {
     id: 'vendors',
     label: 'Vendor Management',
     icon: Building2,
@@ -63,11 +68,6 @@ const navigationItems = [
     id: 'security',
     label: 'Security',
     icon: Shield,
-  },
-  {
-    id: 'feature-request',
-    label: 'Feature Request',
-    icon: MessageSquare,
   },
 ];
 
