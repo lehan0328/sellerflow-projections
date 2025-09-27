@@ -11,6 +11,7 @@ import { CalendarIcon, Search, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { CustomerForm } from "./customer-form";
 
 interface Customer {
   id: string;
@@ -56,6 +57,7 @@ export const IncomeForm = ({
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
 
   // Filter customers based on search term and sort alphabetically
   const filteredCustomers = customers
@@ -105,6 +107,30 @@ export const IncomeForm = ({
     }));
     setCustomerSearchTerm(customer.name);
     setShowCustomerDropdown(false);
+  };
+
+  const handleAddCustomerFromForm = async (customerData: any) => {
+    if (onAddCustomer) {
+      try {
+        const newCustomer = await onAddCustomer({
+          name: customerData.name,
+          paymentTerms: customerData.paymentTerms,
+          netTermsDays: customerData.netTermsDays ? parseInt(customerData.netTermsDays) : undefined
+        });
+        
+        // Auto-select the new customer - use a temporary ID since we don't get the actual ID back
+        setFormData(prev => ({
+          ...prev,
+          customer: customerData.name,
+          customerId: `temp-${Date.now()}`
+        }));
+        
+        setCustomerSearchTerm(customerData.name);
+      } catch (error) {
+        console.error('Error adding customer:', error);
+      }
+    }
+    setShowCustomerForm(false);
   };
 
   const incomeCategories = [
@@ -218,7 +244,7 @@ export const IncomeForm = ({
                   <Button 
                     type="button" 
                     variant="outline" 
-                    onClick={() => {/* TODO: Add customer form */}}
+                    onClick={() => setShowCustomerForm(true)}
                     className="px-3"
                   >
                     <Plus className="h-4 w-4" />
@@ -373,6 +399,13 @@ export const IncomeForm = ({
           </>
         )}
       </DialogContent>
+      
+      {/* Customer Form Modal */}
+      <CustomerForm 
+        open={showCustomerForm}
+        onOpenChange={setShowCustomerForm}
+        onAddCustomer={handleAddCustomerFromForm}
+      />
     </Dialog>
   );
 };
