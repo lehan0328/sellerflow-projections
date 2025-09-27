@@ -8,7 +8,8 @@ import {
   Shield, 
   Building2,
   Bell,
-  Settings
+  Settings,
+  ShoppingCart
 } from "lucide-react";
 
 const navigationItems = [
@@ -21,6 +22,11 @@ const navigationItems = [
     id: 'vendors',
     label: 'Vendor Management',
     icon: Building2,
+  },
+  {
+    id: 'amazon',
+    label: 'Amazon Integration',
+    icon: ShoppingCart,
   },
   {
     id: 'appearance',
