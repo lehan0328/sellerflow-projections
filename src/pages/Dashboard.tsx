@@ -43,14 +43,19 @@ const Dashboard = () => {
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   
   // State for vendors used in forms (derived from database vendors) - always fresh data
-  const formVendors = useMemo(() => vendors.map(v => ({ 
-    id: v.id, 
-    name: v.name, 
-    paymentType: v.paymentType || 'total',
-    netTermsDays: (v.netTermsDays ?? '30') as any,
-    category: v.category || "",
-    source: v.source || 'unknown'
-  })), [vendors]); // Recompute when vendors change
+  const formVendors = useMemo(() => {
+    console.log('Dashboard - Creating formVendors from vendors:', vendors);
+    const result = vendors.map(v => ({ 
+      id: v.id, 
+      name: v.name, 
+      paymentType: v.paymentType || 'total',
+      netTermsDays: (v.netTermsDays ?? '30') as any,
+      category: v.category || "",
+      source: v.source || 'unknown'
+    }));
+    console.log('Dashboard - formVendors result:', result);
+    return result;
+  }, [vendors]); // Recompute when vendors change
   
   // Force refresh vendors when opening Purchase Order form to ensure fresh data
   const handleOpenPurchaseOrderForm = () => {

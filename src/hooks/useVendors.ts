@@ -51,10 +51,14 @@ export const useVendors = () => {
         return;
       }
 
+      console.log('Fetching vendors for user:', user.id);
+      
       const { data, error } = await supabase
         .from('vendors')
         .select('*')
         .order('created_at', { ascending: false });
+
+      console.log('Vendors query result:', { data, error });
 
       if (error) {
         console.error('Supabase error fetching vendors:', error);
@@ -80,6 +84,7 @@ export const useVendors = () => {
         updated_at: vendor.updated_at
       })) || [];
 
+      console.log('Formatted vendors:', formattedVendors);
       setVendors(formattedVendors);
     } catch (error) {
       console.error('Error fetching vendors:', error);

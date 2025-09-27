@@ -38,8 +38,12 @@ interface PaymentSchedule {
 }
 
 export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, onAddVendor }: PurchaseOrderFormProps) => {
+  // Debug logging
+  console.log('PurchaseOrderForm - received vendors:', vendors);
+
   // Get unique vendors for dropdown (no duplicates) - prioritize management vendors
   const uniqueVendors = useMemo(() => {
+    console.log('PurchaseOrderForm - processing vendors:', vendors);
     const vendorMap = new Map();
     
     // Sort vendors to prioritize: 1) management over purchase_order, 2) latest updates
@@ -70,6 +74,8 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
     // Convert to array and sort alphabetically by name
     const uniqueVendorsList = Array.from(vendorMap.values());
     uniqueVendorsList.sort((a, b) => a.name.localeCompare(b.name));
+    
+    console.log('PurchaseOrderForm - uniqueVendorsList:', uniqueVendorsList);
     
     return uniqueVendorsList;
   }, [vendors]);

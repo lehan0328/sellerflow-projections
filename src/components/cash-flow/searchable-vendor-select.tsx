@@ -27,10 +27,14 @@ export const SearchableVendorSelect = ({
 }: SearchableVendorSelectProps) => {
   const [open, setOpen] = useState(false);
 
+  console.log('SearchableVendorSelect - vendors:', vendors, 'value:', value);
+
   // Find selected vendor
   const selectedVendor = vendors.find(vendor => vendor.id === value);
+  console.log('SearchableVendorSelect - selectedVendor:', selectedVendor);
 
   const handleSelect = (vendorId: string) => {
+    console.log('SearchableVendorSelect - handleSelect called with:', vendorId);
     onValueChange(vendorId);
     setOpen(false);
   };
