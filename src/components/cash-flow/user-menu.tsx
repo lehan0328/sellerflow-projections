@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Settings, CreditCard, LogOut, RotateCcw } from "lucide-react";
+import { Settings, CreditCard, LogOut, RotateCcw, Building2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -88,6 +88,14 @@ export function UserMenu() {
         <DropdownMenuItem onClick={() => navigate('/settings')}>
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/manage-accounts')}>
+          <Building2 className="mr-2 h-4 w-4" />
+          <span>Manage Bank Accounts</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/manage-credit-cards')}>
+          <CreditCard className="mr-2 h-4 w-4" />
+          <span>Manage Credit Cards</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate('/upgrade-plan')}>
           <CreditCard className="mr-2 h-4 w-4" />

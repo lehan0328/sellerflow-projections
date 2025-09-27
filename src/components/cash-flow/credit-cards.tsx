@@ -147,6 +147,15 @@ export function CreditCards() {
           <div className="flex items-center space-x-2">
             <CreditCard className="h-5 w-5 text-primary" />
             <CardTitle>Credit Cards</CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.location.href = '/manage-credit-cards'}
+              className="ml-4"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Manage
+            </Button>
           </div>
           <div className="flex items-center space-x-4">
             <div className="text-sm text-muted-foreground">
@@ -156,7 +165,7 @@ export function CreditCards() {
               <DialogTrigger asChild>
                 <Button size="sm" variant="outline">
                   <Plus className="h-4 w-4 mr-1" />
-                  Add Card
+                  Quick Add
                 </Button>
               </DialogTrigger>
               <DialogContent>
@@ -269,9 +278,9 @@ export function CreditCards() {
           <div className="text-center py-8">
             <CreditCard className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-muted-foreground mb-4">No credit cards added yet</p>
-            <Button onClick={() => setShowAddDialog(true)}>
+            <Button onClick={() => window.location.href = '/manage-credit-cards'}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Your First Card
+              Connect Your First Card
             </Button>
           </div>
         ) : (
