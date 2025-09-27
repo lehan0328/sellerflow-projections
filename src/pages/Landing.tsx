@@ -152,31 +152,31 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+      <nav className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50 animate-fade-in">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center">
+            <div className="flex items-center space-x-2 animate-scale-in">
+              <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center hover-scale transition-all duration-300 hover:rotate-12">
                 <DollarSign className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent hover:scale-105 transition-transform duration-200">
                 CashFlow Pro
               </span>
             </div>
             <div className="hidden md:flex items-center space-x-6">
-              <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
+              <a href="#features" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
                 Features
               </a>
-              <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
+              <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
                 Pricing
               </a>
-              <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">
+              <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
                 Reviews
               </a>
-              <Button variant="outline" size="sm" onClick={() => navigate('/auth')}>
+              <Button variant="outline" size="sm" className="hover-scale transition-all duration-200" onClick={() => navigate('/auth')}>
                 Sign In
               </Button>
-              <Button size="sm" className="bg-gradient-primary" onClick={() => navigate('/auth')}>
+              <Button size="sm" className="bg-gradient-primary hover-scale animate-pulse hover:animate-none transition-all duration-200" onClick={() => navigate('/auth')}>
                 Start Free Trial
               </Button>
             </div>
@@ -186,49 +186,90 @@ const Landing = () => {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden py-20 lg:py-32">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
+        {/* Animated Background */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
+          <div className="absolute top-20 left-20 w-72 h-72 bg-primary/20 rounded-full blur-3xl animate-pulse opacity-20" />
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse opacity-30" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-primary/10 to-accent/10 rounded-full blur-3xl animate-pulse opacity-10" style={{ animationDelay: '2s' }} />
+        </div>
+        
         <div className="container relative mx-auto px-4">
           <div className="text-center space-y-8">
-            <Badge variant="secondary" className="inline-flex items-center space-x-2">
-              <Star className="h-4 w-4 fill-current" />
+            <Badge 
+              variant="secondary" 
+              className="inline-flex items-center space-x-2 animate-fade-in hover-scale transition-all duration-300 hover:bg-primary/10"
+            >
+              <Star className="h-4 w-4 fill-current animate-pulse" />
               <span>Trusted by 1,000+ Amazon Sellers</span>
             </Badge>
             
-            <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
-              Cash Flow Management
-              <span className="block bg-gradient-primary bg-clip-text text-transparent">
-                Built for Amazon Sellers
-              </span>
-            </h1>
+            <div className="animate-fade-in space-y-6" style={{ animationDelay: '200ms' }}>
+              <h1 className="text-4xl lg:text-7xl font-bold leading-tight">
+                <span className="inline-block hover:scale-105 transition-transform duration-300">Cash Flow Management</span>
+                <span className="block bg-gradient-primary bg-clip-text text-transparent animate-pulse hover:animate-none">
+                  Built for Amazon Sellers
+                </span>
+              </h1>
+            </div>
             
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            <p 
+              className="text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed" 
+              style={{ animationDelay: '400ms' }}
+            >
               Forecast your Amazon cash flow months in advance. Get accurate payout predictions, 
               optimize your credit utilization, and never run out of cash for inventory again.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" className="bg-gradient-primary text-lg px-8" onClick={() => navigate('/auth')}>
+            <div 
+              className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-fade-in" 
+              style={{ animationDelay: '600ms' }}
+            >
+              <Button 
+                size="lg" 
+                className="bg-gradient-primary text-lg px-8 py-4 hover-scale animate-pulse hover:animate-none transition-all duration-300 hover:shadow-lg hover:shadow-primary/25" 
+                onClick={() => navigate('/auth')}
+              >
                 Start 7-Day Free Trial
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
               </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8" onClick={() => navigate('/demo')}>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="text-lg px-8 py-4 hover-scale transition-all duration-300 hover:bg-primary/5 hover:border-primary/30" 
+                onClick={() => navigate('/demo')}
+              >
                 See Live Demo
               </Button>
             </div>
             
-            <div className="flex items-center justify-center space-x-8 text-sm text-muted-foreground">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4 text-success" />
+            <div 
+              className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-muted-foreground animate-fade-in" 
+              style={{ animationDelay: '800ms' }}
+            >
+              <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
+                <CheckCircle className="h-4 w-4 text-success animate-pulse" />
                 <span>No credit card required</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4 text-success" />
+              <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
+                <CheckCircle className="h-4 w-4 text-success animate-pulse" style={{ animationDelay: '0.5s' }} />
                 <span>Setup in 5 minutes</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4 text-success" />
+              <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
+                <CheckCircle className="h-4 w-4 text-success animate-pulse" style={{ animationDelay: '1s' }} />
                 <span>Cancel anytime</span>
               </div>
+            </div>
+            
+            {/* Floating Elements */}
+            <div className="absolute top-10 left-10 animate-pulse opacity-20">
+              <DollarSign className="h-12 w-12 text-primary" />
+            </div>
+            <div className="absolute top-32 right-16 animate-pulse opacity-20" style={{ animationDelay: '1s' }}>
+              <TrendingUp className="h-16 w-16 text-accent" />
+            </div>
+            <div className="absolute bottom-20 left-16 animate-pulse opacity-20" style={{ animationDelay: '2s' }}>
+              <ShoppingCart className="h-14 w-14 text-primary" />
             </div>
           </div>
         </div>
