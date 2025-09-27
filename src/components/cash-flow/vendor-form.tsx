@@ -12,9 +12,10 @@ interface VendorFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddVendor: (vendor: any) => void;
+  existingVendors?: Array<{ name: string; id: string; }>;
 }
 
-export const VendorForm = ({ open, onOpenChange, onAddVendor }: VendorFormProps) => {
+export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = [] }: VendorFormProps) => {
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -48,6 +49,16 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor }: VendorFormProps)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check for duplicate vendor name
+    const duplicateVendor = existingVendors.find(
+      vendor => vendor.name.toLowerCase() === formData.name.toLowerCase()
+    );
+    
+    if (duplicateVendor) {
+      toast.error(`Vendor "${formData.name}" already exists. Please use a different name.`);
+      return;
+    }
     
     const vendor = {
       id: Date.now().toString(),

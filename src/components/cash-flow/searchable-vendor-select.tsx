@@ -29,6 +29,9 @@ export const SearchableVendorSelect = ({
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Debug logs
+  console.log("SearchableVendorSelect render - vendors:", vendors.length, "value:", value);
+
   // Filter vendors based on search term
   const filteredVendors = useMemo(() => {
     if (!searchTerm) return vendors;
@@ -41,20 +44,32 @@ export const SearchableVendorSelect = ({
   const selectedVendor = vendors.find(vendor => vendor.id === value);
 
   const handleSelect = (vendorId: string) => {
-    console.log("Vendor selected:", vendorId);
+    console.log("Vendor selected:", vendorId, "calling onValueChange");
     onValueChange(vendorId);
     setOpen(false);
     setSearchTerm("");
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    console.log("Popover open state changing to:", newOpen);
+    setOpen(newOpen);
+    if (!newOpen) {
+      setSearchTerm("");
+    }
+  };
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
           aria-expanded={open}
           className={cn("justify-between", className)}
+          onClick={() => {
+            console.log("Trigger clicked, current open:", open);
+            setOpen(!open);
+          }}
         >
           <span className="truncate">
             {selectedVendor ? selectedVendor.name : placeholder}
@@ -62,19 +77,24 @@ export const SearchableVendorSelect = ({
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-background border border-border shadow-elevated z-[100] backdrop-blur-sm">
-        <div className="flex items-center border-b px-3 py-2">
+      <PopoverContent 
+        className="w-[--radix-popover-trigger-width] p-0 bg-popover text-popover-foreground border border-border shadow-lg z-[200] backdrop-blur-sm"
+        sideOffset={4}
+        align="start"
+        avoidCollisions={true}
+      >
+        <div className="flex items-center border-b px-3 py-2 bg-background/95">
           <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
           <Input
             placeholder="Search vendors..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
             onKeyDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           />
         </div>
-        <ScrollArea className="max-h-64">
+        <ScrollArea className="max-h-64 bg-popover">
           {filteredVendors.length === 0 ? (
             <div className="py-6 text-center text-sm text-muted-foreground">
               No vendors found.
@@ -92,6 +112,7 @@ export const SearchableVendorSelect = ({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    console.log("Item clicked:", vendor.id, vendor.name);
                     handleSelect(vendor.id);
                   }}
                 >

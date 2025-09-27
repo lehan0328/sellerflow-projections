@@ -751,6 +751,7 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
         open={showVendorForm}
         onOpenChange={setShowVendorForm}
         onAddVendor={handleAddVendorFromForm}
+        existingVendors={uniqueVendors}
       />
     </Dialog>
   );
