@@ -1,31 +1,32 @@
-import { useMemo, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SearchableVendorSelect } from "./searchable-vendor-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CalendarIcon, Plus, Trash2 } from "lucide-react";
+import { CalendarIcon, Plus, Trash2, Search } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { VendorForm } from "./vendor-form";
+import { cn } from "@/lib/utils";
+
+interface Vendor {
+  id: string;
+  name: string;
+  paymentType?: string;
+  netTermsDays?: string | number;
+  category?: string;
+}
 
 interface PurchaseOrderFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  vendors: Array<{
-    id: string;
-    name: string;
-    paymentType: string;
-    netTermsDays?: string;
-    category?: string;
-    source?: string;
-  }>;
+  vendors: Vendor[];
   onSubmitOrder: (orderData: any) => void;
   onAddVendor?: (vendorData: any) => void;
 }
@@ -37,53 +38,17 @@ interface PaymentSchedule {
   description: string;
 }
 
-export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, onAddVendor }: PurchaseOrderFormProps) => {
-  // Debug logging
-  console.log('PurchaseOrderForm - received vendors:', vendors);
-
-  // Get unique vendors for dropdown (no duplicates) - prioritize management vendors
-  const uniqueVendors = useMemo(() => {
-    console.log('PurchaseOrderForm - processing vendors:', vendors);
-    const vendorMap = new Map();
-    
-    // Sort vendors to prioritize: 1) management over purchase_order, 2) latest updates
-    const sortedVendors = [...vendors].sort((a, b) => {
-      // First priority: source (management > purchase_order)
-      const sourceWeight = { 'management': 2, 'purchase_order': 1 };
-      const aSourceWeight = sourceWeight[a.source as keyof typeof sourceWeight] || 0;
-      const bSourceWeight = sourceWeight[b.source as keyof typeof sourceWeight] || 0;
-      
-      if (aSourceWeight !== bSourceWeight) {
-        return bSourceWeight - aSourceWeight; // Higher weight first
-      }
-      
-      // Second priority: payment type preference (for same source)
-      const paymentPriority = { 'net-terms': 3, 'preorder': 2, 'total': 1 };
-      const aPriority = paymentPriority[a.paymentType as keyof typeof paymentPriority] || 0;
-      const bPriority = paymentPriority[b.paymentType as keyof typeof paymentPriority] || 0;
-      return bPriority - aPriority;
-    });
-    
-    // Keep only the first (best) vendor for each name
-    sortedVendors.forEach(vendor => {
-      if (!vendorMap.has(vendor.name)) {
-        vendorMap.set(vendor.name, vendor);
-      }
-    });
-    
-    // Convert to array and sort alphabetically by name
-    const uniqueVendorsList = Array.from(vendorMap.values());
-    uniqueVendorsList.sort((a, b) => a.name.localeCompare(b.name));
-    
-    console.log('PurchaseOrderForm - uniqueVendorsList:', uniqueVendorsList);
-    
-    return uniqueVendorsList;
-  }, [vendors]);
-
+export const PurchaseOrderForm = ({ 
+  open, 
+  onOpenChange, 
+  vendors, 
+  onSubmitOrder, 
+  onAddVendor 
+}: PurchaseOrderFormProps) => {
   const [formData, setFormData] = useState({
     poName: "",
     vendor: "",
-    vendorId: "", // Add vendor ID tracking
+    vendorId: "",
     amount: "",
     poDate: new Date(),
     dueDate: undefined as Date | undefined,
@@ -100,21 +65,113 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
     { id: "1", amount: "", dueDate: undefined, description: "Initial deposit" }
   ]);
 
-  const [isMainDatePickerOpen, setIsMainDatePickerOpen] = useState(false);
+  const [showVendorForm, setShowVendorForm] = useState(false);
+  const [showVendorDropdown, setShowVendorDropdown] = useState(false);
+  const [vendorSearchTerm, setVendorSearchTerm] = useState("");
+
+  // Date picker states
   const [isPODatePickerOpen, setIsPODatePickerOpen] = useState(false);
+  const [isDueDatePickerOpen, setIsDueDatePickerOpen] = useState(false);
   const [isDeliveryDatePickerOpen, setIsDeliveryDatePickerOpen] = useState(false);
   const [openPaymentDatePickers, setOpenPaymentDatePickers] = useState<Record<string, boolean>>({});
-  const [showVendorForm, setShowVendorForm] = useState(false);
-
 
   const categories = [
     "Inventory",
-    "Packaging Materials",
+    "Packaging Materials", 
     "Marketing/PPC",
     "Shipping & Logistics",
     "Professional Services",
     "Other"
   ];
+
+  // Filter vendors based on search term
+  const filteredVendors = vendors.filter(vendor =>
+    vendor.name.toLowerCase().includes(vendorSearchTerm.toLowerCase())
+  );
+
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (open) {
+      setFormData({
+        poName: "",
+        vendor: "",
+        vendorId: "",
+        amount: "",
+        poDate: new Date(),
+        dueDate: undefined,
+        deliveryDate: undefined,
+        description: "",
+        category: "",
+        notes: "",
+        paymentType: "due-upon-order",
+        netTermsDays: "30",
+        customDays: ""
+      });
+      setPaymentSchedule([{ id: "1", amount: "", dueDate: undefined, description: "Initial deposit" }]);
+      setVendorSearchTerm("");
+    }
+  }, [open]);
+
+  const handleVendorSelect = (vendor: Vendor) => {
+    console.log('Selected vendor:', vendor);
+    
+    setFormData(prev => ({
+      ...prev,
+      vendor: vendor.name,
+      vendorId: vendor.id,
+      category: vendor.category || "",
+      paymentType: mapVendorPaymentType(vendor.paymentType),
+      netTermsDays: mapNetTermsDays(vendor.netTermsDays),
+      customDays: isCustomNetTerms(vendor.netTermsDays) ? vendor.netTermsDays?.toString() || "" : ""
+    }));
+    
+    setVendorSearchTerm(vendor.name);
+    setShowVendorDropdown(false);
+  };
+
+  const mapVendorPaymentType = (vendorPaymentType?: string): "due-upon-order" | "net-terms" | "preorder" | "due-upon-delivery" => {
+    switch (vendorPaymentType) {
+      case 'net-terms':
+        return 'net-terms';
+      case 'preorder':
+        return 'preorder';
+      case 'due-upon-delivery':
+        return 'due-upon-delivery';
+      default:
+        return 'due-upon-order';
+    }
+  };
+
+  const mapNetTermsDays = (days?: string | number): "30" | "60" | "90" | "custom" => {
+    const dayString = days?.toString();
+    if (dayString === "30" || dayString === "60" || dayString === "90") {
+      return dayString as "30" | "60" | "90";
+    }
+    return dayString ? "custom" : "30";
+  };
+
+  const isCustomNetTerms = (days?: string | number): boolean => {
+    const dayString = days?.toString();
+    return dayString ? !["30", "60", "90"].includes(dayString) : false;
+  };
+
+  const calculateDueDate = (): Date | undefined => {
+    switch (formData.paymentType) {
+      case "due-upon-order":
+        return formData.poDate;
+      case "net-terms":
+        const days = formData.netTermsDays === "custom" 
+          ? parseInt(formData.customDays) || 0 
+          : parseInt(formData.netTermsDays);
+        return addDays(formData.poDate, days);
+      case "due-upon-delivery":
+        return formData.deliveryDate;
+      case "preorder":
+        return undefined; // Due dates are in payment schedule
+      default:
+        return formData.poDate;
+    }
+  };
 
   const addPayment = () => {
     const newPayment: PaymentSchedule = {
@@ -138,27 +195,14 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
     ));
   };
 
-  const calculateDueDate = () => {
-    switch (formData.paymentType) {
-      case "due-upon-order":
-        return formData.poDate;
-      case "net-terms":
-        const days = formData.netTermsDays === "custom" 
-          ? parseInt(formData.customDays) || 0 
-          : parseInt(formData.netTermsDays);
-        return addDays(formData.poDate, days);
-      case "due-upon-delivery":
-        return formData.deliveryDate;
-      case "preorder":
-        return undefined; // For preorder, due dates are in payment schedule
-      default:
-        return formData.poDate;
-    }
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.poName || !formData.vendor || !formData.amount) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
     const calculatedDueDate = calculateDueDate();
     
     const orderData = {
@@ -171,594 +215,383 @@ export const PurchaseOrderForm = ({ open, onOpenChange, vendors, onSubmitOrder, 
     onSubmitOrder(orderData);
     toast.success(`Purchase Order "${formData.poName}" created successfully!`);
     onOpenChange(false);
-    // Reset form
-    setFormData({
-      poName: "",
-      vendor: "",
-      vendorId: "",
-      amount: "",
-      poDate: new Date(),
-      dueDate: undefined,
-      deliveryDate: undefined,
-      description: "",
-      category: "",
-      notes: "",
-      paymentType: "due-upon-order",
-      netTermsDays: "30",
-      customDays: ""
-    });
-    setPaymentSchedule([{ id: "1", amount: "", dueDate: undefined, description: "Initial deposit" }]);
-  };
-
-  const handleInputChange = (field: string, value: string | Date) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleVendorChange = (vendorId: string) => {
-    console.log("Vendor change triggered with ID:", vendorId);
-    console.log("Current form vendorId:", formData.vendorId);
-    
-    // Find vendor by ID (more reliable than name)
-    const selectedVendor = uniqueVendors.find(v => v.id === vendorId) || vendors.find(v => v.id === vendorId);
-    
-    console.log("Selected vendor ID:", vendorId, selectedVendor);
-    
-    if (selectedVendor) {
-      // Map vendor payment type to form payment type with comprehensive mapping
-      let mappedPaymentType: "due-upon-order" | "net-terms" | "preorder" | "due-upon-delivery" = "due-upon-order";
-      
-      // Handle all possible database payment types
-      switch (selectedVendor.paymentType) {
-        case 'total':
-          mappedPaymentType = "due-upon-order";
-          break;
-        case 'net-terms':
-          mappedPaymentType = "net-terms";
-          break;
-        case 'preorder':
-          mappedPaymentType = "preorder";
-          break;
-        case 'due-upon-delivery':
-          mappedPaymentType = "due-upon-delivery";
-          break;
-        case 'due-upon-order':
-          mappedPaymentType = "due-upon-order";
-          break;
-        default:
-          // Fallback for any other values
-          mappedPaymentType = "due-upon-order";
-          console.warn("Unknown payment type:", selectedVendor.paymentType, "defaulting to due-upon-order");
-      }
-      
-      console.log("Payment type mapping:", {
-        original: selectedVendor.paymentType,
-        mapped: mappedPaymentType,
-        netTermsDays: selectedVendor.netTermsDays
-      });
-      
-      // Map vendor category to available categories with better matching
-      let mappedCategory = selectedVendor.category || "";
-      if (mappedCategory) {
-        // Only map if category is not already in the available list
-        if (!categories.includes(mappedCategory)) {
-          const categoryLower = mappedCategory.toLowerCase();
-          if (categoryLower.includes('inventory')) {
-            mappedCategory = "Inventory";
-          } else if (categoryLower.includes('packaging') || categoryLower.includes('material')) {
-            mappedCategory = "Packaging Materials";
-          } else if (categoryLower.includes('marketing') || categoryLower.includes('ppc') || categoryLower.includes('advertising')) {
-            mappedCategory = "Marketing/PPC";
-          } else if (categoryLower.includes('shipping') || categoryLower.includes('logistics') || categoryLower.includes('freight')) {
-            mappedCategory = "Shipping & Logistics";
-          } else if (categoryLower.includes('professional') || categoryLower.includes('service') || categoryLower.includes('consulting')) {
-            mappedCategory = "Professional Services";
-          } else {
-            mappedCategory = "Other";
-          }
-        }
-      }
-
-      console.log("Category mapping:", {
-        original: selectedVendor.category,
-        mapped: mappedCategory
-      });
-
-      // Ensure netTermsDays is properly mapped
-      let netTermsDays: "30" | "60" | "90" | "custom" = "30";
-      if (selectedVendor.netTermsDays) {
-        const days = selectedVendor.netTermsDays.toString();
-        if (["30", "60", "90"].includes(days)) {
-          netTermsDays = days as "30" | "60" | "90";
-        } else {
-          netTermsDays = "custom";
-        }
-      }
-
-      setFormData(prev => ({ 
-        ...prev, 
-        vendor: selectedVendor.name, // Still use name for display
-        vendorId: selectedVendor.id, // Add ID for proper selection tracking
-        category: mappedCategory,
-        paymentType: mappedPaymentType,
-        netTermsDays: netTermsDays,
-        customDays: netTermsDays === "custom" ? selectedVendor.netTermsDays?.toString() || "" : ""
-      }));
-      
-      console.log("Form updated with:", {
-        vendor: selectedVendor.name,
-        category: mappedCategory,
-        paymentType: mappedPaymentType,
-        netTermsDays: netTermsDays
-      });
-      
-      // Set default deposit for preorder vendors
-      if (mappedPaymentType === 'preorder') {
-        setPaymentSchedule([{ 
-          id: "1", 
-          amount: "", 
-          dueDate: undefined, 
-          description: "Initial deposit" 
-        }]);
-      }
-    } else {
-      console.error("Vendor not found for ID:", vendorId);
-      // Reset vendor field but keep other data
-      setFormData(prev => ({ ...prev, vendor: "", vendorId: "" }));
-    }
   };
 
   const handleAddVendorFromForm = (vendorData: any) => {
     if (onAddVendor) {
-      // Calculate due date based on payment terms
-      let dueDate = new Date();
-      if (vendorData.paymentType === 'net-terms' && vendorData.netTermsDays) {
-        const days = parseInt(vendorData.netTermsDays);
-        dueDate = new Date();
-        dueDate.setDate(dueDate.getDate() + days);
-      }
-      
-      // Create complete vendor object with all required fields
       const completeVendorData = {
         name: vendorData.name,
         category: vendorData.category || '',
-        paymentType: vendorData.paymentType,
+        paymentType: vendorData.paymentType || 'total',
         netTermsDays: vendorData.netTermsDays,
         totalOwed: 0,
-        nextPaymentDate: dueDate,
+        nextPaymentDate: new Date(),
         nextPaymentAmount: 0,
         status: 'upcoming' as const,
-        source: 'management' as const  // Changed to 'management' so it appears in Vendor Management
+        source: 'management' as const
       };
-      
-      console.log("Adding vendor with complete data:", completeVendorData);
       
       onAddVendor(completeVendorData);
       
-      // Map vendor payment type to form payment type
-      let mappedPaymentType: "due-upon-order" | "net-terms" | "preorder" | "due-upon-delivery" = "due-upon-order";
-      
-      if (vendorData.paymentType === 'total') {
-        mappedPaymentType = "due-upon-order";
-      } else if (vendorData.paymentType === 'net-terms') {
-        mappedPaymentType = "net-terms";
-      } else if (vendorData.paymentType === 'preorder') {
-        mappedPaymentType = "preorder";
-      }
-      
-      // Auto-select the newly created vendor with proper category mapping
-      let mappedCategory = vendorData.category || "";
-      if (mappedCategory && !categories.includes(mappedCategory)) {
-        const categoryLower = mappedCategory.toLowerCase();
-        if (categoryLower.includes('inventory')) {
-          mappedCategory = "Inventory";
-        } else if (categoryLower.includes('packaging') || categoryLower.includes('material')) {
-          mappedCategory = "Packaging Materials";
-        } else if (categoryLower.includes('marketing') || categoryLower.includes('ppc') || categoryLower.includes('advertising')) {
-          mappedCategory = "Marketing/PPC";
-        } else if (categoryLower.includes('shipping') || categoryLower.includes('logistics') || categoryLower.includes('freight')) {
-          mappedCategory = "Shipping & Logistics";
-        } else if (categoryLower.includes('professional') || categoryLower.includes('service') || categoryLower.includes('consulting')) {
-          mappedCategory = "Professional Services";
-        } else {
-          mappedCategory = "Other";
-        }
-      }
-
-      // Ensure netTermsDays is properly mapped
-      let netTermsDays: "30" | "60" | "90" | "custom" = "30";
-      let customDays = "";
-      if (vendorData.netTermsDays) {
-        const days = vendorData.netTermsDays.toString();
-        if (["30", "60", "90"].includes(days)) {
-          netTermsDays = days as "30" | "60" | "90";
-        } else {
-          netTermsDays = "custom";
-          customDays = days;
-        }
-      }
-
-      setFormData(prev => ({ 
-        ...prev, 
+      // Auto-select the new vendor
+      setFormData(prev => ({
+        ...prev,
         vendor: vendorData.name,
-        vendorId: `temp-${Date.now()}`, // Temporary ID for new vendors
-        category: mappedCategory,
-        paymentType: mappedPaymentType,
-        netTermsDays: netTermsDays,
-        customDays: customDays
+        vendorId: `temp-${Date.now()}`,
+        category: vendorData.category || "",
+        paymentType: mapVendorPaymentType(vendorData.paymentType),
+        netTermsDays: mapNetTermsDays(vendorData.netTermsDays),
+        customDays: isCustomNetTerms(vendorData.netTermsDays) ? vendorData.netTermsDays?.toString() || "" : ""
       }));
+      
+      setVendorSearchTerm(vendorData.name);
     }
     setShowVendorForm(false);
   };
 
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
-            Add Purchase Order
-          </DialogTitle>
-        </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="vendor">Vendor</Label>
-            <div className="flex gap-2">
-              <SearchableVendorSelect
-                vendors={uniqueVendors}
-                value={formData.vendorId}
-                onValueChange={(value) => {
-                  console.log("SearchableVendorSelect onValueChange called with:", value);
-                  handleVendorChange(value);
-                }}
-                placeholder="Search vendors..."
-                className="flex-1"
-              />
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setShowVendorForm(true)}
-                className="px-3"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="poName">PO Name *</Label>
-            <Input
-              id="poName"
-              placeholder="e.g., Q1 Inventory Restock"
-              value={formData.poName}
-              onChange={(e) => handleInputChange("poName", e.target.value)}
-              required
-            />
-          </div>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              Add Purchase Order
+            </DialogTitle>
+          </DialogHeader>
           
-          <div className="space-y-2">
-            <Label>PO Date *</Label>
-            <Popover open={isPODatePickerOpen} onOpenChange={setIsPODatePickerOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.poDate ? format(formData.poDate, "PPP") : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={formData.poDate}
-                  onSelect={(date) => {
-                    handleInputChange("poDate", date || new Date());
-                    setIsPODatePickerOpen(false);
-                  }}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <div className="space-y-3">
-            <Label>Payment Terms</Label>
-            <RadioGroup 
-              value={formData.paymentType} 
-              onValueChange={(value) => handleInputChange("paymentType", value)}
-              className="flex flex-col space-y-2"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="due-upon-order" id="due-upon-order" />
-                <Label htmlFor="due-upon-order">Due Upon Order</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="net-terms" id="net-terms" />
-                <Label htmlFor="net-terms">Net Terms (30, 60, 90 days)</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="preorder" id="preorder" />
-                <Label htmlFor="preorder">Pre-order with Deposit</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="due-upon-delivery" id="due-upon-delivery" />
-                <Label htmlFor="due-upon-delivery">Due Upon Delivery</Label>
-              </div>
-            </RadioGroup>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="amount">Total Amount ($)</Label>
-            <Input
-              id="amount"
-              type="number"
-              placeholder="0.00"
-              value={formData.amount}
-              onChange={(e) => handleInputChange("amount", e.target.value)}
-              required
-            />
-          </div>
-
-          {formData.paymentType === "due-upon-order" && (
-            <div className="p-3 bg-muted rounded-lg">
-              <p className="text-sm text-muted-foreground">
-                <strong>Due Date:</strong> {format(formData.poDate, "PPP")} (same as PO date)
-              </p>
-            </div>
-          )}
-
-          {formData.paymentType === "net-terms" ? (
-            <div className="space-y-3">
-              <Label>Net Terms</Label>
-              <RadioGroup 
-                value={formData.netTermsDays} 
-                onValueChange={(value) => handleInputChange("netTermsDays", value)}
-                className="flex flex-wrap gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="30" id="net30" />
-                  <Label htmlFor="net30">Net 30</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="60" id="net60" />
-                  <Label htmlFor="net60">Net 60</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="90" id="net90" />
-                  <Label htmlFor="net90">Net 90</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="custom" id="custom" />
-                  <Label htmlFor="custom">Custom</Label>
-                </div>
-              </RadioGroup>
-
-              {formData.netTermsDays === "custom" && (
-                <div className="space-y-2">
-                  <Label htmlFor="customDays">Custom Days</Label>
-                  <Input
-                    id="customDays"
-                    type="number"
-                    placeholder="Enter days"
-                    value={formData.customDays}
-                    onChange={(e) => handleInputChange("customDays", e.target.value)}
-                    required
-                  />
-                </div>
-              )}
-
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  <strong>Due Date:</strong> {(() => {
-                    const days = formData.netTermsDays === "custom" 
-                      ? parseInt(formData.customDays) || 0 
-                      : parseInt(formData.netTermsDays);
-                    const dueDate = addDays(formData.poDate, days);
-                    return format(dueDate, "PPP");
-                  })()} ({formData.netTermsDays === "custom" ? formData.customDays : formData.netTermsDays} days from PO date)
-                </p>
-              </div>
-            </div>
-          ) : formData.paymentType === "due-upon-delivery" ? (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Vendor Selection */}
             <div className="space-y-2">
-              <Label>Delivery Date *</Label>
-              <Popover open={isDeliveryDatePickerOpen} onOpenChange={setIsDeliveryDatePickerOpen}>
+              <Label htmlFor="vendor">Vendor *</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <div className="relative">
+                    <Input
+                      placeholder="Search or select vendor..."
+                      value={vendorSearchTerm}
+                      onChange={(e) => {
+                        setVendorSearchTerm(e.target.value);
+                        setShowVendorDropdown(true);
+                        // Clear selection if user is typing
+                        if (e.target.value !== formData.vendor) {
+                          setFormData(prev => ({ ...prev, vendor: "", vendorId: "" }));
+                        }
+                      }}
+                      onFocus={() => setShowVendorDropdown(true)}
+                      className="pr-8"
+                    />
+                    <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  </div>
+                  
+                  {showVendorDropdown && (
+                    <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                      {filteredVendors.length === 0 ? (
+                        <div className="p-3 text-sm text-muted-foreground text-center">
+                          No vendors found
+                        </div>
+                      ) : (
+                        filteredVendors.map((vendor) => (
+                          <div
+                            key={vendor.id}
+                            className="p-2 hover:bg-accent cursor-pointer text-sm border-b last:border-b-0"
+                            onClick={() => handleVendorSelect(vendor)}
+                          >
+                            <div className="font-medium">{vendor.name}</div>
+                            {vendor.category && (
+                              <div className="text-xs text-muted-foreground">{vendor.category}</div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowVendorForm(true)}
+                  className="px-3"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* PO Name */}
+            <div className="space-y-2">
+              <Label htmlFor="poName">PO Name *</Label>
+              <Input
+                id="poName"
+                placeholder="e.g., Q1 Inventory Restock"
+                value={formData.poName}
+                onChange={(e) => setFormData(prev => ({ ...prev, poName: e.target.value }))}
+                required
+              />
+            </div>
+
+            {/* Amount */}
+            <div className="space-y-2">
+              <Label htmlFor="amount">Total Amount *</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={formData.amount}
+                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                required
+              />
+            </div>
+            
+            {/* PO Date */}
+            <div className="space-y-2">
+              <Label>PO Date *</Label>
+              <Popover open={isPODatePickerOpen} onOpenChange={setIsPODatePickerOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className="w-full justify-start text-left font-normal"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.deliveryDate ? format(formData.deliveryDate, "PPP") : "Pick delivery date"}
+                    {formData.poDate ? format(formData.poDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
+                <PopoverContent className="w-auto p-0 z-50">
                   <Calendar
                     mode="single"
-                    selected={formData.deliveryDate}
+                    selected={formData.poDate}
                     onSelect={(date) => {
-                      handleInputChange("deliveryDate", date || new Date());
-                      setIsDeliveryDatePickerOpen(false);
+                      setFormData(prev => ({ ...prev, poDate: date || new Date() }));
+                      setIsPODatePickerOpen(false);
                     }}
                     initialFocus
-                    className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
-              {formData.deliveryDate && (
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    <strong>Due Date:</strong> {format(formData.deliveryDate, "PPP")} (same as delivery date)
-                  </p>
+            </div>
+
+            {/* Payment Terms */}
+            <div className="space-y-3">
+              <Label>Payment Terms</Label>
+              <RadioGroup 
+                value={formData.paymentType} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, paymentType: value as any }))}
+                className="grid grid-cols-2 gap-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="due-upon-order" id="due-upon-order" />
+                  <Label htmlFor="due-upon-order" className="text-sm">Due Upon Order</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="net-terms" id="net-terms" />
+                  <Label htmlFor="net-terms" className="text-sm">Net Terms</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="preorder" id="preorder" />
+                  <Label htmlFor="preorder" className="text-sm">Preorder</Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="due-upon-delivery" id="due-upon-delivery" />
+                  <Label htmlFor="due-upon-delivery" className="text-sm">Due Upon Delivery</Label>
+                </div>
+              </RadioGroup>
+
+              {/* Net Terms Days */}
+              {formData.paymentType === "net-terms" && (
+                <div className="space-y-2">
+                  <Label>Net Terms Days</Label>
+                  <Select value={formData.netTermsDays} onValueChange={(value) => setFormData(prev => ({ ...prev, netTermsDays: value as any }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="30">Net 30</SelectItem>
+                      <SelectItem value="60">Net 60</SelectItem>
+                      <SelectItem value="90">Net 90</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {formData.netTermsDays === "custom" && (
+                    <Input
+                      type="number"
+                      placeholder="Enter custom days"
+                      value={formData.customDays}
+                      onChange={(e) => setFormData(prev => ({ ...prev, customDays: e.target.value }))}
+                    />
+                  )}
+                </div>
+              )}
+
+              {/* Delivery Date for Due Upon Delivery */}
+              {formData.paymentType === "due-upon-delivery" && (
+                <div className="space-y-2">
+                  <Label>Delivery Date</Label>
+                  <Popover open={isDeliveryDatePickerOpen} onOpenChange={setIsDeliveryDatePickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.deliveryDate ? format(formData.deliveryDate, "PPP") : "Pick delivery date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 z-50">
+                      <Calendar
+                        mode="single"
+                        selected={formData.deliveryDate}
+                        onSelect={(date) => {
+                          setFormData(prev => ({ ...prev, deliveryDate: date }));
+                          setIsDeliveryDatePickerOpen(false);
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               )}
             </div>
-          ) : formData.paymentType === "preorder" ? (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="totalAmount">Total Order Amount ($)</Label>
-                <Input
-                  id="totalAmount"
-                  type="number"
-                  placeholder="0.00"
-                  value={formData.amount}
-                  onChange={(e) => handleInputChange("amount", e.target.value)}
-                  required
-                />
-              </div>
 
+            {/* Preorder Payment Schedule */}
+            {formData.paymentType === "preorder" && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label>Payment Schedule</Label>
-                  <Button type="button" size="sm" variant="outline" onClick={addPayment}>
+                  <Button type="button" onClick={addPayment} variant="outline" size="sm">
                     <Plus className="h-4 w-4 mr-1" />
                     Add Payment
                   </Button>
                 </div>
                 
-                {paymentSchedule.map((payment, index) => (
-                  <Card key={payment.id} className="p-4">
-                    <CardContent className="p-0 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-sm font-medium">Payment {index + 1}</h4>
-                        {paymentSchedule.length > 1 && (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => removePayment(payment.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label>Amount ($)</Label>
-                          <Input
-                            type="number"
-                            placeholder="0.00"
-                            value={payment.amount}
-                            onChange={(e) => updatePayment(payment.id, "amount", e.target.value)}
-                            required
-                          />
+                <div className="space-y-2">
+                  {paymentSchedule.map((payment, index) => (
+                    <Card key={payment.id}>
+                      <CardContent className="p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm">Payment {index + 1}</Label>
+                          {paymentSchedule.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removePayment(payment.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
-                        <div>
-                          <Label>Due Date</Label>
-                          <Popover 
-                            open={openPaymentDatePickers[payment.id] || false} 
-                            onOpenChange={(open) => setOpenPaymentDatePickers(prev => ({ ...prev, [payment.id]: open }))}
-                          >
-                            <PopoverTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="w-full justify-start text-left font-normal"
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {payment.dueDate ? format(payment.dueDate, "MMM d") : "Pick date"}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                              <Calendar
-                                mode="single"
-                                selected={payment.dueDate}
-                                onSelect={(date) => {
-                                  updatePayment(payment.id, "dueDate", date);
-                                  setOpenPaymentDatePickers(prev => ({ ...prev, [payment.id]: false }));
-                                }}
-                                initialFocus
-                                className="p-3 pointer-events-auto"
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label>Description</Label>
+                        
                         <Input
-                          placeholder={index === 0 ? "Initial deposit" : "Payment description"}
+                          placeholder="Description"
                           value={payment.description}
                           onChange={(e) => updatePayment(payment.id, "description", e.target.value)}
                         />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                        
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Amount"
+                          value={payment.amount}
+                          onChange={(e) => updatePayment(payment.id, "amount", e.target.value)}
+                        />
+                        
+                        <Popover 
+                          open={openPaymentDatePickers[payment.id]} 
+                          onOpenChange={(open) => setOpenPaymentDatePickers(prev => ({ ...prev, [payment.id]: open }))}
+                        >
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="w-full justify-start text-left font-normal"
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {payment.dueDate ? format(payment.dueDate, "PPP") : "Pick due date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 z-50">
+                            <Calendar
+                              mode="single"
+                              selected={payment.dueDate}
+                              onSelect={(date) => {
+                                updatePayment(payment.id, "dueDate", date);
+                                setOpenPaymentDatePickers(prev => ({ ...prev, [payment.id]: false }));
+                              }}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
-            </div>
-          ) : null}
-          
-          <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
-            <Select 
-              value={formData.category} 
-              onValueChange={(value) => {
-                console.log("Category manually changed to:", value);
-                handleInputChange("category", value);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map(category => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {formData.category && (
-              <p className="text-xs text-muted-foreground">
-                Current: {formData.category}
-              </p>
             )}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              placeholder="Brief description of the purchase"
-              value={formData.description}
-              onChange={(e) => handleInputChange("description", e.target.value)}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (Optional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Additional notes or details"
-              value={formData.notes}
-              onChange={(e) => handleInputChange("notes", e.target.value)}
-              rows={3}
-            />
-          </div>
-          
-          <div className="flex space-x-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1 bg-gradient-primary">
-              Add Purchase Order
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-      
-      <VendorForm 
-        open={showVendorForm}
-        onOpenChange={setShowVendorForm}
-        onAddVendor={handleAddVendorFromForm}
-        existingVendors={uniqueVendors}
-      />
-    </Dialog>
+
+            {/* Category */}
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(category => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="Brief description of the purchase order"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                rows={2}
+              />
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                placeholder="Additional notes or comments"
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                rows={2}
+              />
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                Create Purchase Order
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Vendor Dialog */}
+      {showVendorForm && (
+        <VendorForm
+          open={showVendorForm}
+          onOpenChange={setShowVendorForm}
+          onAddVendor={handleAddVendorFromForm}
+        />
+      )}
+    </>
   );
 };
