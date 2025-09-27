@@ -173,6 +173,9 @@ const Landing = () => {
               <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
                 Reviews
               </a>
+              <a href="/docs" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
+                Docs
+              </a>
               <Button variant="outline" size="sm" className="hover-scale transition-all duration-200" onClick={() => navigate('/auth')}>
                 Sign In
               </Button>

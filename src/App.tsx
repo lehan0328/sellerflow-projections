@@ -11,6 +11,10 @@ import UpgradePlan from "./pages/UpgradePlan";
 import TransactionLog from "./pages/TransactionLog";
 import ManageCreditCards from "./pages/ManageCreditCards";
 import NotFound from "./pages/NotFound";
+import Docs from "./pages/Docs";
+import DocsGettingStarted from "./pages/DocsGettingStarted";
+import DocsAmazonIntegration from "./pages/DocsAmazonIntegration";
+import DocsFAQ from "./pages/DocsFAQ";
 import { Auth } from "./pages/Auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -26,6 +30,10 @@ const App = () => (
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/demo" element={<DemoPage />} />
+          <Route path="/docs" element={<Docs />} />
+          <Route path="/docs/getting-started" element={<DocsGettingStarted />} />
+          <Route path="/docs/amazon-integration" element={<DocsAmazonIntegration />} />
+          <Route path="/docs/faq" element={<DocsFAQ />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
