@@ -1,9 +1,11 @@
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw } from "lucide-react";
 import { useState } from "react";
-
+import { toast } from "sonner";
+import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { creditCards } from "./credit-cards";
 
 interface OverviewStatsProps {
@@ -29,9 +31,45 @@ const timeRangeOptions = [
 export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance }: OverviewStatsProps) {
   const [incomingTimeRange, setIncomingTimeRange] = useState("7days");
   const [upcomingTimeRange, setUpcomingTimeRange] = useState("7days");
+  const [showSyncDialog, setShowSyncDialog] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  
+  const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   
   // Calculate dynamic values based on events
   const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
+  
+  // Check if balances match (within $1 tolerance)
+  const balanceMatches = Math.abs(totalCash - bankAccountBalance) < 1.00;
+  const balanceDifference = Math.abs(totalCash - bankAccountBalance);
+
+  const handleSyncRequest = () => {
+    if (accounts.length === 0) {
+      toast.error("No bank accounts connected. Please connect your accounts first.");
+      return;
+    }
+    setShowSyncDialog(true);
+  };
+
+  const handleConfirmSync = async () => {
+    setIsSyncing(true);
+    setShowSyncDialog(false);
+    
+    try {
+      // Simulate sync process
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      if (onUpdateCashBalance) {
+        onUpdateCashBalance();
+      }
+      
+      toast.success(`Cash balance synced with bank accounts: ${formatCurrency(bankAccountBalance)}`);
+    } catch (error) {
+      toast.error("Failed to sync with bank accounts");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
   
   // Helper function to get end date based on time range
   const getEndDate = (timeRange: string) => {
@@ -74,10 +112,6 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
   });
   const upcomingTotal = upcomingPayments.reduce((sum, payment) => sum + payment.amount, 0);
   
-  // Bank account balance (from bank-accounts.tsx sample data)
-  const bankAccountBalance = 14269.39 + 4.29; // Total from Bank of America + Bluevine
-  const balanceMatches = Math.abs(totalCash - bankAccountBalance) < 0.01;
-  
   // Calculate credit card totals
   const totalCreditBalance = creditCards.reduce((sum, card) => sum + card.balance, 0);
   const totalCreditLimit = creditCards.reduce((sum, card) => sum + card.limit, 0);
@@ -91,101 +125,139 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
   };
   
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-slate-600">Total Available Cash</p>
-              {!balanceMatches && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onUpdateCashBalance}
-                  className="h-6 w-6 p-0 text-orange-400 hover:text-orange-600"
-                  title={`The cash available does not match your synced bank account. Do you want to update?`}
-                >
-                  <AlertTriangle className="h-4 w-4" />
-                </Button>
-              )}
+    <>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-slate-600">Total Available Cash</p>
+                {!balanceMatches && accounts.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSyncRequest}
+                    disabled={isSyncing}
+                    className="h-6 w-6 p-0 text-orange-400 hover:text-orange-600 hover:bg-orange-50"
+                    title={`Bank balance differs by ${formatCurrency(balanceDifference)}. Click to sync.`}
+                  >
+                    {isSyncing ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <AlertTriangle className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
+              </div>
+              <p className="text-2xl font-bold text-blue-700">${totalCash.toLocaleString()}</p>
+              <p className="text-sm text-slate-600">
+                {accounts.length === 0 
+                  ? "No bank accounts connected" 
+                  : balanceMatches 
+                    ? "Synced with bank accounts" 
+                    : `Bank balance: ${formatCurrency(bankAccountBalance)} (${formatCurrency(balanceDifference)} difference)`
+                }
+              </p>
             </div>
-            <p className="text-2xl font-bold text-blue-700">${totalCash.toLocaleString()}</p>
-            <p className="text-sm text-slate-600">
-              {balanceMatches ? "Synced with bank accounts" : `Bank balance: $${bankAccountBalance.toLocaleString()}`}
-            </p>
+            <DollarSign className="h-8 w-8 text-blue-500" />
           </div>
-          <DollarSign className="h-8 w-8 text-blue-500" />
         </div>
-      </div>
-      <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <p className="text-sm text-slate-600">Credit Utilization</p>
-            <p className="text-2xl font-bold text-purple-700">{formatCurrency(totalCreditBalance)}</p>
-            <p className="text-sm text-slate-600">of {formatCurrency(totalCreditLimit)} limit</p>
-            <p className="text-xs text-purple-600">{formatCurrency(totalAvailableCredit)} available • {creditUtilization.toFixed(1)}% used</p>
-          </div>
-          <CreditCard className="h-8 w-8 text-purple-500" />
-        </div>
-      </div>
-      <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-slate-600">Incoming $</p>
-              <Select value={incomingTimeRange} onValueChange={setIncomingTimeRange}>
-                <SelectTrigger className="w-32 h-6 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeRangeOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm text-slate-600">Credit Utilization</p>
+              <p className="text-2xl font-bold text-purple-700">{formatCurrency(totalCreditBalance)}</p>
+              <p className="text-sm text-slate-600">of {formatCurrency(totalCreditLimit)} limit</p>
+              <p className="text-xs text-purple-600">{formatCurrency(totalAvailableCredit)} available • {creditUtilization.toFixed(1)}% used</p>
             </div>
-            <p className="text-2xl font-bold text-green-700">{formatCurrency(incomingTotal)}</p>
-            <p className="text-sm text-slate-600">
-              {incomingPayments.length > 0 ? `${incomingPayments.length} Amazon payouts & income` : "No Amazon payouts or income"}
-            </p>
-            <p className="text-xs text-green-600">
-              {timeRangeOptions.find(opt => opt.value === incomingTimeRange)?.label}
-            </p>
+            <CreditCard className="h-8 w-8 text-purple-500" />
           </div>
-          <TrendingUp className="h-8 w-8 text-green-500" />
         </div>
-      </div>
-      <div className="bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-lg p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-slate-600">Upcoming Payments</p>
-              <Select value={upcomingTimeRange} onValueChange={setUpcomingTimeRange}>
-                <SelectTrigger className="w-32 h-6 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {timeRangeOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-slate-600">Incoming $</p>
+                <Select value={incomingTimeRange} onValueChange={setIncomingTimeRange}>
+                  <SelectTrigger className="w-32 h-6 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeRangeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-2xl font-bold text-green-700">{formatCurrency(incomingTotal)}</p>
+              <p className="text-sm text-slate-600">
+                {incomingPayments.length > 0 ? `${incomingPayments.length} Amazon payouts & income` : "No Amazon payouts or income"}
+              </p>
+              <p className="text-xs text-green-600">
+                {timeRangeOptions.find(opt => opt.value === incomingTimeRange)?.label}
+              </p>
             </div>
-            <p className="text-2xl font-bold text-amber-700">{formatCurrency(upcomingTotal)}</p>
-            <p className="text-sm text-slate-600">
-              {upcomingPayments.length > 0 ? `${upcomingPayments.length} payments due` : "No payments due"}
-            </p>
-            <p className="text-xs text-amber-600">
-              {timeRangeOptions.find(opt => opt.value === upcomingTimeRange)?.label}
-            </p>
+            <TrendingUp className="h-8 w-8 text-green-500" />
           </div>
-          <Calendar className="h-8 w-8 text-amber-500" />
+        </div>
+        <div className="bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-lg p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-slate-600">Upcoming Payments</p>
+                <Select value={upcomingTimeRange} onValueChange={setUpcomingTimeRange}>
+                  <SelectTrigger className="w-32 h-6 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeRangeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-2xl font-bold text-amber-700">{formatCurrency(upcomingTotal)}</p>
+              <p className="text-sm text-slate-600">
+                {upcomingPayments.length > 0 ? `${upcomingPayments.length} payments due` : "No payments due"}
+              </p>
+              <p className="text-xs text-amber-600">
+                {timeRangeOptions.find(opt => opt.value === upcomingTimeRange)?.label}
+              </p>
+            </div>
+            <Calendar className="h-8 w-8 text-amber-500" />
+          </div>
         </div>
       </div>
-    </div>
+      
+      {/* Sync Confirmation Dialog */}
+      <Dialog open={showSyncDialog} onOpenChange={setShowSyncDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sync Cash Balance with Bank Accounts</DialogTitle>
+            <DialogDescription>
+              Your current cash balance ({formatCurrency(totalCash)}) doesn't match your connected bank accounts balance ({formatCurrency(bankAccountBalance)}).
+              <br /><br />
+              <strong>Difference:</strong> {formatCurrency(balanceDifference)}
+              <br />
+              <strong>Connected accounts:</strong> {accounts.length} account{accounts.length !== 1 ? 's' : ''}
+              <br /><br />
+              Would you like to update your cash balance to match your bank accounts?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSyncDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmSync}>
+              Yes, Sync with Bank Accounts
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
