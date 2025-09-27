@@ -18,6 +18,7 @@ interface Customer {
   name: string;
   paymentTerms?: string;
   netTermsDays?: number;
+  category?: string;
 }
 
 interface IncomeFormProps {
@@ -103,7 +104,8 @@ export const IncomeForm = ({
     setFormData(prev => ({
       ...prev,
       customer: customer.name,
-      customerId: customer.id
+      customerId: customer.id,
+      category: customer.category || prev.category
     }));
     setCustomerSearchTerm(customer.name);
     setShowCustomerDropdown(false);
@@ -286,16 +288,6 @@ export const IncomeForm = ({
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="description">Description (Optional)</Label>
-                <Input
-                  id="description"
-                  placeholder="e.g., Monthly subscription revenue"
-                  value={formData.description}
-                  onChange={(e) => handleInputChange("description", e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="amount">Amount ($) *</Label>
                 <Input
                   id="amount"
@@ -352,6 +344,16 @@ export const IncomeForm = ({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description (Optional)</Label>
+                <Input
+                  id="description"
+                  placeholder="e.g., Monthly subscription revenue"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange("description", e.target.value)}
+                />
               </div>
 
               {(formData.isRecurring || isRecurring) && (
