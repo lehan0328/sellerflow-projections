@@ -168,7 +168,7 @@ export const IncomeForm = ({
         </DialogHeader>
         
         {/* Step 1: Customer Selection */}
-        {!formData.customerId && customers.length > 0 && (
+        {!formData.customerId && (
           <div className="space-y-4">
             <div className="text-center py-4">
               <h3 className="text-lg font-semibold mb-2">Select a Customer</h3>
@@ -236,7 +236,7 @@ export const IncomeForm = ({
         )}
 
         {/* Step 2: Income Details */}
-        {(formData.customerId || customers.length === 0) && (
+        {formData.customerId && (
           <>
             {/* Selected Customer Display */}
             <div className="p-3 bg-accent/20 rounded-lg border">
