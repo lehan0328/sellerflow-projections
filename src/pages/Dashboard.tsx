@@ -15,6 +15,7 @@ import { IncomeForm } from "@/components/cash-flow/income-form";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useUserSettings } from "@/hooks/useUserSettings";
+import { useBankAccounts } from "@/hooks/useBankAccounts";
 
 // ========== Type Definitions ==========
 
@@ -38,6 +39,7 @@ const Dashboard = () => {
   const { vendors, addVendor, updateVendor, deleteVendor, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { totalCash, updateTotalCash } = useUserSettings();
+  const { totalBalance: bankAccountBalance } = useBankAccounts();
   
   // State for vendors used in forms (derived from database vendors) - always fresh data
   const formVendors = useMemo(() => vendors.map(v => ({ 
@@ -433,9 +435,11 @@ const Dashboard = () => {
 
 
   const handleUpdateCashBalance = async () => {
-    // Bank account balance (from bank-accounts.tsx sample data)
-    const bankAccountBalance = 14269.39 + 4.29; // Total from Bank of America + Bluevine
+    // Use real bank account balance from connected accounts
+    console.log("Syncing cash balance - Bank account balance:", bankAccountBalance);
+    console.log("Previous total cash:", totalCash);
     await updateTotalCash(bankAccountBalance);
+    console.log("Cash balance updated to bank account balance");
   };
 
   // Convert database transactions to component format
@@ -498,12 +502,15 @@ const Dashboard = () => {
   // Combine all events for calendar
   const allCalendarEvents = [...sampleEvents, ...calendarEvents, ...vendorEvents, ...creditCardEvents];
 
+  // Log cash values for debugging
+  console.log("Dashboard - totalCash:", totalCash, "bankAccountBalance:", bankAccountBalance, "final cash value:", totalCash || bankAccountBalance);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
       <DashboardHeader />
       <div className="p-6 space-y-6">
         <OverviewStats 
-          totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash} 
+          totalCash={totalCash || bankAccountBalance} 
           events={allCalendarEvents}
           onUpdateCashBalance={handleUpdateCashBalance}
         />
@@ -511,7 +518,7 @@ const Dashboard = () => {
         {/* Row 1: Cash Flow Calendar (Full Width) */}
         <CashFlowCalendar 
           events={allCalendarEvents} 
-          totalCash={(vendors.length === 0 && transactions.length === 0) ? 0 : totalCash}
+          totalCash={totalCash || bankAccountBalance}
           onEditTransaction={handleEditTransaction}
         />
 
