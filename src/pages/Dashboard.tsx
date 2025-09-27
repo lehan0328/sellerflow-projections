@@ -13,6 +13,7 @@ import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-m
 import { IncomeOverview } from "@/components/cash-flow/income-overview";
 import { IncomeForm } from "@/components/cash-flow/income-form";
 import { useIncome } from "@/hooks/useIncome";
+import { useUserSettings } from "@/hooks/useUserSettings";
 
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -42,6 +43,7 @@ const Dashboard = () => {
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
+  const { updateTotalCash } = useUserSettings();
   
   // State for vendors used in forms (derived from database vendors) - always fresh data
   const formVendors = useMemo(() => {
@@ -352,6 +354,15 @@ const Dashboard = () => {
     
     // Note: In a real Plaid integration, this would add funds to connected account
 
+    // Update income status to 'received' and payment date to today
+    await updateIncome(income.id, {
+      status: 'received',
+      paymentDate: new Date()
+    });
+
+    // Add amount to user's total cash
+    await updateTotalCash(income.amount);
+
     // Create transaction
     await addTransaction({
       type: 'sales_order',
@@ -361,7 +372,7 @@ const Dashboard = () => {
       status: 'completed'
     });
 
-    // Create cash flow event
+    // Create cash flow event for calendar
     const newEvent: CashFlowEvent = {
       id: Date.now().toString(),
       type: 'inflow',
