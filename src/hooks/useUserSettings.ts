@@ -56,20 +56,23 @@ export const useUserSettings = () => {
     }
   };
 
-  const updateTotalCash = async (newAmount: number) => {
+  const updateTotalCash = async (amountToAdd: number) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Calculate new total by adding to current amount
+      const newTotal = totalCash + amountToAdd;
+
       const { error } = await supabase
         .from('user_settings')
-        .update({ total_cash: newAmount })
+        .update({ total_cash: newTotal })
         .eq('user_id', user.id);
 
       if (error) throw error;
 
-      setTotalCash(newAmount);
-      console.info('Cash updated in database:', newAmount);
+      setTotalCash(newTotal);
+      console.info('Cash updated in database:', newTotal, '(added:', amountToAdd, ')');
     } catch (error) {
       console.error('Error updating total cash:', error);
       toast({
