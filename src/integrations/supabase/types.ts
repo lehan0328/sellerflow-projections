@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      bank_accounts: {
+        Row: {
+          access_token: string
+          account_id: string
+          account_name: string
+          account_number: string
+          account_type: string
+          available_balance: number | null
+          balance: number
+          created_at: string
+          currency_code: string | null
+          id: string
+          institution_name: string
+          is_active: boolean
+          last_sync: string
+          plaid_item_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          account_id: string
+          account_name: string
+          account_number: string
+          account_type: string
+          available_balance?: number | null
+          balance?: number
+          created_at?: string
+          currency_code?: string | null
+          id?: string
+          institution_name: string
+          is_active?: boolean
+          last_sync?: string
+          plaid_item_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          account_id?: string
+          account_name?: string
+          account_number?: string
+          account_type?: string
+          available_balance?: number | null
+          balance?: number
+          created_at?: string
+          currency_code?: string | null
+          id?: string
+          institution_name?: string
+          is_active?: boolean
+          last_sync?: string
+          plaid_item_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cash_flow_events: {
         Row: {
           amount: number

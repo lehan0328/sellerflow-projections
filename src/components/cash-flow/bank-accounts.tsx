@@ -3,37 +3,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Building2, MoreVertical, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-interface BankAccount {
-  id: string;
-  name: string;
-  accountNumber: string;
-  balance: number;
-  type: "depository" | "credit";
-  lastSync: string;
-}
-
-const bankAccounts: BankAccount[] = [
-  {
-    id: "1",
-    name: "Bank of America Imarand",
-    accountNumber: "7034",
-    balance: 14269.39,
-    type: "depository",
-    lastSync: "2025-09-23 12:08:20",
-  },
-  {
-    id: "2",
-    name: "Bluevine Imarand Distributions Inc",
-    accountNumber: "7080",
-    balance: 4.29,
-    type: "depository",
-    lastSync: "2025-09-23 12:07:57",
-  },
-];
+import { useBankAccounts } from "@/hooks/useBankAccounts";
 
 export function BankAccounts() {
   const navigate = useNavigate();
+  const { accounts, isLoading, totalBalance } = useBankAccounts();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -48,7 +22,18 @@ export function BankAccounts() {
     return "destructive";
   };
 
-  const totalBalance = bankAccounts.reduce((sum, account) => sum + account.balance, 0);
+  if (isLoading) {
+    return (
+      <Card className="shadow-card">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            <p className="text-muted-foreground ml-2">Loading accounts...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="shadow-card">
@@ -76,37 +61,52 @@ export function BankAccounts() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {bankAccounts.map((account) => (
-          <div
-            key={account.id}
-            className="flex items-center justify-between rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card"
-          >
-            <div className="space-y-1">
-              <div className="flex items-center space-x-2">
-                <h4 className="font-semibold">{account.name}</h4>
-                <Badge variant="outline" className="text-xs">
-                  {account.accountNumber}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Last sync: {new Date(account.lastSync).toLocaleString()}
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="font-bold text-lg">
-                  {formatCurrency(account.balance)}
-                </p>
-                <Badge variant={getBalanceVariant(account.balance)} className="text-xs">
-                  {account.type}
-                </Badge>
-              </div>
-              <Button variant="ghost" size="sm">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </div>
+        {accounts.length === 0 ? (
+          <div className="text-center py-8">
+            <Building2 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-muted-foreground">No bank accounts connected</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/manage-accounts')}
+              className="mt-2"
+            >
+              Connect Your First Account
+            </Button>
           </div>
-        ))}
+        ) : (
+          accounts.map((account) => (
+            <div
+              key={account.id}
+              className="flex items-center justify-between rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card"
+            >
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <h4 className="font-semibold">{account.account_name}</h4>
+                  <Badge variant="outline" className="text-xs">
+                    {account.account_number}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Last sync: {new Date(account.last_sync).toLocaleString()}
+                </p>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="text-right">
+                  <p className="font-bold text-lg">
+                    {formatCurrency(account.balance)}
+                  </p>
+                  <Badge variant={getBalanceVariant(account.balance)} className="text-xs">
+                    {account.account_type}
+                  </Badge>
+                </div>
+                <Button variant="ghost" size="sm">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
       </CardContent>
     </Card>
   );

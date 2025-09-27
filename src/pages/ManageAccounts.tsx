@@ -6,67 +6,43 @@ import { useNavigate } from "react-router-dom";
 import { Building2, ArrowLeft, Plus, Trash2, RefreshCw, ExternalLink } from "lucide-react";
 import { usePlaidLink } from "react-plaid-link";
 import { toast } from "sonner";
-
-interface PlaidAccount {
-  id: string;
-  name: string;
-  accountNumber: string;
-  balance: number;
-  type: "depository" | "credit" | "loan" | "investment";
-  lastSync: string;
-  institutionName: string;
-  isConnected: boolean;
-}
-
-// Mock data - in real app this would come from Plaid/Supabase
-const mockAccounts: PlaidAccount[] = [
-  {
-    id: "1",
-    name: "Bank of America Checking",
-    accountNumber: "****7034",
-    balance: 14269.39,
-    type: "depository",
-    lastSync: new Date().toISOString(),
-    institutionName: "Bank of America",
-    isConnected: true,
-  },
-  {
-    id: "2",
-    name: "Bluevine Business Checking",
-    accountNumber: "****7080",
-    balance: 4.29,
-    type: "depository",
-    lastSync: new Date().toISOString(),
-    institutionName: "Bluevine",
-    isConnected: true,
-  },
-];
+import { useBankAccounts } from "@/hooks/useBankAccounts";
 
 export default function ManageAccounts() {
   const navigate = useNavigate();
-  const [accounts, setAccounts] = useState<PlaidAccount[]>(mockAccounts);
-  const [isLoading, setIsLoading] = useState(false);
+  const { accounts, isLoading, totalBalance, addAccount, removeAccount, syncAccount } = useBankAccounts();
+  const [isSyncing, setIsSyncing] = useState<string | null>(null);
 
-  // Plaid Link configuration
+  // Plaid Link configuration - In production, get token from your backend
   const config = {
-    token: null, // In real app, get this from your backend
-    onSuccess: (public_token: string, metadata: any) => {
-      // In real app, send public_token to your backend to exchange for access_token
-      console.log("Plaid Link success:", { public_token, metadata });
-      toast.success("Bank account connected successfully!");
-      
-      // Mock adding new account
-      const newAccount: PlaidAccount = {
-        id: Date.now().toString(),
-        name: `${metadata.institution.name} Account`,
-        accountNumber: "****" + Math.random().toString().slice(-4),
-        balance: Math.random() * 10000,
-        type: "depository",
-        lastSync: new Date().toISOString(),
-        institutionName: metadata.institution.name,
-        isConnected: true,
-      };
-      setAccounts(prev => [...prev, newAccount]);
+    token: null, // You'll need to implement a backend endpoint to get this
+    onSuccess: async (public_token: string, metadata: any) => {
+      try {
+        // In a real app, exchange public_token for access_token on your backend
+        // For demo purposes, we'll create a mock account
+        const newAccount = {
+          account_id: metadata.accounts[0]?.id || Date.now().toString(),
+          access_token: "demo_access_token", // In real app, get from backend
+          institution_name: metadata.institution.name,
+          account_name: metadata.accounts[0]?.name || `${metadata.institution.name} Account`,
+          account_number: `****${Math.random().toString().slice(-4)}`,
+          account_type: metadata.accounts[0]?.type || "depository" as const,
+          balance: Math.random() * 10000,
+          available_balance: Math.random() * 8000,
+          currency_code: "USD",
+          last_sync: new Date().toISOString(),
+          is_active: true,
+          plaid_item_id: metadata.link_session_id,
+        };
+
+        const success = await addAccount(newAccount);
+        if (success) {
+          toast.success("Bank account connected successfully!");
+        }
+      } catch (error) {
+        console.error("Error connecting account:", error);
+        toast.error("Failed to connect bank account");
+      }
     },
     onExit: (err: any, metadata: any) => {
       console.log("Plaid Link exit:", { err, metadata });
@@ -86,29 +62,25 @@ export default function ManageAccounts() {
   };
 
   const handleSyncAccount = async (accountId: string) => {
-    setIsLoading(true);
+    setIsSyncing(accountId);
     try {
-      // In real app, call your backend to sync account data
+      // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      setAccounts(prev => 
-        prev.map(account => 
-          account.id === accountId 
-            ? { ...account, lastSync: new Date().toISOString() }
-            : account
-        )
-      );
-      toast.success("Account synced successfully!");
-    } catch (error) {
-      toast.error("Failed to sync account");
+      const success = await syncAccount(accountId);
+      if (success) {
+        toast.success("Account synced successfully!");
+      }
     } finally {
-      setIsLoading(false);
+      setIsSyncing(null);
     }
   };
 
-  const handleRemoveAccount = (accountId: string) => {
-    setAccounts(prev => prev.filter(account => account.id !== accountId));
-    toast.success("Account removed successfully!");
+  const handleRemoveAccount = async (accountId: string) => {
+    const success = await removeAccount(accountId);
+    if (!success) {
+      console.error("Failed to remove account");
+    }
   };
 
   const getAccountTypeColor = (type: string) => {
@@ -121,12 +93,25 @@ export default function ManageAccounts() {
     }
   };
 
-  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background p-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground mt-2">Loading accounts...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
+            {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Button
@@ -142,8 +127,10 @@ export default function ManageAccounts() {
             </div>
           </div>
           <Button
-            onClick={() => open()}
-            disabled={!ready}
+            onClick={() => {
+              // For demo purposes, show message about Plaid setup
+              toast.info("Plaid integration requires backend setup. Contact support for configuration.");
+            }}
             className="bg-primary hover:bg-primary/90"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -167,7 +154,7 @@ export default function ManageAccounts() {
                 <p className="text-sm text-muted-foreground">Last Sync</p>
                 <p className="text-sm text-muted-foreground">
                   {accounts.length > 0 
-                    ? new Date(Math.max(...accounts.map(a => new Date(a.lastSync).getTime()))).toLocaleString()
+                    ? new Date(Math.max(...accounts.map(a => new Date(a.last_sync).getTime()))).toLocaleString()
                     : "Never"
                   }
                 </p>
@@ -192,7 +179,11 @@ export default function ManageAccounts() {
                 <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">No accounts connected</h3>
                 <p className="text-muted-foreground mb-4">Connect your first bank account to get started</p>
-                <Button onClick={() => open()} disabled={!ready}>
+                <Button 
+                  onClick={() => {
+                    toast.info("Plaid integration requires backend setup. Contact support for configuration.");
+                  }}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Connect Account
                 </Button>
@@ -209,17 +200,17 @@ export default function ManageAccounts() {
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2">
-                        <h4 className="font-semibold text-foreground">{account.name}</h4>
+                        <h4 className="font-semibold text-foreground">{account.account_name}</h4>
                         <Badge variant="outline" className="text-xs">
-                          {account.accountNumber}
+                          {account.account_number}
                         </Badge>
-                        <Badge variant={getAccountTypeColor(account.type)} className="text-xs">
-                          {account.type}
+                        <Badge variant={getAccountTypeColor(account.account_type)} className="text-xs">
+                          {account.account_type}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">{account.institutionName}</p>
+                      <p className="text-sm text-muted-foreground">{account.institution_name}</p>
                       <p className="text-xs text-muted-foreground">
-                        Last sync: {new Date(account.lastSync).toLocaleString()}
+                        Last sync: {new Date(account.last_sync).toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -230,9 +221,9 @@ export default function ManageAccounts() {
                         {formatCurrency(account.balance)}
                       </p>
                       <div className="flex items-center space-x-1">
-                        <div className={`w-2 h-2 rounded-full ${account.isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+                        <div className={`w-2 h-2 rounded-full ${account.is_active ? 'bg-green-500' : 'bg-red-500'}`} />
                         <span className="text-xs text-muted-foreground">
-                          {account.isConnected ? 'Connected' : 'Disconnected'}
+                          {account.is_active ? 'Connected' : 'Disconnected'}
                         </span>
                       </div>
                     </div>
@@ -242,9 +233,9 @@ export default function ManageAccounts() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleSyncAccount(account.id)}
-                        disabled={isLoading}
+                        disabled={isSyncing === account.id}
                       >
-                        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`h-4 w-4 ${isSyncing === account.id ? 'animate-spin' : ''}`} />
                       </Button>
                       <Button
                         variant="ghost"
