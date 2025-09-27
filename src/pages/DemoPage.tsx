@@ -150,6 +150,7 @@ const DemoPage = () => {
           }
         }}
         onSubmitIncome={() => alert('Demo: Form submission not available in demo')}
+        customers={[]}
       />
     </div>
   );

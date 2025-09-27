@@ -14,6 +14,7 @@ import { IncomeOverview } from "@/components/cash-flow/income-overview";
 import { IncomeForm } from "@/components/cash-flow/income-form";
 import { useIncome } from "@/hooks/useIncome";
 import { useUserSettings } from "@/hooks/useUserSettings";
+import { useCustomers } from "@/hooks/useCustomers";
 
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -44,6 +45,7 @@ const Dashboard = () => {
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { updateTotalCash } = useUserSettings();
+  const { customers, addCustomer } = useCustomers();
   
   // State for vendors used in forms (derived from database vendors) - always fresh data
   const formVendors = useMemo(() => {
@@ -719,6 +721,8 @@ const Dashboard = () => {
           onOpenChange={setShowIncomeForm}
           onSubmitIncome={handleIncomeSubmit}
           onSubmitExpense={handleExpenseSubmit}
+          customers={customers}
+          onAddCustomer={addCustomer}
         />
       )}
 
@@ -729,6 +733,8 @@ const Dashboard = () => {
           onSubmitIncome={handleIncomeSubmit}
           onSubmitExpense={handleExpenseSubmit}
           isRecurring={true}
+          customers={customers}
+          onAddCustomer={addCustomer}
         />
       )}
 
@@ -739,6 +745,8 @@ const Dashboard = () => {
           onSubmitIncome={handleUpdateIncome}
           onSubmitExpense={handleExpenseSubmit}
           editingIncome={editingIncome}
+          customers={customers}
+          onAddCustomer={addCustomer}
         />
       )}
 
