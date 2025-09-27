@@ -252,7 +252,10 @@ export const PurchaseOrderForm = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className={cn(
+        "max-h-[90vh] overflow-y-auto",
+        !formData.vendorId ? "max-w-lg" : "max-w-md"
+      )}>
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
               Add Purchase Order
@@ -277,9 +280,9 @@ export const PurchaseOrderForm = ({
                         value={vendorSearchTerm}
                         onChange={(e) => {
                           setVendorSearchTerm(e.target.value);
-                          setShowVendorDropdown(true);
+                          if (e.target.value) setShowVendorDropdown(true);
                         }}
-                        onFocus={() => setShowVendorDropdown(true)}
+                        onClick={() => setShowVendorDropdown(true)}
                         className="pr-8"
                       />
                       <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
