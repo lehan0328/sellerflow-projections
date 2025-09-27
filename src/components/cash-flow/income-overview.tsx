@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { DollarSign, Calendar, TrendingUp, Plus, Edit, Search, ArrowUpDown } from "lucide-react";
+import { DollarSign, Calendar, TrendingUp, Plus, Edit, Search, ArrowUpDown, Trash2 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import * as React from "react";
 
@@ -23,9 +23,10 @@ interface IncomeOverviewProps {
   incomeItems: IncomeItem[];
   onCollectToday?: (income: IncomeItem) => void;
   onEditIncome?: (income: IncomeItem) => void;
+  onDeleteIncome?: (income: IncomeItem) => void;
 }
 
-export const IncomeOverview = ({ incomeItems, onCollectToday, onEditIncome }: IncomeOverviewProps) => {
+export const IncomeOverview = ({ incomeItems, onCollectToday, onEditIncome, onDeleteIncome }: IncomeOverviewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'description' | 'amount' | 'paymentDate' | 'source'>('paymentDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -216,7 +217,7 @@ export const IncomeOverview = ({ incomeItems, onCollectToday, onEditIncome }: In
                         <span className="font-medium text-foreground ml-2">
                           {income.source}
                         </span>
-                        <div className="ml-auto">
+                        <div className="ml-auto flex items-center space-x-2">
                           <Button 
                             variant="outline" 
                             size="sm"
@@ -224,6 +225,14 @@ export const IncomeOverview = ({ incomeItems, onCollectToday, onEditIncome }: In
                           >
                             <Edit className="mr-1 h-3 w-3" />
                             Edit
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => onDeleteIncome?.(income)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>

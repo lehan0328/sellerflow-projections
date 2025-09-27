@@ -66,6 +66,10 @@ const DemoPage = () => {
     alert(`Demo: Would collect $${income.amount} from ${income.source}`);
   };
 
+  const handleDeleteIncome = (income: any) => {
+    alert(`Demo: Would delete income: ${income.description}`);
+  };
+
   // Convert vendor due dates to calendar events
   const vendorEvents: CashFlowEvent[] = vendors
     .filter(vendor => vendor.totalOwed > 0 && vendor.nextPaymentDate)
@@ -108,6 +112,7 @@ const DemoPage = () => {
           <IncomeOverview 
             incomeItems={demoIncomeItems}
             onCollectToday={handleCollectIncome}
+            onDeleteIncome={handleDeleteIncome}
           />
         </div>
 

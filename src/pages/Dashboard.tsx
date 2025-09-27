@@ -237,6 +237,13 @@ const Dashboard = () => {
     setShowPurchaseOrderForm(false);
   };
 
+  const handleDeleteIncome = async (income: any) => {
+    console.info("Deleting income:", income.description);
+    
+    // Delete income from database
+    await deleteIncome(income.id);
+  };
+
   const handleEditIncome = (income: any) => {
     setEditingIncome(income);
     setShowEditIncomeForm(true);
@@ -576,6 +583,7 @@ const Dashboard = () => {
             incomeItems={incomeItems}
             onCollectToday={handleCollectIncome}
             onEditIncome={handleEditIncome}
+            onDeleteIncome={handleDeleteIncome}
           />
         </div>
 
