@@ -28,6 +28,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SidebarNavigation } from "@/components/settings/sidebar-navigation";
+import { CreditCardManagement } from "@/components/settings/credit-card-management";
 import { VendorManagement } from "@/components/settings/vendor-management";
 
 const Settings = () => {
@@ -402,6 +403,8 @@ const Settings = () => {
         return renderProfileSettings();
       case 'vendors':
         return <VendorManagement />;
+      case 'credit-cards':
+        return <CreditCardManagement />;
       case 'appearance':
         return renderAppearanceSettings();
       case 'financial':

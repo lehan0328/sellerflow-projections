@@ -7,7 +7,8 @@ import {
   CreditCard, 
   Shield, 
   Building2,
-  Bell
+  Bell,
+  Settings
 } from "lucide-react";
 
 const navigationItems = [
@@ -27,9 +28,14 @@ const navigationItems = [
     icon: Palette,
   },
   {
+    id: 'credit-cards',
+    label: 'Credit Cards',
+    icon: CreditCard,
+  },
+  {
     id: 'financial',
     label: 'Financial Settings',
-    icon: CreditCard,
+    icon: Settings,
   },
   {
     id: 'notifications',

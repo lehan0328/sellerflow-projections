@@ -125,6 +125,84 @@ export type Database = {
           },
         ]
       }
+      credit_cards: {
+        Row: {
+          account_name: string
+          account_type: string
+          annual_fee: number | null
+          available_credit: number
+          balance: number
+          created_at: string
+          credit_limit: number
+          currency_code: string
+          encrypted_access_token: string | null
+          encrypted_account_number: string | null
+          encrypted_plaid_item_id: string | null
+          id: string
+          institution_name: string
+          interest_rate: number | null
+          is_active: boolean
+          last_sync: string
+          masked_account_number: string | null
+          minimum_payment: number | null
+          payment_due_date: string | null
+          plaid_account_id: string | null
+          statement_close_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_name: string
+          account_type?: string
+          annual_fee?: number | null
+          available_credit?: number
+          balance?: number
+          created_at?: string
+          credit_limit?: number
+          currency_code?: string
+          encrypted_access_token?: string | null
+          encrypted_account_number?: string | null
+          encrypted_plaid_item_id?: string | null
+          id?: string
+          institution_name: string
+          interest_rate?: number | null
+          is_active?: boolean
+          last_sync?: string
+          masked_account_number?: string | null
+          minimum_payment?: number | null
+          payment_due_date?: string | null
+          plaid_account_id?: string | null
+          statement_close_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_name?: string
+          account_type?: string
+          annual_fee?: number | null
+          available_credit?: number
+          balance?: number
+          created_at?: string
+          credit_limit?: number
+          currency_code?: string
+          encrypted_access_token?: string | null
+          encrypted_account_number?: string | null
+          encrypted_plaid_item_id?: string | null
+          id?: string
+          institution_name?: string
+          interest_rate?: number | null
+          is_active?: boolean
+          last_sync?: string
+          masked_account_number?: string | null
+          minimum_payment?: number | null
+          payment_due_date?: string | null
+          plaid_account_id?: string | null
+          statement_close_date?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string
@@ -469,6 +547,27 @@ export type Database = {
         }
         Returns: string
       }
+      insert_secure_credit_card: {
+        Args: {
+          p_access_token?: string
+          p_account_name?: string
+          p_account_number?: string
+          p_account_type?: string
+          p_annual_fee?: number
+          p_available_credit?: number
+          p_balance?: number
+          p_credit_limit?: number
+          p_currency_code?: string
+          p_institution_name?: string
+          p_interest_rate?: number
+          p_minimum_payment?: number
+          p_payment_due_date?: string
+          p_plaid_account_id?: string
+          p_plaid_item_id?: string
+          p_statement_close_date?: string
+        }
+        Returns: string
+      }
       update_secure_bank_account: {
         Args: {
           p_access_token?: string
@@ -481,6 +580,28 @@ export type Database = {
           p_currency_code?: string
           p_institution_name?: string
           p_plaid_item_id?: string
+        }
+        Returns: boolean
+      }
+      update_secure_credit_card: {
+        Args: {
+          p_access_token?: string
+          p_account_name?: string
+          p_account_number?: string
+          p_account_type?: string
+          p_annual_fee?: number
+          p_available_credit?: number
+          p_balance?: number
+          p_card_id: string
+          p_credit_limit?: number
+          p_currency_code?: string
+          p_institution_name?: string
+          p_interest_rate?: number
+          p_minimum_payment?: number
+          p_payment_due_date?: string
+          p_plaid_account_id?: string
+          p_plaid_item_id?: string
+          p_statement_close_date?: string
         }
         Returns: boolean
       }
