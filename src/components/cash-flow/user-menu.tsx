@@ -89,10 +89,6 @@ export function UserMenu() {
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate('/manage-credit-cards')}>
-          <CreditCard className="mr-2 h-4 w-4" />
-          <span>Manage Credit Cards</span>
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate('/upgrade-plan')}>
           <CreditCard className="mr-2 h-4 w-4" />
           <span>Upgrade Plan</span>
