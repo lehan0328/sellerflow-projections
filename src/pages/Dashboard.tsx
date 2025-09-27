@@ -12,6 +12,7 @@ import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
 import { IncomeOverview } from "@/components/cash-flow/income-overview";
 import { IncomeForm } from "@/components/cash-flow/income-form";
+import { DeleteAllVendorsButton } from "@/components/DeleteAllVendorsButton";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useUserSettings } from "@/hooks/useUserSettings";
@@ -528,6 +529,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
       <DashboardHeader />
+      <DeleteAllVendorsButton />
       <div className="p-6 space-y-6">
         <OverviewStats 
           totalCash={displayCash} 

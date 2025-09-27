@@ -50,26 +50,15 @@ export const SearchableVendorSelect = ({
     setSearchTerm("");
   };
 
-  const handleOpenChange = (newOpen: boolean) => {
-    console.log("Popover open state changing to:", newOpen);
-    setOpen(newOpen);
-    if (!newOpen) {
-      setSearchTerm("");
-    }
-  };
-
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
           role="combobox"
           aria-expanded={open}
           className={cn("justify-between", className)}
-          onClick={() => {
-            console.log("Trigger clicked, current open:", open);
-            setOpen(!open);
-          }}
+          type="button"
         >
           <span className="truncate">
             {selectedVendor ? selectedVendor.name : placeholder}
@@ -78,33 +67,38 @@ export const SearchableVendorSelect = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="w-[--radix-popover-trigger-width] p-0 bg-popover text-popover-foreground border border-border shadow-lg z-[200] backdrop-blur-sm"
-        sideOffset={4}
+        className="w-[--radix-popover-trigger-width] p-0 bg-background text-foreground border border-border shadow-lg z-[200]"
+        sideOffset={2}
         align="start"
-        avoidCollisions={true}
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          const target = e.currentTarget as HTMLElement;
+          const searchInput = target.querySelector('input');
+          if (searchInput) {
+            setTimeout(() => searchInput.focus(), 0);
+          }
+        }}
       >
-        <div className="flex items-center border-b px-3 py-2 bg-background/95">
+        <div className="flex items-center border-b px-3 py-2 bg-background">
           <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
           <Input
             placeholder="Search vendors..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent"
-            onKeyDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
+            autoFocus
           />
         </div>
-        <ScrollArea className="max-h-64 bg-popover">
-          {filteredVendors.length === 0 ? (
-            <div className="py-6 text-center text-sm text-muted-foreground">
-              No vendors found.
-            </div>
-          ) : (
-            <div className="p-1">
-              {filteredVendors.map((vendor) => (
-                <button
+        <ScrollArea className="max-h-64">
+          <div className="p-1">
+            {filteredVendors.length === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                No vendors found.
+              </div>
+            ) : (
+              filteredVendors.map((vendor) => (
+                <div
                   key={vendor.id}
-                  type="button"
                   className={cn(
                     "relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground transition-colors",
                     value === vendor.id && "bg-accent text-accent-foreground"
@@ -123,10 +117,10 @@ export const SearchableVendorSelect = ({
                     )}
                   />
                   {vendor.name}
-                </button>
-              ))}
-            </div>
-          )}
+                </div>
+              ))
+            )}
+          </div>
         </ScrollArea>
       </PopoverContent>
     </Popover>
