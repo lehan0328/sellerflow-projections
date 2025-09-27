@@ -25,7 +25,6 @@ interface CreditCardFormData {
 
 export function CreditCards() {
   const { creditCards, isLoading, totalCreditLimit, totalBalance, totalAvailableCredit, addCreditCard, updateCreditCard, removeCreditCard } = useCreditCards();
-  const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingCard, setEditingCard] = useState<any>(null);
   const [formData, setFormData] = useState<CreditCardFormData>({
@@ -72,19 +71,8 @@ export function CreditCards() {
   };
 
   const handleAddCard = async () => {
-    const success = await addCreditCard({
-      ...formData,
-      available_credit: formData.credit_limit - formData.balance,
-      account_type: 'credit',
-      currency_code: 'USD',
-      last_sync: new Date().toISOString(),
-      is_active: true,
-    });
-
-    if (success) {
-      setShowAddDialog(false);
-      resetForm();
-    }
+    // Redirect to manage credit cards page for Plaid integration
+    window.location.href = '/manage-credit-cards';
   };
 
   const handleEditCard = (card: any) => {
@@ -161,115 +149,6 @@ export function CreditCards() {
             <div className="text-sm text-muted-foreground">
               Total Available: <span className="font-semibold text-finance-positive">{formatCurrency(totalAvailableCredit)}</span>
             </div>
-            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-              <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Quick Add
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add Credit Card</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="institution_name">Institution</Label>
-                      <Input
-                        id="institution_name"
-                        value={formData.institution_name}
-                        onChange={(e) => setFormData({...formData, institution_name: e.target.value})}
-                        placeholder="Chase, American Express, etc."
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="account_name">Account Name</Label>
-                      <Input
-                        id="account_name"
-                        value={formData.account_name}
-                        onChange={(e) => setFormData({...formData, account_name: e.target.value})}
-                        placeholder="Business Card, Rewards Card, etc."
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="balance">Current Balance</Label>
-                      <Input
-                        id="balance"
-                        type="number"
-                        value={formData.balance}
-                        onChange={(e) => setFormData({...formData, balance: parseFloat(e.target.value) || 0})}
-                        placeholder="0.00"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="credit_limit">Credit Limit</Label>
-                      <Input
-                        id="credit_limit"
-                        type="number"
-                        value={formData.credit_limit}
-                        onChange={(e) => setFormData({...formData, credit_limit: parseFloat(e.target.value) || 0})}
-                        placeholder="0.00"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="minimum_payment">Minimum Payment</Label>
-                      <Input
-                        id="minimum_payment"
-                        type="number"
-                        value={formData.minimum_payment}
-                        onChange={(e) => setFormData({...formData, minimum_payment: parseFloat(e.target.value) || 0})}
-                        placeholder="0.00"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="interest_rate">Interest Rate (%)</Label>
-                      <Input
-                        id="interest_rate"
-                        type="number"
-                        step="0.01"
-                        value={formData.interest_rate}
-                        onChange={(e) => setFormData({...formData, interest_rate: parseFloat(e.target.value) || 0})}
-                        placeholder="0.00"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="payment_due_date">Payment Due Date</Label>
-                      <Input
-                        id="payment_due_date"
-                        type="date"
-                        value={formData.payment_due_date}
-                        onChange={(e) => setFormData({...formData, payment_due_date: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="annual_fee">Annual Fee</Label>
-                      <Input
-                        id="annual_fee"
-                        type="number"
-                        value={formData.annual_fee}
-                        onChange={(e) => setFormData({...formData, annual_fee: parseFloat(e.target.value) || 0})}
-                        placeholder="0.00"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleAddCard}>
-                      Add Card
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
           </div>
         </div>
       </CardHeader>
