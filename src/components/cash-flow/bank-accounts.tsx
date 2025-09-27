@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, MoreVertical } from "lucide-react";
+import { Building2, MoreVertical, Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface BankAccount {
   id: string;
@@ -32,6 +33,8 @@ const bankAccounts: BankAccount[] = [
 ];
 
 export function BankAccounts() {
+  const navigate = useNavigate();
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -54,6 +57,15 @@ export function BankAccounts() {
           <div className="flex items-center space-x-2">
             <Building2 className="h-5 w-5 text-primary" />
             <CardTitle>Bank Accounts</CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/manage-accounts')}
+              className="ml-4"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Manage
+            </Button>
           </div>
           <div className="text-right">
             <p className="text-sm text-muted-foreground">Total Balance</p>
