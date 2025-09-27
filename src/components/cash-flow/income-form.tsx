@@ -87,7 +87,7 @@ export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense
     
     onSubmitIncome(data);
     
-    toast.success(`${isRecurring ? 'Recurring ' : ''}Income "${formData.description}" ${editingIncome ? 'updated' : 'added'} successfully!`);
+    toast.success(`${isRecurring ? 'Recurring ' : ''}Income ${formData.description ? `"${formData.description}" ` : ''}${editingIncome ? 'updated' : 'added'} successfully!`);
     onOpenChange(false);
     
     // Reset form
@@ -118,13 +118,12 @@ export const IncomeForm = ({ open, onOpenChange, onSubmitIncome, onSubmitExpense
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="description">Description *</Label>
+            <Label htmlFor="description">Description (Optional)</Label>
             <Input
               id="description"
               placeholder="e.g., Monthly subscription revenue"
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
-              required
             />
           </div>
 
