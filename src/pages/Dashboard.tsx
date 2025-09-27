@@ -242,6 +242,13 @@ const Dashboard = () => {
     
     // Delete income from database
     await deleteIncome(income.id);
+    
+    // Remove corresponding cash flow events from calendar
+    setCashFlowEvents(prev => prev.filter(event => 
+      !(event.type === 'inflow' && 
+        event.description === income.description && 
+        Math.abs(event.amount - income.amount) < 0.01)
+    ));
   };
 
   const handleEditIncome = (income: any) => {
