@@ -14,11 +14,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { VendorForm } from "./vendor-form";
 import { cn } from "@/lib/utils";
+import { useCreditCards } from "@/hooks/useCreditCards";
 
 interface Vendor {
   id: string;
   name: string;
   paymentType?: string;
+  paymentMethod?: string;
   netTermsDays?: string | number;
   category?: string;
 }
@@ -45,6 +47,8 @@ export const PurchaseOrderForm = ({
   onSubmitOrder, 
   onAddVendor 
 }: PurchaseOrderFormProps) => {
+  const { creditCards } = useCreditCards();
+  
   const [formData, setFormData] = useState({
     poName: "",
     vendor: "",
@@ -58,7 +62,9 @@ export const PurchaseOrderForm = ({
     notes: "",
     paymentType: "due-upon-order" as "due-upon-order" | "net-terms" | "preorder" | "due-upon-delivery",
     netTermsDays: "30" as "30" | "60" | "90" | "custom",
-    customDays: ""
+    customDays: "",
+    paymentMethod: "bank-transfer" as "bank-transfer" | "credit-card",
+    selectedCreditCard: ""
   });
   
   const [paymentSchedule, setPaymentSchedule] = useState<PaymentSchedule[]>([
@@ -105,7 +111,9 @@ export const PurchaseOrderForm = ({
         notes: "",
         paymentType: "due-upon-order",
         netTermsDays: "30",
-        customDays: ""
+        customDays: "",
+        paymentMethod: "bank-transfer",
+        selectedCreditCard: ""
       });
       setPaymentSchedule([{ id: "1", amount: "", dueDate: undefined, description: "Initial deposit" }]);
       setVendorSearchTerm("");
@@ -121,6 +129,7 @@ export const PurchaseOrderForm = ({
       vendorId: vendor.id,
       category: vendor.category || "",
       paymentType: mapVendorPaymentType(vendor.paymentType),
+      paymentMethod: vendor.paymentMethod === "credit-card" ? "credit-card" : "bank-transfer",
       netTermsDays: mapNetTermsDays(vendor.netTermsDays),
       customDays: isCustomNetTerms(vendor.netTermsDays) ? vendor.netTermsDays?.toString() || "" : ""
     }));
@@ -203,6 +212,22 @@ export const PurchaseOrderForm = ({
       return;
     }
 
+    // Check credit card availability and limits if using credit card
+    if (formData.paymentMethod === "credit-card") {
+      if (!formData.selectedCreditCard) {
+        toast.error('Please select a credit card for payment');
+        return;
+      }
+      
+      const selectedCard = creditCards.find(card => card.id === formData.selectedCreditCard);
+      const orderAmount = parseFloat(formData.amount) || 0;
+      
+      if (selectedCard && selectedCard.available_credit < orderAmount) {
+        toast.error(`Insufficient credit limit. Available: $${selectedCard.available_credit.toFixed(2)}, Required: $${orderAmount.toFixed(2)}`);
+        return;
+      }
+    }
+
     const calculatedDueDate = calculateDueDate();
     
     const orderData = {
@@ -222,6 +247,7 @@ export const PurchaseOrderForm = ({
       const completeVendorData = {
         name: vendorData.name,
         category: vendorData.category || '',
+        paymentMethod: vendorData.paymentMethod || 'bank-transfer',
         paymentType: vendorData.paymentType || 'total',
         netTermsDays: vendorData.netTermsDays,
         totalOwed: 0,
@@ -240,6 +266,7 @@ export const PurchaseOrderForm = ({
         vendorId: `temp-${Date.now()}`,
         category: vendorData.category || "",
         paymentType: mapVendorPaymentType(vendorData.paymentType),
+        paymentMethod: vendorData.paymentMethod === "credit-card" ? "credit-card" : "bank-transfer",
         netTermsDays: mapNetTermsDays(vendorData.netTermsDays),
         customDays: isCustomNetTerms(vendorData.netTermsDays) ? vendorData.netTermsDays?.toString() || "" : ""
       }));
@@ -604,6 +631,128 @@ export const PurchaseOrderForm = ({
                 </div>
               </div>
             )}
+
+            {/* Payment Method Section */}
+            <div className="space-y-3">
+              <Label>Payment Method</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="bank-transfer-po"
+                    name="paymentMethodPO"
+                    value="bank-transfer"
+                    checked={formData.paymentMethod === "bank-transfer"}
+                    onChange={(e) => setFormData(prev => ({ ...prev, paymentMethod: e.target.value as "bank-transfer" | "credit-card" }))}
+                    className="w-4 h-4 text-primary bg-gray-100 border-gray-300 focus:ring-primary"
+                  />
+                  <Label htmlFor="bank-transfer-po" className="text-sm font-normal cursor-pointer">
+                    Bank Transfer
+                  </Label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="credit-card-po"
+                    name="paymentMethodPO"
+                    value="credit-card"
+                    checked={formData.paymentMethod === "credit-card"}
+                    onChange={(e) => setFormData(prev => ({ ...prev, paymentMethod: e.target.value as "bank-transfer" | "credit-card" }))}
+                    className="w-4 h-4 text-primary bg-gray-100 border-gray-300 focus:ring-primary"
+                  />
+                  <Label htmlFor="credit-card-po" className="text-sm font-normal cursor-pointer">
+                    Credit Card
+                  </Label>
+                </div>
+              </div>
+
+              {/* Credit Card Selection */}
+              {formData.paymentMethod === "credit-card" && (
+                <div className="space-y-3 p-4 bg-accent/10 rounded-lg border">
+                  <div className="space-y-2">
+                    <Label>Select Credit Card</Label>
+                    <Select 
+                      value={formData.selectedCreditCard} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, selectedCreditCard: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a credit card" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {creditCards.filter(card => card.is_active).map(card => (
+                          <SelectItem key={card.id} value={card.id}>
+                            <div className="flex items-center justify-between w-full">
+                              <span className="font-medium">{card.account_name}</span>
+                              <span className="text-sm text-muted-foreground ml-2">
+                                Available: ${card.available_credit.toFixed(2)}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Credit Card Info */}
+                  {formData.selectedCreditCard && (() => {
+                    const selectedCard = creditCards.find(card => card.id === formData.selectedCreditCard);
+                    const orderAmount = parseFloat(formData.amount) || 0;
+                    const remainingCredit = selectedCard ? selectedCard.available_credit - orderAmount : 0;
+                    const hasInsufficientCredit = selectedCard ? selectedCard.available_credit < orderAmount : false;
+
+                    return selectedCard ? (
+                      <div className="space-y-2">
+                        <div className="text-sm">
+                          <div className="flex justify-between">
+                            <span>Credit Limit:</span>
+                            <span className="font-medium">${selectedCard.credit_limit.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Available Credit:</span>
+                            <span className="font-medium">${selectedCard.available_credit.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Order Amount:</span>
+                            <span className="font-medium">${orderAmount.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between border-t pt-1 mt-2">
+                            <span>Remaining After Purchase:</span>
+                            <span className={cn(
+                              "font-semibold",
+                              hasInsufficientCredit ? "text-red-600" : remainingCredit < 1000 ? "text-yellow-600" : "text-green-600"
+                            )}>
+                              ${remainingCredit.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {hasInsufficientCredit && (
+                          <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                            <div className="flex items-center space-x-2">
+                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                              <span className="text-sm font-medium text-red-800">
+                                Insufficient Credit Available
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="text-xs text-muted-foreground">
+                          * Credit will be reserved from the purchase order date
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
+                  
+                  {creditCards.filter(card => card.is_active).length === 0 && (
+                    <div className="text-center text-sm text-muted-foreground py-4">
+                      No active credit cards found. Please add a credit card in Settings.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Category */}
             <div className="space-y-2">

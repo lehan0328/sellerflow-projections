@@ -19,6 +19,7 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
   const [formData, setFormData] = useState({
     name: "",
     category: "",
+    paymentMethod: "bank-transfer",
     paymentType: "total",
     depositAmount: "",
     netTermsDays: "30",
@@ -64,6 +65,7 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
       id: Date.now().toString(),
       name: formData.name,
       category: formData.category,
+      paymentMethod: formData.paymentMethod,
       paymentType: formData.paymentType,
       netTermsDays: formData.paymentType === 'net-terms' ? 
         (formData.netTermsDays === 'custom' ? formData.customNetDays : formData.netTermsDays) : 
@@ -81,6 +83,7 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
     setFormData({
       name: "",
       category: "",
+      paymentMethod: "bank-transfer",
       paymentType: "total",
       depositAmount: "",
       netTermsDays: "30",
@@ -127,6 +130,40 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-3">
+            <Label>Payment Method</Label>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="bank-transfer"
+                  name="paymentMethod"
+                  value="bank-transfer"
+                  checked={formData.paymentMethod === "bank-transfer"}
+                  onChange={(e) => handleInputChange("paymentMethod", e.target.value)}
+                  className="w-4 h-4 text-primary bg-gray-100 border-gray-300 focus:ring-primary"
+                />
+                <Label htmlFor="bank-transfer" className="text-sm font-normal cursor-pointer">
+                  Bank Transfer
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="credit-card"
+                  name="paymentMethod"
+                  value="credit-card"
+                  checked={formData.paymentMethod === "credit-card"}
+                  onChange={(e) => handleInputChange("paymentMethod", e.target.value)}
+                  className="w-4 h-4 text-primary bg-gray-100 border-gray-300 focus:ring-primary"
+                />
+                <Label htmlFor="credit-card" className="text-sm font-normal cursor-pointer">
+                  Credit Card
+                </Label>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-4">
