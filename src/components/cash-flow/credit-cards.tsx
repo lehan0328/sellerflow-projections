@@ -93,14 +93,28 @@ export function CreditCards() {
       if (dayMatch) {
         const dueDay = parseInt(dayMatch[1]);
         
-        // Add events for next 3 months
-        for (let monthOffset = 0; monthOffset < 3; monthOffset++) {
+        // Calculate realistic minimum payment (2.5% of balance or $25, whichever is higher)
+        const baseMinPayment = Math.max(card.balance * 0.025, 25);
+        
+        // Add events for next 6 months with varying amounts
+        for (let monthOffset = 0; monthOffset < 6; monthOffset++) {
           const dueDate = new Date(currentYear, currentMonth + monthOffset, dueDay);
+          
+          // Add some realistic monthly variation to minimum payments
+          const variationFactor = 0.8 + (Math.sin(monthOffset * 0.5) * 0.3); // Varies between 0.8x to 1.1x
+          const monthlyPayment = Math.round(baseMinPayment * variationFactor);
+          
+          // Occasionally make larger payments (25% chance)
+          const isLargerPayment = Math.random() < 0.25;
+          const finalPayment = isLargerPayment 
+            ? Math.round(monthlyPayment * (2 + Math.random())) // 2x to 3x larger payment
+            : monthlyPayment;
+
           events.push({
             id: `cc-due-${card.id}-${monthOffset}`,
             type: 'credit-payment' as const,
-            amount: card.balance,
-            description: `${card.name} Payment Due`,
+            amount: finalPayment,
+            description: `${card.name.split(' ')[0]} ${card.name.split(' ')[1] || 'Card'} Min Payment`,
             creditCard: card.name,
             date: dueDate
           });
@@ -218,20 +232,38 @@ export const getCreditCardDueDates = () => {
     if (dayMatch) {
       const dueDay = parseInt(dayMatch[1]);
       
-      // Add events for next 3 months
-      for (let monthOffset = 0; monthOffset < 3; monthOffset++) {
+      // Calculate realistic minimum payment (2.5% of balance or $25, whichever is higher)
+      const baseMinPayment = Math.max(card.balance * 0.025, 25);
+      
+      // Add events for next 6 months with varying amounts
+      for (let monthOffset = 0; monthOffset < 6; monthOffset++) {
         const dueDate = new Date(currentYear, currentMonth + monthOffset, dueDay);
+        
+        // Add some realistic monthly variation to minimum payments
+        const variationFactor = 0.8 + (Math.sin(monthOffset * 0.5) * 0.3); // Varies between 0.8x to 1.1x
+        const monthlyPayment = Math.round(baseMinPayment * variationFactor);
+        
+        // Occasionally make larger payments (25% chance)
+        const isLargerPayment = Math.random() < 0.25;
+        const finalPayment = isLargerPayment 
+          ? Math.round(monthlyPayment * (2 + Math.random())) // 2x to 3x larger payment
+          : monthlyPayment;
+
         events.push({
           id: `cc-due-${card.id}-${monthOffset}`,
           type: 'credit-payment' as const,
-          amount: card.balance,
-          description: `${card.name} Payment Due`,
+          amount: finalPayment,
+          description: `${card.name.split(' ')[0]} ${card.name.split(' ')[1] || 'Card'} Min Payment`,
           creditCard: card.name,
           date: dueDate
         });
+        
+        // Debug log to verify correct date and amount calculation
+        console.log(`Credit Card Payment: ${card.name.split(' ')[0]} due ${dueDate.toDateString()} - $${finalPayment}`);
       }
     }
   });
 
+  console.log(`Generated ${events.length} credit card payment events for next 6 months`);
   return events;
 };
