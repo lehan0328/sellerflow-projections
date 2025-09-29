@@ -79,7 +79,7 @@ const Dashboard = () => {
   const [cashFlowEvents, setCashFlowEvents] = useState<CashFlowEvent[]>([]);
   
   // Sample income data - replaced with database hook
-  const { incomeItems, addIncome, updateIncome, deleteIncome } = useIncome();
+  const { incomeItems, addIncome, updateIncome, deleteIncome, refetch: refetchIncome } = useIncome();
 
   // No sample data for new users
 
@@ -286,10 +286,10 @@ const Dashboard = () => {
     // Don't create cash flow events since vendors automatically generate calendar events
     // This prevents duplication in the calendar
 
-    // Refresh vendors to show updated data
+    // Refresh vendors to show updated data and update calendar
     await refetchVendors();
     
-    // Force immediate refresh for both components
+    // Force immediate refresh for both components and calendar
     setTimeout(async () => {
       await refetchVendors();
     }, 200);
@@ -406,6 +406,9 @@ const Dashboard = () => {
       transactionDate: paymentDate,
       status: paymentDateStartOfDay <= today ? 'completed' : 'pending'
     });
+
+    // Refetch income to update calendar
+    await refetchIncome();
 
     // Do not create a separate cashFlowEvent for planned income.
     // The calendar derives planned inflows from incomeItems to avoid duplicates.
