@@ -183,57 +183,11 @@ const Dashboard = () => {
       console.info("Due date is in the future - payment scheduled for:", format(dueDate, "PPP"));
     }
 
-    // Check if vendor already exists by name (case-insensitive)
-    const existingVendor = vendors.find(v => 
-      v.name.toLowerCase().trim() === orderData.vendor.toLowerCase().trim()
-    );
-    
+    // Each purchase order creates a separate vendor record
+    // This allows tracking individual POs separately, even from the same vendor company
     let vendor;
-    if (existingVendor) {
-      // Update existing vendor with new order details
-      const paymentSchedule = orderData.paymentSchedule || [];
-      let nextPaymentDate = orderData.paymentType === 'due-upon-order' ? orderData.poDate : orderData.dueDate;
-      let nextPaymentAmount = amount;
-      
-      // For preorder, use first payment from schedule
-      if (orderData.paymentType === 'preorder' && paymentSchedule.length > 0) {
-        nextPaymentDate = paymentSchedule[0].dueDate;
-        nextPaymentAmount = parseFloat(paymentSchedule[0].amount);
-      }
-
-      // Map form payment types to database payment types
-      let dbPaymentType: 'total' | 'preorder' | 'net-terms' = 'total';
-      switch (orderData.paymentType) {
-        case 'net-terms':
-          dbPaymentType = 'net-terms';
-          break;
-        case 'preorder':
-          dbPaymentType = 'preorder';
-          break;
-        case 'due-upon-order':
-        case 'due-upon-delivery':
-        default:
-          dbPaymentType = 'total';
-          break;
-      }
-
-      // Update existing vendor with combined total owed and latest order details
-      await updateVendor(existingVendor.id, {
-        totalOwed: existingVendor.totalOwed + amount,
-        nextPaymentDate: nextPaymentDate || orderData.poDate || new Date(),
-        nextPaymentAmount: existingVendor.nextPaymentAmount + nextPaymentAmount,
-        category: orderData.category || existingVendor.category,
-        paymentType: dbPaymentType,
-        netTermsDays: orderData.netTermsDays,
-        poName: orderData.poName || existingVendor.poName,
-        description: orderData.description || existingVendor.description,
-        notes: orderData.notes || existingVendor.notes,
-        paymentSchedule: [...(existingVendor.paymentSchedule || []), ...paymentSchedule],
-        source: 'management'
-      });
-      vendor = existingVendor;
-    } else {
-      // Create new vendor
+    {
+      // Create new vendor record for this PO
       const paymentSchedule = orderData.paymentSchedule || [];
       let nextPaymentDate = orderData.paymentType === 'due-upon-order' ? orderData.poDate : orderData.dueDate;
       let nextPaymentAmount = amount;
