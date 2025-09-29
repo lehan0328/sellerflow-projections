@@ -76,15 +76,33 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
     const dateToCheck = new Date(date);
     dateToCheck.setHours(0, 0, 0, 0);
     
-    // For today, always show the exact available cash
+    // For today, show cash after today's transactions
     if (dateToCheck.getTime() === today.getTime()) {
-      return totalAvailableCash;
+      const todayEvents = events.filter(event => {
+        const eventDate = new Date(event.date);
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate.getTime() === today.getTime();
+      });
+      const todayNet = todayEvents.reduce((total, event) => {
+        return total + (event.type === 'inflow' ? event.amount : -event.amount);
+      }, 0);
+      return totalAvailableCash + todayNet;
     }
     
     // For future dates, only include transactions that occur on or before that specific date
     // But don't include historical transactions that already affect the current balance
     if (dateToCheck > today) {
-      // For future dates, start with current balance and only add future transactions up to that date
+      // Calculate today's net first
+      const todayEvents = events.filter(event => {
+        const eventDate = new Date(event.date);
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate.getTime() === today.getTime();
+      });
+      const todayNet = todayEvents.reduce((total, event) => {
+        return total + (event.type === 'inflow' ? event.amount : -event.amount);
+      }, 0);
+      
+      // Then add future transactions up to the checked date
       const futureEventsToDate = events.filter(event => {
         const eventDate = new Date(event.date);
         eventDate.setHours(0, 0, 0, 0);
@@ -95,7 +113,7 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
         return total + (event.type === 'inflow' ? event.amount : -event.amount);
       }, 0);
       
-      return totalAvailableCash + futureChange;
+      return totalAvailableCash + todayNet + futureChange;
     }
     
     // For past dates, calculate what the balance would have been
