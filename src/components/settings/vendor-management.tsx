@@ -227,6 +227,7 @@ export function VendorManagement() {
         open={showAddVendor}
         onOpenChange={setShowAddVendor}
         onAddVendor={handleAddVendor}
+        existingVendors={vendors.map(v => ({ name: v.name, id: v.id }))}
       />
 
       {editingVendor && (

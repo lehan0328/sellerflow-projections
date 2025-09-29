@@ -13,7 +13,6 @@ import { CalendarIcon, Plus, Trash2, Search } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { VendorForm } from "./vendor-form";
 import { cn } from "@/lib/utils";
 import { useCreditCards } from "@/hooks/useCreditCards";
 
@@ -31,7 +30,6 @@ interface PurchaseOrderFormProps {
   onOpenChange: (open: boolean) => void;
   vendors: Vendor[];
   onSubmitOrder: (orderData: any) => void;
-  onAddVendor?: (vendorData: any) => void;
   onDeleteAllVendors?: () => void;
 }
 
@@ -47,7 +45,6 @@ export const PurchaseOrderForm = ({
   onOpenChange, 
   vendors, 
   onSubmitOrder, 
-  onAddVendor,
   onDeleteAllVendors
 }: PurchaseOrderFormProps) => {
   const { creditCards } = useCreditCards();
@@ -74,7 +71,7 @@ export const PurchaseOrderForm = ({
     { id: "1", amount: "", dueDate: undefined, description: "Initial deposit" }
   ]);
 
-  const [showVendorForm, setShowVendorForm] = useState(false);
+  
   const [showVendorDropdown, setShowVendorDropdown] = useState(false);
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
   const [vendorSearchTerm, setVendorSearchTerm] = useState("");
@@ -256,38 +253,10 @@ export const PurchaseOrderForm = ({
     setShowDeleteAllDialog(false);
   };
 
-  const handleAddVendorFromForm = (vendorData: any) => {
-    if (onAddVendor) {
-      const completeVendorData = {
-        name: vendorData.name,
-        category: vendorData.category || '',
-        paymentMethod: vendorData.paymentMethod || 'bank-transfer',
-        paymentType: vendorData.paymentType || 'total',
-        netTermsDays: vendorData.netTermsDays,
-        totalOwed: 0,
-        nextPaymentDate: new Date(),
-        nextPaymentAmount: 0,
-        status: 'upcoming' as const,
-        source: 'management' as const
-      };
-      
-      onAddVendor(completeVendorData);
-      
-      // Auto-select the new vendor
-      setFormData(prev => ({
-        ...prev,
-        vendor: vendorData.name,
-        vendorId: `temp-${Date.now()}`,
-        category: vendorData.category || "",
-        paymentType: mapVendorPaymentType(vendorData.paymentType),
-        paymentMethod: vendorData.paymentMethod === "credit-card" ? "credit-card" : "bank-transfer",
-        netTermsDays: mapNetTermsDays(vendorData.netTermsDays),
-        customDays: isCustomNetTerms(vendorData.netTermsDays) ? vendorData.netTermsDays?.toString() || "" : ""
-      }));
-      
-      setVendorSearchTerm(vendorData.name);
-    }
-    setShowVendorForm(false);
+  const handleGoToVendorManagement = () => {
+    onOpenChange(false);
+    // Navigate to Settings page where vendor management is located
+    window.location.href = '/settings';
   };
 
   return (
@@ -347,7 +316,31 @@ export const PurchaseOrderForm = ({
                       <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
                         {filteredVendors.length === 0 ? (
                           <div className="p-3 text-sm text-muted-foreground text-center">
-                            {vendorSearchTerm ? 'No vendors found matching your search' : 'No vendors available'}
+                            {vendorSearchTerm ? (
+                              <div className="space-y-2">
+                                <div>No vendors found matching your search</div>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={handleGoToVendorManagement}
+                                  className="text-xs"
+                                >
+                                  Add "{vendorSearchTerm}" as new vendor
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <div>No vendors available</div>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={handleGoToVendorManagement}
+                                  className="text-xs"
+                                >
+                                  Go to Vendor Management
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           filteredVendors.map((vendor) => (
@@ -370,10 +363,11 @@ export const PurchaseOrderForm = ({
                   <Button 
                     type="button" 
                     variant="outline" 
-                    onClick={() => setShowVendorForm(true)}
+                    onClick={handleGoToVendorManagement}
                     className="px-3"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Vendor
                   </Button>
                 </div>
               </div>
@@ -856,14 +850,6 @@ export const PurchaseOrderForm = ({
     </AlertDialogContent>
   </AlertDialog>
 
-      {/* Add Vendor Dialog */}
-      {showVendorForm && (
-        <VendorForm
-          open={showVendorForm}
-          onOpenChange={setShowVendorForm}
-          onAddVendor={handleAddVendorFromForm}
-        />
-      )}
     </>
   );
 };
