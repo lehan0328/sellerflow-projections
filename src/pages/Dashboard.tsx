@@ -15,6 +15,7 @@ import { IncomeForm } from "@/components/cash-flow/income-form";
 import { useIncome } from "@/hooks/useIncome";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useCustomers } from "@/hooks/useCustomers";
+import { useToast } from "@/hooks/use-toast";
 
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -39,6 +40,7 @@ const Dashboard = () => {
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
   const [editingIncome, setEditingIncome] = useState<any>(null);
   const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
+  const { toast } = useToast();
   
   // Use database hooks
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, refetch: refetchVendors } = useVendors();
@@ -525,8 +527,47 @@ const Dashboard = () => {
   };
 
   const handleDeleteVendorOrder = async (vendor: Vendor) => {
-    // Delete vendor and associated transactions
-    await deleteVendor(vendor.id);
+    // Instead of deleting the vendor, we'll subtract this order's amount
+    // and only delete the vendor if the balance becomes zero
+    
+    const newTotalOwed = vendor.totalOwed - vendor.nextPaymentAmount;
+    
+    // Delete the associated transaction for this PO
+    const vendorTransactions = transactions.filter(t => t.vendorId === vendor.id);
+    if (vendorTransactions.length > 0) {
+      // Delete the most recent transaction for this vendor
+      await deleteTransaction(vendorTransactions[0].id);
+    }
+    
+    // If there's still money owed, update the vendor
+    if (newTotalOwed > 0) {
+      // Recalculate next payment info from remaining payment schedule
+      let nextPaymentDate = vendor.nextPaymentDate;
+      let nextPaymentAmount = newTotalOwed;
+      let updatedPaymentSchedule = vendor.paymentSchedule || [];
+      
+      // If there's a payment schedule, remove the first payment and use the next one
+      if (updatedPaymentSchedule.length > 1) {
+        updatedPaymentSchedule = updatedPaymentSchedule.slice(1);
+        nextPaymentDate = new Date(updatedPaymentSchedule[0].dueDate);
+        nextPaymentAmount = parseFloat(updatedPaymentSchedule[0].amount);
+      }
+      
+      await updateVendor(vendor.id, {
+        totalOwed: newTotalOwed,
+        nextPaymentDate,
+        nextPaymentAmount,
+        paymentSchedule: updatedPaymentSchedule
+      });
+      
+      toast({
+        title: "Success",
+        description: "Purchase order deleted. Vendor balance updated.",
+      });
+    } else {
+      // If balance is zero or negative, delete the vendor entirely
+      await deleteVendor(vendor.id);
+    }
     
     // Remove any cash flow events associated with this vendor by name or PO name
     setCashFlowEvents(prev => prev.filter(event => 
