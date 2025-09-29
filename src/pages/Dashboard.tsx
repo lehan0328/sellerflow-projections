@@ -350,8 +350,8 @@ const Dashboard = () => {
       customerId: updatedIncomeData.customerId
     });
 
-    // Update cash flow events if payment date changed
-    if (success && originalIncome && originalIncome.paymentDate.getTime() !== paymentDate.getTime()) {
+    // Update cash flow events whenever income is successfully updated
+    if (success && originalIncome) {
       setCashFlowEvents(prev => prev.map(event => {
         // Find and update the cash flow event for this income
         if (event.type === 'inflow' && 
