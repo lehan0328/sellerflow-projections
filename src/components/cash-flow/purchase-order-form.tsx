@@ -264,26 +264,45 @@ export const PurchaseOrderForm = ({
   };
 
   const handleAddVendorFromForm = async (vendorData: any) => {
-    // Calculate due date based on payment terms
-    let dueDate = new Date();
-    if (vendorData.paymentType === 'net-terms' && vendorData.netTermsDays) {
-      const days = parseInt(vendorData.netTermsDays);
-      dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + days);
+    try {
+      // Calculate due date based on payment terms
+      let dueDate = new Date();
+      if (vendorData.paymentType === 'net-terms' && vendorData.netTermsDays) {
+        const days = parseInt(vendorData.netTermsDays);
+        dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + days);
+      }
+      
+      await onAddVendor({
+        name: vendorData.name,
+        totalOwed: 0,
+        nextPaymentDate: dueDate,
+        nextPaymentAmount: 0,
+        status: 'upcoming',
+        category: vendorData.category || '',
+        paymentType: vendorData.paymentType,
+        netTermsDays: vendorData.netTermsDays,
+        source: 'management'
+      });
+      
+      // Auto-select the newly created vendor
+      setFormData(prev => ({
+        ...prev,
+        vendor: vendorData.name,
+        vendorId: '', // Will be updated when vendors refresh
+        category: vendorData.category || '',
+        paymentType: mapVendorPaymentType(vendorData.paymentType),
+        netTermsDays: mapNetTermsDays(vendorData.netTermsDays),
+        customDays: isCustomNetTerms(vendorData.netTermsDays) ? vendorData.netTermsDays?.toString() || '' : ''
+      }));
+      
+      setVendorSearchTerm(vendorData.name);
+      setShowVendorForm(false);
+      toast.success(`Vendor "${vendorData.name}" created successfully!`);
+    } catch (error) {
+      console.error('Error adding vendor:', error);
+      toast.error('Failed to create vendor. Please try again.');
     }
-    
-    await onAddVendor({
-      name: vendorData.name,
-      totalOwed: 0,
-      nextPaymentDate: dueDate,
-      nextPaymentAmount: 0,
-      status: 'upcoming',
-      category: vendorData.category || '',
-      paymentType: vendorData.paymentType,
-      netTermsDays: vendorData.netTermsDays,
-      source: 'management'
-    });
-    setShowVendorForm(false);
   };
 
   const handleGoToVendorManagement = () => {
@@ -364,14 +383,14 @@ export const PurchaseOrderForm = ({
                             ) : (
                               <div className="space-y-2">
                                 <div>No vendors available</div>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  onClick={handleGoToVendorManagement}
-                                  className="text-xs"
-                                >
-                                  Go to Vendor Management
-                                </Button>
+                                 <Button 
+                                   size="sm" 
+                                   variant="outline" 
+                                   onClick={() => setShowVendorForm(true)}
+                                   className="text-xs"
+                                 >
+                                   Create Your First Vendor
+                                 </Button>
                               </div>
                             )}
                           </div>
@@ -396,7 +415,7 @@ export const PurchaseOrderForm = ({
                   <Button 
                     type="button" 
                     variant="outline" 
-                    onClick={handleGoToVendorManagement}
+                    onClick={() => setShowVendorForm(true)}
                     className="px-3"
                   >
                     <Plus className="h-4 w-4 mr-1" />
