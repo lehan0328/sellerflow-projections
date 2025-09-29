@@ -662,63 +662,7 @@ export type Database = {
       }
     }
     Views: {
-      secure_bank_accounts: {
-        Row: {
-          access_token: string | null
-          account_name: string | null
-          account_number: string | null
-          account_type: string | null
-          available_balance: number | null
-          balance: number | null
-          created_at: string | null
-          currency_code: string | null
-          id: string | null
-          institution_name: string | null
-          is_active: boolean | null
-          last_sync: string | null
-          masked_account_number: string | null
-          plaid_item_id: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          access_token?: never
-          account_name?: string | null
-          account_number?: never
-          account_type?: string | null
-          available_balance?: number | null
-          balance?: number | null
-          created_at?: string | null
-          currency_code?: string | null
-          id?: string | null
-          institution_name?: string | null
-          is_active?: boolean | null
-          last_sync?: string | null
-          masked_account_number?: never
-          plaid_item_id?: never
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          access_token?: never
-          account_name?: string | null
-          account_number?: never
-          account_type?: string | null
-          available_balance?: number | null
-          balance?: number | null
-          created_at?: string | null
-          currency_code?: string | null
-          id?: string | null
-          institution_name?: string | null
-          is_active?: boolean | null
-          last_sync?: string | null
-          masked_account_number?: never
-          plaid_item_id?: never
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       decrypt_banking_credential: {

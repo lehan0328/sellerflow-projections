@@ -34,9 +34,9 @@ export const useBankAccounts = () => {
     }
 
     try {
-      // Use the secure view instead of direct table access
+      // Query the bank_accounts table directly (RLS policies ensure proper access control)
       const { data, error } = await supabase
-        .from("secure_bank_accounts")
+        .from("bank_accounts")
         .select("*")
         .eq("is_active", true)
         .order("created_at", { ascending: false });
