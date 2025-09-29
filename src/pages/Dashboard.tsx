@@ -524,55 +524,54 @@ const Dashboard = () => {
   };
 
   const handleDeleteVendorOrder = async (vendor: Vendor) => {
-    // Instead of deleting the vendor, we'll subtract this order's amount
-    // and only delete the vendor if the balance becomes zero
-    
-    const newTotalOwed = vendor.totalOwed - vendor.nextPaymentAmount;
-    
-    // Delete the associated transaction for this PO
-    const vendorTransactions = transactions.filter(t => t.vendorId === vendor.id);
-    if (vendorTransactions.length > 0) {
-      // Delete the most recent transaction for this vendor
-      await deleteTransaction(vendorTransactions[0].id);
+    // Delete ONLY the PO transaction and adjust the vendor balance; never delete the vendor
+    const newTotalOwed = Math.max(0, (vendor.totalOwed || 0) - (vendor.nextPaymentAmount || 0));
+
+    // Try to find the exact matching transaction for this PO
+    const targetTx = transactions.find(t =>
+      t.type === 'purchase_order' &&
+      t.vendorId === vendor.id &&
+      Math.abs(t.amount - vendor.nextPaymentAmount) < 0.01 &&
+      (t.dueDate && vendor.nextPaymentDate
+        ? startOfDay(t.dueDate).getTime() === startOfDay(vendor.nextPaymentDate).getTime()
+        : true)
+    ) || transactions.find(t => t.vendorId === vendor.id && t.type === 'purchase_order');
+
+    if (targetTx) {
+      await deleteTransaction(targetTx.id);
     }
-    
-    // If there's still money owed, update the vendor
-    if (newTotalOwed > 0) {
-      // Recalculate next payment info from remaining payment schedule
-      let nextPaymentDate = vendor.nextPaymentDate;
-      let nextPaymentAmount = newTotalOwed;
-      let updatedPaymentSchedule = vendor.paymentSchedule || [];
-      
-      // If there's a payment schedule, remove the first payment and use the next one
-      if (updatedPaymentSchedule.length > 1) {
-        updatedPaymentSchedule = updatedPaymentSchedule.slice(1);
-        nextPaymentDate = new Date(updatedPaymentSchedule[0].dueDate);
-        nextPaymentAmount = parseFloat(updatedPaymentSchedule[0].amount);
-      }
-      
-      await updateVendor(vendor.id, {
-        totalOwed: newTotalOwed,
-        nextPaymentDate,
-        nextPaymentAmount,
-        paymentSchedule: updatedPaymentSchedule
-      });
-      
-      toast({
-        title: "Success",
-        description: "Purchase order deleted. Vendor balance updated.",
-      });
-    } else {
-      // If balance is zero or negative, delete the vendor entirely
-      await deleteVendor(vendor.id);
+
+    // Recompute next payment info based on remaining schedule
+    let nextPaymentDate = vendor.nextPaymentDate;
+    let nextPaymentAmount = 0;
+    let updatedPaymentSchedule = vendor.paymentSchedule || [];
+
+    if (updatedPaymentSchedule.length > 1) {
+      updatedPaymentSchedule = updatedPaymentSchedule.slice(1);
+      nextPaymentDate = new Date(updatedPaymentSchedule[0].dueDate);
+      nextPaymentAmount = parseFloat(updatedPaymentSchedule[0].amount) || 0;
     }
-    
+
+    await updateVendor(vendor.id, {
+      totalOwed: newTotalOwed,
+      nextPaymentDate,
+      nextPaymentAmount,
+      paymentSchedule: updatedPaymentSchedule,
+      status: newTotalOwed > 0 ? vendor.status : 'upcoming'
+    });
+
+    toast({
+      title: 'Purchase Order deleted',
+      description: 'The vendor record was kept and the balance was updated.',
+    });
+
     // Remove any cash flow events associated with this vendor by name or PO name
     setCashFlowEvents(prev => prev.filter(event => 
       !(event.vendor === vendor.name || 
         event.description?.includes(vendor.name) ||
         (vendor.poName && event.description?.includes(vendor.poName)))
     ));
-    
+
     setEditingVendor(null);
   };
 
