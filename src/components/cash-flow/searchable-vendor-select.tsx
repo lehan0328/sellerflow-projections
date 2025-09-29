@@ -27,11 +27,15 @@ export const SearchableVendorSelect = ({
 }: SearchableVendorSelectProps) => {
   const [open, setOpen] = useState(false);
 
-  console.log('SearchableVendorSelect - vendors:', vendors, 'value:', value);
+  // Get unique vendors and sort alphabetically by name
+  const uniqueVendors = vendors
+    .filter((vendor, index, self) => 
+      index === self.findIndex(v => v.id === vendor.id)
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   // Find selected vendor
-  const selectedVendor = vendors.find(vendor => vendor.id === value);
-  console.log('SearchableVendorSelect - selectedVendor:', selectedVendor);
+  const selectedVendor = uniqueVendors.find(vendor => vendor.id === value);
 
   const handleSelect = (vendorId: string) => {
     console.log('SearchableVendorSelect - handleSelect called with:', vendorId);
@@ -62,12 +66,12 @@ export const SearchableVendorSelect = ({
       >
         <ScrollArea className="max-h-64">
           <div className="p-1">
-            {vendors.length === 0 ? (
+            {uniqueVendors.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
                 No vendors found.
               </div>
             ) : (
-              vendors.map((vendor) => (
+              uniqueVendors.map((vendor) => (
                 <div
                   key={vendor.id}
                   className={cn(

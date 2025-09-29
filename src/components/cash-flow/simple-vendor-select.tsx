@@ -30,9 +30,16 @@ export const SimpleVendorSelect = ({
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const selectedVendor = vendors.find(vendor => vendor.id === value);
+  // Get unique vendors and sort alphabetically
+  const uniqueVendors = vendors
+    .filter((vendor, index, self) => 
+      index === self.findIndex(v => v.id === vendor.id)
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const selectedVendor = uniqueVendors.find(vendor => vendor.id === value);
   
-  const filteredVendors = vendors.filter(vendor =>
+  const filteredVendors = uniqueVendors.filter(vendor =>
     vendor.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
