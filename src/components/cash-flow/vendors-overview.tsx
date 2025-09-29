@@ -12,12 +12,15 @@ import { VendorOrderDetailModal } from "./vendor-order-detail-modal";
 import * as React from "react";
 
 interface VendorsOverviewProps {
+  vendors?: Vendor[];
   onVendorUpdate?: () => void;
   onEditOrder?: (vendor: Vendor) => void;
+  onDeleteVendor?: (vendorId: string) => void;
 }
 
-export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverviewProps) => {
-  const { vendors, loading, deleteVendor, refetch } = useVendors();
+export const VendorsOverview = ({ vendors: propVendors, onVendorUpdate, onEditOrder, onDeleteVendor }: VendorsOverviewProps) => {
+  const { deleteVendor: deleteVendorHook } = useVendors();
+  const vendors = propVendors || [];
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVendor, setSelectedVendor] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | 'paid'>('all');
@@ -115,8 +118,11 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
 
   const handleDeleteVendor = async (vendor: Vendor) => {
     try {
-      await deleteVendor(vendor.id);
-      refetch();
+      if (onDeleteVendor) {
+        onDeleteVendor(vendor.id);
+      } else {
+        await deleteVendorHook(vendor.id);
+      }
       onVendorUpdate?.();
     } catch (error) {
       console.error('Error deleting vendor:', error);
@@ -126,9 +132,12 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
   const handlePayToday = async (vendor: Vendor) => {
     try {
       // Delete the vendor since payment is complete
-      await deleteVendor(vendor.id);
+      if (onDeleteVendor) {
+        onDeleteVendor(vendor.id);
+      } else {
+        await deleteVendorHook(vendor.id);
+      }
       // Refresh data to ensure both calendar and vendor list are updated
-      refetch();
       onVendorUpdate?.();
     } catch (error) {
       console.error('Error processing payment:', error);
@@ -310,11 +319,7 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
       </CardHeader>
       <CardContent className="p-4 flex-1 overflow-hidden">
         <div className="h-full overflow-y-auto space-y-2 pr-2">
-          {loading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Loading vendors...
-            </div>
-          ) : filteredAndSortedVendors.length === 0 ? (
+          {filteredAndSortedVendors.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {selectedVendor ? `No purchase orders found for ${vendorSearchOptions.find(v => v.value === selectedVendor)?.label || selectedVendor}.` :
                searchTerm ? 'No vendors found matching your search.' : 
@@ -441,7 +446,6 @@ export const VendorsOverview = ({ onVendorUpdate, onEditOrder }: VendorsOverview
         onOpenChange={(open) => {
           if (!open) {
             setEditingVendor(null);
-            refetch();
             onVendorUpdate?.();
           }
         }}
