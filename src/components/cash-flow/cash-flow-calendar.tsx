@@ -502,10 +502,17 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
             
             <div className="text-sm text-muted-foreground">
               {viewType === 'calendar' ? 'Monthly Net:' : 'Period Net:'} <span className="font-semibold text-foreground">
-                {viewType === 'calendar' 
-                  ? '+$41,300' 
-                  : `+$${chartData.reduce((sum, day) => sum + day.dailyChange, 0).toLocaleString()}`
-                }
+                {(() => {
+                  const monthEvents = events.filter(event => {
+                    const eventDate = new Date(event.date);
+                    return eventDate.getMonth() === currentDate.getMonth() && 
+                           eventDate.getFullYear() === currentDate.getFullYear();
+                  });
+                  const monthlyNet = monthEvents.reduce((sum, event) => 
+                    sum + (event.type === 'inflow' ? event.amount : -event.amount), 0
+                  );
+                  return `${monthlyNet >= 0 ? '+' : ''}$${monthlyNet.toLocaleString()}`;
+                })()}
               </span>
             </div>
           </div>

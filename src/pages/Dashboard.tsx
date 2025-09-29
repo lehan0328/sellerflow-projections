@@ -621,6 +621,17 @@ const Dashboard = () => {
       date: vendor.nextPaymentDate
     }));
 
+  // Convert income items to calendar events
+  const incomeEvents: CashFlowEvent[] = incomeItems
+    .map(income => ({
+      id: `income-${income.id}`,
+      type: 'inflow' as const,
+      amount: income.amount,
+      description: income.description,
+      source: income.source,
+      date: income.paymentDate
+    }));
+
   // Clean up stale cash flow events when vendors change
   React.useEffect(() => {
     setCashFlowEvents(prev =>
@@ -647,7 +658,7 @@ const Dashboard = () => {
   const creditCardEvents = hasRealData ? getCreditCardDueDates() : [];
 
   // Combine all events for calendar - only include real user data
-  const allCalendarEvents = [...calendarEvents, ...vendorEvents, ...creditCardEvents];
+  const allCalendarEvents = [...calendarEvents, ...vendorEvents, ...incomeEvents, ...creditCardEvents];
 
   // Log cash values for debugging
   console.log("Dashboard - bankAccountBalance:", bankAccountBalance, "accounts connected:", accounts.length);
