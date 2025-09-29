@@ -360,7 +360,7 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                     
                     {/* Show transaction summary in separate box for multiple transactions */}
                     {hasEvents && dayEvents.length > 1 && (
-                      <div className="cursor-pointer hover:bg-muted/30 p-2 rounded border border-muted-foreground/30 bg-muted/5 mb-1"
+                      <div className="cursor-pointer hover:bg-muted/30 p-2 rounded border border-muted-foreground/30 bg-muted/5 mb-1 space-y-1"
                            onClick={() => {
                              setSelectedDayTransactions(dayEvents);
                              setSelectedDate(day);
@@ -372,6 +372,12 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                           </span>
                           <span className={`text-xs font-semibold ${dayBalance >= 0 ? 'text-finance-positive' : 'text-finance-negative'}`}>
                             {dayBalance >= 0 ? '+' : ''}${dayBalance.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between w-full pt-1 border-t border-muted-foreground/20">
+                          <span className="text-[10px] text-muted-foreground">Running Balance</span>
+                          <span className={`text-xs font-bold ${totalCash >= 0 ? 'text-finance-positive' : 'text-finance-negative'}`}>
+                            ${totalCash.toLocaleString()}
                           </span>
                         </div>
                       </div>
