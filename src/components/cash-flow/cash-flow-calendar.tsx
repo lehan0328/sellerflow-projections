@@ -370,8 +370,8 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                           <span className="text-xs text-muted-foreground font-medium">
                             {dayEvents.length} transactions
                           </span>
-                          <span className="text-xs font-semibold text-foreground">
-                            ${dayEvents.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
+                          <span className={`text-xs font-semibold ${dayBalance >= 0 ? 'text-finance-positive' : 'text-finance-negative'}`}>
+                            {dayBalance >= 0 ? '+' : ''}${dayBalance.toLocaleString()}
                           </span>
                         </div>
                       </div>
