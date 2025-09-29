@@ -53,8 +53,10 @@ const Dashboard = () => {
   const formVendors = useMemo(() => {
     console.log('Dashboard - Creating formVendors from vendors:', vendors);
     
-    // Filter to get unique vendors by name and sort alphabetically
+    // Filter to only include management vendors (matching Vendor Management page)
+    // and get unique vendors by name and sort alphabetically
     const uniqueVendors = vendors
+      .filter(vendor => vendor.source === 'management')
       .filter((vendor, index, self) => 
         index === self.findIndex(v => v.name.toLowerCase() === vendor.name.toLowerCase())
       )
@@ -65,7 +67,7 @@ const Dashboard = () => {
         paymentType: v.paymentType || 'total',
         netTermsDays: (v.netTermsDays ?? '30') as any,
         category: v.category || "",
-        source: v.source || 'unknown'
+        source: v.source || 'management'
       }));
     
     console.log('Dashboard - formVendors result (unique):', uniqueVendors);
