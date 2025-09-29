@@ -40,6 +40,7 @@ const Dashboard = () => {
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
   const [editingIncome, setEditingIncome] = useState<any>(null);
   const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
+  const [vendorUpdateTrigger, setVendorUpdateTrigger] = useState(0);
   const { toast } = useToast();
   
   // Use database hooks
@@ -293,10 +294,8 @@ const Dashboard = () => {
     // Refresh vendors to show updated data and update calendar
     await refetchVendors();
     
-    // Force immediate refresh for both components and calendar
-    setTimeout(async () => {
-      await refetchVendors();
-    }, 200);
+    // Trigger VendorsOverview to refresh its own data
+    setVendorUpdateTrigger(prev => prev + 1);
     
     setShowPurchaseOrderForm(false);
   };
@@ -754,7 +753,11 @@ const Dashboard = () => {
         {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <VendorsOverview 
-            onVendorUpdate={refetchVendors}
+            key={`vendors-${vendorUpdateTrigger}`}
+            onVendorUpdate={() => {
+              refetchVendors();
+              setVendorUpdateTrigger(prev => prev + 1);
+            }}
             onEditOrder={(vendor) => {
               console.log('Edit order for vendor:', vendor);
             }}
