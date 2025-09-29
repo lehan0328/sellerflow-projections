@@ -710,6 +710,7 @@ const Dashboard = () => {
           onOpenChange={setShowPurchaseOrderForm}
           onSubmitOrder={handlePurchaseOrderSubmit}
           onDeleteAllVendors={deleteAllVendors}
+          onAddVendor={addVendor}
         />
       )}
 

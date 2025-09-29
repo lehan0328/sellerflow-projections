@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useCreditCards } from "@/hooks/useCreditCards";
+import { VendorForm } from "./vendor-form";
 
 interface Vendor {
   id: string;
@@ -31,6 +32,7 @@ interface PurchaseOrderFormProps {
   vendors: Vendor[];
   onSubmitOrder: (orderData: any) => void;
   onDeleteAllVendors?: () => void;
+  onAddVendor: (vendorData: any) => void;
 }
 
 interface PaymentSchedule {
@@ -45,7 +47,8 @@ export const PurchaseOrderForm = ({
   onOpenChange, 
   vendors, 
   onSubmitOrder, 
-  onDeleteAllVendors
+  onDeleteAllVendors,
+  onAddVendor
 }: PurchaseOrderFormProps) => {
   const { creditCards } = useCreditCards();
   
@@ -75,6 +78,7 @@ export const PurchaseOrderForm = ({
   const [showVendorDropdown, setShowVendorDropdown] = useState(false);
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
   const [vendorSearchTerm, setVendorSearchTerm] = useState("");
+  const [showVendorForm, setShowVendorForm] = useState(false);
 
   // Date picker states
   const [isPODatePickerOpen, setIsPODatePickerOpen] = useState(false);
@@ -91,12 +95,18 @@ export const PurchaseOrderForm = ({
     "Other"
   ];
 
-  // Filter vendors based on search term and sort alphabetically
-  const filteredVendors = vendors
-    .filter(vendor =>
-      vendor.name.toLowerCase().includes(vendorSearchTerm.toLowerCase())
+  // Get unique vendors first, then filter and sort alphabetically
+  const uniqueVendors = vendors
+    .filter((vendor, index, self) => 
+      index === self.findIndex(v => v.id === vendor.id)
     )
     .sort((a, b) => a.name.localeCompare(b.name));
+
+  // Filter unique vendors based on search term
+  const filteredVendors = uniqueVendors
+    .filter(vendor =>
+      vendor.name.toLowerCase().includes(vendorSearchTerm.toLowerCase())
+    );
 
   // Reset form when dialog opens/closes
   useEffect(() => {
@@ -253,6 +263,29 @@ export const PurchaseOrderForm = ({
     setShowDeleteAllDialog(false);
   };
 
+  const handleAddVendorFromForm = async (vendorData: any) => {
+    // Calculate due date based on payment terms
+    let dueDate = new Date();
+    if (vendorData.paymentType === 'net-terms' && vendorData.netTermsDays) {
+      const days = parseInt(vendorData.netTermsDays);
+      dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + days);
+    }
+    
+    await onAddVendor({
+      name: vendorData.name,
+      totalOwed: 0,
+      nextPaymentDate: dueDate,
+      nextPaymentAmount: 0,
+      status: 'upcoming',
+      category: vendorData.category || '',
+      paymentType: vendorData.paymentType,
+      netTermsDays: vendorData.netTermsDays,
+      source: 'management'
+    });
+    setShowVendorForm(false);
+  };
+
   const handleGoToVendorManagement = () => {
     onOpenChange(false);
     // Navigate to Settings page where vendor management is located
@@ -319,14 +352,14 @@ export const PurchaseOrderForm = ({
                             {vendorSearchTerm ? (
                               <div className="space-y-2">
                                 <div>No vendors found matching your search</div>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  onClick={handleGoToVendorManagement}
-                                  className="text-xs"
-                                >
-                                  Add "{vendorSearchTerm}" as new vendor
-                                </Button>
+                                 <Button 
+                                   size="sm" 
+                                   variant="outline" 
+                                   onClick={() => setShowVendorForm(true)}
+                                   className="text-xs"
+                                 >
+                                   Add "{vendorSearchTerm}" as new vendor
+                                 </Button>
                               </div>
                             ) : (
                               <div className="space-y-2">
@@ -849,6 +882,13 @@ export const PurchaseOrderForm = ({
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
+
+      <VendorForm
+        open={showVendorForm}
+        onOpenChange={setShowVendorForm}
+        onAddVendor={handleAddVendorFromForm}
+        existingVendors={uniqueVendors.map(v => ({ name: v.name, id: v.id }))}
+      />
 
     </>
   );
