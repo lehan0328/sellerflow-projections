@@ -434,6 +434,7 @@ export type Database = {
           amount: number
           category: string | null
           created_at: string
+          customer_id: string | null
           description: string
           id: string
           is_recurring: boolean
@@ -449,6 +450,7 @@ export type Database = {
           amount: number
           category?: string | null
           created_at?: string
+          customer_id?: string | null
           description: string
           id?: string
           is_recurring?: boolean
@@ -464,6 +466,7 @@ export type Database = {
           amount?: number
           category?: string | null
           created_at?: string
+          customer_id?: string | null
           description?: string
           id?: string
           is_recurring?: boolean
@@ -475,7 +478,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "income_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

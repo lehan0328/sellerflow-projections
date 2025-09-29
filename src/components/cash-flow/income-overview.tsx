@@ -17,6 +17,8 @@ interface IncomeItem {
   status: 'received' | 'pending' | 'overdue';
   category: string;
   isRecurring: boolean;
+  customerId?: string;
+  customer?: string;
 }
 
 interface IncomeOverviewProps {

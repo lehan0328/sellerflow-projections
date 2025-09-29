@@ -312,7 +312,16 @@ const Dashboard = () => {
   };
 
   const handleEditIncome = (income: any) => {
-    setEditingIncome(income);
+    // Find the customer name if customerId exists
+    const customer = income.customerId 
+      ? customers.find(c => c.id === income.customerId)
+      : null;
+    
+    setEditingIncome({
+      ...income,
+      customer: customer?.name || income.source,
+      customerId: income.customerId
+    });
     setShowEditIncomeForm(true);
   };
 
@@ -332,12 +341,13 @@ const Dashboard = () => {
       description: updatedIncomeData.description,
       amount,
       paymentDate,
-      source: updatedIncomeData.source || 'Manual Entry',
+      source: updatedIncomeData.customer || updatedIncomeData.source || 'Manual Entry',
       status: paymentDateStartOfDay <= today ? 'received' as const : 'pending' as const,
       category: updatedIncomeData.category,
       isRecurring: updatedIncomeData.isRecurring || false,
       recurringFrequency: updatedIncomeData.recurringFrequency,
-      notes: updatedIncomeData.notes
+      notes: updatedIncomeData.notes,
+      customerId: updatedIncomeData.customerId
     });
 
     // Update cash flow events if payment date changed
@@ -383,12 +393,13 @@ const Dashboard = () => {
       description: incomeData.description || 'Income',
       amount: amount,
       paymentDate: paymentDate,
-      source: incomeData.source || 'Manual Entry',
+      source: incomeData.customer || incomeData.source || 'Manual Entry',
       status: paymentDateStartOfDay <= today ? 'received' as const : 'pending' as const,
       category: incomeData.category || '',
       isRecurring: incomeData.isRecurring || false,
       recurringFrequency: incomeData.recurringFrequency,
-      notes: incomeData.notes
+      notes: incomeData.notes,
+      customerId: incomeData.customerId
     });
 
     // Create transaction

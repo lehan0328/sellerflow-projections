@@ -14,6 +14,8 @@ export interface IncomeItem {
   isRecurring: boolean;
   recurringFrequency?: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'yearly' | 'weekdays';
   notes?: string;
+  customerId?: string;
+  customer?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -68,6 +70,7 @@ export const useIncome = () => {
         isRecurring: item.is_recurring,
         recurringFrequency: item.recurring_frequency as any,
         notes: item.notes || undefined,
+        customerId: item.customer_id || undefined,
         createdAt: new Date(item.created_at),
         updatedAt: new Date(item.updated_at)
       }));
@@ -101,7 +104,8 @@ export const useIncome = () => {
           category: incomeData.category,
           is_recurring: incomeData.isRecurring,
           recurring_frequency: incomeData.recurringFrequency,
-          notes: incomeData.notes
+          notes: incomeData.notes,
+          customer_id: incomeData.customerId || null
         })
         .select()
         .single();
@@ -123,6 +127,7 @@ export const useIncome = () => {
         isRecurring: data.is_recurring,
         recurringFrequency: data.recurring_frequency as any,
         notes: data.notes || undefined,
+        customerId: data.customer_id || undefined,
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at)
       };
@@ -156,6 +161,7 @@ export const useIncome = () => {
       if (updates.isRecurring !== undefined) updateData.is_recurring = updates.isRecurring;
       if (updates.recurringFrequency !== undefined) updateData.recurring_frequency = updates.recurringFrequency;
       if (updates.notes !== undefined) updateData.notes = updates.notes;
+      if (updates.customerId !== undefined) updateData.customer_id = updates.customerId;
 
       const { data, error } = await supabase
         .from('income')
@@ -181,6 +187,7 @@ export const useIncome = () => {
         isRecurring: data.is_recurring,
         recurringFrequency: data.recurring_frequency as any,
         notes: data.notes || undefined,
+        customerId: data.customer_id || undefined,
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at)
       };
