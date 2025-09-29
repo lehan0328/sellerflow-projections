@@ -350,22 +350,18 @@ const Dashboard = () => {
       customerId: updatedIncomeData.customerId
     });
 
-    // Update cash flow events whenever income is successfully updated
+    // Remove any legacy inflow events for this income to prevent duplicates in the calendar
     if (success && originalIncome) {
-      setCashFlowEvents(prev => prev.map(event => {
-        // Find and update the cash flow event for this income
-        if (event.type === 'inflow' && 
-            event.description === originalIncome.description && 
-            Math.abs(event.amount - originalIncome.amount) < 0.01) {
-          return {
-            ...event,
-            date: paymentDate,
-            amount,
-            description: updatedIncomeData.description || originalIncome.description
-          };
-        }
-        return event;
-      }));
+      setCashFlowEvents(prev =>
+        prev.filter(event => {
+          if (event.type !== 'inflow') return true;
+          const sameDesc = event.description === originalIncome.description;
+          const sameAmount = Math.abs(event.amount - originalIncome.amount) < 0.01;
+          const sameDay =
+            startOfDay(event.date).getTime() === startOfDay(originalIncome.paymentDate).getTime();
+          return !(sameDesc && sameAmount && sameDay);
+        })
+      );
     }
 
     if (success) {
@@ -411,15 +407,8 @@ const Dashboard = () => {
       status: paymentDateStartOfDay <= today ? 'completed' : 'pending'
     });
 
-    // Create cash flow event
-    const newEvent: CashFlowEvent = {
-      id: Date.now().toString(),
-      type: 'inflow',
-      amount: amount,
-      description: incomeData.description || 'Income',
-      date: paymentDate
-    };
-    setCashFlowEvents(prev => [newEvent, ...prev]);
+    // Do not create a separate cashFlowEvent for planned income.
+    // The calendar derives planned inflows from incomeItems to avoid duplicates.
 
     setShowIncomeForm(false);
     setShowRecurringIncomeForm(false);
@@ -631,6 +620,21 @@ const Dashboard = () => {
       source: income.source,
       date: income.paymentDate
     }));
+
+  // Prevent duplicate inflows: remove any legacy cashFlowEvents that mirror existing income items
+  useEffect(() => {
+    setCashFlowEvents(prev =>
+      prev.filter(e => {
+        if (e.type !== 'inflow') return true;
+        // Drop inflow events that match an income item on the same day with same desc and amount
+        return !incomeItems.some(inc =>
+          inc.description === e.description &&
+          Math.abs(inc.amount - e.amount) < 0.01 &&
+          startOfDay(inc.paymentDate).getTime() === startOfDay(e.date).getTime()
+        );
+      })
+    );
+  }, [incomeItems]);
 
   // Clean up stale cash flow events when vendors change
   React.useEffect(() => {
