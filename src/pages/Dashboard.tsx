@@ -754,8 +754,11 @@ const Dashboard = () => {
               refetchVendors();
             }}
             onDeleteVendor={async (vendorId) => {
-              await deleteVendor(vendorId);
-              await refetchVendors();
+              // Find the vendor to get full details
+              const vendor = vendors.find(v => v.id === vendorId);
+              if (vendor) {
+                await handleDeleteVendorOrder(vendor);
+              }
             }}
             onEditOrder={(vendor) => {
               console.log('Edit order for vendor:', vendor);
