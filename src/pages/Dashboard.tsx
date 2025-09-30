@@ -46,7 +46,16 @@ const Dashboard = () => {
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
-  const { totalCash: userSettingsCash, updateTotalCash } = useUserSettings();
+  const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance } = useUserSettings();
+  
+  // One-time fix: Set starting balance to 60000
+  React.useEffect(() => {
+    const hasFixedBalance = localStorage.getItem('balance_fixed_60k');
+    if (!hasFixedBalance && userSettingsCash !== 60000) {
+      setStartingBalance(60000);
+      localStorage.setItem('balance_fixed_60k', 'true');
+    }
+  }, [userSettingsCash, setStartingBalance]);
   const { customers, addCustomer, deleteAllCustomers } = useCustomers();
   
   // State for vendors used in forms (derived from database vendors) - always fresh data

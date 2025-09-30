@@ -87,6 +87,34 @@ export const useUserSettings = () => {
     fetchUserSettings();
   }, []);
 
+  const setStartingBalance = async (amount: number) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('user_settings')
+        .update({ total_cash: amount })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setTotalCash(amount);
+      
+      toast({
+        title: "Success",
+        description: `Starting balance set to $${amount.toLocaleString()}`,
+      });
+    } catch (error) {
+      console.error('Error setting starting balance:', error);
+      toast({
+        title: "Error",
+        description: "Failed to set starting balance",
+        variant: "destructive",
+      });
+    }
+  };
+
   const resetAccount = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -133,6 +161,7 @@ export const useUserSettings = () => {
     totalCash,
     loading,
     updateTotalCash,
+    setStartingBalance,
     resetAccount,
     refetch: fetchUserSettings
   };
