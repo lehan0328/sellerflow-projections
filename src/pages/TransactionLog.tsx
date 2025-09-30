@@ -2,12 +2,14 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TransactionLog as TransactionLogComponent } from "@/components/cash-flow/transaction-log";
 import { BankTransactionLog } from "@/components/cash-flow/bank-transaction-log";
+import { ArchivedTransactions } from "@/components/cash-flow/archived-transactions";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useVendors } from "@/hooks/useVendors";
 import { useIncome } from "@/hooks/useIncome";
 import { useTransactionMatching, TransactionMatch } from "@/hooks/useTransactionMatching";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useMemo } from "react";
 
 export default function TransactionLog() {
   const navigate = useNavigate();
@@ -176,6 +178,43 @@ export default function TransactionLog() {
     status: transaction.status as 'completed' | 'pending' | 'cancelled'
   }));
 
+  // Create archived transactions from matched/completed items
+  const archivedTransactions = useMemo(() => {
+    const archived = [];
+    
+    // Add matched vendors (totalOwed = 0)
+    vendors.forEach(vendor => {
+      if (vendor.totalOwed === 0 && vendor.status === 'upcoming') {
+        archived.push({
+          id: `vendor-${vendor.id}`,
+          type: 'vendor' as const,
+          name: vendor.name,
+          amount: vendor.nextPaymentAmount || 0,
+          description: vendor.poName || vendor.description || 'Vendor payment',
+          date: new Date(vendor.nextPaymentDate),
+          matchedWith: 'Bank Transaction'
+        });
+      }
+    });
+    
+    // Add received income
+    incomeItems.forEach(income => {
+      if (income.status === 'received') {
+        archived.push({
+          id: `income-${income.id}`,
+          type: 'income' as const,
+          name: income.source,
+          amount: income.amount,
+          description: income.description,
+          date: new Date(income.paymentDate),
+          matchedWith: income.category || undefined
+        });
+      }
+    });
+    
+    return archived.sort((a, b) => b.date.getTime() - a.date.getTime());
+  }, [vendors, incomeItems]);
+
   return (
     <div className="min-h-screen bg-gradient-subtle">
       <div className="container mx-auto p-6">
@@ -193,7 +232,7 @@ export default function TransactionLog() {
           </h1>
         </div>
         
-        <div className="max-w-full">
+        <div className="max-w-full space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <TransactionLogComponent
               transactions={formattedTransactions}
@@ -209,6 +248,10 @@ export default function TransactionLog() {
               onManualMatch={handleManualMatch}
             />
           </div>
+          
+          <ArchivedTransactions 
+            transactions={archivedTransactions}
+          />
         </div>
       </div>
     </div>
