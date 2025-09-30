@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { PDFDocument } from "https://cdn.skypack.dev/pdf-lib@1.17.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -59,53 +58,27 @@ serve(async (req) => {
 
     console.log("Processing document:", file.name, file.type);
 
-    let processedBytes: Uint8Array;
-    let mimeType = file.type;
-
-    // Handle PDF conversion to image
+    // PDF files are not supported by the vision API
+    // Only image formats (PNG, JPEG, WEBP, GIF) are accepted
     if (file.type === 'application/pdf') {
-      console.log("Converting PDF to image...");
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdfDoc = await PDFDocument.load(arrayBuffer);
-        const pages = pdfDoc.getPages();
-        
-        if (pages.length === 0) {
-          return new Response(
-            JSON.stringify({ 
-              success: false,
-              error: "PDF file is empty or corrupted"
-            }),
-            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-
-        // For now, we'll pass the PDF bytes and let Gemini handle it directly
-        // Gemini 2.5 Flash supports PDF documents
-        processedBytes = new Uint8Array(arrayBuffer);
-        mimeType = 'application/pdf';
-        console.log("PDF ready for processing");
-      } catch (error) {
-        console.error("PDF processing error:", error);
-        return new Response(
-          JSON.stringify({ 
-            success: false,
-            error: "Failed to process PDF file. Please ensure it's a valid PDF document."
-          }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    } else {
-      // Read file as-is for images
-      const arrayBuffer = await file.arrayBuffer();
-      processedBytes = new Uint8Array(arrayBuffer);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: "PDF files cannot be processed directly. The AI vision API only supports image formats (PNG, JPEG, WEBP, GIF).\n\n📸 Please convert your PDF to an image:\n• Take a screenshot (Windows: Win+Shift+S, Mac: Cmd+Shift+4)\n• Use an online PDF to JPG converter\n• Open the PDF and export/save as an image\n\nThen upload the image file instead."
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
+
+    // Read file as base64 for images
+    const arrayBuffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
     
     // Convert to base64
     let base64 = '';
     const chunkSize = 0x8000; // 32KB chunks to avoid stack overflow
-    for (let i = 0; i < processedBytes.length; i += chunkSize) {
-      const chunk = processedBytes.subarray(i, Math.min(i + chunkSize, processedBytes.length));
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
       base64 += String.fromCharCode(...chunk);
     }
     base64 = btoa(base64);
@@ -132,7 +105,7 @@ serve(async (req) => {
               {
                 type: "image_url",
                 image_url: {
-                  url: `data:${mimeType};base64,${base64}`
+                  url: `data:${file.type};base64,${base64}`
                 }
               }
             ]
