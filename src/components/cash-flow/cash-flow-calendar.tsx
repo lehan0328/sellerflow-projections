@@ -492,15 +492,19 @@ export const CashFlowCalendar = ({
             <div className="text-sm text-muted-foreground">
               {viewType === 'calendar' ? 'Monthly Net:' : 'Period Net:'} <span className="font-semibold text-foreground">
                 {(() => {
-                  const monthEvents = events.filter(event => {
-                    const eventDate = new Date(event.date);
-                    return eventDate.getMonth() === currentDate.getMonth() && 
-                           eventDate.getFullYear() === currentDate.getFullYear();
-                  });
-                  const monthlyNet = monthEvents.reduce((sum, event) => 
-                    sum + (event.type === 'inflow' ? event.amount : -event.amount), 0
-                  );
-                  return `${monthlyNet >= 0 ? '+' : ''}$${monthlyNet.toLocaleString()}`;
+                  // Calculate cumulative balance through end of displayed month
+                  const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+                  endOfMonth.setHours(23, 59, 59, 999);
+                  
+                  const cumulativeNet = events
+                    .filter(event => {
+                      const eventDate = new Date(event.date);
+                      return eventDate <= endOfMonth;
+                    })
+                    .reduce((sum, event) => 
+                      sum + (event.type === 'inflow' ? event.amount : -event.amount), 0
+                    );
+                  return `${cumulativeNet >= 0 ? '+' : ''}$${cumulativeNet.toLocaleString()}`;
                 })()}
               </span>
             </div>
