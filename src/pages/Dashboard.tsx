@@ -140,44 +140,15 @@ const Dashboard = () => {
   // Sample income data - replaced with database hook
   const { incomeItems, addIncome, updateIncome, deleteIncome, refetch: refetchIncome } = useIncome();
 
-  // Add example pending income items for matching demonstration
-  const exampleIncomeItems = [
-    {
-      id: 'example-income-1',
-      description: 'Monthly Service Fee',
-      amount: 5000, // Match the bank transaction amount
-      paymentDate: new Date(), // Set to today so it matches
-      source: 'Acme Corp',
-      status: 'pending' as const,
-      category: 'Services',
-      isRecurring: false,
-      customerId: undefined
-    },
-    {
-      id: 'example-income-2', 
-      description: 'Consulting Project',
-      amount: 5000,
-      paymentDate: addDays(new Date(), 10), // 10 days from now
-      source: 'TechStart Inc',
-      status: 'pending' as const,
-      category: 'Consulting',
-      isRecurring: false,
-      customerId: undefined
-    }
-  ];
-  
-  // Combine real income items with examples for demo
-  const allIncomeItems = [...incomeItems, ...exampleIncomeItems];
-
   // Transaction matching for bank transactions
   const bankTransactions = exampleBankTransactions;
-  const { getMatchesForIncome } = useTransactionMatching(bankTransactions, vendors, allIncomeItems);
+  const { getMatchesForIncome } = useTransactionMatching(bankTransactions, vendors, incomeItems);
 
   // Calculate pending income due today that's not matched
   const todayDate = new Date();
   todayDate.setHours(0, 0, 0, 0);
   
-  const pendingIncomeToday = allIncomeItems
+  const pendingIncomeToday = incomeItems
     .filter(income => {
       const paymentDate = new Date(income.paymentDate);
       paymentDate.setHours(0, 0, 0, 0);
@@ -707,8 +678,8 @@ const Dashboard = () => {
       date: vendor.nextPaymentDate
     }));
 
-  // Convert income items to calendar events (include examples for demo)
-  const incomeEvents: CashFlowEvent[] = allIncomeItems
+  // Convert income items to calendar events
+  const incomeEvents: CashFlowEvent[] = incomeItems
     .map(income => ({
       id: `income-${income.id}`,
       type: 'inflow' as const,
@@ -880,24 +851,21 @@ const Dashboard = () => {
             }}
           />
           <IncomeOverview
-            incomeItems={allIncomeItems}
+            incomeItems={incomeItems}
             bankTransactions={exampleBankTransactions}
             onCollectToday={handleCollectIncome}
             onEditIncome={handleEditIncome}
             onDeleteIncome={handleDeleteIncome}
             onMatchTransaction={async (income) => {
-              // Only update real database items, not examples
-              if (!income.id.startsWith('example-')) {
-                // Create a completed transaction record when matching
-                await addTransaction({
-                  type: 'customer_payment',
-                  amount: income.amount,
-                  description: `Matched: ${income.source} - ${income.description}`,
-                  customerId: income.customerId,
-                  transactionDate: new Date(),
-                  status: 'completed'
-                });
-              }
+              // Create a completed transaction record when matching
+              await addTransaction({
+                type: 'customer_payment',
+                amount: income.amount,
+                description: `Matched: ${income.source} - ${income.description}`,
+                customerId: income.customerId,
+                transactionDate: new Date(),
+                status: 'completed'
+              });
             }}
           />
         </div>
