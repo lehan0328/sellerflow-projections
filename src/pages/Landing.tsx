@@ -284,14 +284,6 @@ const Landing = () => {
                 <span>Smart AI Features</span>
               </div>
             </div>
-            <Badge 
-              variant="secondary" 
-              className="inline-flex items-center space-x-2 animate-fade-in hover-scale transition-all duration-300 hover:bg-primary/10"
-              style={{ animationDelay: '200ms' }}
-            >
-              <Star className="h-4 w-4 fill-current" />
-              <span>Trusted by 1,000+ Amazon Sellers</span>
-            </Badge>
             
             <div className="animate-fade-in space-y-6" style={{ animationDelay: '400ms' }}>
               <h1 className="text-4xl lg:text-7xl font-bold leading-tight">
@@ -333,8 +325,17 @@ const Landing = () => {
                 See Live Demo
               </Button>
             </div>
+
+            <Badge 
+              variant="secondary" 
+              className="inline-flex items-center space-x-2 animate-fade-in hover-scale transition-all duration-300 hover:bg-primary/10"
+              style={{ animationDelay: '900ms' }}
+            >
+              <Star className="h-4 w-4 fill-current" />
+              <span>Trusted by 1,000+ Amazon Sellers</span>
+            </Badge>
             
-            <div 
+            <div
               className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-muted-foreground animate-fade-in" 
               style={{ animationDelay: '1000ms' }}
             >
