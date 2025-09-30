@@ -145,8 +145,8 @@ const Dashboard = () => {
     {
       id: 'example-income-1',
       description: 'Monthly Service Fee',
-      amount: 3500,
-      paymentDate: addDays(new Date(), 5), // 5 days from now
+      amount: 5000, // Match the bank transaction amount
+      paymentDate: new Date(), // Set to today so it matches
       source: 'Acme Corp',
       status: 'pending' as const,
       category: 'Services',
