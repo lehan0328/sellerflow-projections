@@ -354,6 +354,8 @@ export const PurchaseOrderForm = ({
       if (data.success && data.data) {
         const extracted = data.data;
         
+        console.log("Extracted data from document:", extracted);
+        
         // Auto-fill form fields with extracted data
         setFormData(prev => ({
           ...prev,
@@ -380,10 +382,11 @@ export const PurchaseOrderForm = ({
           } else {
             // Set vendor search term for user to select or create
             setVendorSearchTerm(extracted.vendorName);
-            toast.info(`✓ Document processed! Extracted vendor: "${extracted.vendorName}". Please select or create this vendor, then review all details before submitting.`);
+            setShowVendorDropdown(true); // Open dropdown to show "Add vendor" option
+            toast.info(`✓ Document processed! Extracted vendor: "${extracted.vendorName}". Please select or create this vendor below, then review all details before submitting.`);
           }
         } else {
-          toast.success('✓ Document processed! Form auto-filled with extracted data. Please review and confirm all details.');
+          toast.success('✓ Document processed! Form auto-filled with extracted data. Please select a vendor and review all details.');
         }
       } else {
         toast.error('Could not extract purchase order data from document');
