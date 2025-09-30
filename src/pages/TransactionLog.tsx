@@ -107,10 +107,31 @@ export default function TransactionLog() {
       } else if (match.type === 'income' && match.matchedIncome) {
         // Mark income as received
         await updateIncome(match.matchedIncome.id, { status: 'received' });
-        toast.success(`Matched and marked income as received: ${match.matchedIncome.description}`);
+        toast.success(`Matched and marked income as received: ${match.matchedIncome.source}`);
       }
     } catch (error) {
       console.error('Error matching transaction:', error);
+      toast.error('Failed to match transaction');
+    }
+  };
+
+  const handleManualMatch = async (bankTransaction: any, matchType: 'vendor' | 'income', matchId: string) => {
+    try {
+      if (matchType === 'vendor') {
+        const vendor = vendors.find(v => v.id === matchId);
+        if (vendor) {
+          await deleteVendor(matchId);
+          toast.success(`Manually matched and archived vendor: ${vendor.name}`);
+        }
+      } else {
+        const income = incomeItems.find(i => i.id === matchId);
+        if (income) {
+          await updateIncome(matchId, { status: 'received' });
+          toast.success(`Manually matched and marked income as received: ${income.source}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error in manual match:', error);
       toast.error('Failed to match transaction');
     }
   };
@@ -151,8 +172,11 @@ export default function TransactionLog() {
             />
             <BankTransactionLog 
               transactions={exampleBankTransactions}
+              vendors={vendors}
+              incomeItems={incomeItems}
               matches={matches}
               onMatchTransaction={handleMatchTransaction}
+              onManualMatch={handleManualMatch}
             />
           </div>
         </div>
