@@ -15,6 +15,33 @@ export default function TransactionLog() {
   const { vendors, deleteVendor } = useVendors();
   const { incomeItems, updateIncome, deleteIncome } = useIncome();
   
+  // Add example pending income items for matching demonstration
+  const exampleIncomeItems = [
+    {
+      id: 'income1',
+      description: 'Monthly Service Fee',
+      amount: 3500,
+      paymentDate: new Date(2025, 0, 15),
+      source: 'Acme Corp',
+      status: 'pending' as const,
+      category: 'Services',
+      isRecurring: false
+    },
+    {
+      id: 'income2', 
+      description: 'Consulting Project',
+      amount: 5000,
+      paymentDate: new Date(2025, 0, 20),
+      source: 'TechStart Inc',
+      status: 'pending' as const,
+      category: 'Consulting',
+      isRecurring: false
+    }
+  ];
+  
+  // Combine real income items with examples for demo
+  const allIncomeItems = [...incomeItems, ...exampleIncomeItems];
+  
   // Example bank transactions for matching demonstration
   const exampleBankTransactions = [
     {
@@ -87,7 +114,7 @@ export default function TransactionLog() {
   const { matches, isLoading: matchingLoading } = useTransactionMatching(
     exampleBankTransactions,
     vendors,
-    incomeItems
+    allIncomeItems
   );
 
   const handleDeleteTransaction = async (transactionId: string) => {
@@ -124,9 +151,12 @@ export default function TransactionLog() {
           toast.success(`Manually matched and archived vendor: ${vendor.name}`);
         }
       } else {
-        const income = incomeItems.find(i => i.id === matchId);
+        const income = allIncomeItems.find(i => i.id === matchId);
         if (income) {
-          await updateIncome(matchId, { status: 'received' });
+          // Only update if it's a real database item
+          if (incomeItems.find(i => i.id === matchId)) {
+            await updateIncome(matchId, { status: 'received' });
+          }
           toast.success(`Manually matched and marked income as received: ${income.source}`);
         }
       }
@@ -173,7 +203,7 @@ export default function TransactionLog() {
             <BankTransactionLog 
               transactions={exampleBankTransactions}
               vendors={vendors}
-              incomeItems={incomeItems}
+              incomeItems={allIncomeItems}
               matches={matches}
               onMatchTransaction={handleMatchTransaction}
               onManualMatch={handleManualMatch}
