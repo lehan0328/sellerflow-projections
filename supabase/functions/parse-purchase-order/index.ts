@@ -28,14 +28,28 @@ serve(async (req) => {
       );
     }
 
-    // Read file as base64
-    const arrayBuffer = await file.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-    const dataUrl = `data:${file.type};base64,${base64}`;
-
     console.log("Processing document:", file.name, file.type);
 
-    // Use Lovable AI with tool calling to extract structured data
+    // For PDFs, we'll use a text-first approach since vision might fail
+    // Read file as base64
+    const arrayBuffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    
+    // Convert to base64
+    let base64 = '';
+    const chunkSize = 0x8000; // 32KB chunks to avoid stack overflow
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+      base64 += String.fromCharCode(...chunk);
+    }
+    base64 = btoa(base64);
+
+    // Determine mime type - use inline for PDFs
+    const mimeType = file.type === 'application/pdf' ? 'application/pdf' : file.type;
+    
+    console.log("Sending to AI with mime type:", mimeType);
+
+    // Use Lovable AI with inline data for better PDF handling
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -46,20 +60,16 @@ serve(async (req) => {
         model: "google/gemini-2.5-flash",
         messages: [
           {
-            role: "system",
-            content: "You are an AI assistant that extracts purchase order information from documents. Extract vendor name, PO name/description, amount, payment terms, due date, category, and any other relevant details."
-          },
-          {
             role: "user",
             content: [
               {
                 type: "text",
-                text: "Please extract all purchase order information from this document."
+                text: "Extract all purchase order information from this document. Look for: vendor/supplier name, purchase order name/number, total amount, description, payment terms (net 30/60/90), due date, delivery date, category (Inventory, Packaging, Marketing, Shipping, Professional Services, or Other), and any additional notes. If it's an invoice, treat it as a purchase order."
               },
               {
                 type: "image_url",
                 image_url: {
-                  url: dataUrl
+                  url: `data:${mimeType};base64,${base64}`
                 }
               }
             ]
@@ -80,7 +90,7 @@ serve(async (req) => {
                   },
                   poName: {
                     type: "string",
-                    description: "Purchase order name or title"
+                    description: "Purchase order name, number, or invoice number"
                   },
                   amount: {
                     type: "string",
@@ -124,6 +134,9 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("AI gateway error:", response.status, errorText);
+      
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
@@ -136,22 +149,22 @@ serve(async (req) => {
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      
       return new Response(
-        JSON.stringify({ error: "AI service error" }),
+        JSON.stringify({ error: `AI service error: ${errorText}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const data = await response.json();
-    console.log("AI Response:", JSON.stringify(data, null, 2));
+    console.log("AI Response received");
 
     // Extract the structured data from the tool call
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall || !toolCall.function?.arguments) {
+      console.error("No tool call in response:", JSON.stringify(data.choices?.[0]?.message));
       return new Response(
-        JSON.stringify({ error: "Could not extract purchase order data from document" }),
+        JSON.stringify({ error: "Could not extract purchase order data from document. Please ensure the document contains clear purchase order or invoice information." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
