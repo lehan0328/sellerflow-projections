@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LiveDashboardShowcase } from "@/components/LiveDashboardShowcase";
+import { FloatingChatWidget } from "@/components/floating-chat-widget";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -209,7 +210,9 @@ const Landing = () => {
             
             <div className="animate-fade-in space-y-6" style={{ animationDelay: '200ms' }}>
               <h1 className="text-4xl lg:text-7xl font-bold leading-tight">
-                <span className="inline-block hover:scale-105 transition-transform duration-300">AI-Powered Cash Flow</span>
+                <span className="inline-block hover:scale-105 transition-transform duration-300">
+                  <span className="bg-gradient-primary bg-clip-text text-transparent animate-pulse">AI-Powered</span> Cash Flow
+                </span>
                 <span className="block bg-gradient-primary bg-clip-text text-transparent">
                   Built for Amazon Sellers
                 </span>
@@ -521,6 +524,9 @@ const Landing = () => {
           </div>
         </div>
       </footer>
+
+      {/* Floating AI Chat Widget */}
+      <FloatingChatWidget />
     </div>
   );
 };
