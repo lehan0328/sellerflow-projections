@@ -156,7 +156,7 @@ export const CashFlowInsights = ({
       </CardHeader>
       <CardContent className="space-y-4 flex-1 overflow-auto">
         {chatMode ? (
-          <div className="space-y-4">
+          <div className="flex flex-col h-full space-y-4">
             <form onSubmit={handleChatSubmit} className="space-y-3">
               <div>
                 <Input
@@ -177,7 +177,7 @@ export const CashFlowInsights = ({
             </form>
 
             {chatAnswer && (
-              <div className="mt-4 p-3 bg-muted rounded-lg max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+              <div className="flex-1 p-3 bg-muted rounded-lg overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
                 <p className="text-sm font-semibold mb-2">Answer:</p>
                 <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                   {chatAnswer}

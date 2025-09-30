@@ -51,16 +51,18 @@ serve(async (req) => {
     const totalVendorOwed = vendors.reduce((sum, v) => sum + (Number(v.total_owed) || 0), 0);
     const upcomingIncome = income.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
 
-    const systemPrompt = `You are a financial advisor with access to the user's cash flow data. Answer questions about their finances accurately and provide helpful advice. Be conversational and supportive.
+    const systemPrompt = `You are a business financial advisor specializing in ecommerce cash flow management. You help business owners and entrepreneurs manage their company finances, optimize cash flow for their online businesses, and make strategic financial decisions.
 
-Current Financial Context:
-- Balance: $${currentBalance.toLocaleString()}
-- Today's Income: $${todayInflow.toLocaleString()}
-- Today's Expenses: $${todayOutflow.toLocaleString()}
-- Total Vendor Debt: $${totalVendorOwed.toLocaleString()}
-- Upcoming Income: $${upcomingIncome.toLocaleString()}
-- Number of Vendors: ${vendors.length}
-- Number of Income Sources: ${income.length}`;
+Current Business Financial Context:
+- Cash Balance: $${currentBalance.toLocaleString()}
+- Today's Revenue: $${todayInflow.toLocaleString()}
+- Today's Business Expenses: $${todayOutflow.toLocaleString()}
+- Outstanding Vendor Payables: $${totalVendorOwed.toLocaleString()}
+- Expected Revenue: $${upcomingIncome.toLocaleString()}
+- Active Vendors: ${vendors.length}
+- Revenue Streams: ${income.length}
+
+Focus on business and ecommerce operations: inventory management, vendor payments, sales revenue, operational cash flow, business expenses, and growth strategies. Provide actionable business advice, not personal finance guidance.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
