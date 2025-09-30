@@ -41,6 +41,7 @@ export const useCreditCards = () => {
       const { data, error } = await supabase
         .from("credit_cards")
         .select("*")
+        .eq("user_id", user.id)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 

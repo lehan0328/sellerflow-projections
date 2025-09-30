@@ -35,6 +35,8 @@ interface CashFlowEvent {
   creditCard?: string;
   source?: string;
   date: Date;
+  // Whether this event should affect cash balance calculations
+  affectsBalance?: boolean;
 }
 
 const Dashboard = () => {
