@@ -342,8 +342,8 @@ const Dashboard = () => {
     
     // Note: In a real Plaid integration, this would add funds to connected account
 
-    // Add to database
-    await addIncome({
+    // Add to database - check if it succeeds
+    const newIncome = await addIncome({
       description: incomeData.description || 'Income',
       amount: amount,
       paymentDate: paymentDate,
@@ -355,6 +355,11 @@ const Dashboard = () => {
       notes: incomeData.notes,
       customerId: incomeData.customerId
     });
+
+    // Only continue if income was added successfully
+    if (!newIncome) {
+      return; // addIncome already showed an error toast
+    }
 
     // Create transaction
     await addTransaction({

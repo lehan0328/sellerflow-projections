@@ -147,7 +147,7 @@ export const IncomeForm = ({
     "Other"
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const data = {
@@ -161,9 +161,10 @@ export const IncomeForm = ({
     
     console.log("Submitting income:", data);
     
-    onSubmitIncome(data);
+    // Call the submit function and wait for it to complete
+    await onSubmitIncome(data);
     
-    toast.success(`${isRecurring ? 'Recurring ' : ''}Income ${formData.description ? `"${formData.description}" ` : ''}${editingIncome ? 'updated' : 'added'} successfully!`);
+    // Only close and reset if successful (the hook will show the appropriate toast)
     onOpenChange(false);
     
     // Reset form
