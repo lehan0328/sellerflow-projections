@@ -16,6 +16,10 @@ interface OverviewStatsProps {
     date: Date;
   }>;
   onUpdateCashBalance?: () => void;
+  pendingIncomeToday?: {
+    amount: number;
+    count: number;
+  };
 }
 
 const timeRangeOptions = [
@@ -28,7 +32,7 @@ const timeRangeOptions = [
   { value: "90days", label: "90 Days", days: 90 },
 ];
 
-export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance }: OverviewStatsProps) {
+export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance, pendingIncomeToday }: OverviewStatsProps) {
   const [incomingTimeRange, setIncomingTimeRange] = useState("7days");
   const [upcomingTimeRange, setUpcomingTimeRange] = useState("7days");
   const [showSyncDialog, setShowSyncDialog] = useState(false);
@@ -158,6 +162,11 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance 
                     : `Bank balance: ${formatCurrency(bankAccountBalance)} (${formatCurrency(balanceDifference)} difference)`
                 }
               </p>
+              {pendingIncomeToday && pendingIncomeToday.count > 0 && (
+                <p className="text-xs text-blue-600 mt-1">
+                  +{formatCurrency(pendingIncomeToday.amount)} pending income today ({pendingIncomeToday.count} unmatched)
+                </p>
+              )}
             </div>
             <DollarSign className="h-8 w-8 text-blue-500" />
           </div>

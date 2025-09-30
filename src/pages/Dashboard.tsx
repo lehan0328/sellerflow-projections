@@ -22,6 +22,7 @@ import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { BankTransaction } from "@/components/cash-flow/bank-transaction-log";
+import { useTransactionMatching } from "@/hooks/useTransactionMatching";
 
 // ========== Type Definitions ==========
 
@@ -167,6 +168,28 @@ const Dashboard = () => {
   
   // Combine real income items with examples for demo
   const allIncomeItems = [...incomeItems, ...exampleIncomeItems];
+
+  // Transaction matching for bank transactions
+  const bankTransactions = exampleBankTransactions;
+  const { getMatchesForIncome } = useTransactionMatching(bankTransactions, vendors, allIncomeItems);
+
+  // Calculate pending income due today that's not matched
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+  
+  const pendingIncomeToday = allIncomeItems
+    .filter(income => {
+      const paymentDate = new Date(income.paymentDate);
+      paymentDate.setHours(0, 0, 0, 0);
+      const isToday = paymentDate.getTime() === todayDate.getTime();
+      const isPending = income.status === 'pending';
+      const isNotMatched = getMatchesForIncome(income.id).length === 0;
+      return isToday && isPending && isNotMatched;
+    })
+    .reduce((acc, income) => ({
+      amount: acc.amount + income.amount,
+      count: acc.count + 1
+    }), { amount: 0, count: 0 });
 
   // No sample data for new users
 
@@ -800,6 +823,7 @@ const Dashboard = () => {
           totalCash={displayCash} 
           events={allCalendarEvents}
           onUpdateCashBalance={handleUpdateCashBalance}
+          pendingIncomeToday={pendingIncomeToday}
         />
         
         {/* Row 1: Cash Flow Calendar and AI Insights (Side by Side) */}
