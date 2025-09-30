@@ -135,11 +135,6 @@ const Dashboard = () => {
 
     // Note: In a real Plaid integration, this would reverse the bank transaction
     
-    // If this was an income transaction, deduct from total cash
-    if (transaction.type === 'sales_order') {
-      await updateTotalCash(-transaction.amount);
-    }
-    
     // If this was a vendor payment, restore vendor balance
     if (transaction.type === 'vendor_payment' && transaction.vendorId) {
       const vendor = vendors.find(v => v.id === transaction.vendorId);
@@ -421,10 +416,7 @@ const Dashboard = () => {
     
     // Note: In a real Plaid integration, this would add funds to connected account
 
-    // Add amount to user's total cash
-    await updateTotalCash(income.amount);
-
-    // Create transaction for the transaction log
+    // Create transaction for the transaction log (no need to update total_cash separately)
     await addTransaction({
       type: 'sales_order',
       amount: income.amount,
