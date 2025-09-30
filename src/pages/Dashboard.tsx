@@ -689,6 +689,29 @@ const Dashboard = () => {
   // Use bank account balance if connected, otherwise calculate from user settings + transactions
   const displayCash = accounts.length > 0 ? bankAccountBalance : userSettingsCash + transactionTotal;
 
+  // Calculate today's activity for insights
+  const todayInflow = transactions
+    .filter(t => startOfDay(t.transactionDate).getTime() === today.getTime() && 
+                 (t.type === 'customer_payment' || t.type === 'sales_order') &&
+                 t.status === 'completed')
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+  
+  const todayOutflow = transactions
+    .filter(t => startOfDay(t.transactionDate).getTime() === today.getTime() && 
+                 (t.type === 'purchase_order' || t.type === 'vendor_payment') &&
+                 t.status === 'completed')
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
+  const upcomingExpenses = transactions
+    .filter(t => {
+      const txDate = startOfDay(t.transactionDate);
+      const sevenDaysOut = addDays(today, 7);
+      return txDate > today && txDate <= sevenDaysOut &&
+             (t.type === 'purchase_order' || t.type === 'vendor_payment') &&
+             t.status === 'pending';
+    })
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
       <DashboardHeader />
@@ -705,6 +728,9 @@ const Dashboard = () => {
           events={allCalendarEvents} 
           totalCash={displayCash}
           onEditTransaction={handleEditTransaction}
+          todayInflow={todayInflow}
+          todayOutflow={todayOutflow}
+          upcomingExpenses={upcomingExpenses}
         />
 
         {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}

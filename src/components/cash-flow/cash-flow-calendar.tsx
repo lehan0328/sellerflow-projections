@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CashFlowInsights } from "./cash-flow-insights";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
@@ -30,9 +31,19 @@ interface CashFlowCalendarProps {
   events?: CashFlowEvent[];
   totalCash?: number;
   onEditTransaction?: (transaction: CashFlowEvent) => void;
+  todayInflow?: number;
+  todayOutflow?: number;
+  upcomingExpenses?: number;
 }
 
-export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEditTransaction }: CashFlowCalendarProps) => {
+export const CashFlowCalendar = ({ 
+  events: propEvents = [], 
+  totalCash = 0, 
+  onEditTransaction,
+  todayInflow = 0,
+  todayOutflow = 0,
+  upcomingExpenses = 0
+}: CashFlowCalendarProps) => {
   const { totalAvailableCredit } = useCreditCards();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'calendar' | 'chart'>('calendar');
@@ -398,11 +409,12 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                })}
                </div>
              </div>
-          ) : (
-            <div className="h-[400px] flex-shrink-0">
-              <ChartContainer config={chartConfig}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} onClick={handleChartClick}>
+           ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 h-[400px] flex-shrink-0">
+                <ChartContainer config={chartConfig}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} onClick={handleChartClick}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="date" 
@@ -462,6 +474,16 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
                 </ResponsiveContainer>
               </ChartContainer>
             </div>
+            <div className="lg:col-span-1">
+              <CashFlowInsights
+                currentBalance={totalAvailableCash}
+                dailyInflow={todayInflow}
+                dailyOutflow={todayOutflow}
+                upcomingExpenses={upcomingExpenses}
+                events={events}
+              />
+            </div>
+          </div>
           )}
           
           <div className="flex items-center justify-between mt-6 pt-4 border-t flex-shrink-0">
