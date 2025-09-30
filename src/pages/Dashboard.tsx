@@ -678,6 +678,13 @@ const Dashboard = () => {
     return isIncome ? total + amount : total - amount;
   }, 0);
   
+  console.log('Balance Debug:', {
+    userSettingsCash,
+    transactionTotal,
+    transactionCount: transactions.length,
+    transactions: transactions.map(t => ({ type: t.type, amount: t.amount, date: t.transactionDate }))
+  });
+  
   // Use bank account balance if connected, otherwise calculate from user settings + transactions
   const displayCash = accounts.length > 0 ? bankAccountBalance : userSettingsCash + transactionTotal;
 
