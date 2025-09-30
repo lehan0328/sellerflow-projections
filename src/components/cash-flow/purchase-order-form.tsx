@@ -396,21 +396,25 @@ export const PurchaseOrderForm = ({
                         <FileText className="h-6 w-6 text-primary" />
                       </div>
                     </div>
-                    <div>
-                      <h4 className="font-semibold mb-1">Upload Purchase Order Document</h4>
-                      <p className="text-sm text-muted-foreground">Let AI automatically fill the form from your PNG or JPG
-PDF IS NOT CURRENTLY SUPPORTED</p>
-                    </div>
-                    <input ref={fileInputRef} type="file" accept="application/pdf,image/*" onChange={handleFileUpload} className="hidden" />
-                    <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isProcessingDocument} className="w-full">
-                      {isProcessingDocument ? <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Processing {uploadedFileName}...
-                        </> : <>
-                          <Upload className="h-4 w-4 mr-2" />
-                          Upload Document (PDF or Image)
-                        </>}
-                    </Button>
+                  <div>
+                    <h4 className="font-semibold mb-1">Upload Purchase Order Document</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Let AI automatically fill the form from your image
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Supported formats: PNG, JPG, JPEG, WEBP
+                    </p>
+                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/webp" onChange={handleFileUpload} className="hidden" />
+                  <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isProcessingDocument} className="w-full">
+                    {isProcessingDocument ? <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Processing {uploadedFileName}...
+                      </> : <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Image
+                      </>}
+                  </Button>
                   </div>
                 </CardContent>
               </Card>
