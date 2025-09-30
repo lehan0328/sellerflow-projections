@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MessageCircle, X, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,10 +8,20 @@ import { useToast } from "@/hooks/use-toast";
 
 export const FloatingChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(true);
   const [message, setMessage] = useState("");
   const [chatAnswer, setChatAnswer] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  // Hide tooltip after 10 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowTooltip(false);
+    }, 10000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,15 +56,25 @@ export const FloatingChatWidget = () => {
 
   return (
     <>
-      {/* Floating Chat Button */}
+      {/* Floating Chat Button with Tooltip */}
       {!isOpen && (
-        <Button
-          size="lg"
-          onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl bg-gradient-primary hover:scale-110 transition-all duration-300 z-50 animate-bounce"
-        >
-          <MessageCircle className="h-6 w-6" />
-        </Button>
+        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-3">
+          {showTooltip && (
+            <div className="bg-card border shadow-lg rounded-lg px-4 py-2 animate-fade-in">
+              <p className="text-sm font-medium">Here to help! 💬</p>
+            </div>
+          )}
+          <Button
+            size="lg"
+            onClick={() => {
+              setIsOpen(true);
+              setShowTooltip(false);
+            }}
+            className="h-14 w-14 rounded-full shadow-2xl bg-gradient-primary hover:scale-110 transition-all duration-300"
+          >
+            <MessageCircle className="h-6 w-6" />
+          </Button>
+        </div>
       )}
 
       {/* Chat Widget */}

@@ -4,6 +4,8 @@ import { DemoDashboardHeader } from "@/components/cash-flow/demo-dashboard-heade
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
 import { OverviewStats } from "@/components/cash-flow/overview-stats";
 import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
+import { CashFlowChart } from "@/components/cash-flow/cash-flow-chart";
+import { CashFlowInsights } from "@/components/cash-flow/cash-flow-insights";
 import { VendorsOverview } from "@/components/cash-flow/vendors-overview";
 import { BankAccounts } from "@/components/cash-flow/bank-accounts";
 import { CreditCards, getCreditCardDueDates } from "@/components/cash-flow/credit-cards";
@@ -30,11 +32,36 @@ const DemoPage = () => {
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
+  const [viewType, setViewType] = useState<'calendar' | 'chart'>('chart');
   
   // Use real data from demo user
   const { vendors } = useDemoVendors();
   const { transactions } = useDemoTransactions();
   const { totalCash } = useDemoUserSettings();
+
+  // Calculate today's activity for insights
+  const today = startOfDay(new Date());
+  const todayInflow = transactions
+    .filter(t => startOfDay(t.transactionDate).getTime() === today.getTime() && 
+                 (t.type === 'customer_payment' || t.type === 'sales_order') &&
+                 t.status === 'completed')
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+  
+  const todayOutflow = transactions
+    .filter(t => startOfDay(t.transactionDate).getTime() === today.getTime() && 
+                 (t.type === 'purchase_order' || t.type === 'vendor_payment') &&
+                 t.status === 'completed')
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
+  const upcomingExpenses = transactions
+    .filter(t => {
+      const txDate = startOfDay(t.transactionDate);
+      const sevenDaysOut = addDays(today, 7);
+      return txDate > today && txDate <= sevenDaysOut &&
+             (t.type === 'purchase_order' || t.type === 'vendor_payment') &&
+             t.status === 'pending';
+    })
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
   // Demo cash flow events (minimal - most come from vendors)
   const [demoCashFlowEvents] = useState<CashFlowEvent[]>([]);
@@ -104,7 +131,28 @@ const DemoPage = () => {
           onEditTransaction={handleEditTransaction}
         />
 
-        {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
+        {/* Row 2: Cash Flow Chart and AI Insights (Side by Side) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[700px]">
+          <div className="h-full">
+            <CashFlowChart 
+              events={allCalendarEvents} 
+              onAddPurchaseOrder={() => alert('Demo: Purchase order creation not available in demo')}
+              viewType={viewType}
+              onViewTypeChange={setViewType}
+            />
+          </div>
+          <div className="h-full">
+            <CashFlowInsights 
+              currentBalance={totalCash}
+              dailyInflow={todayInflow}
+              dailyOutflow={todayOutflow}
+              upcomingExpenses={upcomingExpenses}
+              events={allCalendarEvents}
+            />
+          </div>
+        </div>
+
+        {/* Row 3: Vendors Overview and Income Overview (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <VendorsOverview 
             onEditOrder={() => alert('Demo: Vendor editing not available in demo')}
@@ -116,13 +164,13 @@ const DemoPage = () => {
           />
         </div>
 
-        {/* Row 3: Bank Accounts and Credit Cards (Side by Side) */}
+        {/* Row 4: Bank Accounts and Credit Cards (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <BankAccounts />
           <CreditCards />
         </div>
 
-        {/* Row 4: Amazon Payouts (Full Width) */}
+        {/* Row 5: Amazon Payouts (Full Width) */}
         <AmazonPayouts />
       </div>
 
