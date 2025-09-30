@@ -46,7 +46,16 @@ const Dashboard = () => {
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
-  const { totalCash: userSettingsCash, updateTotalCash } = useUserSettings();
+  const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance } = useUserSettings();
+  
+  // Ensure starting balance is 0 for a fresh start (so 9/29 shows only the $60k inflow)
+  React.useEffect(() => {
+    const fixed = localStorage.getItem('balance_start_0');
+    if (!fixed && userSettingsCash !== 0) {
+      setStartingBalance(0);
+      localStorage.setItem('balance_start_0', 'true');
+    }
+  }, [userSettingsCash, setStartingBalance]);
   const { customers, addCustomer, deleteAllCustomers } = useCustomers();
   
   // State for vendors used in forms (derived from database vendors) - always fresh data
@@ -659,8 +668,8 @@ const Dashboard = () => {
     const amount = Number(transaction.amount);
     const transactionDate = startOfDay(transaction.transactionDate);
     
-    // Only count transactions on or before today
-    if (transactionDate > today) {
+    // Only count transactions on or before today and that are completed
+    if (transactionDate > today || transaction.status !== 'completed') {
       return total;
     }
     

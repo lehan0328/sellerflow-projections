@@ -71,58 +71,28 @@ export const CashFlowCalendar = ({ events: propEvents = [], totalCash = 0, onEdi
   };
 
   const getTotalCashForDay = (date: Date) => {
+    // Normalize dates to avoid TZ issues
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const dateToCheck = new Date(date);
-    dateToCheck.setHours(0, 0, 0, 0);
-    
-    // For today, show cash after today's transactions
-    if (dateToCheck.getTime() === today.getTime()) {
-      const todayEvents = events.filter(event => {
-        const eventDate = new Date(event.date);
-        eventDate.setHours(0, 0, 0, 0);
-        return eventDate.getTime() === today.getTime();
-      });
-      const todayNet = todayEvents.reduce((total, event) => {
-        return total + (event.type === 'inflow' ? event.amount : -event.amount);
-      }, 0);
-      return totalAvailableCash + todayNet;
-    }
-    
-    // For future dates, only include transactions that occur on or before that specific date
-    // But don't include historical transactions that already affect the current balance
-    if (dateToCheck > today) {
-      // Calculate today's net first
-      const todayEvents = events.filter(event => {
-        const eventDate = new Date(event.date);
-        eventDate.setHours(0, 0, 0, 0);
-        return eventDate.getTime() === today.getTime();
-      });
-      const todayNet = todayEvents.reduce((total, event) => {
-        return total + (event.type === 'inflow' ? event.amount : -event.amount);
-      }, 0);
-      
-      // Then add future transactions up to the checked date
-      const futureEventsToDate = events.filter(event => {
-        const eventDate = new Date(event.date);
-        eventDate.setHours(0, 0, 0, 0);
-        return eventDate > today && eventDate <= dateToCheck;
-      });
-      
-      const futureChange = futureEventsToDate.reduce((total, event) => {
-        return total + (event.type === 'inflow' ? event.amount : -event.amount);
-      }, 0);
-      
-      return totalAvailableCash + todayNet + futureChange;
-    }
-    
-    // For past dates, calculate what the balance would have been
-    const eventsUpToDate = events.filter(event => event.date <= date);
-    const netChange = eventsUpToDate.reduce((total, event) => {
-      return total + (event.type === 'inflow' ? event.amount : -event.amount);
-    }, 0);
-    
-    return totalAvailableCash + netChange;
+    const target = new Date(date);
+    target.setHours(0, 0, 0, 0);
+
+    const sumUntil = (d: Date) =>
+      events
+        .filter((event) => {
+          const ed = new Date(event.date);
+          ed.setHours(0, 0, 0, 0);
+          return ed <= d;
+        })
+        .reduce((total, event) => total + (event.type === 'inflow' ? event.amount : -event.amount), 0);
+
+    // Derive true starting balance by removing all cash movements up to today
+    const netToToday = sumUntil(today);
+    const baseAtStart = totalAvailableCash - netToToday;
+
+    // Balance at target date is starting base plus movements up to that date
+    const netToTarget = sumUntil(target);
+    return baseAtStart + netToTarget;
   };
 
   const getEventIcon = (event: CashFlowEvent) => {
