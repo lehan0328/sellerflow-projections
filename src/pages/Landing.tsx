@@ -1,10 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, DollarSign } from "lucide-react";
+import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, DollarSign, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LiveDashboardShowcase } from "@/components/LiveDashboardShowcase";
 import { FloatingChatWidget } from "@/components/floating-chat-widget";
+import { LineChart, Line, ResponsiveContainer } from 'recharts';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -197,18 +198,102 @@ const Landing = () => {
           <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse opacity-30" style={{ animationDelay: '1s' }} />
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-primary/10 to-accent/10 rounded-full blur-3xl animate-pulse opacity-10" style={{ animationDelay: '2s' }} />
         </div>
+
+        {/* Floating Dashboard Cards - Left */}
+        <div className="hidden lg:block absolute left-10 top-32 animate-fade-in" style={{ animationDelay: '600ms' }}>
+          <Card className="w-72 shadow-2xl rotate-[-6deg] hover:rotate-[-3deg] transition-transform duration-500 bg-card/80 backdrop-blur-md border-2">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">Revenue Overview</CardTitle>
+                <Badge variant="secondary" className="text-xs">Live</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div>
+                  <div className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">$25,056.55</div>
+                  <div className="text-xs text-muted-foreground mt-1">Oct 15 - $45,863</div>
+                </div>
+                <ResponsiveContainer width="100%" height={60}>
+                  <LineChart data={[
+                    { value: 35000 }, { value: 38000 }, { value: 42000 }, 
+                    { value: 39000 }, { value: 45000 }, { value: 43000 }, { value: 45863 }
+                  ]}>
+                    <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Floating Dashboard Cards - Right Top */}
+        <div className="hidden lg:block absolute right-10 top-28 animate-fade-in" style={{ animationDelay: '800ms' }}>
+          <Card className="w-64 shadow-2xl rotate-[6deg] hover:rotate-[3deg] transition-transform duration-500 bg-card/80 backdrop-blur-md border-2">
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">Total active users</div>
+                  <div className="text-2xl font-bold">120K+</div>
+                  <div className="flex items-center gap-1 mt-2">
+                    <div className="flex -space-x-2">
+                      {[1,2,3].map(i => (
+                        <div key={i} className="w-8 h-8 rounded-full bg-gradient-primary border-2 border-background" />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Floating Dashboard Cards - Right Bottom */}
+        <div className="hidden lg:block absolute right-16 bottom-32 animate-fade-in" style={{ animationDelay: '1000ms' }}>
+          <Card className="w-56 shadow-2xl rotate-[-4deg] hover:rotate-[-2deg] transition-transform duration-500 bg-card/80 backdrop-blur-md border-2">
+            <CardContent className="pt-6">
+              <div className="space-y-2">
+                <div>
+                  <div className="text-xs text-muted-foreground">Physical Item</div>
+                  <div className="text-2xl font-bold text-success flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    7,830
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Digital Item</div>
+                  <div className="text-2xl font-bold text-primary flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    4,540
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
         
         <div className="container relative mx-auto px-4">
           <div className="text-center space-y-8">
+            {/* New Smart AI Features Badge */}
+            <div className="flex items-center justify-center gap-3 animate-fade-in">
+              <Badge className="bg-foreground text-background px-3 py-1 text-sm font-semibold">
+                New
+              </Badge>
+              <div className="flex items-center gap-2 text-foreground font-medium">
+                <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+                <span>Smart AI Features</span>
+              </div>
+            </div>
             <Badge 
               variant="secondary" 
               className="inline-flex items-center space-x-2 animate-fade-in hover-scale transition-all duration-300 hover:bg-primary/10"
+              style={{ animationDelay: '200ms' }}
             >
               <Star className="h-4 w-4 fill-current" />
               <span>Trusted by 1,000+ Amazon Sellers</span>
             </Badge>
             
-            <div className="animate-fade-in space-y-6" style={{ animationDelay: '200ms' }}>
+            <div className="animate-fade-in space-y-6" style={{ animationDelay: '400ms' }}>
               <h1 className="text-4xl lg:text-7xl font-bold leading-tight">
                 <span className="inline-block hover:scale-105 transition-transform duration-300">
                   <span className="bg-gradient-primary bg-clip-text text-transparent animate-pulse">AI-Powered</span> Cash Flow
@@ -221,7 +306,7 @@ const Landing = () => {
             
             <p 
               className="text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed" 
-              style={{ animationDelay: '400ms' }}
+              style={{ animationDelay: '600ms' }}
             >
               Get daily AI insights, forecast your Amazon cash flow months in advance, and optimize your credit utilization. 
               Never run out of cash for inventory again with intelligent financial recommendations.
@@ -229,7 +314,7 @@ const Landing = () => {
             
             <div 
               className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-fade-in" 
-              style={{ animationDelay: '600ms' }}
+              style={{ animationDelay: '800ms' }}
             >
               <Button 
                 size="lg" 
@@ -251,7 +336,7 @@ const Landing = () => {
             
             <div 
               className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-muted-foreground animate-fade-in" 
-              style={{ animationDelay: '800ms' }}
+              style={{ animationDelay: '1000ms' }}
             >
               <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
                 <CheckCircle className="h-4 w-4 text-success" />
