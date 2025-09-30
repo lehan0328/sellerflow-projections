@@ -132,7 +132,7 @@ export const CashFlowInsights = ({
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
+            <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap max-h-[200px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
               {advice}
             </div>
           )}
