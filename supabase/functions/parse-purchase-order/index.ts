@@ -58,7 +58,17 @@ serve(async (req) => {
 
     console.log("Processing document:", file.name, file.type);
 
-    // Read file as base64
+    // For PDFs, provide a helpful error message
+    if (file.type === 'application/pdf') {
+      return new Response(
+        JSON.stringify({ 
+          error: "PDF processing: Please take a screenshot of your PDF or convert it to JPG/PNG format for best results. You can use your computer's screenshot tool (Windows: Snipping Tool, Mac: Cmd+Shift+4) or any online PDF to image converter." 
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Read file as base64 for images
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
     

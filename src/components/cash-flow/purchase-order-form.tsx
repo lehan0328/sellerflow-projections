@@ -83,6 +83,7 @@ export const PurchaseOrderForm = ({
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
   const [vendorSearchTerm, setVendorSearchTerm] = useState("");
   const [showVendorForm, setShowVendorForm] = useState(false);
+  const [extractedVendorName, setExtractedVendorName] = useState<string>("");
 
   // Date picker states
   const [isPODatePickerOpen, setIsPODatePickerOpen] = useState(false);
@@ -302,6 +303,7 @@ export const PurchaseOrderForm = ({
       
       setVendorSearchTerm(vendorData.name);
       setShowVendorForm(false);
+      setExtractedVendorName(""); // Clear extracted name after successful addition
       toast.success(`Vendor "${vendorData.name}" created successfully!`);
     } catch (error) {
       console.error('Error adding vendor:', error);
@@ -382,6 +384,7 @@ export const PurchaseOrderForm = ({
           } else {
             // Set vendor search term for user to select or create
             setVendorSearchTerm(extracted.vendorName);
+            setExtractedVendorName(extracted.vendorName); // Store for vendor form
             setShowVendorDropdown(true); // Open dropdown to show "Add vendor" option
             toast.info(`✓ Document processed! Extracted vendor: "${extracted.vendorName}". Please select or create this vendor below, then review all details before submitting.`);
           }
@@ -515,7 +518,7 @@ export const PurchaseOrderForm = ({
                     {showVendorDropdown && (
                       <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
                         {filteredVendors.length === 0 ? (
-                          <div className="p-3 text-sm text-muted-foreground text-center">
+                          <div className="p-3 text-sm text-muted-foreground text-center bg-background">
                             {vendorSearchTerm ? (
                               <div className="space-y-2">
                                 <div>No vendors found matching your search</div>
@@ -546,7 +549,7 @@ export const PurchaseOrderForm = ({
                           filteredVendors.map((vendor) => (
                             <div
                               key={vendor.id}
-                              className="p-2 hover:bg-accent cursor-pointer text-sm border-b last:border-b-0"
+                              className="p-2 hover:bg-accent cursor-pointer text-sm border-b last:border-b-0 bg-background"
                               onClick={() => handleVendorSelect(vendor)}
                             >
                               <div className="font-medium">{vendor.name}</div>
@@ -1055,6 +1058,7 @@ export const PurchaseOrderForm = ({
         onOpenChange={setShowVendorForm}
         onAddVendor={handleAddVendorFromForm}
         existingVendors={uniqueVendors.map(v => ({ name: v.name, id: v.id }))}
+        initialVendorName={extractedVendorName}
       />
 
     </>

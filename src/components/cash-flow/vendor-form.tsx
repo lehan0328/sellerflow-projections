@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,9 +13,10 @@ interface VendorFormProps {
   onOpenChange: (open: boolean) => void;
   onAddVendor: (vendor: any) => void;
   existingVendors?: Array<{ name: string; id: string; }>;
+  initialVendorName?: string;
 }
 
-export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = [] }: VendorFormProps) => {
+export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = [], initialVendorName }: VendorFormProps) => {
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -25,6 +26,16 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
     netTermsDays: "30",
     customNetDays: ""
   });
+
+  // Auto-fill vendor name when initialVendorName is provided
+  useEffect(() => {
+    if (initialVendorName && open) {
+      setFormData(prev => ({
+        ...prev,
+        name: initialVendorName
+      }));
+    }
+  }, [initialVendorName, open]);
 
   const categories = [
     "Inventory",
