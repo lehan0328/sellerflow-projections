@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,8 +14,35 @@ serve(async (req) => {
 
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
+    }
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      throw new Error("Supabase credentials are not configured");
+    }
+
+    // Create Supabase client
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Get auth header for user identification
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Get user from auth header
+    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Get the file from the request
@@ -29,6 +57,31 @@ serve(async (req) => {
     }
 
     console.log("Processing document:", file.name, file.type);
+
+    // Upload to storage for PDFs (keep in memory for images)
+    let fileUrl = null;
+    if (file.type === 'application/pdf') {
+      const fileName = `${user.id}/${Date.now()}-${file.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('purchase-orders')
+        .upload(fileName, file, {
+          contentType: file.type,
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error("Storage upload error:", uploadError);
+        throw new Error("Failed to upload document");
+      }
+
+      // Get public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('purchase-orders')
+        .getPublicUrl(fileName);
+      
+      fileUrl = publicUrl;
+      console.log("PDF uploaded to storage:", fileUrl);
+    }
 
     // Read file as base64
     const arrayBuffer = await file.arrayBuffer();
@@ -170,6 +223,17 @@ serve(async (req) => {
 
     const extractedData = JSON.parse(toolCall.function.arguments);
     console.log("Extracted PO data:", extractedData);
+
+    // Clean up PDF from storage if it was uploaded
+    if (fileUrl && file.type === 'application/pdf') {
+      const fileName = fileUrl.split('/').pop();
+      if (fileName) {
+        await supabase.storage
+          .from('purchase-orders')
+          .remove([`${user.id}/${fileName}`])
+          .catch(err => console.error("Cleanup error:", err));
+      }
+    }
 
     return new Response(
       JSON.stringify({ success: true, data: extractedData }),
