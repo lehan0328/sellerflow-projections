@@ -68,7 +68,9 @@ export const CashFlowCalendar = ({
   const days = eachDayOfInterval({ start: calendarStartWithWeek, end: calendarEndWithWeek });
 
   const weeksInView = Math.ceil(days.length / 7);
-  const gridRowsClass = weeksInView > 5 ? 'grid-rows-6' : 'grid-rows-5';
+  const is6Rows = weeksInView > 5;
+  const gridRowsClass = is6Rows ? 'grid-rows-6' : 'grid-rows-5';
+  const cellHeightClass = is6Rows ? 'h-[70px]' : 'h-[85px]';
 
   const getEventsForDay = (date: Date) => {
     return events.filter(event => 
@@ -250,7 +252,7 @@ export const CashFlowCalendar = ({
         <div className="h-full flex flex-col">
           {viewType === 'calendar' ? (
             <div className="flex-1 min-h-0 flex flex-col">
-              <div className="grid grid-cols-7 gap-1 mb-2">
+              <div className="grid grid-cols-7 gap-1 mb-2 flex-shrink-0">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                 <div key={day} className="text-center text-sm font-medium text-muted-foreground p-1">
                   {day}
@@ -258,7 +260,7 @@ export const CashFlowCalendar = ({
               ))}
             </div>
         
-            <div className={cn("grid grid-cols-7 gap-1 flex-1", gridRowsClass)}>
+            <div className={cn("grid grid-cols-7 gap-1 mb-4", gridRowsClass)}>
               {days.map(day => {
                 const dayEvents = getEventsForDay(day);
                 const dayBalance = getDayBalance(day);
@@ -274,7 +276,8 @@ export const CashFlowCalendar = ({
                   <div
                     key={day.toISOString()}
                      className={cn(
-                       "h-full min-h-[84px] p-1 border rounded-md relative flex flex-col text-xs transition-all",
+                       "p-1 border rounded-md relative flex flex-col text-xs transition-all",
+                       cellHeightClass,
                        {
                          // Past days - grayed out
                          "opacity-50 text-muted-foreground bg-muted/30": isPast && isSameMonth(day, currentDate),
