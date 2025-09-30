@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CreditCard, Filter, Search, RefreshCw, DollarSign, ArrowUpDown, Building2 } from "lucide-react";
+import { CreditCard, Filter, Search, RefreshCw, DollarSign, ArrowUpDown, Building2, Link2, CheckCircle2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
+import { TransactionMatch } from "@/hooks/useTransactionMatching";
 
 export interface BankTransaction {
   id: string;
@@ -27,9 +28,11 @@ export interface BankTransaction {
 interface BankTransactionLogProps {
   transactions?: BankTransaction[];
   onSyncTransactions?: (accountId: string) => void;
+  matches?: TransactionMatch[];
+  onMatchTransaction?: (match: TransactionMatch) => void;
 }
 
-export const BankTransactionLog = ({ transactions = [], onSyncTransactions }: BankTransactionLogProps) => {
+export const BankTransactionLog = ({ transactions = [], onSyncTransactions, matches = [], onMatchTransaction }: BankTransactionLogProps) => {
   const { accounts } = useBankAccounts();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAccount, setSelectedAccount] = useState<string>('all');
@@ -313,6 +316,32 @@ export const BankTransactionLog = ({ transactions = [], onSyncTransactions }: Ba
                             Merchant: {transaction.merchantName}
                           </div>
                         )}
+                        
+                        {/* Show potential matches */}
+                        {matches.filter(m => m.bankTransaction.id === transaction.id).map((match, idx) => (
+                          <div key={idx} className="mt-2 p-2 bg-muted/30 rounded border border-primary/20">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <Link2 className="h-3 w-3 text-primary" />
+                                <span className="text-xs font-medium">
+                                  Potential match: {match.type === 'vendor' ? match.matchedVendor?.name : match.matchedIncome?.description}
+                                </span>
+                                <Badge variant="secondary" className="text-xs">
+                                  {Math.round(match.matchScore * 100)}% match
+                                </Badge>
+                              </div>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => onMatchTransaction?.(match)}
+                                className="h-6 text-xs"
+                              >
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Match & Archive
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
