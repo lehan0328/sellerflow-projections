@@ -181,6 +181,9 @@ const DemoPage = () => {
             onEditOrder={(vendor) => {
               alert('Demo: Vendor editing not available in demo');
             }}
+            onMatchTransaction={async (vendor) => {
+              alert('Demo: Transaction matching not available in demo');
+            }}
           />
           <IncomeOverview
             incomeItems={demoIncomeItems}

@@ -20,9 +20,10 @@ interface VendorsOverviewProps {
   onVendorUpdate?: () => void;
   onEditOrder?: (vendor: Vendor) => void;
   onDeleteVendor?: (vendorId: string) => void;
+  onMatchTransaction?: (vendor: Vendor) => Promise<void>;
 }
 
-export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], onVendorUpdate, onEditOrder, onDeleteVendor }: VendorsOverviewProps) => {
+export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], onVendorUpdate, onEditOrder, onDeleteVendor, onMatchTransaction }: VendorsOverviewProps) => {
   const { deleteVendor: deleteVendorHook } = useVendors();
   const vendors = propVendors || [];
   const { matches, getMatchesForVendor } = useTransactionMatching(bankTransactions, vendors, []);
@@ -151,7 +152,12 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
 
   const handleMatch = async (vendor: Vendor) => {
     try {
-      // Archive the vendor by deleting it (matches with bank transaction)
+      // Create a completed transaction record first
+      if (onMatchTransaction) {
+        await onMatchTransaction(vendor);
+      }
+      
+      // Then archive the vendor by deleting it
       if (onDeleteVendor) {
         onDeleteVendor(vendor.id);
       } else {

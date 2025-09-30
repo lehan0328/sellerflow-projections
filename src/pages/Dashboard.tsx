@@ -801,6 +801,17 @@ const Dashboard = () => {
             onEditOrder={(vendor) => {
               console.log('Edit order for vendor:', vendor);
             }}
+            onMatchTransaction={async (vendor) => {
+              // Create a completed transaction record when matching
+              await addTransaction({
+                type: 'vendor_payment',
+                amount: vendor.totalOwed || 0,
+                description: `Matched: ${vendor.name} - ${vendor.poName || 'Payment'}`,
+                vendorId: vendor.id,
+                transactionDate: new Date(),
+                status: 'completed'
+              });
+            }}
           />
           <IncomeOverview
             incomeItems={incomeItems}
