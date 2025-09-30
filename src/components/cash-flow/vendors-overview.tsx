@@ -11,6 +11,7 @@ import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { VendorOrderDetailModal } from "./vendor-order-detail-modal";
 import { useTransactionMatching } from "@/hooks/useTransactionMatching";
 import { BankTransaction } from "./bank-transaction-log";
+import { toast } from "sonner";
 import * as React from "react";
 
 interface VendorsOverviewProps {
@@ -156,10 +157,16 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
       } else {
         await deleteVendorHook(vendor.id);
       }
+      
+      toast.success("Match successful", {
+        description: `${vendor.name} transaction has been matched and archived.`
+      });
+      
       // Refresh data to ensure both calendar and vendor list are updated
       onVendorUpdate?.();
     } catch (error) {
       console.error('Error matching transaction:', error);
+      toast.error("Failed to match transaction");
     }
   };
 

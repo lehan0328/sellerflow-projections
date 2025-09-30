@@ -553,7 +553,7 @@ const Dashboard = () => {
     });
 
     toast({
-      title: 'Purchase Order deleted',
+      title: 'Purchase order deleted',
       description: 'The vendor record was kept and the balance was updated.',
     });
 
