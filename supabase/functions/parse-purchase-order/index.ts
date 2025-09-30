@@ -58,13 +58,14 @@ serve(async (req) => {
 
     console.log("Processing document:", file.name, file.type);
 
-    // For PDFs, provide a helpful error message
+    // For PDFs, return error in response body (not as HTTP error)
     if (file.type === 'application/pdf') {
       return new Response(
         JSON.stringify({ 
-          error: "PDF processing: Please take a screenshot of your PDF or convert it to JPG/PNG format for best results. You can use your computer's screenshot tool (Windows: Snipping Tool, Mac: Cmd+Shift+4) or any online PDF to image converter." 
+          success: false,
+          error: "PDF files cannot be processed directly. Please convert your PDF to an image first:\n\n• Take a screenshot (Windows: Snipping Tool, Mac: Cmd+Shift+4)\n• Or use an online PDF to JPG converter\n\nThen upload the image file instead."
         }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -173,20 +174,29 @@ serve(async (req) => {
       
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ 
+            success: false,
+            error: "Rate limit exceeded. Please try again later." 
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "Payment required. Please add credits to your workspace." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ 
+            success: false,
+            error: "Payment required. Please add credits to your workspace." 
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
       return new Response(
-        JSON.stringify({ error: `AI service error: ${errorText}` }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ 
+          success: false,
+          error: `AI service error: ${errorText}` 
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -198,8 +208,11 @@ serve(async (req) => {
     if (!toolCall || !toolCall.function?.arguments) {
       console.error("No tool call in response:", JSON.stringify(data.choices?.[0]?.message));
       return new Response(
-        JSON.stringify({ error: "Could not extract purchase order data from document. Please ensure the document contains clear purchase order or invoice information." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ 
+          success: false,
+          error: "Could not extract purchase order data from document. Please ensure the document contains clear purchase order or invoice information." 
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -214,8 +227,11 @@ serve(async (req) => {
   } catch (error) {
     console.error("parse-purchase-order error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ 
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error occurred while processing document"
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

@@ -346,10 +346,16 @@ export const PurchaseOrderForm = ({
         body: formDataToSend
       });
 
-      if (error) throw error;
+      // Check for edge function invocation errors
+      if (error) {
+        console.error('Edge function invocation error:', error);
+        toast.error('Failed to process document. Please try again.');
+        return;
+      }
 
-      if (data.error) {
-        toast.error(data.error);
+      // Check for application-level errors in the response
+      if (data?.error || !data?.success) {
+        toast.error(data?.error || 'Could not extract purchase order data from document');
         return;
       }
 
