@@ -177,7 +177,7 @@ export const CashFlowInsights = ({
             </form>
 
             {chatAnswer && (
-              <div className="mt-4 p-3 bg-muted rounded-lg">
+              <div className="mt-4 p-3 bg-muted rounded-lg max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
                 <p className="text-sm font-semibold mb-2">Answer:</p>
                 <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                   {chatAnswer}
