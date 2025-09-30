@@ -166,7 +166,7 @@ export const useTransactionMatching = (
       };
 
       fetchMatches();
-    }, 1000); // Wait 1 second before making the call
+    }, 5000); // Wait 5 seconds before making the call to avoid rate limits
 
     return () => clearTimeout(timeoutId);
   }, [bankTransactions, vendors, incomeItems]);
