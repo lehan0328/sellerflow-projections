@@ -321,6 +321,45 @@ export type Database = {
           },
         ]
       }
+      cash_flow_insights: {
+        Row: {
+          advice: string
+          created_at: string
+          current_balance: number | null
+          daily_inflow: number | null
+          daily_outflow: number | null
+          id: string
+          insight_date: string
+          upcoming_expenses: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          advice: string
+          created_at?: string
+          current_balance?: number | null
+          daily_inflow?: number | null
+          daily_outflow?: number | null
+          id?: string
+          insight_date: string
+          upcoming_expenses?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          advice?: string
+          created_at?: string
+          current_balance?: number | null
+          daily_inflow?: number | null
+          daily_outflow?: number | null
+          id?: string
+          insight_date?: string
+          upcoming_expenses?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       credit_cards: {
         Row: {
           account_name: string

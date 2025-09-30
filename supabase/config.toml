@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.cash-flow-advice]
 verify_jwt = false
+
+[functions.generate-daily-insights]
+verify_jwt = false
+
+[functions.cash-flow-chat]
+verify_jwt = false
