@@ -4,6 +4,7 @@ import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
 import { OverviewStats } from "@/components/cash-flow/overview-stats";
 import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
+import { CashFlowInsights } from "@/components/cash-flow/cash-flow-insights";
 import { VendorsOverview } from "@/components/cash-flow/vendors-overview";
 import { BankAccounts } from "@/components/cash-flow/bank-accounts";
 import { CreditCards, getCreditCardDueDates } from "@/components/cash-flow/credit-cards";
@@ -723,15 +724,28 @@ const Dashboard = () => {
           onUpdateCashBalance={handleUpdateCashBalance}
         />
         
-        {/* Row 1: Cash Flow Calendar (Full Width) */}
-        <CashFlowCalendar 
-          events={allCalendarEvents} 
-          totalCash={displayCash}
-          onEditTransaction={handleEditTransaction}
-          todayInflow={todayInflow}
-          todayOutflow={todayOutflow}
-          upcomingExpenses={upcomingExpenses}
-        />
+        {/* Row 1: Cash Flow Calendar and AI Insights (Side by Side) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <CashFlowCalendar 
+              events={allCalendarEvents} 
+              totalCash={displayCash}
+              onEditTransaction={handleEditTransaction}
+              todayInflow={todayInflow}
+              todayOutflow={todayOutflow}
+              upcomingExpenses={upcomingExpenses}
+            />
+          </div>
+          <div className="lg:col-span-1">
+            <CashFlowInsights
+              currentBalance={displayCash}
+              dailyInflow={todayInflow}
+              dailyOutflow={todayOutflow}
+              upcomingExpenses={upcomingExpenses}
+              events={allCalendarEvents}
+            />
+          </div>
+        </div>
 
         {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
