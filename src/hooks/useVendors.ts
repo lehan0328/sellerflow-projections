@@ -56,6 +56,7 @@ export const useVendors = () => {
       const { data, error } = await supabase
         .from('vendors')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       console.log('Vendors query result:', { data, error });

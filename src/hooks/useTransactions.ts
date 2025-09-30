@@ -35,9 +35,17 @@ export const useTransactions = () => {
 
   const fetchTransactions = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setTransactions([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

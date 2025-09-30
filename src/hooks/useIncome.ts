@@ -51,6 +51,7 @@ export const useIncome = () => {
       const { data, error } = await supabase
         .from('income')
         .select('*')
+        .eq('user_id', user.id)
         .order('payment_date', { ascending: false });
 
       if (error) {
