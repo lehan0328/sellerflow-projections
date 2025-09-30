@@ -17,7 +17,6 @@ import { cn } from "@/lib/utils";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { VendorForm } from "./vendor-form";
 import { supabase } from "@/integrations/supabase/client";
-
 interface Vendor {
   id: string;
   name: string;
@@ -26,7 +25,6 @@ interface Vendor {
   netTermsDays?: string | number;
   category?: string;
 }
-
 interface PurchaseOrderFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -35,27 +33,26 @@ interface PurchaseOrderFormProps {
   onDeleteAllVendors?: () => void;
   onAddVendor: (vendorData: any) => void;
 }
-
 interface PaymentSchedule {
   id: string;
   amount: string;
   dueDate: Date | undefined;
   description: string;
 }
-
-export const PurchaseOrderForm = ({ 
-  open, 
-  onOpenChange, 
-  vendors, 
-  onSubmitOrder, 
+export const PurchaseOrderForm = ({
+  open,
+  onOpenChange,
+  vendors,
+  onSubmitOrder,
   onDeleteAllVendors,
   onAddVendor
 }: PurchaseOrderFormProps) => {
-  const { creditCards } = useCreditCards();
+  const {
+    creditCards
+  } = useCreditCards();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isProcessingDocument, setIsProcessingDocument] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
-  
   const [formData, setFormData] = useState({
     poName: "",
     vendor: "",
@@ -73,12 +70,12 @@ export const PurchaseOrderForm = ({
     paymentMethod: "bank-transfer" as "bank-transfer" | "credit-card",
     selectedCreditCard: ""
   });
-  
-  const [paymentSchedule, setPaymentSchedule] = useState<PaymentSchedule[]>([
-    { id: "1", amount: "", dueDate: undefined, description: "Initial deposit" }
-  ]);
-
-  
+  const [paymentSchedule, setPaymentSchedule] = useState<PaymentSchedule[]>([{
+    id: "1",
+    amount: "",
+    dueDate: undefined,
+    description: "Initial deposit"
+  }]);
   const [showVendorDropdown, setShowVendorDropdown] = useState(false);
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
   const [vendorSearchTerm, setVendorSearchTerm] = useState("");
@@ -90,28 +87,13 @@ export const PurchaseOrderForm = ({
   const [isDueDatePickerOpen, setIsDueDatePickerOpen] = useState(false);
   const [isDeliveryDatePickerOpen, setIsDeliveryDatePickerOpen] = useState(false);
   const [openPaymentDatePickers, setOpenPaymentDatePickers] = useState<Record<string, boolean>>({});
-
-  const categories = [
-    "Inventory",
-    "Packaging Materials", 
-    "Marketing/PPC",
-    "Shipping & Logistics",
-    "Professional Services",
-    "Other"
-  ];
+  const categories = ["Inventory", "Packaging Materials", "Marketing/PPC", "Shipping & Logistics", "Professional Services", "Other"];
 
   // Get unique vendors first, then filter and sort alphabetically
-  const uniqueVendors = vendors
-    .filter((vendor, index, self) => 
-      index === self.findIndex(v => v.id === vendor.id)
-    )
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const uniqueVendors = vendors.filter((vendor, index, self) => index === self.findIndex(v => v.id === vendor.id)).sort((a, b) => a.name.localeCompare(b.name));
 
   // Filter unique vendors based on search term
-  const filteredVendors = uniqueVendors
-    .filter(vendor =>
-      vendor.name.toLowerCase().includes(vendorSearchTerm.toLowerCase())
-    );
+  const filteredVendors = uniqueVendors.filter(vendor => vendor.name.toLowerCase().includes(vendorSearchTerm.toLowerCase()));
 
   // Reset form when dialog opens/closes
   useEffect(() => {
@@ -133,14 +115,17 @@ export const PurchaseOrderForm = ({
         paymentMethod: "bank-transfer",
         selectedCreditCard: ""
       });
-      setPaymentSchedule([{ id: "1", amount: "", dueDate: undefined, description: "Initial deposit" }]);
+      setPaymentSchedule([{
+        id: "1",
+        amount: "",
+        dueDate: undefined,
+        description: "Initial deposit"
+      }]);
       setVendorSearchTerm("");
     }
   }, [open]);
-
   const handleVendorSelect = (vendor: Vendor) => {
     console.log('Selected vendor:', vendor);
-    
     setFormData(prev => ({
       ...prev,
       vendor: vendor.name,
@@ -151,11 +136,9 @@ export const PurchaseOrderForm = ({
       netTermsDays: mapNetTermsDays(vendor.netTermsDays),
       customDays: isCustomNetTerms(vendor.netTermsDays) ? vendor.netTermsDays?.toString() || "" : ""
     }));
-    
     setVendorSearchTerm(vendor.name);
     setShowVendorDropdown(false);
   };
-
   const mapVendorPaymentType = (vendorPaymentType?: string): "due-upon-order" | "net-terms" | "preorder" | "due-upon-delivery" => {
     switch (vendorPaymentType) {
       case 'net-terms':
@@ -168,7 +151,6 @@ export const PurchaseOrderForm = ({
         return 'due-upon-order';
     }
   };
-
   const mapNetTermsDays = (days?: string | number): "30" | "60" | "90" | "custom" => {
     const dayString = days?.toString();
     if (dayString === "30" || dayString === "60" || dayString === "90") {
@@ -176,30 +158,26 @@ export const PurchaseOrderForm = ({
     }
     return dayString ? "custom" : "30";
   };
-
   const isCustomNetTerms = (days?: string | number): boolean => {
     const dayString = days?.toString();
     return dayString ? !["30", "60", "90"].includes(dayString) : false;
   };
-
   const calculateDueDate = (): Date | undefined => {
     switch (formData.paymentType) {
       case "due-upon-order":
         return formData.poDate;
       case "net-terms":
-        const days = formData.netTermsDays === "custom" 
-          ? parseInt(formData.customDays) || 0 
-          : parseInt(formData.netTermsDays);
+        const days = formData.netTermsDays === "custom" ? parseInt(formData.customDays) || 0 : parseInt(formData.netTermsDays);
         return addDays(formData.poDate, days);
       case "due-upon-delivery":
         return formData.deliveryDate;
       case "preorder":
-        return undefined; // Due dates are in payment schedule
+        return undefined;
+      // Due dates are in payment schedule
       default:
         return formData.poDate;
     }
   };
-
   const addPayment = () => {
     const newPayment: PaymentSchedule = {
       id: Date.now().toString(),
@@ -209,22 +187,19 @@ export const PurchaseOrderForm = ({
     };
     setPaymentSchedule([...paymentSchedule, newPayment]);
   };
-
   const removePayment = (id: string) => {
     if (paymentSchedule.length > 1) {
       setPaymentSchedule(paymentSchedule.filter(p => p.id !== id));
     }
   };
-
   const updatePayment = (id: string, field: keyof PaymentSchedule, value: any) => {
-    setPaymentSchedule(paymentSchedule.map(p => 
-      p.id === id ? { ...p, [field]: value } : p
-    ));
+    setPaymentSchedule(paymentSchedule.map(p => p.id === id ? {
+      ...p,
+      [field]: value
+    } : p));
   };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!formData.poName || !formData.vendor || !formData.amount) {
       toast.error('Please fill in all required fields');
       return;
@@ -236,30 +211,24 @@ export const PurchaseOrderForm = ({
         toast.error('Please select a credit card for payment');
         return;
       }
-      
       const selectedCard = creditCards.find(card => card.id === formData.selectedCreditCard);
       const orderAmount = parseFloat(formData.amount) || 0;
-      
       if (selectedCard && selectedCard.available_credit < orderAmount) {
         toast.error(`Insufficient credit limit. Available: $${selectedCard.available_credit.toFixed(2)}, Required: $${orderAmount.toFixed(2)}`);
         return;
       }
     }
-
     const calculatedDueDate = calculateDueDate();
-    
     const orderData = {
       ...formData,
       dueDate: calculatedDueDate,
       paymentSchedule: formData.paymentType === "preorder" ? paymentSchedule : undefined
     };
-    
     console.log("Submitting purchase order:", orderData);
     onSubmitOrder(orderData);
     toast.success(`Purchase Order "${formData.poName}" created successfully!`);
     onOpenChange(false);
   };
-
   const handleDeleteAllVendors = () => {
     if (onDeleteAllVendors) {
       onDeleteAllVendors();
@@ -267,7 +236,6 @@ export const PurchaseOrderForm = ({
     }
     setShowDeleteAllDialog(false);
   };
-
   const handleAddVendorFromForm = async (vendorData: any) => {
     try {
       // Calculate due date based on payment terms
@@ -277,7 +245,6 @@ export const PurchaseOrderForm = ({
         dueDate = new Date();
         dueDate.setDate(dueDate.getDate() + days);
       }
-      
       await onAddVendor({
         name: vendorData.name,
         totalOwed: 0,
@@ -289,18 +256,18 @@ export const PurchaseOrderForm = ({
         netTermsDays: vendorData.netTermsDays,
         source: 'management'
       });
-      
+
       // Auto-select the newly created vendor
       setFormData(prev => ({
         ...prev,
         vendor: vendorData.name,
-        vendorId: '', // Will be updated when vendors refresh
+        vendorId: '',
+        // Will be updated when vendors refresh
         category: vendorData.category || '',
         paymentType: mapVendorPaymentType(vendorData.paymentType),
         netTermsDays: mapNetTermsDays(vendorData.netTermsDays),
         customDays: isCustomNetTerms(vendorData.netTermsDays) ? vendorData.netTermsDays?.toString() || '' : ''
       }));
-      
       setVendorSearchTerm(vendorData.name);
       setShowVendorForm(false);
       setExtractedVendorName(""); // Clear extracted name after successful addition
@@ -310,13 +277,11 @@ export const PurchaseOrderForm = ({
       toast.error('Failed to create vendor. Please try again.');
     }
   };
-
   const handleGoToVendorManagement = () => {
     onOpenChange(false);
     // Navigate to Settings page where vendor management is located
     window.location.href = '/settings';
   };
-
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -332,17 +297,18 @@ export const PurchaseOrderForm = ({
       toast.error('File size must be less than 10MB');
       return;
     }
-
     setIsProcessingDocument(true);
     setUploadedFileName(file.name);
-    
     try {
       // Create form data
       const formDataToSend = new FormData();
       formDataToSend.append('file', file);
 
       // Call the edge function
-      const { data, error } = await supabase.functions.invoke('parse-purchase-order', {
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('parse-purchase-order', {
         body: formDataToSend
       });
 
@@ -358,12 +324,10 @@ export const PurchaseOrderForm = ({
         toast.error(data?.error || 'Could not extract purchase order data from document');
         return;
       }
-
       if (data.success && data.data) {
         const extracted = data.data;
-        
         console.log("Extracted data from document:", extracted);
-        
+
         // Auto-fill form fields with extracted data
         setFormData(prev => ({
           ...prev,
@@ -374,16 +338,12 @@ export const PurchaseOrderForm = ({
           notes: extracted.notes || prev.notes,
           netTermsDays: extracted.netTermsDays || prev.netTermsDays,
           dueDate: extracted.dueDate ? parse(extracted.dueDate, 'yyyy-MM-dd', new Date()) : prev.dueDate,
-          deliveryDate: extracted.deliveryDate ? parse(extracted.deliveryDate, 'yyyy-MM-dd', new Date()) : prev.deliveryDate,
+          deliveryDate: extracted.deliveryDate ? parse(extracted.deliveryDate, 'yyyy-MM-dd', new Date()) : prev.deliveryDate
         }));
 
         // Try to match vendor name
         if (extracted.vendorName) {
-          const matchedVendor = vendors.find(v => 
-            v.name.toLowerCase().includes(extracted.vendorName.toLowerCase()) ||
-            extracted.vendorName.toLowerCase().includes(v.name.toLowerCase())
-          );
-
+          const matchedVendor = vendors.find(v => v.name.toLowerCase().includes(extracted.vendorName.toLowerCase()) || extracted.vendorName.toLowerCase().includes(v.name.toLowerCase()));
           if (matchedVendor) {
             handleVendorSelect(matchedVendor);
             toast.success(`✓ Document processed! Matched vendor: ${matchedVendor.name}. Please review and confirm details.`);
@@ -411,14 +371,9 @@ export const PurchaseOrderForm = ({
       }
     }
   };
-
-  return (
-    <>
+  return <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn(
-        "max-h-[90vh] overflow-y-auto",
-        !formData.vendorId ? "max-w-lg" : "max-w-2xl w-full"
-      )}>
+      <DialogContent className={cn("max-h-[90vh] overflow-y-auto", !formData.vendorId ? "max-w-lg" : "max-w-2xl w-full")}>
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
               Add Purchase Order
@@ -426,8 +381,7 @@ export const PurchaseOrderForm = ({
           </DialogHeader>
           
           {/* Step 1: Vendor Selection */}
-          {!formData.vendorId && (
-            <div className="space-y-4">
+          {!formData.vendorId && <div className="space-y-4">
               <div className="text-center py-4">
                 <h3 className="text-lg font-semibold mb-2">Select a Vendor</h3>
                 <p className="text-sm text-muted-foreground">Choose a vendor to create a purchase order</p>
@@ -444,35 +398,18 @@ export const PurchaseOrderForm = ({
                     </div>
                     <div>
                       <h4 className="font-semibold mb-1">Upload Purchase Order Document</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Let AI automatically fill the form from your PDF or image
-                      </p>
+                      <p className="text-sm text-muted-foreground">Let AI automatically fill the form from your PNG or JPG
+PDF IS NOT CURRENTLY SUPPORTED</p>
                     </div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="application/pdf,image/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isProcessingDocument}
-                      className="w-full"
-                    >
-                      {isProcessingDocument ? (
-                        <>
+                    <input ref={fileInputRef} type="file" accept="application/pdf,image/*" onChange={handleFileUpload} className="hidden" />
+                    <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isProcessingDocument} className="w-full">
+                      {isProcessingDocument ? <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                           Processing {uploadedFileName}...
-                        </>
-                      ) : (
-                        <>
+                        </> : <>
                           <Upload className="h-4 w-4 mr-2" />
                           Upload Document (PDF or Image)
-                        </>
-                      )}
+                        </>}
                     </Button>
                   </div>
                 </CardContent>
@@ -492,89 +429,42 @@ export const PurchaseOrderForm = ({
               <div className="space-y-2">
                 <div className="flex items-center justify-between mb-2">
                   <Label htmlFor="vendor">Vendor *</Label>
-                  {vendors.length > 0 && (
-                    <Button 
-                      type="button" 
-                      variant="destructive" 
-                      size="sm"
-                      onClick={() => setShowDeleteAllDialog(true)}
-                      className="text-xs px-2 py-1 h-auto"
-                    >
+                  {vendors.length > 0 && <Button type="button" variant="destructive" size="sm" onClick={() => setShowDeleteAllDialog(true)} className="text-xs px-2 py-1 h-auto">
                       <Trash2 className="h-3 w-3 mr-1" />
                       Delete All
-                    </Button>
-                  )}
+                    </Button>}
                 </div>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <div className="relative">
-                      <Input
-                        placeholder="Search or select vendor..."
-                        value={vendorSearchTerm}
-                        onChange={(e) => {
-                          setVendorSearchTerm(e.target.value);
-                          if (e.target.value) setShowVendorDropdown(true);
-                        }}
-                        onClick={() => setShowVendorDropdown(true)}
-                        className="pr-8"
-                      />
+                      <Input placeholder="Search or select vendor..." value={vendorSearchTerm} onChange={e => {
+                    setVendorSearchTerm(e.target.value);
+                    if (e.target.value) setShowVendorDropdown(true);
+                  }} onClick={() => setShowVendorDropdown(true)} className="pr-8" />
                       <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     </div>
                     
-                    {showVendorDropdown && (
-                      <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                        {filteredVendors.length === 0 ? (
-                          <div className="p-3 text-sm text-muted-foreground text-center bg-background">
-                            {vendorSearchTerm ? (
-                              <div className="space-y-2">
+                    {showVendorDropdown && <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                        {filteredVendors.length === 0 ? <div className="p-3 text-sm text-muted-foreground text-center bg-background">
+                            {vendorSearchTerm ? <div className="space-y-2">
                                 <div>No vendors found matching your search</div>
-                                 <Button 
-                                   size="sm" 
-                                   variant="outline" 
-                                   onClick={() => setShowVendorForm(true)}
-                                   className="text-xs"
-                                 >
+                                 <Button size="sm" variant="outline" onClick={() => setShowVendorForm(true)} className="text-xs">
                                    Add "{vendorSearchTerm}" as new vendor
                                  </Button>
-                              </div>
-                            ) : (
-                              <div className="space-y-2">
+                              </div> : <div className="space-y-2">
                                 <div>No vendors available</div>
-                                 <Button 
-                                   size="sm" 
-                                   variant="outline" 
-                                   onClick={() => setShowVendorForm(true)}
-                                   className="text-xs"
-                                 >
+                                 <Button size="sm" variant="outline" onClick={() => setShowVendorForm(true)} className="text-xs">
                                    Create Your First Vendor
                                  </Button>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          filteredVendors.map((vendor) => (
-                            <div
-                              key={vendor.id}
-                              className="p-2 hover:bg-accent cursor-pointer text-sm border-b last:border-b-0 bg-background"
-                              onClick={() => handleVendorSelect(vendor)}
-                            >
+                              </div>}
+                          </div> : filteredVendors.map(vendor => <div key={vendor.id} className="p-2 hover:bg-accent cursor-pointer text-sm border-b last:border-b-0 bg-background" onClick={() => handleVendorSelect(vendor)}>
                               <div className="font-medium">{vendor.name}</div>
-                              {vendor.category && (
-                                <div className="text-xs text-muted-foreground">{vendor.category}</div>
-                              )}
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    )}
+                              {vendor.category && <div className="text-xs text-muted-foreground">{vendor.category}</div>}
+                            </div>)}
+                      </div>}
                   </div>
                   
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setShowVendorForm(true)}
-                    className="px-3"
-                  >
+                  <Button type="button" variant="outline" onClick={() => setShowVendorForm(true)} className="px-3">
                     <Plus className="h-4 w-4 mr-1" />
                     Add Vendor
                   </Button>
@@ -586,30 +476,25 @@ export const PurchaseOrderForm = ({
                   Cancel
                 </Button>
               </div>
-            </div>
-          )}
+            </div>}
 
           {/* Step 2: Purchase Order Details */}
-          {formData.vendorId && (
-            <form onSubmit={handleSubmit} className="space-y-4">
+          {formData.vendorId && <form onSubmit={handleSubmit} className="space-y-4">
               {/* Selected Vendor Display */}
               <div className="p-3 bg-accent/20 rounded-lg border">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium">{formData.vendor}</div>
-                    {formData.category && (
-                      <div className="text-sm text-muted-foreground">{formData.category}</div>
-                    )}
+                    {formData.category && <div className="text-sm text-muted-foreground">{formData.category}</div>}
                   </div>
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => {
-                      setFormData(prev => ({ ...prev, vendor: "", vendorId: "" }));
-                      setVendorSearchTerm("");
-                    }}
-                  >
+                  <Button type="button" variant="ghost" size="sm" onClick={() => {
+                setFormData(prev => ({
+                  ...prev,
+                  vendor: "",
+                  vendorId: ""
+                }));
+                setVendorSearchTerm("");
+              }}>
                     Change Vendor
                   </Button>
                 </div>
@@ -618,27 +503,19 @@ export const PurchaseOrderForm = ({
             {/* PO Name */}
             <div className="space-y-2">
               <Label htmlFor="poName">PO Name *</Label>
-              <Input
-                id="poName"
-                placeholder="e.g., Q1 Inventory Restock"
-                value={formData.poName}
-                onChange={(e) => setFormData(prev => ({ ...prev, poName: e.target.value }))}
-                required
-              />
+              <Input id="poName" placeholder="e.g., Q1 Inventory Restock" value={formData.poName} onChange={e => setFormData(prev => ({
+              ...prev,
+              poName: e.target.value
+            }))} required />
             </div>
 
             {/* Amount */}
             <div className="space-y-2">
               <Label htmlFor="amount">Total Amount *</Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={formData.amount}
-                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                required
-              />
+              <Input id="amount" type="number" step="0.01" placeholder="0.00" value={formData.amount} onChange={e => setFormData(prev => ({
+              ...prev,
+              amount: e.target.value
+            }))} required />
             </div>
             
             {/* PO Date */}
@@ -646,24 +523,19 @@ export const PurchaseOrderForm = ({
               <Label>PO Date *</Label>
               <Popover open={isPODatePickerOpen} onOpenChange={setIsPODatePickerOpen}>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal"
-                  >
+                  <Button variant="outline" className="w-full justify-start text-left font-normal">
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {formData.poDate ? format(formData.poDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 z-50">
-                  <Calendar
-                    mode="single"
-                    selected={formData.poDate}
-                    onSelect={(date) => {
-                      setFormData(prev => ({ ...prev, poDate: date || new Date() }));
-                      setIsPODatePickerOpen(false);
-                    }}
-                    initialFocus
-                  />
+                  <Calendar mode="single" selected={formData.poDate} onSelect={date => {
+                  setFormData(prev => ({
+                    ...prev,
+                    poDate: date || new Date()
+                  }));
+                  setIsPODatePickerOpen(false);
+                }} initialFocus />
                 </PopoverContent>
               </Popover>
             </div>
@@ -671,11 +543,10 @@ export const PurchaseOrderForm = ({
             {/* Payment Terms */}
             <div className="space-y-3">
               <Label>Payment Terms</Label>
-              <RadioGroup 
-                value={formData.paymentType} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, paymentType: value as any }))}
-                className="grid grid-cols-2 gap-2"
-              >
+              <RadioGroup value={formData.paymentType} onValueChange={value => setFormData(prev => ({
+              ...prev,
+              paymentType: value as any
+            }))} className="grid grid-cols-2 gap-2">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="due-upon-order" id="due-upon-order" />
                   <Label htmlFor="due-upon-order" className="text-sm">Due Upon Order</Label>
@@ -699,43 +570,39 @@ export const PurchaseOrderForm = ({
 
               {/* Payment Due Date Display */}
               {(() => {
-                const calculatedDueDate = calculateDueDate();
-                if (calculatedDueDate) {
-                  return (
-                    <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
+              const calculatedDueDate = calculateDueDate();
+              if (calculatedDueDate) {
+                return <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Payment Due Date:</span>
                         <span className="text-sm font-semibold text-accent-foreground">
                           {format(calculatedDueDate, "PPP")}
                         </span>
                       </div>
-                    </div>
-                  );
-                } else if (formData.paymentType === "preorder") {
-                  return (
-                    <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
+                    </div>;
+              } else if (formData.paymentType === "preorder") {
+                return <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
                       <div className="text-sm font-medium text-center text-muted-foreground">
                         Due dates will be set in payment schedule below
                       </div>
-                    </div>
-                  );
-                } else if (formData.paymentType === "due-upon-delivery" && !formData.deliveryDate) {
-                  return (
-                    <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
+                    </div>;
+              } else if (formData.paymentType === "due-upon-delivery" && !formData.deliveryDate) {
+                return <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
                       <div className="text-sm font-medium text-center text-muted-foreground">
                         Select delivery date below to calculate due date
                       </div>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
+                    </div>;
+              }
+              return null;
+            })()}
 
               {/* Net Terms Days */}
-              {formData.paymentType === "net-terms" && (
-                <div className="space-y-2">
+              {formData.paymentType === "net-terms" && <div className="space-y-2">
                   <Label>Net Terms Days</Label>
-                  <Select value={formData.netTermsDays} onValueChange={(value) => setFormData(prev => ({ ...prev, netTermsDays: value as any }))}>
+                  <Select value={formData.netTermsDays} onValueChange={value => setFormData(prev => ({
+                ...prev,
+                netTermsDays: value as any
+              }))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -747,50 +614,37 @@ export const PurchaseOrderForm = ({
                     </SelectContent>
                   </Select>
                   
-                  {formData.netTermsDays === "custom" && (
-                    <Input
-                      type="number"
-                      placeholder="Enter custom days"
-                      value={formData.customDays}
-                      onChange={(e) => setFormData(prev => ({ ...prev, customDays: e.target.value }))}
-                    />
-                  )}
-                </div>
-              )}
+                  {formData.netTermsDays === "custom" && <Input type="number" placeholder="Enter custom days" value={formData.customDays} onChange={e => setFormData(prev => ({
+                ...prev,
+                customDays: e.target.value
+              }))} />}
+                </div>}
 
               {/* Delivery Date for Due Upon Delivery */}
-              {formData.paymentType === "due-upon-delivery" && (
-                <div className="space-y-2">
+              {formData.paymentType === "due-upon-delivery" && <div className="space-y-2">
                   <Label>Delivery Date</Label>
                   <Popover open={isDeliveryDatePickerOpen} onOpenChange={setIsDeliveryDatePickerOpen}>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
+                      <Button variant="outline" className="w-full justify-start text-left font-normal">
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {formData.deliveryDate ? format(formData.deliveryDate, "PPP") : "Pick delivery date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0 z-50">
-                      <Calendar
-                        mode="single"
-                        selected={formData.deliveryDate}
-                        onSelect={(date) => {
-                          setFormData(prev => ({ ...prev, deliveryDate: date }));
-                          setIsDeliveryDatePickerOpen(false);
-                        }}
-                        initialFocus
-                      />
+                      <Calendar mode="single" selected={formData.deliveryDate} onSelect={date => {
+                    setFormData(prev => ({
+                      ...prev,
+                      deliveryDate: date
+                    }));
+                    setIsDeliveryDatePickerOpen(false);
+                  }} initialFocus />
                     </PopoverContent>
                   </Popover>
-                </div>
-              )}
+                </div>}
             </div>
 
             {/* Preorder Payment Schedule */}
-            {formData.paymentType === "preorder" && (
-              <div className="space-y-3">
+            {formData.paymentType === "preorder" && <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label>Payment Schedule</Label>
                   <Button type="button" onClick={addPayment} variant="outline" size="sm">
@@ -800,98 +654,63 @@ export const PurchaseOrderForm = ({
                 </div>
                 
                 <div className="space-y-2">
-                  {paymentSchedule.map((payment, index) => (
-                    <Card key={payment.id}>
+                  {paymentSchedule.map((payment, index) => <Card key={payment.id}>
                       <CardContent className="p-3 space-y-2">
                         <div className="flex items-center justify-between">
                           <Label className="text-sm">Payment {index + 1}</Label>
-                          {paymentSchedule.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removePayment(payment.id)}
-                            >
+                          {paymentSchedule.length > 1 && <Button type="button" variant="ghost" size="sm" onClick={() => removePayment(payment.id)}>
                               <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
+                            </Button>}
                         </div>
                         
-                        <Input
-                          placeholder="Description"
-                          value={payment.description}
-                          onChange={(e) => updatePayment(payment.id, "description", e.target.value)}
-                        />
+                        <Input placeholder="Description" value={payment.description} onChange={e => updatePayment(payment.id, "description", e.target.value)} />
                         
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="Amount"
-                          value={payment.amount}
-                          onChange={(e) => updatePayment(payment.id, "amount", e.target.value)}
-                        />
+                        <Input type="number" step="0.01" placeholder="Amount" value={payment.amount} onChange={e => updatePayment(payment.id, "amount", e.target.value)} />
                         
-                        <Popover 
-                          open={openPaymentDatePickers[payment.id]} 
-                          onOpenChange={(open) => setOpenPaymentDatePickers(prev => ({ ...prev, [payment.id]: open }))}
-                        >
+                        <Popover open={openPaymentDatePickers[payment.id]} onOpenChange={open => setOpenPaymentDatePickers(prev => ({
+                    ...prev,
+                    [payment.id]: open
+                  }))}>
                           <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className="w-full justify-start text-left font-normal"
-                            >
+                            <Button variant="outline" className="w-full justify-start text-left font-normal">
                               <CalendarIcon className="mr-2 h-4 w-4" />
                               {payment.dueDate ? format(payment.dueDate, "PPP") : "Pick due date"}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0 z-50">
-                            <Calendar
-                              mode="single"
-                              selected={payment.dueDate}
-                              onSelect={(date) => {
-                                updatePayment(payment.id, "dueDate", date);
-                                setOpenPaymentDatePickers(prev => ({ ...prev, [payment.id]: false }));
-                              }}
-                              initialFocus
-                            />
+                            <Calendar mode="single" selected={payment.dueDate} onSelect={date => {
+                        updatePayment(payment.id, "dueDate", date);
+                        setOpenPaymentDatePickers(prev => ({
+                          ...prev,
+                          [payment.id]: false
+                        }));
+                      }} initialFocus />
                           </PopoverContent>
                         </Popover>
                       </CardContent>
-                    </Card>
-                  ))}
+                    </Card>)}
                 </div>
-              </div>
-            )}
+              </div>}
 
             {/* Payment Method Section */}
             <div className="space-y-3">
               <Label>Payment Method</Label>
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id="bank-transfer-po"
-                    name="paymentMethodPO"
-                    value="bank-transfer"
-                    checked={formData.paymentMethod === "bank-transfer"}
-                    onChange={(e) => setFormData(prev => ({ ...prev, paymentMethod: e.target.value as "bank-transfer" | "credit-card" }))}
-                    className="w-4 h-4 text-primary bg-gray-100 border-gray-300 focus:ring-primary"
-                  />
+                  <input type="radio" id="bank-transfer-po" name="paymentMethodPO" value="bank-transfer" checked={formData.paymentMethod === "bank-transfer"} onChange={e => setFormData(prev => ({
+                  ...prev,
+                  paymentMethod: e.target.value as "bank-transfer" | "credit-card"
+                }))} className="w-4 h-4 text-primary bg-gray-100 border-gray-300 focus:ring-primary" />
                   <Label htmlFor="bank-transfer-po" className="text-sm font-normal cursor-pointer">
                     Bank Transfer
                   </Label>
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id="credit-card-po"
-                    name="paymentMethodPO"
-                    value="credit-card"
-                    checked={formData.paymentMethod === "credit-card"}
-                    onChange={(e) => setFormData(prev => ({ ...prev, paymentMethod: e.target.value as "bank-transfer" | "credit-card" }))}
-                    className="w-4 h-4 text-primary bg-gray-100 border-gray-300 focus:ring-primary"
-                  />
+                  <input type="radio" id="credit-card-po" name="paymentMethodPO" value="credit-card" checked={formData.paymentMethod === "credit-card"} onChange={e => setFormData(prev => ({
+                  ...prev,
+                  paymentMethod: e.target.value as "bank-transfer" | "credit-card"
+                }))} className="w-4 h-4 text-primary bg-gray-100 border-gray-300 focus:ring-primary" />
                   <Label htmlFor="credit-card-po" className="text-sm font-normal cursor-pointer">
                     Credit Card
                   </Label>
@@ -899,41 +718,36 @@ export const PurchaseOrderForm = ({
               </div>
 
               {/* Credit Card Selection */}
-              {formData.paymentMethod === "credit-card" && (
-                <div className="space-y-3 p-4 bg-accent/10 rounded-lg border">
+              {formData.paymentMethod === "credit-card" && <div className="space-y-3 p-4 bg-accent/10 rounded-lg border">
                   <div className="space-y-2">
                     <Label>Select Credit Card</Label>
-                    <Select 
-                      value={formData.selectedCreditCard} 
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, selectedCreditCard: value }))}
-                    >
+                    <Select value={formData.selectedCreditCard} onValueChange={value => setFormData(prev => ({
+                  ...prev,
+                  selectedCreditCard: value
+                }))}>
                       <SelectTrigger>
                         <SelectValue placeholder="Choose a credit card" />
                       </SelectTrigger>
                       <SelectContent>
-                        {creditCards.filter(card => card.is_active).map(card => (
-                          <SelectItem key={card.id} value={card.id}>
+                        {creditCards.filter(card => card.is_active).map(card => <SelectItem key={card.id} value={card.id}>
                             <div className="flex items-center justify-between w-full">
                               <span className="font-medium">{card.account_name}</span>
                               <span className="text-sm text-muted-foreground ml-2">
                                 Available: ${card.available_credit.toFixed(2)}
                               </span>
                             </div>
-                          </SelectItem>
-                        ))}
+                          </SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
 
                   {/* Credit Card Info */}
                   {formData.selectedCreditCard && (() => {
-                    const selectedCard = creditCards.find(card => card.id === formData.selectedCreditCard);
-                    const orderAmount = parseFloat(formData.amount) || 0;
-                    const remainingCredit = selectedCard ? selectedCard.available_credit - orderAmount : 0;
-                    const hasInsufficientCredit = selectedCard ? selectedCard.available_credit < orderAmount : false;
-
-                    return selectedCard ? (
-                      <div className="space-y-2">
+                const selectedCard = creditCards.find(card => card.id === formData.selectedCreditCard);
+                const orderAmount = parseFloat(formData.amount) || 0;
+                const remainingCredit = selectedCard ? selectedCard.available_credit - orderAmount : 0;
+                const hasInsufficientCredit = selectedCard ? selectedCard.available_credit < orderAmount : false;
+                return selectedCard ? <div className="space-y-2">
                         <div className="text-sm">
                           <div className="flex justify-between">
                             <span>Credit Limit:</span>
@@ -949,53 +763,45 @@ export const PurchaseOrderForm = ({
                           </div>
                           <div className="flex justify-between border-t pt-1 mt-2">
                             <span>Remaining After Purchase:</span>
-                            <span className={cn(
-                              "font-semibold",
-                              hasInsufficientCredit ? "text-red-600" : remainingCredit < 1000 ? "text-yellow-600" : "text-green-600"
-                            )}>
+                            <span className={cn("font-semibold", hasInsufficientCredit ? "text-red-600" : remainingCredit < 1000 ? "text-yellow-600" : "text-green-600")}>
                               ${remainingCredit.toFixed(2)}
                             </span>
                           </div>
                         </div>
                         
-                        {hasInsufficientCredit && (
-                          <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                        {hasInsufficientCredit && <div className="bg-red-50 border border-red-200 rounded-md p-3">
                             <div className="flex items-center space-x-2">
                               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                               <span className="text-sm font-medium text-red-800">
                                 Insufficient Credit Available
                               </span>
                             </div>
-                          </div>
-                        )}
+                          </div>}
 
                         <div className="text-xs text-muted-foreground">
                           * Credit will be reserved from the purchase order date
                         </div>
-                      </div>
-                    ) : null;
-                  })()}
+                      </div> : null;
+              })()}
                   
-                  {creditCards.filter(card => card.is_active).length === 0 && (
-                    <div className="text-center text-sm text-muted-foreground py-4">
+                  {creditCards.filter(card => card.is_active).length === 0 && <div className="text-center text-sm text-muted-foreground py-4">
                       No active credit cards found. Please add a credit card in Settings.
-                    </div>
-                  )}
-                </div>
-              )}
+                    </div>}
+                </div>}
             </div>
 
             {/* Category */}
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+              <Select value={formData.category} onValueChange={value => setFormData(prev => ({
+              ...prev,
+              category: value
+            }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map(category => (
-                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                  ))}
+                  {categories.map(category => <SelectItem key={category} value={category}>{category}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -1003,25 +809,19 @@ export const PurchaseOrderForm = ({
             {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                placeholder="Brief description of the purchase order"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                rows={2}
-              />
+              <Textarea id="description" placeholder="Brief description of the purchase order" value={formData.description} onChange={e => setFormData(prev => ({
+              ...prev,
+              description: e.target.value
+            }))} rows={2} />
             </div>
 
             {/* Notes */}
             <div className="space-y-2">
               <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                placeholder="Additional notes or comments"
-                value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                rows={2}
-              />
+              <Textarea id="notes" placeholder="Additional notes or comments" value={formData.notes} onChange={e => setFormData(prev => ({
+              ...prev,
+              notes: e.target.value
+            }))} rows={2} />
             </div>
 
             {/* Submit Button */}
@@ -1033,8 +833,7 @@ export const PurchaseOrderForm = ({
                 Create Purchase Order
               </Button>
             </div>
-        </form>
-      )}
+        </form>}
     </DialogContent>
   </Dialog>
 
@@ -1049,24 +848,17 @@ export const PurchaseOrderForm = ({
       </AlertDialogHeader>
       <AlertDialogFooter>
         <AlertDialogCancel>Cancel</AlertDialogCancel>
-        <AlertDialogAction 
-          onClick={handleDeleteAllVendors}
-          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-        >
+        <AlertDialogAction onClick={handleDeleteAllVendors} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
           Delete All Vendors
         </AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
 
-      <VendorForm
-        open={showVendorForm}
-        onOpenChange={setShowVendorForm}
-        onAddVendor={handleAddVendorFromForm}
-        existingVendors={uniqueVendors.map(v => ({ name: v.name, id: v.id }))}
-        initialVendorName={extractedVendorName}
-      />
+      <VendorForm open={showVendorForm} onOpenChange={setShowVendorForm} onAddVendor={handleAddVendorFromForm} existingVendors={uniqueVendors.map(v => ({
+      name: v.name,
+      id: v.id
+    }))} initialVendorName={extractedVendorName} />
 
-    </>
-  );
+    </>;
 };
