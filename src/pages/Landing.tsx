@@ -275,15 +275,11 @@ const Landing = () => {
         <div className="container relative mx-auto px-4">
           <div className="text-center space-y-8">
             {/* New Smart AI Features Badge */}
-            <div className="flex items-center justify-center gap-3 animate-fade-in">
-              <Badge className="bg-foreground text-background px-3 py-1 text-sm font-semibold">
-                New
-              </Badge>
-              <div className="flex items-center gap-2 text-foreground font-medium">
-                <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-                <span>Smart AI Features</span>
-              </div>
-            </div>
+            <Badge className="inline-flex items-center gap-2 bg-foreground text-background px-4 py-2 text-sm font-semibold animate-fade-in">
+              <span>New</span>
+              <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+              <span>Smart AI Features</span>
+            </Badge>
             
             <div className="animate-fade-in space-y-6" style={{ animationDelay: '400ms' }}>
               <h1 className="text-4xl lg:text-7xl font-bold leading-tight">
