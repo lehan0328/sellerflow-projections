@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
+import { BankTransaction } from "@/components/cash-flow/bank-transaction-log";
 
 // ========== Type Definitions ==========
 
@@ -48,6 +49,36 @@ const Dashboard = () => {
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance } = useUserSettings();
+
+  // Example bank transactions for matching
+  const exampleBankTransactions: BankTransaction[] = [
+    {
+      id: '1',
+      accountId: 'example-acc-1',
+      accountName: 'Business Checking',
+      institutionName: 'Chase Bank',
+      date: new Date(),
+      description: 'ABC SUPPLIES INC',
+      merchantName: 'ABC Supplies',
+      amount: -1250,
+      type: 'debit',
+      category: 'Business',
+      status: 'posted'
+    },
+    {
+      id: '2',
+      accountId: 'example-acc-1',
+      accountName: 'Business Checking',
+      institutionName: 'Chase Bank',
+      date: new Date(),
+      description: 'BILO DISTRIBUTORS',
+      merchantName: 'Bilo Distributors',
+      amount: -850,
+      type: 'debit',
+      category: 'Business',
+      status: 'posted'
+    }
+  ];
   
   // Ensure starting balance is 0 for a fresh start (so 9/29 shows only the $60k inflow)
   React.useEffect(() => {
@@ -756,6 +787,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <VendorsOverview 
             vendors={activeVendors}
+            bankTransactions={exampleBankTransactions}
             onVendorUpdate={() => {
               refetchVendors();
             }}

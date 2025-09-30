@@ -5,22 +5,26 @@ import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2 } from "lucide-react";
+import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { VendorOrderDetailModal } from "./vendor-order-detail-modal";
+import { useTransactionMatching } from "@/hooks/useTransactionMatching";
+import { BankTransaction } from "./bank-transaction-log";
 import * as React from "react";
 
 interface VendorsOverviewProps {
   vendors?: Vendor[];
+  bankTransactions?: BankTransaction[];
   onVendorUpdate?: () => void;
   onEditOrder?: (vendor: Vendor) => void;
   onDeleteVendor?: (vendorId: string) => void;
 }
 
-export const VendorsOverview = ({ vendors: propVendors, onVendorUpdate, onEditOrder, onDeleteVendor }: VendorsOverviewProps) => {
+export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], onVendorUpdate, onEditOrder, onDeleteVendor }: VendorsOverviewProps) => {
   const { deleteVendor: deleteVendorHook } = useVendors();
   const vendors = propVendors || [];
+  const { matches, getMatchesForVendor } = useTransactionMatching(bankTransactions, vendors, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVendor, setSelectedVendor] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | 'paid'>('all');
@@ -141,6 +145,21 @@ export const VendorsOverview = ({ vendors: propVendors, onVendorUpdate, onEditOr
       onVendorUpdate?.();
     } catch (error) {
       console.error('Error processing payment:', error);
+    }
+  };
+
+  const handleMatch = async (vendor: Vendor) => {
+    try {
+      // Archive the vendor by deleting it (matches with bank transaction)
+      if (onDeleteVendor) {
+        onDeleteVendor(vendor.id);
+      } else {
+        await deleteVendorHook(vendor.id);
+      }
+      // Refresh data to ensure both calendar and vendor list are updated
+      onVendorUpdate?.();
+    } catch (error) {
+      console.error('Error matching transaction:', error);
     }
   };
 
@@ -376,6 +395,34 @@ export const VendorsOverview = ({ vendors: propVendors, onVendorUpdate, onEditOr
                         <Edit className="mr-1 h-3 w-3" />
                         Edit
                       </Button>
+                      {getMatchesForVendor(vendor.id).length > 0 && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="default"
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <Link2 className="mr-1 h-3 w-3" />
+                              Match
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Match Transaction</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will match the vendor payment with a bank transaction and archive it from the calendar. Continue?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleMatch(vendor)}>
+                                Match & Archive
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                       {vendor.nextPaymentDate && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>

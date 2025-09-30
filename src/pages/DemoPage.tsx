@@ -13,6 +13,7 @@ import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { IncomeOverview } from "@/components/cash-flow/income-overview";
 import { IncomeForm } from "@/components/cash-flow/income-form";
 import { useDemoVendors, useDemoTransactions, useDemoUserSettings } from "@/hooks/useDemoData";
+import { BankTransaction } from "@/components/cash-flow/bank-transaction-log";
 
 // Demo data and types
 interface CashFlowEvent {
@@ -35,6 +36,23 @@ const DemoPage = () => {
   const { vendors } = useDemoVendors();
   const { transactions } = useDemoTransactions();
   const { totalCash } = useDemoUserSettings();
+
+  // Example bank transactions for demo matching
+  const exampleBankTransactions: BankTransaction[] = [
+    {
+      id: '1',
+      accountId: 'demo-acc-1',
+      accountName: 'Business Checking',
+      institutionName: 'Demo Bank',
+      date: new Date(),
+      description: 'ACME CORP',
+      merchantName: 'Acme Corp',
+      amount: -1500,
+      type: 'debit',
+      category: 'Business',
+      status: 'posted'
+    }
+  ];
 
   const today = startOfDay(new Date());
 
@@ -155,6 +173,7 @@ const DemoPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <VendorsOverview 
             vendors={activeVendors}
+            bankTransactions={exampleBankTransactions}
             onVendorUpdate={() => {}}
             onDeleteVendor={async (vendorId) => {
               alert('Demo: Vendor deletion not available in demo');
