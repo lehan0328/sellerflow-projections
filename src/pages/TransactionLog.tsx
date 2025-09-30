@@ -15,23 +15,77 @@ export default function TransactionLog() {
   const { vendors, deleteVendor } = useVendors();
   const { incomeItems, updateIncome, deleteIncome } = useIncome();
   
-  // Mock bank transactions for matching demo
-  const mockBankTransactions = [
+  // Example bank transactions for matching demonstration
+  const exampleBankTransactions = [
     {
       id: 'bank1',
       accountId: 'acc1',
-      accountName: 'Chase Checking',
+      accountName: 'Chase Business Checking',
       institutionName: 'Chase Bank',
-      amount: -150.00,
-      description: 'Payment to Vendor ABC',
-      date: new Date(),
+      amount: -1250.00,
+      description: 'ACH Payment - ABC Supplies Co',
+      merchantName: 'ABC Supplies',
+      category: 'Business Expense',
+      date: new Date(2025, 0, 15),
+      type: 'debit' as const,
+      status: 'posted' as const,
+    },
+    {
+      id: 'bank2',
+      accountId: 'acc1',
+      accountName: 'Chase Business Checking',
+      institutionName: 'Chase Bank',
+      amount: 3500.00,
+      description: 'Direct Deposit - Client Payment Acme Corp',
+      merchantName: 'Acme Corporation',
+      category: 'Income',
+      date: new Date(2025, 0, 14),
+      type: 'credit' as const,
+      status: 'posted' as const,
+    },
+    {
+      id: 'bank3',
+      accountId: 'acc2',
+      accountName: 'Wells Fargo Business',
+      institutionName: 'Wells Fargo',
+      amount: -875.50,
+      description: 'Wire Transfer - XYZ Manufacturing',
+      merchantName: 'XYZ Manufacturing',
+      category: 'Supplies',
+      date: new Date(2025, 0, 13),
+      type: 'debit' as const,
+      status: 'posted' as const,
+    },
+    {
+      id: 'bank4',
+      accountId: 'acc1',
+      accountName: 'Chase Business Checking',
+      institutionName: 'Chase Bank',
+      amount: 2100.00,
+      description: 'Payment Received - Tech Services Inc',
+      merchantName: 'Tech Services',
+      category: 'Revenue',
+      date: new Date(2025, 0, 12),
+      type: 'credit' as const,
+      status: 'posted' as const,
+    },
+    {
+      id: 'bank5',
+      accountId: 'acc2',
+      accountName: 'Wells Fargo Business',
+      institutionName: 'Wells Fargo',
+      amount: -450.00,
+      description: 'Online Payment - Office Depot',
+      merchantName: 'Office Depot',
+      category: 'Office Supplies',
+      date: new Date(2025, 0, 11),
       type: 'debit' as const,
       status: 'posted' as const,
     }
   ];
   
-  const { matches, getMatchesForBankTransaction } = useTransactionMatching(
-    mockBankTransactions,
+  const { matches, isLoading: matchingLoading } = useTransactionMatching(
+    exampleBankTransactions,
     vendors,
     incomeItems
   );
@@ -96,7 +150,7 @@ export default function TransactionLog() {
               onDeleteTransaction={handleDeleteTransaction}
             />
             <BankTransactionLog 
-              transactions={mockBankTransactions}
+              transactions={exampleBankTransactions}
               matches={matches}
               onMatchTransaction={handleMatchTransaction}
             />
