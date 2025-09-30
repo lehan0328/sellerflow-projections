@@ -346,6 +346,11 @@ export const PurchaseOrderForm = ({
 
       if (error) throw error;
 
+      if (data.error) {
+        toast.error(data.error);
+        return;
+      }
+
       if (data.success && data.data) {
         const extracted = data.data;
         
