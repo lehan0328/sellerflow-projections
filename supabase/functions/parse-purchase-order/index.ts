@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -58,31 +58,6 @@ serve(async (req) => {
 
     console.log("Processing document:", file.name, file.type);
 
-    // Upload to storage for PDFs (keep in memory for images)
-    let fileUrl = null;
-    if (file.type === 'application/pdf') {
-      const fileName = `${user.id}/${Date.now()}-${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('purchase-orders')
-        .upload(fileName, file, {
-          contentType: file.type,
-          upsert: false
-        });
-
-      if (uploadError) {
-        console.error("Storage upload error:", uploadError);
-        throw new Error("Failed to upload document");
-      }
-
-      // Get public URL for the uploaded file
-      const { data: { publicUrl } } = supabase.storage
-        .from('purchase-orders')
-        .getPublicUrl(fileName);
-      
-      fileUrl = publicUrl;
-      console.log("PDF uploaded to storage:", fileUrl);
-    }
-
     // Read file as base64
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
@@ -96,45 +71,48 @@ serve(async (req) => {
     }
     base64 = btoa(base64);
 
-    // Determine mime type
-    const mimeType = file.type;
-    
-    console.log("Sending to AI with mime type:", mimeType);
+    console.log("Sending to AI for extraction");
 
-    // Use Gemini Flash (default, free during promo period)
-    const requestBody: any = {
-      model: "google/gemini-2.5-flash",
-      messages: [
-        {
-          role: "user",
-          content: file.type === 'application/pdf' ? [
-            {
-              type: "text",
-              text: "Extract all purchase order information from this PDF document. Look for: vendor/supplier name, purchase order name/number, total amount, description, payment terms (net 30/60/90), due date, delivery date, category (Inventory, Packaging, Marketing, Shipping, Professional Services, or Other), and any additional notes. If it's an invoice, treat it as a purchase order."
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: fileUrl // Use storage URL for PDFs
-              }
-            }
-          ] : [
-            {
-              type: "text",
-              text: "Extract all purchase order information from this document. Look for: vendor/supplier name, purchase order name/number, total amount, description, payment terms (net 30/60/90), due date, delivery date, category (Inventory, Packaging, Marketing, Shipping, Professional Services, or Other), and any additional notes. If it's an invoice, treat it as a purchase order."
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:${mimeType};base64,${base64}` // Use base64 for images
-              }
-            }
-          ]
-        }
-    };
+    // Use Gemini Flash with proper document/image handling
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Extract all purchase order and invoice information from this document. 
 
-    // Add tool choice
-    requestBody.tools = [
+Look for and extract:
+- Vendor/Supplier Name (required)
+- Purchase Order Number or Invoice Number
+- Total Amount (required)
+- Item Description or Service Description
+- Payment Terms (Net 30, Net 60, Net 90, or immediate/due upon receipt)
+- Due Date (if specified)
+- Delivery Date (if specified)
+- Category (choose most relevant: Inventory, Packaging Materials, Marketing/PPC, Shipping & Logistics, Professional Services, or Other)
+- Any Additional Notes or Terms
+
+Be thorough and extract all relevant information. If it's an invoice, treat it as a purchase order.`
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:${file.type};base64,${base64}`
+                }
+              }
+            ]
+          }
+        ],
+        tools: [
           {
             type: "function",
             function: {
@@ -187,16 +165,9 @@ serve(async (req) => {
               }
             }
           }
-        ];
-    requestBody.tool_choice = { type: "function", function: { name: "extract_purchase_order" } };
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
+        ],
+        tool_choice: { type: "function", function: { name: "extract_purchase_order" } }
+      }),
     });
 
     if (!response.ok) {
@@ -237,18 +208,6 @@ serve(async (req) => {
 
     const extractedData = JSON.parse(toolCall.function.arguments);
     console.log("Extracted PO data:", extractedData);
-
-    // Clean up PDF from storage if it was uploaded
-    if (fileUrl && file.type === 'application/pdf') {
-      const filePathParts = fileUrl.split('/purchase-orders/');
-      if (filePathParts.length > 1) {
-        const filePath = filePathParts[1]; // This will be "userId/timestamp-filename.pdf"
-        await supabase.storage
-          .from('purchase-orders')
-          .remove([filePath])
-          .catch(err => console.error("Cleanup error:", err));
-      }
-    }
 
     return new Response(
       JSON.stringify({ success: true, data: extractedData }),
