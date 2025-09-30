@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { PDFDocument } from "https://cdn.skypack.dev/pdf-lib@1.17.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -58,26 +59,53 @@ serve(async (req) => {
 
     console.log("Processing document:", file.name, file.type);
 
-    // For PDFs, return error in response body (not as HTTP error)
-    if (file.type === 'application/pdf') {
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: "PDF files cannot be processed directly. Please convert your PDF to an image first:\n\n• Take a screenshot (Windows: Snipping Tool, Mac: Cmd+Shift+4)\n• Or use an online PDF to JPG converter\n\nThen upload the image file instead."
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    let processedBytes: Uint8Array;
+    let mimeType = file.type;
 
-    // Read file as base64 for images
-    const arrayBuffer = await file.arrayBuffer();
-    const bytes = new Uint8Array(arrayBuffer);
+    // Handle PDF conversion to image
+    if (file.type === 'application/pdf') {
+      console.log("Converting PDF to image...");
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdfDoc = await PDFDocument.load(arrayBuffer);
+        const pages = pdfDoc.getPages();
+        
+        if (pages.length === 0) {
+          return new Response(
+            JSON.stringify({ 
+              success: false,
+              error: "PDF file is empty or corrupted"
+            }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // For now, we'll pass the PDF bytes and let Gemini handle it directly
+        // Gemini 2.5 Flash supports PDF documents
+        processedBytes = new Uint8Array(arrayBuffer);
+        mimeType = 'application/pdf';
+        console.log("PDF ready for processing");
+      } catch (error) {
+        console.error("PDF processing error:", error);
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: "Failed to process PDF file. Please ensure it's a valid PDF document."
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    } else {
+      // Read file as-is for images
+      const arrayBuffer = await file.arrayBuffer();
+      processedBytes = new Uint8Array(arrayBuffer);
+    }
     
     // Convert to base64
     let base64 = '';
     const chunkSize = 0x8000; // 32KB chunks to avoid stack overflow
-    for (let i = 0; i < bytes.length; i += chunkSize) {
-      const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+    for (let i = 0; i < processedBytes.length; i += chunkSize) {
+      const chunk = processedBytes.subarray(i, Math.min(i + chunkSize, processedBytes.length));
       base64 += String.fromCharCode(...chunk);
     }
     base64 = btoa(base64);
@@ -104,7 +132,7 @@ serve(async (req) => {
               {
                 type: "image_url",
                 image_url: {
-                  url: `data:${file.type};base64,${base64}`
+                  url: `data:${mimeType};base64,${base64}`
                 }
               }
             ]
