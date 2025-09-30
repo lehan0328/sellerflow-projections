@@ -88,20 +88,7 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `Extract all purchase order and invoice information from this document. 
-
-Look for and extract:
-- Vendor/Supplier Name (required)
-- Purchase Order Number or Invoice Number
-- Total Amount (required)
-- Item Description or Service Description
-- Payment Terms (Net 30, Net 60, Net 90, or immediate/due upon receipt)
-- Due Date (if specified)
-- Delivery Date (if specified)
-- Category (choose most relevant: Inventory, Packaging Materials, Marketing/PPC, Shipping & Logistics, Professional Services, or Other)
-- Any Additional Notes or Terms
-
-Be thorough and extract all relevant information. If it's an invoice, treat it as a purchase order.`
+                text: "Extract all purchase order and invoice information from this document. Look for: vendor/supplier name (required), purchase order or invoice number, total amount (required), item description, payment terms (Net 30/60/90 or immediate), due date, delivery date, category (Inventory, Packaging Materials, Marketing/PPC, Shipping & Logistics, Professional Services, or Other), and additional notes."
               },
               {
                 type: "image_url",
