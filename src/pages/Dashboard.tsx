@@ -46,7 +46,7 @@ const Dashboard = () => {
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
-  const { updateTotalCash } = useUserSettings();
+  const { totalCash: userSettingsCash, updateTotalCash } = useUserSettings();
   const { customers, addCustomer, deleteAllCustomers } = useCustomers();
   
   // State for vendors used in forms (derived from database vendors) - always fresh data
@@ -678,8 +678,8 @@ const Dashboard = () => {
     return isIncome ? total + amount : total - amount;
   }, 0);
   
-  // Display only the real bank account balance from Plaid
-  const displayCash = bankAccountBalance;
+  // Use bank account balance if connected, otherwise calculate from user settings + transactions
+  const displayCash = accounts.length > 0 ? bankAccountBalance : userSettingsCash + transactionTotal;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
