@@ -30,17 +30,7 @@ serve(async (req) => {
 
     console.log("Processing document:", file.name, file.type);
 
-    // For PDFs, convert to images is not reliable. Instead, advise users to use images
-    if (file.type === 'application/pdf') {
-      return new Response(
-        JSON.stringify({ 
-          error: "PDF processing is currently not supported. Please convert your PDF to an image (JPG or PNG) and try again. You can use a free online tool or take a screenshot of the document." 
-        }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Read file as base64 (only for images now)
+    // Read file as base64
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
     
@@ -58,7 +48,7 @@ serve(async (req) => {
     
     console.log("Sending to AI with mime type:", mimeType);
 
-    // Use Gemini Flash for image processing
+    // Use Gemini Flash (default, free during promo period)
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -66,7 +56,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
+        model: "google/gemini-2.5-flash",
         messages: [
           {
             role: "user",

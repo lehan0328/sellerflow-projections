@@ -376,14 +376,14 @@ export const PurchaseOrderForm = ({
 
           if (matchedVendor) {
             handleVendorSelect(matchedVendor);
-            toast.success(`Document processed! Matched vendor: ${matchedVendor.name}`);
+            toast.success(`✓ Document processed! Matched vendor: ${matchedVendor.name}. Please review and confirm details.`);
           } else {
             // Set vendor search term for user to select or create
             setVendorSearchTerm(extracted.vendorName);
-            toast.info(`Document processed! Please select or create vendor: ${extracted.vendorName}`);
+            toast.info(`✓ Document processed! Extracted vendor: "${extracted.vendorName}". Please select or create this vendor, then review all details before submitting.`);
           }
         } else {
-          toast.success('Document processed! Please review and fill in remaining fields.');
+          toast.success('✓ Document processed! Form auto-filled with extracted data. Please review and confirm all details.');
         }
       } else {
         toast.error('Could not extract purchase order data from document');
