@@ -353,9 +353,9 @@ export const VendorsOverview = ({ vendors: propVendors, onVendorUpdate, onEditOr
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center">
-                        <span className="text-muted-foreground">Description:</span>
+                        <span className="text-muted-foreground">PO Name:</span>
                         <span className="font-medium text-foreground ml-2">
-                          {vendor.description || vendor.poName || 'No description'}
+                          {vendor.poName || vendor.description || 'No PO name'}
                         </span>
                       </div>
                       {vendor.nextPaymentDate && (
