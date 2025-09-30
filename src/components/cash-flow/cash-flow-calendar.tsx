@@ -255,7 +255,7 @@ export const CashFlowCalendar = ({
               ))}
             </div>
         
-            <div className="grid grid-cols-7 gap-1 h-full">
+            <div className="grid grid-cols-7 gap-1 h-[calc(100%-8rem)]">
               {days.map(day => {
                 const dayEvents = getEventsForDay(day);
                 const dayBalance = getDayBalance(day);
@@ -465,7 +465,7 @@ export const CashFlowCalendar = ({
             </div>
           )}
           
-          <div className="flex items-center justify-between mt-6 pt-4 border-t flex-shrink-0">
+          <div className="flex items-center justify-between mt-4 pt-4 border-t flex-shrink-0">
             <div className="flex items-center space-x-4 text-sm">
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 rounded bg-finance-positive"></div>
