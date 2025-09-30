@@ -139,6 +139,35 @@ const Dashboard = () => {
   // Sample income data - replaced with database hook
   const { incomeItems, addIncome, updateIncome, deleteIncome, refetch: refetchIncome } = useIncome();
 
+  // Add example pending income items for matching demonstration
+  const exampleIncomeItems = [
+    {
+      id: 'example-income-1',
+      description: 'Monthly Service Fee',
+      amount: 3500,
+      paymentDate: new Date(),
+      source: 'Acme Corp',
+      status: 'pending' as const,
+      category: 'Services',
+      isRecurring: false,
+      customerId: undefined
+    },
+    {
+      id: 'example-income-2', 
+      description: 'Consulting Project',
+      amount: 5000,
+      paymentDate: new Date(),
+      source: 'TechStart Inc',
+      status: 'pending' as const,
+      category: 'Consulting',
+      isRecurring: false,
+      customerId: undefined
+    }
+  ];
+  
+  // Combine real income items with examples for demo
+  const allIncomeItems = [...incomeItems, ...exampleIncomeItems];
+
   // No sample data for new users
 
   // No sample data for new users
@@ -655,7 +684,7 @@ const Dashboard = () => {
       date: vendor.nextPaymentDate
     }));
 
-  // Convert income items to calendar events
+  // Convert income items to calendar events (use real items only, not examples)
   const incomeEvents: CashFlowEvent[] = incomeItems
     .map(income => ({
       id: `income-${income.id}`,
@@ -827,21 +856,24 @@ const Dashboard = () => {
             }}
           />
           <IncomeOverview
-            incomeItems={incomeItems}
+            incomeItems={allIncomeItems}
             bankTransactions={exampleBankTransactions}
             onCollectToday={handleCollectIncome}
             onEditIncome={handleEditIncome}
             onDeleteIncome={handleDeleteIncome}
             onMatchTransaction={async (income) => {
-              // Create a completed transaction record when matching
-              await addTransaction({
-                type: 'customer_payment',
-                amount: income.amount,
-                description: `Matched: ${income.source} - ${income.description}`,
-                customerId: income.customerId,
-                transactionDate: new Date(),
-                status: 'completed'
-              });
+              // Only update real database items, not examples
+              if (!income.id.startsWith('example-')) {
+                // Create a completed transaction record when matching
+                await addTransaction({
+                  type: 'customer_payment',
+                  amount: income.amount,
+                  description: `Matched: ${income.source} - ${income.description}`,
+                  customerId: income.customerId,
+                  transactionDate: new Date(),
+                  status: 'completed'
+                });
+              }
             }}
           />
         </div>
