@@ -725,8 +725,8 @@ const Dashboard = () => {
         />
         
         {/* Row 1: Cash Flow Calendar and AI Insights (Side by Side) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[700px]">
+          <div className="lg:col-span-2 h-full">
             <CashFlowCalendar 
               events={allCalendarEvents} 
               totalCash={displayCash}
@@ -736,7 +736,7 @@ const Dashboard = () => {
               upcomingExpenses={upcomingExpenses}
             />
           </div>
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 h-full">
             <CashFlowInsights
               currentBalance={displayCash}
               dailyInflow={todayInflow}

@@ -131,7 +131,7 @@ export const CashFlowInsights = ({
   };
 
   return (
-    <Card className="shadow-card h-fit min-h-[600px]">
+    <Card className="shadow-card h-full flex flex-col">
       <CardHeader>
         <CardTitle className="text-lg flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -154,7 +154,7 @@ export const CashFlowInsights = ({
           </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 flex-1 overflow-auto">
         {chatMode ? (
           <div className="space-y-4">
             <form onSubmit={handleChatSubmit} className="space-y-3">
