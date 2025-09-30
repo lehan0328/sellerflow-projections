@@ -30,7 +30,6 @@ serve(async (req) => {
 
     console.log("Processing document:", file.name, file.type);
 
-    // For PDFs, we'll use a text-first approach since vision might fail
     // Read file as base64
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
@@ -44,12 +43,12 @@ serve(async (req) => {
     }
     base64 = btoa(base64);
 
-    // Determine mime type - use inline for PDFs
-    const mimeType = file.type === 'application/pdf' ? 'application/pdf' : file.type;
+    // Determine mime type
+    const mimeType = file.type;
     
     console.log("Sending to AI with mime type:", mimeType);
 
-    // Use Lovable AI with inline data for better PDF handling
+    // Use Gemini Pro for better PDF handling
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -57,7 +56,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-pro",
         messages: [
           {
             role: "user",
