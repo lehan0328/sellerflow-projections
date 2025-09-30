@@ -145,7 +145,7 @@ const Dashboard = () => {
       id: 'example-income-1',
       description: 'Monthly Service Fee',
       amount: 3500,
-      paymentDate: new Date(),
+      paymentDate: addDays(new Date(), 5), // 5 days from now
       source: 'Acme Corp',
       status: 'pending' as const,
       category: 'Services',
@@ -156,7 +156,7 @@ const Dashboard = () => {
       id: 'example-income-2', 
       description: 'Consulting Project',
       amount: 5000,
-      paymentDate: new Date(),
+      paymentDate: addDays(new Date(), 10), // 10 days from now
       source: 'TechStart Inc',
       status: 'pending' as const,
       category: 'Consulting',
@@ -684,8 +684,8 @@ const Dashboard = () => {
       date: vendor.nextPaymentDate
     }));
 
-  // Convert income items to calendar events (use real items only, not examples)
-  const incomeEvents: CashFlowEvent[] = incomeItems
+  // Convert income items to calendar events (include examples for demo)
+  const incomeEvents: CashFlowEvent[] = allIncomeItems
     .map(income => ({
       id: `income-${income.id}`,
       type: 'inflow' as const,
