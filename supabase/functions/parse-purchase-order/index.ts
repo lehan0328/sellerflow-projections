@@ -102,32 +102,39 @@ serve(async (req) => {
     console.log("Sending to AI with mime type:", mimeType);
 
     // Use Gemini Flash (default, free during promo period)
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Extract all purchase order information from this document. Look for: vendor/supplier name, purchase order name/number, total amount, description, payment terms (net 30/60/90), due date, delivery date, category (Inventory, Packaging, Marketing, Shipping, Professional Services, or Other), and any additional notes. If it's an invoice, treat it as a purchase order."
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:${mimeType};base64,${base64}`
-                }
+    const requestBody: any = {
+      model: "google/gemini-2.5-flash",
+      messages: [
+        {
+          role: "user",
+          content: file.type === 'application/pdf' ? [
+            {
+              type: "text",
+              text: "Extract all purchase order information from this PDF document. Look for: vendor/supplier name, purchase order name/number, total amount, description, payment terms (net 30/60/90), due date, delivery date, category (Inventory, Packaging, Marketing, Shipping, Professional Services, or Other), and any additional notes. If it's an invoice, treat it as a purchase order."
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: fileUrl // Use storage URL for PDFs
               }
-            ]
-          }
-        ],
-        tools: [
+            }
+          ] : [
+            {
+              type: "text",
+              text: "Extract all purchase order information from this document. Look for: vendor/supplier name, purchase order name/number, total amount, description, payment terms (net 30/60/90), due date, delivery date, category (Inventory, Packaging, Marketing, Shipping, Professional Services, or Other), and any additional notes. If it's an invoice, treat it as a purchase order."
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:${mimeType};base64,${base64}` // Use base64 for images
+              }
+            }
+          ]
+        }
+    };
+
+    // Add tool choice
+    requestBody.tools = [
           {
             type: "function",
             function: {
@@ -180,9 +187,16 @@ serve(async (req) => {
               }
             }
           }
-        ],
-        tool_choice: { type: "function", function: { name: "extract_purchase_order" } }
-      }),
+        ];
+    requestBody.tool_choice = { type: "function", function: { name: "extract_purchase_order" } };
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -226,11 +240,12 @@ serve(async (req) => {
 
     // Clean up PDF from storage if it was uploaded
     if (fileUrl && file.type === 'application/pdf') {
-      const fileName = fileUrl.split('/').pop();
-      if (fileName) {
+      const filePathParts = fileUrl.split('/purchase-orders/');
+      if (filePathParts.length > 1) {
+        const filePath = filePathParts[1]; // This will be "userId/timestamp-filename.pdf"
         await supabase.storage
           .from('purchase-orders')
-          .remove([`${user.id}/${fileName}`])
+          .remove([filePath])
           .catch(err => console.error("Cleanup error:", err));
       }
     }
