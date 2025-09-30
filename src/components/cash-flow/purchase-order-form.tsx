@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,13 +9,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CalendarIcon, Plus, Trash2, Search } from "lucide-react";
-import { format, addDays } from "date-fns";
+import { CalendarIcon, Plus, Trash2, Search, Upload, Loader2, FileText } from "lucide-react";
+import { format, addDays, parse } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { VendorForm } from "./vendor-form";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Vendor {
   id: string;
@@ -51,6 +52,9 @@ export const PurchaseOrderForm = ({
   onAddVendor
 }: PurchaseOrderFormProps) => {
   const { creditCards } = useCreditCards();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isProcessingDocument, setIsProcessingDocument] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string>("");
   
   const [formData, setFormData] = useState({
     poName: "",
@@ -311,6 +315,86 @@ export const PurchaseOrderForm = ({
     window.location.href = '/settings';
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (file.type !== 'application/pdf' && !file.type.startsWith('image/')) {
+      toast.error('Please upload a PDF or image file');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB');
+      return;
+    }
+
+    setIsProcessingDocument(true);
+    setUploadedFileName(file.name);
+    
+    try {
+      // Create form data
+      const formDataToSend = new FormData();
+      formDataToSend.append('file', file);
+
+      // Call the edge function
+      const { data, error } = await supabase.functions.invoke('parse-purchase-order', {
+        body: formDataToSend
+      });
+
+      if (error) throw error;
+
+      if (data.success && data.data) {
+        const extracted = data.data;
+        
+        // Auto-fill form fields with extracted data
+        setFormData(prev => ({
+          ...prev,
+          poName: extracted.poName || prev.poName,
+          amount: extracted.amount || prev.amount,
+          description: extracted.description || prev.description,
+          category: extracted.category || prev.category,
+          notes: extracted.notes || prev.notes,
+          netTermsDays: extracted.netTermsDays || prev.netTermsDays,
+          dueDate: extracted.dueDate ? parse(extracted.dueDate, 'yyyy-MM-dd', new Date()) : prev.dueDate,
+          deliveryDate: extracted.deliveryDate ? parse(extracted.deliveryDate, 'yyyy-MM-dd', new Date()) : prev.deliveryDate,
+        }));
+
+        // Try to match vendor name
+        if (extracted.vendorName) {
+          const matchedVendor = vendors.find(v => 
+            v.name.toLowerCase().includes(extracted.vendorName.toLowerCase()) ||
+            extracted.vendorName.toLowerCase().includes(v.name.toLowerCase())
+          );
+
+          if (matchedVendor) {
+            handleVendorSelect(matchedVendor);
+            toast.success(`Document processed! Matched vendor: ${matchedVendor.name}`);
+          } else {
+            // Set vendor search term for user to select or create
+            setVendorSearchTerm(extracted.vendorName);
+            toast.info(`Document processed! Please select or create vendor: ${extracted.vendorName}`);
+          }
+        } else {
+          toast.success('Document processed! Please review and fill in remaining fields.');
+        }
+      } else {
+        toast.error('Could not extract purchase order data from document');
+      }
+    } catch (error: any) {
+      console.error('Error processing document:', error);
+      toast.error(error.message || 'Failed to process document. Please try again.');
+    } finally {
+      setIsProcessingDocument(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -330,6 +414,62 @@ export const PurchaseOrderForm = ({
               <div className="text-center py-4">
                 <h3 className="text-lg font-semibold mb-2">Select a Vendor</h3>
                 <p className="text-sm text-muted-foreground">Choose a vendor to create a purchase order</p>
+              </div>
+
+              {/* AI Document Upload */}
+              <Card className="border-2 border-dashed border-primary/20 bg-primary/5">
+                <CardContent className="pt-6">
+                  <div className="text-center space-y-3">
+                    <div className="flex justify-center">
+                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <FileText className="h-6 w-6 text-primary" />
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-1">Upload Purchase Order Document</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Let AI automatically fill the form from your PDF or image
+                      </p>
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="application/pdf,image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isProcessingDocument}
+                      className="w-full"
+                    >
+                      {isProcessingDocument ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Processing {uploadedFileName}...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload Document (PDF or Image)
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or select manually
+                  </span>
+                </div>
               </div>
               
               <div className="space-y-2">

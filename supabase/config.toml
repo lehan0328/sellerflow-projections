@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.cash-flow-chat]
 verify_jwt = false
+
+[functions.parse-purchase-order]
+verify_jwt = false
