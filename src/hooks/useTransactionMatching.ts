@@ -88,7 +88,7 @@ export const useTransactionMatching = (
           income.source || income.description
         );
         
-        const amountMatch = areAmountsClose(bankTx.amount, income.amount);
+        const amountMatch = areAmountsClose(Math.abs(bankTx.amount), income.amount);
         
         if (nameSimilarity >= 0.6 && amountMatch) {
           const matchScore = (nameSimilarity + (amountMatch ? 0.4 : 0)) / 2;

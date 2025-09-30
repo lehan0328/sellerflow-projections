@@ -77,6 +77,19 @@ const Dashboard = () => {
       type: 'debit',
       category: 'Business',
       status: 'posted'
+    },
+    {
+      id: '3',
+      accountId: 'example-acc-1',
+      accountName: 'Business Checking',
+      institutionName: 'Chase Bank',
+      date: new Date(),
+      description: 'DEPOSIT - ACME CORP',
+      merchantName: 'Acme Corp',
+      amount: 5000,
+      type: 'credit',
+      category: 'Income',
+      status: 'posted'
     }
   ];
   
@@ -815,9 +828,21 @@ const Dashboard = () => {
           />
           <IncomeOverview
             incomeItems={incomeItems}
+            bankTransactions={exampleBankTransactions}
             onCollectToday={handleCollectIncome}
             onEditIncome={handleEditIncome}
             onDeleteIncome={handleDeleteIncome}
+            onMatchTransaction={async (income) => {
+              // Create a completed transaction record when matching
+              await addTransaction({
+                type: 'customer_payment',
+                amount: income.amount,
+                description: `Matched: ${income.source} - ${income.description}`,
+                customerId: income.customerId,
+                transactionDate: new Date(),
+                status: 'completed'
+              });
+            }}
           />
         </div>
 

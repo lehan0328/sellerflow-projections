@@ -187,9 +187,13 @@ const DemoPage = () => {
           />
           <IncomeOverview
             incomeItems={demoIncomeItems}
+            bankTransactions={exampleBankTransactions}
             onCollectToday={handleCollectIncome}
             onEditIncome={handleEditIncome}
             onDeleteIncome={handleDeleteIncome}
+            onMatchTransaction={async (income) => {
+              alert('Demo: Transaction matching not available in demo');
+            }}
           />
         </div>
 

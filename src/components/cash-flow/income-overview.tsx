@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { DollarSign, Calendar, TrendingUp, Plus, Edit, Search, ArrowUpDown, Trash2 } from "lucide-react";
+import { DollarSign, Calendar, TrendingUp, Plus, Edit, Search, ArrowUpDown, Trash2, Link2 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
+import { useTransactionMatching } from "@/hooks/useTransactionMatching";
+import { BankTransaction } from "./bank-transaction-log";
+import { toast } from "sonner";
 import * as React from "react";
 
 interface IncomeItem {
@@ -23,12 +26,15 @@ interface IncomeItem {
 
 interface IncomeOverviewProps {
   incomeItems: IncomeItem[];
+  bankTransactions?: BankTransaction[];
   onCollectToday?: (income: IncomeItem) => void;
   onEditIncome?: (income: IncomeItem) => void;
   onDeleteIncome?: (income: IncomeItem) => void;
+  onMatchTransaction?: (income: IncomeItem) => Promise<void>;
 }
 
-export const IncomeOverview = ({ incomeItems, onCollectToday, onEditIncome, onDeleteIncome }: IncomeOverviewProps) => {
+export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectToday, onEditIncome, onDeleteIncome, onMatchTransaction }: IncomeOverviewProps) => {
+  const { matches, getMatchesForIncome } = useTransactionMatching(bankTransactions, [], incomeItems);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'description' | 'amount' | 'paymentDate' | 'source'>('paymentDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -90,6 +96,27 @@ export const IncomeOverview = ({ incomeItems, onCollectToday, onEditIncome, onDe
   const handleCancelReceiveToday = () => {
     setShowConfirmDialog(false);
     setConfirmingIncome(null);
+  };
+
+  const handleMatch = async (income: IncomeItem) => {
+    try {
+      // Create a completed transaction record first
+      if (onMatchTransaction) {
+        await onMatchTransaction(income);
+      }
+      
+      // Then mark as received by updating status
+      if (onCollectToday) {
+        onCollectToday(income);
+      }
+      
+      toast.success("Match successful", {
+        description: `${income.source} transaction has been matched.`
+      });
+    } catch (error) {
+      console.error('Error matching transaction:', error);
+      toast.error("Failed to match transaction");
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -195,9 +222,9 @@ export const IncomeOverview = ({ incomeItems, onCollectToday, onEditIncome, onDe
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center space-x-2">
-                        <h4 className="font-semibold text-sm">{income.description}</h4>
+                        <h4 className="font-semibold text-sm">{income.source}</h4>
                         <Badge variant="outline" className="text-xs">
-                          Category: {income.category || 'Uncategorized'}
+                          {income.description}
                         </Badge>
                         <Badge variant={getStatusColor(income.status)} className="text-xs">
                           {getStatusIcon(income.status)}
@@ -216,9 +243,9 @@ export const IncomeOverview = ({ incomeItems, onCollectToday, onEditIncome, onDe
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center">
-                          <span className="text-muted-foreground">Source:</span>
+                          <span className="text-muted-foreground">Category:</span>
                           <span className="font-medium text-foreground ml-2">
-                            {income.source}
+                            {income.category || 'Uncategorized'}
                           </span>
                         </div>
                         <div className="flex items-center">
@@ -237,7 +264,18 @@ export const IncomeOverview = ({ incomeItems, onCollectToday, onEditIncome, onDe
                           <Edit className="mr-1 h-3 w-3" />
                           Edit
                         </Button>
-                        {income.status === 'pending' && (
+                        {getMatchesForIncome(income.id).length > 0 && income.status === 'pending' && (
+                          <Button 
+                            size="sm" 
+                            variant="default"
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={() => handleMatch(income)}
+                          >
+                            <Link2 className="mr-1 h-3 w-3" />
+                            Match
+                          </Button>
+                        )}
+                        {income.status === 'pending' && getMatchesForIncome(income.id).length === 0 && (
                           <Button 
                             size="sm" 
                             className="bg-gradient-primary px-4"
