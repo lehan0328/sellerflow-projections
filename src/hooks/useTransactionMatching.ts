@@ -56,105 +56,119 @@ export const useTransactionMatching = (
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const fetchMatches = async () => {
-      if (!bankTransactions.length || (!vendors.length && !incomeItems.length)) {
-        setMatches([]);
-        return;
-      }
+    // Only run matching if we have both bank transactions AND (vendors OR income)
+    if (!bankTransactions.length) {
+      setMatches([]);
+      return;
+    }
 
-      setIsLoading(true);
-      try {
-        console.log('Calling AI to match transactions...');
-        
-        // Prepare data for AI
-        const bankData = bankTransactions.map(t => ({
-          id: t.id,
-          description: t.description,
-          amount: t.amount,
-          type: t.type,
-          merchantName: t.merchantName
-        }));
-        
-        const vendorData = vendors
-          .filter(v => v.totalOwed && v.totalOwed > 0)
-          .map(v => ({
-            id: v.id,
-            name: v.name,
-            totalOwed: v.totalOwed,
-            category: v.category
+    const hasVendors = vendors.some(v => v.totalOwed && v.totalOwed > 0);
+    const hasIncome = incomeItems.some(i => i.status === 'pending');
+    
+    if (!hasVendors && !hasIncome) {
+      setMatches([]);
+      return;
+    }
+
+    // Debounce the API call to prevent spamming
+    const timeoutId = setTimeout(() => {
+      const fetchMatches = async () => {
+        setIsLoading(true);
+        try {
+          console.log('Calling AI to match transactions...');
+          
+          // Prepare data for AI
+          const bankData = bankTransactions.map(t => ({
+            id: t.id,
+            description: t.description,
+            amount: t.amount,
+            type: t.type,
+            merchantName: t.merchantName
           }));
-        
-        const incomeData = incomeItems
-          .filter(i => i.status === 'pending')
-          .map(i => ({
-            id: i.id,
-            description: i.description,
-            amount: i.amount,
-            source: i.source
-          }));
+          
+          const vendorData = vendors
+            .filter(v => v.totalOwed && v.totalOwed > 0)
+            .map(v => ({
+              id: v.id,
+              name: v.name,
+              totalOwed: v.totalOwed,
+              category: v.category
+            }));
+          
+          const incomeData = incomeItems
+            .filter(i => i.status === 'pending')
+            .map(i => ({
+              id: i.id,
+              description: i.description,
+              amount: i.amount,
+              source: i.source
+            }));
 
-        const { data, error } = await supabase.functions.invoke('match-transactions', {
-          body: {
-            bankTransactions: bankData,
-            vendors: vendorData,
-            incomeItems: incomeData
-          }
-        });
-
-        if (error) {
-          console.error('Error calling match-transactions:', error);
-          if (error.message?.includes('429')) {
-            toast.error('Rate limit exceeded. Please try again later.');
-          } else if (error.message?.includes('402')) {
-            toast.error('AI credits exhausted. Please add credits to continue.');
-          } else {
-            toast.error('Failed to match transactions');
-          }
-          setMatches([]);
-          return;
-        }
-
-        console.log('AI matches received:', data);
-
-        // Transform AI response to TransactionMatch format
-        const aiMatches: TransactionMatch[] = (data.matches || [])
-          .map((match: any) => {
-            const bankTx = bankTransactions.find(t => t.id === match.bankTransactionId);
-            if (!bankTx) return null;
-
-            if (match.matchType === 'vendor') {
-              const vendor = vendors.find(v => v.id === match.matchedId);
-              if (!vendor) return null;
-              return {
-                bankTransaction: bankTx,
-                matchedVendor: vendor,
-                matchScore: match.confidence,
-                type: 'vendor' as const
-              };
-            } else {
-              const income = incomeItems.find(i => i.id === match.matchedId);
-              if (!income) return null;
-              return {
-                bankTransaction: bankTx,
-                matchedIncome: income,
-                matchScore: match.confidence,
-                type: 'income' as const
-              };
+          const { data, error } = await supabase.functions.invoke('match-transactions', {
+            body: {
+              bankTransactions: bankData,
+              vendors: vendorData,
+              incomeItems: incomeData
             }
-          })
-          .filter(Boolean) as TransactionMatch[];
+          });
 
-        setMatches(aiMatches);
-      } catch (error) {
-        console.error('Error in transaction matching:', error);
-        toast.error('Failed to analyze transactions');
-        setMatches([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+          if (error) {
+            console.error('Error calling match-transactions:', error);
+            if (error.message?.includes('429')) {
+              toast.error('Rate limit exceeded. Please wait a moment and try again.');
+            } else if (error.message?.includes('402')) {
+              toast.error('AI credits exhausted. Please add credits to continue.');
+            } else {
+              // Don't show toast for other errors to avoid spam
+              console.error('Match error:', error.message);
+            }
+            setMatches([]);
+            return;
+          }
 
-    fetchMatches();
+          console.log('AI matches received:', data);
+
+          // Transform AI response to TransactionMatch format
+          const aiMatches: TransactionMatch[] = (data.matches || [])
+            .map((match: any) => {
+              const bankTx = bankTransactions.find(t => t.id === match.bankTransactionId);
+              if (!bankTx) return null;
+
+              if (match.matchType === 'vendor') {
+                const vendor = vendors.find(v => v.id === match.matchedId);
+                if (!vendor) return null;
+                return {
+                  bankTransaction: bankTx,
+                  matchedVendor: vendor,
+                  matchScore: match.confidence,
+                  type: 'vendor' as const
+                };
+              } else {
+                const income = incomeItems.find(i => i.id === match.matchedId);
+                if (!income) return null;
+                return {
+                  bankTransaction: bankTx,
+                  matchedIncome: income,
+                  matchScore: match.confidence,
+                  type: 'income' as const
+                };
+              }
+            })
+            .filter(Boolean) as TransactionMatch[];
+
+          setMatches(aiMatches);
+        } catch (error) {
+          console.error('Error in transaction matching:', error);
+          setMatches([]);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchMatches();
+    }, 1000); // Wait 1 second before making the call
+
+    return () => clearTimeout(timeoutId);
   }, [bankTransactions, vendors, incomeItems]);
   
   const getMatchesForBankTransaction = (bankTxId: string) => {
