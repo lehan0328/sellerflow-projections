@@ -10,6 +10,11 @@ const Landing = () => {
 
   const features = [
     {
+      icon: <Zap className="h-6 w-6" />,
+      title: "Daily AI Financial Insights",
+      description: "Get personalized daily recommendations powered by AI. Chat with your financial advisor anytime to ask questions about your cash flow.",
+    },
+    {
       icon: <ShoppingCart className="h-6 w-6" />,
       title: "Amazon Payout Forecasting",
       description: "Predict your bi-weekly payouts, reserve releases, and fee adjustments with 95% accuracy.",
@@ -33,11 +38,6 @@ const Landing = () => {
       icon: <Shield className="h-6 w-6" />,
       title: "Inventory Financing Tracking",
       description: "Monitor loan payments, credit lines, and inventory-backed financing all in one place.",
-    },
-    {
-      icon: <Zap className="h-6 w-6" />,
-      title: "Real-time Sync",
-      description: "Connect directly to your bank accounts and get real-time balance updates every hour.",
     },
   ];
 
@@ -209,7 +209,7 @@ const Landing = () => {
             
             <div className="animate-fade-in space-y-6" style={{ animationDelay: '200ms' }}>
               <h1 className="text-4xl lg:text-7xl font-bold leading-tight">
-                <span className="inline-block hover:scale-105 transition-transform duration-300">Cash Flow Management</span>
+                <span className="inline-block hover:scale-105 transition-transform duration-300">AI-Powered Cash Flow</span>
                 <span className="block bg-gradient-primary bg-clip-text text-transparent">
                   Built for Amazon Sellers
                 </span>
@@ -220,8 +220,8 @@ const Landing = () => {
               className="text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed" 
               style={{ animationDelay: '400ms' }}
             >
-              Forecast your Amazon cash flow months in advance. Get accurate payout predictions, 
-              optimize your credit utilization, and never run out of cash for inventory again.
+              Get daily AI insights, forecast your Amazon cash flow months in advance, and optimize your credit utilization. 
+              Never run out of cash for inventory again with intelligent financial recommendations.
             </p>
             
             <div 

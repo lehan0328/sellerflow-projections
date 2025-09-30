@@ -75,22 +75,26 @@ serve(async (req) => {
         const upcomingExpenses = upcomingTx?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
 
         // Generate AI advice
-        const systemPrompt = `You are a financial advisor analyzing cash flow data. Provide concise, actionable advice in a friendly tone. Focus on:
+        const systemPrompt = `You are a financial advisor analyzing cash flow data. Provide concise, actionable advice in a friendly tone.
+
+IMPORTANT FORMATTING RULES:
+- Start with "**Current Financial Health:**" followed by your health assessment
+- Then add "**Key Insight:**" followed by one key pattern or observation
+- End with "**Actionable Recommendation:**" followed by one specific action they should take
+- Keep total response under 150 words
+
+Focus on:
 - Daily cash flow health
 - Spending patterns
 - Risk warnings if cash is running low
-- Opportunities to optimize cash flow
-Keep responses under 150 words and use bullet points where helpful.`;
+- Opportunities to optimize cash flow`;
 
         const userPrompt = `Current Balance: $${settings?.total_cash?.toLocaleString() || 0}
 Today's Inflow: $${todayInflow.toLocaleString()}
 Today's Outflow: $${todayOutflow.toLocaleString()}
 Upcoming Expenses (7 days): $${upcomingExpenses.toLocaleString()}
 
-Analyze this cash flow and provide:
-1. Brief overview of current financial health
-2. One key insight or pattern
-3. One actionable recommendation`;
+Analyze this cash flow.`;
 
         const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",

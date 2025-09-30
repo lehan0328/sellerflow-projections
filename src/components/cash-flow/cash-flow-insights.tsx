@@ -131,7 +131,7 @@ export const CashFlowInsights = ({
   };
 
   return (
-    <Card className="shadow-card h-fit">
+    <Card className="shadow-card h-fit min-h-[600px]">
       <CardHeader>
         <CardTitle className="text-lg flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -241,9 +241,14 @@ export const CashFlowInsights = ({
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap max-h-[200px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-                  {advice}
-                </div>
+                <div 
+                  className="text-sm text-muted-foreground leading-relaxed max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
+                  dangerouslySetInnerHTML={{ 
+                    __html: advice
+                      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
+                      .replace(/\n/g, '<br />')
+                  }}
+                />
               )}
             </div>
           </>
