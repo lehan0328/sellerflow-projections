@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-import { addDays, isToday, isBefore, startOfDay } from "date-fns";
+import { addDays, startOfDay } from "date-fns";
 import { DemoDashboardHeader } from "@/components/cash-flow/demo-dashboard-header";
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
 import { OverviewStats } from "@/components/cash-flow/overview-stats";
 import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
-import { CashFlowChart } from "@/components/cash-flow/cash-flow-chart";
 import { CashFlowInsights } from "@/components/cash-flow/cash-flow-insights";
 import { VendorsOverview } from "@/components/cash-flow/vendors-overview";
 import { BankAccounts } from "@/components/cash-flow/bank-accounts";
@@ -28,19 +27,18 @@ interface CashFlowEvent {
 }
 
 const DemoPage = () => {
-  // Demo state
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
-  const [viewType, setViewType] = useState<'calendar' | 'chart'>('chart');
   
-  // Use real data from demo user
+  // Use demo data hooks
   const { vendors } = useDemoVendors();
   const { transactions } = useDemoTransactions();
   const { totalCash } = useDemoUserSettings();
 
-  // Calculate today's activity for insights
   const today = startOfDay(new Date());
+
+  // Calculate today's activity for insights
   const todayInflow = transactions
     .filter(t => startOfDay(t.transactionDate).getTime() === today.getTime() && 
                  (t.type === 'customer_payment' || t.type === 'sales_order') &&
@@ -63,10 +61,7 @@ const DemoPage = () => {
     })
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
-  // Demo cash flow events (minimal - most come from vendors)
-  const [demoCashFlowEvents] = useState<CashFlowEvent[]>([]);
-
-  // Demo event handlers (show alerts for demo)
+  // Event handlers for demo
   const handleEditTransaction = (transaction: any) => {
     alert(`Demo: Viewing transaction details for ${transaction.description}`);
   };
@@ -75,7 +70,19 @@ const DemoPage = () => {
     alert('Demo: This would sync with bank accounts in the full version');
   };
 
-  // Demo income items - convert from transactions
+  const handleCollectIncome = (income: any) => {
+    alert(`Demo: Would collect $${income.amount} from ${income.source}`);
+  };
+
+  const handleDeleteIncome = (income: any) => {
+    alert(`Demo: Would delete income: ${income.description}`);
+  };
+
+  const handleEditIncome = (income: any) => {
+    alert(`Demo: Would edit income: ${income.description}`);
+  };
+
+  // Convert demo income items from transactions
   const demoIncomeItems = transactions
     .filter(t => t.type === 'sales_order')
     .map(t => ({
@@ -89,13 +96,8 @@ const DemoPage = () => {
       isRecurring: false
     }));
 
-  const handleCollectIncome = (income: any) => {
-    alert(`Demo: Would collect $${income.amount} from ${income.source}`);
-  };
-
-  const handleDeleteIncome = (income: any) => {
-    alert(`Demo: Would delete income: ${income.description}`);
-  };
+  // Filter active vendors (matching real dashboard)
+  const activeVendors = vendors.filter(v => v.totalOwed > 0);
 
   // Convert vendor due dates to calendar events
   const vendorEvents: CashFlowEvent[] = vendors
@@ -113,11 +115,12 @@ const DemoPage = () => {
   const creditCardEvents = getCreditCardDueDates();
 
   // Combine all events for calendar
-  const allCalendarEvents = [...demoCashFlowEvents, ...vendorEvents, ...creditCardEvents];
+  const allCalendarEvents = [...vendorEvents, ...creditCardEvents];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
       <DemoDashboardHeader />
+      
       <div className="p-6 space-y-6">
         <OverviewStats 
           totalCash={totalCash} 
@@ -125,24 +128,20 @@ const DemoPage = () => {
           onUpdateCashBalance={handleUpdateCashBalance}
         />
         
-        {/* Row 1: Cash Flow Calendar (Full Width) */}
-        <CashFlowCalendar 
-          events={allCalendarEvents}
-          onEditTransaction={handleEditTransaction}
-        />
-
-        {/* Row 2: Cash Flow Chart and AI Insights (Side by Side) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[700px]">
-          <div className="h-full">
-            <CashFlowChart 
+        {/* Row 1: Cash Flow Calendar and AI Insights (Side by Side) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[700px]">
+          <div className="lg:col-span-2 h-full">
+            <CashFlowCalendar 
               events={allCalendarEvents} 
-              onAddPurchaseOrder={() => alert('Demo: Purchase order creation not available in demo')}
-              viewType={viewType}
-              onViewTypeChange={setViewType}
+              totalCash={totalCash}
+              onEditTransaction={handleEditTransaction}
+              todayInflow={todayInflow}
+              todayOutflow={todayOutflow}
+              upcomingExpenses={upcomingExpenses}
             />
           </div>
-          <div className="h-full">
-            <CashFlowInsights 
+          <div className="lg:col-span-1 h-full">
+            <CashFlowInsights
               currentBalance={totalCash}
               dailyInflow={todayInflow}
               dailyOutflow={todayOutflow}
@@ -152,42 +151,52 @@ const DemoPage = () => {
           </div>
         </div>
 
-        {/* Row 3: Vendors Overview and Income Overview (Side by Side) */}
+        {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <VendorsOverview 
-            onEditOrder={() => alert('Demo: Vendor editing not available in demo')}
+            vendors={activeVendors}
+            onVendorUpdate={() => {}}
+            onDeleteVendor={async (vendorId) => {
+              alert('Demo: Vendor deletion not available in demo');
+            }}
+            onEditOrder={(vendor) => {
+              alert('Demo: Vendor editing not available in demo');
+            }}
           />
-          <IncomeOverview 
+          <IncomeOverview
             incomeItems={demoIncomeItems}
             onCollectToday={handleCollectIncome}
+            onEditIncome={handleEditIncome}
             onDeleteIncome={handleDeleteIncome}
           />
         </div>
 
-        {/* Row 4: Bank Accounts and Credit Cards (Side by Side) */}
+        {/* Row 3: Bank Accounts and Credit Cards (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <BankAccounts />
           <CreditCards />
         </div>
 
-        {/* Row 5: Amazon Payouts (Full Width) */}
-        <AmazonPayouts />
+        {/* Row 4: Amazon Payouts (Full Width) */}
+        {(vendors.length > 0 || transactions.length > 0) && <AmazonPayouts />}
       </div>
 
-      <FloatingMenu 
+      <FloatingMenu
         onAddPurchaseOrder={() => alert('Demo: Purchase order creation not available in demo')}
         onAddIncome={() => alert('Demo: Income entry not available in demo')}
         onAddRecurringIncome={() => alert('Demo: Recurring income setup not available in demo')}
       />
 
-      <PurchaseOrderForm 
-        open={showPurchaseOrderForm}
-        onOpenChange={setShowPurchaseOrderForm}
-        vendors={[]}
-        onSubmitOrder={() => alert('Demo: Form submission not available in demo')}
-        onDeleteAllVendors={() => alert('Demo: Delete all vendors not available in demo')}
-        onAddVendor={() => alert('Demo: Add vendor not available in demo')}
-      />
+      {showPurchaseOrderForm && (
+        <PurchaseOrderForm
+          vendors={[]}
+          open={showPurchaseOrderForm}
+          onOpenChange={setShowPurchaseOrderForm}
+          onSubmitOrder={() => alert('Demo: Form submission not available in demo')}
+          onDeleteAllVendors={() => alert('Demo: Delete all vendors not available in demo')}
+          onAddVendor={() => alert('Demo: Add vendor not available in demo')}
+        />
+      )}
 
       <IncomeForm 
         open={showIncomeForm || showRecurringIncomeForm}
