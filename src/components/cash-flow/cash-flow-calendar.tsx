@@ -87,22 +87,36 @@ export const CashFlowCalendar = ({
     const target = new Date(date);
     target.setHours(0, 0, 0, 0);
 
-    const sumUntil = (d: Date) =>
-      events
-        .filter((event) => {
+    // Find earliest transaction date
+    const earliestEventDate = events.length > 0 
+      ? events.reduce((earliest, event) => {
           const ed = new Date(event.date);
           ed.setHours(0, 0, 0, 0);
-          return ed <= d;
-        })
-        .reduce((total, event) => total + (event.type === 'inflow' ? event.amount : -event.amount), 0);
+          return ed < earliest ? ed : earliest;
+        }, new Date(events[0].date))
+      : today;
 
-    // Derive true starting balance by removing all cash movements up to today
-    const netToToday = sumUntil(today);
-    const baseAtStart = totalAvailableCash - netToToday;
+    // For dates before any transactions exist, return starting balance
+    if (target < earliestEventDate) {
+      return totalAvailableCash - events.reduce((sum, e) => 
+        sum + (e.type === 'inflow' ? e.amount : -e.amount), 0);
+    }
 
-    // Balance at target date is starting base plus movements up to that date
-    const netToTarget = sumUntil(target);
-    return baseAtStart + netToTarget;
+    // Calculate balance by starting from today and working backwards/forwards
+    const eventsUpToTarget = events.filter((event) => {
+      const ed = new Date(event.date);
+      ed.setHours(0, 0, 0, 0);
+      return ed <= target && ed <= today;
+    });
+    
+    const netChange = eventsUpToTarget.reduce((total, event) => 
+      total + (event.type === 'inflow' ? event.amount : -event.amount), 0);
+    
+    return (totalAvailableCash - events.filter(e => {
+      const ed = new Date(e.date);
+      ed.setHours(0, 0, 0, 0);
+      return ed <= today;
+    }).reduce((sum, e) => sum + (e.type === 'inflow' ? e.amount : -e.amount), 0)) + netChange;
   };
 
   const getEventIcon = (event: CashFlowEvent) => {
