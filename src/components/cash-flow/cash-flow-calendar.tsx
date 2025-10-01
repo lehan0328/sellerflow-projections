@@ -86,19 +86,25 @@ export const CashFlowCalendar = ({
   };
 
   const getTotalCashForDay = (date: Date) => {
-    // Baseline 0: show only this user's actual/planned movements to date
+    // Calculate net change from events up to this day
     const target = new Date(date);
     target.setHours(0, 0, 0, 0);
+    
+    // Get today's date for comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     const netChange = events
       .filter((event) => {
         const ed = new Date(event.date);
         ed.setHours(0, 0, 0, 0);
-        return ed <= target; // include events up to the target day
+        // Only include events from today onwards (future projections)
+        return ed >= today && ed <= target;
       })
       .reduce((total, event) => total + (event.type === 'inflow' ? event.amount : -event.amount), 0);
 
-    return netChange;
+    // Start with current bank balance (or user settings cash) and add projected changes
+    return totalAvailableCash + netChange;
   };
 
   const getEventIcon = (event: CashFlowEvent) => {
@@ -143,7 +149,7 @@ export const CashFlowCalendar = ({
         return total + (event.type === 'inflow' ? event.amount : -event.amount);
       }, 0);
       
-      // Only update running total if we have actual cash flow or if it's today/future
+      // Update running total for all days (includes projected changes)
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const dayToCheck = new Date(day);
