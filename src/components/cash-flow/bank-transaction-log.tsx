@@ -11,6 +11,7 @@ import { CreditCard, Filter, Search, RefreshCw, DollarSign, ArrowUpDown, Buildin
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
+import { useBankTransactions } from "@/hooks/useBankTransactions";
 import { TransactionMatch } from "@/hooks/useTransactionMatching";
 import { Vendor } from "@/hooks/useVendors";
 
@@ -50,6 +51,7 @@ interface BankTransactionLogProps {
 
 export const BankTransactionLog = ({ transactions = [], vendors = [], incomeItems = [], onSyncTransactions, matches = [], onMatchTransaction, onManualMatch }: BankTransactionLogProps) => {
   const { accounts } = useBankAccounts();
+  const { transactions: plaidTransactions, isLoading: isLoadingTransactions, refetch: refetchTransactions } = useBankTransactions();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAccount, setSelectedAccount] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'debit' | 'credit'>('all');
@@ -62,52 +64,27 @@ export const BankTransactionLog = ({ transactions = [], vendors = [], incomeItem
   const [selectedMatchType, setSelectedMatchType] = useState<'vendor' | 'income'>('vendor');
   const [selectedMatchId, setSelectedMatchId] = useState<string>('');
 
-  // Mock bank transactions for demonstration
-  const mockTransactions: BankTransaction[] = [
-    {
-      id: '1',
-      accountId: 'acc1',
-      accountName: 'Chase Checking',
-      institutionName: 'Chase Bank',
-      amount: -45.67,
-      description: 'Starbucks Coffee',
-      category: 'Food & Drink',
-      date: new Date(2024, 0, 15),
-      type: 'debit',
-      status: 'posted',
-      merchantName: 'Starbucks',
-      plaidTransactionId: 'plaid_tx_1'
-    },
-    {
-      id: '2',
-      accountId: 'acc1',
-      accountName: 'Chase Checking',
-      institutionName: 'Chase Bank',
-      amount: 2500.00,
-      description: 'Direct Deposit - Salary',
-      category: 'Payroll',
-      date: new Date(2024, 0, 14),
-      type: 'credit',
-      status: 'posted',
-      merchantName: 'Employer Inc',
-      plaidTransactionId: 'plaid_tx_2'
-    },
-    {
-      id: '3',
-      accountId: 'acc2',
-      accountName: 'Wells Fargo Savings',
-      institutionName: 'Wells Fargo',
-      amount: -125.00,
-      description: 'Transfer to Checking',
-      category: 'Transfer',
-      date: new Date(2024, 0, 13),
-      type: 'debit',
-      status: 'posted',
-      plaidTransactionId: 'plaid_tx_3'
-    }
-  ];
+  // Map Plaid transactions to component format
+  const mappedPlaidTransactions: BankTransaction[] = plaidTransactions.map(tx => {
+    const account = accounts.find(a => a.id === tx.bankAccountId);
+    return {
+      id: tx.id,
+      accountId: tx.bankAccountId,
+      accountName: account?.account_name || 'Unknown Account',
+      institutionName: account?.institution_name || 'Unknown Bank',
+      amount: tx.amount,
+      description: tx.name,
+      category: tx.category?.[0],
+      date: tx.date,
+      type: tx.amount < 0 ? 'debit' as const : 'credit' as const,
+      status: tx.pending ? 'pending' as const : 'posted' as const,
+      merchantName: tx.merchantName,
+      plaidTransactionId: tx.plaidTransactionId
+    };
+  });
 
-  const allTransactions = transactions.length > 0 ? transactions : mockTransactions;
+  // Use Plaid transactions if available, otherwise fall back to prop transactions
+  const allTransactions = mappedPlaidTransactions.length > 0 ? mappedPlaidTransactions : transactions;
 
   // Filter and sort transactions
   const filteredAndSortedTransactions = useMemo(() => {
@@ -145,11 +122,13 @@ export const BankTransactionLog = ({ transactions = [], vendors = [], incomeItem
     });
   }, [allTransactions, searchTerm, selectedAccount, typeFilter, sortBy, sortOrder]);
 
-  const handleSyncAll = () => {
+  const handleSyncAll = async () => {
     toast.success("Syncing all bank accounts...");
     accounts.forEach(account => {
       onSyncTransactions?.(account.id);
     });
+    // Refetch transactions after sync
+    await refetchTransactions();
   };
 
   const getTypeColor = (type: string) => {
@@ -297,12 +276,19 @@ export const BankTransactionLog = ({ transactions = [], vendors = [], incomeItem
       
       <CardContent className="p-4">
         <ScrollArea className="h-[500px] pr-4">
-          {filteredAndSortedTransactions.length === 0 ? (
+          {isLoadingTransactions ? (
+            <div className="text-center py-8">
+              <RefreshCw className="h-8 w-8 mx-auto mb-2 animate-spin text-primary" />
+              <p className="text-muted-foreground">Loading transactions...</p>
+            </div>
+          ) : filteredAndSortedTransactions.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <CreditCard className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>No bank transactions found</p>
-              {accounts.length === 0 && (
+              {accounts.length === 0 ? (
                 <p className="text-xs mt-1">Connect a bank account to see transactions</p>
+              ) : (
+                <p className="text-xs mt-1">Transactions will appear here after syncing</p>
               )}
             </div>
           ) : (
