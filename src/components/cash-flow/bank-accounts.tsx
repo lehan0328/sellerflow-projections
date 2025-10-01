@@ -55,7 +55,7 @@ export function BankAccounts() {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => navigate('/bank-transactions')}
+                onClick={() => navigate('/transactions')}
               >
                 View Transactions
               </Button>
