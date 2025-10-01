@@ -226,6 +226,7 @@ export type Database = {
           institution_name: string
           is_active: boolean
           last_sync: string
+          plaid_account_id: string | null
           updated_at: string
           user_id: string
         }
@@ -244,6 +245,7 @@ export type Database = {
           institution_name: string
           is_active?: boolean
           last_sync?: string
+          plaid_account_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -262,6 +264,7 @@ export type Database = {
           institution_name?: string
           is_active?: boolean
           last_sync?: string
+          plaid_account_id?: string | null
           updated_at?: string
           user_id?: string
         }
