@@ -267,6 +267,71 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_transactions: {
+        Row: {
+          amount: number
+          bank_account_id: string
+          category: string[] | null
+          created_at: string
+          currency_code: string | null
+          date: string
+          id: string
+          merchant_name: string | null
+          name: string
+          payment_channel: string | null
+          pending: boolean
+          plaid_transaction_id: string
+          raw_data: Json | null
+          transaction_type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          bank_account_id: string
+          category?: string[] | null
+          created_at?: string
+          currency_code?: string | null
+          date: string
+          id?: string
+          merchant_name?: string | null
+          name: string
+          payment_channel?: string | null
+          pending?: boolean
+          plaid_transaction_id: string
+          raw_data?: Json | null
+          transaction_type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bank_account_id?: string
+          category?: string[] | null
+          created_at?: string
+          currency_code?: string | null
+          date?: string
+          id?: string
+          merchant_name?: string | null
+          name?: string
+          payment_channel?: string | null
+          pending?: boolean
+          plaid_transaction_id?: string
+          raw_data?: Json | null
+          transaction_type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cash_flow_events: {
         Row: {
           amount: number
@@ -746,6 +811,7 @@ export type Database = {
           p_balance?: number
           p_currency_code?: string
           p_institution_name?: string
+          p_plaid_account_id?: string
           p_plaid_item_id?: string
         }
         Returns: string

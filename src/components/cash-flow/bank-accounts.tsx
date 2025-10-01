@@ -45,12 +45,21 @@ export function BankAccounts() {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => navigate('/manage-accounts')}
+              onClick={() => navigate('/settings')}
               className="ml-4"
             >
               <Settings className="h-4 w-4 mr-2" />
               Manage
             </Button>
+            {accounts.length > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/bank-transactions')}
+              >
+                View Transactions
+              </Button>
+            )}
           </div>
           <div className="text-right">
             <p className="text-sm text-muted-foreground">Total Balance</p>
@@ -68,7 +77,7 @@ export function BankAccounts() {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => navigate('/manage-accounts')}
+              onClick={() => navigate('/settings')}
               className="mt-2"
             >
               Connect Your First Account

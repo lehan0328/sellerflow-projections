@@ -51,6 +51,8 @@ const Dashboard = () => {
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
+  
+  console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
   const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance } = useUserSettings();
 
   // Example bank transactions for matching

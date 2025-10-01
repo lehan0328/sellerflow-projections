@@ -129,6 +129,7 @@ serve(async (req) => {
           p_access_token: access_token,
           p_account_number: account.mask,
           p_plaid_item_id: item_id,
+          p_plaid_account_id: account.account_id,
         });
 
         if (insertError) {
@@ -141,6 +142,23 @@ serve(async (req) => {
     }
 
     console.log('Successfully stored accounts:', accountIds);
+
+    // Start background task to sync transactions for each account
+    const syncPromises = accountIds.map(async (accountId) => {
+      try {
+        const { error: syncError } = await supabase.functions.invoke('sync-plaid-transactions', {
+          body: { accountId, isInitialSync: true },
+        });
+        if (syncError) {
+          console.error(`Failed to sync transactions for account ${accountId}:`, syncError);
+        }
+      } catch (error) {
+        console.error(`Error syncing transactions for account ${accountId}:`, error);
+      }
+    });
+
+    // Don't await - let it run in background
+    Promise.all(syncPromises).catch(console.error);
 
     return new Response(
       JSON.stringify({ 

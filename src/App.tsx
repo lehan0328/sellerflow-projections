@@ -10,6 +10,7 @@ import Settings from "./pages/Settings";
 import UpgradePlan from "./pages/UpgradePlan";
 import TransactionLog from "./pages/TransactionLog";
 import ManageCreditCards from "./pages/ManageCreditCards";
+import BankTransactions from "./pages/BankTransactions";
 import NotFound from "./pages/NotFound";
 import Docs from "./pages/Docs";
 import DocsGettingStarted from "./pages/DocsGettingStarted";
@@ -57,6 +58,11 @@ const App = () => (
           <Route path="/manage-credit-cards" element={
             <ProtectedRoute>
               <ManageCreditCards />
+            </ProtectedRoute>
+          } />
+          <Route path="/bank-transactions" element={
+            <ProtectedRoute>
+              <BankTransactions />
             </ProtectedRoute>
           } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
