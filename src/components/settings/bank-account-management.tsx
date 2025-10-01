@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,51 +6,80 @@ import { Building2, Plus, Trash2, RefreshCw, ExternalLink, DollarSign, TrendingU
 import { usePlaidLink } from "react-plaid-link";
 import { toast } from "sonner";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
+import { supabase } from "@/integrations/supabase/client";
 
 export function BankAccountManagement() {
-  const { accounts, isLoading, totalBalance, addAccount, removeAccount, syncAccount } = useBankAccounts();
+  const { accounts, isLoading, totalBalance, removeAccount } = useBankAccounts();
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
 
-  // Plaid Link configuration - In production, get token from your backend
+  // Plaid Link configuration
   const config = {
-    token: null, // You'll need to implement a backend endpoint to get this
+    token: linkToken,
     onSuccess: async (public_token: string, metadata: any) => {
       try {
-        // In a real app, exchange public_token for access_token on your backend
-        // For demo purposes, we'll create a mock account
-        const newAccount = {
-          account_id: metadata.accounts[0]?.id || Date.now().toString(),
-          access_token: "demo_access_token", // In real app, get from backend
-          institution_name: metadata.institution.name,
-          account_name: metadata.accounts[0]?.name || `${metadata.institution.name} Account`,
-          account_number: `****${Math.random().toString().slice(-4)}`,
-          account_type: metadata.accounts[0]?.type || "depository" as const,
-          balance: Math.random() * 10000,
-          available_balance: Math.random() * 8000,
-          currency_code: "USD",
-          last_sync: new Date().toISOString(),
-          is_active: true,
-          plaid_item_id: metadata.link_session_id,
-        };
+        console.log("Plaid Link success:", metadata);
+        
+        // Exchange the public token for an access token via edge function
+        const { data, error } = await supabase.functions.invoke('exchange-plaid-token', {
+          body: { publicToken: public_token, metadata }
+        });
 
-        const success = await addAccount(newAccount);
-        if (success) {
-          toast.success("Bank account connected successfully!");
-        }
+        if (error) throw error;
+
+        toast.success(data.message || "Account connected successfully!");
+        setIsConnecting(false);
+        setLinkToken(null);
       } catch (error) {
-        console.error("Error connecting account:", error);
-        toast.error("Failed to connect bank account");
+        console.error("Error exchanging token:", error);
+        toast.error("Failed to connect account");
+        setIsConnecting(false);
       }
     },
     onExit: (err: any, metadata: any) => {
       console.log("Plaid Link exit:", { err, metadata });
       if (err) {
-        toast.error("Failed to connect bank account");
+        toast.error("Failed to connect account");
       }
+      setIsConnecting(false);
     },
   };
 
   const { open, ready } = usePlaidLink(config);
+
+  // Open Plaid Link when token is available
+  useEffect(() => {
+    if (linkToken && ready) {
+      open();
+    }
+  }, [linkToken, ready, open]);
+
+  const handleConnectAccount = async () => {
+    try {
+      setIsConnecting(true);
+      
+      // Get link token from edge function
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please log in to connect accounts");
+        setIsConnecting(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-plaid-link-token', {
+        body: { userId: user.id }
+      });
+
+      if (error) throw error;
+
+      setLinkToken(data.link_token);
+    } catch (error) {
+      console.error("Error creating link token:", error);
+      toast.error("Failed to initialize account connection");
+      setIsConnecting(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -62,13 +91,16 @@ export function BankAccountManagement() {
   const handleSyncAccount = async (accountId: string) => {
     setIsSyncing(accountId);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const success = await syncAccount(accountId);
-      if (success) {
-        toast.success("Account synced successfully!");
-      }
+      const { data, error } = await supabase.functions.invoke('sync-plaid-accounts', {
+        body: { accountId, accountType: 'bank_account' }
+      });
+
+      if (error) throw error;
+
+      toast.success(data.message || "Account synced successfully");
+    } catch (error) {
+      console.error("Error syncing account:", error);
+      toast.error("Failed to sync account");
     } finally {
       setIsSyncing(null);
     }
@@ -164,13 +196,12 @@ export function BankAccountManagement() {
           {/* Connect Account Button */}
           <div className="flex justify-center">
             <Button
-              onClick={() => {
-                toast.info("Plaid integration requires backend setup. Contact support for configuration.");
-              }}
+              onClick={handleConnectAccount}
+              disabled={isConnecting}
               className="w-full max-w-xs"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Connect Account
+              {isConnecting ? "Connecting..." : "Connect Account"}
             </Button>
           </div>
 
@@ -184,12 +215,11 @@ export function BankAccountManagement() {
                   Connect your bank accounts to track cash flow and automate reconciliation
                 </p>
                 <Button 
-                  onClick={() => {
-                    toast.info("Plaid integration requires backend setup. Contact support for configuration.");
-                  }}
+                  onClick={handleConnectAccount}
+                  disabled={isConnecting}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Connect Your First Account
+                  {isConnecting ? "Connecting..." : "Connect Your First Account"}
                 </Button>
               </div>
             ) : (

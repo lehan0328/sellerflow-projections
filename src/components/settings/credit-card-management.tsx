@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,8 @@ import {
 import { toast } from "sonner";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { cn } from "@/lib/utils";
+import { usePlaidLink } from "react-plaid-link";
+import { supabase } from "@/integrations/supabase/client";
 
 export function CreditCardManagement() {
   const { 
@@ -40,17 +42,71 @@ export function CreditCardManagement() {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+
+  // Plaid Link configuration for credit cards
+  const config = {
+    token: linkToken,
+    onSuccess: async (public_token: string, metadata: any) => {
+      try {
+        console.log("Plaid Link success:", metadata);
+        
+        // Exchange the public token for an access token via edge function
+        const { data, error } = await supabase.functions.invoke('exchange-plaid-token', {
+          body: { publicToken: public_token, metadata }
+        });
+
+        if (error) throw error;
+
+        toast.success(data.message || "Credit card connected successfully!");
+        setIsConnecting(false);
+        setLinkToken(null);
+      } catch (error) {
+        console.error("Error exchanging token:", error);
+        toast.error("Failed to connect credit card");
+        setIsConnecting(false);
+      }
+    },
+    onExit: (err: any, metadata: any) => {
+      console.log("Plaid Link exit:", { err, metadata });
+      if (err) {
+        toast.error("Failed to connect credit card");
+      }
+      setIsConnecting(false);
+    },
+  };
+
+  const { open, ready } = usePlaidLink(config);
+
+  // Open Plaid Link when token is available
+  useEffect(() => {
+    if (linkToken && ready) {
+      open();
+    }
+  }, [linkToken, ready, open]);
 
   const handleConnectPlaid = async () => {
-    setIsConnecting(true);
     try {
-      // TODO: Integrate with Plaid Link for credit cards
-      toast.info("Plaid integration for credit cards coming soon!");
-      // This would open Plaid Link specifically for credit card accounts
+      setIsConnecting(true);
+      
+      // Get link token from edge function
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please log in to connect credit cards");
+        setIsConnecting(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-plaid-link-token', {
+        body: { userId: user.id }
+      });
+
+      if (error) throw error;
+
+      setLinkToken(data.link_token);
     } catch (error) {
-      console.error("Error connecting to Plaid:", error);
-      toast.error("Failed to connect to Plaid");
-    } finally {
+      console.error("Error creating link token:", error);
+      toast.error("Failed to initialize credit card connection");
       setIsConnecting(false);
     }
   };
@@ -69,9 +125,15 @@ export function CreditCardManagement() {
   const handleSyncCard = async (cardId: string) => {
     setIsSyncing(cardId);
     try {
-      await syncCreditCard(cardId);
-      toast.success("Credit card synced successfully");
+      const { data, error } = await supabase.functions.invoke('sync-plaid-accounts', {
+        body: { accountId: cardId, accountType: 'credit_card' }
+      });
+
+      if (error) throw error;
+
+      toast.success(data.message || "Credit card synced successfully");
     } catch (error) {
+      console.error("Error syncing card:", error);
       toast.error("Failed to sync credit card");
     } finally {
       setIsSyncing(null);
