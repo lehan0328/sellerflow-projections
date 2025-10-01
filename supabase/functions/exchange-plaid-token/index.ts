@@ -88,6 +88,7 @@ serve(async (req) => {
       if (account.type === 'credit') {
         // Store as credit card
         const { data: cardId, error: insertError } = await supabase.rpc('insert_secure_credit_card', {
+          p_user_id: user.id,
           p_institution_name: metadata.institution.name,
           p_account_name: account.name,
           p_account_type: account.subtype || 'credit',
@@ -110,6 +111,7 @@ serve(async (req) => {
       } else {
         // Store as bank account
         const { data: accountId, error: insertError } = await supabase.rpc('insert_secure_bank_account', {
+          p_user_id: user.id,
           p_institution_name: metadata.institution.name,
           p_account_name: account.name,
           p_account_type: account.subtype || account.type,
