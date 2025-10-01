@@ -140,7 +140,7 @@ export function CreditCards() {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => window.location.href = '/manage-credit-cards'}
+              onClick={() => navigate('/settings', { state: { activeSection: 'credit-cards' } })}
               className="ml-4"
             >
               <Settings className="h-4 w-4 mr-2" />
