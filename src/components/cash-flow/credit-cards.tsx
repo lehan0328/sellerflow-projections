@@ -10,6 +10,7 @@ import { CreditCard, Calendar, AlertTriangle, Settings, Plus, Edit, Trash2 } fro
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface CreditCardFormData {
   institution_name: string;
@@ -24,6 +25,7 @@ interface CreditCardFormData {
 }
 
 export function CreditCards() {
+  const navigate = useNavigate();
   const { creditCards, isLoading, totalCreditLimit, totalBalance, totalAvailableCredit, addCreditCard, updateCreditCard, removeCreditCard } = useCreditCards();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingCard, setEditingCard] = useState<any>(null);
@@ -157,7 +159,7 @@ export function CreditCards() {
           <div className="text-center py-8">
             <CreditCard className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-muted-foreground mb-4">No credit cards added yet</p>
-            <Button onClick={() => window.location.href = '/manage-credit-cards'}>
+            <Button onClick={() => navigate('/settings', { state: { activeSection: 'credit-cards' } })}>
               <Plus className="h-4 w-4 mr-2" />
               Connect Your First Card
             </Button>

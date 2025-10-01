@@ -21,7 +21,7 @@ import {
   Palette,
   Database
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +37,7 @@ import { FeatureRequest } from "@/components/settings/feature-request";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme, setTheme } = useTheme();
   const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
@@ -85,9 +86,14 @@ const Settings = () => {
     },
   });
 
+  // Update active section based on location state
   useEffect(() => {
     setMounted(true);
-  }, []);
+    const state = location.state as { activeSection?: string };
+    if (state?.activeSection) {
+      setActiveSection(state.activeSection);
+    }
+  }, [location]);
 
   const handleProfileChange = (field: string, value: string) => {
     const profileData = {
