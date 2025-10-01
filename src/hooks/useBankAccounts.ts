@@ -47,7 +47,20 @@ export const useBankAccounts = () => {
         return;
       }
 
-      setAccounts((data || []) as BankAccount[]);
+      // Deduplicate accounts by plaid_account_id (keep the most recent one)
+      const uniqueAccounts = (data || []).reduce((acc, account) => {
+        const key = account.plaid_account_id || account.id;
+        const existing = acc.get(key);
+        
+        // Keep the most recent account or the one with a plaid_account_id
+        if (!existing || new Date(account.created_at) > new Date(existing.created_at)) {
+          acc.set(key, account);
+        }
+        
+        return acc;
+      }, new Map());
+
+      setAccounts(Array.from(uniqueAccounts.values()) as BankAccount[]);
     } catch (error) {
       console.error("Error:", error);
       toast.error("Failed to fetch bank accounts");
