@@ -45,7 +45,7 @@ export function BankAccounts() {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => navigate('/settings')}
+              onClick={() => navigate('/manage-accounts')}
               className="ml-4"
             >
               <Settings className="h-4 w-4 mr-2" />
