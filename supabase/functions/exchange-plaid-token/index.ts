@@ -26,12 +26,22 @@ serve(async (req) => {
 
     const authHeader = req.headers.get('Authorization')!;
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    // Create client with user's token to maintain auth context
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     if (authError || !user) {
       throw new Error('Unauthorized');
     }
+    
+    // Create client with user's auth token for RPC calls
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+        },
+      },
+    });
 
     console.log('Exchanging public token for user:', user.id);
 
@@ -88,7 +98,6 @@ serve(async (req) => {
       if (account.type === 'credit') {
         // Store as credit card
         const { data: cardId, error: insertError } = await supabase.rpc('insert_secure_credit_card', {
-          p_user_id: user.id,
           p_institution_name: metadata.institution.name,
           p_account_name: account.name,
           p_account_type: account.subtype || 'credit',
@@ -111,7 +120,6 @@ serve(async (req) => {
       } else {
         // Store as bank account
         const { data: accountId, error: insertError } = await supabase.rpc('insert_secure_bank_account', {
-          p_user_id: user.id,
           p_institution_name: metadata.institution.name,
           p_account_name: account.name,
           p_account_type: account.subtype || account.type,
