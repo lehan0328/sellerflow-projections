@@ -39,14 +39,6 @@ serve(async (req) => {
         products: ['auth', 'transactions'],
         country_codes: ['US'],
         language: 'en',
-        account_filters: {
-          depository: {
-            account_subtypes: ['checking', 'savings', 'money market', 'paypal', 'prepaid', 'cash management', 'ebt'],
-          },
-          credit: {
-            account_subtypes: ['credit card', 'paypal'],
-          },
-        },
       }),
     });
 
