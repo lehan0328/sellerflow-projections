@@ -313,8 +313,8 @@ export default function TransactionLog() {
                         return (
                           <TableRow key={vendor.id}>
                             <TableCell>
-                              {vendor.nextPaymentDate
-                                ? new Date(vendor.nextPaymentDate).toLocaleDateString()
+                              {vendor.created_at
+                                ? new Date(vendor.created_at).toLocaleDateString()
                                 : "N/A"}
                             </TableCell>
                             <TableCell className="font-medium">
