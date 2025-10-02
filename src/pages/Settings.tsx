@@ -19,7 +19,9 @@ import {
   Moon,
   Monitor,
   Palette,
-  Database
+  Database,
+  Trash2,
+  AlertTriangle
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
@@ -34,6 +36,7 @@ import { AmazonManagement } from "@/components/settings/amazon-management";
 import { BankAccountManagement } from "@/components/settings/bank-account-management";
 import { CustomerManagement } from "@/components/settings/customer-management";
 import { FeatureRequest } from "@/components/settings/feature-request";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -105,6 +108,51 @@ const Settings = () => {
   const handleExport = (type: string) => {
     toast.success(`Exporting ${type} data...`);
     // Here you would implement the actual export functionality
+  };
+
+  const handleClearAllData = async () => {
+    try {
+      if (!user?.id) {
+        toast.error("No user found");
+        return;
+      }
+
+      // Delete all vendors
+      const { error: vendorsError } = await supabase
+        .from('vendors')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (vendorsError) throw vendorsError;
+
+      // Delete all income
+      const { error: incomeError } = await supabase
+        .from('income')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (incomeError) throw incomeError;
+
+      // Delete all transactions
+      const { error: transactionsError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (transactionsError) throw transactionsError;
+
+      // Invalidate all relevant queries
+      queryClient.invalidateQueries({ queryKey: ['vendors'] });
+      queryClient.invalidateQueries({ queryKey: ['income'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+
+      toast.success("All data cleared successfully", {
+        description: "Your account has been reset to zero transactions"
+      });
+    } catch (error) {
+      console.error('Error clearing data:', error);
+      toast.error("Failed to clear data");
+    }
   };
 
   const getThemeIcon = (themeType: string) => {
@@ -407,6 +455,62 @@ const Settings = () => {
     </Card>
   );
 
+  const renderDataManagement = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <Database className="h-5 w-5" />
+          <span>Data Management</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+            <div className="flex-1">
+              <h4 className="font-semibold text-destructive mb-1">Danger Zone</h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                Clear all your financial data including vendors, income, and transactions. This action cannot be undone.
+              </p>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Clear All Data
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete all of your:
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>Vendor purchase orders</li>
+                        <li>Income transactions</li>
+                        <li>Transaction history</li>
+                      </ul>
+                      <br />
+                      This action cannot be undone and you will start from zero.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleClearAllData}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Yes, Clear All Data
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   const renderContent = () => {
     switch (activeSection) {
       case 'profile':
@@ -431,6 +535,8 @@ const Settings = () => {
         return renderDataExportSettings();
       case 'security':
         return renderSecuritySettings();
+      case 'data-management':
+        return renderDataManagement();
       case 'feature-request':
         return <FeatureRequest />;
       default:

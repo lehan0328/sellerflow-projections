@@ -11,7 +11,8 @@ import {
   Settings,
   ShoppingCart,
   MessageSquare,
-  Users
+  Users,
+  Database
 } from "lucide-react";
 
 const navigationItems = [
@@ -69,6 +70,11 @@ const navigationItems = [
     id: 'security',
     label: 'Security',
     icon: Shield,
+  },
+  {
+    id: 'data-management',
+    label: 'Data Management',
+    icon: Database,
   },
   {
     id: 'feature-request',
