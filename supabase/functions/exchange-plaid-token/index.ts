@@ -107,7 +107,7 @@ serve(async (req) => {
             p_available_credit: account.balances.available || 0,
             p_currency_code: account.balances.iso_currency_code || 'USD',
             p_plaid_account_id: account.account_id,
-            p_plaid_access_token: access_token,
+            p_access_token: access_token,
             p_plaid_item_id: item_id,
           });
 
@@ -124,12 +124,11 @@ serve(async (req) => {
             p_institution_name: metadata.institution.name,
             p_account_name: account.name,
             p_account_type: account.subtype || account.type,
-            p_account_id: account.account_id,
             p_balance: account.balances.current || 0,
             p_available_balance: account.balances.available,
             p_currency_code: account.balances.iso_currency_code || 'USD',
             p_plaid_account_id: account.account_id,
-            p_plaid_access_token: access_token,
+            p_access_token: access_token,
             p_plaid_item_id: item_id,
           });
 
