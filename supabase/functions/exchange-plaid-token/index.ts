@@ -110,10 +110,16 @@ serve(async (req) => {
 
         if (liabilitiesResponse.ok) {
           const liabData = await liabilitiesResponse.json();
-          console.log('Liabilities data fetched successfully');
+          console.log('Liabilities response:', JSON.stringify(liabData, null, 2));
           liabilitiesData = liabData.liabilities?.credit || [];
+          if (liabilitiesData.length > 0) {
+            console.log('Found liabilities data for', liabilitiesData.length, 'credit accounts');
+          } else {
+            console.log('No liabilities data in response - this is normal for Plaid Sandbox unless using specific test credentials');
+          }
         } else {
-          console.log('Liabilities endpoint not available, skipping');
+          const errorData = await liabilitiesResponse.json();
+          console.log('Liabilities endpoint error:', errorData);
         }
       } catch (error) {
         console.error('Error fetching liabilities (non-critical):', error);
