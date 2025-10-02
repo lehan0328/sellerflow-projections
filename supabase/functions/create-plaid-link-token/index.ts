@@ -39,6 +39,14 @@ serve(async (req) => {
         products: ['auth', 'transactions'],
         country_codes: ['US'],
         language: 'en',
+        account_filters: {
+          depository: {
+            account_subtypes: ['all'],
+          },
+          credit: {
+            account_subtypes: ['all'],
+          },
+        },
       }),
     });
 
