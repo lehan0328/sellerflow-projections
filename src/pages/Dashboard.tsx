@@ -156,10 +156,10 @@ const Dashboard = () => {
     .filter(income => {
       const paymentDate = new Date(income.paymentDate);
       paymentDate.setHours(0, 0, 0, 0);
-      const isToday = paymentDate.getTime() === todayDate.getTime();
+      const isDueOrOverdue = paymentDate.getTime() <= todayDate.getTime();
       const isPending = income.status === 'pending';
       const isNotMatched = getMatchesForIncome(income.id).length === 0;
-      return isToday && isPending && isNotMatched;
+      return isDueOrOverdue && isPending && isNotMatched;
     })
     .reduce((acc, income) => ({
       amount: acc.amount + income.amount,
