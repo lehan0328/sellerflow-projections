@@ -88,11 +88,60 @@ serve(async (req) => {
 
     // Update the account in database using secure RPC function
     if (accountType === 'credit_card') {
-      const { error: updateError } = await supabase.rpc('update_secure_credit_card', {
+      // Also fetch liabilities data for credit cards to get statement balance and due dates
+      let liabilitiesData = null;
+      try {
+        const liabilitiesResponse = await fetch(`https://${PLAID_ENV}.plaid.com/liabilities/get`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            client_id: PLAID_CLIENT_ID,
+            secret: PLAID_SECRET,
+            access_token: accessToken,
+          }),
+        });
+
+        if (liabilitiesResponse.ok) {
+          const liabData = await liabilitiesResponse.json();
+          console.log('Liabilities data:', JSON.stringify(liabData));
+          
+          // Find the matching credit account by account_id
+          if (liabData.liabilities?.credit) {
+            liabilitiesData = liabData.liabilities.credit.find(
+              (credit: any) => credit.account_id === account.plaid_account_id
+            );
+            console.log('Matched credit liabilities:', liabilitiesData);
+          }
+        } else {
+          console.log('Liabilities endpoint not available or failed, skipping');
+        }
+      } catch (error) {
+        console.error('Error fetching liabilities (non-critical):', error);
+      }
+
+      // Prepare update parameters
+      const updateParams: any = {
         p_card_id: accountId,
         p_balance: Math.abs(plaidAccount.balances.current || 0),
         p_available_credit: plaidAccount.balances.available || 0,
-      });
+      };
+
+      // Add liabilities data if available
+      if (liabilitiesData) {
+        if (liabilitiesData.minimum_payment_amount !== undefined) {
+          updateParams.p_minimum_payment = liabilitiesData.minimum_payment_amount;
+        }
+        if (liabilitiesData.next_payment_due_date) {
+          updateParams.p_payment_due_date = liabilitiesData.next_payment_due_date;
+        }
+        if (liabilitiesData.last_statement_issue_date) {
+          updateParams.p_statement_close_date = liabilitiesData.last_statement_issue_date;
+        }
+      }
+
+      const { error: updateError } = await supabase.rpc('update_secure_credit_card', updateParams);
 
       if (updateError) {
         throw updateError;

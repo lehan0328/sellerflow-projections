@@ -90,6 +90,36 @@ serve(async (req) => {
     console.log(`Found ${accountsData.accounts.length} accounts`);
     console.log('Account types:', accountsData.accounts.map((a: any) => ({ name: a.name, type: a.type, subtype: a.subtype })));
 
+    // Fetch liabilities data for credit cards
+    let liabilitiesData: any = null;
+    const creditAccounts = accountsData.accounts.filter((a: any) => a.type === 'credit');
+    
+    if (creditAccounts.length > 0) {
+      try {
+        const liabilitiesResponse = await fetch(`https://${PLAID_ENV}.plaid.com/liabilities/get`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            client_id: PLAID_CLIENT_ID,
+            secret: PLAID_SECRET,
+            access_token: access_token,
+          }),
+        });
+
+        if (liabilitiesResponse.ok) {
+          const liabData = await liabilitiesResponse.json();
+          console.log('Liabilities data fetched successfully');
+          liabilitiesData = liabData.liabilities?.credit || [];
+        } else {
+          console.log('Liabilities endpoint not available, skipping');
+        }
+      } catch (error) {
+        console.error('Error fetching liabilities (non-critical):', error);
+      }
+    }
+
     // Store accounts in database using secure RPC function
     const accountIds = [];
     for (const account of accountsData.accounts) {
@@ -100,6 +130,10 @@ serve(async (req) => {
       // Determine if it's a credit card or bank account
       if (account.type === 'credit') {
         console.log('Detected CREDIT CARD account:', { name: account.name, balance: account.balances.current, limit: account.balances.limit });
+        
+        // Find matching liabilities data for this credit card
+        const liabilityInfo = liabilitiesData?.find((lib: any) => lib.account_id === account.account_id);
+        
         // Store as credit card with encrypted access token using RPC
         const { data: cardData, error: insertError } = await supabase
           .rpc('insert_secure_credit_card_simple', {
@@ -114,11 +148,12 @@ serve(async (req) => {
             p_account_number: null,
             p_plaid_item_id: item_id,
             p_plaid_account_id: account.account_id,
-            p_minimum_payment: null,
-            p_payment_due_date: null,
-            p_statement_close_date: null,
+            p_minimum_payment: liabilityInfo?.minimum_payment_amount || null,
+            p_payment_due_date: liabilityInfo?.next_payment_due_date || null,
+            p_statement_close_date: liabilityInfo?.last_statement_issue_date || null,
             p_annual_fee: null,
-            p_interest_rate: null,
+            p_cash_back: 0,
+            p_priority: 3,
           });
 
         if (insertError) {
