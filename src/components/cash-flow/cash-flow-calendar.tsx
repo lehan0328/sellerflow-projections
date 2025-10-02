@@ -67,8 +67,16 @@ export const CashFlowCalendar = ({
   // Total available cash passed from parent component
   const totalAvailableCash = totalCash;
   
-  // Use only real events from props, no default sample data
-  const events = propEvents;
+  // Account start date (inclusive)
+  const accountStartDate = new Date('2025-09-29');
+  accountStartDate.setHours(0, 0, 0, 0);
+  
+  // Filter events to only those on/after the account start date
+  const events = propEvents.filter(e => {
+    const d = new Date(e.date);
+    d.setHours(0, 0, 0, 0);
+    return d >= accountStartDate;
+  });
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -128,8 +136,8 @@ export const CashFlowCalendar = ({
       })
       .reduce((total, event) => total + (event.type === 'inflow' ? event.amount : -event.amount), 0);
 
-    // Start with bank account balance (60k from income overview) on 9/29/2025
-    return bankAccountBalance + netChange;
+    // Start with starting cash (e.g., 60k from income overview) on 9/29/2025
+    return totalAvailableCash + netChange;
   };
 
   const getEventIcon = (event: CashFlowEvent) => {
@@ -166,7 +174,7 @@ export const CashFlowCalendar = ({
     accountStartDate.setHours(0, 0, 0, 0);
     
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-    let runningTotal = bankAccountBalance;
+    let runningTotal = totalAvailableCash;
     
     return days.map(day => {
       const dayEvents = events.filter(event => 
