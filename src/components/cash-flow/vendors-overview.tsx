@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2 } from "lucide-react";
+import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { VendorOrderDetailModal } from "./vendor-order-detail-modal";
@@ -24,6 +25,7 @@ interface VendorsOverviewProps {
 }
 
 export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], onVendorUpdate, onEditOrder, onDeleteVendor, onMatchTransaction }: VendorsOverviewProps) => {
+  const navigate = useNavigate();
   const { deleteVendor: deleteVendorHook } = useVendors();
   const vendors = propVendors || [];
   const { matches, getMatchesForVendor } = useTransactionMatching(bankTransactions, vendors, []);
@@ -284,6 +286,15 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
             )}
             </div>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/transactions?tab=vendors")}
+            className="flex items-center space-x-2"
+          >
+            <ExternalLink className="h-4 w-4" />
+            <span>View All Transactions</span>
+          </Button>
         </div>
         
         <div className="flex items-center space-x-4 mt-4">

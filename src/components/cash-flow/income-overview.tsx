@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { DollarSign, Calendar, TrendingUp, Plus, Edit, Search, ArrowUpDown, Trash2, Link2 } from "lucide-react";
+import { DollarSign, Calendar, TrendingUp, Plus, Edit, Search, ArrowUpDown, Trash2, Link2, ExternalLink } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { useTransactionMatching } from "@/hooks/useTransactionMatching";
 import { BankTransaction } from "./bank-transaction-log";
@@ -34,6 +35,7 @@ interface IncomeOverviewProps {
 }
 
 export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectToday, onEditIncome, onDeleteIncome, onMatchTransaction }: IncomeOverviewProps) => {
+  const navigate = useNavigate();
   const { matches, getMatchesForIncome } = useTransactionMatching(bankTransactions, [], incomeItems);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'description' | 'amount' | 'paymentDate' | 'source'>('paymentDate');
@@ -170,6 +172,15 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
               )}
             </div>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/transactions?tab=income")}
+            className="flex items-center space-x-2"
+          >
+            <ExternalLink className="h-4 w-4" />
+            <span>View All Transactions</span>
+          </Button>
         </div>
         
         <div className="flex items-center space-x-4 mt-4">

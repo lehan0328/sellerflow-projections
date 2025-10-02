@@ -1,282 +1,584 @@
-import { ArrowLeft } from "lucide-react";
+import { useState, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { TransactionLog as TransactionLogComponent } from "@/components/cash-flow/transaction-log";
-import { BankTransactionLog } from "@/components/cash-flow/bank-transaction-log";
-import { ArchivedTransactions } from "@/components/cash-flow/archived-transactions";
-import { useTransactions } from "@/hooks/useTransactions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ArrowLeft, Edit, DollarSign, Trash2, Calendar as CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import { useVendors } from "@/hooks/useVendors";
 import { useIncome } from "@/hooks/useIncome";
-import { useTransactionMatching, TransactionMatch } from "@/hooks/useTransactionMatching";
-import { useNavigate } from "react-router-dom";
+import { useTransactions } from "@/hooks/useTransactions";
 import { toast } from "sonner";
-import { useMemo } from "react";
+import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
+import { cn } from "@/lib/utils";
 
 export default function TransactionLog() {
   const navigate = useNavigate();
-  const { transactions, addTransaction, deleteTransaction } = useTransactions();
-  const { vendors, deleteVendor } = useVendors();
-  const { incomeItems, updateIncome, deleteIncome } = useIncome();
-  
-  // Add example pending income items for matching demonstration
-  const exampleIncomeItems = [
-    {
-      id: 'income1',
-      description: 'Monthly Service Fee',
-      amount: 3500,
-      paymentDate: new Date(2025, 0, 15),
-      source: 'Acme Corp',
-      status: 'pending' as const,
-      category: 'Services',
-      isRecurring: false
-    },
-    {
-      id: 'income2', 
-      description: 'Consulting Project',
-      amount: 5000,
-      paymentDate: new Date(2025, 0, 20),
-      source: 'TechStart Inc',
-      status: 'pending' as const,
-      category: 'Consulting',
-      isRecurring: false
-    }
-  ];
-  
-  // Combine real income items with examples for demo
-  const allIncomeItems = [...incomeItems, ...exampleIncomeItems];
-  
-  // Example bank transactions for matching demonstration
-  const exampleBankTransactions = [
-    {
-      id: 'bank1',
-      accountId: 'acc1',
-      accountName: 'Chase Business Checking',
-      institutionName: 'Chase Bank',
-      amount: -1250.00,
-      description: 'ACH Payment - ABC Supplies Co',
-      merchantName: 'ABC Supplies',
-      category: 'Business Expense',
-      date: new Date(2025, 0, 15),
-      type: 'debit' as const,
-      status: 'posted' as const,
-    },
-    {
-      id: 'bank2',
-      accountId: 'acc1',
-      accountName: 'Chase Business Checking',
-      institutionName: 'Chase Bank',
-      amount: 3500.00,
-      description: 'Direct Deposit - Client Payment Acme Corp',
-      merchantName: 'Acme Corporation',
-      category: 'Income',
-      date: new Date(2025, 0, 14),
-      type: 'credit' as const,
-      status: 'posted' as const,
-    },
-    {
-      id: 'bank3',
-      accountId: 'acc2',
-      accountName: 'Wells Fargo Business',
-      institutionName: 'Wells Fargo',
-      amount: -875.50,
-      description: 'Wire Transfer - XYZ Manufacturing',
-      merchantName: 'XYZ Manufacturing',
-      category: 'Supplies',
-      date: new Date(2025, 0, 13),
-      type: 'debit' as const,
-      status: 'posted' as const,
-    },
-    {
-      id: 'bank4',
-      accountId: 'acc1',
-      accountName: 'Chase Business Checking',
-      institutionName: 'Chase Bank',
-      amount: 2100.00,
-      description: 'Payment Received - Tech Services Inc',
-      merchantName: 'Tech Services',
-      category: 'Revenue',
-      date: new Date(2025, 0, 12),
-      type: 'credit' as const,
-      status: 'posted' as const,
-    },
-    {
-      id: 'bank5',
-      accountId: 'acc2',
-      accountName: 'Wells Fargo Business',
-      institutionName: 'Wells Fargo',
-      amount: -450.00,
-      description: 'Online Payment - Office Depot',
-      merchantName: 'Office Depot',
-      category: 'Office Supplies',
-      date: new Date(2025, 0, 11),
-      type: 'debit' as const,
-      status: 'posted' as const,
-    }
-  ];
-  
-  const { matches, isLoading: matchingLoading } = useTransactionMatching(
-    exampleBankTransactions,
-    vendors,
-    allIncomeItems
-  );
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") || "vendors";
 
-  const handleDeleteTransaction = async (transactionId: string) => {
-    await deleteTransaction(transactionId);
+  const { vendors, deleteVendor, updateVendor } = useVendors();
+  const { incomeItems, deleteIncome, updateIncome } = useIncome();
+  const { transactions, deleteTransaction } = useTransactions();
+
+  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [vendorStatusFilter, setVendorStatusFilter] = useState<string>("all");
+  const [incomeStatusFilter, setIncomeStatusFilter] = useState<string>("all");
+  const [vendorDateRange, setVendorDateRange] = useState<string>("all");
+  const [incomeDateRange, setIncomeDateRange] = useState<string>("all");
+  const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
+  const [customToDate, setCustomToDate] = useState<Date | undefined>();
+  const [editingVendor, setEditingVendor] = useState<any>(null);
+
+  // Filter vendors by status and date
+  const filteredVendors = useMemo(() => {
+    let filtered = vendors.filter(v => v.totalOwed && v.totalOwed > 0);
+
+    // Status filter
+    if (vendorStatusFilter === "pending") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      filtered = filtered.filter(v => {
+        if (!v.nextPaymentDate) return false;
+        const dueDate = new Date(v.nextPaymentDate);
+        dueDate.setHours(0, 0, 0, 0);
+        return dueDate >= today;
+      });
+    } else if (vendorStatusFilter === "due") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      filtered = filtered.filter(v => {
+        if (!v.nextPaymentDate) return false;
+        const dueDate = new Date(v.nextPaymentDate);
+        dueDate.setHours(0, 0, 0, 0);
+        return dueDate <= today;
+      });
+    }
+
+    // Date range filter
+    if (vendorDateRange !== "all" && vendorDateRange !== "custom") {
+      const now = new Date();
+      const days = vendorDateRange === "3days" ? 3 : vendorDateRange === "7days" ? 7 : 30;
+      const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+      
+      filtered = filtered.filter(v => {
+        if (!v.nextPaymentDate) return false;
+        return new Date(v.nextPaymentDate) >= startDate;
+      });
+    } else if (vendorDateRange === "custom" && customFromDate && customToDate) {
+      filtered = filtered.filter(v => {
+        if (!v.nextPaymentDate) return false;
+        const date = new Date(v.nextPaymentDate);
+        return date >= customFromDate && date <= customToDate;
+      });
+    }
+
+    return filtered;
+  }, [vendors, vendorStatusFilter, vendorDateRange, customFromDate, customToDate]);
+
+  // Filter income by status and date
+  const filteredIncome = useMemo(() => {
+    let filtered = incomeItems.filter(i => i.status !== "received");
+
+    // Status filter
+    if (incomeStatusFilter === "pending") {
+      filtered = filtered.filter(i => i.status === "pending");
+    } else if (incomeStatusFilter === "overdue") {
+      filtered = filtered.filter(i => i.status === "overdue");
+    }
+
+    // Date range filter
+    if (incomeDateRange !== "all" && incomeDateRange !== "custom") {
+      const now = new Date();
+      const days = incomeDateRange === "3days" ? 3 : incomeDateRange === "7days" ? 7 : 30;
+      const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+      
+      filtered = filtered.filter(i => {
+        return new Date(i.paymentDate) >= startDate;
+      });
+    } else if (incomeDateRange === "custom" && customFromDate && customToDate) {
+      filtered = filtered.filter(i => {
+        const date = new Date(i.paymentDate);
+        return date >= customFromDate && date <= customToDate;
+      });
+    }
+
+    return filtered;
+  }, [incomeItems, incomeStatusFilter, incomeDateRange, customFromDate, customToDate]);
+
+  // Get deleted transactions
+  const deletedTransactions = useMemo(() => {
+    return transactions.filter(t => t.status === "cancelled");
+  }, [transactions]);
+
+  const getVendorStatus = (vendor: any) => {
+    if (!vendor.nextPaymentDate) return { text: "No due date", variant: "default" as const };
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueDate = new Date(vendor.nextPaymentDate);
+    dueDate.setHours(0, 0, 0, 0);
+    
+    const timeDiff = dueDate.getTime() - today.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    
+    if (daysDiff < 0) {
+      const overdueDays = Math.abs(daysDiff);
+      return { 
+        text: overdueDays === 1 ? "Overdue 1 day" : `Overdue ${overdueDays} days`,
+        variant: "destructive" as const
+      };
+    } else if (daysDiff === 0) {
+      return { text: "Due Today", variant: "secondary" as const };
+    } else if (daysDiff <= 7) {
+      return { text: `${daysDiff} days`, variant: "secondary" as const };
+    } else {
+      return { text: `${daysDiff} days to due`, variant: "default" as const };
+    }
   };
 
-  const handleUndoTransaction = (transactionId: string) => {
-    deleteTransaction(transactionId);
-  };
-  
-  const handleMatchTransaction = async (match: TransactionMatch) => {
+  const handlePayVendor = async (vendor: any) => {
     try {
-      if (match.type === 'vendor' && match.matchedVendor) {
-        // Archive vendor by deleting it (marking as paid)
-        await deleteVendor(match.matchedVendor.id);
-        toast.success(`Matched and archived vendor: ${match.matchedVendor.name}`);
-      } else if (match.type === 'income' && match.matchedIncome) {
-        // Only update if it's a real database item
-        if (incomeItems.find(i => i.id === match.matchedIncome!.id)) {
-          // Create transaction log entry first
-          await addTransaction({
-            type: 'customer_payment',
-            amount: match.matchedIncome.amount,
-            description: `Matched: ${match.matchedIncome.source} - ${match.matchedIncome.description}`,
-            transactionDate: new Date(),
-            status: 'completed'
-          });
-          
-          // Mark income as received (archives it)
-          await updateIncome(match.matchedIncome.id, { status: 'received' });
-          toast.success(`Matched and archived income: ${match.matchedIncome.source}`);
-        } else {
-          toast.success(`Matched income: ${match.matchedIncome.source}`);
-        }
-      }
+      await deleteVendor(vendor.id);
+      toast.success("Payment recorded", {
+        description: `${vendor.name} has been marked as paid.`
+      });
     } catch (error) {
-      console.error('Error matching transaction:', error);
-      toast.error('Failed to match transaction');
+      toast.error("Failed to record payment");
     }
   };
 
-  const handleManualMatch = async (bankTransaction: any, matchType: 'vendor' | 'income', matchId: string) => {
+  const handleDeleteVendor = async (vendor: any) => {
     try {
-      if (matchType === 'vendor') {
-        const vendor = vendors.find(v => v.id === matchId);
-        if (vendor) {
-          await deleteVendor(matchId);
-          toast.success(`Manually matched and archived vendor: ${vendor.name}`);
-        }
-      } else {
-        const income = allIncomeItems.find(i => i.id === matchId);
-        if (income) {
-          // Only update if it's a real database item
-          if (incomeItems.find(i => i.id === matchId)) {
-            // Create transaction log entry first
-            await addTransaction({
-              type: 'customer_payment',
-              amount: income.amount,
-              description: `Matched: ${income.source} - ${income.description}`,
-              transactionDate: new Date(),
-              status: 'completed'
-            });
-            
-            // Mark income as received (archives it)
-            await updateIncome(matchId, { status: 'received' });
-          }
-          toast.success(`Manually matched and archived income: ${income.source}`);
-        }
-      }
+      await deleteVendor(vendor.id);
+      toast.success("Transaction deleted");
     } catch (error) {
-      console.error('Error in manual match:', error);
-      toast.error('Failed to match transaction');
+      toast.error("Failed to delete transaction");
     }
   };
 
-  const formattedTransactions = transactions.map(transaction => ({
-    id: transaction.id,
-    type: transaction.type as 'payment' | 'purchase' | 'adjustment',
-    vendor: transaction.vendorId || undefined,
-    amount: Number(transaction.amount),
-    description: transaction.description || 'Transaction',
-    date: new Date(transaction.transactionDate),
-    status: transaction.status as 'completed' | 'pending' | 'cancelled'
-  }));
+  const handlePayIncome = async (income: any) => {
+    try {
+      await updateIncome(income.id, { status: "received" });
+      toast.success("Income received", {
+        description: `${income.description} has been marked as received.`
+      });
+    } catch (error) {
+      toast.error("Failed to update income");
+    }
+  };
 
-  // Create archived transactions from matched/completed items
-  const archivedTransactions = useMemo(() => {
-    const archived = [];
-    
-    // Add matched vendors (totalOwed = 0)
-    vendors.forEach(vendor => {
-      if (vendor.totalOwed === 0 && vendor.status === 'upcoming') {
-        archived.push({
-          id: `vendor-${vendor.id}`,
-          type: 'vendor' as const,
-          name: vendor.name,
-          amount: vendor.nextPaymentAmount || 0,
-          description: vendor.poName || vendor.description || 'Vendor payment',
-          date: new Date(vendor.nextPaymentDate),
-          matchedWith: 'Bank Transaction'
-        });
-      }
-    });
-    
-    // Add received income
-    incomeItems.forEach(income => {
-      if (income.status === 'received') {
-        archived.push({
-          id: `income-${income.id}`,
-          type: 'income' as const,
-          name: income.source,
-          amount: income.amount,
-          description: income.description,
-          date: new Date(income.paymentDate),
-          matchedWith: income.category || undefined
-        });
-      }
-    });
-    
-    return archived.sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [vendors, incomeItems]);
+  const handleDeleteIncome = async (income: any) => {
+    try {
+      await deleteIncome(income.id);
+      toast.success("Transaction deleted");
+    } catch (error) {
+      toast.error("Failed to delete transaction");
+    }
+  };
+
+  const handleRestoreTransaction = async (transaction: any) => {
+    try {
+      // Implementation depends on transaction type
+      toast.success("Transaction restored");
+    } catch (error) {
+      toast.error("Failed to restore transaction");
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle">
-      <div className="container mx-auto p-6">
-        <div className="flex items-center mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/dashboard')}
-            className="mr-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Transaction Log
-          </h1>
-        </div>
-        
-        <div className="max-w-full space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <TransactionLogComponent
-              transactions={formattedTransactions}
-              onUndoTransaction={handleUndoTransaction}
-              onDeleteTransaction={handleDeleteTransaction}
-            />
-            <BankTransactionLog 
-              transactions={exampleBankTransactions}
-              vendors={vendors}
-              incomeItems={allIncomeItems}
-              matches={matches}
-              onMatchTransaction={handleMatchTransaction}
-              onManualMatch={handleManualMatch}
-            />
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center space-x-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back to Dashboard</span>
+            </Button>
+            <h1 className="text-3xl font-bold">Transaction Log</h1>
           </div>
-          
-          <ArchivedTransactions 
-            transactions={archivedTransactions}
-          />
         </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsTrigger value="vendors">Vendor Transactions</TabsTrigger>
+            <TabsTrigger value="income">Income Transactions</TabsTrigger>
+            <TabsTrigger value="deleted">Deleted Transactions</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="vendors" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Vendor Purchase Orders</CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <Select value={vendorStatusFilter} onValueChange={setVendorStatusFilter}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="due">Due</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Select value={vendorDateRange} onValueChange={setVendorDateRange}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Date Range" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Time</SelectItem>
+                        <SelectItem value="3days">Last 3 Days</SelectItem>
+                        <SelectItem value="7days">Last 7 Days</SelectItem>
+                        <SelectItem value="30days">Last 30 Days</SelectItem>
+                        <SelectItem value="custom">Custom Range</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {vendorDateRange === "custom" && (
+                      <div className="flex items-center space-x-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {customFromDate ? format(customFromDate, "MMM dd") : "From"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={customFromDate}
+                              onSelect={setCustomFromDate}
+                              initialFocus
+                              className="pointer-events-auto"
+                            />
+                          </PopoverContent>
+                        </Popover>
+
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {customToDate ? format(customToDate, "MMM dd") : "To"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={customToDate}
+                              onSelect={setCustomToDate}
+                              initialFocus
+                              className="pointer-events-auto"
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>PO#</TableHead>
+                      <TableHead>Vendor</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Due Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredVendors.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                          No vendor transactions found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredVendors.map((vendor) => {
+                        const status = getVendorStatus(vendor);
+                        return (
+                          <TableRow key={vendor.id}>
+                            <TableCell>
+                              {vendor.nextPaymentDate
+                                ? new Date(vendor.nextPaymentDate).toLocaleDateString()
+                                : "N/A"}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {vendor.poName || vendor.description || "N/A"}
+                            </TableCell>
+                            <TableCell>{vendor.name}</TableCell>
+                            <TableCell className="font-semibold">
+                              ${vendor.totalOwed?.toLocaleString() || "0"}
+                            </TableCell>
+                            <TableCell>
+                              {vendor.nextPaymentDate
+                                ? new Date(vendor.nextPaymentDate).toLocaleDateString()
+                                : "N/A"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={status.variant}>{status.text}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setEditingVendor(vendor)}
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handlePayVendor(vendor)}
+                                >
+                                  <DollarSign className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteVendor(vendor)}
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="income" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Income Transactions</CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <Select value={incomeStatusFilter} onValueChange={setIncomeStatusFilter}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="overdue">Overdue</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <Select value={incomeDateRange} onValueChange={setIncomeDateRange}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Date Range" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Time</SelectItem>
+                        <SelectItem value="3days">Last 3 Days</SelectItem>
+                        <SelectItem value="7days">Last 7 Days</SelectItem>
+                        <SelectItem value="30days">Last 30 Days</SelectItem>
+                        <SelectItem value="custom">Custom Range</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    {incomeDateRange === "custom" && (
+                      <div className="flex items-center space-x-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {customFromDate ? format(customFromDate, "MMM dd") : "From"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={customFromDate}
+                              onSelect={setCustomFromDate}
+                              initialFocus
+                              className="pointer-events-auto"
+                            />
+                          </PopoverContent>
+                        </Popover>
+
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {customToDate ? format(customToDate, "MMM dd") : "To"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={customToDate}
+                              onSelect={setCustomToDate}
+                              initialFocus
+                              className="pointer-events-auto"
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Source</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Payment Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredIncome.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                          No income transactions found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredIncome.map((income) => (
+                        <TableRow key={income.id}>
+                          <TableCell>
+                            {new Date(income.paymentDate).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="font-medium">{income.description}</TableCell>
+                          <TableCell>{income.source}</TableCell>
+                          <TableCell className="font-semibold">
+                            ${income.amount.toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            {new Date(income.paymentDate).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                income.status === "received"
+                                  ? "secondary"
+                                  : income.status === "overdue"
+                                  ? "destructive"
+                                  : "default"
+                              }
+                            >
+                              {income.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end space-x-2">
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => handlePayIncome(income)}
+                                disabled={income.status === "received"}
+                              >
+                                <DollarSign className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteIncome(income)}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="deleted" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Deleted Transactions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {deletedTransactions.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          No deleted transactions
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      deletedTransactions.map((transaction) => (
+                        <TableRow key={transaction.id}>
+                          <TableCell>
+                            {new Date(transaction.transactionDate).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="capitalize">{transaction.type}</TableCell>
+                          <TableCell>{transaction.description}</TableCell>
+                          <TableCell className="font-semibold">
+                            ${Math.abs(Number(transaction.amount)).toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{transaction.status}</Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {editingVendor && (
+          <VendorOrderEditModal
+            vendor={editingVendor}
+            open={!!editingVendor}
+            onOpenChange={(open) => !open && setEditingVendor(null)}
+            onSave={async (updates) => {
+              await updateVendor(editingVendor.id, updates);
+              setEditingVendor(null);
+              toast.success("Vendor order updated");
+            }}
+            onDelete={async (vendor) => {
+              await handleDeleteVendor(vendor);
+              setEditingVendor(null);
+            }}
+          />
+        )}
       </div>
     </div>
   );
