@@ -76,6 +76,28 @@ export const useBankAccounts = () => {
     }
 
     try {
+      // Check for duplicate plaid_account_id
+      if (accountData.plaid_item_id) {
+        const { data: existingAccounts, error: checkError } = await supabase
+          .from("bank_accounts")
+          .select("id, account_name, institution_name, plaid_account_id")
+          .eq("user_id", user.id)
+          .eq("is_active", true);
+
+        if (checkError) {
+          console.error("Error checking for duplicate accounts:", checkError);
+        } else if (existingAccounts && existingAccounts.length > 0) {
+          // Check if any existing account has the same plaid_item_id
+          const duplicate = existingAccounts.find(acc => 
+            acc.plaid_account_id && acc.plaid_account_id === accountData.plaid_item_id
+          );
+          if (duplicate) {
+            toast.error(`This bank account is already connected: ${duplicate.institution_name} - ${duplicate.account_name}`);
+            return false;
+          }
+        }
+      }
+
       // Use the secure insert function instead of direct insert
       const { data, error } = await supabase.rpc('insert_secure_bank_account', {
         p_institution_name: accountData.institution_name,
