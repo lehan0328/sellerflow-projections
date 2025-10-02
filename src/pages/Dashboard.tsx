@@ -822,6 +822,8 @@ const Dashboard = () => {
               dailyOutflow={todayOutflow}
               upcomingExpenses={upcomingExpenses}
               events={allCalendarEvents}
+              vendors={vendors}
+              income={incomeItems}
             />
           </div>
         </div>

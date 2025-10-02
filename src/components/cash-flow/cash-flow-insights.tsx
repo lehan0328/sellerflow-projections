@@ -12,6 +12,8 @@ interface CashFlowInsightsProps {
   dailyOutflow: number;
   upcomingExpenses: number;
   events?: any[];
+  vendors?: any[];
+  income?: any[];
 }
 
 export const CashFlowInsights = ({
@@ -20,6 +22,8 @@ export const CashFlowInsights = ({
   dailyOutflow,
   upcomingExpenses,
   events = [],
+  vendors = [],
+  income = [],
 }: CashFlowInsightsProps) => {
   const [advice, setAdvice] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -77,6 +81,8 @@ export const CashFlowInsights = ({
           dailyOutflow,
           upcomingExpenses,
           chartData: events.slice(-7),
+          vendors,
+          income,
         },
       });
 

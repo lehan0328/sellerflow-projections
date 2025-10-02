@@ -9,30 +9,115 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { currentBalance, dailyInflow, dailyOutflow, upcomingExpenses, chartData } = await req.json();
+    const { 
+      currentBalance, 
+      dailyInflow, 
+      dailyOutflow, 
+      upcomingExpenses, 
+      vendors = [],
+      income = [],
+      chartData 
+    } = await req.json();
+    
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const systemPrompt = `You are a financial advisor analyzing cash flow data. Provide concise, actionable advice in a friendly tone. 
+    // Calculate future cash flow projections (next 60 days)
+    const projections = [];
+    let runningBalance = currentBalance || 0;
+    const today = new Date();
+    
+    for (let i = 0; i < 60; i++) {
+      const targetDate = new Date(today);
+      targetDate.setDate(today.getDate() + i);
+      const dateStr = targetDate.toISOString().split('T')[0];
+      
+      let dayInflow = 0;
+      let dayOutflow = 0;
+      
+      // Calculate expected income for this date
+      const pendingIncome = income.filter((item: any) => {
+        const paymentDate = new Date(item.paymentDate).toISOString().split('T')[0];
+        return paymentDate === dateStr && item.status === 'pending';
+      });
+      dayInflow = pendingIncome.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+      
+      // Calculate expected expenses for this date
+      const dueVendors = vendors.filter((vendor: any) => {
+        const dueDate = new Date(vendor.nextPaymentDate).toISOString().split('T')[0];
+        return dueDate === dateStr && vendor.totalOwed > 0;
+      });
+      dayOutflow = dueVendors.reduce((sum: number, vendor: any) => sum + (vendor.totalOwed || 0), 0);
+      
+      runningBalance = runningBalance + dayInflow - dayOutflow;
+      
+      if (dayInflow > 0 || dayOutflow > 0 || runningBalance < 0) {
+        projections.push({
+          date: dateStr,
+          balance: runningBalance,
+          inflow: dayInflow,
+          outflow: dayOutflow
+        });
+      }
+      
+      // Stop if we've found the first negative balance
+      if (runningBalance < 0 && projections.length > 0) {
+        break;
+      }
+    }
+    
+    // Find when balance goes negative
+    const goesNegative = projections.find(p => p.balance < 0);
+    const daysUntilNegative = goesNegative ? 
+      Math.floor((new Date(goesNegative.date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : null;
+    
+    // Calculate total upcoming income vs expenses
+    const totalUpcomingIncome = income
+      .filter((item: any) => item.status === 'pending')
+      .reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+    
+    const totalUpcomingExpenses = vendors
+      .filter((vendor: any) => vendor.totalOwed > 0)
+      .reduce((sum: number, vendor: any) => sum + (vendor.totalOwed || 0), 0);
+    
+    // Calculate safe spending power (current balance + upcoming income - upcoming expenses - safety buffer)
+    const safetyBuffer = currentBalance * 0.1; // 10% buffer
+    const spendingPower = Math.max(0, currentBalance + totalUpcomingIncome - totalUpcomingExpenses - safetyBuffer);
+
+    const systemPrompt = `You are a financial advisor analyzing cash flow data and future projections. Provide concise, actionable advice in a friendly tone. 
 
 IMPORTANT FORMATTING RULES:
 - Start with "**Current Financial Health:**" followed by your health assessment
-- Then add "**Key Insight:**" followed by one key pattern or observation
+- Add "**Future Outlook:**" with projection analysis (CRITICAL if going negative soon)
+- Add "**Safe Spending Power:**" with the calculated amount they can safely spend
 - End with "**Actionable Recommendation:**" followed by one specific action they should take
-- Keep total response under 150 words
+- Keep total response under 200 words
+- If going negative, make this VERY CLEAR and URGENT
 
 Focus on:
-- Daily cash flow health
-- Spending patterns
-- Risk warnings if cash is running low
-- Opportunities to optimize cash flow`;
+- Current vs projected cash position
+- When balance will go negative (if applicable)
+- Safe spending amount to avoid going negative
+- Risk warnings and action items`;
+
+    let projectionSummary = "";
+    if (goesNegative) {
+      projectionSummary = `⚠️ CRITICAL: Balance projected to go NEGATIVE in ${daysUntilNegative} days (on ${goesNegative.date}). Balance will drop to $${goesNegative.balance.toLocaleString()}.`;
+    } else if (projections.length > 0) {
+      const lowestBalance = Math.min(...projections.map(p => p.balance));
+      projectionSummary = `Projected to stay positive. Lowest balance in next 60 days: $${lowestBalance.toLocaleString()}.`;
+    }
 
     const userPrompt = `Current Balance: $${currentBalance?.toLocaleString() || 0}
 Today's Inflow: $${dailyInflow?.toLocaleString() || 0}
 Today's Outflow: $${dailyOutflow?.toLocaleString() || 0}
-Upcoming Expenses (7 days): $${upcomingExpenses?.toLocaleString() || 0}
+Upcoming Income (Total): $${totalUpcomingIncome.toLocaleString()}
+Upcoming Expenses (Total): $${totalUpcomingExpenses.toLocaleString()}
+Safe Spending Power: $${spendingPower.toLocaleString()}
 
-Analyze this cash flow.`;
+${projectionSummary}
+
+Analyze this cash flow and provide guidance.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
