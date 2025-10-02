@@ -96,55 +96,49 @@ serve(async (req) => {
       
       // Determine if it's a credit card or bank account
       if (account.type === 'credit') {
-        // Store as credit card directly
+        // Store as credit card with encrypted access token using RPC
         const { data: cardData, error: insertError } = await supabase
-          .from('credit_cards')
-          .insert({
-            user_id: user.id,
-            institution_name: metadata.institution.name,
-            account_name: account.name,
-            account_type: account.subtype || 'credit',
-            balance: Math.abs(account.balances.current || 0),
-            credit_limit: account.balances.limit || 0,
-            available_credit: account.balances.available || 0,
-            currency_code: account.balances.iso_currency_code || 'USD',
-            plaid_account_id: account.account_id,
-            last_sync: new Date().toISOString(),
-          })
-          .select('id')
-          .single();
+          .rpc('insert_secure_credit_card', {
+            p_institution_name: metadata.institution.name,
+            p_account_name: account.name,
+            p_account_type: account.subtype || 'credit',
+            p_balance: Math.abs(account.balances.current || 0),
+            p_credit_limit: account.balances.limit || 0,
+            p_available_credit: account.balances.available || 0,
+            p_currency_code: account.balances.iso_currency_code || 'USD',
+            p_plaid_account_id: account.account_id,
+            p_plaid_access_token: access_token,
+            p_plaid_item_id: item_id,
+          });
 
         if (insertError) {
           console.error('Error inserting credit card:', insertError);
           throw insertError;
         }
         
-        accountIds.push(cardData.id);
+        accountIds.push(cardData);
       } else {
-        // Store as bank account directly
+        // Store as bank account with encrypted access token using RPC
         const { data: accountData, error: insertError } = await supabase
-          .from('bank_accounts')
-          .insert({
-            user_id: user.id,
-            institution_name: metadata.institution.name,
-            account_name: account.name,
-            account_type: account.subtype || account.type,
-            account_id: account.account_id,
-            balance: account.balances.current || 0,
-            available_balance: account.balances.available,
-            currency_code: account.balances.iso_currency_code || 'USD',
-            plaid_account_id: account.account_id,
-            last_sync: new Date().toISOString(),
-          })
-          .select('id')
-          .single();
+          .rpc('insert_secure_bank_account', {
+            p_institution_name: metadata.institution.name,
+            p_account_name: account.name,
+            p_account_type: account.subtype || account.type,
+            p_account_id: account.account_id,
+            p_balance: account.balances.current || 0,
+            p_available_balance: account.balances.available,
+            p_currency_code: account.balances.iso_currency_code || 'USD',
+            p_plaid_account_id: account.account_id,
+            p_plaid_access_token: access_token,
+            p_plaid_item_id: item_id,
+          });
 
         if (insertError) {
           console.error('Error inserting bank account:', insertError);
           throw insertError;
         }
         
-        accountIds.push(accountData.id);
+        accountIds.push(accountData);
       }
     }
 
