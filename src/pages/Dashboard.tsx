@@ -17,6 +17,7 @@ import { useIncome } from "@/hooks/useIncome";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -563,11 +564,46 @@ const Dashboard = () => {
     const targetTx = transactions.find(t =>
       t.type === 'purchase_order' &&
       t.vendorId === vendor.id &&
-      Math.abs(t.amount - vendor.nextPaymentAmount) < 0.01 &&
+      Math.abs(t.amount - (vendor.nextPaymentAmount || 0)) < 0.01 &&
       (t.dueDate && vendor.nextPaymentDate
         ? startOfDay(t.dueDate).getTime() === startOfDay(vendor.nextPaymentDate).getTime()
         : true)
     ) || transactions.find(t => t.vendorId === vendor.id && t.type === 'purchase_order');
+
+    // Archive to deleted_transactions
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const paymentDate = vendor.nextPaymentDate ? new Date(vendor.nextPaymentDate) : undefined;
+        const amount = vendor.nextPaymentAmount || (targetTx ? targetTx.amount : 0) || 0;
+        const payload: any = {
+          user_id: user.id,
+          transaction_type: 'vendor',
+          original_id: targetTx?.id || vendor.id,
+          name: vendor.name,
+          amount,
+          description: vendor.poName || vendor.description || 'PO deleted',
+          payment_date: paymentDate ? `${paymentDate.getFullYear()}-${String(paymentDate.getMonth()+1).padStart(2,'0')}-${String(paymentDate.getDate()).padStart(2,'0')}` : null,
+          status: vendor.status || 'pending',
+          category: vendor.category || null,
+          metadata: {
+            context: 'po_delete',
+            vendorId: vendor.id,
+            poName: vendor.poName,
+            nextPaymentAmount: vendor.nextPaymentAmount,
+            nextPaymentDate: vendor.nextPaymentDate,
+          }
+        };
+        const { error: archiveError } = await supabase
+          .from('deleted_transactions')
+          .insert(payload as any);
+        if (archiveError) {
+          console.error('Failed to archive deleted vendor PO:', archiveError);
+        }
+      }
+    } catch (e) {
+      console.error('Archive step failed:', e);
+    }
 
     if (targetTx) {
       await deleteTransaction(targetTx.id);
