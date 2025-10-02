@@ -110,9 +110,15 @@ serve(async (req) => {
             p_credit_limit: account.balances.limit || 0,
             p_available_credit: account.balances.available || 0,
             p_currency_code: account.balances.iso_currency_code || 'USD',
-            p_plaid_account_id: account.account_id,
             p_access_token: access_token,
+            p_account_number: null,
             p_plaid_item_id: item_id,
+            p_plaid_account_id: account.account_id,
+            p_minimum_payment: null,
+            p_payment_due_date: null,
+            p_statement_close_date: null,
+            p_annual_fee: null,
+            p_interest_rate: null,
           });
 
         if (insertError) {
