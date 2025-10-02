@@ -26,6 +26,14 @@ interface CashFlowEvent {
   date: Date;
 }
 
+interface IncomeItem {
+  id: string;
+  amount: number;
+  paymentDate: Date;
+  status: 'received' | 'pending' | 'overdue';
+  description: string;
+}
+
 interface CashFlowCalendarProps {
   events?: CashFlowEvent[];
   totalCash?: number;
@@ -33,6 +41,7 @@ interface CashFlowCalendarProps {
   todayInflow?: number;
   todayOutflow?: number;
   upcomingExpenses?: number;
+  incomeItems?: IncomeItem[];
 }
 
 export const CashFlowCalendar = ({ 
@@ -41,7 +50,8 @@ export const CashFlowCalendar = ({
   onEditTransaction,
   todayInflow = 0,
   todayOutflow = 0,
-  upcomingExpenses = 0
+  upcomingExpenses = 0,
+  incomeItems = []
 }: CashFlowCalendarProps) => {
   const { totalAvailableCredit } = useCreditCards();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -83,6 +93,19 @@ export const CashFlowCalendar = ({
     return dayEvents.reduce((total, event) => {
       return total + (event.type === 'inflow' ? event.amount : -event.amount);
     }, 0);
+  };
+
+  const getPendingIncomeForDay = (date: Date) => {
+    return incomeItems
+      .filter(income => {
+        const incomeDate = new Date(income.paymentDate);
+        incomeDate.setHours(0, 0, 0, 0);
+        const checkDate = new Date(date);
+        checkDate.setHours(0, 0, 0, 0);
+        return income.status === 'pending' && 
+               incomeDate.getTime() === checkDate.getTime();
+      })
+      .reduce((sum, income) => sum + income.amount, 0);
   };
 
   const getTotalCashForDay = (date: Date) => {
@@ -271,6 +294,7 @@ export const CashFlowCalendar = ({
                 const dayEvents = getEventsForDay(day);
                 const dayBalance = getDayBalance(day);
                 const totalCash = getTotalCashForDay(day);
+                const pendingIncome = getPendingIncomeForDay(day);
                 const hasEvents = dayEvents.length > 0;
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
@@ -349,6 +373,14 @@ export const CashFlowCalendar = ({
                               ${totalCash.toLocaleString()}
                             </span>
                           </div>
+                          {pendingIncome > 0 && (
+                            <div className="flex items-center justify-end gap-1">
+                              <span className="text-[10px] text-amber-600">Pending</span>
+                              <span className="text-[10px] text-amber-600 font-medium">
+                                +${pendingIncome.toLocaleString()}
+                              </span>
+                            </div>
+                          )}
                           <div className="flex items-center justify-end gap-1">
                             <span className="text-[10px] text-muted-foreground">Credit</span>
                             <span className="text-[10px] text-blue-600 font-medium">
