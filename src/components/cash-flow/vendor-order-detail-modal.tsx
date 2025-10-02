@@ -21,13 +21,13 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
   const { updateVendor } = useVendors();
   const { transactions, deleteTransaction, refetch } = useTransactions();
   
-  // Refetch transactions when modal opens to ensure we have latest data
+  // Refetch transactions only when modal initially opens
   React.useEffect(() => {
-    if (open && vendor) {
-      console.log('Modal opened for vendor:', vendor.name, 'ID:', vendor.id);
+    if (open) {
+      console.log('Modal opened for vendor:', vendor?.name, 'ID:', vendor?.id);
       refetch();
     }
-  }, [open, vendor, refetch]);
+  }, [open, refetch]);
   
   const [formData, setFormData] = useState({
     totalOwed: vendor?.totalOwed || 0,
@@ -132,9 +132,9 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Reset form when vendor changes
+  // Reset form only when modal opens, not when vendor changes (to prevent overwriting user edits)
   React.useEffect(() => {
-    if (vendor) {
+    if (open && vendor) {
       setFormData({
         totalOwed: vendor.totalOwed || 0,
         nextPaymentAmount: vendor.nextPaymentAmount || 0,
@@ -144,7 +144,7 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
         notes: vendor.notes || ''
       });
     }
-  }, [vendor]);
+  }, [open, vendor?.id]);
 
   if (!vendor) return null;
 
