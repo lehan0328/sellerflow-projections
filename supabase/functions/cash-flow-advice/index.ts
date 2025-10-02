@@ -22,63 +22,77 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Calculate future cash flow projections (next 60 days)
+    console.log("Starting cash flow analysis with:", {
+      currentBalance,
+      vendorsCount: vendors.length,
+      incomeCount: income.length
+    });
+
+    // Calculate future cash flow projections (180 days)
     const projections = [];
     let runningBalance = currentBalance || 0;
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i <= 180; i++) {
       const targetDate = new Date(today);
       targetDate.setDate(today.getDate() + i);
+      targetDate.setHours(0, 0, 0, 0);
       const dateStr = targetDate.toISOString().split('T')[0];
       
       let dayInflow = 0;
       let dayOutflow = 0;
       
-      // Calculate expected income for this date
-      const pendingIncome = income.filter((item: any) => {
-        const paymentDate = new Date(item.paymentDate).toISOString().split('T')[0];
-        return paymentDate === dateStr && item.status === 'pending';
+      // Calculate expected income for this date (only pending income that becomes received)
+      const dayIncome = income.filter((item: any) => {
+        if (!item.paymentDate || item.status !== 'pending') return false;
+        const incomeDate = new Date(item.paymentDate);
+        incomeDate.setHours(0, 0, 0, 0);
+        return incomeDate.getTime() === targetDate.getTime();
       });
-      dayInflow = pendingIncome.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+      dayInflow = dayIncome.reduce((sum: number, item: any) => sum + (Number(item.amount) || 0), 0);
       
-      // Calculate expected expenses for this date
-      const dueVendors = vendors.filter((vendor: any) => {
-        const dueDate = new Date(vendor.nextPaymentDate).toISOString().split('T')[0];
-        return dueDate === dateStr && vendor.totalOwed > 0;
+      // Calculate expected expenses for this date (only vendors with amounts owed)
+      const dayVendors = vendors.filter((vendor: any) => {
+        if (!vendor.nextPaymentDate || (vendor.totalOwed || 0) <= 0) return false;
+        const vendorDate = new Date(vendor.nextPaymentDate);
+        vendorDate.setHours(0, 0, 0, 0);
+        return vendorDate.getTime() === targetDate.getTime();
       });
-      dayOutflow = dueVendors.reduce((sum: number, vendor: any) => sum + (vendor.totalOwed || 0), 0);
+      dayOutflow = dayVendors.reduce((sum: number, vendor: any) => sum + (Number(vendor.totalOwed) || 0), 0);
       
+      // Update running balance
       runningBalance = runningBalance + dayInflow - dayOutflow;
       
+      // Store projections for days with activity or when negative
       if (dayInflow > 0 || dayOutflow > 0 || runningBalance < 0) {
         projections.push({
           date: dateStr,
           balance: runningBalance,
           inflow: dayInflow,
-          outflow: dayOutflow
+          outflow: dayOutflow,
+          daysFromNow: i
         });
-      }
-      
-      // Stop if we've found the first negative balance
-      if (runningBalance < 0 && projections.length > 0) {
-        break;
       }
     }
     
+    console.log("Generated projections:", {
+      totalProjections: projections.length,
+      firstNegative: projections.find(p => p.balance < 0)
+    });
+    
     // Find when balance goes negative
     const goesNegative = projections.find(p => p.balance < 0);
-    const daysUntilNegative = goesNegative ? 
-      Math.floor((new Date(goesNegative.date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : null;
+    const daysUntilNegative = goesNegative ? goesNegative.daysFromNow : null;
     
     // Calculate total upcoming income vs expenses
     const totalUpcomingIncome = income
       .filter((item: any) => item.status === 'pending')
-      .reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+      .reduce((sum: number, item: any) => sum + (Number(item.amount) || 0), 0);
     
     const totalUpcomingExpenses = vendors
-      .filter((vendor: any) => vendor.totalOwed > 0)
-      .reduce((sum: number, vendor: any) => sum + (vendor.totalOwed || 0), 0);
+      .filter((vendor: any) => (vendor.totalOwed || 0) > 0)
+      .reduce((sum: number, vendor: any) => sum + (Number(vendor.totalOwed) || 0), 0);
     
     // Calculate safe spending power (current balance + upcoming income - upcoming expenses - safety buffer)
     const safetyBuffer = currentBalance * 0.1; // 10% buffer
@@ -92,7 +106,7 @@ IMPORTANT FORMATTING RULES:
 - Add "**Safe Spending Power:**" with the calculated amount they can safely spend
 - End with "**Actionable Recommendation:**" followed by one specific action they should take
 - Keep total response under 200 words
-- If going negative, make this VERY CLEAR and URGENT
+- If going negative, make this VERY CLEAR and URGENT with the EXACT day count and amount
 
 Focus on:
 - Current vs projected cash position
@@ -102,10 +116,14 @@ Focus on:
 
     let projectionSummary = "";
     if (goesNegative) {
-      projectionSummary = `⚠️ CRITICAL: Balance projected to go NEGATIVE in ${daysUntilNegative} days (on ${goesNegative.date}). Balance will drop to $${goesNegative.balance.toLocaleString()}.`;
+      const formattedDate = new Date(goesNegative.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      projectionSummary = `⚠️ CRITICAL: Balance projected to go NEGATIVE in ${daysUntilNegative} days (${formattedDate}). Balance will drop to $${goesNegative.balance.toLocaleString()}.`;
     } else if (projections.length > 0) {
       const lowestBalance = Math.min(...projections.map(p => p.balance));
-      projectionSummary = `Projected to stay positive. Lowest balance in next 60 days: $${lowestBalance.toLocaleString()}.`;
+      const lowestDay = projections.find(p => p.balance === lowestBalance);
+      projectionSummary = `Projected to stay positive for next 180 days. Lowest balance: $${lowestBalance.toLocaleString()} (in ${lowestDay?.daysFromNow} days).`;
+    } else {
+      projectionSummary = `No significant cash flow changes projected in the next 180 days.`;
     }
 
     const userPrompt = `Current Balance: $${currentBalance?.toLocaleString() || 0}
