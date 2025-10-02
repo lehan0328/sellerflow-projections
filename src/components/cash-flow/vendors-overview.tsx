@@ -368,7 +368,6 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
               <TableRow>
                 <TableHead>Vendor</TableHead>
                 <TableHead>PO# / Ref#</TableHead>
-                <TableHead>Category</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Due Date</TableHead>
                 <TableHead>Status</TableHead>
@@ -378,7 +377,7 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
             <TableBody>
               {filteredAndSortedVendors.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     {selectedVendor ? `No purchase orders found for ${vendorSearchOptions.find(v => v.value === selectedVendor)?.label || selectedVendor}.` :
                      searchTerm ? 'No vendors found matching your search.' : 
                      'No vendors with purchase orders.'}
@@ -389,15 +388,6 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
                   <TableRow key={vendor.id}>
                     <TableCell className="font-medium">{vendor.name}</TableCell>
                     <TableCell>{vendor.poName || vendor.description || 'N/A'}</TableCell>
-                    <TableCell>
-                      {vendor.category ? (
-                        <Badge variant="outline" className="text-xs">
-                          {vendor.category}
-                        </Badge>
-                      ) : (
-                        'N/A'
-                      )}
-                    </TableCell>
                     <TableCell className="font-semibold">
                       ${(vendor.totalOwed || 0).toLocaleString()}
                     </TableCell>

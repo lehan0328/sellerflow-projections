@@ -226,7 +226,6 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
               <TableRow>
                 <TableHead>Customer</TableHead>
                 <TableHead>Ref# / Description</TableHead>
-                <TableHead>Category</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Payment Date</TableHead>
                 <TableHead>Status</TableHead>
@@ -236,7 +235,7 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
             <TableBody>
               {filteredAndSortedIncomes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     {searchTerm ? 'No income items found matching your search.' : 'No income items to display.'}
                   </TableCell>
                 </TableRow>
@@ -245,15 +244,6 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
                   <TableRow key={income.id}>
                     <TableCell className="font-medium">{income.source}</TableCell>
                     <TableCell>{income.description}</TableCell>
-                    <TableCell>
-                      {income.category ? (
-                        <Badge variant="outline" className="text-xs">
-                          {income.category}
-                        </Badge>
-                      ) : (
-                        'N/A'
-                      )}
-                    </TableCell>
                     <TableCell className="font-semibold">
                       ${income.amount.toLocaleString()}
                     </TableCell>
