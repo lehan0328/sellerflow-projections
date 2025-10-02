@@ -134,9 +134,14 @@ export default function TransactionLog() {
         await deleteVendor(match.matchedVendor.id);
         toast.success(`Matched and archived vendor: ${match.matchedVendor.name}`);
       } else if (match.type === 'income' && match.matchedIncome) {
-        // Mark income as received
-        await updateIncome(match.matchedIncome.id, { status: 'received' });
-        toast.success(`Matched and marked income as received: ${match.matchedIncome.source}`);
+        // Only update if it's a real database item
+        if (incomeItems.find(i => i.id === match.matchedIncome!.id)) {
+          // Mark income as received
+          await updateIncome(match.matchedIncome.id, { status: 'received' });
+          toast.success(`Matched and marked income as received: ${match.matchedIncome.source}`);
+        } else {
+          toast.success(`Matched income: ${match.matchedIncome.source}`);
+        }
       }
     } catch (error) {
       console.error('Error matching transaction:', error);
