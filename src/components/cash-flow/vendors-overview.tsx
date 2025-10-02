@@ -569,7 +569,7 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
                                 </AlertDialogTrigger>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>Delete vendor</p>
+                                <p>Delete transaction</p>
                               </TooltipContent>
                           <AlertDialogContent>
                             <AlertDialogHeader>
