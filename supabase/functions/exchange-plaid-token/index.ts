@@ -88,14 +88,18 @@ serve(async (req) => {
     }
 
     console.log(`Found ${accountsData.accounts.length} accounts`);
+    console.log('Account types:', accountsData.accounts.map((a: any) => ({ name: a.name, type: a.type, subtype: a.subtype })));
 
     // Store accounts in database using secure RPC function
     const accountIds = [];
     for (const account of accountsData.accounts) {
       const accountType = metadata.accounts.find((a: any) => a.id === account.account_id);
       
+      console.log(`Processing account: ${account.name}, type: ${account.type}, subtype: ${account.subtype}`);
+      
       // Determine if it's a credit card or bank account
       if (account.type === 'credit') {
+        console.log('Detected CREDIT CARD account:', { name: account.name, balance: account.balances.current, limit: account.balances.limit });
         // Store as credit card with encrypted access token using RPC
         const { data: cardData, error: insertError } = await supabase
           .rpc('insert_secure_credit_card', {
