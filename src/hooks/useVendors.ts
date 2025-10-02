@@ -213,6 +213,14 @@ export const useVendors = () => {
       if (!vendor) throw new Error('Vendor not found');
 
       // Save to deleted_transactions before deleting
+      console.log('Attempting to save deleted vendor:', {
+        user_id: user.id,
+        vendor_id: vendor.id,
+        vendor_name: vendor.name,
+        total_owed: vendor.totalOwed,
+        next_payment_date: vendor.nextPaymentDate
+      });
+
       const { error: saveError } = await supabase
         .from('deleted_transactions')
         .insert({
@@ -220,11 +228,11 @@ export const useVendors = () => {
           transaction_type: 'vendor',
           original_id: vendor.id,
           name: vendor.name,
-          amount: vendor.totalOwed,
+          amount: vendor.totalOwed || 0,
           description: vendor.poName || vendor.description || '',
-          payment_date: formatDateForDB(vendor.nextPaymentDate),
-          status: vendor.status,
-          category: vendor.category,
+          payment_date: vendor.nextPaymentDate ? formatDateForDB(vendor.nextPaymentDate) : null,
+          status: vendor.status || 'upcoming',
+          category: vendor.category || null,
           metadata: {
             paymentType: vendor.paymentType,
             netTermsDays: vendor.netTermsDays,
@@ -234,7 +242,14 @@ export const useVendors = () => {
         });
 
       if (saveError) {
-        console.error('Error saving deleted vendor:', saveError);
+        console.error('Error saving deleted vendor to deleted_transactions:', saveError);
+        toast({
+          title: "Warning",
+          description: "Vendor deleted but could not be archived: " + saveError.message,
+          variant: "destructive",
+        });
+      } else {
+        console.log('Successfully saved to deleted_transactions');
       }
 
       // First delete all associated transactions to avoid foreign key constraint error
