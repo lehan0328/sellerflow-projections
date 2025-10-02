@@ -729,6 +729,13 @@ const Dashboard = () => {
     );
   }, [vendors]);
 
+  // Clear all cash flow events when all data is deleted
+  React.useEffect(() => {
+    if (vendors.length === 0 && incomeItems.length === 0 && transactions.length === 0) {
+      setCashFlowEvents([]);
+    }
+  }, [vendors.length, incomeItems.length, transactions.length]);
+
   // Get credit card due date events only if user has real data (vendors or transactions)
   const hasRealData = vendors.length > 0 || transactions.length > 0;
   const creditCardEvents = hasRealData ? getCreditCardDueDates() : [];
