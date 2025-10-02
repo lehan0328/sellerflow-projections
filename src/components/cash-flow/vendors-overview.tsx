@@ -6,7 +6,11 @@ import { Combobox } from "@/components/ui/combobox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
@@ -36,6 +40,9 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
   const [sortBy, setSortBy] = useState<'name' | 'totalOwed' | 'nextPaymentDate' | 'nextPaymentAmount'>('nextPaymentDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
+  const [dateRange, setDateRange] = useState<string>("all");
+  const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
+  const [customToDate, setCustomToDate] = useState<Date | undefined>();
 
   // Vendor search options for autocomplete - unique vendors only
   const vendorSearchOptions = useMemo(() => {
@@ -80,7 +87,20 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
         matchesStatus = vendor.totalOwed === 0 || vendor.status === 'paid';
       }
       
-      return matchesStatus;
+      if (!matchesStatus) return false;
+
+      // Date range filter
+      if (dateRange !== "all" && dateRange !== "custom" && vendor.nextPaymentDate) {
+        const now = new Date();
+        const days = dateRange === "3days" ? 3 : dateRange === "7days" ? 7 : 30;
+        const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+        if (new Date(vendor.nextPaymentDate) < startDate) return false;
+      } else if (dateRange === "custom" && customFromDate && customToDate && vendor.nextPaymentDate) {
+        const date = new Date(vendor.nextPaymentDate);
+        if (date < customFromDate || date > customToDate) return false;
+      }
+      
+      return true;
     });
 
     return filtered.sort((a, b) => {
@@ -104,7 +124,7 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
 
       return 0;
     });
-  }, [vendors, searchTerm, selectedVendor, statusFilter, sortBy, sortOrder]);
+  }, [vendors, searchTerm, selectedVendor, statusFilter, sortBy, sortOrder, dateRange, customFromDate, customToDate]);
 
   const handleEditOrder = (vendor: Vendor) => {
     setEditingVendor(vendor);
@@ -337,6 +357,47 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
             </Select>
           </div>
           
+          <div className="flex items-center space-x-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Select value={dateRange} onValueChange={setDateRange}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
+                <SelectItem value="all">All Dates</SelectItem>
+                <SelectItem value="3days">3 Days</SelectItem>
+                <SelectItem value="7days">7 Days</SelectItem>
+                <SelectItem value="30days">30 Days</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {dateRange === "custom" && (
+            <>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn(!customFromDate && "text-muted-foreground")}>
+                    {customFromDate ? format(customFromDate, "MMM dd") : "From"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent mode="single" selected={customFromDate} onSelect={setCustomFromDate} initialFocus className="pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn(!customToDate && "text-muted-foreground")}>
+                    {customToDate ? format(customToDate, "MMM dd") : "To"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent mode="single" selected={customToDate} onSelect={setCustomToDate} initialFocus className="pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </>
+          )}
+
           <div className="flex items-center space-x-2">
             <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
             <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>

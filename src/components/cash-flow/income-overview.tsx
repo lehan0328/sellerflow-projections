@@ -5,7 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DollarSign, Calendar, TrendingUp, Plus, Edit, Search, ArrowUpDown, Trash2, Link2, ExternalLink } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { useTransactionMatching } from "@/hooks/useTransactionMatching";
@@ -41,6 +45,9 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'description' | 'amount' | 'paymentDate' | 'source'>('paymentDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [dateRange, setDateRange] = useState<string>("all");
+  const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
+  const [customToDate, setCustomToDate] = useState<Date | undefined>();
   
   // State for confirmation dialog
   const [confirmingIncome, setConfirmingIncome] = useState<IncomeItem | null>(null);
@@ -48,12 +55,29 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
 
   // Filter and sort income items
   const filteredAndSortedIncomes = useMemo(() => {
-    let filtered = incomeItems.filter(income => 
-      income.status !== 'received' && // Hide archived (received) income
-      (income.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      income.amount.toString().includes(searchTerm) ||
-      income.source.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    let filtered = incomeItems.filter(income => {
+      // Hide archived (received) income
+      if (income.status === 'received') return false;
+
+      // Search filter
+      const matchesSearch = income.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        income.amount.toString().includes(searchTerm) ||
+        income.source.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      if (!matchesSearch) return false;
+
+      // Date range filter
+      if (dateRange !== "all" && dateRange !== "custom") {
+        const now = new Date();
+        const days = dateRange === "3days" ? 3 : dateRange === "7days" ? 7 : 30;
+        const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+        if (income.paymentDate < startDate) return false;
+      } else if (dateRange === "custom" && customFromDate && customToDate) {
+        if (income.paymentDate < customFromDate || income.paymentDate > customToDate) return false;
+      }
+
+      return true;
+    });
 
     return filtered.sort((a, b) => {
       let aValue = a[sortBy];
@@ -76,7 +100,7 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
 
       return 0;
     });
-  }, [incomeItems, searchTerm, sortBy, sortOrder]);
+  }, [incomeItems, searchTerm, sortBy, sortOrder, dateRange, customFromDate, customToDate]);
 
   const handleCollectToday = (income: IncomeItem) => {
     // Update income status to received - this will be handled by the parent component
@@ -195,6 +219,47 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
             />
           </div>
           
+          <div className="flex items-center space-x-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Select value={dateRange} onValueChange={setDateRange}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Dates</SelectItem>
+                <SelectItem value="3days">3 Days</SelectItem>
+                <SelectItem value="7days">7 Days</SelectItem>
+                <SelectItem value="30days">30 Days</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {dateRange === "custom" && (
+            <>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn(!customFromDate && "text-muted-foreground")}>
+                    {customFromDate ? format(customFromDate, "MMM dd") : "From"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent mode="single" selected={customFromDate} onSelect={setCustomFromDate} initialFocus className="pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn(!customToDate && "text-muted-foreground")}>
+                    {customToDate ? format(customToDate, "MMM dd") : "To"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent mode="single" selected={customToDate} onSelect={setCustomToDate} initialFocus className="pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </>
+          )}
+
           <div className="flex items-center space-x-2">
             <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
             <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
