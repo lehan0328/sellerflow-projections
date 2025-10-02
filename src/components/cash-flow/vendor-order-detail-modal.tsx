@@ -21,13 +21,22 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
   const { updateVendor } = useVendors();
   const { transactions, deleteTransaction, refetch } = useTransactions();
   
+  // Track if we've fetched for this modal session
+  const hasFetchedRef = React.useRef(false);
+  
   // Refetch transactions only when modal initially opens
   React.useEffect(() => {
-    if (open) {
+    if (open && !hasFetchedRef.current) {
       console.log('Modal opened for vendor:', vendor?.name, 'ID:', vendor?.id);
       refetch();
+      hasFetchedRef.current = true;
+    } else if (!open) {
+      // Reset when modal closes
+      hasFetchedRef.current = false;
     }
-  }, [open, refetch]);
+    // Intentionally excluding refetch from dependencies to prevent infinite loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
   
   const [formData, setFormData] = useState({
     totalOwed: vendor?.totalOwed || 0,
@@ -132,9 +141,12 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Reset form only when modal opens, not when vendor changes (to prevent overwriting user edits)
+  // Track if form has been initialized for this modal session
+  const hasInitializedFormRef = React.useRef(false);
+  
+  // Reset form only when modal first opens, not on realtime updates
   React.useEffect(() => {
-    if (open && vendor) {
+    if (open && vendor && !hasInitializedFormRef.current) {
       setFormData({
         totalOwed: vendor.totalOwed || 0,
         nextPaymentAmount: vendor.nextPaymentAmount || 0,
@@ -143,8 +155,12 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
         description: vendor.description || '',
         notes: vendor.notes || ''
       });
+      hasInitializedFormRef.current = true;
+    } else if (!open) {
+      // Reset flag when modal closes
+      hasInitializedFormRef.current = false;
     }
-  }, [open, vendor?.id]);
+  }, [open, vendor]);
 
   if (!vendor) return null;
 
