@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { CreditCard, ArrowLeft, Plus, Trash2, RefreshCw, ExternalLink, Edit } fr
 import { usePlaidLink } from "react-plaid-link";
 import { toast } from "sonner";
 import { useCreditCards } from "@/hooks/useCreditCards";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CreditCardFormData {
   institution_name: string;
@@ -29,6 +30,8 @@ export default function ManageCreditCards() {
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingCard, setEditingCard] = useState<any>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [linkToken, setLinkToken] = useState<string | null>(null);
   const [formData, setFormData] = useState<CreditCardFormData>({
     institution_name: '',
     account_name: '',
@@ -43,37 +46,25 @@ export default function ManageCreditCards() {
 
   // Plaid Link configuration for credit cards
   const config = {
-    token: null, // You'll need to implement a backend endpoint to get this
+    token: linkToken,
     onSuccess: async (public_token: string, metadata: any) => {
       try {
-        // In a real app, exchange public_token for access_token on your backend
-        // For demo purposes, we'll create a mock credit card
-        const newCreditCard = {
-          institution_name: metadata.institution.name,
-          account_name: metadata.accounts[0]?.name || `${metadata.institution.name} Credit Card`,
-          account_type: "credit",
-          balance: Math.random() * 5000,
-          credit_limit: Math.random() * 15000 + 5000,
-          available_credit: 0, // Will be calculated
-          currency_code: "USD",
-          minimum_payment: Math.random() * 200 + 25,
-          annual_fee: Math.random() < 0.3 ? Math.random() * 500 : 0,
-          interest_rate: Math.random() * 20 + 12,
-          last_sync: new Date().toISOString(),
-          is_active: true,
-          plaid_account_id: metadata.accounts[0]?.id,
-        };
+        console.log("Plaid Link success:", metadata);
+        
+        // Exchange the public token for an access token via edge function
+        const { data, error } = await supabase.functions.invoke('exchange-plaid-token', {
+          body: { publicToken: public_token, metadata }
+        });
 
-        // Calculate available credit
-        newCreditCard.available_credit = newCreditCard.credit_limit - newCreditCard.balance;
+        if (error) throw error;
 
-        const success = await addCreditCard(newCreditCard);
-        if (success) {
-          toast.success("Credit card connected successfully!");
-        }
+        toast.success(data.message || "Credit card connected successfully!");
+        setIsConnecting(false);
+        setLinkToken(null);
       } catch (error) {
-        console.error("Error connecting credit card:", error);
+        console.error("Error exchanging token:", error);
         toast.error("Failed to connect credit card");
+        setIsConnecting(false);
       }
     },
     onExit: (err: any, metadata: any) => {
@@ -81,10 +72,44 @@ export default function ManageCreditCards() {
       if (err) {
         toast.error("Failed to connect credit card");
       }
+      setIsConnecting(false);
     },
   };
 
   const { open, ready } = usePlaidLink(config);
+
+  // Open Plaid Link when token is available
+  useEffect(() => {
+    if (linkToken && ready) {
+      open();
+    }
+  }, [linkToken, ready, open]);
+
+  const handleConnectPlaid = async () => {
+    try {
+      setIsConnecting(true);
+      
+      // Get link token from edge function
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please log in to connect credit cards");
+        setIsConnecting(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-plaid-link-token', {
+        body: { userId: user.id }
+      });
+
+      if (error) throw error;
+
+      setLinkToken(data.link_token);
+    } catch (error) {
+      console.error("Error creating link token:", error);
+      toast.error("Failed to initialize credit card connection");
+      setIsConnecting(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -198,14 +223,18 @@ export default function ManageCreditCards() {
           </div>
           <div className="flex space-x-2">
             <Button
-              onClick={() => {
-                // For demo purposes, show message about Plaid setup
-                toast.info("Plaid integration requires backend setup. Contact support for configuration.");
-              }}
+              onClick={handleConnectPlaid}
+              disabled={isConnecting}
               className="bg-primary hover:bg-primary/90"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Connect via Plaid
+              {isConnecting ? (
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Connect via Plaid
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -252,12 +281,17 @@ export default function ManageCreditCards() {
                 <p className="text-muted-foreground mb-4">Connect your first credit card to get started</p>
                 <div className="flex justify-center space-x-2">
                   <Button 
-                    onClick={() => {
-                      toast.info("Plaid integration requires backend setup. Contact support for configuration.");
-                    }}
+                    onClick={handleConnectPlaid}
+                    disabled={isConnecting}
                   >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Connect via Plaid
+                    {isConnecting ? (
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Connect via Plaid
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
