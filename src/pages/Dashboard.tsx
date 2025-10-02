@@ -576,29 +576,16 @@ const Dashboard = () => {
   };
 
   const handleDeleteVendorOrder = async (vendor: Vendor) => {
-    // Delete ONLY the PO transaction and adjust the vendor balance; never delete the vendor
-    const newTotalOwed = Math.max(0, (vendor.totalOwed || 0) - (vendor.nextPaymentAmount || 0));
-
-    // Try to find the exact matching transaction for this PO
-    const targetTx = transactions.find(t =>
-      t.type === 'purchase_order' &&
-      t.vendorId === vendor.id &&
-      Math.abs(t.amount - (vendor.nextPaymentAmount || 0)) < 0.01 &&
-      (t.dueDate && vendor.nextPaymentDate
-        ? startOfDay(t.dueDate).getTime() === startOfDay(vendor.nextPaymentDate).getTime()
-        : true)
-    ) || transactions.find(t => t.vendorId === vendor.id && t.type === 'purchase_order');
-
-    // Archive to deleted_transactions
+    // Archive to deleted_transactions first
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const paymentDate = vendor.nextPaymentDate ? new Date(vendor.nextPaymentDate) : undefined;
-        const amount = vendor.nextPaymentAmount || (targetTx ? targetTx.amount : 0) || 0;
+        const amount = vendor.totalOwed || 0;
         const payload: any = {
           user_id: user.id,
           transaction_type: 'vendor',
-          original_id: targetTx?.id || vendor.id,
+          original_id: vendor.id,
           name: vendor.name,
           amount,
           description: vendor.poName || vendor.description || 'PO deleted',
@@ -606,10 +593,10 @@ const Dashboard = () => {
           status: vendor.status || 'pending',
           category: vendor.category || null,
           metadata: {
-            context: 'po_delete',
+            context: 'vendor_delete',
             vendorId: vendor.id,
             poName: vendor.poName,
-            nextPaymentAmount: vendor.nextPaymentAmount,
+            totalOwed: vendor.totalOwed,
             nextPaymentDate: vendor.nextPaymentDate,
           }
         };
@@ -617,47 +604,27 @@ const Dashboard = () => {
           .from('deleted_transactions')
           .insert(payload as any);
         if (archiveError) {
-          console.error('Failed to archive deleted vendor PO:', archiveError);
+          console.error('Failed to archive deleted vendor:', archiveError);
         }
       }
     } catch (e) {
       console.error('Archive step failed:', e);
     }
 
-    if (targetTx) {
-      await deleteTransaction(targetTx.id);
-    }
+    // Delete the vendor completely from the database
+    await deleteVendor(vendor.id);
 
-    // Recompute next payment info based on remaining schedule
-    let nextPaymentDate = vendor.nextPaymentDate;
-    let nextPaymentAmount = 0;
-    let updatedPaymentSchedule = vendor.paymentSchedule || [];
-
-    if (updatedPaymentSchedule.length > 1) {
-      updatedPaymentSchedule = updatedPaymentSchedule.slice(1);
-      nextPaymentDate = new Date(updatedPaymentSchedule[0].dueDate);
-      nextPaymentAmount = parseFloat(updatedPaymentSchedule[0].amount) || 0;
-    }
-
-    await updateVendor(vendor.id, {
-      totalOwed: newTotalOwed,
-      nextPaymentDate,
-      nextPaymentAmount,
-      paymentSchedule: updatedPaymentSchedule,
-      status: newTotalOwed > 0 ? vendor.status : 'upcoming'
-    });
-
-    toast({
-      title: 'Purchase order deleted',
-      description: 'The vendor record was kept and the balance was updated.',
-    });
-
-    // Remove any cash flow events associated with this vendor by name or PO name
+    // Remove any cash flow events associated with this vendor
     setCashFlowEvents(prev => prev.filter(event => 
       !(event.vendor === vendor.name || 
         event.description?.includes(vendor.name) ||
         (vendor.poName && event.description?.includes(vendor.poName)))
     ));
+
+    toast({
+      title: 'Vendor transaction deleted',
+      description: 'The vendor has been removed and archived to deleted transactions.',
+    });
 
     setEditingVendor(null);
   };
