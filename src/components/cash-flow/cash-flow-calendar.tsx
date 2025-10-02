@@ -466,7 +466,7 @@ export const CashFlowCalendar = ({
                             {dayEvents.length} transactions
                           </span>
                           <span className={`text-xs font-semibold ${bankAccountBalance >= 0 ? 'text-finance-positive' : 'text-finance-negative'}`}>
-                            ${bankAccountBalance.toLocaleString()}
+                            Net ${bankAccountBalance.toLocaleString()}
                           </span>
                         </div>
                         {isToday(day) && pendingIncome > 0 && (
