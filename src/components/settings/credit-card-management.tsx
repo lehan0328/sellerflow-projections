@@ -332,8 +332,8 @@ export function CreditCardManagement() {
                               {card.annual_fee > 0 && (
                                 <span>Annual Fee: {formatCurrency(card.annual_fee)}</span>
                               )}
-                              {card.interest_rate > 0 && (
-                                <span>APR: {card.interest_rate}%</span>
+                              {card.cash_back > 0 && (
+                                <span>Cash Back: {card.cash_back}%</span>
                               )}
                             </div>
                           )}

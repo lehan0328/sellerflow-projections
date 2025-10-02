@@ -21,7 +21,8 @@ interface CreditCardFormData {
   payment_due_date?: string;
   statement_close_date?: string;
   annual_fee: number;
-  interest_rate: number;
+  cash_back: number;
+  priority: number;
 }
 
 export function CreditCards() {
@@ -38,7 +39,8 @@ export function CreditCards() {
     payment_due_date: '',
     statement_close_date: '',
     annual_fee: 0,
-    interest_rate: 0,
+    cash_back: 0,
+    priority: 3,
   });
 
   const formatCurrency = (amount: number) => {
@@ -68,7 +70,8 @@ export function CreditCards() {
       payment_due_date: '',
       statement_close_date: '',
       annual_fee: 0,
-      interest_rate: 0,
+      cash_back: 0,
+      priority: 3,
     });
   };
 
@@ -88,7 +91,8 @@ export function CreditCards() {
       payment_due_date: card.payment_due_date || '',
       statement_close_date: card.statement_close_date || '',
       annual_fee: card.annual_fee,
-      interest_rate: card.interest_rate,
+      cash_back: card.cash_back || 0,
+      priority: card.priority || 3,
     });
     setShowEditDialog(true);
   };
@@ -349,14 +353,43 @@ export function CreditCards() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit_interest_rate">Interest Rate (%)</Label>
+                  <Label htmlFor="edit_cash_back">Cash Back (%)</Label>
                   <Input
-                    id="edit_interest_rate"
+                    id="edit_cash_back"
                     type="number"
                     step="0.01"
-                    value={formData.interest_rate}
-                    onChange={(e) => setFormData({...formData, interest_rate: parseFloat(e.target.value) || 0})}
+                    value={formData.cash_back}
+                    onChange={(e) => setFormData({...formData, cash_back: parseFloat(e.target.value) || 0})}
                   />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit_payment_due_date">Payment Due Date</Label>
+                  <Input
+                    id="edit_payment_due_date"
+                    type="date"
+                    value={formData.payment_due_date}
+                    onChange={(e) => setFormData({...formData, payment_due_date: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit_priority">Priority (1=Highest, 5=Lowest)</Label>
+                  <Select
+                    value={formData.priority.toString()}
+                    onValueChange={(value) => setFormData({...formData, priority: parseInt(value)})}
+                  >
+                    <SelectTrigger id="edit_priority">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 - Highest Priority</SelectItem>
+                      <SelectItem value="2">2 - High Priority</SelectItem>
+                      <SelectItem value="3">3 - Medium Priority</SelectItem>
+                      <SelectItem value="4">4 - Low Priority</SelectItem>
+                      <SelectItem value="5">5 - Lowest Priority</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="flex justify-end space-x-2">

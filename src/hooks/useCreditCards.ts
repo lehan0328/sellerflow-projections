@@ -19,7 +19,8 @@ export interface CreditCard {
   payment_due_date?: string;
   statement_close_date?: string;
   annual_fee: number;
-  interest_rate: number;
+  cash_back: number;
+  priority: number;
   last_sync: string;
   is_active: boolean;
   created_at: string;
@@ -80,7 +81,8 @@ export const useCreditCards = () => {
         p_payment_due_date: cardData.payment_due_date,
         p_statement_close_date: cardData.statement_close_date,
         p_annual_fee: cardData.annual_fee,
-        p_interest_rate: cardData.interest_rate
+        p_cash_back: cardData.cash_back,
+        p_priority: cardData.priority
       });
 
       if (error) {
@@ -120,7 +122,8 @@ export const useCreditCards = () => {
         p_payment_due_date: updates.payment_due_date,
         p_statement_close_date: updates.statement_close_date,
         p_annual_fee: updates.annual_fee,
-        p_interest_rate: updates.interest_rate
+        p_cash_back: updates.cash_back,
+        p_priority: updates.priority
       });
 
       if (error) {

@@ -435,6 +435,7 @@ export type Database = {
           annual_fee: number | null
           available_credit: number
           balance: number
+          cash_back: number | null
           created_at: string
           credit_limit: number
           currency_code: string
@@ -450,6 +451,7 @@ export type Database = {
           minimum_payment: number | null
           payment_due_date: string | null
           plaid_account_id: string | null
+          priority: number | null
           statement_close_date: string | null
           updated_at: string
           user_id: string
@@ -460,6 +462,7 @@ export type Database = {
           annual_fee?: number | null
           available_credit?: number
           balance?: number
+          cash_back?: number | null
           created_at?: string
           credit_limit?: number
           currency_code?: string
@@ -475,6 +478,7 @@ export type Database = {
           minimum_payment?: number | null
           payment_due_date?: string | null
           plaid_account_id?: string | null
+          priority?: number | null
           statement_close_date?: string | null
           updated_at?: string
           user_id: string
@@ -485,6 +489,7 @@ export type Database = {
           annual_fee?: number | null
           available_credit?: number
           balance?: number
+          cash_back?: number | null
           created_at?: string
           credit_limit?: number
           currency_code?: string
@@ -500,6 +505,7 @@ export type Database = {
           minimum_payment?: number | null
           payment_due_date?: string | null
           plaid_account_id?: string | null
+          priority?: number | null
           statement_close_date?: string | null
           updated_at?: string
           user_id?: string
@@ -901,24 +907,44 @@ export type Database = {
         Returns: string
       }
       insert_secure_credit_card_simple: {
-        Args: {
-          p_access_token: string
-          p_account_name: string
-          p_account_number: string
-          p_account_type: string
-          p_annual_fee: number
-          p_available_credit: number
-          p_balance: number
-          p_credit_limit: number
-          p_currency_code: string
-          p_institution_name: string
-          p_interest_rate: number
-          p_minimum_payment: number
-          p_payment_due_date: string
-          p_plaid_account_id: string
-          p_plaid_item_id: string
-          p_statement_close_date: string
-        }
+        Args:
+          | {
+              p_access_token: string
+              p_account_name: string
+              p_account_number: string
+              p_account_type: string
+              p_annual_fee: number
+              p_available_credit: number
+              p_balance: number
+              p_cash_back?: number
+              p_credit_limit: number
+              p_currency_code: string
+              p_institution_name: string
+              p_minimum_payment: number
+              p_payment_due_date: string
+              p_plaid_account_id: string
+              p_plaid_item_id: string
+              p_priority?: number
+              p_statement_close_date: string
+            }
+          | {
+              p_access_token: string
+              p_account_name: string
+              p_account_number: string
+              p_account_type: string
+              p_annual_fee: number
+              p_available_credit: number
+              p_balance: number
+              p_credit_limit: number
+              p_currency_code: string
+              p_institution_name: string
+              p_interest_rate: number
+              p_minimum_payment: number
+              p_payment_due_date: string
+              p_plaid_account_id: string
+              p_plaid_item_id: string
+              p_statement_close_date: string
+            }
         Returns: string
       }
       update_secure_amazon_account: {
