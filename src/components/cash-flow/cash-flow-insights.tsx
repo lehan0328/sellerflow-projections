@@ -75,15 +75,7 @@ export const CashFlowInsights = ({
   const generateInsight = async () => {
     try {
       const { data, error } = await supabase.functions.invoke("cash-flow-advice", {
-        body: {
-          currentBalance,
-          dailyInflow,
-          dailyOutflow,
-          upcomingExpenses,
-          chartData: events.slice(-7),
-          vendors,
-          income,
-        },
+        body: {},
       });
 
       if (error) throw error;

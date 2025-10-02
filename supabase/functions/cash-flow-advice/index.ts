@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,23 +10,71 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { 
-      currentBalance, 
-      dailyInflow, 
-      dailyOutflow, 
-      upcomingExpenses, 
-      vendors = [],
-      income = [],
-      chartData 
-    } = await req.json();
-    
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    // Authenticate user
+    const authHeader = req.headers.get('Authorization')!;
+    const token = authHeader.replace('Bearer ', '');
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log("Fetching data for user:", user.id);
+
+    // Fetch user's vendors directly from database
+    const { data: vendors, error: vendorsError } = await supabase
+      .from('vendors')
+      .select('*')
+      .eq('user_id', user.id);
+
+    if (vendorsError) {
+      console.error("Error fetching vendors:", vendorsError);
+      throw new Error("Failed to fetch vendors");
+    }
+
+    // Fetch user's income directly from database
+    const { data: income, error: incomeError } = await supabase
+      .from('income')
+      .select('*')
+      .eq('user_id', user.id);
+
+    if (incomeError) {
+      console.error("Error fetching income:", incomeError);
+      throw new Error("Failed to fetch income");
+    }
+
+    // Fetch user's bank accounts to calculate current balance
+    const { data: bankAccounts, error: bankError } = await supabase
+      .from('bank_accounts')
+      .select('balance, available_balance')
+      .eq('user_id', user.id)
+      .eq('is_active', true);
+
+    if (bankError) {
+      console.error("Error fetching bank accounts:", bankError);
+      throw new Error("Failed to fetch bank accounts");
+    }
+
+    // Calculate current balance from user's bank accounts
+    const currentBalance = (bankAccounts || []).reduce((sum, account) => {
+      return sum + (Number(account.balance) || 0);
+    }, 0);
 
     console.log("Starting cash flow analysis with:", {
       currentBalance,
-      vendorsCount: vendors.length,
-      incomeCount: income.length
+      vendorsCount: vendors?.length || 0,
+      incomeCount: income?.length || 0,
+      userId: user.id
     });
 
     // Calculate future cash flow projections (180 days)
@@ -44,22 +93,22 @@ serve(async (req) => {
       let dayOutflow = 0;
       
       // Calculate expected income for this date (only pending income that becomes received)
-      const dayIncome = income.filter((item: any) => {
-        if (!item.paymentDate || item.status !== 'pending') return false;
-        const incomeDate = new Date(item.paymentDate);
+      const dayIncome = (income || []).filter((item: any) => {
+        if (!item.payment_date || item.status !== 'pending') return false;
+        const incomeDate = new Date(item.payment_date);
         incomeDate.setHours(0, 0, 0, 0);
         return incomeDate.getTime() === targetDate.getTime();
       });
       dayInflow = dayIncome.reduce((sum: number, item: any) => sum + (Number(item.amount) || 0), 0);
       
       // Calculate expected expenses for this date (only vendors with amounts owed)
-      const dayVendors = vendors.filter((vendor: any) => {
-        if (!vendor.nextPaymentDate || (vendor.totalOwed || 0) <= 0) return false;
-        const vendorDate = new Date(vendor.nextPaymentDate);
+      const dayVendors = (vendors || []).filter((vendor: any) => {
+        if (!vendor.next_payment_date || (vendor.total_owed || 0) <= 0) return false;
+        const vendorDate = new Date(vendor.next_payment_date);
         vendorDate.setHours(0, 0, 0, 0);
         return vendorDate.getTime() === targetDate.getTime();
       });
-      dayOutflow = dayVendors.reduce((sum: number, vendor: any) => sum + (Number(vendor.totalOwed) || 0), 0);
+      dayOutflow = dayVendors.reduce((sum: number, vendor: any) => sum + (Number(vendor.total_owed) || 0), 0);
       
       // Update running balance
       runningBalance = runningBalance + dayInflow - dayOutflow;
@@ -86,13 +135,13 @@ serve(async (req) => {
     const daysUntilNegative = goesNegative ? goesNegative.daysFromNow : null;
     
     // Calculate total upcoming income vs expenses
-    const totalUpcomingIncome = income
+    const totalUpcomingIncome = (income || [])
       .filter((item: any) => item.status === 'pending')
       .reduce((sum: number, item: any) => sum + (Number(item.amount) || 0), 0);
     
-    const totalUpcomingExpenses = vendors
-      .filter((vendor: any) => (vendor.totalOwed || 0) > 0)
-      .reduce((sum: number, vendor: any) => sum + (Number(vendor.totalOwed) || 0), 0);
+    const totalUpcomingExpenses = (vendors || [])
+      .filter((vendor: any) => (vendor.total_owed || 0) > 0)
+      .reduce((sum: number, vendor: any) => sum + (Number(vendor.total_owed) || 0), 0);
     
     // Calculate safe spending power (current balance + upcoming income - upcoming expenses - safety buffer)
     const safetyBuffer = currentBalance * 0.1; // 10% buffer
@@ -126,9 +175,7 @@ Focus on:
       projectionSummary = `No significant cash flow changes projected in the next 180 days.`;
     }
 
-    const userPrompt = `Current Balance: $${currentBalance?.toLocaleString() || 0}
-Today's Inflow: $${dailyInflow?.toLocaleString() || 0}
-Today's Outflow: $${dailyOutflow?.toLocaleString() || 0}
+    const userPrompt = `Current Balance: $${currentBalance.toLocaleString()}
 Upcoming Income (Total): $${totalUpcomingIncome.toLocaleString()}
 Upcoming Expenses (Total): $${totalUpcomingExpenses.toLocaleString()}
 Safe Spending Power: $${spendingPower.toLocaleString()}
