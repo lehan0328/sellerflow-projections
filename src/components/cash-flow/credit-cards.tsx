@@ -188,11 +188,19 @@ export function CreditCards() {
                         )}
                       </div>
                       <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                        {card.payment_due_date && (
+                        {card.payment_due_date ? (
                           <span className="flex items-center">
                             <Calendar className="mr-1 h-3 w-3" />
                             Due: {new Date(card.payment_due_date).toLocaleDateString()}
                           </span>
+                        ) : (
+                          <button
+                            onClick={() => handleEditCard(card)}
+                            className="flex items-center text-primary hover:underline"
+                          >
+                            <Calendar className="mr-1 h-3 w-3" />
+                            Set due date
+                          </button>
                         )}
                       </div>
                     </div>
