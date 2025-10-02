@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DollarSign, Calendar, TrendingUp, Plus, Edit, Search, ArrowUpDown, Trash2, Link2, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
@@ -219,62 +220,65 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
         </div>
       </CardHeader>
       <CardContent className="p-4 flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto space-y-2 pr-2">
-          {filteredAndSortedIncomes.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {searchTerm ? 'No income items found matching your search.' : 'No income items to display.'}
-            </div>
-          ) : (
-            filteredAndSortedIncomes.map((income) => (
-              <div
-                key={income.id}
-                className="p-2 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:shadow-md"
-              >
-                <div className="flex items-start justify-between mb-1">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center space-x-2">
-                        <h4 className="font-semibold text-sm">{income.source}</h4>
+        <div className="h-full overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Customer</TableHead>
+                <TableHead>Ref# / Description</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Payment Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredAndSortedIncomes.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    {searchTerm ? 'No income items found matching your search.' : 'No income items to display.'}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredAndSortedIncomes.map((income) => (
+                  <TableRow key={income.id}>
+                    <TableCell className="font-medium">{income.source}</TableCell>
+                    <TableCell>{income.description}</TableCell>
+                    <TableCell>
+                      {income.category ? (
                         <Badge variant="outline" className="text-xs">
-                          {income.description}
+                          {income.category}
                         </Badge>
-                        <Badge variant={getStatusColor(income.status)} className="text-xs">
-                          {getStatusIcon(income.status)}
-                          <span className="ml-1 capitalize">{income.status}</span>
+                      ) : (
+                        'N/A'
+                      )}
+                    </TableCell>
+                    <TableCell className="font-semibold">
+                      ${income.amount.toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      {income.paymentDate.toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusColor(income.status)} className="text-xs">
+                        {getStatusIcon(income.status)}
+                        <span className="ml-1 capitalize">{income.status}</span>
+                      </Badge>
+                      {income.isRecurring && (
+                        <Badge variant="secondary" className="text-xs ml-1">
+                          Recurring
                         </Badge>
-                        {income.isRecurring && (
-                          <Badge variant="secondary" className="text-xs">
-                            Recurring
-                          </Badge>
-                        )}
-                      </div>
-                      <span className="font-medium text-sm text-right">
-                        ${income.amount.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center">
-                          <span className="text-muted-foreground">Category:</span>
-                          <span className="font-medium text-foreground ml-2">
-                            {income.category || 'Uncategorized'}
-                          </span>
-                        </div>
-                        <div className="flex items-center">
-                          <span className="text-muted-foreground">Payment Date:</span>
-                          <span className="font-medium text-foreground ml-2">
-                            {income.paymentDate.toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end space-x-2">
                         <Button 
                           variant="outline" 
                           size="sm"
                           onClick={() => onEditIncome?.(income)}
                         >
-                          <Edit className="mr-1 h-3 w-3" />
-                          Edit
+                          <Edit className="h-3 w-3" />
                         </Button>
                         {getMatchesForIncome(income.id).length > 0 && income.status === 'pending' && (
                           <Button 
@@ -283,18 +287,16 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
                             className="bg-green-600 hover:bg-green-700"
                             onClick={() => handleMatch(income)}
                           >
-                            <Link2 className="mr-1 h-3 w-3" />
-                            Match
+                            <Link2 className="h-3 w-3" />
                           </Button>
                         )}
                         {income.status === 'pending' && getMatchesForIncome(income.id).length === 0 && (
                           <Button 
                             size="sm" 
-                            className="bg-gradient-primary px-4"
+                            variant="default"
                             onClick={() => handleReceiveTodayClick(income)}
                           >
-                            <DollarSign className="mr-1 h-3 w-3" />
-                            Receive Today
+                            <DollarSign className="h-3 w-3" />
                           </Button>
                         )}
                         <Button 
@@ -306,12 +308,12 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
       </CardContent>
       

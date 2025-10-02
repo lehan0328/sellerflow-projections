@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Combobox } from "@/components/ui/combobox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
@@ -361,154 +362,154 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
         </div>
       </CardHeader>
       <CardContent className="p-4 flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto space-y-2 pr-2">
-          {filteredAndSortedVendors.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              {selectedVendor ? `No purchase orders found for ${vendorSearchOptions.find(v => v.value === selectedVendor)?.label || selectedVendor}.` :
-               searchTerm ? 'No vendors found matching your search.' : 
-               'No vendors with purchase orders.'}
-            </div>
-          ) : (
-            filteredAndSortedVendors.map((vendor) => (
-            <div
-              key={vendor.id}
-              className="p-2 border rounded-lg hover:bg-muted/50 transition-all duration-200 hover:shadow-md"
-            >
-              <div className="flex items-start justify-between mb-1">
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center space-x-2">
-                      <h4 className="font-semibold text-sm">{vendor.name}</h4>
-                      {vendor.category && (
+        <div className="h-full overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Vendor</TableHead>
+                <TableHead>PO# / Ref#</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Amount</TableHead>
+                <TableHead>Due Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredAndSortedVendors.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    {selectedVendor ? `No purchase orders found for ${vendorSearchOptions.find(v => v.value === selectedVendor)?.label || selectedVendor}.` :
+                     searchTerm ? 'No vendors found matching your search.' : 
+                     'No vendors with purchase orders.'}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredAndSortedVendors.map((vendor) => (
+                  <TableRow key={vendor.id}>
+                    <TableCell className="font-medium">{vendor.name}</TableCell>
+                    <TableCell>{vendor.poName || vendor.description || 'N/A'}</TableCell>
+                    <TableCell>
+                      {vendor.category ? (
                         <Badge variant="outline" className="text-xs">
                           {vendor.category}
                         </Badge>
+                      ) : (
+                        'N/A'
                       )}
+                    </TableCell>
+                    <TableCell className="font-semibold">
+                      ${(vendor.totalOwed || 0).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      {vendor.nextPaymentDate
+                        ? new Date(vendor.nextPaymentDate).toLocaleDateString()
+                        : 'N/A'}
+                    </TableCell>
+                    <TableCell>
                       <Badge variant={getStatusColor(vendor)} className="text-xs">
                         {getStatusIcon(vendor)}
-                        <span className="ml-1 capitalize">{getStatusText(vendor)}</span>
+                        <span className="ml-1">{getStatusText(vendor)}</span>
                       </Badge>
-                    </div>
-                    <span className="font-medium text-sm text-right">
-                      ${(vendor.totalOwed || 0).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center">
-                        <span className="text-muted-foreground">PO Name:</span>
-                        <span className="font-medium text-foreground ml-2">
-                          {vendor.poName || vendor.description || 'No PO name'}
-                        </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditOrder(vendor)}
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        {getMatchesForVendor(vendor.id).length > 0 && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="default"
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <Link2 className="h-3 w-3" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Match Transaction</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will match the vendor payment with a bank transaction and archive it from the calendar. Continue?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleMatch(vendor)}>
+                                  Match & Archive
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                        {vendor.nextPaymentDate && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                variant="default"
+                                disabled={!vendor.totalOwed || vendor.totalOwed <= 0}
+                              >
+                                <CreditCard className="h-3 w-3" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Mark payment to {vendor.name} (${(vendor.totalOwed || 0).toLocaleString()}) as paid today?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handlePayToday(vendor)}>
+                                  Mark as Paid
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Vendor Order</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this vendor order for {vendor.name}? This action cannot be undone and will remove the ${(vendor.totalOwed || 0).toLocaleString()} transaction.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteVendor(vendor)}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                Delete Order
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
-                      {vendor.nextPaymentDate && (
-                        <div className="flex items-center">
-                          <span className="text-muted-foreground">Due:</span>
-                          <span className="font-medium text-foreground ml-2">
-                            {new Date(vendor.nextPaymentDate).toLocaleDateString()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleEditOrder(vendor)}
-                      >
-                        <Edit className="mr-1 h-3 w-3" />
-                        Edit
-                      </Button>
-                      {getMatchesForVendor(vendor.id).length > 0 && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              variant="default"
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              <Link2 className="mr-1 h-3 w-3" />
-                              Match
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Match Transaction</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will match the vendor payment with a bank transaction and archive it from the calendar. Continue?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleMatch(vendor)}>
-                                Match & Archive
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                      {vendor.nextPaymentDate && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              size="sm" 
-                              className="bg-gradient-primary px-4"
-                              disabled={!vendor.totalOwed || vendor.totalOwed <= 0}
-                            >
-                              <CreditCard className="mr-1 h-3 w-3" />
-                              Pay Today
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Mark payment to {vendor.name} (${(vendor.totalOwed || 0).toLocaleString()}) as paid today?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handlePayToday(vendor)}>
-                                Mark as Paid
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Vendor Order</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete this vendor order for {vendor.name}? This action cannot be undone and will remove the ${(vendor.totalOwed || 0).toLocaleString()} transaction.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={() => handleDeleteVendor(vendor)}
-                              className="bg-destructive hover:bg-destructive/90"
-                            >
-                              Delete Order
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )))}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
       </CardContent>
       
