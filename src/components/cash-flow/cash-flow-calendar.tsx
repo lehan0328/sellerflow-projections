@@ -78,6 +78,9 @@ export const CashFlowCalendar = ({
     return d >= accountStartDate;
   });
 
+  // Hide calendar monetary summaries if there's no user data
+  const hasAnyData = events.length > 0 || (incomeItems?.length ?? 0) > 0;
+
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   
@@ -362,31 +365,33 @@ export const CashFlowCalendar = ({
                         )}
                       </div>
                       {isToday(day) ? (
-                        <div className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <span className="text-[10px] text-muted-foreground">Cash</span>
-                            <span className={`text-sm font-bold ${bankAccountBalance < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
-                              ${bankAccountBalance.toLocaleString()}
-                            </span>
-                          </div>
-                          {pendingIncome > 0 && (
-                            <div className="flex items-center justify-end gap-1">
-                              <span className="text-[10px] text-amber-600">Pending</span>
-                              <span className="text-xs text-amber-600 font-semibold">
-                                +${pendingIncome.toLocaleString()}
-                              </span>
+                          {hasAnyData && (
+                            <div className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <span className="text-[10px] text-muted-foreground">Cash</span>
+                                <span className={`text-sm font-bold ${bankAccountBalance < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
+                                  ${bankAccountBalance.toLocaleString()}
+                                </span>
+                              </div>
+                              {pendingIncome > 0 && (
+                                <div className="flex items-center justify-end gap-1">
+                                  <span className="text-[10px] text-amber-600">Pending</span>
+                                  <span className="text-xs text-amber-600 font-semibold">
+                                    +${pendingIncome.toLocaleString()}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex items-center justify-end gap-1">
+                                <span className="text-[10px] text-muted-foreground">Credit</span>
+                                <span className="text-xs font-semibold text-blue-600">
+                                  ${totalAvailableCredit.toLocaleString()}
+                                </span>
+                              </div>
                             </div>
                           )}
-                          <div className="flex items-center justify-end gap-1">
-                            <span className="text-[10px] text-muted-foreground">Credit</span>
-                            <span className="text-xs font-semibold text-blue-600">
-                              ${totalAvailableCredit.toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
                       ) : (
                         <div className="text-right">
-                          {!isPast && (
+                          {!isPast && hasAnyData && (
                             <>
                               <div className="flex items-center justify-end gap-1">
                                 <span className="text-[10px] text-muted-foreground">Cash</span>
