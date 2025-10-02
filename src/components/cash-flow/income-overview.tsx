@@ -46,9 +46,10 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
   // Filter and sort income items
   const filteredAndSortedIncomes = useMemo(() => {
     let filtered = incomeItems.filter(income => 
-      income.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      income.status !== 'received' && // Hide archived (received) income
+      (income.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       income.amount.toString().includes(searchTerm) ||
-      income.source.toLowerCase().includes(searchTerm.toLowerCase())
+      income.source.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     return filtered.sort((a, b) => {

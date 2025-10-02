@@ -13,7 +13,7 @@ import { useMemo } from "react";
 
 export default function TransactionLog() {
   const navigate = useNavigate();
-  const { transactions, deleteTransaction } = useTransactions();
+  const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { vendors, deleteVendor } = useVendors();
   const { incomeItems, updateIncome, deleteIncome } = useIncome();
   
@@ -136,9 +136,18 @@ export default function TransactionLog() {
       } else if (match.type === 'income' && match.matchedIncome) {
         // Only update if it's a real database item
         if (incomeItems.find(i => i.id === match.matchedIncome!.id)) {
-          // Mark income as received
+          // Create transaction log entry first
+          await addTransaction({
+            type: 'customer_payment',
+            amount: match.matchedIncome.amount,
+            description: `Matched: ${match.matchedIncome.source} - ${match.matchedIncome.description}`,
+            transactionDate: new Date(),
+            status: 'completed'
+          });
+          
+          // Mark income as received (archives it)
           await updateIncome(match.matchedIncome.id, { status: 'received' });
-          toast.success(`Matched and marked income as received: ${match.matchedIncome.source}`);
+          toast.success(`Matched and archived income: ${match.matchedIncome.source}`);
         } else {
           toast.success(`Matched income: ${match.matchedIncome.source}`);
         }
@@ -162,9 +171,19 @@ export default function TransactionLog() {
         if (income) {
           // Only update if it's a real database item
           if (incomeItems.find(i => i.id === matchId)) {
+            // Create transaction log entry first
+            await addTransaction({
+              type: 'customer_payment',
+              amount: income.amount,
+              description: `Matched: ${income.source} - ${income.description}`,
+              transactionDate: new Date(),
+              status: 'completed'
+            });
+            
+            // Mark income as received (archives it)
             await updateIncome(matchId, { status: 'received' });
           }
-          toast.success(`Manually matched and marked income as received: ${income.source}`);
+          toast.success(`Manually matched and archived income: ${income.source}`);
         }
       }
     } catch (error) {
