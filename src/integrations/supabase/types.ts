@@ -536,6 +536,51 @@ export type Database = {
         }
         Relationships: []
       }
+      deleted_transactions: {
+        Row: {
+          amount: number
+          category: string | null
+          deleted_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          original_id: string
+          payment_date: string | null
+          status: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          deleted_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          original_id: string
+          payment_date?: string | null
+          status?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          deleted_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          original_id?: string
+          payment_date?: string | null
+          status?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       income: {
         Row: {
           amount: number

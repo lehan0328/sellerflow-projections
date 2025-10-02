@@ -67,8 +67,6 @@ export const CashFlowCalendar = ({
   // Total available cash passed from parent component
   const totalAvailableCash = totalCash;
   
-  console.log('CashFlowCalendar - totalCash prop:', totalCash, 'totalAvailableCash:', totalAvailableCash);
-  
   // Account start date (inclusive)
   const accountStartDate = new Date('2025-09-29');
   accountStartDate.setHours(0, 0, 0, 0);
@@ -82,8 +80,6 @@ export const CashFlowCalendar = ({
 
   // Hide calendar monetary summaries if there's no user data
   const hasAnyData = events.length > 0 || (incomeItems?.length ?? 0) > 0;
-  
-  console.log('CashFlowCalendar - hasAnyData:', hasAnyData, 'events:', events.length, 'incomeItems:', incomeItems?.length ?? 0);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);

@@ -205,6 +205,38 @@ export const useVendors = () => {
 
   const deleteVendor = async (id: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Get the vendor details before deleting
+      const vendor = vendors.find(v => v.id === id);
+      if (!vendor) throw new Error('Vendor not found');
+
+      // Save to deleted_transactions before deleting
+      const { error: saveError } = await supabase
+        .from('deleted_transactions')
+        .insert({
+          user_id: user.id,
+          transaction_type: 'vendor',
+          original_id: vendor.id,
+          name: vendor.name,
+          amount: vendor.totalOwed,
+          description: vendor.poName || vendor.description || '',
+          payment_date: formatDateForDB(vendor.nextPaymentDate),
+          status: vendor.status,
+          category: vendor.category,
+          metadata: {
+            paymentType: vendor.paymentType,
+            netTermsDays: vendor.netTermsDays,
+            paymentSchedule: vendor.paymentSchedule,
+            notes: vendor.notes
+          }
+        });
+
+      if (saveError) {
+        console.error('Error saving deleted vendor:', saveError);
+      }
+
       // First delete all associated transactions to avoid foreign key constraint error
       const { error: transactionError } = await supabase
         .from('transactions')

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +16,19 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { toast } from "sonner";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+
+interface DeletedTransaction {
+  id: string;
+  transaction_type: 'vendor' | 'income';
+  name: string;
+  amount: number;
+  description: string;
+  payment_date: string;
+  status: string;
+  category: string;
+  deleted_at: string;
+}
 
 export default function TransactionLog() {
   const navigate = useNavigate();
@@ -25,6 +38,7 @@ export default function TransactionLog() {
   const { vendors, deleteVendor, updateVendor } = useVendors();
   const { incomeItems, deleteIncome, updateIncome } = useIncome();
   const { transactions, deleteTransaction } = useTransactions();
+  const [deletedTransactions, setDeletedTransactions] = useState<DeletedTransaction[]>([]);
 
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [vendorStatusFilter, setVendorStatusFilter] = useState<string>("all");
@@ -34,6 +48,29 @@ export default function TransactionLog() {
   const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
   const [customToDate, setCustomToDate] = useState<Date | undefined>();
   const [editingVendor, setEditingVendor] = useState<any>(null);
+
+  // Fetch deleted transactions
+  useEffect(() => {
+    const fetchDeletedTransactions = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('deleted_transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('deleted_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching deleted transactions:', error);
+        return;
+      }
+
+      setDeletedTransactions((data || []) as DeletedTransaction[]);
+    };
+
+    fetchDeletedTransactions();
+  }, []);
 
   // Filter vendors by status and date
   const filteredVendors = useMemo(() => {
@@ -110,11 +147,6 @@ export default function TransactionLog() {
 
     return filtered;
   }, [incomeItems, incomeStatusFilter, incomeDateRange, customFromDate, customToDate]);
-
-  // Get deleted transactions
-  const deletedTransactions = useMemo(() => {
-    return transactions.filter(t => t.status === "cancelled");
-  }, [transactions]);
 
   const getVendorStatus = (vendor: any) => {
     if (!vendor.nextPaymentDate) return { text: "No due date", variant: "default" as const };
@@ -543,10 +575,12 @@ export default function TransactionLog() {
                       deletedTransactions.map((transaction) => (
                         <TableRow key={transaction.id}>
                           <TableCell>
-                            {new Date(transaction.transactionDate).toLocaleDateString()}
+                            {new Date(transaction.payment_date).toLocaleDateString()}
                           </TableCell>
-                          <TableCell className="capitalize">{transaction.type}</TableCell>
-                          <TableCell>{transaction.description}</TableCell>
+                          <TableCell className="capitalize">
+                            <Badge variant="outline">{transaction.transaction_type}</Badge>
+                          </TableCell>
+                          <TableCell>{transaction.name}</TableCell>
                           <TableCell className="font-semibold">
                             ${Math.abs(Number(transaction.amount)).toLocaleString()}
                           </TableCell>
