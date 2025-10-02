@@ -141,13 +141,25 @@ const Settings = () => {
 
       if (transactionsError) throw transactionsError;
 
+      // Reset total cash to 0
+      const { error: settingsError } = await supabase
+        .from('user_settings')
+        .update({ total_cash: 0 })
+        .eq('user_id', user.id);
+
+      if (settingsError) throw settingsError;
+
+      // Clear local storage balance flag
+      localStorage.removeItem('balance_start_0');
+
       // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ['vendors'] });
       queryClient.invalidateQueries({ queryKey: ['income'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['user-settings'] });
 
       toast.success("All data cleared successfully", {
-        description: "Your account has been reset to zero transactions"
+        description: "Your account has been reset to zero balance and zero transactions"
       });
     } catch (error) {
       console.error('Error clearing data:', error);
