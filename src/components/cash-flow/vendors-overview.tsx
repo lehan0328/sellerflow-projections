@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -465,24 +466,40 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEditOrder(vendor)}
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        {getMatchesForVendor(vendor.id).length > 0 && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
                               <Button 
-                                size="sm" 
-                                variant="default"
-                                className="bg-green-600 hover:bg-green-700"
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditOrder(vendor)}
                               >
-                                <Link2 className="h-3 w-3" />
+                                <Edit className="h-3 w-3" />
                               </Button>
-                            </AlertDialogTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Edit vendor details</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        {getMatchesForVendor(vendor.id).length > 0 && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <AlertDialog>
+                                <TooltipTrigger asChild>
+                                  <AlertDialogTrigger asChild>
+                                    <Button 
+                                      size="sm" 
+                                      variant="default"
+                                      className="bg-green-600 hover:bg-green-700"
+                                    >
+                                      <Link2 className="h-3 w-3" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Match with bank transaction</p>
+                                </TooltipContent>
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Match Transaction</AlertDialogTitle>
@@ -497,19 +514,28 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
-                          </AlertDialog>
+                              </AlertDialog>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
                         {vendor.nextPaymentDate && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                size="sm" 
-                                variant="default"
-                                disabled={!vendor.totalOwed || vendor.totalOwed <= 0}
-                              >
-                                <CreditCard className="h-3 w-3" />
-                              </Button>
-                            </AlertDialogTrigger>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <AlertDialog>
+                                <TooltipTrigger asChild>
+                                  <AlertDialogTrigger asChild>
+                                    <Button 
+                                      size="sm" 
+                                      variant="default"
+                                      disabled={!vendor.totalOwed || vendor.totalOwed <= 0}
+                                    >
+                                      <CreditCard className="h-3 w-3" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Mark as paid today</p>
+                                </TooltipContent>
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Confirm Payment</AlertDialogTitle>
@@ -524,18 +550,27 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
-                          </AlertDialog>
+                              </AlertDialog>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </AlertDialogTrigger>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <AlertDialog>
+                              <TooltipTrigger asChild>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    className="text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Delete vendor</p>
+                              </TooltipContent>
                           <AlertDialogContent>
                             <AlertDialogHeader>
                               <AlertDialogTitle>Delete Vendor Order</AlertDialogTitle>
@@ -552,9 +587,11 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
                                 Delete Order
                               </AlertDialogAction>
                             </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
+                            </AlertDialogContent>
+                            </AlertDialog>
+                          </Tooltip>
+                        </TooltipProvider>
+                        </div>
                     </TableCell>
                   </TableRow>
                 ))
