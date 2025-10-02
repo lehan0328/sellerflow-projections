@@ -409,14 +409,22 @@ export const CashFlowCalendar = ({
                              setSelectedDate(day);
                              setShowDayTransactionsModal(true);
                            }}>
-                        <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center justify-between w-full mb-1">
                           <span className="text-xs text-muted-foreground font-medium">
                             {dayEvents.length} transactions
                           </span>
-                          <span className={`text-xs font-semibold ${totalCash >= 0 ? 'text-finance-positive' : 'text-finance-negative'}`}>
-                            ${totalCash.toLocaleString()}
+                          <span className={`text-xs font-semibold ${bankAccountBalance >= 0 ? 'text-finance-positive' : 'text-finance-negative'}`}>
+                            ${bankAccountBalance.toLocaleString()}
                           </span>
                         </div>
+                        {pendingIncome > 0 && (
+                          <div className="flex items-center justify-between w-full">
+                            <span className="text-[10px] text-amber-600">Pending</span>
+                            <span className="text-[10px] text-amber-600 font-medium">
+                              +${pendingIncome.toLocaleString()}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
                     
