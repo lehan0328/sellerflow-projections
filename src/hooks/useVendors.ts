@@ -165,18 +165,20 @@ export const useVendors = () => {
   const updateVendor = async (id: string, updates: Partial<Vendor>) => {
     try {
       const dbUpdates: any = {};
-      if (updates.name) dbUpdates.name = updates.name;
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.totalOwed !== undefined) dbUpdates.total_owed = updates.totalOwed;
-      if (updates.nextPaymentDate) dbUpdates.next_payment_date = formatDateForDB(updates.nextPaymentDate);
+      if (updates.nextPaymentDate !== undefined) dbUpdates.next_payment_date = formatDateForDB(updates.nextPaymentDate);
       if (updates.nextPaymentAmount !== undefined) dbUpdates.next_payment_amount = updates.nextPaymentAmount;
-      if (updates.status) dbUpdates.status = updates.status;
-      if (updates.category) dbUpdates.category = updates.category;
-      if (updates.paymentType) dbUpdates.payment_type = updates.paymentType;
-      if (updates.netTermsDays) dbUpdates.net_terms_days = parseInt(updates.netTermsDays);
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.category !== undefined) dbUpdates.category = updates.category;
+      if (updates.paymentType !== undefined) dbUpdates.payment_type = updates.paymentType;
+      if (updates.netTermsDays !== undefined) dbUpdates.net_terms_days = parseInt(updates.netTermsDays);
       if (updates.poName !== undefined) dbUpdates.po_name = updates.poName;
       if (updates.description !== undefined) dbUpdates.description = updates.description;
       if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
       if (updates.paymentSchedule !== undefined) dbUpdates.payment_schedule = updates.paymentSchedule;
+
+      console.log('Updating vendor in database:', id, dbUpdates);
 
       const { error } = await supabase
         .from('vendors')
@@ -185,9 +187,25 @@ export const useVendors = () => {
 
       if (error) throw error;
 
+      // Update local state immediately
       setVendors(prev => prev.map(vendor => 
         vendor.id === id ? { ...vendor, ...updates } : vendor
       ));
+
+      // Also update related transactions if due date changed
+      if (updates.nextPaymentDate !== undefined) {
+        const { error: txError } = await supabase
+          .from('transactions')
+          .update({ 
+            due_date: formatDateForDB(updates.nextPaymentDate)
+          })
+          .eq('vendor_id', id)
+          .eq('type', 'purchase_order');
+
+        if (txError) {
+          console.error('Error updating related transactions:', txError);
+        }
+      }
 
       toast({
         title: "Success",

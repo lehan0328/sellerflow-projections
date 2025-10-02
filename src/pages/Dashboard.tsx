@@ -534,6 +534,7 @@ const Dashboard = () => {
   const handleSaveVendorOrder = async (updatedVendor: Vendor) => {
     const originalVendor = vendors.find(v => v.id === updatedVendor.id);
     
+    // Update the vendor in database - this will trigger realtime subscription
     await updateVendor(updatedVendor.id, updatedVendor);
     
     // Update cash flow events if payment date changed
@@ -553,7 +554,23 @@ const Dashboard = () => {
       }));
     }
     
+    // Refetch vendors to ensure we have the latest data
+    await refetchVendors();
+    
     setEditingVendor(null);
+  };
+
+  const handleUpdateTransactionDate = async (transactionId: string, newDate: Date, eventType: 'vendor' | 'income') => {
+    if (eventType === 'vendor') {
+      // Find the vendor by transaction ID (transaction ID matches vendor ID in our events)
+      const vendor = vendors.find(v => v.id === transactionId);
+      if (vendor) {
+        await updateVendor(vendor.id, { nextPaymentDate: newDate });
+      }
+    } else if (eventType === 'income') {
+      // Update income item date
+      await updateIncome(transactionId, { paymentDate: newDate });
+    }
   };
 
   const handleDeleteVendorOrder = async (vendor: Vendor) => {
@@ -851,6 +868,7 @@ const Dashboard = () => {
               events={allCalendarEvents} 
               totalCash={displayCash}
               onEditTransaction={handleEditTransaction}
+              onUpdateTransactionDate={handleUpdateTransactionDate}
               todayInflow={todayInflow}
               todayOutflow={todayOutflow}
               upcomingExpenses={upcomingExpenses}

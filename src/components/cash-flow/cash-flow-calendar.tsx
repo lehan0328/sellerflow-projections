@@ -13,6 +13,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { TransactionDetailModal } from "./transaction-detail-modal";
 import { DayTransactionsModal } from "./day-transactions-modal";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface CashFlowEvent {
   id: string;
@@ -38,6 +39,7 @@ interface CashFlowCalendarProps {
   events?: CashFlowEvent[];
   totalCash?: number;
   onEditTransaction?: (transaction: CashFlowEvent) => void;
+  onUpdateTransactionDate?: (transactionId: string, newDate: Date, eventType: 'vendor' | 'income') => Promise<void>;
   todayInflow?: number;
   todayOutflow?: number;
   upcomingExpenses?: number;
@@ -49,6 +51,7 @@ export const CashFlowCalendar = ({
   events: propEvents = [], 
   totalCash = 0, 
   onEditTransaction,
+  onUpdateTransactionDate,
   todayInflow = 0,
   todayOutflow = 0,
   upcomingExpenses = 0,
@@ -63,6 +66,7 @@ export const CashFlowCalendar = ({
   const [selectedDayTransactions, setSelectedDayTransactions] = useState<CashFlowEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDayTransactionsModal, setShowDayTransactionsModal] = useState(false);
+  const [draggedTransaction, setDraggedTransaction] = useState<CashFlowEvent | null>(null);
   
   // Total available cash passed from parent component
   const totalAvailableCash = totalCash;
@@ -169,6 +173,40 @@ export const CashFlowCalendar = ({
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentDate(prev => direction === 'prev' ? subMonths(prev, 1) : addMonths(prev, 1));
+  };
+
+  const handleDragStart = (e: React.DragEvent, transaction: CashFlowEvent) => {
+    e.stopPropagation();
+    setDraggedTransaction(transaction);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetDate: Date) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!draggedTransaction || !onUpdateTransactionDate) {
+      setDraggedTransaction(null);
+      return;
+    }
+
+    // Determine if it's a vendor transaction or income transaction
+    const eventType = draggedTransaction.type === 'purchase-order' || draggedTransaction.vendor ? 'vendor' : 'income';
+    
+    try {
+      await onUpdateTransactionDate(draggedTransaction.id, targetDate, eventType);
+      toast.success("Transaction date updated successfully");
+    } catch (error) {
+      console.error('Error updating transaction date:', error);
+      toast.error("Failed to update transaction date");
+    }
+    
+    setDraggedTransaction(null);
   };
 
   // Generate chart data for current month
@@ -337,9 +375,13 @@ export const CashFlowCalendar = ({
                          "border-primary/30": hasEvents,
                          "border-border": !hasEvents,
                          // Clickable cursor
-                         "cursor-pointer": hasEvents
+                         "cursor-pointer": hasEvents,
+                         // Drag and drop styling
+                         "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/20": draggedTransaction && !isPast
                        }
                      )}
+                    onDragOver={!isPast ? handleDragOver : undefined}
+                    onDrop={!isPast ? (e) => handleDrop(e, day) : undefined}
                     onClick={() => {
                       if (hasEvents) {
                         if (dayEvents.length === 1) {
@@ -445,9 +487,12 @@ export const CashFlowCalendar = ({
                               dayEvents.slice(0, 1).map(event => (
                                 <div
                                   key={event.id}  
+                                  draggable={!isPast && onUpdateTransactionDate !== undefined}
+                                  onDragStart={(e) => !isPast && onUpdateTransactionDate ? handleDragStart(e, event) : undefined}
                                   className={`
-                                    text-xs px-1 py-0.5 rounded truncate flex items-center space-x-1 border cursor-pointer hover:opacity-80 transition-opacity
+                                    text-xs px-1 py-0.5 rounded truncate flex items-center space-x-1 border transition-opacity
                                     ${getEventColor(event)}
+                                    ${!isPast && onUpdateTransactionDate ? 'cursor-move hover:opacity-80' : 'cursor-pointer hover:opacity-80'}
                                   `}
                                   title={`${event.poName ? `${event.poName} - ` : ""}${event.description}${event.vendor ? ` - ${event.vendor}` : ""}${event.creditCard ? ` - ${event.creditCard}` : ""}`}
                                   onClick={(e) => {
