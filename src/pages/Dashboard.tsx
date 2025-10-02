@@ -562,14 +562,16 @@ const Dashboard = () => {
 
   const handleUpdateTransactionDate = async (transactionId: string, newDate: Date, eventType: 'vendor' | 'income') => {
     if (eventType === 'vendor') {
-      // Find the vendor by transaction ID (transaction ID matches vendor ID in our events)
-      const vendor = vendors.find(v => v.id === transactionId);
+      // Strip the "vendor-" prefix to get the actual vendor ID
+      const vendorId = transactionId.replace('vendor-', '');
+      const vendor = vendors.find(v => v.id === vendorId);
       if (vendor) {
         await updateVendor(vendor.id, { nextPaymentDate: newDate });
       }
     } else if (eventType === 'income') {
-      // Update income item date
-      await updateIncome(transactionId, { paymentDate: newDate });
+      // Strip the "income-" prefix to get the actual income ID
+      const incomeId = transactionId.replace('income-', '');
+      await updateIncome(incomeId, { paymentDate: newDate });
     }
   };
 
