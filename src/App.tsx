@@ -9,7 +9,6 @@ import DemoPage from "./pages/DemoPage";
 import Settings from "./pages/Settings";
 import UpgradePlan from "./pages/UpgradePlan";
 import TransactionLog from "./pages/TransactionLog";
-import ManageCreditCards from "./pages/ManageCreditCards";
 import BankTransactions from "./pages/BankTransactions";
 import NotFound from "./pages/NotFound";
 import Docs from "./pages/Docs";
@@ -53,11 +52,6 @@ const App = () => (
           <Route path="/transactions" element={
             <ProtectedRoute>
               <TransactionLog />
-            </ProtectedRoute>
-          } />
-          <Route path="/manage-credit-cards" element={
-            <ProtectedRoute>
-              <ManageCreditCards />
             </ProtectedRoute>
           } />
           <Route path="/bank-transactions" element={
