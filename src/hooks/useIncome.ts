@@ -272,6 +272,31 @@ export const useIncome = () => {
     fetchIncome();
   }, [user]);
 
+  // Realtime subscription for income
+  useEffect(() => {
+    let channel: any;
+    const setup = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      channel = supabase
+        .channel('income-changes')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'income',
+          filter: `user_id=eq.${user.id}`,
+        }, () => {
+          fetchIncome();
+        })
+        .subscribe();
+    };
+    setup();
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, []);
+
   return {
     incomeItems,
     isLoading,

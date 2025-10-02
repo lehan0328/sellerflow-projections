@@ -195,6 +195,31 @@ export const useTransactions = () => {
     fetchTransactions();
   }, []);
 
+  // Realtime subscription for transactions
+  useEffect(() => {
+    let channel: any;
+    const setup = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      channel = supabase
+        .channel('transactions-changes')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'transactions',
+          filter: `user_id=eq.${user.id}`,
+        }, () => {
+          fetchTransactions();
+        })
+        .subscribe();
+    };
+    setup();
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, []);
+
    return {
      transactions,
      loading,

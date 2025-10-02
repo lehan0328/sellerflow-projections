@@ -291,6 +291,31 @@ export const useVendors = () => {
     fetchVendors();
   }, []);
 
+  // Realtime subscription for vendors
+  useEffect(() => {
+    let channel: any;
+    const setup = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      channel = supabase
+        .channel('vendors-changes')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'vendors',
+          filter: `user_id=eq.${user.id}`,
+        }, () => {
+          fetchVendors();
+        })
+        .subscribe();
+    };
+    setup();
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, []);
+
   // Also fetch vendors when auth state potentially changes
   useEffect(() => {
     const checkAuthAndFetch = async () => {
