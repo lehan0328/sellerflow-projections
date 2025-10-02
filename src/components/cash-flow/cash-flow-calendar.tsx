@@ -383,14 +383,6 @@ export const CashFlowCalendar = ({
                               ${totalCash.toLocaleString()}
                             </span>
                           </div>
-                          {pendingIncome > 0 && (
-                            <div className="flex items-center justify-end gap-1">
-                              <span className="text-[10px] text-amber-600">Pending</span>
-                              <span className="text-[10px] text-amber-600 font-medium">
-                                +${pendingIncome.toLocaleString()}
-                              </span>
-                            </div>
-                          )}
                           <div className="flex items-center justify-end gap-1">
                             <span className="text-[10px] text-muted-foreground">Credit</span>
                             <span className="text-[10px] text-blue-600 font-medium">
@@ -417,7 +409,7 @@ export const CashFlowCalendar = ({
                             ${bankAccountBalance.toLocaleString()}
                           </span>
                         </div>
-                        {pendingIncome > 0 && (
+                        {isToday(day) && pendingIncome > 0 && (
                           <div className="flex items-center justify-between w-full">
                             <span className="text-[10px] text-amber-600">Pending</span>
                             <span className="text-[10px] text-amber-600 font-medium">
