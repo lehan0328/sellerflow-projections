@@ -592,7 +592,8 @@ export default function TransactionLog() {
                     <TableRow>
                       <TableHead>Date</TableHead>
                       <TableHead>Type</TableHead>
-                      <TableHead>Description</TableHead>
+                      <TableHead>Vendor/Customer</TableHead>
+                      <TableHead>PO# / Description</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
@@ -600,7 +601,7 @@ export default function TransactionLog() {
                   <TableBody>
                     {deletedTransactions.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                           No deleted transactions
                         </TableCell>
                       </TableRow>
@@ -614,6 +615,9 @@ export default function TransactionLog() {
                             <Badge variant="outline">{transaction.transaction_type}</Badge>
                           </TableCell>
                           <TableCell>{transaction.name}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {transaction.description || 'N/A'}
+                          </TableCell>
                           <TableCell className="font-semibold">
                             ${Math.abs(Number(transaction.amount)).toLocaleString()}
                           </TableCell>
