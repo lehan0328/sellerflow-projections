@@ -137,9 +137,10 @@ serve(async (req) => {
             p_balance: account.balances.current || 0,
             p_available_balance: account.balances.available,
             p_currency_code: account.balances.iso_currency_code || 'USD',
-            p_plaid_account_id: account.account_id,
             p_access_token: access_token,
+            p_account_number: null,
             p_plaid_item_id: item_id,
+            p_plaid_account_id: account.account_id,
           });
 
         if (insertError) {
