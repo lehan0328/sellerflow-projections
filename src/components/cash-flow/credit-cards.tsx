@@ -189,10 +189,31 @@ export function CreditCards() {
                       </div>
                       <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                         {card.payment_due_date ? (
-                          <span className="flex items-center">
-                            <Calendar className="mr-1 h-3 w-3" />
-                            Due: {new Date(card.payment_due_date).toLocaleDateString()}
-                          </span>
+                          (() => {
+                            const dueDate = new Date(card.payment_due_date);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const isPast = dueDate < today;
+                            
+                            if (isPast) {
+                              return (
+                                <button
+                                  onClick={() => handleEditCard(card)}
+                                  className="flex items-center text-destructive hover:underline font-medium"
+                                >
+                                  <AlertTriangle className="mr-1 h-3 w-3" />
+                                  Update due date (passed)
+                                </button>
+                              );
+                            }
+                            
+                            return (
+                              <span className="flex items-center">
+                                <Calendar className="mr-1 h-3 w-3" />
+                                Due: {dueDate.toLocaleDateString()}
+                              </span>
+                            );
+                          })()
                         ) : (
                           <button
                             onClick={() => handleEditCard(card)}
