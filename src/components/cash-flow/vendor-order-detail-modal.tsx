@@ -11,6 +11,19 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 
+// Helpers to handle local date formatting/parsing to avoid timezone shifts
+const formatDateInputLocal = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const parseDateInputLocal = (value: string) => {
+  const [y, m, d] = value.split('-').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+};
+
 interface VendorOrderDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -41,7 +54,7 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
   const [formData, setFormData] = useState({
     totalOwed: vendor?.totalOwed || 0,
     nextPaymentAmount: vendor?.nextPaymentAmount || 0,
-    nextPaymentDate: vendor?.nextPaymentDate ? new Date(vendor.nextPaymentDate).toISOString().split('T')[0] : '',
+    nextPaymentDate: vendor?.nextPaymentDate ? formatDateInputLocal(vendor.nextPaymentDate) : '',
     poName: vendor?.poName || '',
     description: vendor?.description || '',
     notes: vendor?.notes || ''
@@ -76,10 +89,11 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
     if (!vendor) return;
 
     try {
+      const nextDate = formData.nextPaymentDate ? parseDateInputLocal(formData.nextPaymentDate) : vendor.nextPaymentDate;
       await updateVendor(vendor.id, {
         totalOwed: Number(formData.totalOwed),
         nextPaymentAmount: Number(formData.nextPaymentAmount),
-        nextPaymentDate: formData.nextPaymentDate ? new Date(formData.nextPaymentDate) : vendor.nextPaymentDate,
+        nextPaymentDate: nextDate,
         poName: formData.poName,
         description: formData.description,
         notes: formData.notes
@@ -150,7 +164,7 @@ export const VendorOrderDetailModal = ({ open, onOpenChange, vendor }: VendorOrd
       setFormData({
         totalOwed: vendor.totalOwed || 0,
         nextPaymentAmount: vendor.nextPaymentAmount || 0,
-        nextPaymentDate: vendor.nextPaymentDate ? new Date(vendor.nextPaymentDate).toISOString().split('T')[0] : '',
+        nextPaymentDate: vendor.nextPaymentDate ? formatDateInputLocal(vendor.nextPaymentDate) : '',
         poName: vendor.poName || '',
         description: vendor.description || '',
         notes: vendor.notes || ''
