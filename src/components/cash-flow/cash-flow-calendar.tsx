@@ -111,25 +111,25 @@ export const CashFlowCalendar = ({
   };
 
   const getTotalCashForDay = (date: Date) => {
-    // Calculate net change from events up to this day
+    // Account start date: September 29, 2025
+    const accountStartDate = new Date('2025-09-29');
+    accountStartDate.setHours(0, 0, 0, 0);
+    
     const target = new Date(date);
     target.setHours(0, 0, 0, 0);
-    
-    // Get today's date for comparison
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
 
+    // Calculate net change from account start date to target date
     const netChange = events
       .filter((event) => {
         const ed = new Date(event.date);
         ed.setHours(0, 0, 0, 0);
-        // Only include events from today onwards (future projections)
-        return ed >= today && ed <= target;
+        // Include events from account start date onwards up to target date
+        return ed >= accountStartDate && ed <= target;
       })
       .reduce((total, event) => total + (event.type === 'inflow' ? event.amount : -event.amount), 0);
 
-    // Start with current bank balance (or user settings cash) and add projected changes
-    return totalAvailableCash + netChange;
+    // Start with bank account balance (60k from income overview) on 9/29/2025
+    return bankAccountBalance + netChange;
   };
 
   const getEventIcon = (event: CashFlowEvent) => {
@@ -162,8 +162,11 @@ export const CashFlowCalendar = ({
 
   // Generate chart data for current month
   const generateChartData = () => {
+    const accountStartDate = new Date('2025-09-29');
+    accountStartDate.setHours(0, 0, 0, 0);
+    
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-    let runningTotal = totalAvailableCash;
+    let runningTotal = bankAccountBalance;
     
     return days.map(day => {
       const dayEvents = events.filter(event => 
@@ -174,13 +177,11 @@ export const CashFlowCalendar = ({
         return total + (event.type === 'inflow' ? event.amount : -event.amount);
       }, 0);
       
-      // Update running total for all days (includes projected changes)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      // Update running total from account start date onwards
       const dayToCheck = new Date(day);
       dayToCheck.setHours(0, 0, 0, 0);
       
-      if (dayToCheck >= today) {
+      if (dayToCheck >= accountStartDate) {
         runningTotal += dailyChange;
       }
       
@@ -191,7 +192,7 @@ export const CashFlowCalendar = ({
         dailyChange,
         inflow: dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0),
         outflow: dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0),
-        transactions: dayEvents, // Include actual transaction data
+        transactions: dayEvents,
       };
     });
   };
