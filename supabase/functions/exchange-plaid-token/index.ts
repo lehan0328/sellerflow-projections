@@ -102,7 +102,7 @@ serve(async (req) => {
         console.log('Detected CREDIT CARD account:', { name: account.name, balance: account.balances.current, limit: account.balances.limit });
         // Store as credit card with encrypted access token using RPC
         const { data: cardData, error: insertError } = await supabase
-          .rpc('insert_secure_credit_card', {
+          .rpc('insert_secure_credit_card_simple', {
             p_institution_name: metadata.institution.name,
             p_account_name: account.name,
             p_account_type: account.subtype || 'credit',
@@ -130,7 +130,7 @@ serve(async (req) => {
       } else {
         // Store as bank account with encrypted access token using RPC
         const { data: accountData, error: insertError } = await supabase
-          .rpc('insert_secure_bank_account', {
+          .rpc('insert_secure_bank_account_simple', {
             p_institution_name: metadata.institution.name,
             p_account_name: account.name,
             p_account_type: account.subtype || account.type,

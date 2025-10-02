@@ -864,6 +864,21 @@ export type Database = {
         }
         Returns: string
       }
+      insert_secure_bank_account_simple: {
+        Args: {
+          p_access_token: string
+          p_account_name: string
+          p_account_number: string
+          p_account_type: string
+          p_available_balance: number
+          p_balance: number
+          p_currency_code: string
+          p_institution_name: string
+          p_plaid_account_id: string
+          p_plaid_item_id: string
+        }
+        Returns: string
+      }
       insert_secure_credit_card: {
         Args: {
           p_access_token?: string
@@ -882,6 +897,27 @@ export type Database = {
           p_plaid_account_id?: string
           p_plaid_item_id?: string
           p_statement_close_date?: string
+        }
+        Returns: string
+      }
+      insert_secure_credit_card_simple: {
+        Args: {
+          p_access_token: string
+          p_account_name: string
+          p_account_number: string
+          p_account_type: string
+          p_annual_fee: number
+          p_available_credit: number
+          p_balance: number
+          p_credit_limit: number
+          p_currency_code: string
+          p_institution_name: string
+          p_interest_rate: number
+          p_minimum_payment: number
+          p_payment_due_date: string
+          p_plaid_account_id: string
+          p_plaid_item_id: string
+          p_statement_close_date: string
         }
         Returns: string
       }
