@@ -68,22 +68,13 @@ export const useCreditCards = () => {
     }
 
     try {
-      const { data, error } = await supabase.rpc('insert_secure_credit_card', {
-        p_institution_name: cardData.institution_name,
-        p_account_name: cardData.account_name,
-        p_account_type: cardData.account_type || 'credit',
-        p_balance: cardData.balance,
-        p_credit_limit: cardData.credit_limit,
-        p_available_credit: cardData.available_credit,
-        p_currency_code: cardData.currency_code || 'USD',
-        p_plaid_account_id: cardData.plaid_account_id,
-        p_minimum_payment: cardData.minimum_payment,
-        p_payment_due_date: cardData.payment_due_date,
-        p_statement_close_date: cardData.statement_close_date,
-        p_annual_fee: cardData.annual_fee,
-        p_cash_back: cardData.cash_back,
-        p_priority: cardData.priority
-      });
+      const { error } = await supabase
+        .from("credit_cards")
+        .insert({
+          user_id: user.id,
+          ...cardData,
+          last_sync: new Date().toISOString()
+        });
 
       if (error) {
         console.error("Error adding credit card:", error);
@@ -108,23 +99,11 @@ export const useCreditCards = () => {
     }
 
     try {
-      const { data, error } = await supabase.rpc('update_secure_credit_card', {
-        p_card_id: cardId,
-        p_institution_name: updates.institution_name,
-        p_account_name: updates.account_name,
-        p_account_type: updates.account_type,
-        p_balance: updates.balance,
-        p_credit_limit: updates.credit_limit,
-        p_available_credit: updates.available_credit,
-        p_currency_code: updates.currency_code,
-        p_plaid_account_id: updates.plaid_account_id,
-        p_minimum_payment: updates.minimum_payment,
-        p_payment_due_date: updates.payment_due_date,
-        p_statement_close_date: updates.statement_close_date,
-        p_annual_fee: updates.annual_fee,
-        p_cash_back: updates.cash_back,
-        p_priority: updates.priority
-      });
+      const { error } = await supabase
+        .from("credit_cards")
+        .update(updates)
+        .eq("id", cardId)
+        .eq("user_id", user.id);
 
       if (error) {
         console.error("Error updating credit card:", error);

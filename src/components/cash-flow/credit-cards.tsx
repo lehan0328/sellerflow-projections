@@ -190,6 +190,12 @@ export function CreditCards() {
                             *{card.masked_account_number.slice(-4)}
                           </Badge>
                         )}
+                        <Badge 
+                          variant={card.priority === 1 ? "default" : card.priority === 2 ? "secondary" : "outline"}
+                          className="text-xs"
+                        >
+                          Priority {card.priority}
+                        </Badge>
                       </div>
                       <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                         {card.payment_due_date ? (
