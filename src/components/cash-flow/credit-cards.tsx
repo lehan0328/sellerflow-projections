@@ -13,10 +13,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 interface CreditCardFormData {
-  institution_name: string;
-  account_name: string;
-  balance: number;
-  credit_limit: number;
+  nickname: string;
   minimum_payment: number;
   payment_due_date?: string;
   statement_close_date?: string;
@@ -31,10 +28,7 @@ export function CreditCards() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingCard, setEditingCard] = useState<any>(null);
   const [formData, setFormData] = useState<CreditCardFormData>({
-    institution_name: '',
-    account_name: '',
-    balance: 0,
-    credit_limit: 0,
+    nickname: '',
     minimum_payment: 0,
     payment_due_date: '',
     statement_close_date: '',
@@ -62,10 +56,7 @@ export function CreditCards() {
 
   const resetForm = () => {
     setFormData({
-      institution_name: '',
-      account_name: '',
-      balance: 0,
-      credit_limit: 0,
+      nickname: '',
       minimum_payment: 0,
       payment_due_date: '',
       statement_close_date: '',
@@ -83,14 +74,11 @@ export function CreditCards() {
   const handleEditCard = (card: any) => {
     setEditingCard(card);
     setFormData({
-      institution_name: card.institution_name,
-      account_name: card.account_name,
-      balance: card.balance,
-      credit_limit: card.credit_limit,
-      minimum_payment: card.minimum_payment,
+      nickname: card.nickname || '',
+      minimum_payment: card.minimum_payment || 0,
       payment_due_date: card.payment_due_date || '',
       statement_close_date: card.statement_close_date || '',
-      annual_fee: card.annual_fee,
+      annual_fee: card.annual_fee || 0,
       cash_back: card.cash_back || 0,
       priority: card.priority || 3,
     });
@@ -100,10 +88,7 @@ export function CreditCards() {
   const handleUpdateCard = async () => {
     if (!editingCard) return;
 
-    const success = await updateCreditCard(editingCard.id, {
-      ...formData,
-      available_credit: formData.credit_limit - formData.balance,
-    });
+    const success = await updateCreditCard(editingCard.id, formData);
 
     if (success) {
       setShowEditDialog(false);
@@ -183,7 +168,7 @@ export function CreditCards() {
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2">
                         <h4 className="font-semibold text-sm leading-tight">
-                          {card.institution_name} - {card.account_name}
+                          {card.nickname || `${card.institution_name} - ${card.account_name}`}
                         </h4>
                         {card.masked_account_number && (
                           <Badge variant="outline" className="text-xs">
@@ -310,43 +295,23 @@ export function CreditCards() {
               <DialogTitle>Edit Credit Card</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit_institution_name">Institution</Label>
-                  <Input
-                    id="edit_institution_name"
-                    value={formData.institution_name}
-                    onChange={(e) => setFormData({...formData, institution_name: e.target.value})}
-                  />
+              {editingCard && (
+                <div className="text-sm text-muted-foreground mb-2">
+                  <p><strong>Account:</strong> {editingCard.institution_name} - {editingCard.account_name}</p>
+                  <p><strong>Balance:</strong> {formatCurrency(editingCard.balance)} / {formatCurrency(editingCard.credit_limit)}</p>
                 </div>
-                <div>
-                  <Label htmlFor="edit_account_name">Account Name</Label>
-                  <Input
-                    id="edit_account_name"
-                    value={formData.account_name}
-                    onChange={(e) => setFormData({...formData, account_name: e.target.value})}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit_balance">Current Balance</Label>
-                  <Input
-                    id="edit_balance"
-                    type="number"
-                    value={formData.balance}
-                    onChange={(e) => setFormData({...formData, balance: parseFloat(e.target.value) || 0})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit_credit_limit">Credit Limit</Label>
-                  <Input
-                    id="edit_credit_limit"
-                    type="number"
-                    value={formData.credit_limit}
-                    onChange={(e) => setFormData({...formData, credit_limit: parseFloat(e.target.value) || 0})}
-                  />
-                </div>
+              )}
+              <div>
+                <Label htmlFor="edit_nickname">Nickname (optional)</Label>
+                <Input
+                  id="edit_nickname"
+                  placeholder={editingCard ? `${editingCard.institution_name} - ${editingCard.account_name}` : ''}
+                  value={formData.nickname}
+                  onChange={(e) => setFormData({...formData, nickname: e.target.value})}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Give this card a custom name for easier identification
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

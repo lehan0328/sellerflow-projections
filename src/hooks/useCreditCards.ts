@@ -21,6 +21,7 @@ export interface CreditCard {
   annual_fee: number;
   cash_back: number;
   priority: number;
+  nickname?: string;
   last_sync: string;
   is_active: boolean;
   created_at: string;
@@ -99,9 +100,16 @@ export const useCreditCards = () => {
     }
 
     try {
+      // Convert empty strings to null for date fields
+      const sanitizedUpdates = {
+        ...updates,
+        payment_due_date: updates.payment_due_date === '' ? null : updates.payment_due_date,
+        statement_close_date: updates.statement_close_date === '' ? null : updates.statement_close_date,
+      };
+
       const { error } = await supabase
         .from("credit_cards")
-        .update(updates)
+        .update(sanitizedUpdates)
         .eq("id", cardId)
         .eq("user_id", user.id);
 
@@ -112,6 +120,7 @@ export const useCreditCards = () => {
       }
 
       await fetchCreditCards();
+      toast.success("Credit card updated successfully");
       return true;
     } catch (error) {
       console.error("Error:", error);

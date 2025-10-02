@@ -449,6 +449,7 @@ export type Database = {
           last_sync: string
           masked_account_number: string | null
           minimum_payment: number | null
+          nickname: string | null
           payment_due_date: string | null
           plaid_account_id: string | null
           priority: number | null
@@ -476,6 +477,7 @@ export type Database = {
           last_sync?: string
           masked_account_number?: string | null
           minimum_payment?: number | null
+          nickname?: string | null
           payment_due_date?: string | null
           plaid_account_id?: string | null
           priority?: number | null
@@ -503,6 +505,7 @@ export type Database = {
           last_sync?: string
           masked_account_number?: string | null
           minimum_payment?: number | null
+          nickname?: string | null
           payment_due_date?: string | null
           plaid_account_id?: string | null
           priority?: number | null
