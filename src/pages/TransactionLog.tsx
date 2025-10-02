@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -50,26 +50,57 @@ export default function TransactionLog() {
   const [editingVendor, setEditingVendor] = useState<any>(null);
 
   // Fetch deleted transactions
+  const fetchDeletedTransactions = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('deleted_transactions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('deleted_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching deleted transactions:', error);
+      return;
+    }
+
+    setDeletedTransactions((data || []) as DeletedTransaction[]);
+  }, []);
+
   useEffect(() => {
-    const fetchDeletedTransactions = async () => {
+    fetchDeletedTransactions();
+  }, [fetchDeletedTransactions]);
+
+  // Refresh when switching to Deleted tab
+  useEffect(() => {
+    if (activeTab === 'deleted') {
+      fetchDeletedTransactions();
+    }
+  }, [activeTab, fetchDeletedTransactions]);
+
+  // Realtime updates for deleted transactions
+  useEffect(() => {
+    let channel: any;
+    const setup = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      const { data, error } = await supabase
-        .from('deleted_transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('deleted_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching deleted transactions:', error);
-        return;
-      }
-
-      setDeletedTransactions((data || []) as DeletedTransaction[]);
+      channel = supabase
+        .channel('deleted-transactions-ch')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'deleted_transactions',
+          filter: `user_id=eq.${user.id}`,
+        }, (payload) => {
+          setDeletedTransactions((prev) => [payload.new as unknown as DeletedTransaction, ...prev]);
+        })
+        .subscribe();
     };
-
-    fetchDeletedTransactions();
+    setup();
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   // Filter vendors by status and date
@@ -188,6 +219,7 @@ export default function TransactionLog() {
   const handleDeleteVendor = async (vendor: any) => {
     try {
       await deleteVendor(vendor.id);
+      await fetchDeletedTransactions();
       toast.success("Transaction deleted");
     } catch (error) {
       toast.error("Failed to delete transaction");
@@ -208,6 +240,7 @@ export default function TransactionLog() {
   const handleDeleteIncome = async (income: any) => {
     try {
       await deleteIncome(income.id);
+      await fetchDeletedTransactions();
       toast.success("Transaction deleted");
     } catch (error) {
       toast.error("Failed to delete transaction");
