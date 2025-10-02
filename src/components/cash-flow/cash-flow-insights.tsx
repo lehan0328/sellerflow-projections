@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send } from "lucide-react";
+import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -88,6 +88,25 @@ export const CashFlowInsights = ({
     }
   };
 
+  const handleRefresh = async () => {
+    setLoading(true);
+    try {
+      await generateInsight();
+      toast({
+        title: "Insights Updated",
+        description: "Financial health analysis has been refreshed with latest data.",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Unable to refresh insights. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatQuestion.trim()) return;
@@ -138,20 +157,31 @@ export const CashFlowInsights = ({
             <Sparkles className="h-5 w-5 text-primary" />
             AI Insights
           </div>
-          <Button
-            variant={chatMode ? "default" : "ghost"}
-            size="sm"
-            onClick={() => {
-              setChatMode(!chatMode);
-              if (!chatMode) {
-                setChatQuestion("");
-                setChatAnswer("");
-              }
-            }}
-          >
-            <MessageCircle className="h-4 w-4 mr-1" />
-            {chatMode ? "Back" : "Chat"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={loading}
+              title="Refresh insights with latest data"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button
+              variant={chatMode ? "default" : "ghost"}
+              size="sm"
+              onClick={() => {
+                setChatMode(!chatMode);
+                if (!chatMode) {
+                  setChatQuestion("");
+                  setChatAnswer("");
+                }
+              }}
+            >
+              <MessageCircle className="h-4 w-4 mr-1" />
+              {chatMode ? "Back" : "Chat"}
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 flex-1 overflow-auto">
