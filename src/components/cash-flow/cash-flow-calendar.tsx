@@ -42,6 +42,7 @@ interface CashFlowCalendarProps {
   todayOutflow?: number;
   upcomingExpenses?: number;
   incomeItems?: IncomeItem[];
+  bankAccountBalance?: number;
 }
 
 export const CashFlowCalendar = ({ 
@@ -51,7 +52,8 @@ export const CashFlowCalendar = ({
   todayInflow = 0,
   todayOutflow = 0,
   upcomingExpenses = 0,
-  incomeItems = []
+  incomeItems = [],
+  bankAccountBalance = 0
 }: CashFlowCalendarProps) => {
   const { totalAvailableCredit } = useCreditCards();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -354,10 +356,18 @@ export const CashFlowCalendar = ({
                         <div className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             <span className="text-[10px] text-muted-foreground">Cash</span>
-                            <span className={`text-sm font-bold ${totalCash < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
-                              ${totalCash.toLocaleString()}
+                            <span className={`text-sm font-bold ${bankAccountBalance < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
+                              ${bankAccountBalance.toLocaleString()}
                             </span>
                           </div>
+                          {pendingIncome > 0 && (
+                            <div className="flex items-center justify-end gap-1">
+                              <span className="text-[10px] text-amber-600">Pending</span>
+                              <span className="text-xs text-amber-600 font-semibold">
+                                +${pendingIncome.toLocaleString()}
+                              </span>
+                            </div>
+                          )}
                           <div className="flex items-center justify-end gap-1">
                             <span className="text-[10px] text-muted-foreground">Credit</span>
                             <span className="text-xs font-semibold text-blue-600">

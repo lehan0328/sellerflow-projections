@@ -812,6 +812,7 @@ const Dashboard = () => {
               todayOutflow={todayOutflow}
               upcomingExpenses={upcomingExpenses}
               incomeItems={incomeItems}
+              bankAccountBalance={bankAccountBalance}
             />
           </div>
           <div className="lg:col-span-1 h-full">
