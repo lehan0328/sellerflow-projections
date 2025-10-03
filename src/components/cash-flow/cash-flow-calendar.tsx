@@ -68,8 +68,9 @@ export const CashFlowCalendar = ({
   const [showDayTransactionsModal, setShowDayTransactionsModal] = useState(false);
   const [draggedTransaction, setDraggedTransaction] = useState<CashFlowEvent | null>(null);
   
-  // Total available cash passed from parent component
-  const totalAvailableCash = totalCash;
+  // Total available cash used as baseline for calendar: match today's displayed cash
+  // Use bank account balance when available; fall back to totalCash only if needed
+  const totalAvailableCash = bankAccountBalance ?? totalCash;
   
   // Account start date (inclusive)
   const accountStartDate = new Date('2025-09-29');
