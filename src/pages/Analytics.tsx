@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { useVendors } from "@/hooks/useVendors";
 import { useIncome } from "@/hooks/useIncome";
 import { useBankTransactions } from "@/hooks/useBankTransactions";
@@ -11,8 +12,10 @@ import {
   DollarSign, 
   CreditCard as CreditCardIcon,
   Calendar,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  ArrowLeft
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   LineChart,
   Line,
@@ -33,6 +36,7 @@ import {
 import { useMemo } from "react";
 
 export default function Analytics() {
+  const navigate = useNavigate();
   const { vendors } = useVendors();
   const { incomeItems } = useIncome();
   const { transactions } = useBankTransactions();
@@ -179,6 +183,14 @@ export default function Analytics() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/dashboard')}
+            className="mb-2"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
           <h1 className="text-3xl font-bold">Business Analytics</h1>
           <p className="text-muted-foreground">Comprehensive insights into your financial performance</p>
         </div>
