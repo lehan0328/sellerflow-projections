@@ -449,10 +449,12 @@ const Landing = () => {
               <span className={`text-sm ${!isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>Monthly</span>
               <button
                 onClick={() => setIsYearly(!isYearly)}
-                className="relative inline-flex h-6 w-11 items-center rounded-full bg-muted transition-colors hover:bg-muted/80"
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  isYearly ? 'bg-primary' : 'bg-border'
+                }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-primary transition-transform ${
+                  className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-md transition-transform ${
                     isYearly ? 'translate-x-6' : 'translate-x-1'
                   }`}
                 />
@@ -460,7 +462,7 @@ const Landing = () => {
               <span className={`text-sm ${isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>
                 Yearly
               </span>
-              <Badge className="bg-gradient-primary">Save up to $178/year</Badge>
+              <Badge className="bg-gradient-primary">Save up to 20% ($178/year)</Badge>
             </div>
             <Badge variant="secondary" className="text-sm">
               7-day free trial • Credit card required • Cancel anytime
