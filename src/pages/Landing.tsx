@@ -531,7 +531,7 @@ const Landing = () => {
                         {row.starter === true ? (
                           <Check className="h-5 w-5 text-success" />
                         ) : row.starter === false ? (
-                          <X className="h-5 w-5 text-muted-foreground" />
+                          <X className="h-5 w-5 text-destructive" />
                         ) : (
                           <span className="text-sm font-medium">{row.starter}</span>
                         )}
@@ -540,7 +540,7 @@ const Landing = () => {
                         {row.growing === true ? (
                           <Check className="h-5 w-5 text-success" />
                         ) : row.growing === false ? (
-                          <X className="h-5 w-5 text-muted-foreground" />
+                          <X className="h-5 w-5 text-destructive" />
                         ) : (
                           <span className="text-sm font-medium">{row.growing}</span>
                         )}
@@ -549,7 +549,7 @@ const Landing = () => {
                         {row.professional === true ? (
                           <Check className="h-5 w-5 text-success" />
                         ) : row.professional === false ? (
-                          <X className="h-5 w-5 text-muted-foreground" />
+                          <X className="h-5 w-5 text-destructive" />
                         ) : (
                           <span className="text-sm font-medium">{row.professional}</span>
                         )}
