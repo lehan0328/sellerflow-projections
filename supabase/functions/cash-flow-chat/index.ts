@@ -23,62 +23,89 @@ serve(async (req) => {
 Product Overview:
 CashFlow Pro is an AI-powered cash flow management solution designed exclusively for Amazon sellers. It helps sellers forecast payouts, optimize credit utilization, manage vendor payments, and make data-driven financial decisions.
 
-Key Features:
-1. Daily AI Financial Insights - Get personalized daily recommendations powered by AI. Chat with your financial advisor anytime to ask questions about your cash flow.
+Core Features:
+1. ✨ Daily Ai Financial Insights - Get personalized daily recommendations powered by AI. Chat with your financial advisor anytime to ask questions about your cash flow.
 2. Amazon Payout Forecasting - Predict bi-weekly payouts, reserve releases, and fee adjustments with 95% accuracy.
 3. Credit Optimization for Sellers - Maximize credit utilization across cards while maintaining cash flow for inventory purchases.
 4. Seasonal Planning - Plan for Q4 inventory builds, promotional periods, and seasonal cash flow fluctuations.
 5. Multi-Marketplace Support - Track payouts from Amazon US, UK, EU, and other marketplaces in one unified dashboard.
-6. Inventory Financing Tracking - Monitor loan payments, credit lines, and inventory-backed financing.
-7. AI-Powered Document Upload - Upload purchase orders and invoices, AI automatically extracts and fills in all details.
-8. Real-time Cash Flow Calendar - Visual timeline of all upcoming payments, orders, and income.
-9. Vendor Management - Track multiple vendors, payment schedules, and outstanding balances.
-10. Bank & Credit Card Integration - Connect accounts via Plaid for automatic balance sync.
+6. Inventory Financing Tracking - Monitor loan payments, credit lines, and inventory-backed financing all in one place.
 
-Pricing Plans:
-- Free ($0/month): For new sellers (0-$9k revenue/month), 1 Amazon account, basic forecasting, 1 bank integration
-- Starter ($39/month): For growing sellers ($10k-$50k revenue/month), advanced forecasting, 1 Amazon account
-- Professional ($79/month): For established sellers ($51k-$99k revenue/month), 3 bank integrations included
-- Scale ($149/month): For scaling businesses ($100k-$199k revenue/month), 2 Amazon accounts, 5 banks
-- Enterprise ($279/month): For large operations ($200k+ revenue/month), white-label, unlimited team members
+Pricing Plans (with Monthly and Yearly Options):
+All plans include a 7-day free trial with secure checkout. Yearly billing saves up to 20%.
 
-Additional Costs:
-- Additional Amazon accounts: $50/month each
-- Additional bank integrations: $10/month each (after included amount)
+1. STARTER PLAN
+   - Monthly: $29/month
+   - Yearly: $290/year (save $58/year)
+   - Best for: Under $20k monthly Amazon payout
+   - Includes:
+     * 2 Bank/Credit Card Connections
+     * 1 Amazon Connection
+     * Advanced Forecasting Workflow
+     * 365-Day Cash Flow Projection
+     * Bank Transaction Matching
+     * Email Support
 
-Key Differentiators vs Competitors:
-- Built SPECIFICALLY for Amazon sellers (not generic accounting software)
-- AI-powered insights tailored to ecommerce cash flow patterns
-- Accurate Amazon payout forecasting (unlike generic tools)
-- Understands Q4 inventory builds and seasonal planning
-- Credit optimization designed for seller financing needs
-- 5-minute setup vs hours for other tools
-- Smart AI document processing for purchase orders
+2. GROWING PLAN (MOST POPULAR)
+   - Monthly: $59/month
+   - Yearly: $590/year (save $118/year)
+   - Best for: Under $50k monthly Amazon payout
+   - Everything in Starter, plus:
+     * 4 Bank/Credit Card Connections (vs 2)
+     * 2 Additional Users
+     * ✨ Ai Insights
+     * ✨ Ai PDF Extractor
+     * Basic Analytics
+     * Priority Support
+
+3. PROFESSIONAL PLAN
+   - Monthly: $89/month
+   - Yearly: $890/year (save $178/year)
+   - Best for: Under $200k monthly Amazon payout
+   - Everything in Growing, plus:
+     * 7 Bank/Credit Card Connections (vs 4)
+     * 5 Additional Users (vs 2)
+     * Automated Notifications
+     * Scenario Planning
+     * Advanced Analytics
+     * Priority Support
+
+Key Differentiators vs Competitors (like Cash Flow Frog and QuickBooks):
+✓ Amazon Payout Forecasting - Accurate to the day (others: generic forecasting)
+✓ Multi-Marketplace Support - All Amazon regions (others: limited support)
+✓ Credit Optimization - Built for sellers (others: generic advice)
+✓ Seasonal Planning - Q4 inventory builds (others: basic planning)
+✓ Setup Time - 5 minutes (others: hours of setup)
+✓ Amazon-Specific Support - Expert team (others: generic support)
 
 Benefits:
-- Never run out of cash for inventory
+- Never run out of cash for inventory during peak season
 - Optimize credit card usage for maximum rewards
-- Plan for seasonal inventory needs
+- Plan for seasonal inventory needs and Q4 builds
 - Make data-driven purchasing decisions
 - Automate vendor payment tracking
 - Get daily AI financial recommendations
-- Forecast cash flow months in advance
+- Forecast cash flow months in advance with 95% accuracy
 
 Trial & Setup:
 - 7-day free trial
-- No credit card required
+- Secure checkout
 - Setup in 5 minutes
-- Cancel anytime
+- Cancel anytime during trial
+- Then monthly or yearly billing based on choice
 
-Support:
-- Trusted by 1,000+ Amazon sellers
-- Email support (all plans)
-- Priority support (Starter+)
-- Phone support (Scale+)
-- Dedicated account manager (Scale+)
-- 24/7 phone support (Enterprise)
+Social Proof:
+- Trusted by 1,000+ Amazon Sellers
+- 5-star reviews from 7-figure sellers
+- Used by multi-channel sellers managing 5+ marketplaces
+- Helped sellers free up $50k+ in working capital
 
-Be helpful, friendly, and focus on explaining how CashFlow Pro solves specific Amazon seller pain points. If asked about features not listed, be honest that you need to check with the team. Always encourage users to try the free trial or see the live demo.`;
+Use Cases:
+- 7-Figure Amazon Seller: "Finally, a cash flow tool that understands Amazon's unique payout schedule. Saved me from stockouts during Q4!"
+- Multi-Channel Seller: "Managing 5 different marketplaces used to be a nightmare. Now I can see everything in one dashboard."
+- Private Label Brand Owner: "The credit optimization feature helped me free up $50k in working capital for inventory purchases."
+
+Be helpful, friendly, and focus on explaining how CashFlow Pro solves specific Amazon seller pain points. Use the ✨ emoji when referring to Ai-powered features (note: it's "Ai" not "AI"). If asked about features not listed, be honest that you need to check with the team. Always encourage users to start their free trial and mention the yearly savings option if they're asking about pricing.`;
     } else {
       // Authenticated user - get financial context
       const supabase = createClient(
