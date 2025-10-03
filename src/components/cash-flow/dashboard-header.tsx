@@ -60,6 +60,16 @@ export function DashboardHeader() {
         <Button
           variant="outline"
           size="sm"
+          onClick={() => navigate('/analytics')}
+          className="h-10 px-4 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-accent hover:text-accent-foreground"
+          title="View Analytics"
+        >
+          <DollarSign className="h-4 w-4 mr-2" />
+          Analytics
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => navigate('/transactions')}
           className="h-10 w-10 p-0 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-accent hover:text-accent-foreground"
           title="View Transaction Log"

@@ -10,6 +10,7 @@ import Settings from "./pages/Settings";
 import UpgradePlan from "./pages/UpgradePlan";
 import TransactionLog from "./pages/TransactionLog";
 import BankTransactions from "./pages/BankTransactions";
+import Analytics from "./pages/Analytics";
 import OAuthRedirect from "./pages/OAuthRedirect";
 import NotFound from "./pages/NotFound";
 import Docs from "./pages/Docs";
@@ -58,6 +59,11 @@ const App = () => (
           <Route path="/bank-transactions" element={
             <ProtectedRoute>
               <BankTransactions />
+            </ProtectedRoute>
+          } />
+          <Route path="/analytics" element={
+            <ProtectedRoute>
+              <Analytics />
             </ProtectedRoute>
           } />
           <Route path="/oauth-redirect" element={<OAuthRedirect />} />
