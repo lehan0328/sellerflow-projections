@@ -872,6 +872,9 @@ const Dashboard = () => {
               upcomingExpenses={upcomingExpenses}
               incomeItems={incomeItems}
               bankAccountBalance={bankAccountBalance}
+              vendors={vendors}
+              onVendorClick={handleEditVendorOrder}
+              onIncomeClick={handleEditIncome}
             />
           </div>
           <div className="lg:col-span-1 h-full">

@@ -7,13 +7,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp, ShoppingBag, AlertTriangle } from "lucide-react";
 import { useCreditCards } from "@/hooks/useCreditCards";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays, startOfWeek, endOfWeek, getDay } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays, startOfWeek, endOfWeek, getDay, startOfDay } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { TransactionDetailModal } from "./transaction-detail-modal";
 import { DayTransactionsModal } from "./day-transactions-modal";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { PendingNotificationsPanel } from "./pending-notifications-panel";
 
 interface CashFlowEvent {
   id: string;
@@ -33,6 +34,17 @@ interface IncomeItem {
   paymentDate: Date;
   status: 'received' | 'pending' | 'overdue';
   description: string;
+  source: string;
+}
+
+interface Vendor {
+  id: string;
+  name: string;
+  totalOwed: number;
+  nextPaymentDate: Date;
+  nextPaymentAmount: number;
+  status: string;
+  poName?: string;
 }
 
 interface CashFlowCalendarProps {
@@ -45,6 +57,9 @@ interface CashFlowCalendarProps {
   upcomingExpenses?: number;
   incomeItems?: IncomeItem[];
   bankAccountBalance?: number;
+  vendors?: Vendor[];
+  onVendorClick?: (vendor: Vendor) => void;
+  onIncomeClick?: (income: IncomeItem) => void;
 }
 
 export const CashFlowCalendar = ({ 
@@ -56,7 +71,10 @@ export const CashFlowCalendar = ({
   todayOutflow = 0,
   upcomingExpenses = 0,
   incomeItems = [],
-  bankAccountBalance = 0
+  bankAccountBalance = 0,
+  vendors = [],
+  onVendorClick,
+  onIncomeClick,
 }: CashFlowCalendarProps) => {
   const { totalAvailableCredit } = useCreditCards();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -112,17 +130,37 @@ export const CashFlowCalendar = ({
     }, 0);
   };
 
-  const getPendingIncomeForDay = (date: Date) => {
+  // Get pending income that rolls forward until received
+  const getRollingPendingIncome = (date: Date) => {
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+    const today = startOfDay(new Date());
+
     return incomeItems
       .filter(income => {
-        const incomeDate = new Date(income.paymentDate);
-        incomeDate.setHours(0, 0, 0, 0);
-        const checkDate = new Date(date);
-        checkDate.setHours(0, 0, 0, 0);
-        return income.status === 'pending' && 
-               incomeDate.getTime() === checkDate.getTime();
+        if (income.status === 'received') return false;
+        const incomeDate = startOfDay(new Date(income.paymentDate));
+        // Show pending from payment date onwards until received
+        return incomeDate <= checkDate;
       })
       .reduce((sum, income) => sum + income.amount, 0);
+  };
+
+  // Get overdue amounts (past due date but not yet received/paid)
+  const getOverdueAmounts = (date: Date, type: 'income' | 'vendor') => {
+    const checkDate = startOfDay(new Date(date));
+    const today = startOfDay(new Date());
+    
+    if (type === 'income') {
+      return incomeItems
+        .filter(income => {
+          if (income.status === 'received') return false;
+          const incomeDate = startOfDay(new Date(income.paymentDate));
+          return incomeDate < checkDate && incomeDate < today;
+        })
+        .reduce((sum, income) => sum + income.amount, 0);
+    }
+    return 0;
   };
 
   const getTotalCashForDay = (date: Date) => {
@@ -276,7 +314,7 @@ export const CashFlowCalendar = ({
       <div className="relative flex-shrink-0">        
         <CardHeader className="pb-4 flex-shrink-0">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-            <div className="flex items-center justify-start">
+            <div className="flex items-center justify-between w-full">
               <div className="flex items-center space-x-4">
                 <CardTitle className="text-lg">Cash Flow Visualization</CardTitle>
                 <div className="flex items-center space-x-4">
@@ -306,6 +344,13 @@ export const CashFlowCalendar = ({
                   </Button>
                 </div>
               </div>
+              
+              <PendingNotificationsPanel
+                vendors={vendors}
+                incomeItems={incomeItems}
+                onVendorClick={onVendorClick}
+                onIncomeClick={onIncomeClick}
+              />
             </div>
           </div>
         </CardHeader>
@@ -344,7 +389,8 @@ export const CashFlowCalendar = ({
                 const dayEvents = getEventsForDay(day);
                 const dayBalance = getDayBalance(day);
                 const totalCash = getTotalCashForDay(day);
-                const pendingIncome = getPendingIncomeForDay(day);
+                const pendingIncome = getRollingPendingIncome(day);
+                const overdueIncome = getOverdueAmounts(day, 'income');
                 const hasEvents = dayEvents.length > 0;
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
@@ -404,48 +450,37 @@ export const CashFlowCalendar = ({
                           <AlertTriangle className="h-2 w-2 text-red-500" />
                         )}
                       </div>
-                      {isToday(day) ? (
-                        hasAnyData ? (
-                          <div className="text-right">
+                      {hasAnyData && (
+                        <div className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <span className="text-[10px] text-muted-foreground">Cash</span>
+                            <span className={`text-sm font-bold ${bankAccountBalance < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
+                              ${bankAccountBalance.toLocaleString()}
+                            </span>
+                          </div>
+                          {pendingIncome > 0 && (
                             <div className="flex items-center justify-end gap-1">
-                              <span className="text-[10px] text-muted-foreground">Cash</span>
-                              <span className={`text-sm font-bold ${totalCash < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
-                                ${totalCash.toLocaleString()}
+                              <span className="text-[10px] text-amber-600">Pending</span>
+                              <span className="text-xs text-amber-600 font-semibold">
+                                +${pendingIncome.toLocaleString()}
                               </span>
                             </div>
-                            {pendingIncome > 0 && (
-                              <div className="flex items-center justify-end gap-1">
-                                <span className="text-[10px] text-amber-600">Pending</span>
-                                <span className="text-xs text-amber-600 font-semibold">
-                                  +${pendingIncome.toLocaleString()}
-                                </span>
-                              </div>
-                            )}
+                          )}
+                          {overdueIncome > 0 && (
+                            <div className="flex items-center justify-end gap-1">
+                              <span className="text-[10px] text-red-600">Overdue</span>
+                              <span className="text-xs text-red-600 font-semibold">
+                                +${overdueIncome.toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+                          {!isPast && (
                             <div className="flex items-center justify-end gap-1">
                               <span className="text-[10px] text-muted-foreground">Credit</span>
-                              <span className="text-xs font-semibold text-blue-600">
+                              <span className="text-[10px] text-blue-600 font-medium">
                                 ${totalAvailableCredit.toLocaleString()}
                               </span>
                             </div>
-                          </div>
-                        ) : null
-                      ) : (
-                        <div className="text-right">
-                          {!isPast && hasAnyData && (
-                            <>
-                              <div className="flex items-center justify-end gap-1">
-                                <span className="text-[10px] text-muted-foreground">Cash</span>
-                                <span className={`text-xs font-semibold ${totalCash < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
-                                  ${totalCash.toLocaleString()}
-                                </span>
-                              </div>
-                              <div className="flex items-center justify-end gap-1">
-                                <span className="text-[10px] text-muted-foreground">Credit</span>
-                                <span className="text-[10px] text-blue-600 font-medium">
-                                  ${totalAvailableCredit.toLocaleString()}
-                                </span>
-                              </div>
-                            </>
                           )}
                         </div>
                       )}
@@ -467,11 +502,19 @@ export const CashFlowCalendar = ({
                             ${dayBalance.toLocaleString()}
                           </span>
                         </div>
-                        {isToday(day) && pendingIncome > 0 && (
+                        {pendingIncome > 0 && (
                           <div className="flex items-center justify-between w-full">
                             <span className="text-[10px] text-amber-600">Pending</span>
                             <span className="text-[10px] text-amber-600 font-medium">
                               +${pendingIncome.toLocaleString()}
+                            </span>
+                          </div>
+                        )}
+                        {overdueIncome > 0 && (
+                          <div className="flex items-center justify-between w-full">
+                            <span className="text-[10px] text-red-600">Overdue</span>
+                            <span className="text-[10px] text-red-600 font-medium">
+                              +${overdueIncome.toLocaleString()}
                             </span>
                           </div>
                         )}
