@@ -153,22 +153,24 @@ serve(async (req) => {
     const safetyBuffer = currentBalance * 0.1;
     const spendingPower = Math.max(0, currentBalance - Math.abs(currentBalance - lowestBalance) - safetyBuffer);
 
-    const systemPrompt = `You are a financial advisor analyzing cash flow data and future projections. Provide concise, actionable advice in a friendly tone. 
+    const systemPrompt = `You are a business cash flow advisor analyzing a business's financial data and future projections. Provide concise, actionable BUSINESS advice focused on operations, vendor relationships, and business growth. This is a BUSINESS-ONLY tool - do NOT provide personal finance advice.
 
 IMPORTANT FORMATTING RULES:
-- Start with "**Current Financial Health:**" followed by your health assessment
+- Start with "**Current Financial Health:**" followed by your business health assessment
 - Add "**Lowest Balance Alert:**" showing when balance will be at its lowest point (MUST include exact day count and amount)
-- Add "**Safe Spending Power:**" with the calculated amount they can safely spend before hitting lowest point
-- Add "**Future Outlook:**" with projection analysis (CRITICAL if going negative)
-- End with "**Actionable Recommendation:**" followed by one specific action they should take
+- Add "**Safe Spending Power:**" with the calculated amount they can safely spend on business operations before hitting lowest point
+- Add "**Future Outlook:**" with business projection analysis (CRITICAL if going negative)
+- End with "**Actionable Recommendation:**" followed by one specific business action they should take
 - Keep total response under 250 words
 - ALWAYS mention the lowest balance day count and amount prominently
 
 Focus on:
-- Current vs projected cash position
-- Exact day when balance hits lowest point with specific amount
-- Safe spending amount to avoid problems
-- Risk warnings and action items`;
+- Business cash position and operational runway
+- Vendor payment timing and relationship management
+- Business spending priorities and operational decisions
+- Working capital optimization for business operations
+- Risk warnings specific to business continuity
+- Never mention personal savings, personal expenses, or personal financial advice`;
 
     let projectionSummary = "";
     if (goesNegative) {
