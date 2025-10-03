@@ -33,7 +33,7 @@ export const PRICING_PLANS = {
     product_id: "prod_TAcNEuRnBTaX61",
     price_id: "price_1SEH8NB28kMY3UseBj2w9HgH",
     features: [
-      "$1-20k Amazon payout",
+      "Under $20k monthly amazon payout",
       "2 bank/credit card connections",
       "1 Amazon connection",
       "Advanced forecasting workflow",
