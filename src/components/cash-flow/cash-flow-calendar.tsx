@@ -515,6 +515,12 @@ export const CashFlowCalendar = ({
                               Credit ${totalAvailableCredit.toLocaleString()}
                             </div>
                           )}
+                          {/* Net Amount - show for all dates with data */}
+                          {hasAnyData && netAmount !== null && (
+                            <div className={`text-[10px] font-medium truncate ${netAmount < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                              Net ${netAmount.toLocaleString()}
+                            </div>
+                          )}
                         </div>
                       </div>
                       {totalCash < 0 && (
@@ -536,13 +542,6 @@ export const CashFlowCalendar = ({
                         {(isToday(day) || isPast) && (overdueIncome > 0 || overdueVendors > 0) && (
                           <div className="text-red-600 dark:text-red-400 font-medium truncate">
                             Overdue {overdueIncome >= overdueVendors ? '+' : '-'}${Math.abs(overdueIncome - overdueVendors).toLocaleString()}
-                          </div>
-                        )}
-
-                        {/* Net Amount for future dates */}
-                        {!isToday(day) && !isPast && netAmount !== null && (
-                          <div className={`font-medium truncate ${netAmount < 0 ? 'text-red-600' : 'text-green-600 dark:text-green-400'}`}>
-                            Net ${netAmount.toLocaleString()}
                           </div>
                         )}
                       </div>
