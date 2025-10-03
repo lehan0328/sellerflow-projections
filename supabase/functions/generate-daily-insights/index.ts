@@ -36,8 +36,19 @@ serve(async (req) => {
       try {
         console.log(`Processing user ${profile.user_id}...`);
 
+        // Get historical transactions (last 60 days)
+        const sixtyDaysAgo = new Date();
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+        
+        const { data: allTransactions } = await supabaseAdmin
+          .from("transactions")
+          .select("*")
+          .eq("user_id", profile.user_id)
+          .gte("transaction_date", sixtyDaysAgo.toISOString().split("T")[0])
+          .order("transaction_date", { ascending: true });
+
         // Get user's transactions from today
-        const { data: transactions } = await supabaseAdmin
+        const { data: todayTransactions } = await supabaseAdmin
           .from("transactions")
           .select("*")
           .eq("user_id", profile.user_id)
@@ -50,14 +61,43 @@ serve(async (req) => {
           .eq("user_id", profile.user_id)
           .single();
 
-        // Calculate metrics
-        const todayInflow = transactions?.filter(t => 
+        // Calculate today's metrics
+        const todayInflow = todayTransactions?.filter(t => 
           (t.type === 'customer_payment' || t.type === 'sales_order') && t.status === 'completed'
         ).reduce((sum, t) => sum + Number(t.amount), 0) || 0;
 
-        const todayOutflow = transactions?.filter(t => 
+        const todayOutflow = todayTransactions?.filter(t => 
           (t.type === 'purchase_order' || t.type === 'vendor_payment') && t.status === 'completed'
         ).reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+
+        // Analyze historical spending patterns
+        const historicalInflows = allTransactions?.filter(t => 
+          (t.type === 'customer_payment' || t.type === 'sales_order') && t.status === 'completed'
+        ) || [];
+        
+        const historicalOutflows = allTransactions?.filter(t => 
+          (t.type === 'purchase_order' || t.type === 'vendor_payment') && t.status === 'completed'
+        ) || [];
+
+        const avgDailyInflow = historicalInflows.length > 0 
+          ? historicalInflows.reduce((sum, t) => sum + Number(t.amount), 0) / 60 
+          : 0;
+        
+        const avgDailyOutflow = historicalOutflows.length > 0 
+          ? historicalOutflows.reduce((sum, t) => sum + Number(t.amount), 0) / 60 
+          : 0;
+
+        // Identify spending trends
+        const recentSpending = allTransactions?.filter(t => {
+          const txDate = new Date(t.transaction_date);
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          return txDate >= thirtyDaysAgo && (t.type === 'purchase_order' || t.type === 'vendor_payment');
+        }) || [];
+
+        const recentAvgSpending = recentSpending.length > 0
+          ? recentSpending.reduce((sum, t) => sum + Number(t.amount), 0) / 30
+          : 0;
 
         // Get upcoming expenses (next 7 days)
         const sevenDaysOut = new Date();
@@ -74,27 +114,36 @@ serve(async (req) => {
 
         const upcomingExpenses = upcomingTx?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
 
-        // Generate AI advice
-        const systemPrompt = `You are a financial advisor analyzing cash flow data. Provide concise, actionable advice in a friendly tone.
+        // Generate AI advice with historical context
+        const systemPrompt = `You are a financial advisor analyzing cash flow data with historical context. Provide concise, actionable advice in a friendly tone.
 
 IMPORTANT FORMATTING RULES:
 - Start with "**Current Financial Health:**" followed by your health assessment
-- Then add "**Key Insight:**" followed by one key pattern or observation
+- Then add "**Historical Trends:**" followed by spending pattern observations (compare recent vs historical)
+- Then add "**Cash Flow Projection:**" with a 7-day forecast based on patterns
 - End with "**Actionable Recommendation:**" followed by one specific action they should take
-- Keep total response under 150 words
+- Keep total response under 200 words
 
 Focus on:
-- Daily cash flow health
-- Spending patterns
-- Risk warnings if cash is running low
-- Opportunities to optimize cash flow`;
+- Daily cash flow health compared to historical average
+- Spending pattern changes (increasing/decreasing/stable)
+- Projected cash position in 7 days based on historical patterns
+- Risk warnings if cash is running low or trending down
+- Opportunities to optimize based on historical data`;
 
         const userPrompt = `Current Balance: $${settings?.total_cash?.toLocaleString() || 0}
 Today's Inflow: $${todayInflow.toLocaleString()}
 Today's Outflow: $${todayOutflow.toLocaleString()}
 Upcoming Expenses (7 days): $${upcomingExpenses.toLocaleString()}
 
-Analyze this cash flow.`;
+HISTORICAL DATA (Last 60 days):
+- Average Daily Inflow: $${avgDailyInflow.toFixed(2)}
+- Average Daily Outflow: $${avgDailyOutflow.toFixed(2)}
+- Recent 30-day Average Spending: $${recentAvgSpending.toFixed(2)}/day
+- Total Historical Inflows: $${historicalInflows.reduce((s, t) => s + Number(t.amount), 0).toLocaleString()}
+- Total Historical Outflows: $${historicalOutflows.reduce((s, t) => s + Number(t.amount), 0).toLocaleString()}
+
+Compare today's activity to historical averages and project the next 7 days.`;
 
         const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
