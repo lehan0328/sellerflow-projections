@@ -2,6 +2,30 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+export const ADDON_PRODUCTS = {
+  bank_account: {
+    name: "Additional Bank Account",
+    price: 5,
+    product_id: "prod_TAceumMQgcebjQ",
+    price_id: "price_1SEHPSB28kMY3UseP1mWqne5",
+    description: "Add one more bank/credit card connection"
+  },
+  amazon_account: {
+    name: "Additional Amazon Account",
+    price: 50,
+    product_id: "prod_TAcfNXVQRUFHSC",
+    price_id: "price_1SEHQLB28kMY3UseBmY7IIjx",
+    description: "Add one more Amazon account connection"
+  },
+  user: {
+    name: "Additional User",
+    price: 5,
+    product_id: "prod_TAcgWMdZxz6voS",
+    price_id: "price_1SEHQoB28kMY3UsedGTbBbmA",
+    description: "Add one more user to your account"
+  }
+} as const;
+
 export const PRICING_PLANS = {
   starter: {
     name: "Starter",
@@ -160,6 +184,40 @@ export const useSubscription = () => {
     }
   };
 
+  const purchaseAddon = async (priceId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to purchase add-ons.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { priceId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error("Error purchasing addon:", error);
+      toast({
+        title: "Error",
+        description: "Failed to initiate add-on purchase. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const openCustomerPortal = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -216,6 +274,7 @@ export const useSubscription = () => {
     ...subscriptionState,
     checkSubscription,
     createCheckout,
+    purchaseAddon,
     openCustomerPortal,
   };
 };

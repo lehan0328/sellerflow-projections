@@ -10,11 +10,11 @@ import {
   Settings
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useSubscription, PRICING_PLANS } from "@/hooks/useSubscription";
+import { useSubscription, PRICING_PLANS, ADDON_PRODUCTS } from "@/hooks/useSubscription";
 
 const UpgradePlan = () => {
   const navigate = useNavigate();
-  const { subscribed, plan, subscription_end, createCheckout, openCustomerPortal, isLoading } = useSubscription();
+  const { subscribed, plan, subscription_end, createCheckout, purchaseAddon, openCustomerPortal, isLoading } = useSubscription();
 
   const plans = [
     {
@@ -46,6 +46,34 @@ const UpgradePlan = () => {
   const handleUpgrade = (priceId: string) => {
     createCheckout(priceId);
   };
+
+  const handlePurchaseAddon = (priceId: string) => {
+    purchaseAddon(priceId);
+  };
+
+  const addons = [
+    {
+      key: "bank_account",
+      name: ADDON_PRODUCTS.bank_account.name,
+      price: ADDON_PRODUCTS.bank_account.price,
+      priceId: ADDON_PRODUCTS.bank_account.price_id,
+      description: ADDON_PRODUCTS.bank_account.description,
+    },
+    {
+      key: "amazon_account",
+      name: ADDON_PRODUCTS.amazon_account.name,
+      price: ADDON_PRODUCTS.amazon_account.price,
+      priceId: ADDON_PRODUCTS.amazon_account.price_id,
+      description: ADDON_PRODUCTS.amazon_account.description,
+    },
+    {
+      key: "user",
+      name: ADDON_PRODUCTS.user.name,
+      price: ADDON_PRODUCTS.user.price,
+      priceId: ADDON_PRODUCTS.user.price_id,
+      description: ADDON_PRODUCTS.user.description,
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -184,6 +212,44 @@ const UpgradePlan = () => {
                 );
               })}
             </div>
+
+            {/* Add-ons Section */}
+            {subscribed && (
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle>Add-ons</CardTitle>
+                  <CardDescription>
+                    Enhance your plan with additional features
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    {addons.map((addon) => (
+                      <Card key={addon.key}>
+                        <CardHeader>
+                          <CardTitle className="text-lg">{addon.name}</CardTitle>
+                          <CardDescription>{addon.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="text-2xl font-bold">
+                            ${addon.price}
+                            <span className="text-sm font-normal text-muted-foreground">/month</span>
+                          </div>
+                          <Button 
+                            className="w-full" 
+                            variant="outline"
+                            onClick={() => handlePurchaseAddon(addon.priceId)}
+                            disabled={isLoading}
+                          >
+                            Purchase Add-on
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
             <Card className="mt-6">
               <CardHeader>
