@@ -57,6 +57,20 @@ export function VendorManagement() {
   ];
 
   const handleAddVendor = async (vendorData: any) => {
+    // Check for duplicate vendor name (case-insensitive)
+    const duplicateVendor = vendors.find(
+      v => v.name.toLowerCase() === vendorData.name.toLowerCase()
+    );
+    
+    if (duplicateVendor) {
+      toast({
+        title: "Vendor Already Exists",
+        description: `A vendor named "${duplicateVendor.name}" already exists. Please use a different name.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Calculate due date based on payment terms
     let dueDate = new Date();
     if (vendorData.paymentType === 'net-terms' && vendorData.netTermsDays) {
