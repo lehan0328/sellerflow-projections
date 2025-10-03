@@ -522,49 +522,45 @@ export const CashFlowCalendar = ({
                         )}
                       </div>
                       {hasAnyData && isToday(day) && (
-                        <div className="text-right border border-border rounded p-1.5 bg-background/50">
+                        <div className="text-left border-2 border-primary/70 rounded p-1.5 bg-background shadow-sm">
                           {/* Account Summary */}
-                          <div className="text-[10px] text-muted-foreground mb-0.5">
-                            {bankAccountBalance > 0 ? '3' : '0'} Cash ${bankAccountBalance.toLocaleString()}
+                          <div className="text-[11px] text-foreground mb-0.5">
+                            0 Cash ${bankAccountBalance.toLocaleString()}
                           </div>
-                          <div className="text-[10px] text-muted-foreground mb-1">
+                          <div className="text-[11px] text-foreground mb-1">
                             Credit ${totalAvailableCredit.toLocaleString()}
                           </div>
                           
                           {/* Pending and Overdue Grid */}
-                          {(pendingIncome > 0 || overdueIncome > 0 || overdueVendors > 0) && (
-                            <div className="grid grid-cols-2 gap-1.5 pt-1 border-t border-border/50 mb-1">
-                              <div>
-                                <div className="text-[9px] text-muted-foreground font-medium">Pending</div>
-                                <div className="text-[10px] text-green-600 dark:text-green-400 font-semibold">
-                                  {pendingIncome > 0 ? `+$${pendingIncome.toLocaleString()}` : '$0'}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-[9px] text-muted-foreground font-medium">Overdue</div>
-                                <div className="text-[10px] text-red-600 dark:text-red-400 font-semibold">
-                                  {(overdueIncome > 0 || overdueVendors > 0)
-                                    ? `${overdueIncome >= overdueVendors ? '+' : '-'}$${Math.abs(overdueIncome - overdueVendors).toLocaleString()}`
-                                    : '$0'}
-                                </div>
+                          <div className="grid grid-cols-2 gap-2 pt-1 mb-1">
+                            <div>
+                              <div className="text-[11px] text-foreground font-medium">Pending</div>
+                              <div className="text-[11px] text-green-600 dark:text-green-400 font-bold">
+                                {pendingIncome > 0 ? `+$${pendingIncome.toLocaleString()}` : '$0'}
                               </div>
                             </div>
-                          )}
+                            <div>
+                              <div className="text-[11px] text-foreground font-medium">Overdue</div>
+                              <div className="text-[11px] text-red-600 dark:text-red-400 font-bold">
+                                {(overdueIncome > 0 || overdueVendors > 0)
+                                  ? `${overdueIncome >= overdueVendors ? '+' : '-'}$${Math.abs(overdueIncome - overdueVendors).toLocaleString()}`
+                                  : '$0'}
+                              </div>
+                            </div>
+                          </div>
                           
                           {/* Transaction Link */}
-                          {dayEvents.length > 0 && (
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedDayTransactions(dayEvents);
-                                setSelectedDate(day);
-                                setShowDayTransactionsModal(true);
-                              }}
-                              className="text-[9px] text-primary hover:underline font-medium pt-1 border-t border-border/50 w-full text-center"
-                            >
-                              Transaction
-                            </button>
-                          )}
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDayTransactions(dayEvents);
+                              setSelectedDate(day);
+                              setShowDayTransactionsModal(true);
+                            }}
+                            className="text-[11px] text-primary hover:underline font-medium pt-1 border-t border-border w-full text-center block"
+                          >
+                            Transaction
+                          </button>
                         </div>
                       )}
                       {/* Net Amount for future dates */}
