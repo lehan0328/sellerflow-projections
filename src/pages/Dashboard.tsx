@@ -692,9 +692,9 @@ const Dashboard = () => {
   // Convert cash flow events to calendar format (no conversion needed since types now match)
   const calendarEvents = cashFlowEvents;
 
-  // Convert vendor due dates to calendar events
+  // Convert vendor due dates to calendar events (exclude paid vendors)
   const vendorEvents: CashFlowEvent[] = vendors
-    .filter(vendor => vendor.totalOwed > 0 && vendor.nextPaymentDate)
+    .filter(vendor => vendor.totalOwed > 0 && vendor.nextPaymentDate && vendor.status !== 'paid')
     .map(vendor => ({
       id: `vendor-${vendor.id}`,
       type: 'outflow' as const,
@@ -704,8 +704,9 @@ const Dashboard = () => {
       date: vendor.nextPaymentDate
     }));
 
-  // Convert income items to calendar events
+  // Convert income items to calendar events (exclude received income)
   const incomeEvents: CashFlowEvent[] = incomeItems
+    .filter(income => income.status !== 'received')
     .map(income => ({
       id: `income-${income.id}`,
       type: 'inflow' as const,
