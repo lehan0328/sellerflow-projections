@@ -215,13 +215,19 @@ export const CashFlowCalendar = ({
       }
     });
 
-    // Add all events (income/expenses) up to target date that are after today
-    events.forEach(event => {
-      const eventDate = startOfDay(new Date(event.date));
-      if (eventDate > today && eventDate <= checkDate) {
-        netAmount += (event.type === 'inflow' ? event.amount : -event.amount);
-      }
-    });
+  // Add all other events (excluding ones already counted via incomeItems/vendors)
+  events.forEach(event => {
+    const eventDate = startOfDay(new Date(event.date));
+    if (eventDate > today && eventDate <= checkDate) {
+      // Skip income events; handled by incomeItems
+      if (event.type === 'inflow') return;
+      // Skip vendor-related events; handled by vendors list
+      if (event.type === 'purchase-order' || !!event.vendor) return;
+      // Count remaining event types (e.g., credit payments, manual outflows)
+      const delta = (event.type === 'outflow' || event.type === 'credit-payment') ? -event.amount : event.amount;
+      netAmount += delta;
+    }
+  });
 
     return netAmount;
   };
