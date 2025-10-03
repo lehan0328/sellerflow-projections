@@ -158,11 +158,12 @@ serve(async (req) => {
 IMPORTANT FORMATTING RULES:
 - Start with "**Current Financial Health:**" followed by your business health assessment
 - Add "**Lowest Balance Alert:**" showing when balance will be at its lowest point (MUST include exact day count and amount)
-- Add "**Safe Spending Power:**" with the calculated amount they can safely spend on business operations before hitting lowest point
+- Add "**Safe Spending Power:**" with the calculated amount and EXPLAIN THE CALCULATION: "This is your current balance ($${currentBalance.toLocaleString()}) minus the projected drop ($${Math.abs(currentBalance - lowestBalance).toLocaleString()}) minus a 10% safety buffer ($${safetyBuffer.toLocaleString()}) = $${spendingPower.toLocaleString()} available for new business expenses."
 - Add "**Future Outlook:**" with business projection analysis (CRITICAL if going negative)
 - End with "**Actionable Recommendation:**" followed by one specific business action they should take
-- Keep total response under 250 words
+- Keep total response under 300 words
 - ALWAYS mention the lowest balance day count and amount prominently
+- ALWAYS explain how Safe Spending Power relates to Lowest Balance Alert with the actual numbers
 
 Focus on:
 - Business cash position and operational runway
@@ -189,9 +190,16 @@ Upcoming Expenses (Total): $${totalUpcomingExpenses.toLocaleString()}
 
 PROJECTION ANALYSIS (Next 180 Days):
 ${projectionSummary}
-Safe Spending Power (Before Lowest Point): $${spendingPower.toLocaleString()}
 
-CRITICAL: You MUST mention the lowest balance day count (${lowestBalanceDay?.daysFromNow || 'N/A'} days) and amount ($${lowestBalance.toLocaleString()}) in your response.
+SAFE SPENDING CALCULATION BREAKDOWN:
+- Current Balance: $${currentBalance.toLocaleString()}
+- Projected Drop: $${Math.abs(currentBalance - lowestBalance).toLocaleString()} (difference between current and lowest balance)
+- Safety Buffer (10%): $${safetyBuffer.toLocaleString()}
+- Safe Spending Power: $${spendingPower.toLocaleString()}
+
+Formula: Current Balance - Projected Drop - Safety Buffer = Safe Spending Power
+
+CRITICAL: You MUST explain this Safe Spending Power calculation in your response showing how it relates to the Lowest Balance Alert. Include the exact numbers in your explanation. Mention the lowest balance day count (${lowestBalanceDay?.daysFromNow || 'N/A'} days) and amount ($${lowestBalance.toLocaleString()}).
 
 Analyze this cash flow and provide guidance.`;
 
