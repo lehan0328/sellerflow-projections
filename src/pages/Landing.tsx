@@ -50,7 +50,7 @@ const Landing = () => {
       name: "Starter",
       price: "$29",
       period: "/month",
-      description: "$1-20k Amazon payout range",
+      description: "Under $20k monthly amazon payout",
       features: [
         "2 bank/credit card connections",
         "1 Amazon connection",
@@ -66,7 +66,7 @@ const Landing = () => {
       name: "Growing",
       price: "$59",
       period: "/month",
-      description: "$20,001-50k Amazon payout range",
+      description: "Under $50k monthly amazon payout",
       features: [
         "4 bank/credit card connections",
         "1 Amazon connection",
@@ -86,7 +86,7 @@ const Landing = () => {
       name: "Professional",
       price: "$89",
       period: "/month",
-      description: "$50,001-200k Amazon payout range",
+      description: "Under $200k monthly amazon payout",
       features: [
         "7 bank/credit card connections",
         "1 Amazon connection",
@@ -313,7 +313,7 @@ const Landing = () => {
             >
               <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
                 <CheckCircle className="h-4 w-4 text-success" />
-                <span>No credit card required</span>
+                <span>7-day free trial</span>
               </div>
               <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
                 <CheckCircle className="h-4 w-4 text-success" />
@@ -431,6 +431,9 @@ const Landing = () => {
             <p className="text-xl text-muted-foreground">
               Choose the plan that fits your Amazon business
             </p>
+            <Badge variant="secondary" className="text-sm">
+              7-day free trial • Credit card required • Cancel anytime
+            </Badge>
           </div>
           
           <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
@@ -467,8 +470,11 @@ const Landing = () => {
                     variant={plan.popular ? "default" : "outline"}
                     onClick={() => user ? navigate('/upgrade-plan') : navigate('/auth')}
                   >
-                    Get Started
+                    Start 7-Day Free Trial
                   </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Then {plan.price}/month. Cancel anytime.
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -516,8 +522,8 @@ const Landing = () => {
             Ready to Master Your Amazon Cash Flow?
           </h2>
           <p className="text-xl opacity-90 max-w-2xl mx-auto">
-            Join thousands of successful Amazon sellers who trust CashFlow Pro 
-            to manage their finances and scale their businesses.
+            Start your 7-day free trial today. Credit card required, but you won't be charged until your trial ends. 
+            Join thousands of successful Amazon sellers who trust CashFlow Pro to manage their finances and scale their businesses.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" variant="secondary" className="text-lg px-8" onClick={() => navigate('/auth')}>

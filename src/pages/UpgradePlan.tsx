@@ -162,6 +162,11 @@ const UpgradePlan = () => {
 
           {/* Plans */}
           <div className="lg:col-span-3">
+            <div className="mb-6 text-center">
+              <Badge variant="secondary" className="text-sm">
+                7-day free trial • Credit card required • Cancel anytime
+              </Badge>
+            </div>
             <div className="grid gap-6 md:grid-cols-3">
               {plans.map((planItem) => {
                 const isCurrent = plan === planItem.key;
@@ -205,8 +210,13 @@ const UpgradePlan = () => {
                         disabled={isCurrent || isLoading}
                         onClick={() => handleUpgrade(planItem.priceId)}
                       >
-                        {isCurrent ? "Current Plan" : "Upgrade Now"}
+                        {isCurrent ? "Current Plan" : subscribed ? "Upgrade Now" : "Start 7-Day Free Trial"}
                       </Button>
+                      {!isCurrent && !subscribed && (
+                        <p className="text-xs text-muted-foreground text-center">
+                          Then ${planItem.price}/month. Cancel anytime.
+                        </p>
+                      )}
                     </CardContent>
                   </Card>
                 );

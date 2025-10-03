@@ -225,7 +225,7 @@ export const Auth = () => {
               {showResetForm 
                 ? 'Enter your email to receive a password reset link'
                 : (isSignUp 
-                  ? 'Get 7 days of advanced cash flow insights for free' 
+                  ? 'Start your 7-day free trial. Credit card required, but you won\'t be charged until your trial ends.' 
                   : 'Sign in to your account to continue'
                 )
               }
@@ -441,7 +441,7 @@ export const Auth = () => {
                       <div className="space-y-3 pt-2">
                         <div className="flex items-center space-x-3 text-sm text-muted-foreground">
                           <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
-                          <span>7-day free trial, no credit card required</span>
+                          <span>7-day free trial with credit card</span>
                         </div>
                         <div className="flex items-center space-x-3 text-sm text-muted-foreground">
                           <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
@@ -449,7 +449,7 @@ export const Auth = () => {
                         </div>
                         <div className="flex items-center space-x-3 text-sm text-muted-foreground">
                           <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
-                          <span>Cancel anytime during trial</span>
+                          <span>Cancel anytime, no charge if you cancel during trial</span>
                         </div>
                       </div>
 
