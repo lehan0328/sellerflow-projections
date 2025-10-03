@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, DollarSign, Sparkles } from "lucide-react";
+import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, DollarSign, Sparkles, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LiveDashboardShowcase } from "@/components/LiveDashboardShowcase";
 import { FloatingChatWidget } from "@/components/floating-chat-widget";
@@ -78,14 +78,6 @@ const Landing = () => {
       period: "/month",
       yearlyPeriod: "/year",
       description: "Under $20k monthly amazon payout",
-      features: [
-        "2 bank/credit card connections",
-        "1 Amazon connection",
-        "Advanced forecasting workflow",
-        "365-day cash flow projection",
-        "Bank transaction matching",
-        "Email support",
-      ],
       popular: false,
       priceId: "price_1SEH8NB28kMY3UseBj2w9HgH",
       yearlyPriceId: "price_1SEHZGB28kMY3UseCkWIlnWw",
@@ -98,18 +90,6 @@ const Landing = () => {
       period: "/month",
       yearlyPeriod: "/year",
       description: "Under $50k monthly amazon payout",
-      features: [
-        "4 bank/credit card connections",
-        "1 Amazon connection",
-        "AI insights",
-        "AI PDF extractor",
-        "2 additional users",
-        "Advanced forecasting workflow",
-        "365-day cash flow projection",
-        "Bank transaction matching",
-        "Basic analytics",
-        "Priority support",
-      ],
       popular: true,
       priceId: "price_1SEH8iB28kMY3Usem3k3vElT",
       yearlyPriceId: "price_1SEHZVB28kMY3Use9bH8xPlg",
@@ -122,25 +102,26 @@ const Landing = () => {
       period: "/month",
       yearlyPeriod: "/year",
       description: "Under $200k monthly amazon payout",
-      features: [
-        "7 bank/credit card connections",
-        "1 Amazon connection",
-        "AI insights",
-        "AI PDF extractor",
-        "5 additional users",
-        "Automated notifications",
-        "Advanced forecasting workflow",
-        "365-day cash flow projection",
-        "Bank transaction matching",
-        "Scenario planning",
-        "Advanced analytics",
-        "Priority support",
-      ],
       popular: false,
       priceId: "price_1SEHBHB28kMY3UsenQEY0qoT",
       yearlyPriceId: "price_1SEHZfB28kMY3UseZKmLEcPk",
       savings: "$178"
     },
+  ];
+
+  const featureComparison = [
+    { feature: "Bank/Credit Card Connections", starter: "2", growing: "4", professional: "7" },
+    { feature: "Amazon Connections", starter: "1", growing: "1", professional: "1" },
+    { feature: "Additional Users", starter: false, growing: "2", professional: "5" },
+    { feature: "Advanced Forecasting Workflow", starter: true, growing: true, professional: true },
+    { feature: "365-Day Cash Flow Projection", starter: true, growing: true, professional: true },
+    { feature: "Bank Transaction Matching", starter: true, growing: true, professional: true },
+    { feature: "AI Insights", starter: false, growing: true, professional: true },
+    { feature: "AI PDF Extractor", starter: false, growing: true, professional: true },
+    { feature: "Automated Notifications", starter: false, growing: false, professional: true },
+    { feature: "Scenario Planning", starter: false, growing: false, professional: true },
+    { feature: "Analytics", starter: false, growing: "Basic", professional: "Advanced" },
+    { feature: "Support", starter: "Email", growing: "Priority", professional: "Priority" },
   ];
 
   const testimonials = [
@@ -493,54 +474,92 @@ const Landing = () => {
             </Badge>
           </div>
           
-          <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
-            {pricingPlans.map((plan, index) => (
-              <Card key={index} className={`shadow-card hover:shadow-elevated transition-all duration-300 ${plan.popular ? 'ring-2 ring-primary shadow-elevated scale-105' : ''}`}>
-                <CardHeader className="text-center space-y-4">
-                  {plan.popular && (
-                    <Badge className="bg-gradient-primary text-primary-foreground">
-                      Most Popular
-                    </Badge>
-                  )}
-                  <div>
-                    <h3 className="text-2xl font-bold">{plan.name}</h3>
-                    <p className="text-muted-foreground">{plan.description}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-baseline justify-center">
-                      <span className="text-4xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
-                      <span className="text-muted-foreground">{isYearly ? plan.yearlyPeriod : plan.period}</span>
-                    </div>
-                    {isYearly && (
-                      <Badge variant="secondary" className="text-xs">
-                        Save {plan.savings}/year
+          <div className="max-w-7xl mx-auto">
+            {/* Plan Headers with Pricing */}
+            <div className="grid gap-6 md:grid-cols-4 mb-8">
+              <div className="hidden md:block"></div>
+              {pricingPlans.map((plan, index) => (
+                <Card key={index} className={`shadow-card ${plan.popular ? 'ring-2 ring-primary scale-105' : ''}`}>
+                  <CardHeader className="text-center space-y-4">
+                    {plan.popular && (
+                      <Badge className="bg-gradient-primary text-primary-foreground mx-auto">
+                        Most Popular
                       </Badge>
                     )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <ul className="space-y-3">
-                    {plan.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="flex items-center space-x-3">
-                        <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
-                        <span className="text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button 
-                    className={`w-full ${plan.popular ? 'bg-gradient-primary' : ''}`}
-                    variant={plan.popular ? "default" : "outline"}
-                    onClick={() => handleStartTrial(isYearly ? plan.yearlyPriceId : plan.priceId)}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Loading..." : "Start 7-Day Free Trial"}
-                  </Button>
-                  <p className="text-xs text-muted-foreground text-center">
-                    Then {isYearly ? plan.yearlyPrice + plan.yearlyPeriod : plan.price + plan.period}. Cancel anytime.
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+                    <div>
+                      <h3 className="text-2xl font-bold">{plan.name}</h3>
+                      <p className="text-sm text-muted-foreground">{plan.description}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-baseline justify-center">
+                        <span className="text-4xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
+                        <span className="text-muted-foreground text-sm">{isYearly ? plan.yearlyPeriod : plan.period}</span>
+                      </div>
+                      {isYearly && (
+                        <Badge variant="secondary" className="text-xs">
+                          Save {plan.savings}/year
+                        </Badge>
+                      )}
+                    </div>
+                    <Button 
+                      className={`w-full ${plan.popular ? 'bg-gradient-primary' : ''}`}
+                      variant={plan.popular ? "default" : "outline"}
+                      onClick={() => handleStartTrial(isYearly ? plan.yearlyPriceId : plan.priceId)}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Loading..." : "Start Trial"}
+                    </Button>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+
+            {/* Feature Comparison Table */}
+            <Card>
+              <CardContent className="p-0">
+                <div className="divide-y">
+                  {featureComparison.map((row, index) => (
+                    <div key={index} className="grid grid-cols-4 gap-4 p-4 hover:bg-muted/30 transition-colors">
+                      <div className="font-medium text-sm">{row.feature}</div>
+                      <div className="text-center">
+                        {row.starter === true ? (
+                          <Check className="h-5 w-5 text-success mx-auto" />
+                        ) : row.starter === false ? (
+                          <X className="h-5 w-5 text-muted-foreground mx-auto" />
+                        ) : (
+                          <span className="text-sm">{row.starter}</span>
+                        )}
+                      </div>
+                      <div className="text-center">
+                        {row.growing === true ? (
+                          <Check className="h-5 w-5 text-success mx-auto" />
+                        ) : row.growing === false ? (
+                          <X className="h-5 w-5 text-muted-foreground mx-auto" />
+                        ) : (
+                          <span className="text-sm">{row.growing}</span>
+                        )}
+                      </div>
+                      <div className="text-center">
+                        {row.professional === true ? (
+                          <Check className="h-5 w-5 text-success mx-auto" />
+                        ) : row.professional === false ? (
+                          <X className="h-5 w-5 text-muted-foreground mx-auto" />
+                        ) : (
+                          <span className="text-sm">{row.professional}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Bottom CTA */}
+            <div className="text-center mt-8">
+              <p className="text-sm text-muted-foreground">
+                Then {isYearly ? 'yearly' : 'monthly'} billing. Cancel anytime during your 7-day free trial.
+              </p>
+            </div>
           </div>
         </div>
       </section>
