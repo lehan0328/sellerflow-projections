@@ -497,33 +497,40 @@ export const CashFlowCalendar = ({
                      onDrop={!isPast ? (e) => handleDrop(e, day) : undefined}
                    >
                     {/* Day header with number and Cash on same line */}
-                    <div className="flex items-start justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <div className="text-sm font-bold text-foreground">
-                          {format(day, 'd')}
-                        </div>
-                        {/* Cash next to day number - only show on current day */}
-                        {hasAnyData && isToday(day) && (
-                          <div className="text-[10px] text-green-600 dark:text-green-400 font-medium truncate">
-                            Cash ${bankAccountBalance.toLocaleString()}
+                    <div className="mb-1">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-bold text-foreground">
+                            {format(day, 'd')}
                           </div>
+                          {/* Cash next to day number - only show on current day */}
+                          {hasAnyData && isToday(day) && (
+                            <div className="text-[10px] text-green-600 dark:text-green-400 font-medium truncate">
+                              Cash ${bankAccountBalance.toLocaleString()}
+                            </div>
+                          )}
+                        </div>
+                        {totalCash < 0 && (
+                          <AlertTriangle className="h-3 w-3 text-red-500" />
                         )}
                       </div>
-                      {totalCash < 0 && (
-                        <AlertTriangle className="h-3 w-3 text-red-500" />
+                      
+                      {/* Credit aligned with Cash */}
+                      {hasAnyData && isToday(day) && (
+                        <div className="flex items-center gap-2">
+                          <div className="text-sm font-bold text-transparent">
+                            {format(day, 'd')}
+                          </div>
+                          <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium truncate">
+                            Credit ${totalAvailableCredit.toLocaleString()}
+                          </div>
+                        </div>
                       )}
                     </div>
 
                     {/* Compact financial info - stacked vertically below */}
                     {hasAnyData && (
                       <div className="space-y-0.5 text-[10px] leading-tight">
-                        {/* Credit - show on current day */}
-                        {isToday(day) && (
-                          <div className="text-blue-600 dark:text-blue-400 font-medium truncate">
-                            Credit ${totalAvailableCredit.toLocaleString()}
-                          </div>
-                        )}
-                        
                         {/* Pending - only show on current day */}
                         {isToday(day) && pendingIncome > 0 && (
                           <div className="text-orange-600 dark:text-orange-400 font-medium truncate">
