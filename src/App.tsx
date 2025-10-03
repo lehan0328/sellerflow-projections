@@ -10,6 +10,7 @@ import Settings from "./pages/Settings";
 import UpgradePlan from "./pages/UpgradePlan";
 import TransactionLog from "./pages/TransactionLog";
 import BankTransactions from "./pages/BankTransactions";
+import OAuthRedirect from "./pages/OAuthRedirect";
 import NotFound from "./pages/NotFound";
 import Docs from "./pages/Docs";
 import DocsGettingStarted from "./pages/DocsGettingStarted";
@@ -59,6 +60,7 @@ const App = () => (
               <BankTransactions />
             </ProtectedRoute>
           } />
+          <Route path="/oauth-redirect" element={<OAuthRedirect />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

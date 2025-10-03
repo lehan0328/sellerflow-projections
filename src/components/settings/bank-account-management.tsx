@@ -14,12 +14,16 @@ export function BankAccountManagement() {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // Plaid Link configuration
+  // Plaid Link configuration with OAuth support
   const config = {
     token: linkToken,
+    receivedRedirectUri: window.location.href,
     onSuccess: async (public_token: string, metadata: any) => {
       try {
         console.log("Plaid Link success:", metadata);
+        
+        // Clear OAuth state from sessionStorage
+        sessionStorage.removeItem('plaid_oauth_state_id');
         
         // Exchange the public token for an access token via edge function
         const { data, error } = await supabase.functions.invoke('exchange-plaid-token', {
@@ -43,14 +47,20 @@ export function BankAccountManagement() {
         toast.error("Failed to connect account");
       }
       setIsConnecting(false);
+      sessionStorage.removeItem('plaid_oauth_state_id');
     },
   };
 
   const { open, ready } = usePlaidLink(config);
 
-  // Open Plaid Link when token is available
+  // Open Plaid Link when token is available or when returning from OAuth
   useEffect(() => {
     if (linkToken && ready) {
+      // Check if we're returning from OAuth
+      const oauthStateId = sessionStorage.getItem('plaid_oauth_state_id');
+      if (oauthStateId) {
+        console.log('Resuming OAuth flow with state ID:', oauthStateId);
+      }
       open();
     }
   }, [linkToken, ready, open]);

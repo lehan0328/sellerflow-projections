@@ -23,6 +23,12 @@ serve(async (req) => {
 
     console.log('Creating Plaid link token for user:', userId);
 
+    // Determine the redirect URI based on the request origin
+    const origin = req.headers.get('origin') || 'https://7a7abab6-1ab3-40f5-8847-2b043f3ea03c.lovableproject.com';
+    const redirectUri = `${origin}/oauth-redirect`;
+
+    console.log('Using OAuth redirect URI:', redirectUri);
+
     // Create link token with Plaid API
     const response = await fetch(`https://${PLAID_ENV}.plaid.com/link/token/create`, {
       method: 'POST',
@@ -39,6 +45,7 @@ serve(async (req) => {
         products: ['transactions'],
         country_codes: ['US'],
         language: 'en',
+        redirect_uri: redirectUri,
         account_filters: {
           depository: {
             account_subtypes: ['all'],
