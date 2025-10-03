@@ -505,19 +505,19 @@ export const CashFlowCalendar = ({
                         <div className="flex flex-col items-end text-right">
                           {/* Cash - only show on current day */}
                           {hasAnyData && isToday(day) && (
-                            <div className="text-[10px] text-green-600 dark:text-green-400 font-medium truncate">
+                            <div className="text-xs text-green-600 dark:text-green-400 font-semibold truncate">
                               Cash ${bankAccountBalance.toLocaleString()}
                             </div>
                           )}
                           {/* Credit - only show on current day */}
                           {hasAnyData && isToday(day) && (
-                            <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium truncate">
+                            <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold truncate">
                               Credit ${totalAvailableCredit.toLocaleString()}
                             </div>
                           )}
                           {/* Net Amount - show for all dates with data */}
                           {hasAnyData && netAmount !== null && (
-                            <div className={`text-[10px] font-medium truncate ${netAmount < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                            <div className={`text-xs font-semibold truncate ${netAmount < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                               Net ${netAmount.toLocaleString()}
                             </div>
                           )}

@@ -24,6 +24,7 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { BankTransaction } from "@/components/cash-flow/bank-transaction-log";
 import { useTransactionMatching } from "@/hooks/useTransactionMatching";
+import { TransactionMatchNotification } from "@/components/cash-flow/transaction-match-notification";
 
 // ========== Type Definitions ==========
 
@@ -147,7 +148,10 @@ const Dashboard = () => {
 
   // Transaction matching for bank transactions
   const bankTransactions = exampleBankTransactions;
-  const { getMatchesForIncome } = useTransactionMatching(bankTransactions, vendors, incomeItems);
+  const { matches, getMatchesForIncome } = useTransactionMatching(bankTransactions, vendors, incomeItems);
+  
+  // Calculate unmatched transactions that need attention
+  const unmatchedTransactionsCount = matches.length;
 
   // Calculate pending income due today that's not matched
   const todayDate = new Date();
@@ -858,6 +862,9 @@ const Dashboard = () => {
           onUpdateCashBalance={handleUpdateCashBalance}
           pendingIncomeToday={pendingIncomeToday}
         />
+        
+        {/* Transaction Match Notification */}
+        <TransactionMatchNotification unmatchedCount={unmatchedTransactionsCount} />
         
         {/* Row 1: Cash Flow Calendar and AI Insights (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[700px]">
