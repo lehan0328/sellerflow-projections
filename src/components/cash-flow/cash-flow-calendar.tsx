@@ -496,27 +496,28 @@ export const CashFlowCalendar = ({
                      onDragOver={!isPast ? handleDragOver : undefined}
                      onDrop={!isPast ? (e) => handleDrop(e, day) : undefined}
                    >
-                    {/* Day header with number */}
+                    {/* Day header with number and Cash on same line */}
                     <div className="flex items-start justify-between mb-1">
-                      <div className="text-sm font-bold text-foreground">
-                        {format(day, 'd')}
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm font-bold text-foreground">
+                          {format(day, 'd')}
+                        </div>
+                        {/* Cash next to day number - only show on current day */}
+                        {hasAnyData && isToday(day) && (
+                          <div className="text-[10px] text-green-600 dark:text-green-400 font-medium truncate">
+                            Cash ${bankAccountBalance.toLocaleString()}
+                          </div>
+                        )}
                       </div>
                       {totalCash < 0 && (
                         <AlertTriangle className="h-3 w-3 text-red-500" />
                       )}
                     </div>
 
-                    {/* Compact financial info - stacked vertically */}
+                    {/* Compact financial info - stacked vertically below */}
                     {hasAnyData && (
                       <div className="space-y-0.5 text-[10px] leading-tight">
-                        {/* Cash - always show on current day */}
-                        {isToday(day) && (
-                          <div className="text-green-600 dark:text-green-400 font-medium truncate">
-                            Cash ${bankAccountBalance.toLocaleString()}
-                          </div>
-                        )}
-                        
-                        {/* Credit - always show on current day */}
+                        {/* Credit - show on current day */}
                         {isToday(day) && (
                           <div className="text-blue-600 dark:text-blue-400 font-medium truncate">
                             Credit ${totalAvailableCredit.toLocaleString()}
