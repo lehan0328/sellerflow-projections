@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { useState } from "react";
 import { 
   ArrowLeft,
   Shield,
@@ -15,31 +16,41 @@ import { useSubscription, PRICING_PLANS, ADDON_PRODUCTS } from "@/hooks/useSubsc
 const UpgradePlan = () => {
   const navigate = useNavigate();
   const { subscribed, plan, subscription_end, createCheckout, purchaseAddon, openCustomerPortal, isLoading } = useSubscription();
+  const [isYearly, setIsYearly] = useState(false);
 
   const plans = [
     {
       key: "starter",
       name: PRICING_PLANS.starter.name,
       price: PRICING_PLANS.starter.price,
+      yearlyPrice: PRICING_PLANS.starter.yearlyPrice,
       priceId: PRICING_PLANS.starter.price_id,
+      yearlyPriceId: PRICING_PLANS.starter.yearly_price_id,
       features: PRICING_PLANS.starter.features,
       popular: false,
+      savings: "$58"
     },
     {
       key: "growing",
       name: PRICING_PLANS.growing.name,
       price: PRICING_PLANS.growing.price,
+      yearlyPrice: PRICING_PLANS.growing.yearlyPrice,
       priceId: PRICING_PLANS.growing.price_id,
+      yearlyPriceId: PRICING_PLANS.growing.yearly_price_id,
       features: PRICING_PLANS.growing.features,
       popular: true,
+      savings: "$118"
     },
     {
       key: "professional",
       name: PRICING_PLANS.professional.name,
       price: PRICING_PLANS.professional.price,
+      yearlyPrice: PRICING_PLANS.professional.yearlyPrice,
       priceId: PRICING_PLANS.professional.price_id,
+      yearlyPriceId: PRICING_PLANS.professional.yearly_price_id,
       features: PRICING_PLANS.professional.features,
       popular: false,
+      savings: "$178"
     }
   ];
 
@@ -49,6 +60,10 @@ const UpgradePlan = () => {
 
   const handlePurchaseAddon = (priceId: string) => {
     purchaseAddon(priceId);
+  };
+
+  const getCurrentPriceId = (planItem: typeof plans[0]) => {
+    return isYearly ? planItem.yearlyPriceId : planItem.priceId;
   };
 
   const addons = [
@@ -162,10 +177,28 @@ const UpgradePlan = () => {
 
           {/* Plans */}
           <div className="lg:col-span-3">
-            <div className="mb-6 text-center">
-              <Badge variant="secondary" className="text-sm">
-                7-day free trial • Credit card required • Cancel anytime
-              </Badge>
+            <div className="mb-6 space-y-4">
+              <div className="flex items-center justify-center gap-4">
+                <span className={`text-sm ${!isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>Monthly</span>
+                <button
+                  onClick={() => setIsYearly(!isYearly)}
+                  className="relative inline-flex h-6 w-11 items-center rounded-full bg-muted transition-colors hover:bg-muted/80"
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-primary transition-transform ${
+                      isYearly ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className={`text-sm ${isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>
+                  Yearly <Badge variant="secondary" className="ml-1">Save 2 months</Badge>
+                </span>
+              </div>
+              <div className="text-center">
+                <Badge variant="secondary" className="text-sm">
+                  7-day free trial • Credit card required • Cancel anytime
+                </Badge>
+              </div>
             </div>
             <div className="grid gap-6 md:grid-cols-3">
               {plans.map((planItem) => {
@@ -191,9 +224,14 @@ const UpgradePlan = () => {
                     <CardHeader className="text-center">
                       <CardTitle>{planItem.name}</CardTitle>
                       <div className="text-3xl font-bold">
-                        ${planItem.price}
-                        <span className="text-sm font-normal text-muted-foreground">/month</span>
+                        ${isYearly ? planItem.yearlyPrice : planItem.price}
+                        <span className="text-sm font-normal text-muted-foreground">{isYearly ? '/year' : '/month'}</span>
                       </div>
+                      {isYearly && (
+                        <Badge variant="secondary" className="text-xs mx-auto">
+                          Save {planItem.savings}/year
+                        </Badge>
+                      )}
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <ul className="space-y-2">
@@ -208,13 +246,13 @@ const UpgradePlan = () => {
                         className="w-full" 
                         variant={isCurrent ? "outline" : planItem.popular ? "default" : "outline"}
                         disabled={isCurrent || isLoading}
-                        onClick={() => handleUpgrade(planItem.priceId)}
+                        onClick={() => handleUpgrade(getCurrentPriceId(planItem))}
                       >
                         {isCurrent ? "Current Plan" : subscribed ? "Upgrade Now" : "Start 7-Day Free Trial"}
                       </Button>
                       {!isCurrent && !subscribed && (
                         <p className="text-xs text-muted-foreground text-center">
-                          Then ${planItem.price}/month. Cancel anytime.
+                          Then ${isYearly ? planItem.yearlyPrice + '/year' : planItem.price + '/month'}. Cancel anytime.
                         </p>
                       )}
                     </CardContent>

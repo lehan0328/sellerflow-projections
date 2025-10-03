@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 const Landing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isYearly, setIsYearly] = useState(false);
 
   const features = [
     {
@@ -49,7 +51,9 @@ const Landing = () => {
     {
       name: "Starter",
       price: "$29",
+      yearlyPrice: "$290",
       period: "/month",
+      yearlyPeriod: "/year",
       description: "Under $20k monthly amazon payout",
       features: [
         "2 bank/credit card connections",
@@ -61,11 +65,15 @@ const Landing = () => {
       ],
       popular: false,
       priceId: "price_1SEH8NB28kMY3UseBj2w9HgH",
+      yearlyPriceId: "price_1SEHZGB28kMY3UseCkWIlnWw",
+      savings: "$58"
     },
     {
       name: "Growing",
       price: "$59",
+      yearlyPrice: "$590",
       period: "/month",
+      yearlyPeriod: "/year",
       description: "Under $50k monthly amazon payout",
       features: [
         "4 bank/credit card connections",
@@ -81,11 +89,15 @@ const Landing = () => {
       ],
       popular: true,
       priceId: "price_1SEH8iB28kMY3Usem3k3vElT",
+      yearlyPriceId: "price_1SEHZVB28kMY3Use9bH8xPlg",
+      savings: "$118"
     },
     {
       name: "Professional",
       price: "$89",
+      yearlyPrice: "$890",
       period: "/month",
+      yearlyPeriod: "/year",
       description: "Under $200k monthly amazon payout",
       features: [
         "7 bank/credit card connections",
@@ -103,6 +115,8 @@ const Landing = () => {
       ],
       popular: false,
       priceId: "price_1SEHBHB28kMY3UsenQEY0qoT",
+      yearlyPriceId: "price_1SEHZfB28kMY3UseZKmLEcPk",
+      savings: "$178"
     },
   ];
 
@@ -431,6 +445,22 @@ const Landing = () => {
             <p className="text-xl text-muted-foreground">
               Choose the plan that fits your Amazon business
             </p>
+            <div className="flex items-center justify-center gap-4 mt-6">
+              <span className={`text-sm ${!isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>Monthly</span>
+              <button
+                onClick={() => setIsYearly(!isYearly)}
+                className="relative inline-flex h-6 w-11 items-center rounded-full bg-muted transition-colors hover:bg-muted/80"
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-primary transition-transform ${
+                    isYearly ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className={`text-sm ${isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>
+                Yearly <Badge variant="secondary" className="ml-1">Save 2 months</Badge>
+              </span>
+            </div>
             <Badge variant="secondary" className="text-sm">
               7-day free trial • Credit card required • Cancel anytime
             </Badge>
@@ -451,9 +481,14 @@ const Landing = () => {
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-baseline justify-center">
-                      <span className="text-4xl font-bold">{plan.price}</span>
-                      <span className="text-muted-foreground">{plan.period}</span>
+                      <span className="text-4xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
+                      <span className="text-muted-foreground">{isYearly ? plan.yearlyPeriod : plan.period}</span>
                     </div>
+                    {isYearly && (
+                      <Badge variant="secondary" className="text-xs">
+                        Save {plan.savings}/year
+                      </Badge>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -473,7 +508,7 @@ const Landing = () => {
                     Start 7-Day Free Trial
                   </Button>
                   <p className="text-xs text-muted-foreground text-center">
-                    Then {plan.price}/month. Cancel anytime.
+                    Then {isYearly ? plan.yearlyPrice + plan.yearlyPeriod : plan.price + plan.period}. Cancel anytime.
                   </p>
                 </CardContent>
               </Card>

@@ -30,8 +30,10 @@ export const PRICING_PLANS = {
   starter: {
     name: "Starter",
     price: 29,
+    yearlyPrice: 290,
     product_id: "prod_TAcNEuRnBTaX61",
     price_id: "price_1SEH8NB28kMY3UseBj2w9HgH",
+    yearly_price_id: "price_1SEHZGB28kMY3UseCkWIlnWw",
     features: [
       "Under $20k monthly amazon payout",
       "2 bank/credit card connections",
@@ -45,8 +47,10 @@ export const PRICING_PLANS = {
   growing: {
     name: "Growing",
     price: 59,
+    yearlyPrice: 590,
     product_id: "prod_TAcNnoGuq5Mr7X",
     price_id: "price_1SEH8iB28kMY3Usem3k3vElT",
+    yearly_price_id: "price_1SEHZVB28kMY3Use9bH8xPlg",
     features: [
       "Under $50k monthly amazon payout",
       "4 bank/credit card connections",
@@ -64,8 +68,10 @@ export const PRICING_PLANS = {
   professional: {
     name: "Professional",
     price: 89,
+    yearlyPrice: 890,
     product_id: "prod_TAcQOfzGbqPowf",
     price_id: "price_1SEHBHB28kMY3UsenQEY0qoT",
+    yearly_price_id: "price_1SEHZfB28kMY3UseZKmLEcPk",
     features: [
       "Under $200k monthly amazon payout",
       "7 bank/credit card connections",
