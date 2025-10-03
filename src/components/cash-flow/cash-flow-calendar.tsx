@@ -450,8 +450,8 @@ export const CashFlowCalendar = ({
                           <div className="text-right">
                             <div className="flex items-center justify-end gap-1">
                               <span className="text-[10px] text-muted-foreground">Cash</span>
-                              <span className={`text-sm font-bold ${bankAccountBalance < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
-                                ${bankAccountBalance.toLocaleString()}
+                              <span className={`text-sm font-bold ${totalCash < 0 ? 'text-red-600' : 'text-finance-positive'}`}>
+                                ${totalCash.toLocaleString()}
                               </span>
                             </div>
                             {pendingIncome > 0 && (
