@@ -470,7 +470,7 @@ const Landing = () => {
               <Badge className="bg-gradient-primary">Save up to 20% ($178/year)</Badge>
             </div>
             <Badge variant="secondary" className="text-sm">
-              7-day free trial • Credit card required • Cancel anytime
+              7-day free trial • Secure checkout • Cancel anytime
             </Badge>
           </div>
           
