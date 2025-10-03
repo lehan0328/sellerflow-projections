@@ -61,18 +61,18 @@ export const PendingNotificationsPanel = ({
     return isBefore(paymentDate, today);
   });
 
-  // Get pending POs (future or today, not yet paid)
+  // Get pending POs (due today only, not yet paid)
   const pendingPOs = vendors.filter(vendor => {
     if (vendor.status === 'paid' || vendor.totalOwed <= 0) return false;
     const paymentDate = startOfDay(new Date(vendor.nextPaymentDate));
-    return paymentDate >= today;
+    return paymentDate.getTime() === today.getTime();
   });
 
-  // Get pending income (future or today, not yet received)
+  // Get pending income (due today only, not yet received)
   const pendingIncome = incomeItems.filter(income => {
     if (income.status === 'received') return false;
     const paymentDate = startOfDay(new Date(income.paymentDate));
-    return paymentDate >= today;
+    return paymentDate.getTime() === today.getTime();
   });
 
   const totalOverdue = overduePOs.length + overdueIncome.length;
