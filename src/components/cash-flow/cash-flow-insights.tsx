@@ -89,7 +89,31 @@ export const CashFlowInsights = ({
       });
 
       if (error) throw error;
-      if (data?.advice) setAdvice(data.advice);
+      
+      if (data?.advice) {
+        setAdvice(data.advice);
+        
+        // Save the insight to the database for persistence
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const today = new Date().toISOString().split("T")[0];
+          
+          // Insert or update today's insight
+          await supabase
+            .from("cash_flow_insights")
+            .upsert({
+              user_id: user.id,
+              insight_date: today,
+              advice: data.advice,
+              current_balance: currentBalance,
+              daily_inflow: dailyInflow,
+              daily_outflow: dailyOutflow,
+              upcoming_expenses: upcomingExpenses
+            }, {
+              onConflict: 'user_id,insight_date'
+            });
+        }
+      }
     } catch (error: any) {
       console.error("Failed to generate insight:", error);
       setAdvice("Unable to generate insights at this time.");
