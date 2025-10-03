@@ -184,6 +184,46 @@ export const CashFlowCalendar = ({
       .reduce((sum, vendor) => sum + vendor.nextPaymentAmount, 0);
   };
 
+  // Calculate Net Amount for future dates (projected balance)
+  const getNetAmountForFutureDate = (date: Date) => {
+    const checkDate = startOfDay(new Date(date));
+    const today = startOfDay(new Date());
+    
+    // Only calculate for future dates
+    if (checkDate <= today) return null;
+
+    // Start with current bank balance
+    let netAmount = bankAccountBalance;
+
+    // Add all scheduled income from today through target date
+    incomeItems.forEach(income => {
+      if (income.status === 'received') return;
+      const incomeDate = startOfDay(new Date(income.paymentDate));
+      if (incomeDate > today && incomeDate <= checkDate) {
+        netAmount += income.amount;
+      }
+    });
+
+    // Subtract all scheduled vendor payments from today through target date
+    vendors.forEach(vendor => {
+      if (vendor.status === 'paid' || vendor.totalOwed <= 0) return;
+      const paymentDate = startOfDay(new Date(vendor.nextPaymentDate));
+      if (paymentDate > today && paymentDate <= checkDate) {
+        netAmount -= vendor.nextPaymentAmount;
+      }
+    });
+
+    // Add all events (income/expenses) from today through target date
+    events.forEach(event => {
+      const eventDate = startOfDay(new Date(event.date));
+      if (eventDate > today && eventDate <= checkDate) {
+        netAmount += (event.type === 'inflow' ? event.amount : -event.amount);
+      }
+    });
+
+    return netAmount;
+  };
+
   const getTotalCashForDay = (date: Date) => {
     const target = new Date(date);
     target.setHours(0, 0, 0, 0);
@@ -413,6 +453,7 @@ export const CashFlowCalendar = ({
                 const pendingIncome = getPendingIncomeForToday(day);
                 const overdueIncome = getOverdueIncomeForToday(day);
                 const overdueVendors = getOverdueVendorsForToday(day);
+                const netAmount = getNetAmountForFutureDate(day);
                 const hasEvents = dayEvents.length > 0;
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
@@ -502,6 +543,17 @@ export const CashFlowCalendar = ({
                             <span className="text-[10px] text-muted-foreground">Credit</span>
                             <span className="text-[10px] text-blue-600 font-medium">
                               ${totalAvailableCredit.toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      {/* Net Amount for future dates */}
+                      {hasAnyData && netAmount !== null && !isToday(day) && !isPast && (
+                        <div className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <span className="text-[10px] text-muted-foreground">Net</span>
+                            <span className={`text-sm font-bold ${netAmount < 0 ? 'text-red-600' : 'text-blue-600'}`}>
+                              ${netAmount.toLocaleString()}
                             </span>
                           </div>
                         </div>
