@@ -143,34 +143,40 @@ serve(async (req) => {
       .filter((vendor: any) => (vendor.total_owed || 0) > 0)
       .reduce((sum: number, vendor: any) => sum + (Number(vendor.total_owed) || 0), 0);
     
-    // Calculate safe spending power (current balance + upcoming income - upcoming expenses - safety buffer)
-    const safetyBuffer = currentBalance * 0.1; // 10% buffer
-    const spendingPower = Math.max(0, currentBalance + totalUpcomingIncome - totalUpcomingExpenses - safetyBuffer);
+    // Calculate safe spending power based on actual projections
+    const lowestBalance = projections.length > 0 
+      ? Math.min(...projections.map(p => p.balance)) 
+      : currentBalance;
+    const lowestBalanceDay = projections.find(p => p.balance === lowestBalance);
+    
+    // Safe spending is: current balance minus the lowest projected balance minus 10% buffer
+    const safetyBuffer = currentBalance * 0.1;
+    const spendingPower = Math.max(0, currentBalance - Math.abs(currentBalance - lowestBalance) - safetyBuffer);
 
     const systemPrompt = `You are a financial advisor analyzing cash flow data and future projections. Provide concise, actionable advice in a friendly tone. 
 
 IMPORTANT FORMATTING RULES:
 - Start with "**Current Financial Health:**" followed by your health assessment
-- Add "**Future Outlook:**" with projection analysis (CRITICAL if going negative soon)
-- Add "**Safe Spending Power:**" with the calculated amount they can safely spend
+- Add "**Lowest Balance Alert:**" showing when balance will be at its lowest point (MUST include exact day count and amount)
+- Add "**Safe Spending Power:**" with the calculated amount they can safely spend before hitting lowest point
+- Add "**Future Outlook:**" with projection analysis (CRITICAL if going negative)
 - End with "**Actionable Recommendation:**" followed by one specific action they should take
-- Keep total response under 200 words
-- If going negative, make this VERY CLEAR and URGENT with the EXACT day count and amount
+- Keep total response under 250 words
+- ALWAYS mention the lowest balance day count and amount prominently
 
 Focus on:
 - Current vs projected cash position
-- When balance will go negative (if applicable)
-- Safe spending amount to avoid going negative
+- Exact day when balance hits lowest point with specific amount
+- Safe spending amount to avoid problems
 - Risk warnings and action items`;
 
     let projectionSummary = "";
     if (goesNegative) {
       const formattedDate = new Date(goesNegative.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       projectionSummary = `⚠️ CRITICAL: Balance projected to go NEGATIVE in ${daysUntilNegative} days (${formattedDate}). Balance will drop to $${goesNegative.balance.toLocaleString()}.`;
-    } else if (projections.length > 0) {
-      const lowestBalance = Math.min(...projections.map(p => p.balance));
-      const lowestDay = projections.find(p => p.balance === lowestBalance);
-      projectionSummary = `Projected to stay positive for next 180 days. Lowest balance: $${lowestBalance.toLocaleString()} (in ${lowestDay?.daysFromNow} days).`;
+    } else if (projections.length > 0 && lowestBalanceDay) {
+      const formattedDate = new Date(lowestBalanceDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      projectionSummary = `📊 Lowest Balance: $${lowestBalance.toLocaleString()} occurring in ${lowestBalanceDay.daysFromNow} days (${formattedDate}). Will stay positive for next 180 days.`;
     } else {
       projectionSummary = `No significant cash flow changes projected in the next 180 days.`;
     }
@@ -178,9 +184,12 @@ Focus on:
     const userPrompt = `Current Balance: $${currentBalance.toLocaleString()}
 Upcoming Income (Total): $${totalUpcomingIncome.toLocaleString()}
 Upcoming Expenses (Total): $${totalUpcomingExpenses.toLocaleString()}
-Safe Spending Power: $${spendingPower.toLocaleString()}
 
+PROJECTION ANALYSIS (Next 180 Days):
 ${projectionSummary}
+Safe Spending Power (Before Lowest Point): $${spendingPower.toLocaleString()}
+
+CRITICAL: You MUST mention the lowest balance day count (${lowestBalanceDay?.daysFromNow || 'N/A'} days) and amount ($${lowestBalance.toLocaleString()}) in your response.
 
 Analyze this cash flow and provide guidance.`;
 
