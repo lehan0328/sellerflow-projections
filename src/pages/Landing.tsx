@@ -479,37 +479,37 @@ const Landing = () => {
               <Card className="overflow-hidden">
                 {/* Plan Headers with Pricing */}
                 <div className="grid grid-cols-4 gap-0 border-b">
-                  <div className="p-3 bg-muted/30"></div>
+                  <div className="p-4 bg-muted/30"></div>
                   {pricingPlans.map((plan, index) => (
                     <div 
                       key={index} 
-                      className={`p-3 border-l ${plan.popular ? 'bg-primary/5 relative' : 'bg-background'}`}
+                      className={`p-4 border-l ${plan.popular ? 'bg-primary/5 relative' : 'bg-background'}`}
                     >
                       {plan.popular && (
                         <div className="absolute top-0 left-0 right-0">
-                          <Badge className="bg-gradient-primary text-primary-foreground rounded-none w-full rounded-t-lg text-xs py-0.5">
+                          <Badge className="bg-gradient-primary text-primary-foreground rounded-none w-full rounded-t-lg text-xs py-1">
                             Most Popular
                           </Badge>
                         </div>
                       )}
-                      <div className={`text-center space-y-2 ${plan.popular ? 'mt-5' : ''}`}>
+                      <div className={`text-center space-y-3 ${plan.popular ? 'mt-6' : ''}`}>
                         <div>
-                          <h3 className="text-lg font-bold">{plan.name}</h3>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">{plan.description}</p>
+                          <h3 className="text-xl font-bold">{plan.name}</h3>
+                          <p className="text-xs text-muted-foreground mt-1">{plan.description}</p>
                         </div>
-                        <div className="space-y-1">
-                          <div className="flex items-baseline justify-center gap-0.5">
-                            <span className="text-2xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
-                            <span className="text-muted-foreground text-[10px]">{isYearly ? plan.yearlyPeriod : plan.period}</span>
+                        <div className="space-y-1.5">
+                          <div className="flex items-baseline justify-center gap-1">
+                            <span className="text-3xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
+                            <span className="text-muted-foreground text-xs">{isYearly ? plan.yearlyPeriod : plan.period}</span>
                           </div>
                           {isYearly && (
-                            <Badge variant="secondary" className="text-[10px] py-0 px-1.5">
+                            <Badge variant="secondary" className="text-xs py-0.5 px-2">
                               Save {plan.savings}/year
                             </Badge>
                           )}
                         </div>
                         <Button 
-                          className={`w-full text-xs py-1.5 h-auto ${plan.popular ? 'bg-gradient-primary' : ''}`}
+                          className={`w-full text-sm py-2 h-auto ${plan.popular ? 'bg-gradient-primary' : ''}`}
                           variant={plan.popular ? "default" : "outline"}
                           onClick={() => handleStartTrial(isYearly ? plan.yearlyPriceId : plan.priceId)}
                           disabled={isLoading}
@@ -526,32 +526,32 @@ const Landing = () => {
                   <div className="divide-y">
                     {featureComparison.map((row, index) => (
                       <div key={index} className="grid grid-cols-4 gap-0 hover:bg-muted/30 transition-colors">
-                        <div className="p-2 font-medium text-xs bg-muted/30 flex items-center">{row.feature}</div>
-                        <div className={`p-2 border-l flex items-center justify-center ${pricingPlans[0].popular ? 'bg-primary/5' : ''}`}>
+                        <div className="p-3 font-medium text-sm bg-muted/30 flex items-center">{row.feature}</div>
+                        <div className={`p-3 border-l flex items-center justify-center ${pricingPlans[0].popular ? 'bg-primary/5' : ''}`}>
                           {row.starter === true ? (
                             <Check className="h-4 w-4 text-success" />
                           ) : row.starter === false ? (
                             <X className="h-4 w-4 text-destructive" />
                           ) : (
-                            <span className="text-xs font-medium">{row.starter}</span>
+                            <span className="text-sm font-medium">{row.starter}</span>
                           )}
                         </div>
-                        <div className={`p-2 border-l flex items-center justify-center ${pricingPlans[1].popular ? 'bg-primary/5' : ''}`}>
+                        <div className={`p-3 border-l flex items-center justify-center ${pricingPlans[1].popular ? 'bg-primary/5' : ''}`}>
                           {row.growing === true ? (
                             <Check className="h-4 w-4 text-success" />
                           ) : row.growing === false ? (
                             <X className="h-4 w-4 text-destructive" />
                           ) : (
-                            <span className="text-xs font-medium">{row.growing}</span>
+                            <span className="text-sm font-medium">{row.growing}</span>
                           )}
                         </div>
-                        <div className={`p-2 border-l flex items-center justify-center ${pricingPlans[2].popular ? 'bg-primary/5' : ''}`}>
+                        <div className={`p-3 border-l flex items-center justify-center ${pricingPlans[2].popular ? 'bg-primary/5' : ''}`}>
                           {row.professional === true ? (
                             <Check className="h-4 w-4 text-success" />
                           ) : row.professional === false ? (
                             <X className="h-4 w-4 text-destructive" />
                           ) : (
-                            <span className="text-xs font-medium">{row.professional}</span>
+                            <span className="text-sm font-medium">{row.professional}</span>
                           )}
                         </div>
                       </div>
