@@ -175,7 +175,7 @@ const Landing = () => {
               <Button variant="outline" size="sm" className="hover-scale transition-all duration-200" onClick={() => navigate('/auth')}>
                 Sign In
               </Button>
-              <Button size="sm" className="bg-gradient-primary hover-scale transition-all duration-200" onClick={() => navigate('/auth')}>
+              <Button size="sm" className="bg-gradient-primary hover-scale transition-all duration-200" onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}>
                 Start Free Trial
               </Button>
             </div>
