@@ -126,6 +126,8 @@ export default function TransactionLog() {
         dueDate.setHours(0, 0, 0, 0);
         return dueDate <= today;
       });
+    } else if (vendorStatusFilter === "paid") {
+      filtered = filtered.filter(v => v.status === "paid" || v.totalOwed === 0);
     }
 
     // Date range filter
@@ -158,6 +160,8 @@ export default function TransactionLog() {
       filtered = filtered.filter(i => i.status === "pending");
     } else if (incomeStatusFilter === "overdue") {
       filtered = filtered.filter(i => i.status === "overdue");
+    } else if (incomeStatusFilter === "received") {
+      filtered = filtered.filter(i => i.status === "received");
     }
 
     // Date range filter
@@ -294,6 +298,7 @@ export default function TransactionLog() {
                         <SelectItem value="all">All</SelectItem>
                         <SelectItem value="pending">Pending</SelectItem>
                         <SelectItem value="due">Due</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
                       </SelectContent>
                     </Select>
                     
@@ -447,6 +452,7 @@ export default function TransactionLog() {
                         <SelectItem value="all">All</SelectItem>
                         <SelectItem value="pending">Pending</SelectItem>
                         <SelectItem value="overdue">Overdue</SelectItem>
+                        <SelectItem value="received">Received</SelectItem>
                       </SelectContent>
                     </Select>
                     
