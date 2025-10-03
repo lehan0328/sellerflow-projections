@@ -130,37 +130,58 @@ export const CashFlowCalendar = ({
     }, 0);
   };
 
-  // Get pending income that rolls forward until received
-  const getRollingPendingIncome = (date: Date) => {
-    const checkDate = new Date(date);
-    checkDate.setHours(0, 0, 0, 0);
+  // Get pending income - only show on TODAY if not yet received
+  const getPendingIncomeForToday = (date: Date) => {
+    const checkDate = startOfDay(new Date(date));
     const today = startOfDay(new Date());
+    
+    // Only show pending on today
+    if (checkDate.getTime() !== today.getTime()) return 0;
 
     return incomeItems
       .filter(income => {
         if (income.status === 'received') return false;
         const incomeDate = startOfDay(new Date(income.paymentDate));
-        // Show pending from payment date onwards until received
-        return incomeDate <= checkDate;
+        // Show on today if due date is today or in the future
+        return incomeDate >= today;
       })
       .reduce((sum, income) => sum + income.amount, 0);
   };
 
-  // Get overdue amounts (past due date but not yet received/paid)
-  const getOverdueAmounts = (date: Date, type: 'income' | 'vendor') => {
+  // Get overdue income - only show on TODAY
+  const getOverdueIncomeForToday = (date: Date) => {
     const checkDate = startOfDay(new Date(date));
     const today = startOfDay(new Date());
     
-    if (type === 'income') {
-      return incomeItems
-        .filter(income => {
-          if (income.status === 'received') return false;
-          const incomeDate = startOfDay(new Date(income.paymentDate));
-          return incomeDate < checkDate && incomeDate < today;
-        })
-        .reduce((sum, income) => sum + income.amount, 0);
-    }
-    return 0;
+    // Only show overdue on today
+    if (checkDate.getTime() !== today.getTime()) return 0;
+
+    return incomeItems
+      .filter(income => {
+        if (income.status === 'received') return false;
+        const incomeDate = startOfDay(new Date(income.paymentDate));
+        // Overdue if payment date is before today
+        return incomeDate < today;
+      })
+      .reduce((sum, income) => sum + income.amount, 0);
+  };
+
+  // Get overdue vendor payments - only show on TODAY
+  const getOverdueVendorsForToday = (date: Date) => {
+    const checkDate = startOfDay(new Date(date));
+    const today = startOfDay(new Date());
+    
+    // Only show overdue on today
+    if (checkDate.getTime() !== today.getTime()) return 0;
+
+    return vendors
+      .filter(vendor => {
+        if (vendor.status === 'paid' || vendor.totalOwed <= 0) return false;
+        const paymentDate = startOfDay(new Date(vendor.nextPaymentDate));
+        // Overdue if payment date is before today
+        return paymentDate < today;
+      })
+      .reduce((sum, vendor) => sum + vendor.nextPaymentAmount, 0);
   };
 
   const getTotalCashForDay = (date: Date) => {
@@ -389,8 +410,9 @@ export const CashFlowCalendar = ({
                 const dayEvents = getEventsForDay(day);
                 const dayBalance = getDayBalance(day);
                 const totalCash = getTotalCashForDay(day);
-                const pendingIncome = getRollingPendingIncome(day);
-                const overdueIncome = getOverdueAmounts(day, 'income');
+                const pendingIncome = getPendingIncomeForToday(day);
+                const overdueIncome = getOverdueIncomeForToday(day);
+                const overdueVendors = getOverdueVendorsForToday(day);
                 const hasEvents = dayEvents.length > 0;
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
@@ -450,7 +472,7 @@ export const CashFlowCalendar = ({
                           <AlertTriangle className="h-2 w-2 text-red-500" />
                         )}
                       </div>
-                      {hasAnyData && (
+                      {hasAnyData && isToday(day) && (
                         <div className="text-right">
                           <div className="flex items-center justify-end gap-1">
                             <span className="text-[10px] text-muted-foreground">Cash</span>
@@ -466,22 +488,22 @@ export const CashFlowCalendar = ({
                               </span>
                             </div>
                           )}
-                          {overdueIncome > 0 && (
+                          {(overdueIncome > 0 || overdueVendors > 0) && (
                             <div className="flex items-center justify-end gap-1">
                               <span className="text-[10px] text-red-600">Overdue</span>
                               <span className="text-xs text-red-600 font-semibold">
-                                +${overdueIncome.toLocaleString()}
+                                {overdueIncome > 0 && `+$${overdueIncome.toLocaleString()}`}
+                                {overdueIncome > 0 && overdueVendors > 0 && ' / '}
+                                {overdueVendors > 0 && `-$${overdueVendors.toLocaleString()}`}
                               </span>
                             </div>
                           )}
-                          {!isPast && (
-                            <div className="flex items-center justify-end gap-1">
-                              <span className="text-[10px] text-muted-foreground">Credit</span>
-                              <span className="text-[10px] text-blue-600 font-medium">
-                                ${totalAvailableCredit.toLocaleString()}
-                              </span>
-                            </div>
-                          )}
+                          <div className="flex items-center justify-end gap-1">
+                            <span className="text-[10px] text-muted-foreground">Credit</span>
+                            <span className="text-[10px] text-blue-600 font-medium">
+                              ${totalAvailableCredit.toLocaleString()}
+                            </span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -502,7 +524,7 @@ export const CashFlowCalendar = ({
                             ${dayBalance.toLocaleString()}
                           </span>
                         </div>
-                        {pendingIncome > 0 && (
+                        {isToday(day) && pendingIncome > 0 && (
                           <div className="flex items-center justify-between w-full">
                             <span className="text-[10px] text-amber-600">Pending</span>
                             <span className="text-[10px] text-amber-600 font-medium">
@@ -510,11 +532,13 @@ export const CashFlowCalendar = ({
                             </span>
                           </div>
                         )}
-                        {overdueIncome > 0 && (
+                        {isToday(day) && (overdueIncome > 0 || overdueVendors > 0) && (
                           <div className="flex items-center justify-between w-full">
                             <span className="text-[10px] text-red-600">Overdue</span>
                             <span className="text-[10px] text-red-600 font-medium">
-                              +${overdueIncome.toLocaleString()}
+                              {overdueIncome > 0 && `+$${overdueIncome.toLocaleString()}`}
+                              {overdueIncome > 0 && overdueVendors > 0 && ' / '}
+                              {overdueVendors > 0 && `-$${overdueVendors.toLocaleString()}`}
                             </span>
                           </div>
                         )}
