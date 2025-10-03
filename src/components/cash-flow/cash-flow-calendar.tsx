@@ -143,10 +143,20 @@ export const CashFlowCalendar = ({
     
     const netChange = eventsForPeriod.reduce((total, event) => total + (event.type === 'inflow' ? event.amount : -event.amount), 0);
 
-    // Debug logging
-    if (eventsForPeriod.length > 0) {
-      console.log(`Day ${format(target, 'MMM dd')}: ${eventsForPeriod.length} events, netChange: ${netChange}`, 
-        eventsForPeriod.map(e => ({ type: e.type, amount: e.amount, desc: e.description })));
+    // Debug logging - show events FOR THIS DAY ONLY
+    const eventsThisDayOnly = events.filter((event) => {
+      const ed = new Date(event.date);
+      ed.setHours(0, 0, 0, 0);
+      return ed.getTime() === target.getTime();
+    });
+    
+    if (eventsThisDayOnly.length > 0 || eventsForPeriod.length > 0) {
+      console.log(`Day ${format(target, 'MMM dd')}:`, {
+        eventsToday: eventsThisDayOnly.length,
+        todayEvents: eventsThisDayOnly.map(e => ({ type: e.type, amount: e.amount, desc: e.description, date: format(e.date, 'MMM dd') })),
+        cumulativeEvents: eventsForPeriod.length,
+        netChange: netChange
+      });
     }
 
     // Start with starting cash (e.g., 60k from income overview) on 9/29/2025
