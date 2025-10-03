@@ -496,35 +496,29 @@ export const CashFlowCalendar = ({
                      onDragOver={!isPast ? handleDragOver : undefined}
                      onDrop={!isPast ? (e) => handleDrop(e, day) : undefined}
                    >
-                    {/* Day header with number and Cash on same line */}
+                    {/* Day header with number on left, Cash/Credit on right */}
                     <div className="mb-0.5">
                       <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="text-sm font-bold text-foreground">
-                            {format(day, 'd')}
-                          </div>
-                          {/* Cash next to day number - only show on current day */}
+                        <div className="text-sm font-bold text-foreground">
+                          {format(day, 'd')}
+                        </div>
+                        <div className="flex flex-col items-end text-right">
+                          {/* Cash - only show on current day */}
                           {hasAnyData && isToday(day) && (
                             <div className="text-[10px] text-green-600 dark:text-green-400 font-medium truncate">
                               Cash ${bankAccountBalance.toLocaleString()}
                             </div>
                           )}
+                          {/* Credit - only show on current day */}
+                          {hasAnyData && isToday(day) && (
+                            <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium truncate">
+                              Credit ${totalAvailableCredit.toLocaleString()}
+                            </div>
+                          )}
                         </div>
-                        {totalCash < 0 && (
-                          <AlertTriangle className="h-3 w-3 text-red-500" />
-                        )}
                       </div>
-                      
-                      {/* Credit aligned with Cash */}
-                      {hasAnyData && isToday(day) && (
-                        <div className="flex items-center gap-2">
-                          <div className="text-sm font-bold text-transparent">
-                            {format(day, 'd')}
-                          </div>
-                          <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium truncate">
-                            Credit ${totalAvailableCredit.toLocaleString()}
-                          </div>
-                        </div>
+                      {totalCash < 0 && (
+                        <AlertTriangle className="h-3 w-3 text-red-500 absolute top-1 right-1" />
                       )}
                     </div>
 
