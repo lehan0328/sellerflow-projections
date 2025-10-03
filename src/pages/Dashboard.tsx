@@ -18,6 +18,7 @@ import { useUserSettings } from "@/hooks/useUserSettings";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useCreditCards } from "@/hooks/useCreditCards";
 
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -53,6 +54,7 @@ const Dashboard = () => {
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction } = useTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
+  const { creditCards } = useCreditCards();
   
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
   const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance } = useUserSettings();
@@ -763,9 +765,20 @@ const Dashboard = () => {
     }
   }, [vendors.length, incomeItems.length, transactions.length]);
 
-  // Get credit card due date events only if user has real data (vendors or transactions)
+  // Get credit card due date events - show statement balance as expense on due date
   const hasRealData = vendors.length > 0 || transactions.length > 0;
-  const creditCardEvents = hasRealData ? getCreditCardDueDates() : [];
+  const creditCardEvents: CashFlowEvent[] = hasRealData && creditCards.length > 0
+    ? creditCards
+        .filter(card => card.payment_due_date && card.balance > 0)
+        .map(card => ({
+          id: `credit-payment-${card.id}`,
+          type: 'credit-payment' as const,
+          amount: card.balance, // Use statement balance as the amount
+          description: `${card.institution_name} - ${card.account_name} Payment`,
+          creditCard: card.institution_name,
+          date: new Date(card.payment_due_date!)
+        }))
+    : [];
 
   // Convert vendor payments (actual cash outflows) to calendar events
   const vendorPaymentEvents: CashFlowEvent[] = transactions

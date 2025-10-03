@@ -343,25 +343,40 @@ export function CreditCards() {
                     value={formData.payment_due_date}
                     onChange={(e) => setFormData({...formData, payment_due_date: e.target.value})}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Synced from Plaid or set manually
+                  </p>
                 </div>
                 <div>
-                  <Label htmlFor="edit_priority">Priority (1=Highest, 5=Lowest)</Label>
-                  <Select
-                    value={formData.priority.toString()}
-                    onValueChange={(value) => setFormData({...formData, priority: parseInt(value)})}
-                  >
-                    <SelectTrigger id="edit_priority">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 - Highest Priority</SelectItem>
-                      <SelectItem value="2">2 - High Priority</SelectItem>
-                      <SelectItem value="3">3 - Medium Priority</SelectItem>
-                      <SelectItem value="4">4 - Low Priority</SelectItem>
-                      <SelectItem value="5">5 - Lowest Priority</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="edit_statement_close_date">Statement Close Date</Label>
+                  <Input
+                    id="edit_statement_close_date"
+                    type="date"
+                    value={formData.statement_close_date}
+                    onChange={(e) => setFormData({...formData, statement_close_date: e.target.value})}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Synced from Plaid or set manually
+                  </p>
                 </div>
+              </div>
+              <div>
+                <Label htmlFor="edit_priority">Priority (1=Highest, 5=Lowest)</Label>
+                <Select
+                  value={formData.priority.toString()}
+                  onValueChange={(value) => setFormData({...formData, priority: parseInt(value)})}
+                >
+                  <SelectTrigger id="edit_priority">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 - Highest Priority</SelectItem>
+                    <SelectItem value="2">2 - High Priority</SelectItem>
+                    <SelectItem value="3">3 - Medium Priority</SelectItem>
+                    <SelectItem value="4">4 - Low Priority</SelectItem>
+                    <SelectItem value="5">5 - Lowest Priority</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setShowEditDialog(false)}>
@@ -379,9 +394,9 @@ export function CreditCards() {
   );
 }
 
-// Export the credit card due date events generator - now uses database data
+// Export the credit card due date events generator
 export const getCreditCardDueDates = () => {
-  // This will need to be called from a component that has access to the creditCards data
-  // For now, return empty array as this functionality should be moved to the dashboard
+  // This function is called from Dashboard and needs the credit cards data
+  // It's implemented in useCreditCards hook to be used directly in Dashboard
   return [];
 };

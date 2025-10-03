@@ -228,7 +228,7 @@ export function CreditCardManagement() {
           </div>
 
           {/* Add Credit Card Button */}
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-2">
             <Button 
               onClick={handleConnectPlaid} 
               disabled={isConnecting}
@@ -241,6 +241,9 @@ export function CreditCardManagement() {
               )}
               Connect with Plaid
             </Button>
+            <p className="text-xs text-muted-foreground text-center max-w-md">
+              Plaid automatically syncs statement balance, minimum payment, and due dates from your credit card
+            </p>
           </div>
 
           <Separator />
@@ -288,7 +291,7 @@ export function CreditCardManagement() {
                           
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                             <div>
-                              <p className="text-xs text-muted-foreground">Current Balance</p>
+                              <p className="text-xs text-muted-foreground">Statement Balance</p>
                               <p className="font-semibold">{formatCurrency(card.balance)}</p>
                             </div>
                             <div>
@@ -314,6 +317,36 @@ export function CreditCardManagement() {
                               </p>
                             </div>
                           </div>
+                          
+                          {/* Payment Due Date & Statement Close Date */}
+                          {(card.payment_due_date || card.statement_close_date) && (
+                            <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t">
+                              {card.payment_due_date && (
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Payment Due Date</p>
+                                  <p className="font-semibold text-orange-600">
+                                    {new Date(card.payment_due_date).toLocaleDateString('en-US', { 
+                                      month: 'short', 
+                                      day: 'numeric',
+                                      year: 'numeric'
+                                    })}
+                                  </p>
+                                </div>
+                              )}
+                              {card.statement_close_date && (
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Statement Close Date</p>
+                                  <p className="font-semibold">
+                                    {new Date(card.statement_close_date).toLocaleDateString('en-US', { 
+                                      month: 'short', 
+                                      day: 'numeric',
+                                      year: 'numeric'
+                                    })}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
 
                           {/* Utilization Progress Bar */}
                           <div className="mt-3">
@@ -324,10 +357,20 @@ export function CreditCardManagement() {
                           </div>
 
                           {/* Additional Info */}
-                          {(card.minimum_payment > 0 || card.annual_fee > 0) && (
-                            <div className="flex gap-4 text-xs text-muted-foreground mt-2">
+                          {(card.minimum_payment > 0 || card.annual_fee > 0 || card.payment_due_date || card.statement_close_date) && (
+                            <div className="flex flex-wrap gap-4 text-xs text-muted-foreground mt-2">
                               {card.minimum_payment > 0 && (
                                 <span>Min Payment: {formatCurrency(card.minimum_payment)}</span>
+                              )}
+                              {card.payment_due_date && (
+                                <span className="text-orange-600 font-medium">
+                                  Due: {new Date(card.payment_due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </span>
+                              )}
+                              {card.statement_close_date && (
+                                <span>
+                                  Statement: {new Date(card.statement_close_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                </span>
                               )}
                               {card.annual_fee > 0 && (
                                 <span>Annual Fee: {formatCurrency(card.annual_fee)}</span>
