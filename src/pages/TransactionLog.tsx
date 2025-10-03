@@ -37,7 +37,7 @@ export default function TransactionLog() {
 
   const { vendors, deleteVendor, updateVendor } = useVendors();
   const { incomeItems, deleteIncome, updateIncome } = useIncome();
-  const { transactions, deleteTransaction } = useTransactions();
+  const { transactions, deleteTransaction, addTransaction } = useTransactions();
   const [deletedTransactions, setDeletedTransactions] = useState<DeletedTransaction[]>([]);
 
   const [activeTab, setActiveTab] = useState(defaultTab);
@@ -216,10 +216,24 @@ export default function TransactionLog() {
 
   const handlePayVendor = async (vendor: any) => {
     try {
+      const paymentAmount = vendor.nextPaymentAmount ?? vendor.totalOwed ?? 0;
+
+      // Record the payment as a transaction for logging and calendar outflow
+      await addTransaction({
+        type: 'vendor_payment',
+        amount: paymentAmount,
+        description: `Payment to ${vendor.name}${vendor.poName ? ' - ' + vendor.poName : ''}`,
+        vendorId: vendor.id,
+        transactionDate: new Date(),
+        status: 'completed'
+      });
+
+      // Mark vendor as paid and clear the outstanding balance
       await updateVendor(vendor.id, { 
         status: 'paid' as const,
         totalOwed: 0 
       });
+
       toast.success("Payment recorded", {
         description: `${vendor.name} has been marked as paid.`
       });
@@ -400,7 +414,7 @@ export default function TransactionLog() {
                             </TableCell>
                             <TableCell>{vendor.name}</TableCell>
                             <TableCell className="font-semibold">
-                              ${vendor.totalOwed?.toLocaleString() || "0"}
+                              ${((vendor.nextPaymentAmount ?? vendor.totalOwed ?? 0) as number).toLocaleString()}
                             </TableCell>
                             <TableCell>
                               {vendor.nextPaymentDate

@@ -763,8 +763,20 @@ const Dashboard = () => {
   const hasRealData = vendors.length > 0 || transactions.length > 0;
   const creditCardEvents = hasRealData ? getCreditCardDueDates() : [];
 
+  // Convert vendor payments (actual cash outflows) to calendar events
+  const vendorPaymentEvents: CashFlowEvent[] = transactions
+    .filter(t => t.type === 'vendor_payment')
+    .map(t => ({
+      id: `vendor-payment-${t.id}`,
+      type: 'outflow' as const,
+      amount: t.amount,
+      description: t.description,
+      vendor: t.vendorId ? vendors.find(v => v.id === t.vendorId)?.name : undefined,
+      date: t.transactionDate
+    }));
+
   // Combine all events for calendar - only include real user data
-  const allCalendarEvents = [...calendarEvents, ...vendorEvents, ...incomeEvents, ...creditCardEvents];
+  const allCalendarEvents = [...calendarEvents, ...vendorPaymentEvents, ...vendorEvents, ...incomeEvents, ...creditCardEvents];
 
   // Debug: Log all calendar events to check for duplicates
   console.log("📅 All Calendar Events:", {
