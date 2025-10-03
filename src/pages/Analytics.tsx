@@ -13,7 +13,8 @@ import {
   CreditCard as CreditCardIcon,
   Calendar,
   PieChart as PieChartIcon,
-  ArrowLeft
+  ArrowLeft,
+  Calculator
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -194,6 +195,10 @@ export default function Analytics() {
           <h1 className="text-3xl font-bold">Business Analytics</h1>
           <p className="text-muted-foreground">Comprehensive insights into your financial performance</p>
         </div>
+        <Button onClick={() => navigate('/scenario-planner')}>
+          <Calculator className="h-4 w-4 mr-2" />
+          Scenario Planner
+        </Button>
       </div>
 
       {/* Key Metrics */}

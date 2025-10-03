@@ -11,6 +11,7 @@ import UpgradePlan from "./pages/UpgradePlan";
 import TransactionLog from "./pages/TransactionLog";
 import BankTransactions from "./pages/BankTransactions";
 import Analytics from "./pages/Analytics";
+import ScenarioPlanner from "./pages/ScenarioPlanner";
 import OAuthRedirect from "./pages/OAuthRedirect";
 import NotFound from "./pages/NotFound";
 import Docs from "./pages/Docs";
@@ -61,11 +62,16 @@ const App = () => (
               <BankTransactions />
             </ProtectedRoute>
           } />
-          <Route path="/analytics" element={
-            <ProtectedRoute>
-              <Analytics />
-            </ProtectedRoute>
-          } />
+            <Route path="/analytics" element={
+              <ProtectedRoute>
+                <Analytics />
+              </ProtectedRoute>
+            } />
+            <Route path="/scenario-planner" element={
+              <ProtectedRoute>
+                <ScenarioPlanner />
+              </ProtectedRoute>
+            } />
           <Route path="/oauth-redirect" element={<OAuthRedirect />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
