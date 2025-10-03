@@ -766,6 +766,22 @@ const Dashboard = () => {
   // Combine all events for calendar - only include real user data
   const allCalendarEvents = [...calendarEvents, ...vendorEvents, ...incomeEvents, ...creditCardEvents];
 
+  // Debug: Log all calendar events to check for duplicates
+  console.log("📅 All Calendar Events:", {
+    total: allCalendarEvents.length,
+    cashFlowEvents: calendarEvents.length,
+    vendorEvents: vendorEvents.length,
+    incomeEvents: incomeEvents.length,
+    creditCardEvents: creditCardEvents.length,
+    allEvents: allCalendarEvents.map(e => ({ 
+      id: e.id, 
+      type: e.type, 
+      amount: e.amount, 
+      desc: e.description, 
+      date: format(e.date, 'MMM dd')
+    }))
+  });
+
   // Log cash values for debugging
   console.log("Dashboard - bankAccountBalance:", bankAccountBalance, "accounts connected:", accounts.length);
   
