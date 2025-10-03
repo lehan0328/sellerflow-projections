@@ -34,10 +34,18 @@ export const Auth = () => {
     password: ''
   });
 
-  // Reset password form data
   const [resetEmail, setResetEmail] = useState('');
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
 
   useEffect(() => {
+    // Check for checkout success parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('checkout') === 'success') {
+      setCheckoutSuccess(true);
+      setIsSignUp(true);
+      toast.success("Payment method saved! Complete your account to get started.");
+    }
+
     // Check if user is already authenticated
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -219,17 +227,28 @@ export const Auth = () => {
           
           <div>
             <h1 className="text-2xl font-bold">
-              {showResetForm ? 'Reset Password' : (isSignUp ? 'Start Your Free Trial' : 'Welcome Back')}
+              {showResetForm ? 'Reset Password' : (checkoutSuccess ? 'Complete Your Account' : (isSignUp ? 'Start Your Free Trial' : 'Welcome Back'))}
             </h1>
             <p className="text-muted-foreground">
               {showResetForm 
                 ? 'Enter your email to receive a password reset link'
-                : (isSignUp 
-                  ? 'Start your 7-day free trial. Credit card required, but you won\'t be charged until your trial ends.' 
-                  : 'Sign in to your account to continue'
+                : (checkoutSuccess
+                  ? 'Your payment method is saved! Create your account to access your 7-day free trial.'
+                  : (isSignUp 
+                    ? 'Start your 7-day free trial. Credit card required, but you won\'t be charged until your trial ends.' 
+                    : 'Sign in to your account to continue'
+                  )
                 )
               }
             </p>
+            {checkoutSuccess && (
+              <div className="mt-4 p-3 bg-success/10 border border-success/20 rounded-lg">
+                <p className="text-sm text-success font-medium flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  Payment method secured! Complete your registration below.
+                </p>
+              </div>
+            )}
             {!showResetForm && (
               <div className="mt-2 text-sm text-muted-foreground">
                 {isSignUp ? (

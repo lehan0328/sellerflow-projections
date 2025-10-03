@@ -8,11 +8,34 @@ import { LiveDashboardShowcase } from "@/components/LiveDashboardShowcase";
 import { FloatingChatWidget } from "@/components/floating-chat-widget";
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Landing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isYearly, setIsYearly] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleStartTrial = async (priceId: string) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-guest-checkout", {
+        body: { priceId },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error("Error creating checkout:", error);
+      toast.error("Failed to start checkout. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const features = [
     {
@@ -297,9 +320,10 @@ const Landing = () => {
               <Button 
                 size="lg" 
                 className="bg-gradient-primary text-lg px-8 py-4 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-primary/25" 
-                onClick={() => navigate('/auth')}
+                onClick={() => handleStartTrial(pricingPlans[1].priceId)}
+                disabled={isLoading}
               >
-                Start 7-Day Free Trial
+                {isLoading ? "Loading..." : "Start 7-Day Free Trial"}
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
               </Button>
               <Button 
@@ -506,9 +530,10 @@ const Landing = () => {
                   <Button 
                     className={`w-full ${plan.popular ? 'bg-gradient-primary' : ''}`}
                     variant={plan.popular ? "default" : "outline"}
-                    onClick={() => user ? navigate('/upgrade-plan') : navigate('/auth')}
+                    onClick={() => handleStartTrial(isYearly ? plan.yearlyPriceId : plan.priceId)}
+                    disabled={isLoading}
                   >
-                    Start 7-Day Free Trial
+                    {isLoading ? "Loading..." : "Start 7-Day Free Trial"}
                   </Button>
                   <p className="text-xs text-muted-foreground text-center">
                     Then {isYearly ? plan.yearlyPrice + plan.yearlyPeriod : plan.price + plan.period}. Cancel anytime.
@@ -564,8 +589,14 @@ const Landing = () => {
             Join thousands of successful Amazon sellers who trust CashFlow Pro to manage their finances and scale their businesses.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" variant="secondary" className="text-lg px-8" onClick={() => navigate('/auth')}>
-              Start Your Free Trial
+            <Button 
+              size="lg" 
+              variant="secondary" 
+              className="text-lg px-8" 
+              onClick={() => handleStartTrial(pricingPlans[1].priceId)}
+              disabled={isLoading}
+            >
+              {isLoading ? "Loading..." : "Start Your Free Trial"}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button size="lg" variant="outline" className="text-lg px-8 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
