@@ -494,15 +494,16 @@ const Settings = () => {
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will permanently delete all of your:
-                      <ul className="list-disc list-inside mt-2 space-y-1">
-                        <li>Vendor purchase orders</li>
-                        <li>Income transactions</li>
-                        <li>Transaction history</li>
-                      </ul>
-                      <br />
-                      This action cannot be undone and you will start from zero.
+                    <AlertDialogDescription asChild>
+                      <div>
+                        <p className="mb-2">This will permanently delete all of your:</p>
+                        <ul className="list-disc list-inside mt-2 space-y-1 mb-3">
+                          <li>Vendor purchase orders</li>
+                          <li>Income transactions</li>
+                          <li>Transaction history</li>
+                        </ul>
+                        <p>This action cannot be undone and you will start from zero.</p>
+                      </div>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
