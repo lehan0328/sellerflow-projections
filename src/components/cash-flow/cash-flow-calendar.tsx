@@ -562,20 +562,15 @@ export const CashFlowCalendar = ({
                       </div>
                     )}
                     
-                    {/* Transactions link at bottom - always visible if there are events */}
-                    {hasEvents && (
+                    {/* Transactions link at bottom - only show for multiple transactions */}
+                    {hasEvents && dayEvents.length > 1 && (
                       <div className="mt-auto pt-0.5 border-t border-border/30">
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (dayEvents.length === 1) {
-                              setSelectedTransaction(dayEvents[0]);
-                              setShowTransactionModal(true);
-                            } else {
-                              setSelectedDayTransactions(dayEvents);
-                              setSelectedDate(day);
-                              setShowDayTransactionsModal(true);
-                            }
+                            setSelectedDayTransactions(dayEvents);
+                            setSelectedDate(day);
+                            setShowDayTransactionsModal(true);
                           }}
                           className="text-[9px] text-primary hover:underline font-medium w-full text-left"
                         >
