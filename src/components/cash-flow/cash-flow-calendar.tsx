@@ -497,7 +497,7 @@ export const CashFlowCalendar = ({
                      onDrop={!isPast ? (e) => handleDrop(e, day) : undefined}
                    >
                     {/* Day header with number and Cash on same line */}
-                    <div className="mb-1">
+                    <div className="mb-0.5">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">
                           <div className="text-sm font-bold text-foreground">
@@ -530,7 +530,7 @@ export const CashFlowCalendar = ({
 
                     {/* Compact financial info - stacked vertically below */}
                     {hasAnyData && (
-                      <div className="space-y-0.5 text-[10px] leading-tight">
+                      <div className="space-y-0 text-[10px] leading-tight">
                         {/* Pending - only show on current day */}
                         {isToday(day) && pendingIncome > 0 && (
                           <div className="text-orange-600 dark:text-orange-400 font-medium truncate">
@@ -556,7 +556,7 @@ export const CashFlowCalendar = ({
                     
                     {/* Transactions link at bottom - always visible if there are events */}
                     {hasEvents && (
-                      <div className="mt-auto pt-1 border-t border-border/30">
+                      <div className="mt-auto pt-0.5 border-t border-border/30">
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
@@ -569,7 +569,7 @@ export const CashFlowCalendar = ({
                               setShowDayTransactionsModal(true);
                             }
                           }}
-                          className="text-[10px] text-primary hover:underline font-medium w-full text-left"
+                          className="text-[9px] text-primary hover:underline font-medium w-full text-left"
                         >
                           Transactions ({dayEvents.length})
                         </button>
