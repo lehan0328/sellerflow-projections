@@ -548,10 +548,19 @@ export const CashFlowCalendar = ({
                       </div>
                     )}
 
-                    {/* Single transaction display */}
+                    {/* Single transaction display - draggable and clickable */}
                     {hasEvents && dayEvents.length === 1 && (
-                      <div className="mt-1 pt-1 border-t border-border/30">
-                        <div className="text-[10px] truncate">
+                      <div 
+                        className="mt-1 pt-0.5 border-t border-border/30 cursor-pointer"
+                        draggable={!isPast && onUpdateTransactionDate !== undefined}
+                        onDragStart={(e) => !isPast && onUpdateTransactionDate ? handleDragStart(e, dayEvents[0]) : undefined}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedTransaction(dayEvents[0]);
+                          setShowTransactionModal(true);
+                        }}
+                      >
+                        <div className="text-[9px] truncate leading-tight">
                           <span className="text-foreground font-medium">
                             {dayEvents[0].type === 'inflow' 
                               ? dayEvents[0].description 
