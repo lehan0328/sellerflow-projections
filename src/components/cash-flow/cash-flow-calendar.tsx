@@ -126,35 +126,23 @@ export const CashFlowCalendar = ({
   };
 
   const getTotalCashForDay = (date: Date) => {
-    const periodStart = new Date(calendarStartWithWeek);
-    periodStart.setHours(0, 0, 0, 0);
-
     const target = new Date(date);
     target.setHours(0, 0, 0, 0);
 
-    // Calculate cumulative net change from the start of the visible calendar to target day
-    const eventsForPeriod = events.filter((event) => {
+    // Calculate cumulative net change from all events up to and including target day
+    const eventsUpToDay = events.filter((event) => {
       const ed = new Date(event.date);
       ed.setHours(0, 0, 0, 0);
-      return ed >= periodStart && ed <= target;
+      return ed <= target;
     });
 
-    const netChangeToTarget = eventsForPeriod.reduce(
+    const netChange = eventsUpToDay.reduce(
       (total, event) => total + (event.type === 'inflow' ? event.amount : -event.amount),
       0
     );
 
-    // Debug logging for this day only and cumulative context
-    if (eventsForPeriod.length > 0) {
-      console.log(`Calendar balance @ ${format(target, 'MMM dd')}:`, {
-        periodStart: format(periodStart, 'MMM dd'),
-        netChangeToTarget,
-        events: eventsForPeriod.map(e => ({ type: e.type, amount: e.amount, desc: e.description, date: format(e.date, 'MMM dd') }))
-      });
-    }
-
-    // Moving balance with zero baseline for the visible period
-    return netChangeToTarget;
+    // Start with bank account balance (or totalCash baseline) and apply net change from transactions
+    return bankAccountBalance + netChange;
   };
 
   const getEventIcon = (event: CashFlowEvent) => {
