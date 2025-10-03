@@ -195,25 +195,27 @@ export const CashFlowCalendar = ({
     // Start with current bank balance
     let netAmount = bankAccountBalance;
 
-    // Add all scheduled income from today through target date
+    // Add ALL pending/overdue income (not yet received)
     incomeItems.forEach(income => {
       if (income.status === 'received') return;
       const incomeDate = startOfDay(new Date(income.paymentDate));
-      if (incomeDate > today && incomeDate <= checkDate) {
+      // Include if it's today, overdue, or future up to target date
+      if (incomeDate <= checkDate) {
         netAmount += income.amount;
       }
     });
 
-    // Subtract all scheduled vendor payments from today through target date
+    // Subtract ALL pending/overdue vendor payments (not yet paid)
     vendors.forEach(vendor => {
       if (vendor.status === 'paid' || vendor.totalOwed <= 0) return;
       const paymentDate = startOfDay(new Date(vendor.nextPaymentDate));
-      if (paymentDate > today && paymentDate <= checkDate) {
+      // Include if it's today, overdue, or future up to target date
+      if (paymentDate <= checkDate) {
         netAmount -= vendor.nextPaymentAmount;
       }
     });
 
-    // Add all events (income/expenses) from today through target date
+    // Add all events (income/expenses) up to target date that are after today
     events.forEach(event => {
       const eventDate = startOfDay(new Date(event.date));
       if (eventDate > today && eventDate <= checkDate) {
