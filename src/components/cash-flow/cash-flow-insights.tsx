@@ -31,7 +31,11 @@ export const CashFlowInsights = ({
   const [chatMode, setChatMode] = useState(false);
   const [chatQuestion, setChatQuestion] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
-  const [conversationHistory, setConversationHistory] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([]);
+  const [conversationHistory, setConversationHistory] = useState<Array<{ role: 'user' | 'assistant', content: string }>>(() => {
+    // Load conversation history from localStorage on mount
+    const saved = localStorage.getItem('cashflow-chat-history');
+    return saved ? JSON.parse(saved) : [];
+  });
   const { toast } = useToast();
 
   const netDaily = dailyInflow - dailyOutflow;
@@ -40,6 +44,11 @@ export const CashFlowInsights = ({
   useEffect(() => {
     fetchDailyInsight();
   }, []);
+
+  // Save conversation history to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('cashflow-chat-history', JSON.stringify(conversationHistory));
+  }, [conversationHistory]);
 
   const fetchDailyInsight = async () => {
     setLoading(true);
@@ -248,7 +257,10 @@ export const CashFlowInsights = ({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setConversationHistory([])}
+                  onClick={() => {
+                    setConversationHistory([]);
+                    localStorage.removeItem('cashflow-chat-history');
+                  }}
                   className="w-full"
                 >
                   Clear Chat History
