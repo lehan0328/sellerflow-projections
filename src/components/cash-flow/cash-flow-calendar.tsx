@@ -142,8 +142,8 @@ export const CashFlowCalendar = ({
       .filter(income => {
         if (income.status === 'received') return false;
         const incomeDate = startOfDay(new Date(income.paymentDate));
-        // Show on today if due date is today or in the future
-        return incomeDate >= today;
+        // Only show pending if due date is today or earlier (past/current, not future)
+        return incomeDate <= today;
       })
       .reduce((sum, income) => sum + income.amount, 0);
   };
