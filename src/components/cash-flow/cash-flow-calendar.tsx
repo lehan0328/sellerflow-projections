@@ -133,7 +133,7 @@ export const CashFlowCalendar = ({
     const target = new Date(date);
     target.setHours(0, 0, 0, 0);
 
-    // Calculate net change from account start date to target date
+    // Calculate cumulative net change from account start date to target day
     const eventsForPeriod = events.filter((event) => {
       const ed = new Date(event.date);
       ed.setHours(0, 0, 0, 0);
@@ -141,9 +141,30 @@ export const CashFlowCalendar = ({
       return ed >= accountStartDate && ed <= target;
     });
     
-    const netChange = eventsForPeriod.reduce((total, event) => total + (event.type === 'inflow' ? event.amount : -event.amount), 0);
+    const netChangeToTarget = eventsForPeriod.reduce(
+      (total, event) => total + (event.type === 'inflow' ? event.amount : -event.amount),
+      0
+    );
 
-    // Debug logging - show events FOR THIS DAY ONLY
+    // Compute net change up to today (align with totalAvailableCash which already includes
+    // completed items up to today), then derive base balance at account start to avoid double counting
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const eventsUpToToday = events.filter((event) => {
+      const ed = new Date(event.date);
+      ed.setHours(0, 0, 0, 0);
+      return ed >= accountStartDate && ed <= today;
+    });
+
+    const netChangeUpToToday = eventsUpToToday.reduce(
+      (total, event) => total + (event.type === 'inflow' ? event.amount : -event.amount),
+      0
+    );
+
+    const baseAtStart = totalAvailableCash - netChangeUpToToday;
+
+    // Debug logging - show events FOR THIS DAY ONLY and cumulative context
     const eventsThisDayOnly = events.filter((event) => {
       const ed = new Date(event.date);
       ed.setHours(0, 0, 0, 0);
@@ -152,15 +173,17 @@ export const CashFlowCalendar = ({
     
     if (eventsThisDayOnly.length > 0 || eventsForPeriod.length > 0) {
       console.log(`Day ${format(target, 'MMM dd')}:`, {
+        baseAtStart,
+        netChangeUpToToday,
+        netChangeToTarget,
         eventsToday: eventsThisDayOnly.length,
         todayEvents: eventsThisDayOnly.map(e => ({ type: e.type, amount: e.amount, desc: e.description, date: format(e.date, 'MMM dd') })),
-        cumulativeEvents: eventsForPeriod.length,
-        netChange: netChange
+        cumulativeEvents: eventsForPeriod.length
       });
     }
 
-    // Start with starting cash (e.g., 60k from income overview) on 9/29/2025
-    return totalAvailableCash + netChange;
+    // Base at start + change through target day
+    return baseAtStart + netChangeToTarget;
   };
 
   const getEventIcon = (event: CashFlowEvent) => {
