@@ -547,6 +547,20 @@ export const CashFlowCalendar = ({
                         )}
                       </div>
                     )}
+
+                    {/* Single transaction display */}
+                    {hasEvents && dayEvents.length === 1 && (
+                      <div className="mt-1 pt-1 border-t border-border/30">
+                        <div className="text-[10px] truncate">
+                          <span className="text-foreground font-medium">
+                            {dayEvents[0].vendor || dayEvents[0].description}
+                          </span>
+                          <span className={`ml-1 ${dayEvents[0].type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
+                            {dayEvents[0].type === 'inflow' ? '+' : '-'}${dayEvents[0].amount.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                     
                     {/* Transactions link at bottom - always visible if there are events */}
                     {hasEvents && (
