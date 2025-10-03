@@ -48,7 +48,7 @@ export const PRICING_PLANS = {
     product_id: "prod_TAcNnoGuq5Mr7X",
     price_id: "price_1SEH8iB28kMY3Usem3k3vElT",
     features: [
-      "$20,001-50k Amazon payout",
+      "Under $50k monthly amazon payout",
       "4 bank/credit card connections",
       "1 Amazon connection",
       "AI insights",
@@ -67,7 +67,7 @@ export const PRICING_PLANS = {
     product_id: "prod_TAcQOfzGbqPowf",
     price_id: "price_1SEHBHB28kMY3UsenQEY0qoT",
     features: [
-      "$50,001-200k Amazon payout",
+      "Under $200k monthly amazon payout",
       "7 bank/credit card connections",
       "1 Amazon connection",
       "AI insights",
