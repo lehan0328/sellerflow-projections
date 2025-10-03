@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { question, userId } = await req.json();
+    const { question, userId, conversationHistory = [] } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -140,6 +140,11 @@ Focus on business and ecommerce operations: inventory management, vendor payment
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
+          // Include conversation history to maintain context
+          ...conversationHistory.map((msg: any) => ({
+            role: msg.role,
+            content: msg.content
+          })),
           { role: "user", content: question },
         ],
       }),

@@ -30,7 +30,7 @@ export const CashFlowInsights = ({
   const [chatMode, setChatMode] = useState(false);
   const [chatQuestion, setChatQuestion] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
-  const [chatAnswer, setChatAnswer] = useState("");
+  const [conversationHistory, setConversationHistory] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([]);
   const { toast } = useToast();
 
   const netDaily = dailyInflow - dailyOutflow;
@@ -109,39 +109,53 @@ export const CashFlowInsights = ({
     e.preventDefault();
     if (!chatQuestion.trim()) return;
 
+    const currentQuestion = chatQuestion.trim();
+    
+    // Add user message to history immediately
+    setConversationHistory(prev => [...prev, { role: 'user', content: currentQuestion }]);
+    setChatQuestion(""); // Clear input field
     setChatLoading(true);
-    setChatAnswer("");
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       const { data, error } = await supabase.functions.invoke("cash-flow-chat", {
-        body: { question: chatQuestion, userId: user.id },
+        body: { 
+          question: currentQuestion, 
+          userId: user.id,
+          conversationHistory: conversationHistory
+        },
       });
 
       if (error) throw error;
 
       if (data?.answer) {
-        setChatAnswer(data.answer);
+        // Add assistant response to history
+        setConversationHistory(prev => [...prev, { role: 'assistant', content: data.answer }]);
       }
     } catch (error: any) {
       console.error("Chat error:", error);
+      let errorMessage = "Unable to get an answer. Please try again later.";
+      
       if (error.message?.includes("429")) {
         toast({
           title: "Rate Limit",
           description: "Too many requests. Please try again in a moment.",
           variant: "destructive",
         });
+        errorMessage = "Rate limit reached. Please try again in a moment.";
       } else if (error.message?.includes("402")) {
         toast({
           title: "Credits Required",
           description: "Please add credits to your workspace to use AI chat.",
           variant: "destructive",
         });
-      } else {
-        setChatAnswer("Unable to get an answer. Please try again later.");
+        errorMessage = "Credits required. Please add credits to continue.";
       }
+      
+      // Add error message to history
+      setConversationHistory(prev => [...prev, { role: 'assistant', content: errorMessage }]);
     } finally {
       setChatLoading(false);
     }
@@ -168,13 +182,7 @@ export const CashFlowInsights = ({
             <Button
               variant={chatMode ? "default" : "ghost"}
               size="sm"
-              onClick={() => {
-                setChatMode(!chatMode);
-                if (!chatMode) {
-                  setChatQuestion("");
-                  setChatAnswer("");
-                }
-              }}
+              onClick={() => setChatMode(!chatMode)}
             >
               <MessageCircle className="h-4 w-4 mr-1" />
               {chatMode ? "Back" : "Chat"}
@@ -185,33 +193,65 @@ export const CashFlowInsights = ({
       <CardContent className="space-y-4 flex-1 overflow-auto">
         {chatMode ? (
           <div className="flex flex-col h-full space-y-4">
-            <form onSubmit={handleChatSubmit} className="space-y-3">
-              <div>
+            {/* Conversation History */}
+            {conversationHistory.length > 0 && (
+              <div className="flex-1 space-y-3 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+                {conversationHistory.map((message, index) => (
+                  <div 
+                    key={index}
+                    className={`p-3 rounded-lg ${
+                      message.role === 'user' 
+                        ? 'bg-primary/10 ml-8' 
+                        : 'bg-muted mr-8'
+                    }`}
+                  >
+                    <p className="text-xs font-semibold mb-1 text-muted-foreground">
+                      {message.role === 'user' ? 'You' : 'AI Assistant'}
+                    </p>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {message.content}
+                    </p>
+                  </div>
+                ))}
+                {chatLoading && (
+                  <div className="flex items-center gap-2 p-3 bg-muted mr-8 rounded-lg">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">AI is thinking...</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Input Form */}
+            <form onSubmit={handleChatSubmit} className="space-y-3 flex-shrink-0">
+              <div className="flex gap-2">
                 <Input
                   placeholder="Ask about your cash flow..."
                   value={chatQuestion}
                   onChange={(e) => setChatQuestion(e.target.value)}
                   disabled={chatLoading}
+                  className="flex-1"
                 />
+                <Button type="submit" disabled={chatLoading || !chatQuestion.trim()} size="icon">
+                  {chatLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
               </div>
-              <Button type="submit" disabled={chatLoading || !chatQuestion.trim()} className="w-full">
-                {chatLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Send className="h-4 w-4 mr-2" />
-                )}
-                Ask AI
-              </Button>
+              {conversationHistory.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setConversationHistory([])}
+                  className="w-full"
+                >
+                  Clear Chat History
+                </Button>
+              )}
             </form>
-
-            {chatAnswer && (
-              <div className="flex-1 p-3 bg-muted rounded-lg overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-                <p className="text-sm font-semibold mb-2">Answer:</p>
-                <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                  {chatAnswer}
-                </p>
-              </div>
-            )}
           </div>
         ) : (
           <>
