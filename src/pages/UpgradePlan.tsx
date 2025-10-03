@@ -262,42 +262,40 @@ const UpgradePlan = () => {
             </div>
 
             {/* Add-ons Section */}
-            {subscribed && (
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>Add-ons</CardTitle>
-                  <CardDescription>
-                    Enhance your plan with additional features
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    {addons.map((addon) => (
-                      <Card key={addon.key}>
-                        <CardHeader>
-                          <CardTitle className="text-lg">{addon.name}</CardTitle>
-                          <CardDescription>{addon.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="text-2xl font-bold">
-                            ${addon.price}
-                            <span className="text-sm font-normal text-muted-foreground">/month</span>
-                          </div>
-                          <Button 
-                            className="w-full" 
-                            variant="outline"
-                            onClick={() => handlePurchaseAddon(addon.priceId)}
-                            disabled={isLoading}
-                          >
-                            Purchase Add-on
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Add-ons</CardTitle>
+                <CardDescription>
+                  Enhance your plan with additional features
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-3">
+                  {addons.map((addon) => (
+                    <Card key={addon.key}>
+                      <CardHeader>
+                        <CardTitle className="text-lg">{addon.name}</CardTitle>
+                        <CardDescription>{addon.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="text-2xl font-bold">
+                          ${addon.price}
+                          <span className="text-sm font-normal text-muted-foreground">/month</span>
+                        </div>
+                        <Button 
+                          className="w-full" 
+                          variant="outline"
+                          onClick={() => handlePurchaseAddon(addon.priceId)}
+                          disabled={isLoading}
+                        >
+                          Purchase Add-on
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
             
             <Card className="mt-6">
               <CardHeader>
