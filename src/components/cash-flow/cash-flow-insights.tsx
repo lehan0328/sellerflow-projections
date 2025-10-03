@@ -348,14 +348,16 @@ export const CashFlowInsights = ({
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : (
-                <div 
-                  className="text-sm text-muted-foreground leading-relaxed max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent"
-                  dangerouslySetInnerHTML={{ 
-                    __html: advice
-                      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
-                      .replace(/\n/g, '<br />')
-                  }}
-                />
+                <ScrollArea className="flex-1">
+                  <div 
+                    className="text-sm text-muted-foreground leading-relaxed pr-4"
+                    dangerouslySetInnerHTML={{ 
+                      __html: advice
+                        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
+                        .replace(/\n/g, '<br />')
+                    }}
+                  />
+                </ScrollArea>
               )}
             </div>
           </>
