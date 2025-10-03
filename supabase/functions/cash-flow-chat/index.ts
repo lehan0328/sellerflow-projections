@@ -34,19 +34,27 @@ Core Features:
 Pricing Plans (with Monthly and Yearly Options):
 All plans include a 7-day free trial with secure checkout. Yearly billing saves up to 20%.
 
-1. STARTER PLAN
-   - Monthly: $29/month
-   - Yearly: $290/year (save $58/year)
-   - Best for: Under $20k monthly Amazon payout
+1. FREE PLAN
+   - Price: $0/month (Forever free)
+   - Best for: Getting started
    - Includes:
-     * 2 Bank/Credit Card Connections
+     * 1 Bank/Credit Card Connection
      * 1 Amazon Connection
      * Advanced Forecasting Workflow
      * 365-Day Cash Flow Projection
      * Bank Transaction Matching
      * Email Support
 
-2. GROWING PLAN (MOST POPULAR)
+2. STARTER PLAN
+   - Monthly: $29/month
+   - Yearly: $290/year (save $58/year)
+   - Best for: Under $20k monthly Amazon payout
+   - Everything in Free, plus:
+     * 2 Bank/Credit Card Connections (vs 1)
+     * ✨ Ai PDF Extractor
+     * Email Support
+
+3. GROWING PLAN (MOST POPULAR)
    - Monthly: $59/month
    - Yearly: $590/year (save $118/year)
    - Best for: Under $50k monthly Amazon payout
@@ -54,11 +62,10 @@ All plans include a 7-day free trial with secure checkout. Yearly billing saves 
      * 4 Bank/Credit Card Connections (vs 2)
      * 2 Additional Users
      * ✨ Ai Insights
-     * ✨ Ai PDF Extractor
      * Basic Analytics
      * Priority Support
 
-3. PROFESSIONAL PLAN
+4. PROFESSIONAL PLAN
    - Monthly: $89/month
    - Yearly: $890/year (save $178/year)
    - Best for: Under $200k monthly Amazon payout
