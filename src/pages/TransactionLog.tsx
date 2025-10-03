@@ -105,7 +105,7 @@ export default function TransactionLog() {
 
   // Filter vendors by status and date
   const filteredVendors = useMemo(() => {
-    let filtered = vendors.filter(v => v.totalOwed && v.totalOwed > 0);
+    let filtered = vendors;
 
     // Status filter
     if (vendorStatusFilter === "pending") {
@@ -151,7 +151,7 @@ export default function TransactionLog() {
 
   // Filter income by status and date
   const filteredIncome = useMemo(() => {
-    let filtered = incomeItems.filter(i => i.status !== "received");
+    let filtered = incomeItems;
 
     // Status filter
     if (incomeStatusFilter === "pending") {
