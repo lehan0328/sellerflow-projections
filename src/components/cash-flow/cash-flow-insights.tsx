@@ -348,7 +348,7 @@ export const CashFlowInsights = ({
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               ) : (
-                <ScrollArea className="flex-1">
+                <ScrollArea className="h-[300px]">
                   <div 
                     className="text-sm text-muted-foreground leading-relaxed pr-4"
                     dangerouslySetInnerHTML={{ 
