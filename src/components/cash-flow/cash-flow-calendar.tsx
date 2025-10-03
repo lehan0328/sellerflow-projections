@@ -134,14 +134,20 @@ export const CashFlowCalendar = ({
     target.setHours(0, 0, 0, 0);
 
     // Calculate net change from account start date to target date
-    const netChange = events
-      .filter((event) => {
-        const ed = new Date(event.date);
-        ed.setHours(0, 0, 0, 0);
-        // Include events from account start date onwards up to target date
-        return ed >= accountStartDate && ed <= target;
-      })
-      .reduce((total, event) => total + (event.type === 'inflow' ? event.amount : -event.amount), 0);
+    const eventsForPeriod = events.filter((event) => {
+      const ed = new Date(event.date);
+      ed.setHours(0, 0, 0, 0);
+      // Include events from account start date onwards up to target date
+      return ed >= accountStartDate && ed <= target;
+    });
+    
+    const netChange = eventsForPeriod.reduce((total, event) => total + (event.type === 'inflow' ? event.amount : -event.amount), 0);
+
+    // Debug logging
+    if (eventsForPeriod.length > 0) {
+      console.log(`Day ${format(target, 'MMM dd')}: ${eventsForPeriod.length} events, netChange: ${netChange}`, 
+        eventsForPeriod.map(e => ({ type: e.type, amount: e.amount, desc: e.description })));
+    }
 
     // Start with starting cash (e.g., 60k from income overview) on 9/29/2025
     return totalAvailableCash + netChange;
