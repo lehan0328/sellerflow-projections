@@ -34,9 +34,9 @@ Core Features:
 Pricing Plans (with Monthly and Yearly Options):
 All plans include a 7-day free trial with secure checkout. Yearly billing saves up to 20%.
 
-1. FREE PLAN
+1. NEW SELLER PLAN
    - Price: $0/month (Forever free)
-   - Best for: Getting started
+   - Best for: Under $5k monthly Amazon payout
    - Includes:
      * 1 Bank/Credit Card Connection
      * 1 Amazon Connection

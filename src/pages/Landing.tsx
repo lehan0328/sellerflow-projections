@@ -72,12 +72,12 @@ const Landing = () => {
 
   const pricingPlans = [
     {
-      name: "Free",
+      name: "New Seller",
       price: "$0",
       yearlyPrice: "$0",
       period: "/month",
       yearlyPeriod: "/year",
-      description: "Perfect for getting started",
+      description: "Under $5k monthly amazon payout",
       popular: false,
       priceId: "price_free",
       yearlyPriceId: "price_free",
