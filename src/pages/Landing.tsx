@@ -164,7 +164,7 @@ const Landing = () => {
                 Features
               </a>
               <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
-                Pricing
+                Plans
               </a>
               <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
                 Reviews
@@ -653,7 +653,7 @@ const Landing = () => {
               <h4 className="font-semibold">Product</h4>
               <ul className="space-y-2 text-muted-foreground">
                 <li><a href="#" className="hover:text-foreground">Features</a></li>
-                <li><a href="#" className="hover:text-foreground">Pricing</a></li>
+                <li><a href="#" className="hover:text-foreground">Plans</a></li>
                 <li><a href="#" className="hover:text-foreground">API</a></li>
                 <li><a href="#" className="hover:text-foreground">Integrations</a></li>
               </ul>
