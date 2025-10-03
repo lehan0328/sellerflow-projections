@@ -6,9 +6,11 @@ import { useNavigate } from "react-router-dom";
 import { LiveDashboardShowcase } from "@/components/LiveDashboardShowcase";
 import { FloatingChatWidget } from "@/components/floating-chat-widget";
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import { useAuth } from "@/hooks/useAuth";
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const features = [
     {
@@ -45,88 +47,62 @@ const Landing = () => {
 
   const pricingPlans = [
     {
-      name: "Free",
-      price: "$0",
+      name: "Starter",
+      price: "$29",
       period: "/month",
-      description: "For new Amazon sellers (0-$9k revenue/month)",
+      description: "$1-20k Amazon payout range",
       features: [
-        "1 Amazon account",
-        "Basic payout forecasting", 
-        "1 bank integration",
-        "Additional accounts: $50/month each",
-        "Additional banks: $10/month each",
+        "2 bank/credit card connections",
+        "1 Amazon connection",
+        "Advanced forecasting workflow",
+        "365-day cash flow projection",
+        "Bank transaction matching",
         "Email support",
       ],
       popular: false,
+      priceId: "price_1SEH8NB28kMY3UseBj2w9HgH",
     },
     {
-      name: "Starter",
-      price: "$39",
+      name: "Growing",
+      price: "$59",
       period: "/month",
-      description: "For growing sellers ($10k-$50k revenue/month)",
+      description: "$20,001-50k Amazon payout range",
       features: [
-        "1 Amazon account",
-        "Advanced forecasting & scenarios",
-        "1 bank integration",
-        "Additional accounts: $50/month each",
-        "Additional banks: $10/month each",
-        "Priority email support",
-        "Team collaboration (up to 2 users)",
+        "4 bank/credit card connections",
+        "1 Amazon connection",
+        "AI insights",
+        "AI PDF extractor",
+        "2 additional users",
+        "Advanced forecasting workflow",
+        "365-day cash flow projection",
+        "Bank transaction matching",
+        "Basic analytics",
+        "Priority support",
       ],
-      popular: false,
+      popular: true,
+      priceId: "price_1SEH8iB28kMY3Usem3k3vElT",
     },
     {
       name: "Professional",
-      price: "$79",
+      price: "$89",
       period: "/month",
-      description: "For established sellers ($51k-$99k revenue/month)",
+      description: "$50,001-200k Amazon payout range",
       features: [
-        "1 Amazon account",
-        "Advanced forecasting & scenarios",
-        "3 bank integrations included",
-        "Additional accounts: $50/month each",
-        "Additional banks: $10/month each",
+        "7 bank/credit card connections",
+        "1 Amazon connection",
+        "AI insights",
+        "AI PDF extractor",
+        "5 additional users",
+        "Automated notifications",
+        "Advanced forecasting workflow",
+        "365-day cash flow projection",
+        "Bank transaction matching",
+        "Scenario planning",
+        "Advanced analytics",
         "Priority support",
-        "Team collaboration (up to 5 users)",
-        "API access",
-      ],
-      popular: true,
-    },
-    {
-      name: "Scale",
-      price: "$149",
-      period: "/month",
-      description: "For scaling businesses ($100k-$199k revenue/month)",
-      features: [
-        "2 Amazon accounts included",
-        "Advanced analytics & reporting",
-        "5 bank integrations included",
-        "Additional accounts: $50/month each",
-        "Additional banks: $10/month each",
-        "Priority phone support",
-        "Team collaboration (up to 10 users)",
-        "API access",
-        "Dedicated account manager",
       ],
       popular: false,
-    },
-    {
-      name: "Enterprise",
-      price: "$279",
-      period: "/month",
-      description: "For large operations ($200k+ revenue/month)",
-      features: [
-        "2 Amazon accounts included",
-        "5 bank integrations included",
-        "White-label solution",
-        "Dedicated account manager",
-        "Custom reporting & analytics",
-        "Advanced integrations",
-        "Unlimited team members",
-        "24/7 phone support",
-        "Custom SLA",
-      ],
-      popular: false,
+      priceId: "price_1SEHBHB28kMY3UsenQEY0qoT",
     },
   ];
 
@@ -489,9 +465,9 @@ const Landing = () => {
                   <Button 
                     className={`w-full ${plan.popular ? 'bg-gradient-primary' : ''}`}
                     variant={plan.popular ? "default" : "outline"}
-                    onClick={() => plan.name === "Enterprise" ? null : navigate('/auth')}
+                    onClick={() => user ? navigate('/upgrade-plan') : navigate('/auth')}
                   >
-                    {plan.name === "Enterprise" ? "Contact Sales" : "Start Free Trial"}
+                    Get Started
                   </Button>
                 </CardContent>
               </Card>

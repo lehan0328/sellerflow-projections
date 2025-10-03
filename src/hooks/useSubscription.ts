@@ -1,0 +1,221 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+export const PRICING_PLANS = {
+  starter: {
+    name: "Starter",
+    price: 29,
+    product_id: "prod_TAcNEuRnBTaX61",
+    price_id: "price_1SEH8NB28kMY3UseBj2w9HgH",
+    features: [
+      "$1-20k Amazon payout",
+      "2 bank/credit card connections",
+      "1 Amazon connection",
+      "Advanced forecasting workflow",
+      "365-day cash flow projection",
+      "Bank transaction matching",
+      "Email support"
+    ]
+  },
+  growing: {
+    name: "Growing",
+    price: 59,
+    product_id: "prod_TAcNnoGuq5Mr7X",
+    price_id: "price_1SEH8iB28kMY3Usem3k3vElT",
+    features: [
+      "$20,001-50k Amazon payout",
+      "4 bank/credit card connections",
+      "1 Amazon connection",
+      "AI insights",
+      "AI PDF extractor",
+      "2 additional users",
+      "Advanced forecasting workflow",
+      "365-day cash flow projection",
+      "Bank transaction matching",
+      "Basic analytics",
+      "Priority support"
+    ]
+  },
+  professional: {
+    name: "Professional",
+    price: 89,
+    product_id: "prod_TAcQOfzGbqPowf",
+    price_id: "price_1SEHBHB28kMY3UsenQEY0qoT",
+    features: [
+      "$50,001-200k Amazon payout",
+      "7 bank/credit card connections",
+      "1 Amazon connection",
+      "AI insights",
+      "AI PDF extractor",
+      "5 additional users",
+      "Automated notifications",
+      "Advanced forecasting workflow",
+      "365-day cash flow projection",
+      "Bank transaction matching",
+      "Scenario planning",
+      "Advanced analytics",
+      "Priority support"
+    ]
+  }
+} as const;
+
+export type PlanTier = keyof typeof PRICING_PLANS;
+
+export interface SubscriptionState {
+  subscribed: boolean;
+  product_id: string | null;
+  subscription_end: string | null;
+  plan: PlanTier | null;
+  isLoading: boolean;
+}
+
+export const useSubscription = () => {
+  const { toast } = useToast();
+  const [subscriptionState, setSubscriptionState] = useState<SubscriptionState>({
+    subscribed: false,
+    product_id: null,
+    subscription_end: null,
+    plan: null,
+    isLoading: true,
+  });
+
+  const checkSubscription = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setSubscriptionState({
+          subscribed: false,
+          product_id: null,
+          subscription_end: null,
+          plan: null,
+          isLoading: false,
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("check-subscription", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      // Map product_id to plan tier
+      let plan: PlanTier | null = null;
+      if (data.product_id) {
+        const planEntry = Object.entries(PRICING_PLANS).find(
+          ([, planData]) => planData.product_id === data.product_id
+        );
+        if (planEntry) {
+          plan = planEntry[0] as PlanTier;
+        }
+      }
+
+      setSubscriptionState({
+        subscribed: data.subscribed || false,
+        product_id: data.product_id,
+        subscription_end: data.subscription_end,
+        plan,
+        isLoading: false,
+      });
+    } catch (error) {
+      console.error("Error checking subscription:", error);
+      setSubscriptionState(prev => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  const createCheckout = async (priceId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to upgrade your plan.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { priceId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error("Error creating checkout:", error);
+      toast({
+        title: "Error",
+        description: "Failed to initiate checkout. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openCustomerPortal = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to manage your subscription.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("customer-portal", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error("Error opening customer portal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to open customer portal. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    checkSubscription();
+
+    // Check subscription on auth state change
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      setTimeout(() => {
+        checkSubscription();
+      }, 0);
+    });
+
+    // Refresh subscription every 10 seconds
+    const interval = setInterval(checkSubscription, 10000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(interval);
+    };
+  }, []);
+
+  return {
+    ...subscriptionState,
+    checkSubscription,
+    createCheckout,
+    openCustomerPortal,
+  };
+};
