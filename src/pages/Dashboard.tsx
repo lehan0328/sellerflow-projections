@@ -523,8 +523,8 @@ const Dashboard = () => {
     };
     setCashFlowEvents(prev => [newEvent, ...prev]);
 
-    // Remove income item from income overview now that it's processed
-    await deleteIncome(income.id);
+    // Mark income as received instead of deleting
+    await updateIncome(income.id, { status: 'received' });
   };
 
   const handleEditVendorOrder = (vendor: Vendor) => {

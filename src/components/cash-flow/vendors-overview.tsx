@@ -32,7 +32,7 @@ interface VendorsOverviewProps {
 
 export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], onVendorUpdate, onEditOrder, onDeleteVendor, onMatchTransaction }: VendorsOverviewProps) => {
   const navigate = useNavigate();
-  const { deleteVendor: deleteVendorHook } = useVendors();
+  const { deleteVendor: deleteVendorHook, updateVendor } = useVendors();
   const vendors = propVendors || [];
   const { matches, getMatchesForVendor } = useTransactionMatching(bankTransactions, vendors, []);
   const [searchTerm, setSearchTerm] = useState('');
@@ -161,12 +161,8 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
 
   const handlePayToday = async (vendor: Vendor) => {
     try {
-      // Delete the vendor since payment is complete
-      if (onDeleteVendor) {
-        onDeleteVendor(vendor.id);
-      } else {
-        await deleteVendorHook(vendor.id);
-      }
+      // Mark vendor as paid and clear the balance
+      await updateVendor(vendor.id, { status: 'paid' as any, totalOwed: 0 });
       // Refresh data to ensure both calendar and vendor list are updated
       onVendorUpdate?.();
     } catch (error) {
