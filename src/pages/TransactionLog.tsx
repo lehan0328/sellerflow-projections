@@ -184,6 +184,11 @@ export default function TransactionLog() {
   }, [incomeItems, incomeStatusFilter, incomeDateRange, customFromDate, customToDate]);
 
   const getVendorStatus = (vendor: any) => {
+    // Check if vendor is marked as paid
+    if (vendor.status === 'paid' || vendor.totalOwed === 0) {
+      return { text: "Paid", variant: "secondary" as const };
+    }
+    
     if (!vendor.nextPaymentDate) return { text: "No due date", variant: "default" as const };
     
     const today = new Date();
@@ -211,7 +216,10 @@ export default function TransactionLog() {
 
   const handlePayVendor = async (vendor: any) => {
     try {
-      await deleteVendor(vendor.id);
+      await updateVendor(vendor.id, { 
+        status: 'paid' as const,
+        totalOwed: 0 
+      });
       toast.success("Payment recorded", {
         description: `${vendor.name} has been marked as paid.`
       });
@@ -412,9 +420,10 @@ export default function TransactionLog() {
                                   <Edit className="h-3 w-3" />
                                 </Button>
                                 <Button
-                                  variant="default"
-                                  size="sm"
-                                  onClick={() => handlePayVendor(vendor)}
+                                 variant="default"
+                                 size="sm"
+                                 onClick={() => handlePayVendor(vendor)}
+                                 disabled={vendor.status === 'paid' || vendor.totalOwed === 0}
                                 >
                                   <DollarSign className="h-3 w-3" />
                                 </Button>
@@ -546,17 +555,17 @@ export default function TransactionLog() {
                             {new Date(income.paymentDate).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
-                            <Badge
-                              variant={
-                                income.status === "received"
-                                  ? "secondary"
-                                  : income.status === "overdue"
-                                  ? "destructive"
-                                  : "default"
-                              }
-                            >
-                              {income.status}
-                            </Badge>
+                             <Badge
+                               variant={
+                                 income.status === "received"
+                                   ? "secondary"
+                                   : income.status === "overdue"
+                                   ? "destructive"
+                                   : "default"
+                               }
+                             >
+                               {income.status.charAt(0).toUpperCase() + income.status.slice(1)}
+                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end space-x-2">
