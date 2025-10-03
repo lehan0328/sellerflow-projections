@@ -53,7 +53,7 @@ serve(async (req) => {
       subscription_data: {
         trial_period_days: 7,
       },
-      success_url: `${req.headers.get("origin")}/auth?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${req.headers.get("origin")}/signup?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/?checkout=canceled`,
       allow_promotion_codes: true,
     });
