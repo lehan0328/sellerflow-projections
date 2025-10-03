@@ -553,7 +553,9 @@ export const CashFlowCalendar = ({
                       <div className="mt-1 pt-1 border-t border-border/30">
                         <div className="text-[10px] truncate">
                           <span className="text-foreground font-medium">
-                            {dayEvents[0].vendor || dayEvents[0].description}
+                            {dayEvents[0].type === 'inflow' 
+                              ? dayEvents[0].description 
+                              : (dayEvents[0].vendor || dayEvents[0].description)}
                           </span>
                           <span className={`ml-1 ${dayEvents[0].type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
                             {dayEvents[0].type === 'inflow' ? '+' : '-'}${dayEvents[0].amount.toLocaleString()}
