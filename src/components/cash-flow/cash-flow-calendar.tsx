@@ -489,161 +489,84 @@ export const CashFlowCalendar = ({
                          // Days with events
                          "border-primary/30": hasEvents,
                          "border-border": !hasEvents,
-                         // Clickable cursor
-                         "cursor-pointer": hasEvents,
                          // Drag and drop styling
                          "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/20": draggedTransaction && !isPast
                        }
                      )}
-                    onDragOver={!isPast ? handleDragOver : undefined}
-                    onDrop={!isPast ? (e) => handleDrop(e, day) : undefined}
-                    onClick={() => {
-                      if (hasEvents) {
-                        if (dayEvents.length === 1) {
-                          // Single transaction - show individual transaction modal
-                          setSelectedTransaction(dayEvents[0]);
-                          setShowTransactionModal(true);
-                        } else {
-                          // Multiple transactions - show day transactions modal
-                          setSelectedDayTransactions(dayEvents);
-                          setSelectedDate(day);
-                          setShowDayTransactionsModal(true);
-                        }
-                      }
-                    }}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center space-x-1">
-                        <div className="text-xs font-medium">
-                          {format(day, 'd')}
-                        </div>
-                        {totalCash < 0 && (
-                          <AlertTriangle className="h-2 w-2 text-red-500" />
-                        )}
+                     onDragOver={!isPast ? handleDragOver : undefined}
+                     onDrop={!isPast ? (e) => handleDrop(e, day) : undefined}
+                   >
+                    {/* Day header with number */}
+                    <div className="flex items-start justify-between mb-1">
+                      <div className="text-sm font-bold text-foreground">
+                        {format(day, 'd')}
                       </div>
-                      {hasAnyData && isToday(day) && (
-                        <div className="text-left border-2 border-primary/70 rounded p-1.5 bg-background shadow-sm">
-                          {/* Account Summary */}
-                          <div className="text-[11px] text-foreground mb-0.5">
-                            0 Cash ${bankAccountBalance.toLocaleString()}
-                          </div>
-                          <div className="text-[11px] text-foreground mb-1">
-                            Credit ${totalAvailableCredit.toLocaleString()}
-                          </div>
-                          
-                          {/* Pending and Overdue Grid */}
-                          <div className="grid grid-cols-2 gap-2 pt-1 mb-1">
-                            <div>
-                              <div className="text-[11px] text-foreground font-medium">Pending</div>
-                              <div className="text-[11px] text-green-600 dark:text-green-400 font-bold">
-                                {pendingIncome > 0 ? `+$${pendingIncome.toLocaleString()}` : '$0'}
-                              </div>
-                            </div>
-                            <div>
-                              <div className="text-[11px] text-foreground font-medium">Overdue</div>
-                              <div className="text-[11px] text-red-600 dark:text-red-400 font-bold">
-                                {(overdueIncome > 0 || overdueVendors > 0)
-                                  ? `${overdueIncome >= overdueVendors ? '+' : '-'}$${Math.abs(overdueIncome - overdueVendors).toLocaleString()}`
-                                  : '$0'}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          {/* Transaction Link */}
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedDayTransactions(dayEvents);
-                              setSelectedDate(day);
-                              setShowDayTransactionsModal(true);
-                            }}
-                            className="text-[11px] text-primary hover:underline font-medium pt-1 border-t border-border w-full text-center block"
-                          >
-                            Transaction
-                          </button>
-                        </div>
-                      )}
-                      {/* Net Amount for future dates */}
-                      {hasAnyData && netAmount !== null && !isToday(day) && !isPast && (
-                        <div className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <span className="text-[10px] text-muted-foreground">Net</span>
-                            <span className={`text-sm font-bold ${netAmount < 0 ? 'text-red-600' : 'text-blue-600'}`}>
-                              ${netAmount.toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
+                      {totalCash < 0 && (
+                        <AlertTriangle className="h-3 w-3 text-red-500" />
                       )}
                     </div>
-                    
-                    {/* Show transaction summary in separate box for multiple transactions */}
-                    {hasEvents && dayEvents.length > 1 && (
-                      <div className="cursor-pointer hover:bg-muted/30 p-2 rounded border border-muted-foreground/30 bg-muted/5 mb-1"
-                           onClick={() => {
-                             setSelectedDayTransactions(dayEvents);
-                             setSelectedDate(day);
-                             setShowDayTransactionsModal(true);
-                           }}>
-                        <div className="flex items-center justify-between w-full mb-1">
-                          <span className="text-xs text-muted-foreground font-medium">
-                            {dayEvents.length} transactions
-                          </span>
-                          <span className={`text-xs font-semibold ${dayBalance >= 0 ? 'text-finance-positive' : 'text-finance-negative'}`}>
-                            ${dayBalance.toLocaleString()}
-                          </span>
-                        </div>
-                        {isToday(day) && pendingIncome > 0 && (
-                          <div className="flex items-center justify-between w-full">
-                            <span className="text-[10px] text-amber-600">Pending</span>
-                            <span className="text-[10px] text-amber-600 font-medium">
-                              +${pendingIncome.toLocaleString()}
-                            </span>
+
+                    {/* Compact financial info - stacked vertically */}
+                    {hasAnyData && (
+                      <div className="space-y-0.5 text-[10px] leading-tight">
+                        {/* Cash - always show on current day */}
+                        {isToday(day) && (
+                          <div className="text-green-600 dark:text-green-400 font-medium truncate">
+                            Cash ${bankAccountBalance.toLocaleString()}
                           </div>
                         )}
-                        {isToday(day) && (overdueIncome > 0 || overdueVendors > 0) && (
-                          <div className="flex items-center justify-between w-full">
-                            <span className="text-[10px] text-red-600">Overdue</span>
-                            <span className="text-[10px] text-red-600 font-medium">
-                              {overdueIncome > 0 && `+$${overdueIncome.toLocaleString()}`}
-                              {overdueIncome > 0 && overdueVendors > 0 && ' / '}
-                              {overdueVendors > 0 && `-$${overdueVendors.toLocaleString()}`}
-                            </span>
+                        
+                        {/* Credit - always show on current day */}
+                        {isToday(day) && (
+                          <div className="text-blue-600 dark:text-blue-400 font-medium truncate">
+                            Credit ${totalAvailableCredit.toLocaleString()}
+                          </div>
+                        )}
+                        
+                        {/* Pending - only show on current day */}
+                        {isToday(day) && pendingIncome > 0 && (
+                          <div className="text-orange-600 dark:text-orange-400 font-medium truncate">
+                            Pending +${pendingIncome.toLocaleString()}
+                          </div>
+                        )}
+                        
+                        {/* Overdue - show on current day and past dates */}
+                        {(isToday(day) || isPast) && (overdueIncome > 0 || overdueVendors > 0) && (
+                          <div className="text-red-600 dark:text-red-400 font-medium truncate">
+                            Overdue {overdueIncome >= overdueVendors ? '+' : '-'}${Math.abs(overdueIncome - overdueVendors).toLocaleString()}
+                          </div>
+                        )}
+
+                        {/* Net Amount for future dates */}
+                        {!isToday(day) && !isPast && netAmount !== null && (
+                          <div className={`font-medium truncate ${netAmount < 0 ? 'text-red-600' : 'text-green-600 dark:text-green-400'}`}>
+                            Net ${netAmount.toLocaleString()}
                           </div>
                         )}
                       </div>
                     )}
                     
-                     <div className="flex-1 space-y-1">
-                        {hasEvents && (
-                          <>
-                            {dayEvents.length === 1 ? (
-                              dayEvents.slice(0, 1).map(event => (
-                                <div
-                                  key={event.id}  
-                                  draggable={!isPast && onUpdateTransactionDate !== undefined}
-                                  onDragStart={(e) => !isPast && onUpdateTransactionDate ? handleDragStart(e, event) : undefined}
-                                  className={`
-                                    text-xs px-1 py-0.5 rounded truncate flex items-center space-x-1 border transition-opacity
-                                    ${getEventColor(event)}
-                                    ${!isPast && onUpdateTransactionDate ? 'cursor-move hover:opacity-80' : 'cursor-pointer hover:opacity-80'}
-                                  `}
-                                  title={`${event.poName ? `${event.poName} - ` : ""}${event.description}${event.vendor ? ` - ${event.vendor}` : ""}${event.creditCard ? ` - ${event.creditCard}` : ""}`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedTransaction(event);
-                                    setShowTransactionModal(true);
-                                  }}
-                                >
-                                  {getEventIcon(event)}
-                                  <span className="truncate">
-                                    {event.vendor ? event.vendor : event.description} ${event.amount.toLocaleString()}
-                                  </span>
-                                </div>
-                              ))
-                            ) : null}
-                          </>
-                        )}
+                    {/* Transactions link at bottom - always visible if there are events */}
+                    {hasEvents && (
+                      <div className="mt-auto pt-1 border-t border-border/30">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (dayEvents.length === 1) {
+                              setSelectedTransaction(dayEvents[0]);
+                              setShowTransactionModal(true);
+                            } else {
+                              setSelectedDayTransactions(dayEvents);
+                              setSelectedDate(day);
+                              setShowDayTransactionsModal(true);
+                            }
+                          }}
+                          className="text-[10px] text-primary hover:underline font-medium w-full text-left"
+                        >
+                          Transactions ({dayEvents.length})
+                        </button>
                       </div>
+                    )}
                    </div>
                  );
                 })}
