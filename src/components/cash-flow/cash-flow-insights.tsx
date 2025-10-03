@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -195,8 +196,9 @@ export const CashFlowInsights = ({
           <div className="flex flex-col h-full space-y-4">
             {/* Conversation History */}
             {conversationHistory.length > 0 && (
-              <div className="flex-1 space-y-3 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-                {conversationHistory.map((message, index) => (
+              <ScrollArea className="flex-1 h-[400px]">
+                <div className="space-y-3 pr-4">
+                  {conversationHistory.map((message, index) => (
                   <div 
                     key={index}
                     className={`p-3 rounded-lg ${
@@ -212,14 +214,15 @@ export const CashFlowInsights = ({
                       {message.content}
                     </p>
                   </div>
-                ))}
-                {chatLoading && (
-                  <div className="flex items-center gap-2 p-3 bg-muted mr-8 rounded-lg">
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    <span className="text-sm text-muted-foreground">AI is thinking...</span>
-                  </div>
-                )}
-              </div>
+                  ))}
+                  {chatLoading && (
+                    <div className="flex items-center gap-2 p-3 bg-muted mr-8 rounded-lg">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      <span className="text-sm text-muted-foreground">AI is thinking...</span>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
             )}
 
             {/* Input Form */}
