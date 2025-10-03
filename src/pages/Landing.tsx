@@ -445,7 +445,7 @@ const Landing = () => {
             <p className="text-xl text-muted-foreground">
               Choose the plan that fits your Amazon business
             </p>
-            <div className="flex items-center justify-center gap-4 mt-6">
+            <div className="flex items-center justify-center gap-4 mt-6 bg-muted/50 backdrop-blur-sm border rounded-lg p-4 max-w-md mx-auto">
               <span className={`text-sm ${!isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>Monthly</span>
               <button
                 onClick={() => setIsYearly(!isYearly)}
@@ -458,8 +458,9 @@ const Landing = () => {
                 />
               </button>
               <span className={`text-sm ${isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>
-                Yearly <Badge variant="secondary" className="ml-1">Save 2 months</Badge>
+                Yearly
               </span>
+              <Badge className="bg-gradient-primary">Save up to $178/year</Badge>
             </div>
             <Badge variant="secondary" className="text-sm">
               7-day free trial • Credit card required • Cancel anytime
