@@ -117,13 +117,13 @@ const Settings = () => {
         return;
       }
 
-      // Delete all vendors
-      const { error: vendorsError } = await supabase
-        .from('vendors')
+      // Delete all transactions FIRST to avoid foreign key issues
+      const { error: transactionsError } = await supabase
+        .from('transactions')
         .delete()
         .eq('user_id', user.id);
 
-      if (vendorsError) throw vendorsError;
+      if (transactionsError) throw transactionsError;
 
       // Delete all income
       const { error: incomeError } = await supabase
@@ -133,13 +133,13 @@ const Settings = () => {
 
       if (incomeError) throw incomeError;
 
-      // Delete all transactions
-      const { error: transactionsError } = await supabase
-        .from('transactions')
+      // Delete all vendors LAST (after dependent transactions are gone)
+      const { error: vendorsError } = await supabase
+        .from('vendors')
         .delete()
         .eq('user_id', user.id);
 
-      if (transactionsError) throw transactionsError;
+      if (vendorsError) throw vendorsError;
 
       // Reset total cash to 0
       const { error: settingsError } = await supabase
