@@ -49,7 +49,7 @@ All plans include a 7-day free trial with secure checkout. Yearly billing saves 
    - Monthly: $29/month
    - Yearly: $290/year (save $58/year)
    - Best for: Under $20k monthly Amazon payout
-   - Everything in Free, plus:
+   - Everything in New Seller, plus:
      * 2 Bank/Credit Card Connections (vs 1)
      * ✨ Ai PDF Extractor
      * Email Support
@@ -70,12 +70,27 @@ All plans include a 7-day free trial with secure checkout. Yearly billing saves 
    - Yearly: $890/year (save $178/year)
    - Best for: Under $200k monthly Amazon payout
    - Everything in Growing, plus:
-     * 7 Bank/Credit Card Connections (vs 4)
+     * 6 Bank/Credit Card Connections (vs 4)
      * 5 Additional Users (vs 2)
      * Automated Notifications
      * Scenario Planning
      * Advanced Analytics
      * Priority Support
+
+5. ENTERPRISE PLAN
+   - Price: Custom Pricing
+   - Best for: $200k+ monthly Amazon payout
+   - Everything in Professional, plus:
+     * Unlimited Bank/Credit Card Connections
+     * 3+ Amazon Connections
+     * Unlimited Users
+     * Custom Analytics & Reporting
+     * API Access
+     * White-Label Option
+     * Custom Integrations
+     * Dedicated Account Manager
+     * 24/7 Phone Support
+   - Contact sales@cashflowpro.com for pricing
 
 Key Differentiators vs Competitors (like Cash Flow Frog and QuickBooks):
 ✓ Amazon Payout Forecasting - Accurate to the day (others: generic forecasting)

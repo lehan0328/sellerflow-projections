@@ -20,6 +20,20 @@ const Landing = () => {
   const handleStartTrial = async (priceId: string) => {
     setIsLoading(true);
     try {
+      // Handle Enterprise plan contact
+      if (priceId === "enterprise") {
+        window.location.href = "mailto:sales@cashflowpro.com?subject=Enterprise Plan Inquiry";
+        setIsLoading(false);
+        return;
+      }
+
+      // Handle Free plan - navigate to auth
+      if (priceId === "price_free") {
+        navigate('/auth');
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("create-guest-checkout", {
         body: { priceId },
       });
@@ -119,21 +133,37 @@ const Landing = () => {
       yearlyPriceId: "price_1SEHZfB28kMY3UseZKmLEcPk",
       savings: "$178"
     },
+    {
+      name: "Enterprise",
+      price: "Custom",
+      yearlyPrice: "Custom",
+      period: "",
+      yearlyPeriod: "",
+      description: "$200k+ monthly amazon payout",
+      popular: false,
+      priceId: "enterprise",
+      yearlyPriceId: "enterprise",
+      savings: ""
+    },
   ];
 
   const featureComparison = [
-    { feature: "Bank/Credit Card Connections", free: "1", starter: "2", growing: "4", professional: "7" },
-    { feature: "Amazon Connections", free: "1", starter: "1", growing: "1", professional: "1" },
-    { feature: "Additional Users", free: false, starter: false, growing: "2", professional: "5" },
-    { feature: "Advanced Forecasting Workflow", free: true, starter: true, growing: true, professional: true },
-    { feature: "365-Day Cash Flow Projection", free: true, starter: true, growing: true, professional: true },
-    { feature: "Bank Transaction Matching", free: true, starter: true, growing: true, professional: true },
-    { feature: "✨ Ai Insights", free: false, starter: false, growing: true, professional: true },
-    { feature: "✨ Ai PDF Extractor", free: false, starter: true, growing: true, professional: true },
-    { feature: "Automated Notifications", free: false, starter: false, growing: false, professional: true },
-    { feature: "Scenario Planning", free: false, starter: false, growing: false, professional: true },
-    { feature: "Analytics", free: false, starter: false, growing: "Basic", professional: "Advanced" },
-    { feature: "Support", free: "Email", starter: "Email", growing: "Priority", professional: "Priority" },
+    { feature: "Bank/Credit Card Connections", free: "1", starter: "2", growing: "4", professional: "6", enterprise: "Unlimited" },
+    { feature: "Amazon Connections", free: "1", starter: "1", growing: "1", professional: "1", enterprise: "3+" },
+    { feature: "Additional Users", free: false, starter: false, growing: "2", professional: "5", enterprise: "Unlimited" },
+    { feature: "Advanced Forecasting Workflow", free: true, starter: true, growing: true, professional: true, enterprise: true },
+    { feature: "365-Day Cash Flow Projection", free: true, starter: true, growing: true, professional: true, enterprise: true },
+    { feature: "Bank Transaction Matching", free: true, starter: true, growing: true, professional: true, enterprise: true },
+    { feature: "✨ Ai Insights", free: false, starter: false, growing: true, professional: true, enterprise: true },
+    { feature: "✨ Ai PDF Extractor", free: false, starter: true, growing: true, professional: true, enterprise: true },
+    { feature: "Automated Notifications", free: false, starter: false, growing: false, professional: true, enterprise: true },
+    { feature: "Scenario Planning", free: false, starter: false, growing: false, professional: true, enterprise: true },
+    { feature: "Analytics", free: false, starter: false, growing: "Basic", professional: "Advanced", enterprise: "Custom" },
+    { feature: "API Access", free: false, starter: false, growing: false, professional: false, enterprise: true },
+    { feature: "White-Label Option", free: false, starter: false, growing: false, professional: false, enterprise: true },
+    { feature: "Custom Integrations", free: false, starter: false, growing: false, professional: false, enterprise: true },
+    { feature: "Dedicated Account Manager", free: false, starter: false, growing: false, professional: false, enterprise: true },
+    { feature: "Support", free: "Email", starter: "Email", growing: "Priority", professional: "Priority", enterprise: "24/7 Phone" },
   ];
 
   const testimonials = [
@@ -490,7 +520,7 @@ const Landing = () => {
               {/* Integrated Plan Cards with Comparison */}
               <Card className="overflow-hidden">
                 {/* Plan Headers with Pricing */}
-                <div className="grid grid-cols-5 gap-0 border-b">
+                <div className="grid grid-cols-6 gap-0 border-b">
                   <div className="p-4 bg-muted/30"></div>
                   {pricingPlans.map((plan, index) => (
                     <div 
@@ -526,7 +556,7 @@ const Landing = () => {
                           onClick={() => handleStartTrial(isYearly ? plan.yearlyPriceId : plan.priceId)}
                           disabled={isLoading}
                         >
-                          {isLoading ? "Loading..." : "Start Trial"}
+                          {isLoading ? "Loading..." : plan.name === "Enterprise" ? "Contact Sales" : plan.name === "New Seller" ? "Get Started" : "Start Trial"}
                         </Button>
                       </div>
                     </div>
@@ -537,7 +567,7 @@ const Landing = () => {
                 <CardContent className="p-0">
                   <div className="divide-y">
                     {featureComparison.map((row, index) => (
-                      <div key={index} className="grid grid-cols-5 gap-0 hover:bg-muted/30 transition-colors">
+                      <div key={index} className="grid grid-cols-6 gap-0 hover:bg-muted/30 transition-colors">
                         <div className="p-3 font-medium text-sm bg-muted/30 flex items-center">{row.feature}</div>
                         <div className={`p-3 border-l flex items-center justify-center ${pricingPlans[0].popular ? 'bg-primary/5' : ''}`}>
                           {row.free === true ? (
@@ -573,6 +603,15 @@ const Landing = () => {
                             <X className="h-4 w-4 text-destructive" />
                           ) : (
                             <span className="text-sm font-medium">{row.professional}</span>
+                          )}
+                        </div>
+                        <div className={`p-3 border-l flex items-center justify-center ${pricingPlans[4].popular ? 'bg-primary/5' : ''}`}>
+                          {row.enterprise === true ? (
+                            <Check className="h-4 w-4 text-success" />
+                          ) : row.enterprise === false ? (
+                            <X className="h-4 w-4 text-destructive" />
+                          ) : (
+                            <span className="text-sm font-medium">{row.enterprise}</span>
                           )}
                         </div>
                       </div>
