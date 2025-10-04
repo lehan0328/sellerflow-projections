@@ -145,10 +145,10 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
               )}
 
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={handleClose}>
+                <Button onClick={handleClose}>
                   Keep Subscription
                 </Button>
-                <Button onClick={handleReasonSubmit}>
+                <Button variant="outline" onClick={handleReasonSubmit}>
                   Continue
                 </Button>
               </div>
