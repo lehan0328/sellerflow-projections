@@ -43,6 +43,26 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // Check for plan override first (lifetime access, special cases)
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('plan_override')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profile?.plan_override) {
+      logStep("Plan override found", { plan: profile.plan_override });
+      return new Response(JSON.stringify({
+        subscribed: true,
+        plan: profile.plan_override,
+        subscription_end: null,
+        is_override: true
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
@@ -79,7 +99,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
       product_id: productId,
-      subscription_end: subscriptionEnd
+      subscription_end: subscriptionEnd,
+      is_override: false
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

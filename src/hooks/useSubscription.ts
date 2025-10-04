@@ -132,9 +132,12 @@ export const useSubscription = () => {
 
       if (error) throw error;
 
-      // Map product_id to plan tier
+      // Handle plan override (lifetime access, special cases)
       let plan: PlanTier | null = null;
-      if (data.product_id) {
+      if (data.is_override && data.plan) {
+        plan = data.plan as PlanTier;
+      } else if (data.product_id) {
+        // Map product_id to plan tier for regular Stripe subscriptions
         const planEntry = Object.entries(PRICING_PLANS).find(
           ([, planData]) => planData.product_id === data.product_id
         );

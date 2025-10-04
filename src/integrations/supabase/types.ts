@@ -659,6 +659,8 @@ export type Database = {
           id: string
           last_name: string | null
           monthly_revenue: string | null
+          plan_override: string | null
+          plan_override_reason: string | null
           updated_at: string
           user_id: string
         }
@@ -671,6 +673,8 @@ export type Database = {
           id?: string
           last_name?: string | null
           monthly_revenue?: string | null
+          plan_override?: string | null
+          plan_override_reason?: string | null
           updated_at?: string
           user_id: string
         }
@@ -683,6 +687,8 @@ export type Database = {
           id?: string
           last_name?: string | null
           monthly_revenue?: string | null
+          plan_override?: string | null
+          plan_override_reason?: string | null
           updated_at?: string
           user_id?: string
         }

@@ -42,19 +42,24 @@ export default function SubscriptionManagement() {
 
         {/* Current Plan Status */}
         <Card className="border-primary/30 max-w-2xl mx-auto">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Current Plan: {planLimits.name}</CardTitle>
-              {subscribed && subscription_end && (
-                <CardDescription>
-                  Renews on {new Date(subscription_end).toLocaleDateString()}
-                </CardDescription>
-              )}
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Current Plan: {planLimits.name}</CardTitle>
+                {subscribed && subscription_end ? (
+                  <CardDescription>
+                    Renews on {new Date(subscription_end).toLocaleDateString()}
+                  </CardDescription>
+                ) : subscribed && !subscription_end ? (
+                  <CardDescription className="flex items-center gap-2">
+                    <Crown className="h-4 w-4 text-primary" />
+                    <span className="font-semibold text-primary">Lifetime Access</span>
+                  </CardDescription>
+                ) : null}
+              </div>
+              <Badge variant="secondary">${planLimits.price}/month</Badge>
             </div>
-            <Badge variant="secondary">${planLimits.price}/month</Badge>
-          </div>
-        </CardHeader>
+          </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -91,7 +96,7 @@ export default function SubscriptionManagement() {
             </div>
           </div>
 
-          {subscribed && (
+          {subscribed && subscription_end && (
             <div className="pt-4 border-t flex gap-2">
               <Button onClick={handleManageSubscription} variant="outline" className="flex-1">
                 <ExternalLink className="h-4 w-4 mr-2" />
