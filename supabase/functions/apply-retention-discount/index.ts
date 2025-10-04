@@ -51,19 +51,24 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    // Find active subscription
+    // Find active or trialing subscription
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
-      status: "active",
-      limit: 1,
+      limit: 10,
     });
     
-    if (subscriptions.data.length === 0) {
-      throw new Error("No active subscription found");
+    const activeSubscription = subscriptions.data.find(
+      sub => sub.status === "active" || sub.status === "trialing"
+    );
+    
+    if (!activeSubscription) {
+      throw new Error("No active or trialing subscription found");
     }
     
-    const subscription = subscriptions.data[0];
-    logStep("Found active subscription", { subscriptionId: subscription.id });
+    logStep("Found active subscription", { 
+      subscriptionId: activeSubscription.id,
+      status: activeSubscription.status 
+    });
 
     // Create or retrieve a 10% off coupon for 3 months
     let couponId = "RETENTION_10_3MONTHS";
@@ -83,7 +88,7 @@ serve(async (req) => {
     }
 
     // Apply the coupon to the subscription
-    const updatedSubscription = await stripe.subscriptions.update(subscription.id, {
+    const updatedSubscription = await stripe.subscriptions.update(activeSubscription.id, {
       coupon: couponId,
     });
     logStep("Applied discount to subscription", { 
