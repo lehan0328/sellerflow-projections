@@ -65,8 +65,8 @@ serve(async (req) => {
     const subscription = subscriptions.data[0];
     logStep("Found active subscription", { subscriptionId: subscription.id });
 
-    // Create or retrieve a 20% off coupon for 2 months
-    let couponId = "RETENTION_20_2MONTHS";
+    // Create or retrieve a 10% off coupon for 3 months
+    let couponId = "RETENTION_10_3MONTHS";
     try {
       await stripe.coupons.retrieve(couponId);
       logStep("Using existing retention coupon");
@@ -74,10 +74,10 @@ serve(async (req) => {
       // Coupon doesn't exist, create it
       await stripe.coupons.create({
         id: couponId,
-        percent_off: 20,
+        percent_off: 10,
         duration: "repeating",
-        duration_in_months: 2,
-        name: "Retention Discount - 20% off for 2 months",
+        duration_in_months: 3,
+        name: "Retention Discount - 10% off for 3 months",
       });
       logStep("Created new retention coupon");
     }
@@ -93,7 +93,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ 
       success: true,
-      message: "20% discount applied for the next 2 months"
+      message: "10% discount applied for the next 3 months"
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

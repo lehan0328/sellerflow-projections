@@ -88,7 +88,7 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
 
       if (error) throw error;
 
-      toast.success('Great! 20% discount applied for the next 2 months 🎉');
+      toast.success('Great! 10% discount applied for the next 3 months 🎉');
       handleClose();
     } catch (error) {
       console.error('Error applying discount:', error);
@@ -271,7 +271,7 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
             <DialogHeader>
               <DialogTitle className="text-2xl">Wait! Here's a Special Offer 🎁</DialogTitle>
               <DialogDescription>
-                We'd love to keep you as a customer. How about 20% off for the next 2 months?
+                We'd love to keep you as a customer. How about 10% off for the next 3 months?
               </DialogDescription>
             </DialogHeader>
 
@@ -283,7 +283,7 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
                       <DollarSign className="h-8 w-8 text-primary-foreground" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-2xl">20% Off for 2 Months</h3>
+                      <h3 className="font-semibold text-2xl">10% Off for 3 Months</h3>
                       <p className="text-muted-foreground">Keep all your features at a reduced price</p>
                     </div>
                   </div>
@@ -325,7 +325,7 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
                     disabled={loading}
                     className="bg-gradient-primary"
                   >
-                    {loading ? 'Applying...' : 'Yes! Apply 20% Discount'}
+                    {loading ? 'Applying...' : 'Yes! Apply 10% Discount'}
                   </Button>
                 </div>
               </div>
