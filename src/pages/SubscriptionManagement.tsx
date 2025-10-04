@@ -4,13 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useSubscription, PRICING_PLANS } from "@/hooks/useSubscription";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
-import { Check, Crown, Loader2, ExternalLink } from "lucide-react";
+import { Check, Crown, Loader2, ExternalLink, XCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CancellationFlow } from "@/components/subscription/CancellationFlow";
 
 export default function SubscriptionManagement() {
   const { subscribed, plan, subscription_end, isLoading, createCheckout, openCustomerPortal } = useSubscription();
   const { currentPlan, planLimits, currentUsage } = usePlanLimits();
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
+  const [showCancellationFlow, setShowCancellationFlow] = useState(false);
 
   const handleUpgrade = async (priceId: string, planKey: string) => {
     setProcessingPlan(planKey);
@@ -89,10 +91,18 @@ export default function SubscriptionManagement() {
           </div>
 
           {subscribed && (
-            <div className="pt-4 border-t">
-              <Button onClick={handleManageSubscription} variant="outline" className="w-full md:w-auto">
+            <div className="pt-4 border-t flex gap-2">
+              <Button onClick={handleManageSubscription} variant="outline" className="flex-1">
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Manage Subscription & Billing
+              </Button>
+              <Button 
+                onClick={() => setShowCancellationFlow(true)} 
+                variant="outline"
+                className="text-destructive hover:text-destructive"
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Cancel Subscription
               </Button>
             </div>
           )}
@@ -172,6 +182,12 @@ export default function SubscriptionManagement() {
           <strong>Need more connections?</strong> Visit the Add Account section to purchase additional add-ons for bank accounts and Amazon connections.
         </AlertDescription>
       </Alert>
+
+      {/* Cancellation Flow Modal */}
+      <CancellationFlow 
+        open={showCancellationFlow} 
+        onOpenChange={setShowCancellationFlow} 
+      />
     </div>
   );
 }
