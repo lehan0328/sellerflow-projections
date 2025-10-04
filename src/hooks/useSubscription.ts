@@ -262,6 +262,43 @@ export const useSubscription = () => {
     }
   };
 
+  const removePlanOverride = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to manage your plan.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("remove-plan-override", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Plan override removed. You can now subscribe to a regular plan.",
+      });
+
+      // Refresh subscription status
+      await checkSubscription();
+    } catch (error) {
+      console.error("Error removing plan override:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove plan override. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     checkSubscription();
 
@@ -287,5 +324,6 @@ export const useSubscription = () => {
     createCheckout,
     purchaseAddon,
     openCustomerPortal,
+    removePlanOverride,
   };
 };

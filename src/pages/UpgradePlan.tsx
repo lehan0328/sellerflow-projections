@@ -30,7 +30,7 @@ interface CartItem {
 
 const UpgradePlan = () => {
   const navigate = useNavigate();
-  const { subscribed, plan, subscription_end, createCheckout, purchaseAddon, openCustomerPortal, isLoading } = useSubscription();
+  const { subscribed, plan, subscription_end, createCheckout, purchaseAddon, openCustomerPortal, removePlanOverride, isLoading } = useSubscription();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
   const [isYearly, setIsYearly] = useState(false);
   const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({
@@ -218,19 +218,21 @@ const UpgradePlan = () => {
                    ) : (
                     <>
                       <Separator />
-                      <div className="flex items-center justify-center gap-2 p-4 bg-primary/5 rounded-lg">
-                        <Shield className="h-5 w-5 text-primary" />
-                        <span className="text-sm font-semibold text-primary">Lifetime Access - No billing required</span>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-center gap-2 p-4 bg-primary/5 rounded-lg">
+                          <Shield className="h-5 w-5 text-primary" />
+                          <span className="text-sm font-semibold text-primary">Lifetime Access - No billing required</span>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="w-full"
+                          onClick={removePlanOverride}
+                        >
+                          <Settings className="h-4 w-4 mr-2" />
+                          Switch to Monthly Subscription
+                        </Button>
                       </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="w-full"
-                        onClick={openCustomerPortal}
-                      >
-                        <Settings className="h-4 w-4 mr-2" />
-                        Manage Subscription
-                      </Button>
                     </>
                   )}
                   {subscribed && (
