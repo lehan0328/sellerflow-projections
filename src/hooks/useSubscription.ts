@@ -5,24 +5,27 @@ import { useToast } from "@/hooks/use-toast";
 export const ADDON_PRODUCTS = {
   bank_account: {
     name: "Additional Bank Account",
-    price: 5,
+    price: 7,
     product_id: "prod_TAceumMQgcebjQ",
     price_id: "price_1SEHPSB28kMY3UseP1mWqne5",
-    description: "Add one more bank/credit card connection"
+    description: "Add one more bank/credit card connection",
+    trial_days: 7
   },
   amazon_account: {
     name: "Additional Amazon Account",
     price: 50,
     product_id: "prod_TAcfNXVQRUFHSC",
     price_id: "price_1SEHQLB28kMY3UseBmY7IIjx",
-    description: "Add one more Amazon account connection"
+    description: "Add one more Amazon account connection",
+    trial_days: 7
   },
   user: {
     name: "Additional User",
     price: 5,
     product_id: "prod_TAcgWMdZxz6voS",
     price_id: "price_1SEHQoB28kMY3UsedGTbBbmA",
-    description: "Add one more user to your account"
+    description: "Add one more user to your account",
+    trial_days: 7
   }
 } as const;
 

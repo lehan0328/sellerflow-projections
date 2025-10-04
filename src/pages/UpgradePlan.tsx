@@ -339,9 +339,12 @@ const UpgradePlan = () => {
                         <CardDescription>{addon.description}</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <div className="text-2xl font-bold">
-                          ${addon.price}
-                          <span className="text-sm font-normal text-muted-foreground">/month</span>
+                        <div className="space-y-1">
+                          <div className="text-2xl font-bold">
+                            ${addon.price}
+                            <span className="text-sm font-normal text-muted-foreground">/month</span>
+                          </div>
+                          <p className="text-xs text-green-600 font-medium">7-day free trial included</p>
                         </div>
                         <div className="flex items-center justify-center gap-3">
                           <Button

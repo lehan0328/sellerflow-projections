@@ -107,8 +107,11 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                   <p className="text-sm text-muted-foreground">
                     Connect additional bank accounts via Plaid for comprehensive cash flow tracking.
                   </p>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">${addOnPrice.bank}/month per connection</span>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">${addOnPrice.bank}/month per connection</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">7-day free trial included</p>
                   </div>
                   <div className="space-y-2">
                     <Button 
@@ -116,7 +119,7 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                       size="sm"
                       onClick={() => handlePurchaseAddon('bank')}
                     >
-                      Purchase Add-on - ${addOnPrice.bank}/mo
+                      Start 7-Day Trial - ${addOnPrice.bank}/mo after
                     </Button>
                   </div>
                 </CardContent>
@@ -133,8 +136,11 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                   <p className="text-sm text-muted-foreground">
                     Connect additional Amazon Seller Central accounts for multi-marketplace management.
                   </p>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">${addOnPrice.amazon}/month per connection</span>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">${addOnPrice.amazon}/month per connection</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">7-day free trial included</p>
                   </div>
                   <div className="space-y-2">
                     <Button 
@@ -142,7 +148,7 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                       size="sm"
                       onClick={() => handlePurchaseAddon('amazon')}
                     >
-                      Purchase Add-on - ${addOnPrice.amazon}/mo
+                      Start 7-Day Trial - ${addOnPrice.amazon}/mo after
                     </Button>
                   </div>
                 </CardContent>
