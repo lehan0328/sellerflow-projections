@@ -101,9 +101,9 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
         {currentStep === 'reason' && (
           <>
             <DialogHeader>
-              <DialogTitle className="text-2xl">Need a Break?</DialogTitle>
+              <DialogTitle className="text-2xl">We're sorry to see you go</DialogTitle>
               <DialogDescription>
-                Let us know why you'd like to pause your subscription
+                Help us improve by letting us know why you're canceling
               </DialogDescription>
             </DialogHeader>
 
@@ -136,7 +136,7 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
                   <Label htmlFor="other-reason">Please tell us more</Label>
                   <Textarea
                     id="other-reason"
-                    placeholder="What's your reason for pausing?"
+                    placeholder="What's your reason for canceling?"
                     value={feedback}
                     onChange={(e) => setFeedback(e.target.value)}
                     rows={4}
@@ -160,9 +160,9 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
         {currentStep === 'alternatives' && (
           <>
             <DialogHeader>
-              <DialogTitle className="text-2xl">Let's Pause Your Subscription</DialogTitle>
+              <DialogTitle className="text-2xl">Before you go...</DialogTitle>
               <DialogDescription>
-                We can help you take a break while keeping all your data safe
+                We'd love to help address your concerns. Here are some alternatives to canceling:
               </DialogDescription>
             </DialogHeader>
 
@@ -224,8 +224,8 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
                   <Button onClick={handleClose}>
                     Keep Subscription
                   </Button>
-                  <Button variant="outline" onClick={proceedToCancel}>
-                    I still want to cancel completely
+                  <Button variant="destructive" onClick={proceedToCancel}>
+                    My cashflow is perfect, cancel
                   </Button>
                 </div>
               </div>
@@ -239,10 +239,10 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
             <DialogHeader>
               <DialogTitle className="text-2xl flex items-center gap-2">
                 <AlertCircle className="h-6 w-6 text-destructive" />
-                Confirm Complete Cancellation
+                Final Confirmation
               </DialogTitle>
               <DialogDescription>
-                Are you sure you want to completely cancel instead of pausing?
+                Are you absolutely sure you want to cancel your subscription?
               </DialogDescription>
             </DialogHeader>
 
@@ -274,15 +274,15 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
               <Card className="border-primary/30 bg-primary/5">
                 <CardContent className="p-4">
                   <p className="text-sm font-medium">
-                    💡 <strong>Reminder:</strong> You can pause your subscription instead! 
-                    You'll keep all your data and won't be charged for 30 days.
+                    💡 <strong>Pro tip:</strong> Consider pausing your subscription instead. 
+                    You'll keep all your data and can resume anytime without losing progress.
                   </p>
                 </CardContent>
               </Card>
 
               {selectedReason && (
                 <div className="space-y-2 p-4 bg-muted rounded-lg">
-                  <p className="text-sm font-medium">Your reason for pausing:</p>
+                  <p className="text-sm font-medium">Your cancellation reason:</p>
                   <div className="flex items-center gap-2">
                     {(() => {
                       const Icon = getReasonIcon(selectedReason);
