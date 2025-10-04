@@ -517,9 +517,14 @@ export const CashFlowCalendar = ({
                           )}
                           {/* Net Amount - show for all dates with data */}
                           {hasAnyData && netAmount !== null && (
-                            <div className={`text-xs font-semibold truncate ${netAmount < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                              Net ${netAmount.toLocaleString()}
-                            </div>
+                            <>
+                              <div className={`text-xs font-semibold truncate ${netAmount < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                                Net ${netAmount.toLocaleString()}
+                              </div>
+                              <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold truncate">
+                                Credit ${totalAvailableCredit.toLocaleString()}
+                              </div>
+                            </>
                           )}
                         </div>
                       </div>
