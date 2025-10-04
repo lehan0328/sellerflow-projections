@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useSubscription, PRICING_PLANS } from './useSubscription';
+import { supabase } from '@/integrations/supabase/client';
 
 export type PlanType = 'starter' | 'professional' | 'enterprise';
 
@@ -14,18 +16,19 @@ interface CurrentUsage {
   amazonConnections: number;
 }
 
+// Map subscription tiers to plan limits
 const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
   starter: {
     bankConnections: 2,
     amazonConnections: 1,
     name: 'Starter',
-    price: 29
+    price: PRICING_PLANS.starter.price
   },
   professional: {
-    bankConnections: 5,
-    amazonConnections: 3,
+    bankConnections: 7,
+    amazonConnections: 1,
     name: 'Professional', 
-    price: 79
+    price: PRICING_PLANS.professional.price
   },
   enterprise: {
     bankConnections: 999,
@@ -36,42 +39,45 @@ const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
 };
 
 export const usePlanLimits = () => {
-  const [currentPlan, setCurrentPlan] = useState<PlanType>('starter');
+  const subscription = useSubscription();
   const [currentUsage, setCurrentUsage] = useState<CurrentUsage>({
-    bankConnections: 1, // Default to 1 existing connection
+    bankConnections: 0,
     amazonConnections: 0
   });
 
+  // Map subscription plan to plan type - default to professional
+  const mapPlanTier = (tier: string | null): PlanType => {
+    if (tier === 'starter') return 'starter';
+    if (tier === 'growing') return 'professional';
+    if (tier === 'professional') return 'professional';
+    return 'professional'; // Default to professional
+  };
+  
+  const currentPlan: PlanType = mapPlanTier(subscription.plan);
   const planLimits = PLAN_LIMITS[currentPlan];
+
+  // Fetch actual usage from database
+  useEffect(() => {
+    const fetchUsage = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const [bankAccounts, amazonAccounts] = await Promise.all([
+        supabase.from('bank_accounts').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('amazon_accounts').select('id', { count: 'exact' }).eq('user_id', user.id)
+      ]);
+
+      setCurrentUsage({
+        bankConnections: bankAccounts.count || 0,
+        amazonConnections: amazonAccounts.count || 0
+      });
+    };
+
+    fetchUsage();
+  }, []);
 
   const canAddBankConnection = currentUsage.bankConnections < planLimits.bankConnections;
   const canAddAmazonConnection = currentUsage.amazonConnections < planLimits.amazonConnections;
-
-  const addBankConnection = () => {
-    if (canAddBankConnection) {
-      setCurrentUsage(prev => ({
-        ...prev,
-        bankConnections: prev.bankConnections + 1
-      }));
-      return true;
-    }
-    return false;
-  };
-
-  const addAmazonConnection = () => {
-    if (canAddAmazonConnection) {
-      setCurrentUsage(prev => ({
-        ...prev,
-        amazonConnections: prev.amazonConnections + 1
-      }));
-      return true;
-    }
-    return false;
-  };
-
-  const upgradePlan = (newPlan: PlanType) => {
-    setCurrentPlan(newPlan);
-  };
 
   return {
     currentPlan,
@@ -79,9 +85,6 @@ export const usePlanLimits = () => {
     currentUsage,
     canAddBankConnection,
     canAddAmazonConnection,
-    addBankConnection,
-    addAmazonConnection,
-    upgradePlan,
     PLAN_LIMITS
   };
 };

@@ -26,7 +26,7 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
     interestRate: "",
   });
 
-  const { canAddBankConnection, canAddAmazonConnection, addBankConnection, addAmazonConnection } = usePlanLimits();
+  const { canAddBankConnection, canAddAmazonConnection } = usePlanLimits();
 
   const accountTypes = [
     {
@@ -74,19 +74,15 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
     }
 
     if (selectedType === 'plaid') {
-      if (addBankConnection()) {
-        toast.success("Redirecting to Plaid for secure bank connection...");
-        setTimeout(() => {
-          toast.success("Bank account connected successfully via Plaid!");
-        }, 2000);
-      }
+      toast.success("Redirecting to Plaid for secure bank connection...");
+      setTimeout(() => {
+        toast.success("Bank account connected successfully via Plaid!");
+      }, 2000);
     } else if (selectedType === 'amazon') {
-      if (addAmazonConnection()) {
-        toast.success("Connecting to Amazon Seller Central...");
-        setTimeout(() => {
-          toast.success("Amazon account connected successfully!");
-        }, 2000);
-      }
+      toast.success("Connecting to Amazon Seller Central...");
+      setTimeout(() => {
+        toast.success("Amazon account connected successfully!");
+      }, 2000);
     } else {
       toast.success("Credit card added successfully!");
     }

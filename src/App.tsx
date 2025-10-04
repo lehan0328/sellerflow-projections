@@ -9,6 +9,7 @@ import DemoPage from "./pages/DemoPage";
 import Settings from "./pages/Settings";
 import { SignUp } from "./pages/SignUp";
 import UpgradePlan from "./pages/UpgradePlan";
+import SubscriptionManagement from "./pages/SubscriptionManagement";
 import TransactionLog from "./pages/TransactionLog";
 import BankTransactions from "./pages/BankTransactions";
 import Analytics from "./pages/Analytics";
@@ -52,6 +53,11 @@ const App = () => (
           <Route path="/upgrade-plan" element={
             <ProtectedRoute>
               <UpgradePlan />
+            </ProtectedRoute>
+          } />
+          <Route path="/subscription" element={
+            <ProtectedRoute>
+              <SubscriptionManagement />
             </ProtectedRoute>
           } />
           <Route path="/transactions" element={

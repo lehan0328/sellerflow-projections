@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building, ShoppingCart, Check, Zap, Crown } from "lucide-react";
 import { usePlanLimits, PlanType } from "@/hooks/usePlanLimits";
+import { useSubscription, ADDON_PRODUCTS, PRICING_PLANS } from "@/hooks/useSubscription";
 import { toast } from "sonner";
 
 interface PurchaseAddonsModalProps {
@@ -12,24 +13,26 @@ interface PurchaseAddonsModalProps {
 }
 
 export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalProps) => {
-  const { currentPlan, planLimits, currentUsage, upgradePlan, PLAN_LIMITS } = usePlanLimits();
+  const { currentPlan, planLimits, currentUsage, PLAN_LIMITS } = usePlanLimits();
+  const { purchaseAddon, createCheckout } = useSubscription();
 
-  const handlePurchaseAddon = (type: 'bank' | 'amazon', quantity: number = 1) => {
-    // Simulate addon purchase
-    toast.success(`Successfully purchased ${quantity} additional ${type} connection${quantity > 1 ? 's' : ''}!`);
+  const handlePurchaseAddon = async (type: 'bank' | 'amazon') => {
+    const priceId = type === 'bank' ? ADDON_PRODUCTS.bank_account.price_id : ADDON_PRODUCTS.amazon_account.price_id;
+    await purchaseAddon(priceId);
     onOpenChange(false);
   };
 
-  const handleUpgradePlan = (newPlan: PlanType) => {
-    // Simulate plan upgrade
-    upgradePlan(newPlan);
-    toast.success(`Successfully upgraded to ${PLAN_LIMITS[newPlan].name} plan!`);
-    onOpenChange(false);
+  const handleUpgradePlan = async (planKey: string) => {
+    const planData = PRICING_PLANS[planKey as keyof typeof PRICING_PLANS];
+    if (planData) {
+      await createCheckout(planData.price_id);
+      onOpenChange(false);
+    }
   };
 
   const addOnPrice = {
-    bank: 15,
-    amazon: 25
+    bank: ADDON_PRODUCTS.bank_account.price,
+    amazon: ADDON_PRODUCTS.amazon_account.price
   };
 
   return (
@@ -111,17 +114,9 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                     <Button 
                       className="w-full" 
                       size="sm"
-                      onClick={() => handlePurchaseAddon('bank', 1)}
+                      onClick={() => handlePurchaseAddon('bank')}
                     >
-                      Add 1 Connection - ${addOnPrice.bank}/mo
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full" 
-                      size="sm"
-                      onClick={() => handlePurchaseAddon('bank', 5)}
-                    >
-                      Add 5 Connections - ${addOnPrice.bank * 5}/mo
+                      Purchase Add-on - ${addOnPrice.bank}/mo
                     </Button>
                   </div>
                 </CardContent>
@@ -145,17 +140,9 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                     <Button 
                       className="w-full" 
                       size="sm"
-                      onClick={() => handlePurchaseAddon('amazon', 1)}
+                      onClick={() => handlePurchaseAddon('amazon')}
                     >
-                      Add 1 Connection - ${addOnPrice.amazon}/mo
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="w-full" 
-                      size="sm"
-                      onClick={() => handlePurchaseAddon('amazon', 3)}
-                    >
-                      Add 3 Connections - ${addOnPrice.amazon * 3}/mo
+                      Purchase Add-on - ${addOnPrice.amazon}/mo
                     </Button>
                   </div>
                 </CardContent>
