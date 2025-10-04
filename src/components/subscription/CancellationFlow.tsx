@@ -256,11 +256,11 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
                   Back
                 </Button>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleClose}>
+                  <Button onClick={handleClose}>
                     Keep Subscription
                   </Button>
-                  <Button variant="destructive" onClick={proceedToCancel}>
-                    Continue to Cancel
+                  <Button variant="outline" onClick={proceedToCancel}>
+                    My cashflow is perfect, cancel
                   </Button>
                 </div>
               </div>
