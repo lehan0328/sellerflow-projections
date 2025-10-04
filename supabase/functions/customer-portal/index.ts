@@ -41,6 +41,18 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // Check if user has a plan override (lifetime access, etc.)
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('plan_override, plan_override_reason')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profile?.plan_override) {
+      logStep("User has plan override, no portal access needed", { plan: profile.plan_override });
+      throw new Error("Your account has lifetime access and doesn't require subscription management. Contact support if you need assistance.");
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     if (customers.data.length === 0) {

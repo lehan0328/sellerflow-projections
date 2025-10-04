@@ -53,7 +53,7 @@ export default function SubscriptionManagement() {
                 ) : subscribed && !subscription_end ? (
                   <CardDescription className="flex items-center gap-2">
                     <Crown className="h-4 w-4 text-primary" />
-                    <span className="font-semibold text-primary">Lifetime Access</span>
+                    <span className="font-semibold text-primary">Lifetime Access - No billing required</span>
                   </CardDescription>
                 ) : null}
               </div>

@@ -183,24 +183,34 @@ const UpgradePlan = () => {
                       {PRICING_PLANS[plan].name} - ${PRICING_PLANS[plan].price}/mo
                     </Badge>
                   </div>
-                  {subscription_end && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Renews</span>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(subscription_end).toLocaleDateString()}
-                      </span>
-                    </div>
+                  {subscription_end ? (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Renews</span>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(subscription_end).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <Separator />
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="w-full"
+                        onClick={openCustomerPortal}
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Manage Subscription
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Separator />
+                      <div className="flex items-center justify-center gap-2 p-4 bg-primary/5 rounded-lg">
+                        <Shield className="h-5 w-5 text-primary" />
+                        <span className="text-sm font-semibold text-primary">Lifetime Access - No billing required</span>
+                      </div>
+                    </>
                   )}
-                  <Separator />
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="w-full"
-                    onClick={openCustomerPortal}
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    Manage Subscription
-                  </Button>
                 </>
               ) : (
                 <>
@@ -245,12 +255,18 @@ const UpgradePlan = () => {
           <div className="grid gap-6 md:grid-cols-3 max-w-6xl mx-auto">
               {plans.map((planItem) => {
                 const isCurrent = plan === planItem.key;
+                const planHierarchy = { starter: 1, growing: 2, professional: 3 };
+                const currentPlanLevel = plan ? planHierarchy[plan] : 0;
+                const itemPlanLevel = planHierarchy[planItem.key as keyof typeof planHierarchy];
+                const isUpgrade = itemPlanLevel > currentPlanLevel;
+                const isDowngrade = itemPlanLevel < currentPlanLevel && subscribed;
+                
                 return (
                   <Card 
                     key={planItem.name} 
                     className={`relative ${isCurrent ? 'ring-2 ring-primary' : ''} ${planItem.popular ? 'ring-2 ring-accent' : ''}`}
                   >
-                    {planItem.popular && (
+                    {planItem.popular && !isCurrent && (
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                         <Badge className="bg-gradient-primary">
                           <Star className="h-3 w-3 mr-1" />
@@ -286,13 +302,19 @@ const UpgradePlan = () => {
                       </ul>
                       <Button 
                         className="w-full" 
-                        variant={isCurrent ? "outline" : planItem.popular ? "default" : "outline"}
-                        disabled={isCurrent || isLoading}
+                        variant={isCurrent ? "outline" : planItem.popular && isUpgrade ? "default" : "outline"}
+                        disabled={isCurrent || isDowngrade || isLoading}
                         onClick={() => handleUpgrade(getCurrentPriceId(planItem))}
                       >
-                        {isCurrent ? "Current Plan" : subscribed ? "Upgrade Now" : "Start 7-Day Free Trial"}
+                        {isCurrent 
+                          ? "Current Plan" 
+                          : isDowngrade 
+                          ? "Downgrade Not Available" 
+                          : subscribed && isUpgrade
+                          ? "Upgrade Now"
+                          : "Start 7-Day Free Trial"}
                       </Button>
-                      {!isCurrent && !subscribed && (
+                      {!isCurrent && !subscribed && !isDowngrade && (
                         <p className="text-xs text-muted-foreground text-center">
                           Then ${isYearly ? planItem.yearlyPrice + '/year' : planItem.price + '/month'}. Cancel anytime.
                         </p>
