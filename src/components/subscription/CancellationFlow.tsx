@@ -224,7 +224,7 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
                   <Button onClick={handleClose}>
                     Keep Subscription
                   </Button>
-                  <Button variant="outline" onClick={proceedToCancel}>
+                  <Button variant="destructive" onClick={proceedToCancel}>
                     My cashflow is perfect, cancel
                   </Button>
                 </div>
