@@ -15,6 +15,7 @@ export interface Vendor {
   poName?: string;
   description?: string;
   notes?: string;
+  remarks?: string;
   paymentSchedule?: any[];
   source?: 'purchase_order' | 'management';
   created_at?: string;
@@ -79,6 +80,7 @@ export const useVendors = () => {
         poName: vendor.po_name || '',
         description: vendor.description || '',
         notes: vendor.notes || '',
+        remarks: vendor.remarks || '',
         paymentSchedule: Array.isArray(vendor.payment_schedule) ? vendor.payment_schedule : [],
         source: vendor.source as Vendor['source'] || 'management',
         created_at: vendor.created_at,

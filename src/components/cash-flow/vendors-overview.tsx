@@ -146,16 +146,23 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
     }
   };
 
-  const handleDeleteVendor = async (vendor: Vendor) => {
+  const handleDeleteVendorTransaction = async (vendor: Vendor) => {
     try {
-      if (onDeleteVendor) {
-        onDeleteVendor(vendor.id);
-      } else {
-        await deleteVendorHook(vendor.id);
-      }
+      // Update vendor to mark as paid and reset totalOwed
+      await updateVendor(vendor.id, { 
+        status: 'paid' as any, 
+        totalOwed: 0,
+        nextPaymentAmount: 0
+      });
+      
+      toast.success("Transaction deleted", {
+        description: `Vendor transaction for ${vendor.name} has been removed.`
+      });
+      
       onVendorUpdate?.();
     } catch (error) {
-      console.error('Error deleting vendor:', error);
+      console.error('Error deleting vendor transaction:', error);
+      toast.error("Failed to delete transaction");
     }
   };
 
@@ -444,13 +451,14 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
                 <TableHead>Amount</TableHead>
                 <TableHead>Due Date</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Remarks</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAndSortedVendors.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     {selectedVendor ? `No purchase orders found for ${vendorSearchOptions.find(v => v.value === selectedVendor)?.label || selectedVendor}.` :
                      searchTerm ? 'No vendors found matching your search.' : 
                      'No vendors with purchase orders.'}
@@ -474,6 +482,15 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
                         {getStatusIcon(vendor)}
                         <span className="ml-1">{getStatusText(vendor)}</span>
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="text"
+                        placeholder="e.g., Shipped, Received"
+                        value={vendor.remarks || ''}
+                        onChange={(e) => updateVendor(vendor.id, { remarks: e.target.value })}
+                        className="h-8 text-xs max-w-[150px]"
+                      />
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">
@@ -584,18 +601,18 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
                               </TooltipContent>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Vendor Order</AlertDialogTitle>
+                              <AlertDialogTitle>Delete Vendor Transaction</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to delete this vendor order for {vendor.name}? This action cannot be undone and will remove the ${(vendor.totalOwed || 0).toLocaleString()} transaction.
+                                Are you sure you want to delete this transaction for {vendor.name}? The vendor will remain in your Vendor Management list but the ${(vendor.totalOwed || 0).toLocaleString()} transaction will be removed.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction 
-                                onClick={() => handleDeleteVendor(vendor)}
+                                onClick={() => handleDeleteVendorTransaction(vendor)}
                                 className="bg-destructive hover:bg-destructive/90"
                               >
-                                Delete Order
+                                Delete Transaction
                               </AlertDialogAction>
                             </AlertDialogFooter>
                             </AlertDialogContent>

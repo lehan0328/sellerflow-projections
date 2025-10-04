@@ -816,6 +816,7 @@ export type Database = {
           payment_schedule: Json | null
           payment_type: string | null
           po_name: string | null
+          remarks: string | null
           source: string | null
           status: string | null
           total_owed: number | null
@@ -835,6 +836,7 @@ export type Database = {
           payment_schedule?: Json | null
           payment_type?: string | null
           po_name?: string | null
+          remarks?: string | null
           source?: string | null
           status?: string | null
           total_owed?: number | null
@@ -854,6 +856,7 @@ export type Database = {
           payment_schedule?: Json | null
           payment_type?: string | null
           po_name?: string | null
+          remarks?: string | null
           source?: string | null
           status?: string | null
           total_owed?: number | null
