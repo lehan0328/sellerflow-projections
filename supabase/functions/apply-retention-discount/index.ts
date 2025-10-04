@@ -82,7 +82,7 @@ serve(async (req) => {
         percent_off: 10,
         duration: "repeating",
         duration_in_months: 3,
-        name: "Retention Discount - 10% off for 3 months",
+        name: "Retention 10% off 3 months",
       });
       logStep("Created new retention coupon");
     }
