@@ -303,13 +303,13 @@ const UpgradePlan = () => {
                       <Button 
                         className="w-full" 
                         variant={isCurrent ? "outline" : planItem.popular && isUpgrade ? "default" : "outline"}
-                        disabled={isCurrent || isDowngrade || isLoading}
+                        disabled={isCurrent || isLoading}
                         onClick={() => handleUpgrade(getCurrentPriceId(planItem))}
                       >
                         {isCurrent 
                           ? "Current Plan" 
                           : isDowngrade 
-                          ? "Downgrade Not Available" 
+                          ? "Downgrade" 
                           : subscribed && isUpgrade
                           ? "Upgrade Now"
                           : "Start 7-Day Free Trial"}

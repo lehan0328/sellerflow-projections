@@ -96,7 +96,7 @@ export default function SubscriptionManagement() {
             </div>
           </div>
 
-          {subscribed && subscription_end && (
+          {subscribed && (
             <div className="pt-4 border-t flex gap-2">
               <Button onClick={handleManageSubscription} variant="outline" className="flex-1">
                 <ExternalLink className="h-4 w-4 mr-2" />
