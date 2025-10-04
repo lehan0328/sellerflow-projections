@@ -138,91 +138,89 @@ const UpgradePlan = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => navigate('/dashboard')}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold flex items-center space-x-2">
-                  <Shield className="h-6 w-6" />
-                  <span>Upgrade Plan</span>
-                </h1>
-                <p className="text-muted-foreground">
-                  Choose the perfect plan for your business needs
-                </p>
-              </div>
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex flex-col items-center text-center space-y-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/dashboard')}
+              className="self-start"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold flex items-center justify-center space-x-2">
+                <Shield className="h-8 w-8" />
+                <span>Upgrade Plan</span>
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Choose the perfect plan for your business needs
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid gap-6 lg:grid-cols-4">
-          {/* Current Account Status */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Shield className="h-5 w-5" />
-                  <span>Current Plan</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {isLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading...</p>
-                ) : subscribed && plan ? (
-                  <>
+      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        {/* Current Account Status */}
+        <div className="flex justify-center">
+          <Card className="w-full max-w-2xl">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-center space-x-2">
+                <Shield className="h-5 w-5" />
+                <span>Current Plan</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isLoading ? (
+                <p className="text-sm text-muted-foreground text-center">Loading...</p>
+              ) : subscribed && plan ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Plan</span>
+                    <Badge className="bg-gradient-primary">
+                      {PRICING_PLANS[plan].name} - ${PRICING_PLANS[plan].price}/mo
+                    </Badge>
+                  </div>
+                  {subscription_end && (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm">Plan</span>
-                      <Badge className="bg-gradient-primary">
-                        {PRICING_PLANS[plan].name} - ${PRICING_PLANS[plan].price}/mo
-                      </Badge>
+                      <span className="text-sm">Renews</span>
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(subscription_end).toLocaleDateString()}
+                      </span>
                     </div>
-                    {subscription_end && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Renews</span>
-                        <span className="text-sm text-muted-foreground">
-                          {new Date(subscription_end).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
-                    <Separator />
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      className="w-full"
-                      onClick={openCustomerPortal}
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      Manage Subscription
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">Plan</span>
-                      <Badge variant="secondary">No Active Plan</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Upgrade to unlock all features and grow your business
-                    </p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                  )}
+                  <Separator />
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="w-full"
+                    onClick={openCustomerPortal}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Manage Subscription
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Plan</span>
+                    <Badge variant="secondary">No Active Plan</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Upgrade to unlock all features and grow your business
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-          {/* Plans */}
-          <div className="lg:col-span-3">
-            <div className="mb-6 space-y-4">
-              <div className="flex items-center justify-center gap-4">
+        {/* Plans */}
+        <div>
+          <div className="mb-6 space-y-4">
+            <div className="flex items-center justify-center gap-4">
                 <span className={`text-sm ${!isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>Monthly</span>
                 <button
                   onClick={() => setIsYearly(!isYearly)}
@@ -234,17 +232,17 @@ const UpgradePlan = () => {
                     }`}
                   />
                 </button>
-                <span className={`text-sm ${isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>
-                  Yearly <Badge variant="secondary" className="ml-1">Save 2 months</Badge>
-                </span>
-              </div>
-              <div className="text-center">
-                <Badge variant="secondary" className="text-sm">
-                  7-day free trial • Credit card required • Cancel anytime
-                </Badge>
-              </div>
+              <span className={`text-sm ${isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>
+                Yearly <Badge variant="secondary" className="ml-1">Save 2 months</Badge>
+              </span>
             </div>
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="text-center">
+              <Badge variant="secondary" className="text-sm">
+                7-day free trial • Credit card required • Cancel anytime
+              </Badge>
+            </div>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3 max-w-6xl mx-auto">
               {plans.map((planItem) => {
                 const isCurrent = plan === planItem.key;
                 return (
@@ -301,12 +299,12 @@ const UpgradePlan = () => {
                       )}
                     </CardContent>
                   </Card>
-                );
-              })}
-            </div>
+              );
+            })}
+          </div>
 
-            {/* Add-ons Cart Section */}
-            <Card className="mt-6">
+          {/* Add-ons Cart Section */}
+          <Card className="mt-6 max-w-6xl mx-auto">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span className="flex items-center gap-2">
@@ -418,21 +416,20 @@ const UpgradePlan = () => {
                     <p>Select add-ons above to get started</p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-            
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Need help choosing?</CardTitle>
-                <CardDescription>
-                  Not sure which plan is right for you? Our team can help you find the perfect fit for your business needs.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline">Contact Sales</Button>
-              </CardContent>
-            </Card>
-          </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="mt-6 max-w-6xl mx-auto">
+            <CardHeader>
+              <CardTitle className="text-center">Need help choosing?</CardTitle>
+              <CardDescription className="text-center">
+                Not sure which plan is right for you? Our team can help you find the perfect fit for your business needs.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center">
+              <Button variant="outline">Contact Sales</Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
