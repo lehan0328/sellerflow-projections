@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp, ShoppingBag, AlertTriangle } from "lucide-react";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays, startOfWeek, endOfWeek, getDay, startOfDay } from "date-fns";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { TransactionDetailModal } from "./transaction-detail-modal";
 import { DayTransactionsModal } from "./day-transactions-modal";
@@ -80,6 +80,7 @@ export const CashFlowCalendar = ({
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'calendar' | 'chart'>('calendar');
   const [chartTimeRange, setChartTimeRange] = useState<'1' | '3' | '6' | '12'>('3');
+  const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
   const [selectedTransaction, setSelectedTransaction] = useState<CashFlowEvent | null>(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedDayTransactions, setSelectedDayTransactions] = useState<CashFlowEvent[]>([]);
@@ -422,17 +423,29 @@ export const CashFlowCalendar = ({
                   </div>
                   
                   {viewType === 'chart' && (
-                    <Select value={chartTimeRange} onValueChange={(value: '1' | '3' | '6' | '12') => setChartTimeRange(value)}>
-                      <SelectTrigger className="w-[140px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1 Month</SelectItem>
-                        <SelectItem value="3">3 Months</SelectItem>
-                        <SelectItem value="6">6 Months</SelectItem>
-                        <SelectItem value="12">1 Year</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <>
+                      <Select value={chartTimeRange} onValueChange={(value: '1' | '3' | '6' | '12') => setChartTimeRange(value)}>
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 Month</SelectItem>
+                          <SelectItem value="3">3 Months</SelectItem>
+                          <SelectItem value="6">6 Months</SelectItem>
+                          <SelectItem value="12">1 Year</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      
+                      <Select value={chartType} onValueChange={(value: 'bar' | 'line') => setChartType(value)}>
+                        <SelectTrigger className="w-[130px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="bar">Bar Chart</SelectItem>
+                          <SelectItem value="line">Line Chart</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </>
                   )}
                 </div>
               </div>
@@ -625,61 +638,121 @@ export const CashFlowCalendar = ({
             <div className="h-[400px] flex-shrink-0">
               <ChartContainer config={chartConfig}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} onClick={handleChartClick}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="date" 
-                      tick={{ fontSize: 12 }}
-                      interval="preserveStartEnd"
-                    />
-                    <YAxis 
-                      tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                    />
-                    <ChartTooltip 
-                      content={<ChartTooltipContent />}
-                      formatter={(value: number, name: string) => [
-                        `$${value.toLocaleString()}`,
-                        'Cash Flow'
-                      ]}
-                      labelFormatter={(label, payload) => {
-                        if (payload && payload[0]) {
-                          const data = payload[0].payload;
-                          const hasTransactions = data.transactions && data.transactions.length > 0;
-                          return (
-                            <div className="space-y-1">
-                              <p className="font-semibold">{label}</p>
-                              <div className="text-sm space-y-1">
-                                {data.dailyChange !== 0 && (
-                                  <p className={data.dailyChange > 0 ? 'text-green-600' : 'text-red-600'}>
-                                    Daily Change: ${data.dailyChange > 0 ? '+' : ''}${data.dailyChange.toLocaleString()}
-                                  </p>
-                                )}
-                                {data.inflow > 0 && (
-                                  <p className="text-green-600">Inflow: +${data.inflow.toLocaleString()}</p>
-                                )}
-                                {data.outflow > 0 && (
-                                  <p className="text-red-600">Outflow: -${data.outflow.toLocaleString()}</p>
-                                )}
-                                {hasTransactions && (
-                                  <p className="text-blue-600 font-medium">
-                                    💡 Click to view transaction details
-                                  </p>
-                                )}
+                  {chartType === 'bar' ? (
+                    <BarChart data={chartData} onClick={handleChartClick}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 12 }}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }}
+                        tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                      />
+                      <ChartTooltip 
+                        content={<ChartTooltipContent />}
+                        formatter={(value: number, name: string) => [
+                          `$${value.toLocaleString()}`,
+                          'Cash Flow'
+                        ]}
+                        labelFormatter={(label, payload) => {
+                          if (payload && payload[0]) {
+                            const data = payload[0].payload;
+                            const hasTransactions = data.transactions && data.transactions.length > 0;
+                            return (
+                              <div className="space-y-1">
+                                <p className="font-semibold">{label}</p>
+                                <div className="text-sm space-y-1">
+                                  {data.dailyChange !== 0 && (
+                                    <p className={data.dailyChange > 0 ? 'text-green-600' : 'text-red-600'}>
+                                      Daily Change: ${data.dailyChange > 0 ? '+' : ''}${data.dailyChange.toLocaleString()}
+                                    </p>
+                                  )}
+                                  {data.inflow > 0 && (
+                                    <p className="text-green-600">Inflow: +${data.inflow.toLocaleString()}</p>
+                                  )}
+                                  {data.outflow > 0 && (
+                                    <p className="text-red-600">Outflow: -${data.outflow.toLocaleString()}</p>
+                                  )}
+                                  {hasTransactions && (
+                                    <p className="text-blue-600 font-medium">
+                                      💡 Click to view transaction details
+                                    </p>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        }
-                        return label;
-                      }}
-                    />
-                    <Bar 
-                      dataKey="cashFlow" 
-                      fill="hsl(var(--primary))" 
-                      radius={[4, 4, 0, 0]}
-                      cursor="pointer"
-                    />
-                  </BarChart>
+                            );
+                          }
+                          return label;
+                        }}
+                      />
+                      <Bar 
+                        dataKey="cashFlow" 
+                        fill="hsl(var(--primary))" 
+                        radius={[4, 4, 0, 0]}
+                        cursor="pointer"
+                      />
+                    </BarChart>
+                  ) : (
+                    <LineChart data={chartData} onClick={handleChartClick}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 12 }}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }}
+                        tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                      />
+                      <ChartTooltip 
+                        content={<ChartTooltipContent />}
+                        formatter={(value: number, name: string) => [
+                          `$${value.toLocaleString()}`,
+                          'Cash Flow'
+                        ]}
+                        labelFormatter={(label, payload) => {
+                          if (payload && payload[0]) {
+                            const data = payload[0].payload;
+                            const hasTransactions = data.transactions && data.transactions.length > 0;
+                            return (
+                              <div className="space-y-1">
+                                <p className="font-semibold">{label}</p>
+                                <div className="text-sm space-y-1">
+                                  {data.dailyChange !== 0 && (
+                                    <p className={data.dailyChange > 0 ? 'text-green-600' : 'text-red-600'}>
+                                      Daily Change: ${data.dailyChange > 0 ? '+' : ''}${data.dailyChange.toLocaleString()}
+                                    </p>
+                                  )}
+                                  {data.inflow > 0 && (
+                                    <p className="text-green-600">Inflow: +${data.inflow.toLocaleString()}</p>
+                                  )}
+                                  {data.outflow > 0 && (
+                                    <p className="text-red-600">Outflow: -${data.outflow.toLocaleString()}</p>
+                                  )}
+                                  {hasTransactions && (
+                                    <p className="text-blue-600 font-medium">
+                                      💡 Click to view transaction details
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          }
+                          return label;
+                        }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="cashFlow" 
+                        stroke="hsl(var(--primary))" 
+                        strokeWidth={2}
+                        dot={{ r: 4, cursor: 'pointer' }}
+                        activeDot={{ r: 6, cursor: 'pointer' }}
+                      />
+                    </LineChart>
+                  )}
                 </ResponsiveContainer>
               </ChartContainer>
             </div>
