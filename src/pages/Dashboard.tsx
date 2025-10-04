@@ -249,6 +249,8 @@ const Dashboard = () => {
 
   const handlePurchaseOrderSubmit = async (orderData: any) => {
     console.info("Purchase order received in Dashboard:", orderData);
+    console.info("Order data vendorId:", orderData.vendorId);
+    console.info("Current vendors:", vendors.map(v => ({ id: v.id, name: v.name })));
     
     const amount = typeof orderData.amount === 'string' ? 
       parseFloat(orderData.amount) : orderData.amount;
@@ -269,9 +271,12 @@ const Dashboard = () => {
     // Check if vendor already exists (selected from dropdown)
     let vendor;
     if (orderData.vendorId) {
+      console.info("Using existing vendor with ID:", orderData.vendorId);
       // Use existing vendor and update it with PO details
       vendor = vendors.find(v => v.id === orderData.vendorId);
+      console.info("Found vendor:", vendor);
       if (vendor) {
+        console.info("Updating vendor with new PO details");
         // Update the existing vendor with new PO info
         await updateVendor(vendor.id, {
           totalOwed: vendor.totalOwed + amount,
@@ -281,8 +286,12 @@ const Dashboard = () => {
           description: orderData.description,
           notes: orderData.notes
         });
+        console.info("Vendor updated successfully");
+      } else {
+        console.error("Vendor not found with ID:", orderData.vendorId);
       }
     } else {
+      console.info("Creating new vendor for PO");
       // Create new vendor record for this PO
       const paymentSchedule = orderData.paymentSchedule || [];
       let nextPaymentDate = orderData.paymentType === 'due-upon-order' ? orderData.poDate : orderData.dueDate;
@@ -327,6 +336,9 @@ const Dashboard = () => {
       });
     }
 
+    console.info("Final vendor object:", vendor);
+    console.info("Creating transaction with vendorId:", vendor?.id);
+
     await addTransaction({
       type: 'purchase_order',
       amount: amount,
@@ -340,8 +352,10 @@ const Dashboard = () => {
     // Don't create cash flow events since vendors automatically generate calendar events
     // This prevents duplication in the calendar
 
+    console.info("Transaction created, refreshing vendors");
     // Refresh vendors to show updated data and update calendar
     await refetchVendors();
+    console.info("Vendors refetched");
     
     setShowPurchaseOrderForm(false);
   };
