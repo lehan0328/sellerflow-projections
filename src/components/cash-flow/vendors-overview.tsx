@@ -199,6 +199,11 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
   const getStatusColor = (vendor: Vendor) => {
     if (!vendor.nextPaymentDate) return 'default';
     
+    // Check if paid
+    if (vendor.status === 'paid' || vendor.totalOwed === 0) {
+      return 'default'; // Paid - neutral color
+    }
+    
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Reset time to start of day
     
@@ -208,14 +213,19 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
     const timeDiff = dueDate.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
     
-    if (daysDiff < 0) {
-      return 'destructive'; // overdue
-    } else if (daysDiff === 0) {
-      return 'secondary'; // due today
-    } else if (daysDiff <= 7) {
-      return 'secondary'; // due within a week
+    // Pending (far future)
+    if (vendor.status === 'upcoming' && daysDiff > 7) {
+      return 'default'; // Pending - neutral blue
     }
-    return 'default'; // upcoming
+    
+    if (daysDiff < 0) {
+      return 'destructive'; // overdue - red
+    } else if (daysDiff === 0) {
+      return 'secondary'; // due today - yellow
+    } else if (daysDiff <= 7) {
+      return 'secondary'; // due within a week - yellow
+    }
+    return 'default'; // upcoming - neutral
   };
 
   const getStatusIcon = (vendor: Vendor) => {
@@ -245,25 +255,30 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
     const dueDate = new Date(vendor.nextPaymentDate);
     dueDate.setHours(0, 0, 0, 0); // Reset time to start of day
     
-    // Debug logging
-    console.log(`Vendor ${vendor.name}: Today=${today.toDateString()}, Due=${dueDate.toDateString()}`);
-    
     // Calculate difference in days
     const timeDiff = dueDate.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
     
-    console.log(`Vendor ${vendor.name}: daysDiff=${daysDiff}`);
+    // Check if vendor is paid
+    if (vendor.status === 'paid' || vendor.totalOwed === 0) {
+      return 'Paid';
+    }
+    
+    // Show "Pending" for newly created vendors (status = 'upcoming' and far from due date)
+    if (vendor.status === 'upcoming' && daysDiff > 7) {
+      return 'Pending';
+    }
     
     if (daysDiff > 0) {
       // Future date - show days remaining
-      return `${daysDiff} days`;
+      return `${daysDiff} ${daysDiff === 1 ? 'day' : 'days'}`;
     } else if (daysDiff === 0) {
       // Due today
       return 'Due Today';
     } else {
       // Past due - show overdue days
       const overdueDays = Math.abs(daysDiff);
-      return overdueDays === 1 ? 'Overdue 1 day' : `Overdue ${overdueDays} days`;
+      return overdueDays === 1 ? '1 day overdue' : `${overdueDays} days overdue`;
     }
   };
 
