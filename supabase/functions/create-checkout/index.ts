@@ -25,11 +25,20 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const { priceId } = await req.json();
-    if (!priceId) {
-      throw new Error("priceId is required");
+    const body = await req.json();
+    const { priceId, lineItems } = body;
+    
+    // Support both single priceId and multiple lineItems
+    let finalLineItems;
+    if (lineItems && Array.isArray(lineItems)) {
+      finalLineItems = lineItems;
+      logStep("Received line items", { lineItems });
+    } else if (priceId) {
+      finalLineItems = [{ price: priceId, quantity: 1 }];
+      logStep("Received price ID", { priceId });
+    } else {
+      throw new Error("Either priceId or lineItems is required");
     }
-    logStep("Received price ID", { priceId });
 
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
@@ -54,12 +63,7 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      line_items: finalLineItems,
       mode: "subscription",
       subscription_data: {
         trial_period_days: 7,

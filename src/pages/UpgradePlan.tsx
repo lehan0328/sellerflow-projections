@@ -8,15 +8,32 @@ import {
   Shield,
   Check,
   Star,
-  Settings
+  Settings,
+  ShoppingCart,
+  Plus,
+  Minus,
+  Trash2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSubscription, PRICING_PLANS, ADDON_PRODUCTS } from "@/hooks/useSubscription";
+
+interface CartItem {
+  priceId: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
 
 const UpgradePlan = () => {
   const navigate = useNavigate();
   const { subscribed, plan, subscription_end, createCheckout, purchaseAddon, openCustomerPortal, isLoading } = useSubscription();
   const [isYearly, setIsYearly] = useState(false);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({
+    bank_account: 1,
+    amazon_account: 1,
+    user: 1
+  });
 
   const plans = [
     {
@@ -65,6 +82,50 @@ const UpgradePlan = () => {
   const getCurrentPriceId = (planItem: typeof plans[0]) => {
     return isYearly ? planItem.yearlyPriceId : planItem.priceId;
   };
+
+  const addToCart = (addon: typeof addons[0], quantity: number = 1) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.priceId === addon.priceId);
+      if (existing) {
+        return prev.map(item => 
+          item.priceId === addon.priceId 
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        );
+      }
+      return [...prev, { priceId: addon.priceId, name: addon.name, price: addon.price, quantity }];
+    });
+    // Reset quantity after adding to cart
+    setAddonQuantities(prev => ({ ...prev, [addon.key]: 1 }));
+  };
+
+  const updateCartQuantity = (priceId: string, quantity: number) => {
+    if (quantity <= 0) {
+      setCart(prev => prev.filter(item => item.priceId !== priceId));
+    } else {
+      setCart(prev => prev.map(item => 
+        item.priceId === priceId ? { ...item, quantity } : item
+      ));
+    }
+  };
+
+  const removeFromCart = (priceId: string) => {
+    setCart(prev => prev.filter(item => item.priceId !== priceId));
+  };
+
+  const handleCheckoutCart = async () => {
+    if (cart.length === 0) return;
+    
+    const lineItems = cart.map(item => ({
+      price: item.priceId,
+      quantity: item.quantity
+    }));
+    
+    await createCheckout(undefined, lineItems);
+    setCart([]);
+  };
+
+  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const addons = [
     {
@@ -266,7 +327,7 @@ const UpgradePlan = () => {
               <CardHeader>
                 <CardTitle>Add-ons</CardTitle>
                 <CardDescription>
-                  Enhance your plan with additional features
+                  Select quantity and add to cart to purchase multiple add-ons together
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -282,13 +343,40 @@ const UpgradePlan = () => {
                           ${addon.price}
                           <span className="text-sm font-normal text-muted-foreground">/month</span>
                         </div>
+                        <div className="flex items-center justify-center gap-3">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            onClick={() => setAddonQuantities(prev => ({ 
+                              ...prev, 
+                              [addon.key]: Math.max(1, prev[addon.key] - 1) 
+                            }))}
+                            disabled={addonQuantities[addon.key] <= 1}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <span className="text-lg font-semibold w-12 text-center">
+                            {addonQuantities[addon.key]}
+                          </span>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            onClick={() => setAddonQuantities(prev => ({ 
+                              ...prev, 
+                              [addon.key]: prev[addon.key] + 1 
+                            }))}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
                         <Button 
                           className="w-full" 
                           variant="outline"
-                          onClick={() => handlePurchaseAddon(addon.priceId)}
+                          onClick={() => addToCart(addon, addonQuantities[addon.key])}
                           disabled={isLoading}
                         >
-                          Purchase Add-on
+                          <ShoppingCart className="h-4 w-4 mr-2" />
+                          Add to Cart
                         </Button>
                       </CardContent>
                     </Card>
@@ -296,6 +384,80 @@ const UpgradePlan = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Cart Section */}
+            {cart.length > 0 && (
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <ShoppingCart className="h-5 w-5" />
+                      Cart ({cart.length} {cart.length === 1 ? 'item' : 'items'})
+                    </span>
+                    <Badge variant="secondary" className="text-lg">
+                      Total: ${cartTotal}/month
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {cart.map((item) => (
+                    <div key={item.priceId} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <h4 className="font-semibold">{item.name}</h4>
+                        <p className="text-sm text-muted-foreground">${item.price}/month × {item.quantity}</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            onClick={() => updateCartQuantity(item.priceId, item.quantity - 1)}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <span className="font-semibold w-8 text-center">{item.quantity}</span>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            onClick={() => updateCartQuantity(item.priceId, item.quantity + 1)}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="font-bold min-w-[80px] text-right">
+                          ${item.price * item.quantity}
+                        </div>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => removeFromCart(item.priceId)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  <Separator />
+                  <div className="flex items-center justify-between pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCart([])}
+                    >
+                      Clear Cart
+                    </Button>
+                    <Button
+                      size="lg"
+                      onClick={handleCheckoutCart}
+                      disabled={isLoading}
+                      className="bg-gradient-primary"
+                    >
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      Checkout (${cartTotal}/month)
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
             <Card className="mt-6">
               <CardHeader>
