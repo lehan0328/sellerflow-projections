@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp, ShoppingBag, AlertTriangle } from "lucide-react";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays, startOfWeek, endOfWeek, getDay, startOfDay } from "date-fns";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { TransactionDetailModal } from "./transaction-detail-modal";
 import { DayTransactionsModal } from "./day-transactions-modal";
@@ -602,7 +602,7 @@ export const CashFlowCalendar = ({
             <div className="h-[400px] flex-shrink-0">
               <ChartContainer config={chartConfig}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} onClick={handleChartClick}>
+                  <BarChart data={chartData} onClick={handleChartClick}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="date" 
@@ -650,15 +650,13 @@ export const CashFlowCalendar = ({
                         return label;
                       }}
                     />
-                    <Line 
-                      type="monotone" 
+                    <Bar 
                       dataKey="cashFlow" 
-                      stroke="hsl(var(--primary))" 
-                      strokeWidth={2}
-                      dot={{ r: 4, cursor: 'pointer' }}
-                      activeDot={{ r: 6, cursor: 'pointer' }}
+                      fill="hsl(var(--primary))" 
+                      radius={[4, 4, 0, 0]}
+                      cursor="pointer"
                     />
-                  </LineChart>
+                  </BarChart>
                 </ResponsiveContainer>
               </ChartContainer>
             </div>
