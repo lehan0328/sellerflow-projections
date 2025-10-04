@@ -11,10 +11,13 @@ import {
   Settings,
   ShoppingCart,
   Plus,
-  Minus
+  Minus,
+  XCircle,
+  TrendingUp
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSubscription, PRICING_PLANS, ADDON_PRODUCTS } from "@/hooks/useSubscription";
+import { CancellationFlow } from "@/components/subscription/CancellationFlow";
 
 interface CartItem {
   priceId: string;
@@ -26,6 +29,7 @@ interface CartItem {
 const UpgradePlan = () => {
   const navigate = useNavigate();
   const { subscribed, plan, subscription_end, createCheckout, purchaseAddon, openCustomerPortal, isLoading } = useSubscription();
+  const [showCancellationFlow, setShowCancellationFlow] = useState(false);
   const [isYearly, setIsYearly] = useState(false);
   const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({
     bank_account: 0,
@@ -202,14 +206,49 @@ const UpgradePlan = () => {
                         Manage Subscription
                       </Button>
                     </>
-                  ) : (
+                   ) : (
                     <>
                       <Separator />
                       <div className="flex items-center justify-center gap-2 p-4 bg-primary/5 rounded-lg">
                         <Shield className="h-5 w-5 text-primary" />
                         <span className="text-sm font-semibold text-primary">Lifetime Access - No billing required</span>
                       </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="w-full"
+                        onClick={openCustomerPortal}
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Manage Subscription
+                      </Button>
                     </>
+                  )}
+                  {subscribed && (
+                    <div className="flex gap-2">
+                      {!isYearly && subscription_end && plan && (
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="flex-1 bg-gradient-primary"
+                          onClick={() => handleUpgrade(PRICING_PLANS[plan].yearly_price_id)}
+                        >
+                          <TrendingUp className="h-4 w-4 mr-2" />
+                          Upgrade to Yearly (Save {plans.find(p => p.key === plan)?.savings})
+                        </Button>
+                      )}
+                      {subscription_end && (
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setShowCancellationFlow(true)}
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Cancel
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </>
               ) : (
@@ -454,6 +493,12 @@ const UpgradePlan = () => {
           </Card>
         </div>
       </div>
+
+      {/* Cancellation Flow Modal */}
+      <CancellationFlow 
+        open={showCancellationFlow} 
+        onOpenChange={setShowCancellationFlow} 
+      />
     </div>
   );
 };
