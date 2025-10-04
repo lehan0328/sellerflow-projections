@@ -126,9 +126,12 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
     return "positive";
   };
   
+  // Calculate net (incoming - upcoming)
+  const netAmount = incomingTotal - upcomingTotal;
+  
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
           <div className="flex items-center justify-between">
             <div className="flex-1">
@@ -238,6 +241,38 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               </p>
             </div>
             <Calendar className="h-8 w-8 text-amber-500" />
+          </div>
+        </div>
+        <div className={`bg-gradient-to-br ${netAmount >= 0 ? 'from-emerald-50 to-emerald-100 border-emerald-200' : 'from-red-50 to-red-100 border-red-200'} border rounded-lg p-6`}>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm text-slate-600">Net</p>
+              <p className={`text-2xl font-bold ${netAmount >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                {formatCurrency(Math.abs(netAmount))}
+              </p>
+              <p className="text-sm text-slate-600">
+                {netAmount >= 0 ? 'Positive cash flow' : 'Negative cash flow'}
+              </p>
+              <p className="text-xs text-slate-500">
+                Incoming - Upcoming
+              </p>
+            </div>
+            <TrendingUp className={`h-8 w-8 ${netAmount >= 0 ? 'text-emerald-500' : 'text-red-500'}`} />
+          </div>
+        </div>
+        <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 rounded-lg p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm text-slate-600">Available Credit</p>
+              <p className="text-2xl font-bold text-indigo-700">{formatCurrency(totalAvailableCredit)}</p>
+              <p className="text-sm text-slate-600">
+                {formatCurrency(totalCreditLimit)} total limit
+              </p>
+              <p className="text-xs text-indigo-600">
+                {formatCurrency(totalCreditBalance)} used • {creditUtilization.toFixed(1)}% utilization
+              </p>
+            </div>
+            <CreditCard className="h-8 w-8 text-indigo-500" />
           </div>
         </div>
       </div>
