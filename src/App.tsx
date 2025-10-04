@@ -20,6 +20,7 @@ import Docs from "./pages/Docs";
 import DocsGettingStarted from "./pages/DocsGettingStarted";
 import DocsAmazonIntegration from "./pages/DocsAmazonIntegration";
 import DocsFAQ from "./pages/DocsFAQ";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import { Auth } from "./pages/Auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/docs/getting-started" element={<DocsGettingStarted />} />
           <Route path="/docs/amazon-integration" element={<DocsAmazonIntegration />} />
           <Route path="/docs/faq" element={<DocsFAQ />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
