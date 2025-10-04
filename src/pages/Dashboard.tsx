@@ -266,10 +266,23 @@ const Dashboard = () => {
       console.info("Due date is in the future - payment scheduled for:", format(dueDate, "PPP"));
     }
 
-    // Each purchase order creates a separate vendor record
-    // This allows tracking individual POs separately, even from the same vendor company
+    // Check if vendor already exists (selected from dropdown)
     let vendor;
-    {
+    if (orderData.vendorId) {
+      // Use existing vendor and update it with PO details
+      vendor = vendors.find(v => v.id === orderData.vendorId);
+      if (vendor) {
+        // Update the existing vendor with new PO info
+        await updateVendor(vendor.id, {
+          totalOwed: vendor.totalOwed + amount,
+          nextPaymentDate: orderData.dueDate || orderData.poDate || new Date(),
+          nextPaymentAmount: amount,
+          poName: orderData.poName,
+          description: orderData.description,
+          notes: orderData.notes
+        });
+      }
+    } else {
       // Create new vendor record for this PO
       const paymentSchedule = orderData.paymentSchedule || [];
       let nextPaymentDate = orderData.paymentType === 'due-upon-order' ? orderData.poDate : orderData.dueDate;
