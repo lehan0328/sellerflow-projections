@@ -52,7 +52,7 @@ const Dashboard = () => {
   
   // Use database hooks
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, refetch: refetchVendors } = useVendors();
-  const { transactions, addTransaction, deleteTransaction } = useTransactions();
+  const { transactions, addTransaction, deleteTransaction, refetch: refetchTransactions } = useTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { creditCards } = useCreditCards();
   
@@ -279,12 +279,13 @@ const Dashboard = () => {
         console.info("Updating vendor with new PO details");
         // Update the existing vendor with new PO info
         await updateVendor(vendor.id, {
-          totalOwed: vendor.totalOwed + amount,
+          totalOwed: (vendor.totalOwed || 0) + amount,
           nextPaymentDate: orderData.dueDate || orderData.poDate || new Date(),
           nextPaymentAmount: amount,
           poName: orderData.poName,
           description: orderData.description,
-          notes: orderData.notes
+          notes: orderData.notes,
+          status: 'upcoming' as any
         });
         console.info("Vendor updated successfully");
       } else {
@@ -337,13 +338,13 @@ const Dashboard = () => {
     }
 
     console.info("Final vendor object:", vendor);
-    console.info("Creating transaction with vendorId:", vendor?.id);
+    console.info("Creating transaction with vendorId:", vendor?.id || orderData.vendorId);
 
     await addTransaction({
       type: 'purchase_order',
       amount: amount,
       description: `${orderData.poName} - ${orderData.vendor}`,
-      vendorId: vendor?.id,
+      vendorId: vendor?.id || orderData.vendorId,
       transactionDate: new Date(),
       dueDate: orderData.dueDate,
       status: dueDateStartOfDay <= today ? 'completed' : 'pending'
@@ -352,10 +353,10 @@ const Dashboard = () => {
     // Don't create cash flow events since vendors automatically generate calendar events
     // This prevents duplication in the calendar
 
-    console.info("Transaction created, refreshing vendors");
-    // Refresh vendors to show updated data and update calendar
-    await refetchVendors();
-    console.info("Vendors refetched");
+    console.info("Transaction created, refreshing vendors and transactions");
+    // Refresh vendors and transactions to show updated data and update calendar
+    await Promise.all([refetchVendors(), refetchTransactions()]);
+    console.info("Vendors and transactions refetched");
     
     setShowPurchaseOrderForm(false);
   };
