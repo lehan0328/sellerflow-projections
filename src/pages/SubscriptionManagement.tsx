@@ -33,14 +33,15 @@ export default function SubscriptionManagement() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Subscription Management</h1>
-        <p className="text-muted-foreground">Manage your plan, billing, and add-ons</p>
-      </div>
+    <div className="min-h-screen flex flex-col items-center p-6 space-y-8">
+      <div className="w-full max-w-6xl space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-2">Subscription Management</h1>
+          <p className="text-muted-foreground">Manage your plan, billing, and add-ons</p>
+        </div>
 
-      {/* Current Plan Status */}
-      <Card className="border-primary/30">
+        {/* Current Plan Status */}
+        <Card className="border-primary/30 max-w-2xl mx-auto">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -109,10 +110,10 @@ export default function SubscriptionManagement() {
         </CardContent>
       </Card>
 
-      {/* Available Plans */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-semibold">Available Plans</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Available Plans */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold text-center">Available Plans</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {Object.entries(PRICING_PLANS).map(([key, planData]) => {
             const isCurrentPlan = plan === key;
             const isProfessional = key === 'professional';
@@ -173,21 +174,22 @@ export default function SubscriptionManagement() {
               </Card>
             );
           })}
+          </div>
         </div>
-      </div>
 
-      {/* Info Alert */}
-      <Alert>
+        {/* Info Alert */}
+        <Alert className="max-w-2xl mx-auto">
         <AlertDescription>
           <strong>Need more connections?</strong> Visit the Add Account section to purchase additional add-ons for bank accounts and Amazon connections.
         </AlertDescription>
       </Alert>
 
-      {/* Cancellation Flow Modal */}
-      <CancellationFlow 
-        open={showCancellationFlow} 
-        onOpenChange={setShowCancellationFlow} 
-      />
+        {/* Cancellation Flow Modal */}
+        <CancellationFlow 
+          open={showCancellationFlow} 
+          onOpenChange={setShowCancellationFlow} 
+        />
+      </div>
     </div>
   );
 }
