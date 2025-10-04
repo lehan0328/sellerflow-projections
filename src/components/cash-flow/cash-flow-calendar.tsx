@@ -546,12 +546,7 @@ export const CashFlowCalendar = ({
                         {/* Overdue - show on current day and past dates */}
                         {(isToday(day) || isPast) && overdueVendors > 0 && (
                           <div className="text-red-600 dark:text-red-400 font-medium truncate">
-                            Overdue Vendor PO -${overdueVendors.toLocaleString()}
-                          </div>
-                        )}
-                        {(isToday(day) || isPast) && overdueIncome > 0 && (
-                          <div className="text-orange-600 dark:text-orange-400 font-medium truncate">
-                            Overdue Income +${overdueIncome.toLocaleString()}
+                            Overdue - ${overdueVendors.toLocaleString()}
                           </div>
                         )}
                       </div>
