@@ -8,24 +8,21 @@ export const ADDON_PRODUCTS = {
     price: 7,
     product_id: "prod_TAceumMQgcebjQ",
     price_id: "price_1SEHPSB28kMY3UseP1mWqne5",
-    description: "Add one more bank/credit card connection",
-    trial_days: 7
+    description: "Add one more bank/credit card connection"
   },
   amazon_account: {
     name: "Additional Amazon Account",
     price: 50,
     product_id: "prod_TAcfNXVQRUFHSC",
     price_id: "price_1SEHQLB28kMY3UseBmY7IIjx",
-    description: "Add one more Amazon account connection",
-    trial_days: 7
+    description: "Add one more Amazon account connection"
   },
   user: {
     name: "Additional User",
     price: 5,
     product_id: "prod_TAcgWMdZxz6voS",
     price_id: "price_1SEHQoB28kMY3UsedGTbBbmA",
-    description: "Add one more user to your account",
-    trial_days: 7
+    description: "Add one more user to your account"
   }
 } as const;
 

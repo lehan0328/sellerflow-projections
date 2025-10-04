@@ -344,7 +344,7 @@ const UpgradePlan = () => {
                             ${addon.price}
                             <span className="text-sm font-normal text-muted-foreground">/month</span>
                           </div>
-                          <p className="text-xs text-green-600 font-medium">7-day free trial included</p>
+                          <p className="text-xs text-orange-600 font-medium">Billed immediately</p>
                         </div>
                         <div className="flex items-center justify-center gap-3">
                           <Button

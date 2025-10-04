@@ -111,7 +111,7 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                     <div className="flex items-center justify-between">
                       <span className="font-semibold">${addOnPrice.bank}/month per connection</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">7-day free trial included</p>
+                    <p className="text-xs text-orange-600 font-medium">Billed immediately, no trial period</p>
                   </div>
                   <div className="space-y-2">
                     <Button 
@@ -119,7 +119,7 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                       size="sm"
                       onClick={() => handlePurchaseAddon('bank')}
                     >
-                      Start 7-Day Trial - ${addOnPrice.bank}/mo after
+                      Purchase Now - ${addOnPrice.bank}/mo
                     </Button>
                   </div>
                 </CardContent>
@@ -140,7 +140,7 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                     <div className="flex items-center justify-between">
                       <span className="font-semibold">${addOnPrice.amazon}/month per connection</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">7-day free trial included</p>
+                    <p className="text-xs text-orange-600 font-medium">Billed immediately, no trial period</p>
                   </div>
                   <div className="space-y-2">
                     <Button 
@@ -148,7 +148,7 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                       size="sm"
                       onClick={() => handlePurchaseAddon('amazon')}
                     >
-                      Start 7-Day Trial - ${addOnPrice.amazon}/mo after
+                      Purchase Now - ${addOnPrice.amazon}/mo
                     </Button>
                   </div>
                 </CardContent>
