@@ -98,6 +98,8 @@ export interface SubscriptionState {
   subscription_end: string | null;
   plan: PlanTier | null;
   isLoading: boolean;
+  is_trialing?: boolean;
+  trial_end?: string | null;
 }
 
 export const useSubscription = () => {
@@ -108,6 +110,8 @@ export const useSubscription = () => {
     subscription_end: null,
     plan: null,
     isLoading: true,
+    is_trialing: false,
+    trial_end: null,
   });
 
   const checkSubscription = async () => {
@@ -152,6 +156,8 @@ export const useSubscription = () => {
         subscription_end: data.subscription_end,
         plan,
         isLoading: false,
+        is_trialing: data.is_trialing || false,
+        trial_end: data.trial_end || null,
       });
     } catch (error) {
       console.error("Error checking subscription:", error);

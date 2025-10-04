@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useSubscription, PRICING_PLANS } from "@/hooks/useSubscription";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
-import { Check, Crown, Loader2, ExternalLink, XCircle } from "lucide-react";
+import { Check, Crown, Loader2, ExternalLink, XCircle, Star } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CancellationFlow } from "@/components/subscription/CancellationFlow";
 
 export default function SubscriptionManagement() {
-  const { subscribed, plan, subscription_end, isLoading, createCheckout, openCustomerPortal } = useSubscription();
+  const { subscribed, plan, subscription_end, is_trialing, isLoading, createCheckout, openCustomerPortal } = useSubscription();
   const { currentPlan, planLimits, currentUsage } = usePlanLimits();
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
@@ -48,7 +48,16 @@ export default function SubscriptionManagement() {
                 <CardTitle>Current Plan: {planLimits.name}</CardTitle>
                 {subscribed && subscription_end ? (
                   <CardDescription>
-                    Renews on {new Date(subscription_end).toLocaleDateString()}
+                    {is_trialing ? (
+                      <span className="flex items-center gap-2">
+                        <Star className="h-4 w-4 text-blue-500" />
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">
+                          Free Trial - Ends {new Date(subscription_end).toLocaleDateString()}
+                        </span>
+                      </span>
+                    ) : (
+                      <span>Renews on {new Date(subscription_end).toLocaleDateString()}</span>
+                    )}
                   </CardDescription>
                 ) : subscribed && !subscription_end ? (
                   <CardDescription className="flex items-center gap-2">
