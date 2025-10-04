@@ -104,28 +104,37 @@ export const useVendors = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      console.log('Adding vendor with data:', vendorData);
+      
+      const insertData = {
+        user_id: user.id,
+        name: vendorData.name,
+        total_owed: vendorData.totalOwed,
+        next_payment_date: formatDateForDB(vendorData.nextPaymentDate),
+        next_payment_amount: vendorData.nextPaymentAmount,
+        status: vendorData.status,
+        category: vendorData.category,
+        payment_type: vendorData.paymentType,
+        net_terms_days: vendorData.netTermsDays ? parseInt(vendorData.netTermsDays) : null,
+        po_name: vendorData.poName || null,
+        description: vendorData.description || null,
+        notes: vendorData.notes || null,
+        payment_schedule: vendorData.paymentSchedule || null,
+        source: vendorData.source || 'management'
+      };
+      
+      console.log('Inserting to database:', insertData);
+
       const { data, error } = await supabase
         .from('vendors')
-        .insert({
-          user_id: user.id,
-          name: vendorData.name,
-          total_owed: vendorData.totalOwed,
-          next_payment_date: formatDateForDB(vendorData.nextPaymentDate),
-          next_payment_amount: vendorData.nextPaymentAmount,
-          status: vendorData.status,
-          category: vendorData.category,
-          payment_type: vendorData.paymentType,
-          net_terms_days: vendorData.netTermsDays ? parseInt(vendorData.netTermsDays) : null,
-          po_name: vendorData.poName || null,
-          description: vendorData.description || null,
-          notes: vendorData.notes || null,
-          payment_schedule: vendorData.paymentSchedule || null,
-          source: vendorData.source || 'management'
-        })
+        .insert(insertData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error adding vendor:', error);
+        throw error;
+      }
 
       const newVendor: Vendor = {
         id: data.id,
@@ -152,13 +161,15 @@ export const useVendors = () => {
       });
 
       return newVendor;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding vendor:', error);
+      const errorMessage = error?.message || 'Failed to add vendor';
       toast({
         title: "Error",
-        description: "Failed to add vendor",
+        description: errorMessage,
         variant: "destructive",
       });
+      throw error; // Re-throw to allow form to handle it
     }
   };
 
