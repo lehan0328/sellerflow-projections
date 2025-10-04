@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Pause, TrendingDown, AlertCircle, MessageSquare, DollarSign, Zap, Video } from "lucide-react";
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useNavigate } from "react-router-dom";
 
 interface CancellationFlowProps {
   open: boolean;
@@ -29,19 +29,16 @@ const CANCELLATION_REASONS = [
 
 export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) => {
   const { openCustomerPortal } = useSubscription();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<CancellationStep>('reason');
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [feedback, setFeedback] = useState('');
-  const [demoEmail, setDemoEmail] = useState('');
-  const [demoDate, setDemoDate] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleClose = () => {
     setCurrentStep('reason');
     setSelectedReason('');
     setFeedback('');
-    setDemoEmail('');
-    setDemoDate('');
     onOpenChange(false);
   };
 
@@ -53,24 +50,14 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
     setCurrentStep('alternatives');
   };
 
-  const handleScheduleDemo = async () => {
-    if (!demoEmail || !demoDate) {
-      toast.error('Please provide your email and preferred date');
-      return;
-    }
-
-    setLoading(true);
-    // Simulate demo scheduling
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    toast.success('Demo scheduled! We\'ll send you a confirmation email shortly.');
+  const handleScheduleDemo = () => {
     handleClose();
-    setLoading(false);
+    navigate('/schedule-demo');
   };
 
   const handlePauseSubscription = () => {
-    toast.success('Subscription paused for 30 days. You won\'t be charged during this time.');
     handleClose();
+    navigate('/pause-subscription');
   };
 
   const handleDowngrade = () => {
@@ -182,47 +169,24 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
             <div className="space-y-4">
               {/* Schedule Demo Option */}
               <Card className="border-primary/30">
-                <CardContent className="p-6 space-y-4">
+                <CardContent className="p-6">
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-primary/10 rounded-lg">
                       <Video className="h-6 w-6 text-primary" />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg mb-1">Schedule a Free Demo</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
+                      <p className="text-sm text-muted-foreground mb-3">
                         Let our team show you how to get the most value from your subscription. 
                         We can address your specific concerns and show you features you might have missed.
                       </p>
-                      
-                      <div className="space-y-3">
-                        <div>
-                          <Label htmlFor="demo-email">Your Email</Label>
-                          <Input
-                            id="demo-email"
-                            type="email"
-                            placeholder="you@example.com"
-                            value={demoEmail}
-                            onChange={(e) => setDemoEmail(e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="demo-date">Preferred Date & Time</Label>
-                          <Input
-                            id="demo-date"
-                            type="datetime-local"
-                            value={demoDate}
-                            onChange={(e) => setDemoDate(e.target.value)}
-                          />
-                        </div>
-                        <Button 
-                          className="w-full bg-gradient-primary" 
-                          onClick={handleScheduleDemo}
-                          disabled={loading}
-                        >
-                          <Calendar className="h-4 w-4 mr-2" />
-                          Schedule Demo & Keep Subscription
-                        </Button>
-                      </div>
+                      <Button 
+                        className="w-full bg-gradient-primary" 
+                        onClick={handleScheduleDemo}
+                      >
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Schedule Demo
+                      </Button>
                     </div>
                   </div>
                 </CardContent>

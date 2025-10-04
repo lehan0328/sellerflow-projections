@@ -14,6 +14,8 @@ import TransactionLog from "./pages/TransactionLog";
 import BankTransactions from "./pages/BankTransactions";
 import Analytics from "./pages/Analytics";
 import ScenarioPlanner from "./pages/ScenarioPlanner";
+import ScheduleDemo from "./pages/ScheduleDemo";
+import PauseSubscription from "./pages/PauseSubscription";
 import OAuthRedirect from "./pages/OAuthRedirect";
 import NotFound from "./pages/NotFound";
 import Docs from "./pages/Docs";
@@ -80,6 +82,16 @@ const App = () => (
             <Route path="/scenario-planner" element={
               <ProtectedRoute>
                 <ScenarioPlanner />
+              </ProtectedRoute>
+            } />
+            <Route path="/schedule-demo" element={
+              <ProtectedRoute>
+                <ScheduleDemo />
+              </ProtectedRoute>
+            } />
+            <Route path="/pause-subscription" element={
+              <ProtectedRoute>
+                <PauseSubscription />
               </ProtectedRoute>
             } />
           <Route path="/oauth-redirect" element={<OAuthRedirect />} />
