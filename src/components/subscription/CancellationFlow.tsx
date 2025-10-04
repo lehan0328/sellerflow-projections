@@ -9,13 +9,14 @@ import { Calendar, Pause, TrendingDown, AlertCircle, MessageSquare, DollarSign, 
 import { toast } from "sonner";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CancellationFlowProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-type CancellationStep = 'reason' | 'alternatives' | 'confirmation';
+type CancellationStep = 'reason' | 'alternatives' | 'discount_offer' | 'confirmation';
 
 const CANCELLATION_REASONS = [
   { value: 'too_expensive', label: 'Too expensive', icon: DollarSign },
@@ -67,6 +68,37 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
   };
 
   const proceedToCancel = () => {
+    setCurrentStep('discount_offer');
+  };
+
+  const handleAcceptDiscount = async () => {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Please sign in to continue');
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('apply-retention-discount', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success('Great! 20% discount applied for the next 2 months 🎉');
+      handleClose();
+    } catch (error) {
+      console.error('Error applying discount:', error);
+      toast.error('Failed to apply discount. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const declineDiscountAndCancel = () => {
     setCurrentStep('confirmation');
   };
 
@@ -233,7 +265,75 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
           </>
         )}
 
-        {/* Step 3: Final Confirmation */}
+        {/* Step 3: Discount Offer */}
+        {currentStep === 'discount_offer' && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Wait! Here's a Special Offer 🎁</DialogTitle>
+              <DialogDescription>
+                We'd love to keep you as a customer. How about 20% off for the next 2 months?
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-primary rounded-full">
+                      <DollarSign className="h-8 w-8 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-2xl">20% Off for 2 Months</h3>
+                      <p className="text-muted-foreground">Keep all your features at a reduced price</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2 pt-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-primary">✓</span>
+                      <span>All premium features included</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-primary">✓</span>
+                      <span>Keep all your data and connections</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-primary">✓</span>
+                      <span>Cancel anytime during or after the discount period</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-primary">✓</span>
+                      <span>No commitment required</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-between gap-2 pt-4">
+                <Button variant="outline" onClick={() => setCurrentStep('alternatives')}>
+                  Back
+                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={declineDiscountAndCancel}
+                  >
+                    No thanks, continue to cancel
+                  </Button>
+                  <Button 
+                    onClick={handleAcceptDiscount}
+                    disabled={loading}
+                    className="bg-gradient-primary"
+                  >
+                    {loading ? 'Applying...' : 'Yes! Apply 20% Discount'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Step 4: Final Confirmation */}
         {currentStep === 'confirmation' && (
           <>
             <DialogHeader>
@@ -299,7 +399,7 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
               )}
 
               <div className="flex justify-between gap-2 pt-4">
-                <Button variant="outline" onClick={() => setCurrentStep('alternatives')}>
+                <Button variant="outline" onClick={() => setCurrentStep('discount_offer')}>
                   Back
                 </Button>
                 <div className="flex gap-2">
