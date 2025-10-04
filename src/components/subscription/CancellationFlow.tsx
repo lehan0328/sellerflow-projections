@@ -315,10 +315,10 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
                 </Button>
                 <div className="flex gap-2">
                   <Button 
-                    variant="outline" 
+                    variant="destructive" 
                     onClick={declineDiscountAndCancel}
                   >
-                    No thanks, continue to cancel
+                    No thanks, i dont have cashflow problems
                   </Button>
                   <Button 
                     onClick={handleAcceptDiscount}
