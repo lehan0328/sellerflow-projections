@@ -13,7 +13,9 @@ import {
   Plus,
   Minus,
   XCircle,
-  TrendingUp
+  TrendingUp,
+  ArrowDown,
+  X
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSubscription, PRICING_PLANS, ADDON_PRODUCTS } from "@/hooks/useSubscription";
@@ -137,6 +139,13 @@ const UpgradePlan = () => {
   );
 
   const totalItems = Object.values(addonQuantities).reduce((sum, qty) => sum + qty, 0);
+
+  // Determine the next higher tier
+  const planHierarchy = { starter: 1, growing: 2, professional: 3 };
+  const currentPlanLevel = plan ? planHierarchy[plan] : 0;
+  const nextTierKey = Object.entries(planHierarchy).find(([_, level]) => level === currentPlanLevel + 1)?.[0];
+  const nextTier = nextTierKey ? plans.find(p => p.key === nextTierKey) : null;
+  const currentTierData = plan ? plans.find(p => p.key === plan) : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -266,56 +275,191 @@ const UpgradePlan = () => {
           </Card>
         </div>
 
-        {/* Plans */}
-        <div>
-          <div className="mb-6 space-y-4">
-            <div className="flex items-center justify-center gap-4">
-                <span className={`text-sm ${!isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>Monthly</span>
-                <button
-                  onClick={() => setIsYearly(!isYearly)}
-                  className="relative inline-flex h-6 w-11 items-center rounded-full bg-muted transition-colors hover:bg-muted/80"
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-primary transition-transform ${
-                      isYearly ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              <span className={`text-sm ${isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>
-                Yearly <Badge variant="secondary" className="ml-1">Save 2 months</Badge>
-              </span>
+        {/* Plan Comparison */}
+        {subscribed && plan && (
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold">Your Plan Benefits</h2>
+              <p className="text-muted-foreground">
+                {nextTier ? `Compare your current plan with ${nextTier.name}` : 'You\'re on the highest tier!'}
+              </p>
             </div>
-            <div className="text-center">
-              <Badge variant="secondary" className="text-sm">
-                7-day free trial • Credit card required • Cancel anytime
-              </Badge>
+
+            <div className="grid gap-6 md:grid-cols-2 max-w-5xl mx-auto">
+              {/* Current Plan */}
+              {currentTierData && (
+                <Card className="relative ring-2 ring-primary">
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <Badge variant="default">Current Plan</Badge>
+                  </div>
+                  <CardHeader className="text-center">
+                    <CardTitle>{currentTierData.name}</CardTitle>
+                    <div className="text-3xl font-bold">
+                      ${isYearly ? currentTierData.yearlyPrice : currentTierData.price}
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {isYearly ? '/year' : '/month'}
+                      </span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <ul className="space-y-3">
+                      {currentTierData.features.map((feature, index) => (
+                        <li key={index} className="flex items-start text-sm">
+                          <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Next Tier or Professional Benefits */}
+              {nextTier ? (
+                <Card className="relative ring-2 ring-accent">
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <Badge className="bg-gradient-primary">
+                      <Star className="h-3 w-3 mr-1" />
+                      Upgrade Available
+                    </Badge>
+                  </div>
+                  <CardHeader className="text-center">
+                    <CardTitle>{nextTier.name}</CardTitle>
+                    <div className="text-3xl font-bold">
+                      ${isYearly ? nextTier.yearlyPrice : nextTier.price}
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {isYearly ? '/year' : '/month'}
+                      </span>
+                    </div>
+                    {isYearly && (
+                      <Badge variant="secondary" className="text-xs mx-auto">
+                        Save {nextTier.savings}/year
+                      </Badge>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <ul className="space-y-3">
+                      {nextTier.features.map((feature, index) => (
+                        <li key={index} className="flex items-start text-sm">
+                          <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Button 
+                      className="w-full bg-gradient-primary" 
+                      onClick={() => handleUpgrade(getCurrentPriceId(nextTier))}
+                      disabled={isLoading}
+                    >
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Upgrade to {nextTier.name}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card className="relative">
+                  <CardHeader className="text-center">
+                    <CardTitle className="flex items-center justify-center gap-2">
+                      <Shield className="h-5 w-5 text-primary" />
+                      Maximum Features Unlocked
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-center text-muted-foreground">
+                      You're enjoying all the benefits of our highest tier plan!
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
+
+            {/* Billing Toggle */}
+            <Card className="max-w-2xl mx-auto">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <h3 className="font-semibold">Switch to {isYearly ? 'Monthly' : 'Yearly'} Billing</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {isYearly 
+                        ? 'Switch to monthly billing for more flexibility' 
+                        : `Save ${currentTierData?.savings || '$58'} per year with annual billing`
+                      }
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsYearly(!isYearly)}
+                  >
+                    {isYearly ? 'Switch to Monthly' : 'Switch to Yearly'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Downgrade Option */}
+            {currentPlanLevel > 1 && (
+              <Card className="max-w-2xl mx-auto border-destructive/50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <h3 className="font-semibold">Need to Downgrade?</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Switch to a lower tier plan if your needs have changed
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      className="text-destructive hover:text-destructive"
+                      onClick={openCustomerPortal}
+                    >
+                      <ArrowDown className="h-4 w-4 mr-2" />
+                      Manage Plan
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
-          <div className="grid gap-6 md:grid-cols-3 max-w-6xl mx-auto">
-              {plans.map((planItem) => {
-                const isCurrent = plan === planItem.key;
-                const planHierarchy = { starter: 1, growing: 2, professional: 3 };
-                const currentPlanLevel = plan ? planHierarchy[plan] : 0;
-                const itemPlanLevel = planHierarchy[planItem.key as keyof typeof planHierarchy];
-                const isUpgrade = itemPlanLevel > currentPlanLevel;
-                const isDowngrade = itemPlanLevel < currentPlanLevel && subscribed;
-                
-                return (
+        )}
+
+        {/* Plans for non-subscribed users */}
+        {!subscribed && (
+          <div>
+            <div className="mb-6 space-y-4">
+              <div className="flex items-center justify-center gap-4">
+                  <span className={`text-sm ${!isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>Monthly</span>
+                  <button
+                    onClick={() => setIsYearly(!isYearly)}
+                    className="relative inline-flex h-6 w-11 items-center rounded-full bg-muted transition-colors hover:bg-muted/80"
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-primary transition-transform ${
+                        isYearly ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                <span className={`text-sm ${isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>
+                  Yearly <Badge variant="secondary" className="ml-1">Save 2 months</Badge>
+                </span>
+              </div>
+              <div className="text-center">
+                <Badge variant="secondary" className="text-sm">
+                  7-day free trial • Credit card required • Cancel anytime
+                </Badge>
+              </div>
+            </div>
+            <div className="grid gap-6 md:grid-cols-3 max-w-6xl mx-auto">
+                {plans.map((planItem) => (
                   <Card 
                     key={planItem.name} 
-                    className={`relative ${isCurrent ? 'ring-2 ring-primary' : ''} ${planItem.popular ? 'ring-2 ring-accent' : ''}`}
+                    className={`relative ${planItem.popular ? 'ring-2 ring-accent' : ''}`}
                   >
-                    {planItem.popular && !isCurrent && (
+                    {planItem.popular && (
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                         <Badge className="bg-gradient-primary">
                           <Star className="h-3 w-3 mr-1" />
                           Most Popular
                         </Badge>
-                      </div>
-                    )}
-                    {isCurrent && (
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                        <Badge variant="default">Current Plan</Badge>
                       </div>
                     )}
                     <CardHeader className="text-center">
@@ -341,31 +485,24 @@ const UpgradePlan = () => {
                       </ul>
                       <Button 
                         className="w-full" 
-                        variant={isCurrent ? "outline" : planItem.popular && isUpgrade ? "default" : "outline"}
-                        disabled={isCurrent || isLoading}
+                        variant={planItem.popular ? "default" : "outline"}
                         onClick={() => handleUpgrade(getCurrentPriceId(planItem))}
+                        disabled={isLoading}
                       >
-                        {isCurrent 
-                          ? "Current Plan" 
-                          : isDowngrade 
-                          ? "Downgrade" 
-                          : subscribed && isUpgrade
-                          ? "Upgrade Now"
-                          : "Start 7-Day Free Trial"}
+                        Start 7-Day Free Trial
                       </Button>
-                      {!isCurrent && !subscribed && !isDowngrade && (
-                        <p className="text-xs text-muted-foreground text-center">
-                          Then ${isYearly ? planItem.yearlyPrice + '/year' : planItem.price + '/month'}. Cancel anytime.
-                        </p>
-                      )}
+                      <p className="text-xs text-muted-foreground text-center">
+                        Then ${isYearly ? planItem.yearlyPrice + '/year' : planItem.price + '/month'}. Cancel anytime.
+                      </p>
                     </CardContent>
                   </Card>
-              );
-            })}
+                ))}
+            </div>
           </div>
+        )}
 
-          {/* Add-ons Cart Section */}
-          <Card className="mt-6 max-w-6xl mx-auto">
+        {/* Add-ons Cart Section */}
+        <Card className="mt-6 max-w-6xl mx-auto">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span className="flex items-center gap-2">
@@ -478,9 +615,9 @@ const UpgradePlan = () => {
                   </div>
                 )}
             </CardContent>
-          </Card>
-          
-          <Card className="mt-6 max-w-6xl mx-auto">
+        </Card>
+        
+        <Card className="mt-6 max-w-6xl mx-auto">
             <CardHeader>
               <CardTitle className="text-center">Need help choosing?</CardTitle>
               <CardDescription className="text-center">
@@ -490,8 +627,7 @@ const UpgradePlan = () => {
             <CardContent className="flex justify-center">
               <Button variant="outline">Contact Sales</Button>
             </CardContent>
-          </Card>
-        </div>
+        </Card>
       </div>
 
       {/* Cancellation Flow Modal */}
