@@ -124,38 +124,45 @@ export const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Decorative elements */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated gradient orbs */}
+      <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-gradient-to-br from-primary/20 via-primary/10 to-transparent rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-gradient-to-tl from-accent/20 via-accent/10 to-transparent rounded-full blur-3xl translate-x-1/2 translate-y-1/2 animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-gradient-to-r from-primary/10 to-accent/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 animate-pulse" style={{ animationDelay: '2s' }} />
+      
+      {/* Grid pattern overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--primary)/0.03)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--primary)/0.03)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_70%,transparent_110%)]" />
       
       <div className="w-full max-w-md space-y-6 relative z-10">
         {/* Header */}
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-6">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate('/')}
-            className="absolute top-4 left-4 md:top-8 md:left-8"
+            className="absolute top-4 left-4 md:top-8 md:left-8 backdrop-blur-sm bg-background/50 border border-primary/10 hover:bg-background/80 hover:border-primary/20 transition-all"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Home
           </Button>
           
-          <div className="flex items-center justify-center space-x-3">
-            <div className="h-12 w-12 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg">
-              <DollarSign className="h-7 w-7 text-primary-foreground" />
+          <div className="flex items-center justify-center space-x-4 animate-fade-in">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-xl opacity-50 animate-pulse" />
+              <div className="relative h-16 w-16 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-2xl">
+                <DollarSign className="h-9 w-9 text-primary-foreground" />
+              </div>
             </div>
-            <span className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <span className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               CashFlow Pro
             </span>
           </div>
           
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
+          <div className="space-y-3">
+            <h1 className="text-4xl font-bold tracking-tight">
               {showResetForm ? 'Reset Password' : 'Welcome Back'}
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-muted-foreground text-lg">
               {showResetForm 
                 ? 'Enter your email to receive a password reset link'
                 : 'Sign in to manage your Amazon business cash flow'
@@ -164,24 +171,28 @@ export const Auth = () => {
           </div>
         </div>
 
-        <Card className="shadow-elevated border-2 backdrop-blur-sm bg-card/95">
-          <CardContent className="p-8">
+        <Card className="shadow-2xl border border-primary/20 backdrop-blur-xl bg-card/60 relative overflow-hidden group">
+          {/* Card glow effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          
+          <CardContent className="p-10 relative z-10">
             {showResetForm ? (
               <div className="space-y-4">
                 <form onSubmit={handlePasswordReset} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="resetEmail">Email Address</Label>
+                    <Label htmlFor="resetEmail" className="text-base">Email Address</Label>
                     <Input
                       id="resetEmail"
                       type="email"
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
                       required
-                      className="h-11"
+                      className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                      placeholder="you@example.com"
                     />
                   </div>
                   
-                  <Button type="submit" className="w-full bg-gradient-primary h-11 text-base font-medium" disabled={loading}>
+                  <Button type="submit" className="w-full bg-gradient-primary h-12 text-base font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all" disabled={loading}>
                     {loading ? 'Sending...' : 'Send Reset Link'}
                   </Button>
                   
@@ -197,9 +208,9 @@ export const Auth = () => {
               </div>
             ) : (
               <div className="space-y-6">
-                <form onSubmit={handleSignIn} className="space-y-5">
+                <form onSubmit={handleSignIn} className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="signInEmail" className="text-sm font-medium">Email Address</Label>
+                    <Label htmlFor="signInEmail" className="text-base font-medium">Email Address</Label>
                     <Input
                       id="signInEmail"
                       type="email"
@@ -207,12 +218,12 @@ export const Auth = () => {
                       value={signInData.email}
                       onChange={(e) => setSignInData(prev => ({ ...prev, email: e.target.value }))}
                       required
-                      className="h-11"
+                      className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signInPassword" className="text-sm font-medium">Password</Label>
+                    <Label htmlFor="signInPassword" className="text-base font-medium">Password</Label>
                     <div className="relative">
                       <Input
                         id="signInPassword"
@@ -221,12 +232,12 @@ export const Auth = () => {
                         value={signInData.password}
                         onChange={(e) => setSignInData(prev => ({ ...prev, password: e.target.value }))}
                         required
-                        className="h-11 pr-10"
+                        className="h-12 pr-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
                       >
                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
@@ -237,29 +248,34 @@ export const Auth = () => {
                     <button
                       type="button"
                       onClick={() => setShowResetForm(true)}
-                      className="text-sm text-primary hover:underline font-medium"
+                      className="text-sm text-primary hover:text-primary/80 font-medium transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-primary after:transition-all hover:after:w-full"
                     >
                       Forgot your password?
                     </button>
                   </div>
 
-                  <Button type="submit" className="w-full bg-gradient-primary h-11 text-base font-medium shadow-lg hover:shadow-xl transition-all" disabled={loading}>
-                    {loading ? 'Signing In...' : 'Sign In'}
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-gradient-primary h-13 text-base font-semibold shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all relative overflow-hidden group" 
+                    disabled={loading}
+                  >
+                    <span className="relative z-10">{loading ? 'Signing In...' : 'Sign In'}</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                   </Button>
                 </form>
 
-                <div className="relative my-6">
+                <div className="relative my-8">
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border"></div>
+                    <div className="w-full border-t border-primary/20"></div>
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                    <span className="bg-card/60 backdrop-blur-sm px-4 text-muted-foreground font-medium">Or continue with</span>
                   </div>
                 </div>
 
                 <Button
                   variant="outline"
-                  className="w-full h-11 text-base font-medium"
+                  className="w-full h-12 text-base font-medium border-primary/20 bg-background/50 backdrop-blur-sm hover:bg-primary/5 hover:border-primary/40 transition-all hover:scale-[1.02]"
                   onClick={handleGoogleAuth}
                   disabled={loading}
                 >
@@ -284,13 +300,13 @@ export const Auth = () => {
                   Continue with Google
                 </Button>
 
-                <div className="text-center mt-6">
-                  <p className="text-sm text-muted-foreground">
+                <div className="text-center mt-8">
+                  <p className="text-base text-muted-foreground">
                     Don't have an account?{' '}
                     <button
                       type="button"
                       onClick={() => navigate('/')}
-                      className="text-primary hover:underline font-semibold"
+                      className="text-primary hover:text-primary/80 font-semibold transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-primary after:transition-all hover:after:w-full"
                     >
                       Start free trial
                     </button>
