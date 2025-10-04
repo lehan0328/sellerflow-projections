@@ -216,41 +216,6 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
                 </Card>
               )}
 
-              {/* Downgrade Option */}
-              {selectedReason === 'too_expensive' && (
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-blue-500/10 rounded-lg">
-                        <TrendingDown className="h-6 w-6 text-blue-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg mb-1">Downgrade to a Lower Plan</h3>
-                        <p className="text-sm text-muted-foreground mb-3">
-                          Keep access to essential features at a lower price. You can always upgrade later.
-                        </p>
-                        <Button variant="outline" className="w-full" onClick={handleDowngrade}>
-                          <DollarSign className="h-4 w-4 mr-2" />
-                          View Lower Plans
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Additional Feedback */}
-              <div className="space-y-2">
-                <Label htmlFor="feedback">Any additional feedback? (Optional)</Label>
-                <Textarea
-                  id="feedback"
-                  placeholder="Tell us more about your experience or what we could improve..."
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  rows={4}
-                />
-              </div>
-
               <div className="flex justify-between gap-2 pt-4 border-t">
                 <Button variant="outline" onClick={() => setCurrentStep('reason')}>
                   Back
