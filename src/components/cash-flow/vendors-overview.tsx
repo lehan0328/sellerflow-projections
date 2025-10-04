@@ -484,13 +484,20 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Input
-                        type="text"
-                        placeholder="e.g., Shipped, Received"
-                        value={vendor.remarks || ''}
-                        onChange={(e) => updateVendor(vendor.id, { remarks: e.target.value })}
-                        className="h-8 text-xs max-w-[150px]"
-                      />
+                      <Select
+                        value={vendor.remarks || 'Ordered'}
+                        onValueChange={(value) => updateVendor(vendor.id, { remarks: value })}
+                      >
+                        <SelectTrigger className="h-8 text-xs max-w-[130px]">
+                          <SelectValue placeholder="Ordered" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border border-border z-50">
+                          <SelectItem value="Ordered">Ordered</SelectItem>
+                          <SelectItem value="Shipped">Shipped</SelectItem>
+                          <SelectItem value="Delayed">Delayed</SelectItem>
+                          <SelectItem value="Received">Received</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">

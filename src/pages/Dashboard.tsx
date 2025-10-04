@@ -332,6 +332,7 @@ const Dashboard = () => {
         poName: orderData.poName,
         description: orderData.description,
         notes: orderData.notes,
+        remarks: 'Ordered',
         paymentSchedule: paymentSchedule,
         source: 'management'
       });
