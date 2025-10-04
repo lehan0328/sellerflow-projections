@@ -79,6 +79,7 @@ export const CashFlowCalendar = ({
   const { totalAvailableCredit } = useCreditCards();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'calendar' | 'chart'>('calendar');
+  const [chartTimeRange, setChartTimeRange] = useState<'1' | '3' | '6' | '12'>('3');
   const [selectedTransaction, setSelectedTransaction] = useState<CashFlowEvent | null>(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedDayTransactions, setSelectedDayTransactions] = useState<CashFlowEvent[]>([]);
@@ -314,12 +315,18 @@ export const CashFlowCalendar = ({
     setDraggedTransaction(null);
   };
 
-  // Generate chart data for current month
+  // Generate chart data based on selected time range
   const generateChartData = () => {
     const accountStartDate = new Date('2025-09-29');
     accountStartDate.setHours(0, 0, 0, 0);
     
-    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    // Calculate date range based on selected time range
+    const monthsToShow = parseInt(chartTimeRange);
+    const chartStartDate = subMonths(new Date(), monthsToShow - 1);
+    const chartStart = startOfMonth(chartStartDate);
+    const chartEnd = endOfMonth(new Date());
+    
+    const days = eachDayOfInterval({ start: chartStart, end: chartEnd });
     let runningTotal = totalAvailableCash;
     
     return days.map(day => {
@@ -392,25 +399,41 @@ export const CashFlowCalendar = ({
                     <span className="text-xs text-green-600 font-medium">Healthy</span>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2 bg-muted rounded-lg p-1">
-                  <Button
-                    variant={viewType === 'calendar' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewType('calendar')}
-                    className="px-3"
-                  >
-                    <CalendarIcon className="h-4 w-4 mr-1" />
-                    Calendar
-                  </Button>
-                  <Button
-                    variant={viewType === 'chart' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewType('chart')}
-                    className="px-3"
-                  >
-                    <TrendingUp className="h-4 w-4 mr-1" />
-                    Chart
-                  </Button>
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 bg-muted rounded-lg p-1">
+                    <Button
+                      variant={viewType === 'calendar' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewType('calendar')}
+                      className="px-3"
+                    >
+                      <CalendarIcon className="h-4 w-4 mr-1" />
+                      Calendar
+                    </Button>
+                    <Button
+                      variant={viewType === 'chart' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewType('chart')}
+                      className="px-3"
+                    >
+                      <TrendingUp className="h-4 w-4 mr-1" />
+                      Chart
+                    </Button>
+                  </div>
+                  
+                  {viewType === 'chart' && (
+                    <Select value={chartTimeRange} onValueChange={(value: '1' | '3' | '6' | '12') => setChartTimeRange(value)}>
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 Month</SelectItem>
+                        <SelectItem value="3">3 Months</SelectItem>
+                        <SelectItem value="6">6 Months</SelectItem>
+                        <SelectItem value="12">1 Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
               
