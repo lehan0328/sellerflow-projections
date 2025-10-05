@@ -55,25 +55,55 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId;
     let hasExistingSubscription = false;
+    let hasEverHadTrial = false;
+    let currentSubscription = null;
     
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
+      const customer = customers.data[0];
       logStep("Existing customer found", { customerId });
       
-      // Check if customer has any active or trialing subscriptions
-      const subscriptions = await stripe.subscriptions.list({
+      // Check metadata for trial usage tracking
+      hasEverHadTrial = customer.metadata?.trial_used === 'true';
+      logStep("Customer trial history from metadata", { hasEverHadTrial });
+      
+      // Check ALL subscriptions (including canceled) to verify trial usage
+      const allSubscriptions = await stripe.subscriptions.list({
         customer: customerId,
-        limit: 1,
+        limit: 100, // Get all subscriptions to check history
       });
       
-      hasExistingSubscription = subscriptions.data.some(
+      // Check if customer has ever had a trial (even if canceled)
+      const hadTrialBefore = allSubscriptions.data.some(
+        sub => sub.trial_end !== null || sub.status === 'trialing'
+      );
+      
+      if (hadTrialBefore && !hasEverHadTrial) {
+        // Update customer metadata to mark trial as used
+        await stripe.customers.update(customerId, {
+          metadata: { trial_used: 'true' }
+        });
+        hasEverHadTrial = true;
+        logStep("Updated customer metadata - trial marked as used");
+      }
+      
+      // Check for current active or trialing subscription
+      currentSubscription = allSubscriptions.data.find(
         sub => sub.status === 'active' || sub.status === 'trialing'
       );
       
-      logStep("Checked for existing subscriptions", { 
+      hasExistingSubscription = !!currentSubscription;
+      
+      logStep("Checked subscription history", { 
         hasExistingSubscription,
-        subscriptionCount: subscriptions.data.length 
+        hasEverHadTrial,
+        currentSubscriptionId: currentSubscription?.id,
+        currentStatus: currentSubscription?.status,
+        totalSubscriptions: allSubscriptions.data.length
       });
+    } else {
+      // New customer - create with metadata
+      logStep("New customer - will track trial usage");
     }
 
     // Create checkout session
@@ -86,14 +116,37 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/upgrade-plan?subscription=canceled`,
     };
     
-    // Only add trial for completely new customers without existing subscriptions
-    if (!hasExistingSubscription) {
+    // If new customer is created, mark trial as used in metadata
+    if (!customerId) {
+      sessionConfig.customer_creation = "always";
       sessionConfig.subscription_data = {
+        metadata: {
+          trial_used: 'true'
+        }
+      };
+    }
+    
+    // Trial logic: Only offer trial if customer has NEVER had one before
+    if (!hasEverHadTrial && !hasExistingSubscription) {
+      sessionConfig.subscription_data = {
+        ...sessionConfig.subscription_data,
         trial_period_days: 7,
       };
-      logStep("Adding 7-day trial for new customer");
-    } else {
-      logStep("Skipping trial - customer has existing subscription");
+      logStep("Adding 7-day trial for first-time customer");
+    } else if (hasEverHadTrial && !hasExistingSubscription) {
+      logStep("Skipping trial - customer has used trial before");
+    } else if (hasExistingSubscription && currentSubscription) {
+      // When upgrading from existing subscription, schedule new subscription 
+      // to start when current period ends (no immediate charge)
+      const currentPeriodEnd = currentSubscription.current_period_end;
+      sessionConfig.subscription_data = {
+        ...sessionConfig.subscription_data,
+        trial_end: currentPeriodEnd, // New subscription starts after current one
+      };
+      logStep("Scheduling new subscription after current period", { 
+        currentPeriodEnd,
+        currentPeriodEndDate: new Date(currentPeriodEnd * 1000).toISOString()
+      });
     }
     
     const session = await stripe.checkout.sessions.create(sessionConfig);
