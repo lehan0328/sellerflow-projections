@@ -89,7 +89,7 @@ serve(async (req) => {
 
     // Apply the coupon to the subscription
     const updatedSubscription = await stripe.subscriptions.update(activeSubscription.id, {
-      coupon: couponId,
+      discounts: [{ coupon: couponId }],
     });
     logStep("Applied discount to subscription", { 
       subscriptionId: updatedSubscription.id,
