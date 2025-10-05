@@ -37,6 +37,7 @@ import { BankAccountManagement } from "@/components/settings/bank-account-manage
 import { CustomerManagement } from "@/components/settings/customer-management";
 import { FeatureRequest } from "@/components/settings/feature-request";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { PageLoadingWrapper } from "@/components/PageLoadingWrapper";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -562,7 +563,8 @@ const Settings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <PageLoadingWrapper isLoading={profileLoading} loadingMessage="Loading your settings...">
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 py-4">
@@ -613,7 +615,8 @@ const Settings = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </PageLoadingWrapper>
   );
 };
 

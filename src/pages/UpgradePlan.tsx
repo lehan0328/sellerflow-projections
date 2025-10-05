@@ -153,7 +153,7 @@ const UpgradePlan = () => {
       <div className="min-h-screen bg-background">
         <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="max-w-7xl mx-auto px-4 py-4">
-            <div className="flex flex-col items-center text-center space-y-4">
+            <div className="flex flex-col items-center text-center space-y-4 animate-fade-in">
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -174,9 +174,9 @@ const UpgradePlan = () => {
         </div>
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex justify-center items-center min-h-[60vh]">
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 animate-fade-in">
               <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground">Loading your subscription details...</p>
+              <p className="text-muted-foreground animate-pulse">Loading your subscription details...</p>
             </div>
           </div>
         </div>
@@ -185,7 +185,7 @@ const UpgradePlan = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-fade-in">
       {/* Header */}
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 py-4">
