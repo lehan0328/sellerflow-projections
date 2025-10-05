@@ -430,10 +430,22 @@ const UpgradePlan = () => {
                   <CardHeader className="text-center">
                     <CardTitle>{currentTierData.name}</CardTitle>
                     <div className="text-3xl font-bold">
-                      ${isYearly ? currentTierData.yearlyPrice : currentTierData.price}
-                      <span className="text-sm font-normal text-muted-foreground">
-                        {isYearly ? '/year' : '/month'}
-                      </span>
+                      {isYearly ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="text-lg line-through text-muted-foreground font-normal">
+                            ${currentTierData.price * 12}
+                          </span>
+                          <span>
+                            ${currentTierData.yearlyPrice}
+                            <span className="text-sm font-normal text-muted-foreground">/year</span>
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          ${currentTierData.price}
+                          <span className="text-sm font-normal text-muted-foreground">/month</span>
+                        </>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -462,10 +474,22 @@ const UpgradePlan = () => {
                   <CardHeader className="text-center">
                     <CardTitle>{nextTier.name}</CardTitle>
                     <div className="text-3xl font-bold">
-                      ${isYearly ? nextTier.yearlyPrice : nextTier.price}
-                      <span className="text-sm font-normal text-muted-foreground">
-                        {isYearly ? '/year' : '/month'}
-                      </span>
+                      {isYearly ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="text-lg line-through text-muted-foreground font-normal">
+                            ${nextTier.price * 12}
+                          </span>
+                          <span>
+                            ${nextTier.yearlyPrice}
+                            <span className="text-sm font-normal text-muted-foreground">/year</span>
+                          </span>
+                        </div>
+                      ) : (
+                        <>
+                          ${nextTier.price}
+                          <span className="text-sm font-normal text-muted-foreground">/month</span>
+                        </>
+                      )}
                     </div>
                     {isYearly && (
                       <Badge variant="secondary" className="text-xs mx-auto">
@@ -604,8 +628,22 @@ const UpgradePlan = () => {
                     <CardHeader className="text-center">
                       <CardTitle>{planItem.name}</CardTitle>
                       <div className="text-3xl font-bold">
-                        ${isYearly ? planItem.yearlyPrice : planItem.price}
-                        <span className="text-sm font-normal text-muted-foreground">{isYearly ? '/year' : '/month'}</span>
+                        {isYearly ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-lg line-through text-muted-foreground font-normal">
+                              ${planItem.price * 12}
+                            </span>
+                            <span>
+                              ${planItem.yearlyPrice}
+                              <span className="text-sm font-normal text-muted-foreground">/year</span>
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            ${planItem.price}
+                            <span className="text-sm font-normal text-muted-foreground">/month</span>
+                          </>
+                        )}
                       </div>
                       {isYearly && (
                         <Badge variant="secondary" className="text-xs mx-auto">
