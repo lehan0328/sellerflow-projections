@@ -33,7 +33,7 @@ const Support = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content: "Hi! I'm your AI support assistant. I can help answer questions about CashFlow Pro features, troubleshooting, and more. Try asking me first before submitting a ticket - I might be able to help you right away! 🚀"
+      content: "Hi! I'm your AI support assistant. I can help answer questions about Auren features, troubleshooting, and more. Try asking me first before submitting a ticket - I might be able to help you right away! 🚀"
     }
   ]);
   const [chatInput, setChatInput] = useState("");
@@ -289,7 +289,7 @@ const Support = () => {
                   <CardTitle>AI Support Assistant</CardTitle>
                 </div>
                 <CardDescription>
-                  Ask me anything about CashFlow Pro! I can help with features, troubleshooting, and general questions.
+                  Ask me anything about Auren! I can help with features, troubleshooting, and general questions.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -338,7 +338,7 @@ const Support = () => {
                     <Input
                       value={chatInput}
                       onChange={(e) => setChatInput(e.target.value)}
-                      placeholder="Ask me anything about CashFlow Pro..."
+                      placeholder="Ask me anything about Auren..."
                       disabled={isChatLoading}
                     />
                     <Button type="submit" disabled={isChatLoading || !chatInput.trim()}>

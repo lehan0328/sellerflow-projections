@@ -26,7 +26,7 @@ const DocsGettingStarted = () => {
   const setupSteps = [
     {
       title: "Create Your Account",
-      description: "Sign up for CashFlow Pro and verify your email address",
+      description: "Sign up for Auren and verify your email address",
       time: "2 minutes",
       icon: <Users className="h-5 w-5" />,
       completed: true
@@ -99,7 +99,7 @@ const DocsGettingStarted = () => {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold">Getting Started</h1>
-                  <p className="text-muted-foreground text-sm">Setup your CashFlow Pro account</p>
+                  <p className="text-muted-foreground text-sm">Setup your Auren account</p>
                 </div>
               </div>
             </div>
@@ -118,7 +118,7 @@ const DocsGettingStarted = () => {
               <Clock className="h-3 w-3 mr-1" />
               10 minutes setup
             </Badge>
-            <h2 className="text-3xl font-bold">Welcome to CashFlow Pro</h2>
+            <h2 className="text-3xl font-bold">Welcome to Auren</h2>
             <p className="text-xl text-muted-foreground">
               Get your Amazon business cash flow under control in just a few simple steps. 
               This guide will walk you through everything you need to know to get started.
@@ -129,7 +129,7 @@ const DocsGettingStarted = () => {
           <Alert className="border-success/20 bg-success/10">
             <CheckCircle className="h-4 w-4 text-success" />
             <AlertDescription className="text-success-foreground">
-              <strong>Why CashFlow Pro?</strong> Unlimited vendors and transactions on all plans. Amazon sellers using our platform get 95%+ accurate payout forecasting, AI-powered insights, and complete cash flow visibility across all accounts.
+              <strong>Why Auren?</strong> Unlimited vendors and transactions on all plans. Amazon sellers using our platform get 95%+ accurate payout forecasting, AI-powered insights, and complete cash flow visibility across all accounts.
             </AlertDescription>
           </Alert>
 
@@ -174,7 +174,7 @@ const DocsGettingStarted = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-muted-foreground">
-                  Start by creating your CashFlow Pro account. You'll need a valid email address and 
+                  Start by creating your Auren account. You'll need a valid email address and 
                   some basic information about your Amazon business.
                 </p>
                 <div className="bg-muted/50 p-4 rounded-lg">
@@ -278,7 +278,7 @@ const DocsGettingStarted = () => {
               <CardContent className="space-y-4">
                 <p className="text-muted-foreground">
                   Set up your preferences, add team members, and configure notifications to 
-                  get the most out of CashFlow Pro.
+                  get the most out of Auren.
                 </p>
                 
                 <div className="grid gap-4 md:grid-cols-2">

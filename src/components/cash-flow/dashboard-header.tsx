@@ -1,6 +1,7 @@
-import { DollarSign, History, MessageSquare } from "lucide-react";
+import { History, MessageSquare, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "./user-menu";
+import aurenLogo from "@/assets/auren-logo.png";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,11 +47,11 @@ export function DashboardHeader() {
       {/* Logo - Top Left */}
       <div className="absolute top-6 left-6 z-40">
         <div className="flex items-center space-x-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg">
-            <DollarSign className="h-6 w-6 text-primary-foreground" />
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center">
+            <img src={aurenLogo} alt="Auren" className="h-10 w-10" />
           </div>
           <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            CashFlow Pro
+            Auren
           </span>
         </div>
       </div>
@@ -64,7 +65,7 @@ export function DashboardHeader() {
           className="h-10 px-4 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-accent hover:text-accent-foreground"
           title="View Analytics"
         >
-          <DollarSign className="h-4 w-4 mr-2" />
+          <TrendingUp className="h-4 w-4 mr-2" />
           Analytics
         </Button>
         <Button

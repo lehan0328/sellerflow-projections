@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { DollarSign, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import aurenLogo from "@/assets/auren-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -154,12 +155,12 @@ export const Auth = () => {
           <div className="flex items-center justify-center space-x-4 animate-fade-in">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-xl opacity-50 animate-pulse" />
-              <div className="relative h-16 w-16 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-2xl">
-                <DollarSign className="h-9 w-9 text-primary-foreground" />
+              <div className="relative h-16 w-16 rounded-2xl flex items-center justify-center">
+                <img src={aurenLogo} alt="Auren" className="h-16 w-16" />
               </div>
             </div>
             <span className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              CashFlow Pro
+              Auren
             </span>
           </div>
           

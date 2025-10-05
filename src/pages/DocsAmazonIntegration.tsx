@@ -166,7 +166,7 @@ const DocsAmazonIntegration = () => {
                       <h4 className="font-semibold">Go to Amazon Developer Console</h4>
                     </div>
                     <p className="text-muted-foreground ml-11">
-                      Visit the Amazon Developer Console to create an app for CashFlow Pro integration.
+                      Visit the Amazon Developer Console to create an app for Auren integration.
                     </p>
                     <div className="ml-11">
                       <Button variant="outline" size="sm">
@@ -190,7 +190,7 @@ const DocsAmazonIntegration = () => {
                       </p>
                       <div className="bg-muted/50 p-4 rounded-lg">
                         <div className="space-y-2 text-sm">
-                          <div><strong>App Name:</strong> CashFlow Pro Integration</div>
+                          <div><strong>App Name:</strong> Auren Integration</div>
                           <div><strong>Data Access:</strong> SP-API</div>
                           <div><strong>Use Case:</strong> Analytics, Business Intelligence</div>
                         </div>
@@ -233,11 +233,11 @@ const DocsAmazonIntegration = () => {
                   <div className="space-y-4">
                     <div className="flex items-center space-x-3">
                       <Badge variant="outline" className="w-8 h-8 flex items-center justify-center p-0">4</Badge>
-                      <h4 className="font-semibold">Add to CashFlow Pro</h4>
+                      <h4 className="font-semibold">Add to Auren</h4>
                     </div>
                     <div className="ml-11 space-y-3">
                       <p className="text-muted-foreground">
-                        In your CashFlow Pro settings, add your Amazon account using the credentials above.
+                        In your Auren settings, add your Amazon account using the credentials above.
                       </p>
                       <Button className="bg-gradient-primary" onClick={() => navigate('/settings')}>
                         <Settings className="h-4 w-4 mr-2" />

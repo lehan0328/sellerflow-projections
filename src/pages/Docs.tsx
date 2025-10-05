@@ -156,7 +156,7 @@ const Docs = () => {
                     <span>Documentation</span>
                   </h1>
                   <p className="text-muted-foreground text-sm">
-                    Learn how to use CashFlow Pro effectively
+                    Learn how to use Auren effectively
                   </p>
                 </div>
               </div>
@@ -191,7 +191,7 @@ const Docs = () => {
           {/* Hero Section */}
           <div className="text-center space-y-6 mb-12">
             <h2 className="text-4xl font-bold">
-              CashFlow Pro Documentation
+              Auren Documentation
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Everything you need to master your Amazon business cash flow with unlimited vendors, AI-powered insights, and real-time bank integrations
@@ -337,7 +337,7 @@ const Docs = () => {
               <CardContent className="p-8">
                 <h3 className="text-xl font-bold mb-4">Still need help?</h3>
                 <p className="text-muted-foreground mb-6">
-                  Our support team is here to help you succeed with CashFlow Pro.
+                  Our support team is here to help you succeed with Auren.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Button variant="outline" onClick={() => navigate('/support')}>

@@ -24,7 +24,7 @@ export default function ScheduleDemo() {
             <h1 className="text-4xl font-bold">Schedule a Demo</h1>
           </div>
           <p className="text-muted-foreground text-lg">
-            Let our team show you how to get the most value from CashFlow Pro
+            Let our team show you how to get the most value from Auren
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export default function ScheduleDemo() {
             <ul className="space-y-2 text-sm">
               <li className="flex items-start gap-2">
                 <span className="text-primary">•</span>
-                <span>Personalized walkthrough of CashFlow Pro features</span>
+                <span>Personalized walkthrough of Auren features</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary">•</span>

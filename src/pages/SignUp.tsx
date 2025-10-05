@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle, DollarSign, Eye, EyeOff } from "lucide-react";
+import { CheckCircle, Eye, EyeOff } from "lucide-react";
+import aurenLogo from "@/assets/auren-logo.png";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -138,11 +139,11 @@ export const SignUp = () => {
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center space-x-3">
-            <div className="h-12 w-12 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg">
-              <DollarSign className="h-7 w-7 text-primary-foreground" />
+            <div className="h-12 w-12 rounded-xl flex items-center justify-center">
+              <img src={aurenLogo} alt="Auren" className="h-12 w-12" />
             </div>
             <span className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              CashFlow Pro
+              Auren
             </span>
           </div>
           

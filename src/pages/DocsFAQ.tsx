@@ -32,7 +32,7 @@ const DocsFAQ = () => {
       icon: <FileText className="h-4 w-4" />,
       questions: [
         {
-          question: "How long does it take to set up CashFlow Pro?",
+          question: "How long does it take to set up Auren?",
           answer: "Most users complete the full setup in under 10 minutes. This includes creating your account, connecting Amazon, and linking your bank accounts. The system starts generating forecasts immediately after your first data sync."
         },
         {
@@ -44,7 +44,7 @@ const DocsFAQ = () => {
           answer: "Yes! You can try our interactive demo without creating an account to see how the platform works. When you're ready to use your real data, sign up for a paid plan. All plans come with a 30-day money-back guarantee."
         },
         {
-          question: "Can I use CashFlow Pro for multiple Amazon accounts?",
+          question: "Can I use Auren for multiple Amazon accounts?",
           answer: "Yes! All plans include 1 Amazon account connection. You can add more Amazon accounts for $50/mo per additional account. This allows you to manage multiple seller accounts or marketplaces in one dashboard."
         }
       ]
@@ -221,7 +221,7 @@ const DocsFAQ = () => {
           <div className="text-center space-y-4">
             <h2 className="text-3xl font-bold">Frequently Asked Questions</h2>
             <p className="text-xl text-muted-foreground">
-              Find quick answers to the most common questions about CashFlow Pro
+              Find quick answers to the most common questions about Auren
             </p>
           </div>
 
@@ -309,7 +309,7 @@ const DocsFAQ = () => {
                 <div>
                   <h3 className="text-2xl font-bold mb-2">Still have questions?</h3>
                   <p className="text-muted-foreground">
-                    Our support team is here to help you succeed with CashFlow Pro
+                    Our support team is here to help you succeed with Auren
                   </p>
                 </div>
 
@@ -382,7 +382,7 @@ const DocsFAQ = () => {
                 <Button variant="outline" className="justify-start h-auto p-4" onClick={() => navigate('/demo')}>
                   <div className="text-left">
                     <div className="font-medium">Live Demo</div>
-                    <div className="text-sm text-muted-foreground">See CashFlow Pro in action</div>
+                    <div className="text-sm text-muted-foreground">See Auren in action</div>
                   </div>
                 </Button>
                 <Button variant="outline" className="justify-start h-auto p-4">

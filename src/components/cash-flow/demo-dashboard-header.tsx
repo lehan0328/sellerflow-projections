@@ -1,4 +1,4 @@
-import { DollarSign } from "lucide-react";
+import aurenLogo from "@/assets/auren-logo.png";
 
 export function DemoDashboardHeader() {
   return (
@@ -6,11 +6,11 @@ export function DemoDashboardHeader() {
       {/* Logo - Top Left */}
       <div className="absolute top-6 left-6 z-40">
         <div className="flex items-center space-x-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg">
-            <DollarSign className="h-6 w-6 text-primary-foreground" />
+          <div className="h-10 w-10 rounded-xl flex items-center justify-center">
+            <img src={aurenLogo} alt="Auren" className="h-10 w-10" />
           </div>
           <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            CashFlow Pro
+            Auren
           </span>
         </div>
       </div>
@@ -29,7 +29,7 @@ export function DemoDashboardHeader() {
             Demo Dashboard
           </h1>
           <p className="text-muted-foreground mt-2">
-            Explore CashFlow Pro features in this interactive demo
+            Explore Auren features in this interactive demo
           </p>
         </div>
       </div>

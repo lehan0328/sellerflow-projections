@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, DollarSign, Sparkles, Check, X } from "lucide-react";
+import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X } from "lucide-react";
+import aurenLogo from "@/assets/auren-logo.png";
 import { useNavigate } from "react-router-dom";
 import { LiveDashboardShowcase } from "@/components/LiveDashboardShowcase";
 import { FloatingChatWidget } from "@/components/floating-chat-widget";
@@ -194,11 +195,11 @@ const Landing = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 animate-scale-in">
-              <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center hover-scale transition-all duration-300 hover:rotate-12">
-                <DollarSign className="h-5 w-5 text-primary-foreground" />
+              <div className="h-8 w-8 rounded-lg flex items-center justify-center hover-scale transition-all duration-300 hover:rotate-12">
+                <img src={aurenLogo} alt="Auren" className="h-8 w-8" />
               </div>
               <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent hover:scale-105 transition-transform duration-200">
-                CashFlow Pro
+                Auren
               </span>
             </div>
             <div className="hidden md:flex items-center space-x-6">
@@ -401,7 +402,7 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
-              Why Amazon Sellers Choose CashFlow Pro
+              Why Amazon Sellers Choose Auren
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Generic cash flow tools don't understand Amazon's unique challenges. 
@@ -434,7 +435,7 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
-              CashFlow Pro vs. Generic Tools
+              Auren vs. Generic Tools
             </h2>
             <p className="text-xl text-muted-foreground">
               See why Amazon sellers are switching from Cash Flow Frog and QuickBooks
@@ -449,7 +450,7 @@ const Landing = () => {
                     <h3 className="font-semibold text-center">Feature</h3>
                   </div>
                   <div className="p-6 space-y-4 bg-primary/5">
-                    <h3 className="font-semibold text-center text-primary">CashFlow Pro</h3>
+                    <h3 className="font-semibold text-center text-primary">Auren</h3>
                   </div>
                   <div className="p-6 space-y-4">
                     <h3 className="font-semibold text-center text-muted-foreground">Other Tools</h3>
@@ -671,7 +672,7 @@ const Landing = () => {
           </h2>
           <p className="text-xl opacity-90 max-w-2xl mx-auto">
             Start your 7-day free trial today. Credit card required, but you won't be charged until your trial ends. 
-            Join thousands of successful Amazon sellers who trust CashFlow Pro to manage their finances and scale their businesses.
+            Join thousands of successful Amazon sellers who trust Auren to manage their finances and scale their businesses.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button 
@@ -700,10 +701,10 @@ const Landing = () => {
           <div className="grid gap-8 md:grid-cols-4">
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-primary-foreground" />
+                <div className="h-8 w-8 rounded-lg flex items-center justify-center">
+                  <img src={aurenLogo} alt="Auren" className="h-8 w-8" />
                 </div>
-                <span className="text-xl font-bold">CashFlow Pro</span>
+                <span className="text-xl font-bold">Auren</span>
               </div>
               <p className="text-muted-foreground">
                 The cash flow management solution built specifically for Amazon sellers.
@@ -738,7 +739,7 @@ const Landing = () => {
             </div>
           </div>
           <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2025 CashFlow Pro. All rights reserved.</p>
+            <p>&copy; 2025 Auren. All rights reserved.</p>
           </div>
         </div>
       </footer>
