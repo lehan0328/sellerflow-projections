@@ -1,4 +1,4 @@
-import { DollarSign, History } from "lucide-react";
+import { DollarSign, History, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "./user-menu";
 import { useNavigate } from "react-router-dom";
@@ -75,6 +75,15 @@ export function DashboardHeader() {
           title="View Transaction Log"
         >
           <History className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate('/support')}
+          className="h-10 w-10 p-0 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-accent hover:text-accent-foreground"
+          title="Get Support"
+        >
+          <MessageSquare className="h-4 w-4" />
         </Button>
         <UserMenu />
       </div>

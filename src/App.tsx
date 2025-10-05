@@ -27,6 +27,7 @@ import { Auth } from "./pages/Auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import Admin from "./pages/Admin";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+import Support from "./pages/Support";
 
 const queryClient = new QueryClient();
 
@@ -101,6 +102,11 @@ const App = () => (
                 <ProtectedAdminRoute>
                   <Admin />
                 </ProtectedAdminRoute>
+              </ProtectedRoute>
+            } />
+            <Route path="/support" element={
+              <ProtectedRoute>
+                <Support />
               </ProtectedRoute>
             } />
           <Route path="/oauth-redirect" element={<OAuthRedirect />} />
