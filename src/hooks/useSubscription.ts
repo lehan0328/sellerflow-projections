@@ -35,7 +35,7 @@ export const PRICING_PLANS = {
     price_id: "price_1SEH8NB28kMY3UseBj2w9HgH",
     yearly_price_id: "price_1SEHZGB28kMY3UseCkWIlnWw",
     features: [
-      "Under $20k monthly amazon payout",
+      "Up to $20k monthly revenue",
       "2 bank/credit card connections",
       "1 Amazon connection",
       "Advanced forecasting workflow",
@@ -52,7 +52,7 @@ export const PRICING_PLANS = {
     price_id: "price_1SEH8iB28kMY3Usem3k3vElT",
     yearly_price_id: "price_1SEHZVB28kMY3Use9bH8xPlg",
     features: [
-      "Under $50k monthly amazon payout",
+      "Up to $75k monthly revenue",
       "4 bank/credit card connections",
       "1 Amazon connection",
       "2 additional users",
@@ -68,7 +68,7 @@ export const PRICING_PLANS = {
     price_id: "price_1SEHBHB28kMY3UsenQEY0qoT",
     yearly_price_id: "price_1SEHZfB28kMY3UseZKmLEcPk",
     features: [
-      "Under $200k monthly amazon payout",
+      "Up to $200k monthly revenue",
       "6 bank/credit card connections",
       "1 Amazon connection",
       "5 additional users",
@@ -77,6 +77,48 @@ export const PRICING_PLANS = {
       "Scenario planning",
       "Advanced analytics",
       "Priority support"
+    ]
+  }
+} as const;
+
+export const ENTERPRISE_TIERS = {
+  tier1: {
+    name: "Enterprise - Tier 1",
+    revenue: "$200k - $500k monthly revenue",
+    price: 149,
+    features: [
+      "8 bank/credit card connections (+ add more)",
+      "2 Amazon connections",
+      "7 additional users",
+      "All Professional features",
+      "1:1 hands-on setup with team member",
+      "Dedicated account manager"
+    ]
+  },
+  tier2: {
+    name: "Enterprise - Tier 2",
+    revenue: "$500k - $1M monthly revenue",
+    price: 249,
+    features: [
+      "8 bank/credit card connections (+ add more)",
+      "2 Amazon connections",
+      "7 additional users",
+      "All Professional features",
+      "1:1 hands-on setup with team member",
+      "Dedicated account manager"
+    ]
+  },
+  tier3: {
+    name: "Enterprise - Tier 3",
+    revenue: "$1M+ monthly revenue",
+    price: 349,
+    features: [
+      "8 bank/credit card connections (+ add more)",
+      "2 Amazon connections",
+      "7 additional users",
+      "All Professional features",
+      "1:1 hands-on setup with team member",
+      "Dedicated account manager"
     ]
   }
 } as const;

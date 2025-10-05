@@ -19,8 +19,9 @@ import {
   Calendar
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useSubscription, PRICING_PLANS, ADDON_PRODUCTS } from "@/hooks/useSubscription";
+import { useSubscription, PRICING_PLANS, ADDON_PRODUCTS, ENTERPRISE_TIERS } from "@/hooks/useSubscription";
 import { CancellationFlow } from "@/components/subscription/CancellationFlow";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CartItem {
   priceId: string;
@@ -34,6 +35,7 @@ const UpgradePlan = () => {
   const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, createCheckout, purchaseAddon, openCustomerPortal, removePlanOverride, isLoading } = useSubscription();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
   const [isYearly, setIsYearly] = useState(false);
+  const [selectedEnterpriseTier, setSelectedEnterpriseTier] = useState<keyof typeof ENTERPRISE_TIERS>("tier1");
   const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({
     bank_account: 0,
     amazon_account: 0,
@@ -675,6 +677,105 @@ const UpgradePlan = () => {
                   </Card>
                 ))}
             </div>
+          </div>
+        )}
+
+        {/* Enterprise Section */}
+        {!subscribed && (
+          <div className="mt-12">
+            <div className="text-center mb-8 space-y-4">
+              <h2 className="text-3xl font-bold">Enterprise Plan</h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Custom pricing based on your monthly revenue. Select your revenue tier below to see pricing.
+              </p>
+            </div>
+            
+            <Card className="max-w-4xl mx-auto">
+              <CardHeader>
+                <CardTitle className="text-center">Select Your Revenue Tier</CardTitle>
+                <CardDescription className="text-center">
+                  Choose the tier that matches your monthly revenue
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex justify-center">
+                  <Select 
+                    value={selectedEnterpriseTier} 
+                    onValueChange={(value) => setSelectedEnterpriseTier(value as keyof typeof ENTERPRISE_TIERS)}
+                  >
+                    <SelectTrigger className="w-full max-w-md">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tier1">$200k - $500k monthly revenue</SelectItem>
+                      <SelectItem value="tier2">$500k - $1M monthly revenue</SelectItem>
+                      <SelectItem value="tier3">$1M+ monthly revenue</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="text-center">
+                  <div className="inline-block p-6 rounded-lg bg-gradient-to-r from-primary/10 to-accent/10 border-2 border-primary/20">
+                    <div className="text-5xl font-bold mb-2">
+                      ${ENTERPRISE_TIERS[selectedEnterpriseTier].price}
+                      <span className="text-lg font-normal text-muted-foreground">/month</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {ENTERPRISE_TIERS[selectedEnterpriseTier].revenue}
+                    </p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-lg">Included Features</h3>
+                    <ul className="space-y-2">
+                      {ENTERPRISE_TIERS[selectedEnterpriseTier].features.map((feature, index) => (
+                        <li key={index} className="flex items-start text-sm">
+                          <Check className="h-4 w-4 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-lg">Perfect For</h3>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li className="flex items-start">
+                        <Check className="h-4 w-4 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                        <span>Large e-commerce businesses</span>
+                      </li>
+                      <li className="flex items-start">
+                        <Check className="h-4 w-4 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                        <span>Teams needing advanced support</span>
+                      </li>
+                      <li className="flex items-start">
+                        <Check className="h-4 w-4 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                        <span>Businesses with complex workflows</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center gap-4 pt-4">
+                  <Button 
+                    size="lg" 
+                    className="w-full max-w-md bg-gradient-primary"
+                    onClick={() => {
+                      // Contact sales or custom checkout flow
+                      window.open('mailto:support@aurenapp.com?subject=Enterprise Plan Inquiry&body=I am interested in the Enterprise plan for ' + ENTERPRISE_TIERS[selectedEnterpriseTier].revenue, '_blank');
+                    }}
+                  >
+                    Contact Sales for Enterprise
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Our team will reach out within 24 hours to set up your custom plan
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 

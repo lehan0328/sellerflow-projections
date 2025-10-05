@@ -37,10 +37,10 @@ const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
     price: PRICING_PLANS.professional.price
   },
   enterprise: {
-    bankConnections: 999,
-    amazonConnections: 999,
+    bankConnections: 8,
+    amazonConnections: 2,
     name: 'Enterprise',
-    price: 199
+    price: 149 // Starting price, varies by revenue tier
   }
 };
 
