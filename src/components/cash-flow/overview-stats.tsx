@@ -1,4 +1,4 @@
-import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw, Shield } from "lucide-react";
+import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw, Star } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -267,7 +267,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <p className="text-sm text-slate-600">AI Safe Spending Limit</p>
-                <Shield className="h-4 w-4 text-indigo-600" />
+                <Star className="h-4 w-4 text-indigo-600" />
               </div>
               {isLoadingSafeSpending ? (
                 <div className="space-y-2">
