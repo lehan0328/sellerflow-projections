@@ -234,12 +234,12 @@ const UpgradePlan = () => {
                     </Badge>
                   </div>
                   
-                  {discount?.percent_off && (
+                  {discount_ever_redeemed && (
                     <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20 space-y-2">
                       <div className="flex items-center justify-center gap-2 mb-2">
                         <Star className="h-5 w-5 text-green-600" />
                         <span className="text-sm font-semibold text-green-600">
-                          {discount.percent_off}% Discount Applied
+                          10% Retention Discount Applied
                         </span>
                       </div>
                       <div className="space-y-1">
@@ -248,44 +248,31 @@ const UpgradePlan = () => {
                           <span className="line-through text-muted-foreground">${PRICING_PLANS[plan].price}/mo</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-green-600">New Total:</span>
+                          <span className="font-semibold text-green-600">Discounted Price:</span>
                           <span className="text-xl font-bold text-green-600">
-                            ${(PRICING_PLANS[plan].price * (1 - discount.percent_off / 100)).toFixed(2)}/mo
+                            ${(PRICING_PLANS[plan].price * 0.9).toFixed(2)}/mo
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-green-600">You save:</span>
                           <span className="font-semibold text-green-600">
-                            ${(PRICING_PLANS[plan].price * (discount.percent_off / 100)).toFixed(2)}/mo
+                            ${(PRICING_PLANS[plan].price * 0.1).toFixed(2)}/mo
                           </span>
                         </div>
+                      </div>
+                      <div className="pt-2 mt-2 border-t border-green-500/20">
+                        <p className="text-xs text-center text-green-600">
+                          Discount valid for 3 months from redemption
+                        </p>
                       </div>
                     </div>
                   )}
                   
-                  {!discount?.percent_off && (
+                  {!discount_ever_redeemed && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Price</span>
                       <span className="text-lg font-bold">
                         ${PRICING_PLANS[plan].price}/mo
-                      </span>
-                    </div>
-                  )}
-
-                  {discount?.percent_off && discount.duration === 'repeating' && discount.duration_in_months && subscription_end && (
-                    <div className="flex items-center justify-between p-3 bg-green-500/10 rounded-lg border border-green-500/20">
-                      <div className="flex items-center gap-2">
-                        <Star className="h-4 w-4 text-green-600 flex-shrink-0" />
-                        <span className="text-sm font-medium text-green-600">
-                          Discount ends
-                        </span>
-                      </div>
-                      <span className="text-sm font-semibold text-green-600">
-                        {new Date(
-                          new Date(subscription_end).setMonth(
-                            new Date(subscription_end).getMonth() + discount.duration_in_months
-                          )
-                        ).toLocaleDateString()}
                       </span>
                     </div>
                   )}
