@@ -29,7 +29,7 @@ const CANCELLATION_REASONS = [
 ];
 
 export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) => {
-  const { openCustomerPortal, discount } = useSubscription();
+  const { openCustomerPortal, discount, discount_ever_redeemed } = useSubscription();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<CancellationStep>('reason');
   const [selectedReason, setSelectedReason] = useState<string>('');
@@ -68,10 +68,22 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
   };
 
   const proceedToCancel = () => {
-    setCurrentStep('discount_offer');
+    // Skip discount offer if user has ever redeemed it before
+    if (discount_ever_redeemed) {
+      setCurrentStep('confirmation');
+    } else {
+      setCurrentStep('discount_offer');
+    }
   };
 
   const handleAcceptDiscount = async () => {
+    // Double-check if discount was ever redeemed
+    if (discount_ever_redeemed) {
+      toast.error('You have already redeemed the discount promotion');
+      handleClose();
+      return;
+    }
+
     // Check if discount already exists
     if (discount) {
       toast.error('You already have an active discount on your subscription');
@@ -337,10 +349,10 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
                   </Button>
                   <Button 
                     onClick={handleAcceptDiscount}
-                    disabled={loading || !!discount}
+                    disabled={loading || !!discount || !!discount_ever_redeemed}
                     className="bg-gradient-primary"
                   >
-                    {loading ? 'Applying...' : discount ? 'Discount Already Active' : 'Yes! Apply 10% Discount'}
+                    {loading ? 'Applying...' : (discount || discount_ever_redeemed) ? 'Discount Already Redeemed' : 'Yes! Apply 10% Discount'}
                   </Button>
                 </div>
               </div>

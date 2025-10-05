@@ -654,6 +654,7 @@ export type Database = {
           amazon_marketplaces: string[] | null
           company: string | null
           created_at: string
+          discount_redeemed_at: string | null
           email: string | null
           first_name: string | null
           id: string
@@ -668,6 +669,7 @@ export type Database = {
           amazon_marketplaces?: string[] | null
           company?: string | null
           created_at?: string
+          discount_redeemed_at?: string | null
           email?: string | null
           first_name?: string | null
           id?: string
@@ -682,6 +684,7 @@ export type Database = {
           amazon_marketplaces?: string[] | null
           company?: string | null
           created_at?: string
+          discount_redeemed_at?: string | null
           email?: string | null
           first_name?: string | null
           id?: string

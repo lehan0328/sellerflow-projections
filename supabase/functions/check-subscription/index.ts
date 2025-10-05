@@ -46,7 +46,7 @@ serve(async (req) => {
     // Check for plan override first (lifetime access, special cases)
     const { data: profile } = await supabaseClient
       .from('profiles')
-      .select('plan_override')
+      .select('plan_override, discount_redeemed_at')
       .eq('user_id', user.id)
       .single();
 
@@ -56,7 +56,8 @@ serve(async (req) => {
         subscribed: true,
         plan: profile.plan_override,
         subscription_end: null,
-        is_override: true
+        is_override: true,
+        discount_ever_redeemed: !!profile.discount_redeemed_at
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -68,7 +69,18 @@ serve(async (req) => {
     
     if (customers.data.length === 0) {
       logStep("No customer found, updating unsubscribed state");
-      return new Response(JSON.stringify({ subscribed: false }), {
+      
+      // Still check if user ever redeemed a discount
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('discount_redeemed_at')
+        .eq('user_id', user.id)
+        .single();
+      
+      return new Response(JSON.stringify({ 
+        subscribed: false,
+        discount_ever_redeemed: !!profile?.discount_redeemed_at
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
@@ -137,6 +149,13 @@ serve(async (req) => {
       logStep("No active or trialing subscription found");
     }
 
+    // Check if user ever redeemed a discount
+    const { data: profileData } = await supabaseClient
+      .from('profiles')
+      .select('discount_redeemed_at')
+      .eq('user_id', user.id)
+      .single();
+
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
       product_id: productId,
@@ -144,7 +163,8 @@ serve(async (req) => {
       is_override: false,
       is_trialing: isTrialing,
       trial_end: trialEnd,
-      discount: discountInfo
+      discount: discountInfo,
+      discount_ever_redeemed: !!profileData?.discount_redeemed_at
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

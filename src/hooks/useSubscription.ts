@@ -107,6 +107,7 @@ export interface SubscriptionState {
     duration: string;
     duration_in_months: number | null;
   } | null;
+  discount_ever_redeemed?: boolean;
 }
 
 export const useSubscription = () => {
@@ -166,6 +167,7 @@ export const useSubscription = () => {
         is_trialing: data.is_trialing || false,
         trial_end: data.trial_end || null,
         discount: data.discount || null,
+        discount_ever_redeemed: data.discount_ever_redeemed || false,
       });
     } catch (error) {
       console.error("Error checking subscription:", error);

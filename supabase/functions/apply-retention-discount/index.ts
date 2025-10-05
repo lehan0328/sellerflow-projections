@@ -110,6 +110,18 @@ serve(async (req) => {
       discount: updatedSubscription.discount 
     });
 
+    // Mark in profiles that user has redeemed the discount
+    const { error: profileError } = await supabaseClient
+      .from('profiles')
+      .update({ discount_redeemed_at: new Date().toISOString() })
+      .eq('user_id', user.id);
+
+    if (profileError) {
+      logStep("Warning: Could not update profile with redemption timestamp", { error: profileError });
+    } else {
+      logStep("Updated profile with discount redemption timestamp");
+    }
+
     return new Response(JSON.stringify({ 
       success: true,
       message: "10% discount applied for the next 3 months"

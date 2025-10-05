@@ -30,7 +30,7 @@ interface CartItem {
 
 const UpgradePlan = () => {
   const navigate = useNavigate();
-  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, createCheckout, purchaseAddon, openCustomerPortal, removePlanOverride, isLoading } = useSubscription();
+  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, createCheckout, purchaseAddon, openCustomerPortal, removePlanOverride, isLoading } = useSubscription();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
   const [isYearly, setIsYearly] = useState(false);
   const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({
@@ -218,9 +218,20 @@ const UpgradePlan = () => {
                   {discount && (
                     <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
                       <Star className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium text-green-600">
-                        {discount.percent_off}% discount active for {discount.duration_in_months} months
-                      </span>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-green-600">
+                          {discount.percent_off}% discount active
+                        </span>
+                        {discount.duration === 'repeating' && discount.duration_in_months && subscription_end && (
+                          <span className="text-xs text-green-600/80">
+                            Promotion ends: {new Date(
+                              new Date(subscription_end).setMonth(
+                                new Date(subscription_end).getMonth() + discount.duration_in_months
+                              )
+                            ).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )}
                   {subscription_end ? (
@@ -275,7 +286,7 @@ const UpgradePlan = () => {
                           Upgrade to Yearly (Save {plans.find(p => p.key === plan)?.savings})
                         </Button>
                       )}
-                      {subscription_end && (
+                      {subscription_end && !discount_ever_redeemed && (
                         <Button 
                           size="sm" 
                           variant="outline"
