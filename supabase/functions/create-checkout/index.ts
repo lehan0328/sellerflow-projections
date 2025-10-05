@@ -54,23 +54,49 @@ serve(async (req) => {
     // Check for existing customer
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId;
+    let hasExistingSubscription = false;
+    
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
       logStep("Existing customer found", { customerId });
+      
+      // Check if customer has any active or trialing subscriptions
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        limit: 1,
+      });
+      
+      hasExistingSubscription = subscriptions.data.some(
+        sub => sub.status === 'active' || sub.status === 'trialing'
+      );
+      
+      logStep("Checked for existing subscriptions", { 
+        hasExistingSubscription,
+        subscriptionCount: subscriptions.data.length 
+      });
     }
 
     // Create checkout session
-    const session = await stripe.checkout.sessions.create({
+    const sessionConfig: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: finalLineItems,
       mode: "subscription",
-      subscription_data: {
-        trial_period_days: 7,
-      },
       success_url: `${req.headers.get("origin")}/dashboard?subscription=success`,
       cancel_url: `${req.headers.get("origin")}/upgrade-plan?subscription=canceled`,
-    });
+    };
+    
+    // Only add trial for completely new customers without existing subscriptions
+    if (!hasExistingSubscription) {
+      sessionConfig.subscription_data = {
+        trial_period_days: 7,
+      };
+      logStep("Adding 7-day trial for new customer");
+    } else {
+      logStep("Skipping trial - customer has existing subscription");
+    }
+    
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
