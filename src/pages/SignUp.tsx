@@ -15,10 +15,12 @@ export const SignUp = () => {
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [signUpData, setSignUpData] = useState({
     email: searchParams.get('email') || '',
     password: '',
+    confirmPassword: '',
     firstName: '',
     lastName: '',
     company: '',
@@ -78,6 +80,11 @@ export const SignUp = () => {
     e.preventDefault();
     if (!signUpData.email || !signUpData.password || !signUpData.firstName || !signUpData.lastName) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+
+    if (signUpData.password !== signUpData.confirmPassword) {
+      toast.error('Passwords do not match');
       return;
     }
 
@@ -221,6 +228,34 @@ export const SignUp = () => {
                 <p className="text-xs text-muted-foreground">
                   Must be at least 7 characters with at least one letter and one number
                 </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password *</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={signUpData.confirmPassword}
+                    onChange={(e) => setSignUpData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    required
+                    minLength={7}
+                    className="h-11 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                {signUpData.confirmPassword && signUpData.password !== signUpData.confirmPassword && (
+                  <p className="text-xs text-destructive">
+                    Passwords do not match
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
