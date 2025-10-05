@@ -194,10 +194,10 @@ const Docs = () => {
               CashFlow Pro Documentation
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Everything you need to know to master your Amazon business cash flow management
+              Everything you need to master your Amazon business cash flow with unlimited vendors, AI-powered insights, and real-time bank integrations
             </p>
             <Badge variant="secondary" className="text-sm">
-              Last Updated: December 2024
+              Last Updated: January 2025
             </Badge>
           </div>
 
@@ -340,12 +340,12 @@ const Docs = () => {
                   Our support team is here to help you succeed with CashFlow Pro.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={() => navigate('/support')}>
                     <HelpCircle className="mr-2 h-4 w-4" />
-                    Contact Support
+                    Get Support
                   </Button>
-                  <Button className="bg-gradient-primary">
-                    Schedule Demo Call
+                  <Button className="bg-gradient-primary" onClick={() => navigate('/demo')}>
+                    Try Demo
                   </Button>
                 </div>
               </CardContent>

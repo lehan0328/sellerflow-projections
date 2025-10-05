@@ -57,22 +57,22 @@ const DocsGettingStarted = () => {
   const keyFeatures = [
     {
       title: "Amazon Payout Forecasting",
-      description: "See exactly when your next Amazon payments will arrive",
+      description: "See exactly when your next Amazon payments will arrive with 95%+ accuracy",
       icon: <DollarSign className="h-6 w-6 text-success" />
     },
     {
       title: "Real-time Cash Flow",
-      description: "Monitor your cash position across all accounts",
+      description: "Monitor your cash position across all bank accounts and credit cards",
       icon: <Zap className="h-6 w-6 text-primary" />
     },
     {
-      title: "Vendor Management",
-      description: "Track supplier payments and manage cash outflows",
+      title: "Unlimited Vendors",
+      description: "Track unlimited suppliers and purchase orders on all plans",
       icon: <Users className="h-6 w-6 text-accent" />
     },
     {
-      title: "Secure Banking",
-      description: "Bank-level encryption keeps your data safe",
+      title: "AI Support & Insights",
+      description: "Get instant help and personalized financial advice with AI",
       icon: <Shield className="h-6 w-6 text-muted-foreground" />
     }
   ];
@@ -129,7 +129,7 @@ const DocsGettingStarted = () => {
           <Alert className="border-success/20 bg-success/10">
             <CheckCircle className="h-4 w-4 text-success" />
             <AlertDescription className="text-success-foreground">
-              <strong>Why CashFlow Pro?</strong> Amazon sellers using our platform typically see 23% better cash flow predictability and avoid stockouts 89% more often than those using generic tools.
+              <strong>Why CashFlow Pro?</strong> Unlimited vendors and transactions on all plans. Amazon sellers using our platform get 95%+ accurate payout forecasting, AI-powered insights, and complete cash flow visibility across all accounts.
             </AlertDescription>
           </Alert>
 

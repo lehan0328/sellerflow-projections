@@ -40,12 +40,12 @@ const DocsFAQ = () => {
           answer: "You'll need: (1) An active Amazon Seller Central account, (2) Access to your business bank accounts, (3) Your Amazon app credentials from Developer Central, and (4) About 10 minutes to complete the setup process."
         },
         {
-          question: "Is there a free trial?",
-          answer: "Yes! We offer a 7-day free trial with full access to all features. No credit card required. You can explore all functionality including Amazon integration, cash flow forecasting, and reporting during your trial."
+          question: "Do you offer a free trial or demo?",
+          answer: "Yes! You can try our interactive demo without creating an account to see how the platform works. When you're ready to use your real data, sign up for a paid plan. All plans come with a 30-day money-back guarantee."
         },
         {
           question: "Can I use CashFlow Pro for multiple Amazon accounts?",
-          answer: "Absolutely. You can connect multiple Amazon seller accounts across different marketplaces. Each additional account may incur extra charges depending on your plan. Check our pricing page for details."
+          answer: "Yes! All plans include 1 Amazon account connection. You can add more Amazon accounts for $50/mo per additional account. This allows you to manage multiple seller accounts or marketplaces in one dashboard."
         }
       ]
     },
@@ -98,20 +98,24 @@ const DocsFAQ = () => {
       icon: <CreditCard className="h-4 w-4" />,
       questions: [
         {
-          question: "What happens after my free trial?",
-          answer: "After your 7-day trial, you'll need to choose a paid plan to continue using CashFlow Pro. Your data remains secure and accessible. You can upgrade anytime during or after your trial period."
+          question: "What are the pricing plans?",
+          answer: "We have three plans: Starter ($29/mo or $290/year) for under $20k monthly Amazon payout, Growing ($59/mo or $590/year) for under $50k, and Professional ($89/mo or $890/year) for under $200k. All plans include unlimited vendors and unlimited transactions. Yearly plans save you ~17%."
+        },
+        {
+          question: "Do you limit the number of vendors or transactions?",
+          answer: "No! All plans include unlimited vendors and unlimited transactions. There are no limits on how many purchase orders, invoices, or transactions you can track. The main differences between plans are bank connections, Amazon payout limits, AI features, and number of users."
+        },
+        {
+          question: "Can I add more bank accounts or Amazon accounts?",
+          answer: "Yes! Each plan includes a certain number of bank/credit card connections and Amazon accounts. You can purchase add-ons: Additional Bank Account ($7/mo), Additional Amazon Account ($50/mo), or Additional User ($5/mo)."
         },
         {
           question: "Can I change plans anytime?",
           answer: "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately for upgrades (prorated billing) or at the next billing cycle for downgrades. No long-term contracts required."
         },
         {
-          question: "Do you offer refunds?",
-          answer: "We offer a 30-day money-back guarantee on all plans. If you're not satisfied within the first 30 days, contact support for a full refund. No questions asked."
-        },
-        {
           question: "What payment methods do you accept?",
-          answer: "We accept all major credit cards (Visa, MasterCard, American Express) and ACH transfers for annual plans. All payments are processed securely through Stripe. We don't store payment information on our servers."
+          answer: "We accept all major credit cards (Visa, MasterCard, American Express) processed securely through Stripe. All payments are encrypted and we don't store payment information on our servers."
         }
       ]
     },
@@ -120,20 +124,28 @@ const DocsFAQ = () => {
       icon: <Settings className="h-4 w-4" />,
       questions: [
         {
+          question: "What is the AI Support Chat?",
+          answer: "All users have access to our AI Support Chat assistant that can answer questions about the platform 24/7. It's trained on our complete documentation and can help with setup, features, troubleshooting, and best practices. For complex issues, you can submit a support ticket for human assistance."
+        },
+        {
+          question: "How do I get help if I have an issue?",
+          answer: "Start by using the AI Support Chat in the Support page - it can answer most questions instantly. If you need more help, you can submit a support ticket with priority, category, and detailed description. Our support team responds to tickets within 24 hours (4 hours for priority support on Growing/Professional plans)."
+        },
+        {
           question: "How far ahead can I forecast cash flow?",
-          answer: "You can forecast up to 12 months ahead. Accuracy is highest for the next 3 months (95%+), good for 3-6 months (85%+), and directional for 6-12 months (75%+). Forecasts update automatically as new data comes in."
+          answer: "All plans include 365-day (12-month) cash flow projection. Accuracy is highest for the next 30 days (95%+), good for 1-3 months (85%+), and directional for 3-12 months. Forecasts update automatically as new data syncs from your connected accounts."
         },
         {
           question: "Can I export my data?",
           answer: "Yes, you can export all your data including transactions, forecasts, and reports in CSV, Excel, or PDF formats. Go to Settings > Data Export for all available options. No vendor lock-in - your data is always accessible."
         },
         {
-          question: "Do you integrate with QuickBooks or other accounting software?",
-          answer: "Currently, we don't have direct integrations with accounting software, but it's on our roadmap. You can export transaction data to import into your accounting system. Contact support if you have specific integration needs."
+          question: "Do you have AI features?",
+          answer: "Yes! Growing and Professional plans include AI insights for personalized financial advice and AI PDF extractor to automatically extract data from purchase orders and invoices. The AI support assistant is available to all users to help answer questions about the platform."
         },
         {
           question: "Can team members access my account?",
-          answer: "Yes, most plans support multiple team members with different permission levels. You can invite team members and control what they can see and edit. Check your plan details for user limits and collaboration features."
+          answer: "Yes! The Starter plan is for single users. Growing plan includes 2 additional users, and Professional includes 5 additional users. You can add more users for $5/mo each. Each user can have different permission levels to control access."
         }
       ]
     },
@@ -306,16 +318,12 @@ const DocsFAQ = () => {
                     <h4 className="font-semibold">Contact Options</h4>
                     <div className="space-y-3">
                       <div className="flex items-center space-x-3 text-sm">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span>support@cashflowpro.com</span>
-                      </div>
-                      <div className="flex items-center space-x-3 text-sm">
                         <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                        <span>Live chat (24/7)</span>
+                        <span>AI Support Chat (24/7)</span>
                       </div>
                       <div className="flex items-center space-x-3 text-sm">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span>+1 (555) 123-4567</span>
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span>Support tickets</span>
                       </div>
                     </div>
                   </div>
@@ -324,29 +332,28 @@ const DocsFAQ = () => {
                     <h4 className="font-semibold">Response Times</h4>
                     <div className="space-y-2 text-sm text-muted-foreground">
                       <div className="flex justify-between">
-                        <span>Live Chat</span>
+                        <span>AI Chat</span>
                         <Badge variant="outline">Instant</Badge>
                       </div>
                       <div className="flex justify-between">
-                        <span>Email Support</span>
-                        <Badge variant="outline">&lt; 4 hours</Badge>
+                        <span>Support Tickets</span>
+                        <Badge variant="outline">&lt; 24 hours</Badge>
                       </div>
                       <div className="flex justify-between">
-                        <span>Phone Support</span>
-                        <Badge variant="outline">Business hours</Badge>
+                        <span>Priority Support</span>
+                        <Badge variant="outline">&lt; 4 hours</Badge>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button className="bg-gradient-primary">
+                  <Button className="bg-gradient-primary" onClick={() => navigate('/support')}>
                     <MessageSquare className="h-4 w-4 mr-2" />
-                    Start Live Chat
+                    Get Support
                   </Button>
-                  <Button variant="outline">
-                    <Mail className="h-4 w-4 mr-2" />
-                    Email Support
+                  <Button variant="outline" onClick={() => navigate('/demo')}>
+                    Try Demo
                   </Button>
                 </div>
               </div>
