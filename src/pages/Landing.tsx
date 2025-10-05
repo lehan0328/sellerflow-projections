@@ -209,7 +209,7 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 lg:py-32">
+      <section className="relative overflow-hidden py-12 lg:py-20">
         {/* Animated Background */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
