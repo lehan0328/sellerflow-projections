@@ -174,12 +174,10 @@ const Landing = () => {
     <div className="min-h-screen bg-background">
       {/* Navigation */}
       <nav className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50 animate-fade-in">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 animate-scale-in">
-              <div className="h-10 w-10 rounded-lg flex items-center justify-center hover-scale transition-all duration-300 hover:rotate-12">
-                <img src={aurenIcon} alt="Auren" className="h-10 w-10" />
-              </div>
+            <div className="flex items-center animate-scale-in">
+              <img src={aurenIcon} alt="Auren" className="h-12 w-12 hover-scale transition-all duration-300" />
             </div>
             <div className="hidden md:flex items-center space-x-6">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
