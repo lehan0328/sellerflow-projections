@@ -191,47 +191,52 @@ const UpgradePlan = () => {
               ) : subscribed && plan ? (
                 <>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">Plan</span>
+                    <span className="text-sm font-medium">Plan</span>
+                    <Badge className="bg-gradient-primary">
+                      {PRICING_PLANS[plan].name}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Price</span>
                     <div className="flex flex-col items-end gap-1">
-                      <Badge className="bg-gradient-primary">
-                        {PRICING_PLANS[plan].name}
-                      </Badge>
                       {discount?.percent_off ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground line-through">
+                        <>
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-green-600">
+                              ${(PRICING_PLANS[plan].price * (1 - discount.percent_off / 100)).toFixed(2)}/mo
+                            </span>
+                            <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
+                              {discount.percent_off}% OFF
+                            </Badge>
+                          </div>
+                          <span className="text-xs text-muted-foreground line-through">
                             ${PRICING_PLANS[plan].price}/mo
                           </span>
-                          <span className="text-sm font-semibold text-green-600">
-                            ${(PRICING_PLANS[plan].price * (1 - discount.percent_off / 100)).toFixed(2)}/mo
-                          </span>
-                          <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600">
-                            {discount.percent_off}% OFF
-                          </Badge>
-                        </div>
+                        </>
                       ) : (
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-lg font-bold">
                           ${PRICING_PLANS[plan].price}/mo
                         </span>
                       )}
                     </div>
                   </div>
-                  {discount && (
-                    <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
-                      <Star className="h-4 w-4 text-green-600" />
-                      <div className="flex flex-col">
+
+                  {discount?.percent_off && discount.duration === 'repeating' && discount.duration_in_months && subscription_end && (
+                    <div className="flex items-center justify-between p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 text-green-600 flex-shrink-0" />
                         <span className="text-sm font-medium text-green-600">
-                          {discount.percent_off}% discount active
+                          Discount ends
                         </span>
-                        {discount.duration === 'repeating' && discount.duration_in_months && subscription_end && (
-                          <span className="text-xs text-green-600/80">
-                            Promotion ends: {new Date(
-                              new Date(subscription_end).setMonth(
-                                new Date(subscription_end).getMonth() + discount.duration_in_months
-                              )
-                            ).toLocaleDateString()}
-                          </span>
-                        )}
                       </div>
+                      <span className="text-sm font-semibold text-green-600">
+                        {new Date(
+                          new Date(subscription_end).setMonth(
+                            new Date(subscription_end).getMonth() + discount.duration_in_months
+                          )
+                        ).toLocaleDateString()}
+                      </span>
                     </div>
                   )}
                   {subscription_end ? (
