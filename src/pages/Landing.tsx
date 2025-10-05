@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X } from "lucide-react";
 import aurenLogo from "@/assets/auren-logo.png";
+import aurenFullLogo from "@/assets/auren-full-logo.png";
 import { useNavigate } from "react-router-dom";
 import { LiveDashboardShowcase } from "@/components/LiveDashboardShowcase";
 import { FloatingChatWidget } from "@/components/floating-chat-widget";
@@ -317,6 +318,11 @@ const Landing = () => {
               <Sparkles className="h-4 w-4 text-primary animate-pulse" />
               <span>Smart AI Features</span>
             </Badge>
+            
+            {/* Full Logo */}
+            <div className="flex justify-center animate-fade-in" style={{ animationDelay: '200ms' }}>
+              <img src={aurenFullLogo} alt="Auren - Marketplace Cashflow Simplified" className="h-32 lg:h-40 w-auto" />
+            </div>
             
             <div className="animate-fade-in space-y-6" style={{ animationDelay: '400ms' }}>
               <h1 className="text-4xl lg:text-7xl font-bold leading-tight">

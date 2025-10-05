@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
-import aurenLogo from "@/assets/auren-logo.png";
+import aurenFullLogo from "@/assets/auren-full-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -152,16 +152,13 @@ export const Auth = () => {
           {/* Header */}
           <div className="text-center space-y-6">
           
-          <div className="flex items-center justify-center space-x-4 animate-fade-in">
+          <div className="flex items-center justify-center animate-fade-in">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-xl opacity-50 animate-pulse" />
-              <div className="relative h-16 w-16 rounded-2xl flex items-center justify-center">
-                <img src={aurenLogo} alt="Auren" className="h-16 w-16" />
+              <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-2xl opacity-30 animate-pulse" />
+              <div className="relative">
+                <img src={aurenFullLogo} alt="Auren - Marketplace Cashflow Simplified" className="h-32 w-auto" />
               </div>
             </div>
-            <span className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Auren
-            </span>
           </div>
           
           <div className="space-y-3">
