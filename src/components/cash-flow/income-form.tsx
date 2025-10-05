@@ -159,10 +159,14 @@ export const IncomeForm = ({
       customerId: formData.customerId || undefined
     };
     
-    console.log("Submitting income:", data);
+    console.log("Submitting:", data);
     
-    // Call the submit function and wait for it to complete
-    await onSubmitIncome(data);
+    // Call the appropriate submit function based on type
+    if (formData.type === "expense" && onSubmitExpense) {
+      await onSubmitExpense(data);
+    } else {
+      await onSubmitIncome(data);
+    }
     
     // Only close and reset if successful (the hook will show the appropriate toast)
     onOpenChange(false);
@@ -194,12 +198,12 @@ export const IncomeForm = ({
       )}>
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
-            {editingIncome ? 'Edit Income' : (isRecurring ? 'Add Recurring Income' : 'Add Income')}
+            {editingIncome ? 'Edit Income' : (isRecurring ? `Add Recurring ${formData.type === "expense" ? "Expense" : "Income"}` : 'Add Income')}
           </DialogTitle>
         </DialogHeader>
         
-        {/* Step 1: Customer Selection */}
-        {!formData.customerId && (
+        {/* Step 1: Customer Selection (skip for recurring) */}
+        {!formData.customerId && !formData.isRecurring && (
           <div className="space-y-4">
             <div className="text-center py-4">
               <h3 className="text-lg font-semibold mb-2">Select a Customer</h3>
@@ -299,30 +303,50 @@ export const IncomeForm = ({
           </div>
         )}
 
-        {/* Step 2: Income Details */}
-        {formData.customerId && (
+        {/* Step 2: Income/Expense Details */}
+        {(formData.customerId || formData.isRecurring) && (
           <>
-            {/* Selected Customer Display */}
-            <div className="p-3 bg-accent/20 rounded-lg border">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">{formData.customer}</div>
+            {/* Selected Customer Display - only show if not recurring */}
+            {formData.customerId && !formData.isRecurring && (
+              <div className="p-3 bg-accent/20 rounded-lg border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{formData.customer}</div>
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, customer: "", customerId: "" }));
+                      setCustomerSearchTerm("");
+                    }}
+                  >
+                    Change Customer
+                  </Button>
                 </div>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    setFormData(prev => ({ ...prev, customer: "", customerId: "" }));
-                    setCustomerSearchTerm("");
-                  }}
-                >
-                  Change Customer
-                </Button>
               </div>
-            </div>
+            )}
             
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Type selector for recurring entries */}
+              {formData.isRecurring && (
+                <div className="space-y-2">
+                  <Label htmlFor="type">Type *</Label>
+                  <Select 
+                    value={formData.type} 
+                    onValueChange={(value: "income" | "expense") => handleInputChange("type", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="income">Income</SelectItem>
+                      <SelectItem value="expense">Expense</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="amount">Amount ($) *</Label>
                 <Input
@@ -430,7 +454,7 @@ export const IncomeForm = ({
                   Cancel
                 </Button>
                 <Button type="submit" className="flex-1 bg-gradient-primary">
-                  {editingIncome ? 'Update' : 'Add'} {isRecurring ? 'Recurring ' : ''}Income
+                  {editingIncome ? 'Update' : 'Add'} {isRecurring ? 'Recurring ' : ''}{formData.isRecurring ? (formData.type === "expense" ? "Expense" : "Income") : "Income"}
                 </Button>
               </div>
             </form>
