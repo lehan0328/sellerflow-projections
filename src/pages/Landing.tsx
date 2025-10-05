@@ -350,7 +350,7 @@ const Landing = () => {
               style={{ animationDelay: '900ms' }}
             >
               <Star className="h-4 w-4 fill-current" />
-              <span>Trusted by 1,000+ Amazon Sellers</span>
+              <span>Made for Amazon Sellers by Amazon Sellers</span>
             </Badge>
             
             <div
