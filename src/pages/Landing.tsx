@@ -206,7 +206,7 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-24 pb-12 lg:pt-32 lg:pb-20">
+      <section className="relative overflow-hidden pt-4 pb-12 lg:pt-8 lg:pb-20">
         {/* Animated Background */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
