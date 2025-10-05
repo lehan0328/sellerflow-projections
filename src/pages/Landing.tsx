@@ -297,11 +297,11 @@ const Landing = () => {
             
             {/* Full Logo */}
             <div className="flex justify-center animate-fade-in" style={{ animationDelay: '200ms' }}>
-              <img src={aurenFullLogo} alt="Auren" className="h-32 lg:h-48 w-auto" />
+              <img src={aurenFullLogo} alt="Auren" className="h-24 lg:h-36 w-auto" />
             </div>
             
             <div className="animate-fade-in space-y-6" style={{ animationDelay: '400ms' }}>
-              <h1 className="text-4xl lg:text-7xl font-bold leading-tight">
+              <h1 className="text-3xl lg:text-5xl font-bold leading-tight">
                 <span className="inline-block hover:scale-105 transition-transform duration-300">
                   <span className="bg-gradient-primary bg-clip-text text-transparent animate-pulse">AI-Powered</span> Cash Flow
                 </span>
@@ -312,7 +312,7 @@ const Landing = () => {
             </div>
             
             <p 
-              className="text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed" 
+              className="text-lg text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed" 
               style={{ animationDelay: '600ms' }}
             >
               Get daily AI insights, forecast your Amazon cash flow months in advance, and optimize your credit utilization. 
@@ -325,7 +325,7 @@ const Landing = () => {
             >
               <Button 
                 size="lg" 
-                className="bg-gradient-primary text-lg px-8 py-4 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-primary/25" 
+                className="bg-gradient-primary text-base px-6 py-3 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-primary/25" 
                 onClick={() => handleStartTrial(pricingPlans[1].priceId)}
                 disabled={isLoading}
               >
@@ -335,7 +335,7 @@ const Landing = () => {
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="text-lg px-8 py-4 hover-scale transition-all duration-300 hover:bg-primary/5 hover:border-primary/30" 
+                className="text-base px-6 py-3 hover-scale transition-all duration-300 hover:bg-primary/5 hover:border-primary/30" 
                 onClick={() => navigate('/demo')}
               >
                 See Live Demo
