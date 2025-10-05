@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useCreditCards } from "@/hooks/useCreditCards";
+import { useSubscription } from "@/hooks/useSubscription";
 import { VendorForm } from "./vendor-form";
 import { supabase } from "@/integrations/supabase/client";
 interface Vendor {
@@ -50,6 +51,7 @@ export const PurchaseOrderForm = ({
   const {
     creditCards
   } = useCreditCards();
+  const subscription = useSubscription();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isProcessingDocument, setIsProcessingDocument] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
@@ -285,6 +287,16 @@ export const PurchaseOrderForm = ({
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Check if user has access to PDF extractor (growing, professional plans or subscribed)
+    const hasAccess = subscription.subscribed && 
+                      (subscription.plan === 'growing' || 
+                       subscription.plan === 'professional');
+    
+    if (!hasAccess) {
+      toast.error('PDF Extractor is available on Growing and Professional plans. Please upgrade to access this feature.');
+      return;
+    }
 
     // Validate file type
     if (file.type !== 'application/pdf' && !file.type.startsWith('image/')) {

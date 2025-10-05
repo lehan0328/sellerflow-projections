@@ -894,7 +894,7 @@ const Dashboard = () => {
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
+    <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background/95 to-background/90">
       <DashboardHeader />
       
       <div className="p-6 space-y-6">

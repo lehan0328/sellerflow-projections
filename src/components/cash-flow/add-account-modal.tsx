@@ -9,6 +9,8 @@ import { CreditCard, Building, Wallet, Plus, ShoppingCart, AlertTriangle } from 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { UpgradeModal } from "@/components/upgrade-modal";
+import { useState as useReactState } from "react";
 
 interface AddAccountModalProps {
   open: boolean;
@@ -16,8 +18,9 @@ interface AddAccountModalProps {
 }
 
 export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) => {
-  const [selectedType, setSelectedType] = useState<string>("");
-  const [formData, setFormData] = useState({
+  const [selectedType, setSelectedType] = useReactState<string>("");
+  const [showUpgradeModal, setShowUpgradeModal] = useReactState(false);
+  const [formData, setFormData] = useReactState({
     accountName: "",
     accountNumber: "",
     routingNumber: "",
@@ -26,7 +29,7 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
     interestRate: "",
   });
 
-  const { canAddBankConnection, canAddAmazonConnection } = usePlanLimits();
+  const { canAddBankConnection, canAddAmazonConnection, planLimits, currentUsage } = usePlanLimits();
 
   const accountTypes = [
     {
@@ -63,13 +66,13 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
     }
 
     // Check plan limits
-    if (selectedType === 'plaid' && !canAddBankConnection) {
-      toast.error("You've reached your bank connection limit. Please upgrade your plan or purchase add-ons.");
+    if ((selectedType === 'plaid' || selectedType === 'credit') && !canAddBankConnection) {
+      setShowUpgradeModal(true);
       return;
     }
 
     if (selectedType === 'amazon' && !canAddAmazonConnection) {
-      toast.error("You've reached your Amazon connection limit. Please upgrade your plan or purchase add-ons.");
+      setShowUpgradeModal(true);
       return;
     }
 
@@ -102,9 +105,9 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
   };
 
   const canSelectType = (type: string) => {
-    if (type === 'plaid') return canAddBankConnection;
+    if (type === 'plaid' || type === 'credit') return canAddBankConnection;
     if (type === 'amazon') return canAddAmazonConnection;
-    return true; // Credit cards have no limits
+    return true;
   };
 
   return (
@@ -317,6 +320,13 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
           )}
         </div>
       </DialogContent>
+      
+      <UpgradeModal 
+        open={showUpgradeModal} 
+        onOpenChange={setShowUpgradeModal}
+        feature={selectedType === 'amazon' ? 'Amazon connections' : 'bank/credit card connections'}
+        currentLimit={`${currentUsage.bankConnections}/${planLimits.bankConnections}`}
+      />
     </Dialog>
   );
 };

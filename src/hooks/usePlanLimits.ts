@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSubscription, PRICING_PLANS } from './useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 
-export type PlanType = 'starter' | 'professional' | 'enterprise';
+export type PlanType = 'starter' | 'growing' | 'professional' | 'enterprise';
 
 interface PlanLimits {
   bankConnections: number;
@@ -24,8 +24,14 @@ const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
     name: 'Starter',
     price: PRICING_PLANS.starter.price
   },
+  growing: {
+    bankConnections: 4,
+    amazonConnections: 1,
+    name: 'Growing',
+    price: 59
+  },
   professional: {
-    bankConnections: 7,
+    bankConnections: 6,
     amazonConnections: 1,
     name: 'Professional', 
     price: PRICING_PLANS.professional.price
@@ -45,30 +51,33 @@ export const usePlanLimits = () => {
     amazonConnections: 0
   });
 
-  // Map subscription plan to plan type - default to professional
+  // Map subscription plan to plan type - default to starter for free users
   const mapPlanTier = (tier: string | null): PlanType => {
     if (tier === 'starter') return 'starter';
-    if (tier === 'growing') return 'professional';
+    if (tier === 'growing') return 'growing';
     if (tier === 'professional') return 'professional';
-    return 'professional'; // Default to professional
+    if (tier === 'enterprise') return 'enterprise';
+    // Free users get starter limits (2 connections)
+    return 'starter';
   };
   
   const currentPlan: PlanType = mapPlanTier(subscription.plan);
   const planLimits = PLAN_LIMITS[currentPlan];
 
-  // Fetch actual usage from database
+  // Fetch actual usage from database (including credit cards)
   useEffect(() => {
     const fetchUsage = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const [bankAccounts, amazonAccounts] = await Promise.all([
+      const [bankAccounts, creditCards, amazonAccounts] = await Promise.all([
         supabase.from('bank_accounts').select('id', { count: 'exact' }).eq('user_id', user.id),
+        supabase.from('credit_cards').select('id', { count: 'exact' }).eq('user_id', user.id),
         supabase.from('amazon_accounts').select('id', { count: 'exact' }).eq('user_id', user.id)
       ]);
 
       setCurrentUsage({
-        bankConnections: bankAccounts.count || 0,
+        bankConnections: (bankAccounts.count || 0) + (creditCards.count || 0),
         amazonConnections: amazonAccounts.count || 0
       });
     };
