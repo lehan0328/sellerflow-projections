@@ -81,6 +81,7 @@ serve(async (req) => {
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       limit: 1,
+      expand: ['data.discount.coupon'],
     });
     
     // Filter for active or trialing subscriptions

@@ -97,8 +97,10 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
 
       toast.success('Great! 10% discount applied for the next 3 months 🎉');
       handleClose();
-      // Refresh the page to show updated discount
-      window.location.reload();
+      // Add a small delay before refreshing to allow Stripe to process
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (error: any) {
       console.error('Error applying discount:', error);
       if (error.message?.includes('already been applied')) {
