@@ -61,7 +61,7 @@ export const LiveDashboardShowcase = () => {
           </div>
         </div>
 
-        <div className="absolute bottom-4 left-4 right-4">
+        <div className="absolute bottom-4 left-4 right-4 pointer-events-none">
           <div className="bg-background/95 backdrop-blur-sm rounded-lg p-4 border shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
