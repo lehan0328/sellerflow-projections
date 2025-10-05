@@ -147,6 +147,43 @@ const UpgradePlan = () => {
   const nextTier = nextTierKey ? plans.find(p => p.key === nextTierKey) : null;
   const currentTierData = plan ? plans.find(p => p.key === plan) : null;
 
+  // Show loading state while subscription data is being fetched
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="max-w-7xl mx-auto px-4 py-4">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/dashboard')}
+                className="self-start"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold flex items-center justify-center space-x-2">
+                  <Shield className="h-8 w-8" />
+                  <span>Upgrade Plan</span>
+                </h1>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="flex justify-center items-center min-h-[60vh]">
+            <div className="text-center space-y-4">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto"></div>
+              <p className="text-muted-foreground">Loading your subscription details...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
