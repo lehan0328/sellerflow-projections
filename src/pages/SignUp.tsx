@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle, DollarSign, Eye, EyeOff } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -22,8 +23,29 @@ export const SignUp = () => {
     lastName: '',
     company: '',
     monthlyRevenue: '',
-    marketplaces: ''
+    marketplaces: [] as string[]
   });
+
+  const ecommerceMarketplaces = [
+    { id: 'amazon', label: 'Amazon' },
+    { id: 'walmart', label: 'Walmart' },
+    { id: 'shopify', label: 'Shopify' },
+    { id: 'ebay', label: 'eBay' },
+    { id: 'etsy', label: 'Etsy' },
+    { id: 'target', label: 'Target' },
+    { id: 'facebook', label: 'Facebook Marketplace' },
+    { id: 'mercari', label: 'Mercari' },
+    { id: 'other', label: 'Other' }
+  ];
+
+  const toggleMarketplace = (marketplaceId: string) => {
+    setSignUpData(prev => ({
+      ...prev,
+      marketplaces: prev.marketplaces.includes(marketplaceId)
+        ? prev.marketplaces.filter(m => m !== marketplaceId)
+        : [...prev.marketplaces, marketplaceId]
+    }));
+  };
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -78,7 +100,7 @@ export const SignUp = () => {
             last_name: signUpData.lastName,
             company: signUpData.company,
             monthly_revenue: signUpData.monthlyRevenue,
-            amazon_marketplaces: signUpData.marketplaces ? [signUpData.marketplaces] : []
+            ecommerce_marketplaces: signUpData.marketplaces
           }
         }
       });
@@ -214,38 +236,34 @@ export const SignUp = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="monthlyRevenue" className="text-sm font-medium">Monthly Amazon Revenue</Label>
-                <Select onValueChange={(value) => setSignUpData(prev => ({ ...prev, monthlyRevenue: value }))}>
-                  <SelectTrigger className="h-11">
-                    <SelectValue placeholder="Select revenue range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0-5k">Under $5k (New Seller - Free)</SelectItem>
-                    <SelectItem value="5k-50k">$5k - $50k (Starter - $39/mo)</SelectItem>
-                    <SelectItem value="51k-99k">$51k - $99k (Growing - $79/mo)</SelectItem>
-                    <SelectItem value="100k-199k">$100k - $199k (Professional - $149/mo)</SelectItem>
-                    <SelectItem value="200k+">$200k+ (Enterprise - Custom)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="monthlyRevenue"
+                  placeholder="e.g., $50,000"
+                  value={signUpData.monthlyRevenue}
+                  onChange={(e) => setSignUpData(prev => ({ ...prev, monthlyRevenue: e.target.value }))}
+                  className="h-11"
+                />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="marketplaces" className="text-sm font-medium">Primary Amazon Marketplace</Label>
-                <Select onValueChange={(value) => setSignUpData(prev => ({ ...prev, marketplaces: value }))}>
-                  <SelectTrigger className="h-11">
-                    <SelectValue placeholder="Select primary marketplace" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="US">United States</SelectItem>
-                    <SelectItem value="CA">Canada</SelectItem>
-                    <SelectItem value="UK">United Kingdom</SelectItem>
-                    <SelectItem value="DE">Germany</SelectItem>
-                    <SelectItem value="FR">France</SelectItem>
-                    <SelectItem value="IT">Italy</SelectItem>
-                    <SelectItem value="ES">Spain</SelectItem>
-                    <SelectItem value="JP">Japan</SelectItem>
-                    <SelectItem value="AU">Australia</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">What other marketplaces do you sell on? (Select all that apply)</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {ecommerceMarketplaces.map((marketplace) => (
+                    <div key={marketplace.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={marketplace.id}
+                        checked={signUpData.marketplaces.includes(marketplace.id)}
+                        onCheckedChange={() => toggleMarketplace(marketplace.id)}
+                      />
+                      <Label
+                        htmlFor={marketplace.id}
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        {marketplace.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <Button type="submit" className="w-full bg-gradient-primary h-12 text-base font-medium shadow-lg hover:shadow-xl transition-all" disabled={loading}>
