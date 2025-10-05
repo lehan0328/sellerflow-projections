@@ -204,14 +204,6 @@ const UpgradePlan = () => {
                           {new Date(subscription_end).toLocaleDateString()}
                         </span>
                       </div>
-                      {is_trialing && (
-                        <div className="flex items-center justify-center gap-2 p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                          <Star className="h-4 w-4 text-blue-500" />
-                          <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                            Free Trial Active - {Math.ceil((new Date(subscription_end).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days remaining
-                          </span>
-                        </div>
-                      )}
                       <Separator />
                       <Button 
                         size="sm" 
