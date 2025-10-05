@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X } from "lucide-react";
+import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus } from "lucide-react";
 import aurenIcon from "@/assets/auren-icon.png";
 import aurenFullLogo from "@/assets/auren-full-logo.png";
 import { useNavigate } from "react-router-dom";
@@ -12,19 +12,50 @@ import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 const Landing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isYearly, setIsYearly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showEnterpriseCustomizer, setShowEnterpriseCustomizer] = useState(false);
+  const [enterpriseTier, setEnterpriseTier] = useState<"tier1" | "tier2" | "tier3">("tier1");
+  const [enterpriseAddons, setEnterpriseAddons] = useState({
+    bankConnections: 0,
+    amazonConnections: 0,
+    users: 0
+  });
+
+  const enterpriseTiers = {
+    tier1: { revenue: "$200k - $500k", price: 149, connections: 8, amazon: 2, users: 7 },
+    tier2: { revenue: "$500k - $1M", price: 249, connections: 8, amazon: 2, users: 7 },
+    tier3: { revenue: "$1M+", price: 349, connections: 8, amazon: 2, users: 7 }
+  };
+
+  const addonPricing = {
+    bankConnection: 7,
+    amazonConnection: 50,
+    user: 5
+  };
+
+  const calculateEnterprisePrice = () => {
+    const basePrice = enterpriseTiers[enterpriseTier].price;
+    const addonCost = 
+      (enterpriseAddons.bankConnections * addonPricing.bankConnection) +
+      (enterpriseAddons.amazonConnections * addonPricing.amazonConnection) +
+      (enterpriseAddons.users * addonPricing.user);
+    return basePrice + addonCost;
+  };
 
   const handleStartTrial = async (priceId: string) => {
     setIsLoading(true);
     try {
-      // Handle Enterprise plan contact
+      // Handle Enterprise plan - open customizer
       if (priceId === "enterprise") {
-        window.location.href = "mailto:sales@auren.com?subject=Enterprise Plan Inquiry";
+        setShowEnterpriseCustomizer(true);
         setIsLoading(false);
         return;
       }
@@ -86,7 +117,7 @@ const Landing = () => {
       yearlyPrice: "$290",
       period: "/month",
       yearlyPeriod: "/year",
-      description: "Under $20k monthly amazon payout",
+      description: "Up to $20k monthly revenue",
       popular: false,
       priceId: "price_1SEH8NB28kMY3UseBj2w9HgH",
       yearlyPriceId: "price_1SEHZGB28kMY3UseCkWIlnWw",
@@ -98,7 +129,7 @@ const Landing = () => {
       yearlyPrice: "$590",
       period: "/month",
       yearlyPeriod: "/year",
-      description: "Under $50k monthly amazon payout",
+      description: "Up to $75k monthly revenue",
       popular: true,
       priceId: "price_1SEH8iB28kMY3Usem3k3vElT",
       yearlyPriceId: "price_1SEHZVB28kMY3Use9bH8xPlg",
@@ -110,7 +141,7 @@ const Landing = () => {
       yearlyPrice: "$890",
       period: "/month",
       yearlyPeriod: "/year",
-      description: "Under $200k monthly amazon payout",
+      description: "Up to $200k monthly revenue",
       popular: false,
       priceId: "price_1SEHBHB28kMY3UsenQEY0qoT",
       yearlyPriceId: "price_1SEHZfB28kMY3UseZKmLEcPk",
@@ -122,7 +153,7 @@ const Landing = () => {
       yearlyPrice: "Custom",
       period: "",
       yearlyPeriod: "",
-      description: "$200k+ monthly amazon payout",
+      description: "$200k+ monthly revenue",
       popular: false,
       priceId: "enterprise",
       yearlyPriceId: "enterprise",
@@ -131,9 +162,9 @@ const Landing = () => {
   ];
 
   const featureComparison = [
-    { feature: "Bank/Credit Card Connections", starter: "2", growing: "4", professional: "6", enterprise: "Unlimited" },
-    { feature: "Amazon Connections", starter: "1", growing: "1", professional: "1", enterprise: "3+" },
-    { feature: "Additional Users", starter: false, growing: "2", professional: "5", enterprise: "Unlimited" },
+    { feature: "Bank/Credit Card Connections", starter: "2", growing: "4", professional: "6", enterprise: "8 + add-ons" },
+    { feature: "Amazon Connections", starter: "1", growing: "1", professional: "1", enterprise: "2 + add-ons" },
+    { feature: "Additional Users", starter: false, growing: "2", professional: "5", enterprise: "7 + add-ons" },
     { feature: "Advanced Forecasting Workflow", starter: true, growing: true, professional: true, enterprise: true },
     { feature: "365-Day Cash Flow Projection", starter: true, growing: true, professional: true, enterprise: true },
     { feature: "Bank Transaction Matching", starter: true, growing: true, professional: true, enterprise: true },
@@ -142,9 +173,7 @@ const Landing = () => {
     { feature: "Automated Notifications", starter: false, growing: false, professional: true, enterprise: true },
     { feature: "Scenario Planning", starter: false, growing: false, professional: true, enterprise: true },
     { feature: "Analytics", starter: false, growing: "Basic", professional: "Advanced", enterprise: "Custom" },
-    { feature: "API Access", starter: false, growing: false, professional: false, enterprise: true },
-    { feature: "White-Label Option", starter: false, growing: false, professional: false, enterprise: true },
-    { feature: "Custom Integrations", starter: false, growing: false, professional: false, enterprise: true },
+    { feature: "1:1 Hands-on Setup", starter: false, growing: false, professional: false, enterprise: true },
     { feature: "Dedicated Account Manager", starter: false, growing: false, professional: false, enterprise: true },
     { feature: "Support", starter: "Email", growing: "Priority", professional: "Priority", enterprise: "24/7 Phone" },
   ];
@@ -539,7 +568,7 @@ const Landing = () => {
                           onClick={() => handleStartTrial(isYearly ? plan.yearlyPriceId : plan.priceId)}
                           disabled={isLoading}
                         >
-                          {isLoading ? "Loading..." : plan.name === "Enterprise" ? "Contact Sales" : "Start Trial"}
+                          {isLoading ? "Loading..." : plan.name === "Enterprise" ? "Customize Plan" : "Start Trial"}
                         </Button>
                       </div>
                     </div>
@@ -716,6 +745,182 @@ const Landing = () => {
           </div>
         </div>
       </footer>
+
+      {/* Enterprise Customizer Dialog */}
+      <Dialog open={showEnterpriseCustomizer} onOpenChange={setShowEnterpriseCustomizer}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Customize Your Enterprise Plan</DialogTitle>
+            <DialogDescription>
+              Select your revenue tier and additional features to see your custom pricing
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Revenue Tier Selector */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium">Monthly Revenue</label>
+              <Select value={enterpriseTier} onValueChange={(value: "tier1" | "tier2" | "tier3") => setEnterpriseTier(value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tier1">$200k - $500k</SelectItem>
+                  <SelectItem value="tier2">$500k - $1M</SelectItem>
+                  <SelectItem value="tier3">$1M+</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Base Features */}
+            <div className="p-4 bg-primary/5 rounded-lg space-y-2">
+              <h4 className="font-semibold">Included in base price (${enterpriseTiers[enterpriseTier].price}/month):</h4>
+              <ul className="space-y-1 text-sm">
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-primary" />
+                  {enterpriseTiers[enterpriseTier].connections} bank/credit card connections
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-primary" />
+                  {enterpriseTiers[enterpriseTier].amazon} Amazon connections
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-primary" />
+                  {enterpriseTiers[enterpriseTier].users} additional users
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-primary" />
+                  All Professional features
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-primary" />
+                  1:1 hands-on setup with team member
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-primary" />
+                  Dedicated account manager
+                </li>
+              </ul>
+            </div>
+
+            <Separator />
+
+            {/* Add-ons */}
+            <div className="space-y-4">
+              <h4 className="font-semibold">Additional Add-ons (optional):</h4>
+              
+              {/* Bank Connections */}
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <div className="font-medium">Additional Bank Connections</div>
+                  <div className="text-sm text-muted-foreground">${addonPricing.bankConnection}/month each</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => setEnterpriseAddons(prev => ({ ...prev, bankConnections: Math.max(0, prev.bankConnections - 1) }))}
+                    disabled={enterpriseAddons.bankConnections <= 0}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="text-lg font-bold w-8 text-center">{enterpriseAddons.bankConnections}</span>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => setEnterpriseAddons(prev => ({ ...prev, bankConnections: prev.bankConnections + 1 }))}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Amazon Connections */}
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <div className="font-medium">Additional Amazon Connections</div>
+                  <div className="text-sm text-muted-foreground">${addonPricing.amazonConnection}/month each</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => setEnterpriseAddons(prev => ({ ...prev, amazonConnections: Math.max(0, prev.amazonConnections - 1) }))}
+                    disabled={enterpriseAddons.amazonConnections <= 0}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="text-lg font-bold w-8 text-center">{enterpriseAddons.amazonConnections}</span>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => setEnterpriseAddons(prev => ({ ...prev, amazonConnections: prev.amazonConnections + 1 }))}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Additional Users */}
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <div>
+                  <div className="font-medium">Additional Users</div>
+                  <div className="text-sm text-muted-foreground">${addonPricing.user}/month each</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => setEnterpriseAddons(prev => ({ ...prev, users: Math.max(0, prev.users - 1) }))}
+                    disabled={enterpriseAddons.users <= 0}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="text-lg font-bold w-8 text-center">{enterpriseAddons.users}</span>
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={() => setEnterpriseAddons(prev => ({ ...prev, users: prev.users + 1 }))}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Total Price */}
+            <div className="p-6 bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg">
+              <div className="text-center space-y-2">
+                <div className="text-sm text-muted-foreground">Your Custom Enterprise Price</div>
+                <div className="text-5xl font-bold">
+                  ${calculateEnterprisePrice()}
+                  <span className="text-lg font-normal text-muted-foreground">/month</span>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Base: ${enterpriseTiers[enterpriseTier].price} + Add-ons: ${calculateEnterprisePrice() - enterpriseTiers[enterpriseTier].price}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Button */}
+            <Button 
+              className="w-full bg-gradient-primary" 
+              size="lg"
+              onClick={() => {
+                window.open(`mailto:support@aurenapp.com?subject=Enterprise Plan - ${enterpriseTiers[enterpriseTier].revenue}&body=I would like to sign up for the Enterprise plan with the following configuration:%0D%0A%0D%0ARevenue Tier: ${enterpriseTiers[enterpriseTier].revenue}%0D%0ABase Price: $${enterpriseTiers[enterpriseTier].price}/month%0D%0A%0D%0AAdd-ons:%0D%0A- Additional Bank Connections: ${enterpriseAddons.bankConnections}%0D%0A- Additional Amazon Connections: ${enterpriseAddons.amazonConnections}%0D%0A- Additional Users: ${enterpriseAddons.users}%0D%0A%0D%0ATotal Monthly Price: $${calculateEnterprisePrice()}`, '_blank');
+                setShowEnterpriseCustomizer(false);
+              }}
+            >
+              Contact Sales to Get Started
+            </Button>
+            <p className="text-xs text-center text-muted-foreground">
+              Our team will reach out within 24 hours to finalize your custom plan
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Floating AI Chat Widget */}
       <FloatingChatWidget />
