@@ -1,4 +1,4 @@
-import aurenLogo from "@/assets/auren-logo.png";
+import aurenIcon from "@/assets/auren-icon.png";
 
 export function DemoDashboardHeader() {
   return (
@@ -7,7 +7,7 @@ export function DemoDashboardHeader() {
       <div className="absolute top-6 left-6 z-40">
         <div className="flex items-center space-x-3">
           <div className="h-10 w-10 rounded-xl flex items-center justify-center">
-            <img src={aurenLogo} alt="Auren" className="h-10 w-10" />
+            <img src={aurenIcon} alt="Auren" className="h-10 w-10" />
           </div>
           <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
             Auren

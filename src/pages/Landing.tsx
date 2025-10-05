@@ -3,8 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X } from "lucide-react";
-import aurenLogo from "@/assets/auren-logo.png";
-import aurenFullLogo from "@/assets/auren-full-logo.png";
+import aurenIcon from "@/assets/auren-icon.png";
 import { useNavigate } from "react-router-dom";
 import { LiveDashboardShowcase } from "@/components/LiveDashboardShowcase";
 import { FloatingChatWidget } from "@/components/floating-chat-widget";
@@ -177,8 +176,8 @@ const Landing = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 animate-scale-in">
-              <div className="h-8 w-8 rounded-lg flex items-center justify-center hover-scale transition-all duration-300 hover:rotate-12">
-                <img src={aurenLogo} alt="Auren" className="h-8 w-8" />
+              <div className="h-10 w-10 rounded-lg flex items-center justify-center hover-scale transition-all duration-300 hover:rotate-12">
+                <img src={aurenIcon} alt="Auren" className="h-10 w-10" />
               </div>
               <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent hover:scale-105 transition-transform duration-200">
                 Auren
@@ -300,9 +299,9 @@ const Landing = () => {
               <span>Smart AI Features</span>
             </Badge>
             
-            {/* Full Logo */}
+            {/* Icon Logo */}
             <div className="flex justify-center animate-fade-in" style={{ animationDelay: '200ms' }}>
-              <img src={aurenFullLogo} alt="Auren - Marketplace Cashflow Simplified" className="h-32 lg:h-40 w-auto" />
+              <img src={aurenIcon} alt="Auren" className="h-24 lg:h-32 w-auto" />
             </div>
             
             <div className="animate-fade-in space-y-6" style={{ animationDelay: '400ms' }}>
@@ -680,7 +679,7 @@ const Landing = () => {
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <div className="h-8 w-8 rounded-lg flex items-center justify-center">
-                  <img src={aurenLogo} alt="Auren" className="h-8 w-8" />
+                  <img src={aurenIcon} alt="Auren" className="h-8 w-8" />
                 </div>
                 <span className="text-xl font-bold">Auren</span>
               </div>

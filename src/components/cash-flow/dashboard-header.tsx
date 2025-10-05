@@ -54,7 +54,7 @@ export function DashboardHeader({ onRefresh, isRefreshing = false, lastRefreshTi
       {/* Logo - Top Left */}
       <div className="absolute top-6 left-6 z-40">
         <div className="flex items-center">
-          <img src={aurenIcon} alt="Auren" className="h-10 w-auto" />
+          <img src={aurenIcon} alt="Auren" className="h-14 w-auto" />
         </div>
       </div>
 

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle, Eye, EyeOff } from "lucide-react";
-import aurenFullLogo from "@/assets/auren-full-logo.png";
+import aurenIcon from "@/assets/auren-icon.png";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -139,7 +139,7 @@ export const SignUp = () => {
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center">
-            <img src={aurenFullLogo} alt="Auren - Marketplace Cashflow Simplified" className="h-24 w-auto" />
+            <img src={aurenIcon} alt="Auren" className="h-20 w-auto" />
           </div>
           
           <div>

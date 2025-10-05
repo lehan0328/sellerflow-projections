@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
-import aurenFullLogo from "@/assets/auren-full-logo.png";
+import aurenIcon from "@/assets/auren-icon.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -137,7 +137,7 @@ export const Auth = () => {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-2xl opacity-30 animate-pulse" />
               <div className="relative">
-                <img src={aurenFullLogo} alt="Auren - Marketplace Cashflow Simplified" className="h-32 w-auto" />
+                <img src={aurenIcon} alt="Auren" className="h-20 w-auto" />
               </div>
             </div>
           </div>
