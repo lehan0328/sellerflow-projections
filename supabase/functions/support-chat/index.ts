@@ -13,14 +13,15 @@ CashFlow Pro helps businesses manage their cash flow, track expenses, monitor in
 **Key Features:**
 1. **Dashboard**: Real-time financial overview with cash balance, upcoming expenses, and income projections
 2. **Cash Flow Calendar**: Visual timeline of all financial events (income, expenses, vendor payments)
-3. **Vendor Management**: Track purchase orders, payment schedules, and vendor relationships
+3. **Vendor Management**: Track purchase orders, payment schedules, and vendor relationships (unlimited vendors on all plans)
 4. **Income Tracking**: Monitor customer payments, invoices, and recurring income
 5. **Bank Account Integration**: Connect bank accounts via Plaid for real-time balance tracking
 6. **Credit Card Management**: Track credit card balances, due dates, and available credit
 7. **Amazon Seller Integration**: Connect Amazon Seller Central accounts to track payouts and revenue
 8. **Transaction Matching**: Automatically match bank transactions with pending orders/invoices
-9. **AI Insights**: Get personalized financial advice and cash flow predictions
-10. **Scenario Planner**: Create what-if scenarios to plan for future financial decisions
+9. **AI Insights**: Get personalized financial advice and cash flow predictions (Growing and Professional plans)
+10. **AI PDF Extractor**: Automatically extract data from purchase orders and invoices (Growing and Professional plans)
+11. **Scenario Planner**: Create what-if scenarios to plan for future financial decisions (Professional plan)
 
 **Common Tasks:**
 - Adding purchase orders: Use the floating "+" button on dashboard, select vendor, enter amount and due date
@@ -31,10 +32,49 @@ CashFlow Pro helps businesses manage their cash flow, track expenses, monitor in
 - Amazon integration: Settings > Amazon - connect Seller Central account with SP-API credentials
 
 **Subscription Plans:**
-- Free Plan: Basic cash flow tracking (limited to 10 vendors, 20 transactions/month)
-- Starter Plan ($29/mo): Up to 50 vendors, unlimited transactions, bank integration
-- Professional Plan ($79/mo): Unlimited vendors, AI insights, scenario planning, priority support
-- Enterprise Plan ($199/mo): Multi-user access, advanced analytics, dedicated account manager
+All plans include unlimited vendors and unlimited transactions.
+
+- **Starter Plan ($29/mo or $290/year):**
+  - Under $20k monthly Amazon payout
+  - 2 bank/credit card connections
+  - 1 Amazon connection
+  - Advanced forecasting workflow
+  - 365-day cash flow projection
+  - Bank transaction matching
+  - Email support
+
+- **Growing Plan ($59/mo or $590/year):**
+  - Under $50k monthly Amazon payout
+  - 4 bank/credit card connections
+  - 1 Amazon connection
+  - AI insights
+  - AI PDF extractor
+  - 2 additional users
+  - Advanced forecasting workflow
+  - 365-day cash flow projection
+  - Bank transaction matching
+  - Basic analytics
+  - Priority support
+
+- **Professional Plan ($89/mo or $890/year):**
+  - Under $200k monthly Amazon payout
+  - 7 bank/credit card connections
+  - 1 Amazon connection
+  - AI insights
+  - AI PDF extractor
+  - 5 additional users
+  - Automated notifications
+  - Advanced forecasting workflow
+  - 365-day cash flow projection
+  - Bank transaction matching
+  - Scenario planning
+  - Advanced analytics
+  - Priority support
+
+**Add-ons (available for all plans):**
+- Additional Bank Account: $7/mo per account - Add more bank/credit card connections
+- Additional Amazon Account: $50/mo per account - Add more Amazon account connections
+- Additional User: $5/mo per user - Add more team members
 
 **Payment Terms:**
 - Net Terms: Payment due X days after invoice date
