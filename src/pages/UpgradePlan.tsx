@@ -234,30 +234,43 @@ const UpgradePlan = () => {
                     </Badge>
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Price</span>
-                    <div className="flex flex-col items-end gap-1">
-                      {discount?.percent_off ? (
-                        <>
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg font-bold text-green-600">
-                              ${(PRICING_PLANS[plan].price * (1 - discount.percent_off / 100)).toFixed(2)}/mo
-                            </span>
-                            <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
-                              {discount.percent_off}% OFF
-                            </Badge>
-                          </div>
-                          <span className="text-xs text-muted-foreground line-through">
-                            ${PRICING_PLANS[plan].price}/mo
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-lg font-bold">
-                          ${PRICING_PLANS[plan].price}/mo
+                  {discount?.percent_off && (
+                    <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20 space-y-2">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <Star className="h-5 w-5 text-green-600" />
+                        <span className="text-sm font-semibold text-green-600">
+                          {discount.percent_off}% Discount Applied
                         </span>
-                      )}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Original Price:</span>
+                          <span className="line-through text-muted-foreground">${PRICING_PLANS[plan].price}/mo</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-green-600">New Total:</span>
+                          <span className="text-xl font-bold text-green-600">
+                            ${(PRICING_PLANS[plan].price * (1 - discount.percent_off / 100)).toFixed(2)}/mo
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-green-600">You save:</span>
+                          <span className="font-semibold text-green-600">
+                            ${(PRICING_PLANS[plan].price * (discount.percent_off / 100)).toFixed(2)}/mo
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
+                  
+                  {!discount?.percent_off && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Price</span>
+                      <span className="text-lg font-bold">
+                        ${PRICING_PLANS[plan].price}/mo
+                      </span>
+                    </div>
+                  )}
 
                   {discount?.percent_off && discount.duration === 'repeating' && discount.duration_in_months && subscription_end && (
                     <div className="flex items-center justify-between p-3 bg-green-500/10 rounded-lg border border-green-500/20">
