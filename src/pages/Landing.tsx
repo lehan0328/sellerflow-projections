@@ -297,11 +297,11 @@ const Landing = () => {
             
             {/* Full Logo */}
             <div className="flex justify-center animate-fade-in" style={{ animationDelay: '200ms' }}>
-              <img src={aurenFullLogo} alt="Auren" className="h-24 lg:h-36 w-auto" />
+              <img src={aurenFullLogo} alt="Auren" className="h-20 lg:h-28 w-auto" />
             </div>
             
             <div className="animate-fade-in space-y-6" style={{ animationDelay: '400ms' }}>
-              <h1 className="text-3xl lg:text-5xl font-bold leading-tight">
+              <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
                 <span className="inline-block hover:scale-105 transition-transform duration-300">
                   <span className="bg-gradient-primary bg-clip-text text-transparent animate-pulse">AI-Powered</span> Cash Flow
                 </span>
