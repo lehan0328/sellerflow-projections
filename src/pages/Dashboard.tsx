@@ -996,7 +996,7 @@ const Dashboard = () => {
         </div>
 
         {/* Row 5: Amazon Payouts (Full Width) */}
-        {(vendors.length > 0 || transactions.length > 0) && <AmazonPayouts />}
+        <AmazonPayouts />
       </div>
 
       <FloatingMenu
