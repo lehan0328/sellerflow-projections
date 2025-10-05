@@ -372,9 +372,9 @@ const UpgradePlan = () => {
         {subscribed && plan && (
           <div className="space-y-6">
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold">Your Plan Benefits</h2>
+              <h2 className="text-2xl font-bold">Upgrade Benefits</h2>
               <p className="text-muted-foreground">
-                {nextTier ? `Compare your current plan with ${nextTier.name}` : 'You\'re on the highest tier!'}
+                {nextTier ? `Here's what you'll gain by upgrading to ${nextTier.name}` : 'You\'re on the highest tier!'}
               </p>
             </div>
 
@@ -395,6 +395,7 @@ const UpgradePlan = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground text-center">Your current features</p>
                     <ul className="space-y-3">
                       {currentTierData.features.map((feature, index) => (
                         <li key={index} className="flex items-start text-sm">
@@ -407,13 +408,13 @@ const UpgradePlan = () => {
                 </Card>
               )}
 
-              {/* Next Tier or Professional Benefits */}
-              {nextTier ? (
+              {/* Additional Benefits when upgrading */}
+              {nextTier && currentTierData ? (
                 <Card className="relative ring-2 ring-accent">
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     <Badge className="bg-gradient-primary">
                       <Star className="h-3 w-3 mr-1" />
-                      Upgrade Available
+                      Additional Benefits
                     </Badge>
                   </div>
                   <CardHeader className="text-center">
@@ -431,13 +432,16 @@ const UpgradePlan = () => {
                     )}
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <p className="text-sm text-green-600 font-medium text-center">You'll gain these benefits:</p>
                     <ul className="space-y-3">
-                      {nextTier.features.map((feature, index) => (
-                        <li key={index} className="flex items-start text-sm">
-                          <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
+                      {nextTier.features
+                        .filter((feature: string) => !currentTierData.features.some((cf: string) => cf === feature))
+                        .map((feature, index) => (
+                          <li key={index} className="flex items-start text-sm">
+                            <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                            <span className="font-medium">{feature}</span>
+                          </li>
+                        ))}
                     </ul>
                     <Button 
                       className="w-full bg-gradient-primary" 
