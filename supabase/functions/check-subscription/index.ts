@@ -93,7 +93,7 @@ serve(async (req) => {
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       limit: 1,
-      expand: ['data.discount.coupon'],
+      expand: ['data.discount'],
     });
     
     // Filter for active or trialing subscriptions
@@ -132,16 +132,24 @@ serve(async (req) => {
       productId = subscription.items.data[0].price.product as string;
       
       // Check for active discount
-      if (subscription.discount) {
+      logStep("Checking for discount", { hasDiscount: !!subscription.discount });
+      if (subscription.discount && subscription.discount.coupon) {
         const coupon = subscription.discount.coupon;
+        logStep("Discount object found", { 
+          couponId: coupon.id,
+          percentOff: coupon.percent_off,
+          amountOff: coupon.amount_off 
+        });
         discountInfo = {
           coupon_id: coupon.id,
-          percent_off: coupon.percent_off,
-          amount_off: coupon.amount_off,
+          percent_off: coupon.percent_off || null,
+          amount_off: coupon.amount_off || null,
           duration: coupon.duration,
-          duration_in_months: coupon.duration_in_months,
+          duration_in_months: coupon.duration_in_months || null,
         };
         logStep("Active discount found", discountInfo);
+      } else {
+        logStep("No discount found on subscription");
       }
       
       logStep("Determined subscription tier", { productId, isTrialing, hasDiscount: !!discountInfo });
