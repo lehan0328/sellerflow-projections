@@ -426,7 +426,14 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
               )}
 
               <div className="flex justify-between gap-2 pt-4">
-                <Button variant="outline" onClick={() => setCurrentStep('discount_offer')}>
+                <Button variant="outline" onClick={() => {
+                  // Go back to alternatives or reason depending on if discount was already redeemed
+                  if (discount_ever_redeemed) {
+                    setCurrentStep('alternatives');
+                  } else {
+                    setCurrentStep('discount_offer');
+                  }
+                }}>
                   Back
                 </Button>
                 <div className="flex gap-2">

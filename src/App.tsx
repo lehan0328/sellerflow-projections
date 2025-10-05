@@ -25,6 +25,8 @@ import DocsFAQ from "./pages/DocsFAQ";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import { Auth } from "./pages/Auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import Admin from "./pages/Admin";
+import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -92,6 +94,13 @@ const App = () => (
             <Route path="/pause-subscription" element={
               <ProtectedRoute>
                 <PauseSubscription />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <ProtectedAdminRoute>
+                  <Admin />
+                </ProtectedAdminRoute>
               </ProtectedRoute>
             } />
           <Route path="/oauth-redirect" element={<OAuthRedirect />} />

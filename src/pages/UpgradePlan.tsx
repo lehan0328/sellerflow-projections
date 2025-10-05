@@ -278,9 +278,9 @@ const UpgradePlan = () => {
                       </div>
                     </>
                   )}
-                  {subscribed && (
+                  {subscribed && subscription_end && (
                     <div className="flex gap-2">
-                      {!isYearly && subscription_end && plan && (
+                      {!isYearly && plan && (
                         <Button
                           size="sm"
                           variant="default"
@@ -291,17 +291,15 @@ const UpgradePlan = () => {
                           Upgrade to Yearly (Save {plans.find(p => p.key === plan)?.savings})
                         </Button>
                       )}
-                      {subscription_end && !discount_ever_redeemed && (
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => setShowCancellationFlow(true)}
-                        >
-                          <XCircle className="h-4 w-4 mr-2" />
-                          Cancel
-                        </Button>
-                      )}
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setShowCancellationFlow(true)}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Cancel
+                      </Button>
                     </div>
                   )}
                 </>
