@@ -89,6 +89,15 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
+    // Fetch customer with discount info
+    const customer = await stripe.customers.retrieve(customerId, {
+      expand: ['discount.coupon']
+    });
+    logStep("Customer retrieved", { 
+      hasDiscount: !!(customer as any).discount,
+      customerDiscountType: typeof (customer as any).discount 
+    });
+
     // Check for active or trialing subscriptions with full discount expansion
     logStep("Fetching subscriptions with discount data");
     const subscriptions = await stripe.subscriptions.list({
@@ -144,7 +153,7 @@ serve(async (req) => {
       
       productId = subscription.items.data[0].price.product as string;
       
-      // Check for active discount - handle both expanded and non-expanded cases
+      // Check for discount on subscription first
       logStep("Checking for discount", { 
         hasDiscountProperty: !!subscription.discount,
         discountType: typeof subscription.discount,
@@ -152,12 +161,11 @@ serve(async (req) => {
       });
       
       if (subscription.discount) {
-        // The discount object might be a string ID or an expanded object
         const discount = subscription.discount as any;
         const coupon = discount.coupon;
         
         if (coupon) {
-          logStep("Coupon found", { 
+          logStep("Coupon found on subscription", { 
             couponId: coupon.id,
             percentOff: coupon.percent_off,
             amountOff: coupon.amount_off,
@@ -172,12 +180,37 @@ serve(async (req) => {
             duration: coupon.duration,
             duration_in_months: coupon.duration_in_months || null,
           };
-          logStep("Discount info created", discountInfo);
-        } else {
-          logStep("Discount exists but no coupon found", { discount });
+          logStep("Discount info created from subscription", discountInfo);
         }
-      } else {
-        logStep("No discount property on subscription");
+      }
+      
+      // If no discount on subscription, check customer-level discount
+      if (!discountInfo && (customer as any).discount) {
+        const customerDiscount = (customer as any).discount;
+        const coupon = customerDiscount.coupon;
+        
+        if (coupon) {
+          logStep("Coupon found on customer", { 
+            couponId: coupon.id,
+            percentOff: coupon.percent_off,
+            amountOff: coupon.amount_off,
+            duration: coupon.duration,
+            durationInMonths: coupon.duration_in_months
+          });
+          
+          discountInfo = {
+            coupon_id: coupon.id,
+            percent_off: coupon.percent_off || null,
+            amount_off: coupon.amount_off || null,
+            duration: coupon.duration,
+            duration_in_months: coupon.duration_in_months || null,
+          };
+          logStep("Discount info created from customer", discountInfo);
+        }
+      }
+      
+      if (!discountInfo) {
+        logStep("No discount found on subscription or customer");
       }
       
       logStep("Final subscription data", { 

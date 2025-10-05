@@ -251,30 +251,6 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
                 </CardContent>
               </Card>
 
-              {/* Pause Subscription Option */}
-              {(selectedReason === 'temporary_pause' || selectedReason === 'not_using') && (
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-orange-500/10 rounded-lg">
-                        <Pause className="h-6 w-6 text-orange-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg mb-1">Pause for 30 Days</h3>
-                        <p className="text-sm text-muted-foreground mb-3">
-                          Take a break without losing your data. We won't charge you for the next 30 days, 
-                          and you can resume anytime.
-                        </p>
-                        <Button variant="outline" className="w-full" onClick={handlePauseSubscription}>
-                          <Pause className="h-4 w-4 mr-2" />
-                          Pause Subscription
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
               <div className="flex justify-between gap-2 pt-4 border-t">
                 <Button variant="outline" onClick={() => setCurrentStep('reason')}>
                   Back
