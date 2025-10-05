@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X } from "lucide-react";
 import aurenIcon from "@/assets/auren-icon.png";
+import aurenFullLogo from "@/assets/auren-full-logo.png";
 import { useNavigate } from "react-router-dom";
 import { LiveDashboardShowcase } from "@/components/LiveDashboardShowcase";
 import { FloatingChatWidget } from "@/components/floating-chat-widget";
@@ -299,9 +300,9 @@ const Landing = () => {
               <span>Smart AI Features</span>
             </Badge>
             
-            {/* Icon Logo */}
+            {/* Full Logo */}
             <div className="flex justify-center animate-fade-in" style={{ animationDelay: '200ms' }}>
-              <img src={aurenIcon} alt="Auren" className="h-24 lg:h-32 w-auto" />
+              <img src={aurenFullLogo} alt="Auren" className="h-24 lg:h-32 w-auto" />
             </div>
             
             <div className="animate-fade-in space-y-6" style={{ animationDelay: '400ms' }}>
