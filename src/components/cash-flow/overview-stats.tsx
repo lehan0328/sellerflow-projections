@@ -1,4 +1,4 @@
-import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw } from "lucide-react";
+import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw, Shield } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,6 +7,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useCreditCards } from "@/hooks/useCreditCards";
+import { useSafeSpending } from "@/hooks/useSafeSpending";
 
 interface OverviewStatsProps {
   totalCash?: number;
@@ -40,6 +41,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
+  const { data: safeSpendingData, isLoading: isLoadingSafeSpending } = useSafeSpending();
   
   // Calculate dynamic values based on events
   const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
@@ -263,16 +265,43 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
         <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 rounded-lg p-6">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <p className="text-sm text-slate-600">Available Credit</p>
-              <p className="text-2xl font-bold text-indigo-700">{formatCurrency(totalAvailableCredit)}</p>
-              <p className="text-sm text-slate-600">
-                {formatCurrency(totalCreditLimit)} total limit
-              </p>
-              <p className="text-xs text-indigo-600">
-                {formatCurrency(totalCreditBalance)} used • {creditUtilization.toFixed(1)}% utilization
-              </p>
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-sm text-slate-600">AI Safe Spending Limit</p>
+                <Shield className="h-4 w-4 text-indigo-600" />
+              </div>
+              {isLoadingSafeSpending ? (
+                <div className="space-y-2">
+                  <div className="h-8 w-32 bg-indigo-200 animate-pulse rounded"></div>
+                  <div className="h-4 w-24 bg-indigo-100 animate-pulse rounded"></div>
+                </div>
+              ) : safeSpendingData ? (
+                <>
+                  <p className="text-2xl font-bold text-indigo-700">
+                    {formatCurrency(safeSpendingData.safe_daily_limit)}<span className="text-sm font-normal">/day</span>
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    {formatCurrency(safeSpendingData.total_180day_limit)} for 180 days
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      safeSpendingData.confidence_level === 'high' 
+                        ? 'bg-green-100 text-green-700' 
+                        : safeSpendingData.confidence_level === 'medium'
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {safeSpendingData.confidence_level} confidence
+                    </span>
+                  </div>
+                  <p className="text-xs text-indigo-600 mt-1">
+                    {safeSpendingData.reasoning}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-slate-500">Unable to calculate</p>
+              )}
             </div>
-            <CreditCard className="h-8 w-8 text-indigo-500" />
+            <TrendingUp className="h-8 w-8 text-indigo-500" />
           </div>
         </div>
       </div>
