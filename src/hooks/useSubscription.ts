@@ -100,6 +100,13 @@ export interface SubscriptionState {
   isLoading: boolean;
   is_trialing?: boolean;
   trial_end?: string | null;
+  discount?: {
+    coupon_id: string;
+    percent_off: number | null;
+    amount_off: number | null;
+    duration: string;
+    duration_in_months: number | null;
+  } | null;
 }
 
 export const useSubscription = () => {
@@ -158,6 +165,7 @@ export const useSubscription = () => {
         isLoading: false,
         is_trialing: data.is_trialing || false,
         trial_end: data.trial_end || null,
+        discount: data.discount || null,
       });
     } catch (error) {
       console.error("Error checking subscription:", error);

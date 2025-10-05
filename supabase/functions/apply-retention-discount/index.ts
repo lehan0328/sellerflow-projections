@@ -65,6 +65,20 @@ serve(async (req) => {
       throw new Error("No active or trialing subscription found");
     }
     
+    // Check if discount already exists
+    if (activeSubscription.discount) {
+      logStep("Discount already applied", { 
+        subscriptionId: activeSubscription.id,
+        existingDiscount: activeSubscription.discount.coupon.id
+      });
+      return new Response(JSON.stringify({ 
+        error: "A discount has already been applied to this subscription"
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+    
     logStep("Found active subscription", { 
       subscriptionId: activeSubscription.id,
       status: activeSubscription.status 

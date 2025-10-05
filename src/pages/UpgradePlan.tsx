@@ -30,7 +30,7 @@ interface CartItem {
 
 const UpgradePlan = () => {
   const navigate = useNavigate();
-  const { subscribed, plan, subscription_end, is_trialing, trial_end, createCheckout, purchaseAddon, openCustomerPortal, removePlanOverride, isLoading } = useSubscription();
+  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, createCheckout, purchaseAddon, openCustomerPortal, removePlanOverride, isLoading } = useSubscription();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
   const [isYearly, setIsYearly] = useState(false);
   const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({
@@ -192,10 +192,37 @@ const UpgradePlan = () => {
                 <>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Plan</span>
-                    <Badge className="bg-gradient-primary">
-                      {PRICING_PLANS[plan].name} - ${PRICING_PLANS[plan].price}/mo
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge className="bg-gradient-primary">
+                        {PRICING_PLANS[plan].name}
+                      </Badge>
+                      {discount?.percent_off ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground line-through">
+                            ${PRICING_PLANS[plan].price}/mo
+                          </span>
+                          <span className="text-sm font-semibold text-green-600">
+                            ${(PRICING_PLANS[plan].price * (1 - discount.percent_off / 100)).toFixed(2)}/mo
+                          </span>
+                          <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600">
+                            {discount.percent_off}% OFF
+                          </Badge>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">
+                          ${PRICING_PLANS[plan].price}/mo
+                        </span>
+                      )}
+                    </div>
                   </div>
+                  {discount && (
+                    <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                      <Star className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium text-green-600">
+                        {discount.percent_off}% discount active for {discount.duration_in_months} months
+                      </span>
+                    </div>
+                  )}
                   {subscription_end ? (
                     <>
                       <div className="flex items-center justify-between">

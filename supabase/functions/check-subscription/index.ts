@@ -94,6 +94,8 @@ serve(async (req) => {
     let isTrialing = false;
     let trialEnd = null;
 
+    let discountInfo = null;
+
     if (hasActiveSub && activeOrTrialingSub) {
       const subscription = activeOrTrialingSub;
       isTrialing = subscription.status === 'trialing';
@@ -115,7 +117,21 @@ serve(async (req) => {
       }
       
       productId = subscription.items.data[0].price.product as string;
-      logStep("Determined subscription tier", { productId, isTrialing });
+      
+      // Check for active discount
+      if (subscription.discount) {
+        const coupon = subscription.discount.coupon;
+        discountInfo = {
+          coupon_id: coupon.id,
+          percent_off: coupon.percent_off,
+          amount_off: coupon.amount_off,
+          duration: coupon.duration,
+          duration_in_months: coupon.duration_in_months,
+        };
+        logStep("Active discount found", discountInfo);
+      }
+      
+      logStep("Determined subscription tier", { productId, isTrialing, hasDiscount: !!discountInfo });
     } else {
       logStep("No active or trialing subscription found");
     }
@@ -126,7 +142,8 @@ serve(async (req) => {
       subscription_end: subscriptionEnd,
       is_override: false,
       is_trialing: isTrialing,
-      trial_end: trialEnd
+      trial_end: trialEnd,
+      discount: discountInfo
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

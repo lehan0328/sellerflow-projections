@@ -29,7 +29,7 @@ const CANCELLATION_REASONS = [
 ];
 
 export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) => {
-  const { openCustomerPortal } = useSubscription();
+  const { openCustomerPortal, discount } = useSubscription();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<CancellationStep>('reason');
   const [selectedReason, setSelectedReason] = useState<string>('');
@@ -72,6 +72,13 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
   };
 
   const handleAcceptDiscount = async () => {
+    // Check if discount already exists
+    if (discount) {
+      toast.error('You already have an active discount on your subscription');
+      handleClose();
+      return;
+    }
+
     setLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -90,9 +97,15 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
 
       toast.success('Great! 10% discount applied for the next 3 months 🎉');
       handleClose();
-    } catch (error) {
+      // Refresh the page to show updated discount
+      window.location.reload();
+    } catch (error: any) {
       console.error('Error applying discount:', error);
-      toast.error('Failed to apply discount. Please try again.');
+      if (error.message?.includes('already been applied')) {
+        toast.error('This discount has already been redeemed');
+      } else {
+        toast.error('Failed to apply discount. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -322,10 +335,10 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
                   </Button>
                   <Button 
                     onClick={handleAcceptDiscount}
-                    disabled={loading}
+                    disabled={loading || !!discount}
                     className="bg-gradient-primary"
                   >
-                    {loading ? 'Applying...' : 'Yes! Apply 10% Discount'}
+                    {loading ? 'Applying...' : discount ? 'Discount Already Active' : 'Yes! Apply 10% Discount'}
                   </Button>
                 </div>
               </div>
