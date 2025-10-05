@@ -89,11 +89,17 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    // Check for active or trialing subscriptions
+    // Check for active or trialing subscriptions with full discount expansion
+    logStep("Fetching subscriptions with discount data");
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
-      limit: 1,
-      expand: ['data.discount'],
+      limit: 10,
+      expand: ['data.discount.coupon'],
+    });
+    
+    logStep("Raw subscriptions data", { 
+      count: subscriptions.data.length,
+      statuses: subscriptions.data.map(s => s.status)
     });
     
     // Filter for active or trialing subscriptions
@@ -113,6 +119,13 @@ serve(async (req) => {
       const subscription = activeOrTrialingSub;
       isTrialing = subscription.status === 'trialing';
       
+      logStep("Full subscription object", { 
+        id: subscription.id,
+        status: subscription.status,
+        hasDiscount: !!subscription.discount,
+        discountObject: subscription.discount
+      });
+      
       // If trialing, use trial_end, otherwise use current_period_end
       if (isTrialing && subscription.trial_end) {
         trialEnd = new Date(subscription.trial_end * 1000).toISOString();
@@ -131,28 +144,48 @@ serve(async (req) => {
       
       productId = subscription.items.data[0].price.product as string;
       
-      // Check for active discount
-      logStep("Checking for discount", { hasDiscount: !!subscription.discount });
-      if (subscription.discount && subscription.discount.coupon) {
-        const coupon = subscription.discount.coupon;
-        logStep("Discount object found", { 
-          couponId: coupon.id,
-          percentOff: coupon.percent_off,
-          amountOff: coupon.amount_off 
-        });
-        discountInfo = {
-          coupon_id: coupon.id,
-          percent_off: coupon.percent_off || null,
-          amount_off: coupon.amount_off || null,
-          duration: coupon.duration,
-          duration_in_months: coupon.duration_in_months || null,
-        };
-        logStep("Active discount found", discountInfo);
+      // Check for active discount - handle both expanded and non-expanded cases
+      logStep("Checking for discount", { 
+        hasDiscountProperty: !!subscription.discount,
+        discountType: typeof subscription.discount,
+        discountKeys: subscription.discount ? Object.keys(subscription.discount) : []
+      });
+      
+      if (subscription.discount) {
+        // The discount object might be a string ID or an expanded object
+        const discount = subscription.discount as any;
+        const coupon = discount.coupon;
+        
+        if (coupon) {
+          logStep("Coupon found", { 
+            couponId: coupon.id,
+            percentOff: coupon.percent_off,
+            amountOff: coupon.amount_off,
+            duration: coupon.duration,
+            durationInMonths: coupon.duration_in_months
+          });
+          
+          discountInfo = {
+            coupon_id: coupon.id,
+            percent_off: coupon.percent_off || null,
+            amount_off: coupon.amount_off || null,
+            duration: coupon.duration,
+            duration_in_months: coupon.duration_in_months || null,
+          };
+          logStep("Discount info created", discountInfo);
+        } else {
+          logStep("Discount exists but no coupon found", { discount });
+        }
       } else {
-        logStep("No discount found on subscription");
+        logStep("No discount property on subscription");
       }
       
-      logStep("Determined subscription tier", { productId, isTrialing, hasDiscount: !!discountInfo });
+      logStep("Final subscription data", { 
+        productId, 
+        isTrialing, 
+        hasDiscount: !!discountInfo,
+        discountInfo 
+      });
     } else {
       logStep("No active or trialing subscription found");
     }
