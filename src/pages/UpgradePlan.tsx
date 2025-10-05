@@ -390,11 +390,34 @@ const UpgradePlan = () => {
         {/* Plan Comparison */}
         {subscribed && plan && (
           <div className="space-y-6">
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-4">
               <h2 className="text-2xl font-bold">Upgrade Benefits</h2>
               <p className="text-muted-foreground">
                 {nextTier ? `Here's what you'll gain by upgrading to ${nextTier.name}` : 'You\'re on the highest tier!'}
               </p>
+              
+              {/* Monthly/Yearly Toggle */}
+              <div className="flex items-center justify-center gap-4">
+                <Button
+                  variant={!isYearly ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsYearly(false)}
+                  className={!isYearly ? "bg-gradient-primary" : ""}
+                >
+                  Monthly
+                </Button>
+                <Button
+                  variant={isYearly ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsYearly(true)}
+                  className={isYearly ? "bg-gradient-primary" : ""}
+                >
+                  Yearly
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    Save up to $178
+                  </Badge>
+                </Button>
+              </div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2 max-w-5xl mx-auto">
