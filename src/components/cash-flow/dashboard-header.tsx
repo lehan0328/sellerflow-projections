@@ -1,4 +1,4 @@
-import { History, MessageSquare, TrendingUp } from "lucide-react";
+import { History, MessageSquare, TrendingUp, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "./user-menu";
 import aurenLogo from "@/assets/auren-logo.png";
@@ -6,8 +6,15 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+  lastRefreshTime?: Date | null;
+}
+
+export function DashboardHeader({ onRefresh, isRefreshing = false, lastRefreshTime }: DashboardHeaderProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -61,6 +68,17 @@ export function DashboardHeader() {
         <Button
           variant="outline"
           size="sm"
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          className="h-10 px-4 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-accent hover:text-accent-foreground"
+          title="Refresh Data"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => navigate('/analytics')}
           className="h-10 px-4 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-accent hover:text-accent-foreground"
           title="View Analytics"
@@ -98,6 +116,11 @@ export function DashboardHeader() {
           <p className="text-muted-foreground mt-2">
             Real-time insights and financial management
           </p>
+          {lastRefreshTime && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Last updated: {format(lastRefreshTime, "MMM d, yyyy 'at' h:mm a")}
+            </p>
+          )}
         </div>
       </div>
     </div>
