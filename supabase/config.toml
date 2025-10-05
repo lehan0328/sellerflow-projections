@@ -44,3 +44,6 @@ verify_jwt = true
 
 [functions.create-guest-checkout]
 verify_jwt = false
+
+[functions.support-chat]
+verify_jwt = true

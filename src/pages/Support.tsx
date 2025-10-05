@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,16 +7,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Send, MessageSquare, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Send, MessageSquare, Clock, CheckCircle2, AlertCircle, Bot, User } from "lucide-react";
 import { useSupportTickets } from "@/hooks/useSupportTickets";
 import { toast } from "sonner";
 import { PageLoadingWrapper } from "@/components/PageLoadingWrapper";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+type ChatMessage = { role: "user" | "assistant"; content: string };
 
 const Support = () => {
   const navigate = useNavigate();
   const { tickets, isLoading, createTicket } = useSupportTickets();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showNewTicket, setShowNewTicket] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(true);
   
   const [formData, setFormData] = useState({
     subject: "",
@@ -24,6 +28,141 @@ const Support = () => {
     priority: "medium" as "low" | "medium" | "high",
     category: ""
   });
+
+  // AI Chat state
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    {
+      role: "assistant",
+      content: "Hi! I'm your AI support assistant. I can help answer questions about CashFlow Pro features, troubleshooting, and more. Try asking me first before submitting a ticket - I might be able to help you right away! 🚀"
+    }
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom of chat
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
+
+  const handleChatSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim() || isChatLoading) return;
+
+    const userMessage = chatInput.trim();
+    setChatInput("");
+    
+    // Add user message
+    const newMessages: ChatMessage[] = [...chatMessages, { role: "user", content: userMessage }];
+    setChatMessages(newMessages);
+    setIsChatLoading(true);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/support-chat`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ messages: newMessages }),
+        }
+      );
+
+      if (response.status === 429) {
+        toast.error("Too many requests. Please wait a moment and try again.");
+        setChatMessages(prev => prev.slice(0, -1));
+        return;
+      }
+
+      if (response.status === 402) {
+        toast.error("AI service temporarily unavailable. Please submit a ticket.");
+        setChatMessages(prev => prev.slice(0, -1));
+        return;
+      }
+
+      if (!response.ok || !response.body) {
+        throw new Error("Failed to get AI response");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = "";
+      let assistantContent = "";
+      let streamDone = false;
+
+      // Add assistant message placeholder
+      setChatMessages(prev => [...prev, { role: "assistant", content: "" }]);
+
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") {
+            streamDone = true;
+            break;
+          }
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              assistantContent += content;
+              setChatMessages(prev => {
+                const updated = [...prev];
+                updated[updated.length - 1] = { role: "assistant", content: assistantContent };
+                return updated;
+              });
+            }
+          } catch {
+            textBuffer = line + "\n" + textBuffer;
+            break;
+          }
+        }
+      }
+
+      // Final flush
+      if (textBuffer.trim()) {
+        for (let raw of textBuffer.split("\n")) {
+          if (!raw || raw.startsWith(":") || !raw.startsWith("data: ")) continue;
+          const jsonStr = raw.slice(6).trim();
+          if (jsonStr === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) {
+              assistantContent += content;
+              setChatMessages(prev => {
+                const updated = [...prev];
+                updated[updated.length - 1] = { role: "assistant", content: assistantContent };
+                return updated;
+              });
+            }
+          } catch {}
+        }
+      }
+    } catch (error) {
+      console.error("Chat error:", error);
+      toast.error("Failed to get AI response. Please try again.");
+      setChatMessages(prev => prev.slice(0, -1));
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,11 +265,90 @@ const Support = () => {
                 <p className="text-muted-foreground">Get help with your account and features</p>
               </div>
             </div>
-            <Button onClick={() => setShowNewTicket(!showNewTicket)}>
-              <Send className="h-4 w-4 mr-2" />
-              New Ticket
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowAIChat(!showAIChat)}
+              >
+                <Bot className="h-4 w-4 mr-2" />
+                {showAIChat ? "Hide" : "Show"} AI Assistant
+              </Button>
+              <Button onClick={() => setShowNewTicket(!showNewTicket)}>
+                <Send className="h-4 w-4 mr-2" />
+                New Ticket
+              </Button>
+            </div>
           </div>
+
+          {/* AI Chat Assistant */}
+          {showAIChat && (
+            <Card className="shadow-card">
+              <CardHeader>
+                <div className="flex items-center space-x-2">
+                  <Bot className="h-5 w-5 text-primary" />
+                  <CardTitle>AI Support Assistant</CardTitle>
+                </div>
+                <CardDescription>
+                  Ask me anything about CashFlow Pro! I can help with features, troubleshooting, and general questions.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <ScrollArea className="h-[400px] rounded-lg border p-4">
+                    <div className="space-y-4">
+                      {chatMessages.map((msg, idx) => (
+                        <div
+                          key={idx}
+                          className={`flex items-start space-x-2 ${
+                            msg.role === "user" ? "justify-end" : ""
+                          }`}
+                        >
+                          {msg.role === "assistant" && (
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <Bot className="h-4 w-4 text-primary" />
+                            </div>
+                          )}
+                          <div
+                            className={`rounded-lg p-3 max-w-[80%] ${
+                              msg.role === "user"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted"
+                            }`}
+                          >
+                            <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                          </div>
+                          {msg.role === "user" && (
+                            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                              <User className="h-4 w-4 text-primary-foreground" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {isChatLoading && (
+                        <div className="flex items-center space-x-2 text-muted-foreground">
+                          <Bot className="h-4 w-4 animate-pulse" />
+                          <span className="text-sm">Thinking...</span>
+                        </div>
+                      )}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  </ScrollArea>
+                  
+                  <form onSubmit={handleChatSubmit} className="flex space-x-2">
+                    <Input
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder="Ask me anything about CashFlow Pro..."
+                      disabled={isChatLoading}
+                    />
+                    <Button type="submit" disabled={isChatLoading || !chatInput.trim()}>
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </form>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* New Ticket Form */}
           {showNewTicket && (
