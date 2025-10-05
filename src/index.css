@@ -17,9 +17,9 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 262 83% 58%;
-    --primary-foreground: 210 40% 98%;
-    --primary-glow: 262 70% 70%;
+    --primary: 200 80% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 200 75% 70%;
 
     --secondary: 220 14.3% 95.9%;
     --secondary-foreground: 220 8.9% 46.1%;
@@ -27,9 +27,9 @@ All colors MUST be HSL.
     --muted: 220 14.3% 95.9%;
     --muted-foreground: 220 8.9% 46.1%;
 
-    --accent: 262 60% 55%;
-    --accent-foreground: 210 40% 98%;
-    --accent-glow: 262 50% 75%;
+    --accent: 230 60% 60%;
+    --accent-foreground: 0 0% 100%;
+    --accent-glow: 230 50% 75%;
 
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
@@ -48,9 +48,9 @@ All colors MUST be HSL.
     --finance-neutral: 220 8.9% 46.1%;
     
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(262 70% 70%));
-    --gradient-accent: linear-gradient(135deg, hsl(262 60% 55%), hsl(262 50% 75%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(220 14% 98%));
+    --gradient-primary: linear-gradient(135deg, hsl(200 80% 55%), hsl(230 60% 60%));
+    --gradient-accent: linear-gradient(135deg, hsl(230 60% 60%), hsl(200 75% 70%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 20% 98%));
     
     /* Shadows */
     --shadow-card: 0 4px 6px -1px hsl(222 47% 11% / 0.1), 0 2px 4px -1px hsl(222 47% 11% / 0.06);
@@ -62,9 +62,9 @@ All colors MUST be HSL.
 
     --sidebar-foreground: 222 47% 11%;
 
-    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary: 200 80% 55%;
 
-    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-primary-foreground: 0 0% 100%;
 
     --sidebar-accent: 220 14.3% 95.9%;
 
@@ -72,7 +72,7 @@ All colors MUST be HSL.
 
     --sidebar-border: 220 13% 91%;
 
-    --sidebar-ring: 262 83% 58%;
+    --sidebar-ring: 200 80% 55%;
   }
 
   .dark {
@@ -85,9 +85,9 @@ All colors MUST be HSL.
     --popover: 222 47% 15%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 262 83% 58%;
-    --primary-foreground: 210 40% 98%;
-    --primary-glow: 262 70% 70%;
+    --primary: 200 80% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 200 75% 70%;
 
     --secondary: 217 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -95,9 +95,9 @@ All colors MUST be HSL.
     --muted: 217 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 262 60% 55%;
-    --accent-foreground: 210 40% 98%;
-    --accent-glow: 262 50% 75%;
+    --accent: 230 60% 60%;
+    --accent-foreground: 0 0% 100%;
+    --accent-glow: 230 50% 75%;
 
     --success: 142 76% 45%;
     --success-foreground: 222 47% 11%;
@@ -108,7 +108,7 @@ All colors MUST be HSL.
 
     --border: 217 32.6% 17.5%;
     --input: 217 32.6% 17.5%;
-    --ring: 262 83% 58%;
+    --ring: 200 80% 55%;
 
     /* Financial App Specific - Dark Mode */
     --finance-positive: 142 76% 45%;
@@ -116,8 +116,8 @@ All colors MUST be HSL.
     --finance-neutral: 215 20.2% 65.1%;
     
     /* Gradients - Dark Mode */
-    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(262 70% 70%));
-    --gradient-accent: linear-gradient(135deg, hsl(262 60% 55%), hsl(262 50% 75%));
+    --gradient-primary: linear-gradient(135deg, hsl(200 80% 55%), hsl(230 60% 60%));
+    --gradient-accent: linear-gradient(135deg, hsl(230 60% 60%), hsl(200 75% 70%));
     --gradient-card: linear-gradient(145deg, hsl(222 47% 15%), hsl(217 32.6% 17.5%));
     
     /* Shadows - Dark Mode */
@@ -125,12 +125,12 @@ All colors MUST be HSL.
     --shadow-elevated: 0 10px 25px -3px hsl(0 0% 0% / 0.3), 0 4px 6px -2px hsl(0 0% 0% / 0.2);
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 262 83% 58%;
-    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-primary: 200 80% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 217 32.6% 17.5%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217 32.6% 17.5%;
-    --sidebar-ring: 262 83% 58%;
+    --sidebar-ring: 200 80% 55%;
   }
 }
 
