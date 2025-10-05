@@ -180,9 +180,6 @@ const Landing = () => {
               <div className="h-10 w-10 rounded-lg flex items-center justify-center hover-scale transition-all duration-300 hover:rotate-12">
                 <img src={aurenIcon} alt="Auren" className="h-10 w-10" />
               </div>
-              <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent hover:scale-105 transition-transform duration-200">
-                Auren
-              </span>
             </div>
             <div className="hidden md:flex items-center space-x-6">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
@@ -302,7 +299,7 @@ const Landing = () => {
             
             {/* Full Logo */}
             <div className="flex justify-center animate-fade-in" style={{ animationDelay: '200ms' }}>
-              <img src={aurenFullLogo} alt="Auren" className="h-24 lg:h-32 w-auto" />
+              <img src={aurenFullLogo} alt="Auren" className="h-32 lg:h-48 w-auto" />
             </div>
             
             <div className="animate-fade-in space-y-6" style={{ animationDelay: '400ms' }}>
