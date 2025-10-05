@@ -8,28 +8,28 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 240 10% 98%;
-    --foreground: 240 10% 15%;
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 15%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 15%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 270 70% 65%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 270 65% 75%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 210 40% 98%;
+    --primary-glow: 262 70% 70%;
 
-    --secondary: 270 60% 97%;
-    --secondary-foreground: 270 50% 30%;
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 220 8.9% 46.1%;
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 45%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
 
-    --accent: 270 60% 50%;
-    --accent-foreground: 0 0% 100%;
-    --accent-glow: 270 55% 85%;
+    --accent: 262 60% 55%;
+    --accent-foreground: 210 40% 98%;
+    --accent-glow: 262 50% 75%;
 
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
@@ -38,99 +38,99 @@ All colors MUST be HSL.
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 270 70% 65%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 262 83% 58%;
 
     /* Financial App Specific */
     --finance-positive: 142 76% 36%;
     --finance-negative: 0 84.2% 60.2%;
-    --finance-neutral: 240 3.8% 45%;
+    --finance-neutral: 220 8.9% 46.1%;
     
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(270 60% 50%), hsl(270 65% 70%));
-    --gradient-accent: linear-gradient(135deg, hsl(270 70% 60%), hsl(270 60% 80%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(270 60% 98%));
+    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(262 70% 70%));
+    --gradient-accent: linear-gradient(135deg, hsl(262 60% 55%), hsl(262 50% 75%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(220 14% 98%));
     
     /* Shadows */
-    --shadow-card: 0 4px 6px -1px hsl(240 10% 15% / 0.1), 0 2px 4px -1px hsl(240 10% 15% / 0.06);
-    --shadow-elevated: 0 10px 25px -3px hsl(240 10% 15% / 0.1), 0 4px 6px -2px hsl(240 10% 15% / 0.05);
+    --shadow-card: 0 4px 6px -1px hsl(222 47% 11% / 0.1), 0 2px 4px -1px hsl(222 47% 11% / 0.06);
+    --shadow-elevated: 0 10px 25px -3px hsl(222 47% 11% / 0.1), 0 4px 6px -2px hsl(222 47% 11% / 0.05);
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 0 0% 100%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-foreground: 222 47% 11%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary: 262 83% 58%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-primary-foreground: 210 40% 98%;
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent: 220 14.3% 95.9%;
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-accent-foreground: 222 47% 11%;
 
     --sidebar-border: 220 13% 91%;
 
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 262 83% 58%;
   }
 
   .dark {
-    --background: 240 10% 4%;
-    --foreground: 240 5% 96%;
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
 
-    --card: 240 10% 6%;
-    --card-foreground: 240 5% 96%;
+    --card: 222 47% 15%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 240 10% 6%;
-    --popover-foreground: 240 5% 96%;
+    --popover: 222 47% 15%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 270 65% 70%;
-    --primary-foreground: 240 10% 4%;
-    --primary-glow: 270 60% 80%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 210 40% 98%;
+    --primary-glow: 262 70% 70%;
 
-    --secondary: 270 20% 22%;
-    --secondary-foreground: 240 5% 96%;
+    --secondary: 217 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 65%;
+    --muted: 217 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 270 60% 55%;
-    --accent-foreground: 240 10% 4%;
-    --accent-glow: 270 55% 80%;
+    --accent: 262 60% 55%;
+    --accent-foreground: 210 40% 98%;
+    --accent-glow: 262 50% 75%;
 
     --success: 142 76% 45%;
-    --success-foreground: 240 10% 4%;
+    --success-foreground: 222 47% 11%;
     --warning: 38 92% 60%;
-    --warning-foreground: 240 10% 4%;
+    --warning-foreground: 222 47% 11%;
     --destructive: 0 84.2% 70%;
-    --destructive-foreground: 240 10% 4%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 270 65% 70%;
+    --border: 217 32.6% 17.5%;
+    --input: 217 32.6% 17.5%;
+    --ring: 262 83% 58%;
 
     /* Financial App Specific - Dark Mode */
     --finance-positive: 142 76% 45%;
     --finance-negative: 0 84.2% 70%;
-    --finance-neutral: 240 5% 65%;
+    --finance-neutral: 215 20.2% 65.1%;
     
     /* Gradients - Dark Mode */
-    --gradient-primary: linear-gradient(135deg, hsl(270 60% 50%), hsl(270 65% 70%));
-    --gradient-accent: linear-gradient(135deg, hsl(270 60% 55%), hsl(270 55% 75%));
-    --gradient-card: linear-gradient(145deg, hsl(240 10% 6%), hsl(270 20% 12%));
+    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(262 70% 70%));
+    --gradient-accent: linear-gradient(135deg, hsl(262 60% 55%), hsl(262 50% 75%));
+    --gradient-card: linear-gradient(145deg, hsl(222 47% 15%), hsl(217 32.6% 17.5%));
     
     /* Shadows - Dark Mode */
     --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.3), 0 2px 4px -1px hsl(0 0% 0% / 0.2);
     --shadow-elevated: 0 10px 25px -3px hsl(0 0% 0% / 0.3), 0 4px 6px -2px hsl(0 0% 0% / 0.2);
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 217 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 32.6% 17.5%;
+    --sidebar-ring: 262 83% 58%;
   }
 }
 

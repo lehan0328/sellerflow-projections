@@ -1,7 +1,7 @@
 import { History, MessageSquare, TrendingUp, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "./user-menu";
-import aurenFullLogo from "@/assets/auren-full-logo.png";
+import aurenIcon from "@/assets/auren-icon.png";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,7 +54,7 @@ export function DashboardHeader({ onRefresh, isRefreshing = false, lastRefreshTi
       {/* Logo - Top Left */}
       <div className="absolute top-6 left-6 z-40">
         <div className="flex items-center">
-          <img src={aurenFullLogo} alt="Auren - Marketplace Cashflow Simplified" className="h-12 w-auto" />
+          <img src={aurenIcon} alt="Auren" className="h-10 w-auto" />
         </div>
       </div>
 

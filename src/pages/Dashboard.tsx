@@ -894,7 +894,10 @@ const Dashboard = () => {
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-primary/5 via-background/95 to-background/90">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Subtle gradient orbs */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-primary/5 to-transparent rounded-full blur-3xl opacity-30 animate-pulse" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tl from-accent/5 to-transparent rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }} />
       <DashboardHeader />
       
       <div className="p-6 space-y-6">
