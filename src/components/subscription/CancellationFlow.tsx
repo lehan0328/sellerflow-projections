@@ -50,14 +50,6 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
       toast.error('Please select a reason for canceling');
       return;
     }
-    setCurrentStep('feedback');
-  };
-
-  const handleFeedbackSubmit = () => {
-    if (!improvementFeedback.trim()) {
-      toast.error('Please share what we can improve');
-      return;
-    }
     setCurrentStep('alternatives');
   };
 
@@ -80,7 +72,7 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
   const proceedToCancel = () => {
     // Skip discount offer if user has ever redeemed it before
     if (discount_ever_redeemed) {
-      setCurrentStep('confirmation');
+      setCurrentStep('feedback');
     } else {
       setCurrentStep('discount_offer');
     }
@@ -136,10 +128,15 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
   };
 
   const declineDiscountAndCancel = () => {
-    setCurrentStep('confirmation');
+    setCurrentStep('feedback');
   };
 
   const handleFinalCancel = async () => {
+    if (!improvementFeedback.trim()) {
+      toast.error('Please share what we can improve before canceling');
+      return;
+    }
+
     setLoading(true);
     
     // Submit feedback
@@ -149,7 +146,7 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
       improvementFeedback,
     });
 
-    toast.success('Opening Stripe customer portal to complete cancellation...');
+    toast.success('Thank you for your feedback. Opening Stripe portal to complete cancellation...');
     
     // Open Stripe customer portal for actual cancellation
     await openCustomerPortal();
@@ -226,55 +223,7 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
           </>
         )}
 
-        {/* Step 2: Improvement Feedback */}
-        {currentStep === 'feedback' && (
-          <>
-            <DialogHeader>
-              <DialogTitle className="text-2xl">Help Us Improve</DialogTitle>
-              <DialogDescription>
-                Your feedback is valuable to us. What could we improve to keep you as a customer?
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="improvement-feedback">
-                  What specific improvements or changes would make you reconsider? *
-                </Label>
-                <Textarea
-                  id="improvement-feedback"
-                  placeholder="For example: Better mobile app, lower pricing, more integrations, faster support response times, specific features..."
-                  value={improvementFeedback}
-                  onChange={(e) => setImprovementFeedback(e.target.value)}
-                  rows={6}
-                  className="resize-none"
-                />
-                <p className="text-xs text-muted-foreground">
-                  This helps us understand what matters most to our customers
-                </p>
-              </div>
-
-              <Card className="border-blue-500/30 bg-blue-50 dark:bg-blue-950/20">
-                <CardContent className="p-4">
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
-                    💡 <strong>Your voice matters:</strong> We review every piece of feedback and use it to prioritize our product roadmap.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <div className="flex justify-between gap-2">
-                <Button variant="outline" onClick={() => setCurrentStep('reason')}>
-                  Back
-                </Button>
-                <Button onClick={handleFeedbackSubmit}>
-                  Continue
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Step 3: Alternatives */}
+        {/* Step 2: Alternatives */}
         {currentStep === 'alternatives' && (
           <>
             <DialogHeader>
@@ -311,7 +260,60 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
               </Card>
 
               <div className="flex justify-between gap-2 pt-4 border-t">
-                <Button variant="outline" onClick={() => setCurrentStep('feedback')}>
+                <Button variant="outline" onClick={() => setCurrentStep('reason')}>
+                  Back
+                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={handleClose}>
+                    Keep Subscription
+                  </Button>
+                  <Button variant="destructive" onClick={proceedToCancel}>
+                    My cashflow is perfect, cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Step 3: Discount Offer */}
+        {currentStep === 'discount_offer' && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Before you go...</DialogTitle>
+              <DialogDescription>
+                We'd love to help address your concerns. Here are some alternatives to canceling:
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Schedule Demo Option */}
+              <Card className="border-primary/30">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Video className="h-6 w-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg mb-1">Schedule a Free Demo</h3>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Let our team show you how to get the most value from your subscription. 
+                        We can address your specific concerns and show you features you might have missed.
+                      </p>
+                      <Button 
+                        className="w-full bg-gradient-primary" 
+                        onClick={handleScheduleDemo}
+                      >
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Schedule Demo
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-between gap-2 pt-4 border-t">
+                <Button variant="outline" onClick={() => setCurrentStep('alternatives')}>
                   Back
                 </Button>
                 <div className="flex gap-2">
@@ -395,7 +397,100 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
           </>
         )}
 
-        {/* Step 4: Final Confirmation */}
+        {/* Step 4: Final Improvement Feedback */}
+        {currentStep === 'feedback' && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="text-2xl flex items-center gap-2">
+                <MessageSquare className="h-6 w-6 text-primary" />
+                One Last Thing Before You Go
+              </DialogTitle>
+              <DialogDescription>
+                Your feedback helps us improve. What would make you reconsider?
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              {selectedReason && (
+                <div className="space-y-2 p-4 bg-muted rounded-lg">
+                  <p className="text-sm font-medium">Your cancellation reason:</p>
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const Icon = getReasonIcon(selectedReason);
+                      return <Icon className="h-4 w-4" />;
+                    })()}
+                    <span className="text-sm">
+                      {CANCELLATION_REASONS.find(r => r.value === selectedReason)?.label}
+                    </span>
+                  </div>
+                  {feedback && (
+                    <p className="text-sm text-muted-foreground mt-2 italic">"{feedback}"</p>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="improvement-feedback">
+                  What specific improvements would keep you as a customer? *
+                </Label>
+                <Textarea
+                  id="improvement-feedback"
+                  placeholder="For example: Better mobile app, lower pricing, more integrations, faster support response times, specific features..."
+                  value={improvementFeedback}
+                  onChange={(e) => setImprovementFeedback(e.target.value)}
+                  rows={6}
+                  className="resize-none"
+                />
+                <p className="text-xs text-muted-foreground">
+                  This helps us prioritize what matters most to our customers
+                </p>
+              </div>
+
+              <Card className="border-blue-500/30 bg-blue-50 dark:bg-blue-950/20">
+                <CardContent className="p-4">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    💡 <strong>We're listening:</strong> Every piece of feedback is reviewed by our team and directly influences our product roadmap.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-destructive/30 bg-destructive/5">
+                <CardContent className="p-4">
+                  <p className="text-sm">
+                    <strong>What happens next:</strong> After submitting, you'll be redirected to Stripe to complete the cancellation. Your access will continue until the end of your billing period.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-between gap-2 pt-4">
+                <Button variant="outline" onClick={() => {
+                  // Go back to discount offer or alternatives depending on if discount was already redeemed
+                  if (discount_ever_redeemed) {
+                    setCurrentStep('alternatives');
+                  } else {
+                    setCurrentStep('discount_offer');
+                  }
+                }}>
+                  Back
+                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleClose}>
+                    Keep My Subscription
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    onClick={handleFinalCancel}
+                    disabled={loading || !improvementFeedback.trim()}
+                  >
+                    {loading ? 'Processing...' : 'Submit & Cancel Subscription'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Step 5: Confirmation (Legacy - keeping for back navigation) */}
         {currentStep === 'confirmation' && (
           <>
             <DialogHeader>
