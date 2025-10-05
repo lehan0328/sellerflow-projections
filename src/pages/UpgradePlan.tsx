@@ -269,11 +269,29 @@ const UpgradePlan = () => {
                   )}
                   
                   {!discount_ever_redeemed && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Price</span>
-                      <span className="text-lg font-bold">
-                        ${PRICING_PLANS[plan].price}/mo
-                      </span>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Price</span>
+                        {isYearly ? (
+                          <div className="text-right">
+                            <div className="text-lg font-bold">
+                              ${PRICING_PLANS[plan].yearlyPrice}/year
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              (${(PRICING_PLANS[plan].yearlyPrice / 12).toFixed(2)}/month)
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-lg font-bold">
+                            ${PRICING_PLANS[plan].price}/mo
+                          </span>
+                        )}
+                      </div>
+                      {!isYearly && (
+                        <div className="text-xs text-muted-foreground text-right">
+                          Annual total: ${PRICING_PLANS[plan].price * 12}
+                        </div>
+                      )}
                     </div>
                   )}
                   {subscription_end ? (
