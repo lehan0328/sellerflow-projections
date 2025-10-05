@@ -17,19 +17,19 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 15%;
 
-    --primary: 265 85% 58%;
+    --primary: 270 70% 65%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 265 85% 70%;
+    --primary-glow: 270 65% 75%;
 
-    --secondary: 265 75% 95%;
-    --secondary-foreground: 265 70% 25%;
+    --secondary: 270 60% 97%;
+    --secondary-foreground: 270 50% 30%;
 
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 45%;
 
-    --accent: 265 70% 40%;
+    --accent: 270 60% 50%;
     --accent-foreground: 0 0% 100%;
-    --accent-glow: 265 75% 85%;
+    --accent-glow: 270 55% 85%;
 
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
@@ -40,7 +40,7 @@ All colors MUST be HSL.
 
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 265 85% 58%;
+    --ring: 270 70% 65%;
 
     /* Financial App Specific */
     --finance-positive: 142 76% 36%;
@@ -48,9 +48,9 @@ All colors MUST be HSL.
     --finance-neutral: 240 3.8% 45%;
     
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(265 70% 40%), hsl(265 85% 65%));
-    --gradient-accent: linear-gradient(135deg, hsl(265 85% 58%), hsl(265 75% 85%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(265 75% 98%));
+    --gradient-primary: linear-gradient(135deg, hsl(270 60% 50%), hsl(270 65% 70%));
+    --gradient-accent: linear-gradient(135deg, hsl(270 70% 60%), hsl(270 60% 80%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(270 60% 98%));
     
     /* Shadows */
     --shadow-card: 0 4px 6px -1px hsl(240 10% 15% / 0.1), 0 2px 4px -1px hsl(240 10% 15% / 0.06);
@@ -85,19 +85,19 @@ All colors MUST be HSL.
     --popover: 240 10% 6%;
     --popover-foreground: 240 5% 96%;
 
-    --primary: 265 85% 65%;
+    --primary: 270 65% 70%;
     --primary-foreground: 240 10% 4%;
-    --primary-glow: 265 85% 75%;
+    --primary-glow: 270 60% 80%;
 
-    --secondary: 265 15% 20%;
+    --secondary: 270 20% 22%;
     --secondary-foreground: 240 5% 96%;
 
     --muted: 240 4% 16%;
     --muted-foreground: 240 5% 65%;
 
-    --accent: 265 70% 50%;
+    --accent: 270 60% 55%;
     --accent-foreground: 240 10% 4%;
-    --accent-glow: 265 75% 85%;
+    --accent-glow: 270 55% 80%;
 
     --success: 142 76% 45%;
     --success-foreground: 240 10% 4%;
@@ -108,7 +108,7 @@ All colors MUST be HSL.
 
     --border: 240 4% 16%;
     --input: 240 4% 16%;
-    --ring: 265 85% 65%;
+    --ring: 270 65% 70%;
 
     /* Financial App Specific - Dark Mode */
     --finance-positive: 142 76% 45%;
@@ -116,9 +116,9 @@ All colors MUST be HSL.
     --finance-neutral: 240 5% 65%;
     
     /* Gradients - Dark Mode */
-    --gradient-primary: linear-gradient(135deg, hsl(265 70% 45%), hsl(265 85% 65%));
-    --gradient-accent: linear-gradient(135deg, hsl(265 85% 50%), hsl(265 75% 75%));
-    --gradient-card: linear-gradient(145deg, hsl(240 10% 6%), hsl(265 15% 10%));
+    --gradient-primary: linear-gradient(135deg, hsl(270 60% 50%), hsl(270 65% 70%));
+    --gradient-accent: linear-gradient(135deg, hsl(270 60% 55%), hsl(270 55% 75%));
+    --gradient-card: linear-gradient(145deg, hsl(240 10% 6%), hsl(270 20% 12%));
     
     /* Shadows - Dark Mode */
     --shadow-card: 0 4px 6px -1px hsl(0 0% 0% / 0.3), 0 2px 4px -1px hsl(0 0% 0% / 0.2);

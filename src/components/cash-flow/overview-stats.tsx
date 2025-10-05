@@ -41,7 +41,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
-  const { data: safeSpendingData, isLoading: isLoadingSafeSpending } = useSafeSpending();
+  const { data: safeSpendingData, isLoading: isLoadingSafeSpending, refetch: refetchSafeSpending } = useSafeSpending();
   
   // Calculate dynamic values based on events
   const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
@@ -301,7 +301,19 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 <p className="text-sm text-slate-500">Unable to calculate</p>
               )}
             </div>
-            <TrendingUp className="h-8 w-8 text-indigo-500" />
+            <div className="flex flex-col items-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => refetchSafeSpending()}
+                disabled={isLoadingSafeSpending}
+                className="h-8 w-8 p-0"
+                title="Refresh Safe Spending Limit"
+              >
+                <RefreshCw className={`h-4 w-4 text-indigo-600 ${isLoadingSafeSpending ? 'animate-spin' : ''}`} />
+              </Button>
+              <TrendingUp className="h-8 w-8 text-indigo-500" />
+            </div>
           </div>
         </div>
       </div>

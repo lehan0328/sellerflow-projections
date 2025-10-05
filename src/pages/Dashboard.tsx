@@ -48,8 +48,6 @@ const Dashboard = () => {
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
   const [editingIncome, setEditingIncome] = useState<any>(null);
   const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(new Date());
   const { toast } = useToast();
   
   // Use database hooks
@@ -143,32 +141,6 @@ const Dashboard = () => {
   const handleOpenPurchaseOrderForm = () => {
     refetchVendors(); // Ensure we have the latest vendor data
     setShowPurchaseOrderForm(true);
-  };
-
-  // Manual refresh function
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await Promise.all([
-        refetchVendors(),
-        refetchTransactions(),
-        refetchIncome()
-      ]);
-      setLastRefreshTime(new Date());
-      toast({
-        title: "Data refreshed",
-        description: "All dashboard data has been updated.",
-      });
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-      toast({
-        title: "Refresh failed",
-        description: "Failed to refresh data. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
   };
 
   const [cashFlowEvents, setCashFlowEvents] = useState<CashFlowEvent[]>([]);
@@ -923,11 +895,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
-      <DashboardHeader 
-        onRefresh={handleRefresh}
-        isRefreshing={isRefreshing}
-        lastRefreshTime={lastRefreshTime}
-      />
+      <DashboardHeader />
       
       <div className="p-6 space-y-6">
         <OverviewStats 
