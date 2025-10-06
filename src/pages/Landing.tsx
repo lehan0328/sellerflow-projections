@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
+import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun, ExternalLink } from "lucide-react";
+import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun, ExternalLink, Lock, AlertCircle, BookOpen } from "lucide-react";
 import aurenIcon from "@/assets/auren-icon.png";
 import aurenFullLogo from "@/assets/auren-full-logo.png";
 import { useNavigate, Link } from "react-router-dom";
@@ -24,6 +25,16 @@ const Landing = () => {
   const [isYearly, setIsYearly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showEnterpriseCustomizer, setShowEnterpriseCustomizer] = useState(false);
+  const [showStickyCTA, setShowStickyCTA] = useState(false);
+
+  // Track scroll for sticky CTA
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowStickyCTA(window.scrollY > 600);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   const [enterpriseTier, setEnterpriseTier] = useState<"tier1" | "tier2" | "tier3">("tier1");
   const [enterpriseAddons, setEnterpriseAddons] = useState({
     bankConnections: 0,
@@ -230,8 +241,88 @@ const Landing = () => {
     },
   ];
 
+  const blogPosts = [
+    {
+      title: "How to Forecast Amazon Payouts with Accuracy",
+      description: "Learn data-driven methods to predict your next disbursement and avoid cashflow issues.",
+      link: "/blog/forecast-amazon-payouts",
+      category: "Forecasting"
+    },
+    {
+      title: "5 Cashflow Mistakes Every Amazon Seller Should Avoid",
+      description: "Stop losing liquidity due to payout delays — manage cashflow like a pro.",
+      link: "/blog/manage-cashflow",
+      category: "Strategy"
+    },
+    {
+      title: "Best Cashflow Tools for Marketplace Sellers",
+      description: "Compare the top financial tools that help Amazon and multi-channel sellers stay profitable.",
+      link: "/blog/best-cashflow-tools",
+      category: "Tools"
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Auren - Cash Flow Forecasting for Amazon Sellers | Predict Payouts & Manage Finances</title>
+        <meta name="description" content="Forecast Amazon payouts, track expenses, and avoid cash shortfalls with Auren. AI-powered insights, 365-day projections, and real-time dashboards for marketplace sellers." />
+        <link rel="canonical" href="https://aurenapp.com" />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content="Auren - Cash Flow Forecasting for Amazon Sellers" />
+        <meta property="og:description" content="Predict Amazon payouts and manage seller cash flow with 95% accuracy. Start your free trial today." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://aurenapp.com" />
+        <meta property="og:image" content="https://aurenapp.com/assets/og-image.png" />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Auren - Cash Flow Forecasting for Amazon Sellers" />
+        <meta name="twitter:description" content="Predict payouts and manage finances with AI-powered insights." />
+        <meta name="twitter:image" content="https://aurenapp.com/assets/og-image.png" />
+        
+        {/* Schema.org */}
+        <script type="application/ld+json">{`
+          {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "Auren",
+            "applicationCategory": "FinanceApplication",
+            "offers": {
+              "@type": "Offer",
+              "price": "29",
+              "priceCurrency": "USD"
+            },
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "5",
+              "ratingCount": "127"
+            }
+          }
+        `}</script>
+      </Helmet>
+
+      {/* Sticky CTA */}
+      {showStickyCTA && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t shadow-lg animate-slide-up">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-primary" />
+              <span className="font-semibold">Get clarity before your next Amazon payout</span>
+            </div>
+            <Button 
+              onClick={() => handleStartTrial(pricingPlans[1].priceId)}
+              className="bg-gradient-primary"
+              disabled={isLoading}
+            >
+              Start Free Trial
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50 animate-fade-in">
         <div className="container mx-auto px-6 py-4">
@@ -241,9 +332,9 @@ const Landing = () => {
               <span className="text-2xl font-bold">Auren</span>
             </div>
             <div className="hidden md:flex items-center space-x-6">
-              <a href="#features" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
+              <Link to="/features" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
                 Features
-              </a>
+              </Link>
               <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
                 Plans
               </a>
@@ -472,6 +563,22 @@ const Landing = () => {
               </div>
               <div className="p-4 bg-background rounded-lg border">
                 <p className="text-sm italic">"Never miss inventory buys anymore"</p>
+              </div>
+            </div>
+            
+            {/* Trust Badges */}
+            <div className="flex flex-wrap items-center justify-center gap-8 pt-8">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Lock className="h-5 w-5" />
+                <span className="text-sm font-medium">256-bit Encryption</span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Shield className="h-5 w-5" />
+                <span className="text-sm font-medium">Read-Only Access</span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <CheckCircle className="h-5 w-5 text-success" />
+                <span className="text-sm font-medium">SOC 2 Compliant</span>
               </div>
             </div>
           </div>
@@ -947,6 +1054,48 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Blog Preview Section */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center space-y-4 mb-16">
+            <BookOpen className="h-12 w-12 mx-auto text-primary" />
+            <h2 className="text-3xl lg:text-4xl font-bold">
+              Latest Insights from Auren
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Learn proven strategies to forecast payouts, manage cashflow, and scale your Amazon business.
+            </p>
+          </div>
+          
+          <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
+            {blogPosts.map((post, index) => (
+              <Card key={index} className="shadow-card hover:shadow-elevated transition-all duration-300 group cursor-pointer" onClick={() => navigate(post.link)}>
+                <CardHeader>
+                  <Badge variant="secondary" className="w-fit mb-2">{post.category}</Badge>
+                  <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                    {post.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground mb-4">{post.description}</p>
+                  <Button variant="link" className="p-0 h-auto font-semibold group-hover:translate-x-1 transition-transform">
+                    Read More
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="flex justify-center mt-12">
+            <Button variant="outline" size="lg" onClick={() => navigate('/blog')}>
+              View All Articles
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* FAQ Section */}
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
@@ -1099,8 +1248,8 @@ const Landing = () => {
       {/* Footer */}
       <footer className="border-t bg-card py-12">
         <div className="container mx-auto px-4">
-          <div className="grid gap-8 md:grid-cols-4">
-            <div className="space-y-4">
+          <div className="grid gap-8 md:grid-cols-5">
+            <div className="space-y-4 md:col-span-2">
               <div className="flex items-center space-x-2">
                 <div className="h-8 w-8 rounded-lg flex items-center justify-center">
                   <img src={aurenIcon} alt="Auren" className="h-8 w-8" />
@@ -1108,39 +1257,63 @@ const Landing = () => {
                 <span className="text-xl font-bold">Auren</span>
               </div>
               <p className="text-muted-foreground">
-                The cash flow management solution built specifically for Amazon sellers.
+                The cash flow management solution built specifically for Amazon sellers. Forecast payouts, track expenses, and grow with confidence.
               </p>
+              <div className="flex gap-4 pt-2">
+                <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
+                  <a href="https://twitter.com/aurenapp" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                  </a>
+                </Button>
+                <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
+                  <a href="https://linkedin.com/company/aurenapp" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                  </a>
+                </Button>
+              </div>
             </div>
             <div className="space-y-4">
               <h4 className="font-semibold">Product</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#features" className="hover:text-foreground">Features</a></li>
-                <li><a href="#pricing" className="hover:text-foreground">Plans</a></li>
-                <li><Link to="/blog" className="hover:text-foreground">Blog</Link></li>
-                <li><a href="/docs" className="hover:text-foreground">Docs</a></li>
+                <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
+                <li><a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a></li>
+                <li><Link to="/demo" className="hover:text-foreground transition-colors">Live Demo</Link></li>
+                <li><Link to="/features" className="hover:text-foreground transition-colors">All Features</Link></li>
               </ul>
             </div>
             <div className="space-y-4">
-              <h4 className="font-semibold">Support</h4>
+              <h4 className="font-semibold">Resources</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Help Center</a></li>
-                <li><a href="#" className="hover:text-foreground">Contact Us</a></li>
-                <li><a href="#" className="hover:text-foreground">Status</a></li>
-                <li><a href="#" className="hover:text-foreground">Security</a></li>
+                <li><Link to="/blog" className="hover:text-foreground transition-colors">Blog</Link></li>
+                <li><Link to="/docs" className="hover:text-foreground transition-colors">Documentation</Link></li>
+                <li><Link to="/docs/getting-started" className="hover:text-foreground transition-colors">Getting Started</Link></li>
+                <li><Link to="/docs/faq" className="hover:text-foreground transition-colors">FAQ</Link></li>
               </ul>
             </div>
             <div className="space-y-4">
               <h4 className="font-semibold">Company</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">About</a></li>
-                <li><a href="#" className="hover:text-foreground">Blog</a></li>
-                <li><a href="#" className="hover:text-foreground">Careers</a></li>
-                <li><a href="#" className="hover:text-foreground">Privacy</a></li>
+                <li><Link to="/support" className="hover:text-foreground transition-colors">Support</Link></li>
+                <li><Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
+                <li><a href="#" className="hover:text-foreground transition-colors">Terms of Service</a></li>
+                <li><a href="mailto:support@aurenapp.com" className="hover:text-foreground transition-colors">Contact Us</a></li>
               </ul>
             </div>
           </div>
-          <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2025 Auren. All rights reserved.</p>
+          <div className="border-t mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-muted-foreground text-center md:text-left">
+              &copy; 2025 Auren. All rights reserved.
+            </p>
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                <span>Secure & Encrypted</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                <span>Read-Only Access</span>
+              </div>
+            </div>
           </div>
         </div>
       </footer>
