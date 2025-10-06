@@ -236,8 +236,9 @@ const Landing = () => {
       <nav className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50 animate-fade-in">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center animate-scale-in">
+            <div className="flex items-center gap-3 animate-scale-in">
               <img src={aurenIcon} alt="Auren" className="h-12 w-12 hover-scale transition-all duration-300" />
+              <span className="text-2xl font-bold">Auren</span>
             </div>
             <div className="hidden md:flex items-center space-x-6">
               <a href="#features" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
