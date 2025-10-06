@@ -11,7 +11,7 @@ import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { EnterpriseSetupModal } from "@/components/EnterpriseSetupModal";
 import { useSubscription } from "@/hooks/useSubscription";
-import aurenIcon from "@/assets/auren-icon.png";
+import aurenIcon from "@/assets/auren-icon-blue.png";
 
 const marketplaces = [
   { id: "ATVPDKIKX0DER", name: "United States", code: "US" },

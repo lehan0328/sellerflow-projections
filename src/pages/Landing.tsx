@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun, ExternalLink, Lock, AlertCircle, BookOpen } from "lucide-react";
-import aurenIcon from "@/assets/auren-icon.png";
+import aurenIcon from "@/assets/auren-icon-blue.png";
 import aurenFullLogo from "@/assets/auren-full-logo.png";
 import { useNavigate, Link } from "react-router-dom";
 import { LiveDashboardShowcase } from "@/components/LiveDashboardShowcase";
@@ -324,27 +324,32 @@ const Landing = () => {
       )}
 
       {/* Navigation */}
-      <nav className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50 animate-fade-in">
+      <nav className="border-b bg-background/60 backdrop-blur-xl sticky top-0 z-50 animate-fade-in">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 animate-scale-in">
-              <img src={aurenIcon} alt="Auren" className="h-12 w-12 hover-scale transition-all duration-300" />
-              <span className="text-2xl font-bold">Auren</span>
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-glow-pulse" />
+                <img src={aurenIcon} alt="Auren" className="relative h-12 w-12 hover-scale transition-all duration-300" />
+              </div>
+              <span className="text-2xl font-display font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+                Auren
+              </span>
             </div>
             <div className="hidden md:flex items-center space-x-6">
-              <Link to="/features" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
+              <Link to="/features" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Features
               </Link>
-              <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
+              <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Plans
               </a>
-              <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
+              <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Reviews
               </a>
-              <a href="/blog" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
+              <a href="/blog" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Blog
               </a>
-              <a href="/docs" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link">
+              <a href="/docs" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Docs
               </a>
               <Button
@@ -357,10 +362,19 @@ const Landing = () => {
                 <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                 <span className="sr-only">Toggle theme</span>
               </Button>
-              <Button variant="outline" size="sm" className="hover-scale transition-all duration-200" onClick={() => navigate('/auth')}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="hover-scale transition-all duration-200 border-primary/20 hover:border-primary/40" 
+                onClick={() => navigate('/auth')}
+              >
                 Sign In
               </Button>
-              <Button size="sm" className="bg-gradient-primary hover-scale transition-all duration-200" onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}>
+              <Button 
+                size="sm" 
+                className="bg-gradient-primary hover-scale transition-all duration-200 hover:shadow-lg hover:shadow-primary/50" 
+                onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+              >
                 Start Free Trial
               </Button>
             </div>
@@ -369,145 +383,148 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-4 pb-0">
-        {/* Animated Background */}
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
-          <div className="absolute top-20 left-20 w-72 h-72 bg-primary/20 rounded-full blur-3xl animate-pulse opacity-20" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse opacity-30" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-primary/10 to-accent/10 rounded-full blur-3xl animate-pulse opacity-10" style={{ animationDelay: '2s' }} />
+      <section className="relative overflow-hidden py-20 lg:py-32">
+        {/* Grid Pattern Background */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+        
+        {/* Animated Gradient Orbs */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/30 rounded-full blur-[100px] animate-float" />
+          <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] bg-accent/20 rounded-full blur-[120px] animate-float" style={{ animationDelay: '2s', animationDuration: '8s' }} />
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-primary-glow/20 rounded-full blur-[80px] animate-glow-pulse" />
         </div>
         
+        {/* Glassmorphism Overlay */}
+        <div className="absolute inset-0 backdrop-blur-[1px]" />
+        
         <div className="container relative mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 items-center pt-8 pb-12 lg:pt-12 lg:pb-16">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left Content */}
-            <div className="space-y-8">
-              {/* New Smart AI Features Badge */}
-              <Badge className="inline-flex items-center gap-2 bg-foreground text-background px-4 py-2 text-sm font-semibold animate-fade-in">
-                <span>New</span>
-                <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-                <span>Smart AI Features</span>
-              </Badge>
+            <div className="space-y-8 z-10">
+              {/* Floating Badge */}
+              <div className="animate-fade-in">
+                <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm hover-scale">
+                  <Sparkles className="h-4 w-4 animate-pulse" />
+                  <span className="font-display">AI-Powered Forecasting</span>
+                  <span className="ml-2 px-2 py-0.5 bg-primary/20 rounded-full text-xs">New</span>
+                </Badge>
+              </div>
               
               <div className="animate-fade-in space-y-6" style={{ animationDelay: '200ms' }}>
-                <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
-                  <span className="bg-gradient-primary bg-clip-text text-transparent">
-                    Cashflow Forecasting for Marketplace Sellers
+                <h1 className="text-5xl lg:text-6xl xl:text-7xl font-display font-bold leading-[1.1] tracking-tight">
+                  <span className="block text-foreground">Cashflow</span>
+                  <span className="block bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+                    Forecasting
                   </span>
+                  <span className="block text-foreground">for Marketplace</span>
+                  <span className="block text-foreground">Sellers</span>
                 </h1>
               </div>
               
               <p 
-                className="text-xl text-muted-foreground max-w-xl animate-fade-in leading-relaxed font-medium" 
-                style={{ animationDelay: '600ms' }}
+                className="text-xl text-muted-foreground max-w-xl animate-fade-in leading-relaxed" 
+                style={{ animationDelay: '400ms' }}
               >
-                Auren helps you predict Amazon payouts, track expenses, and stay ahead of cash shortfalls — all in one simple dashboard.
+                Predict Amazon payouts with <span className="text-primary font-semibold">95% accuracy</span>, track expenses in real-time, 
+                and stay ahead of cash shortfalls with AI-powered insights.
               </p>
               
               <div 
                 className="flex flex-col sm:flex-row items-start gap-4 animate-fade-in" 
-                style={{ animationDelay: '800ms' }}
+                style={{ animationDelay: '600ms' }}
               >
                 <Button 
                   size="lg" 
-                  className="bg-gradient-primary text-base px-8 py-6 text-lg hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-primary/25" 
+                  className="group relative bg-gradient-primary text-white text-base px-8 py-7 text-lg font-semibold overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-primary/50 hover:-translate-y-1" 
                   onClick={() => handleStartTrial(pricingPlans[1].priceId)}
                   disabled={isLoading}
                 >
-                  {isLoading ? "Loading..." : "Start 7-Day Free Trial"}
-                  <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
+                  <span className="relative z-10">{isLoading ? "Loading..." : "Start 7-Day Free Trial"}</span>
+                  <ArrowRight className="relative z-10 ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </Button>
                 <Button 
                   size="lg" 
                   variant="outline"
-                  className="text-base px-8 py-6 text-lg hover-scale transition-all duration-300" 
+                  className="text-base px-8 py-7 text-lg font-semibold border-2 hover-scale transition-all duration-300 hover:border-primary/50 hover:bg-primary/5" 
                   onClick={() => navigate('/demo')}
                 >
+                  <ExternalLink className="mr-2 h-5 w-5" />
                   See Live Demo
                 </Button>
               </div>
               
-              {/* Trust & Security Line */}
-              <p 
-                className="text-sm text-muted-foreground max-w-2xl animate-fade-in leading-relaxed border-l-2 border-primary/50 pl-4" 
-                style={{ animationDelay: '850ms' }}
-              >
-                🔒 Read-only Amazon SP-API • Bank connections via secure aggregator • We never sell your data
-              </p>
-
-              <Badge 
-                variant="secondary" 
-                className="inline-flex items-center space-x-2 animate-fade-in hover-scale transition-all duration-300 hover:bg-primary/10"
-                style={{ animationDelay: '900ms' }}
-              >
-                <Star className="h-4 w-4 fill-current" />
-                <span>Made for Amazon Sellers by Amazon Sellers</span>
-              </Badge>
-              
-              {/* CTA Bar */}
+              {/* Trust Indicators */}
               <div
-                className="flex flex-col sm:flex-row items-start gap-6 text-sm text-muted-foreground animate-fade-in" 
+                className="flex flex-wrap items-center gap-6 pt-4 animate-fade-in" 
+                style={{ animationDelay: '800ms' }}
+              >
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="flex -space-x-1">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent border-2 border-background" />
+                    ))}
+                  </div>
+                  <span className="text-muted-foreground">
+                    <span className="font-semibold text-foreground">500+</span> sellers trust Auren
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  ))}
+                  <span className="ml-2 text-sm text-muted-foreground">
+                    <span className="font-semibold text-foreground">4.9</span>/5 rating
+                  </span>
+                </div>
+              </div>
+              
+              {/* Security Badge */}
+              <div 
+                className="inline-flex items-center gap-3 px-4 py-3 rounded-xl bg-card/50 backdrop-blur-sm border border-border/50 animate-fade-in" 
                 style={{ animationDelay: '1000ms' }}
               >
-                <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
-                  <CheckCircle className="h-4 w-4 text-success" />
-                  <span>Start free</span>
-                </div>
-                <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
-                  <CheckCircle className="h-4 w-4 text-success" />
-                  <span>Cancel anytime</span>
-                </div>
-                <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
-                  <CheckCircle className="h-4 w-4 text-success" />
-                  <span>2-minute setup</span>
+                <Lock className="h-5 w-5 text-primary" />
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>Bank-grade security</span>
+                  <span className="text-border">•</span>
+                  <span>Read-only access</span>
+                  <span className="text-border">•</span>
+                  <span>SOC 2 compliant</span>
                 </div>
               </div>
             </div>
 
             {/* Right Dashboard Preview */}
             <div 
-              className="relative animate-fade-in space-y-6"
-              style={{ animationDelay: '1200ms' }}
+              className="relative animate-fade-in"
+              style={{ animationDelay: '400ms' }}
             >
-              {/* Dashboard Description */}
-              <div className="text-center space-y-3 px-4">
-                <p className="text-lg text-muted-foreground">
-                  Experience a fully interactive cash flow dashboard with real-time projections, AI-powered insights, 
-                  and comprehensive financial tracking - all designed specifically for Amazon sellers.
-                </p>
-              </div>
-
-              {/* Try Interactive Demo Button */}
-              <div className="flex justify-center">
-                <Button
-                  variant="outline" 
-                  onClick={() => navigate('/demo')}
-                  className="inline-flex items-center space-x-2 hover-scale transition-all duration-300"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  <span>Try Interactive Demo</span>
-                </Button>
-              </div>
-
-              <div className="relative">
-                {/* Glow effect behind dashboard */}
-                <div className="absolute -inset-4 bg-gradient-to-b from-primary/20 via-primary/10 to-transparent rounded-2xl blur-2xl" />
+              {/* Floating Card Effect */}
+              <div className="relative animate-float">
+                {/* Glow effect */}
+                <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-3xl blur-3xl animate-glow-pulse" />
                 
                 {/* Dashboard preview card */}
-                <div className="relative rounded-2xl border-2 border-primary/20 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden hover-scale transition-all duration-500">
-                  <div className="p-2 border-b border-border/50 bg-muted/30 flex items-center gap-2">
-                    <div className="flex gap-1.5">
+                <div className="relative rounded-3xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden group hover:border-primary/40 transition-all duration-500">
+                  {/* Browser chrome */}
+                  <div className="p-3 border-b border-border/50 bg-muted/30 flex items-center justify-between">
+                    <div className="flex gap-2">
                       <div className="w-3 h-3 rounded-full bg-red-500/80" />
                       <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
                       <div className="w-3 h-3 rounded-full bg-green-500/80" />
                     </div>
-                    <div className="flex-1 text-center text-xs text-muted-foreground font-medium">
-                      Live Dashboard
+                    <div className="flex-1 mx-4 px-4 py-1 bg-background/50 rounded-lg">
+                      <div className="text-xs text-muted-foreground font-mono">aurenapp.com/dashboard</div>
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="w-6 h-6 rounded bg-muted/50" />
+                      <div className="w-6 h-6 rounded bg-muted/50" />
                     </div>
                   </div>
                   
-                  {/* Dashboard screenshot/component */}
-                  <div className="relative overflow-hidden flex items-center justify-center bg-background" style={{ aspectRatio: '16/9' }}>
+                  {/* Dashboard screenshot/iframe */}
+                  <div className="relative overflow-hidden flex items-center justify-center bg-background/50" style={{ aspectRatio: '16/10' }}>
                     <div className="w-full h-full flex items-center justify-center">
                       <iframe
                         src="/demo"
@@ -523,25 +540,25 @@ const Landing = () => {
                       />
                     </div>
                     
-                    {/* Fade out gradient at bottom */}
-                    <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-card via-card/50 to-transparent pointer-events-none" />
+                    {/* Fade gradient */}
+                    <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-card/80 via-card/40 to-transparent pointer-events-none" />
                   </div>
                 </div>
-              </div>
 
-              {/* Stats below dashboard */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">Real-time</div>
-                  <div className="text-sm text-muted-foreground">Data Updates</div>
+                {/* Floating stats */}
+                <div className="absolute -bottom-6 -left-6 p-4 rounded-2xl bg-card/80 backdrop-blur-xl border border-primary/20 shadow-lg animate-float" style={{ animationDelay: '1s' }}>
+                  <div className="text-sm text-muted-foreground">Next Payout</div>
+                  <div className="text-2xl font-bold text-success">$12,847</div>
+                  <div className="text-xs text-muted-foreground">in 3 days</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">Interactive</div>
-                  <div className="text-sm text-muted-foreground">Interface</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">Responsive</div>
-                  <div className="text-sm text-muted-foreground">Design</div>
+
+                <div className="absolute -top-6 -right-6 p-4 rounded-2xl bg-card/80 backdrop-blur-xl border border-accent/20 shadow-lg animate-float" style={{ animationDelay: '2s', animationDuration: '7s' }}>
+                  <div className="text-sm text-muted-foreground">Forecast Accuracy</div>
+                  <div className="text-2xl font-bold text-primary">95.8%</div>
+                  <div className="flex items-center gap-1 text-xs text-success">
+                    <TrendingUp className="h-3 w-3" />
+                    <span>+2.3% this month</span>
+                  </div>
                 </div>
               </div>
             </div>

@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate, Link } from "react-router-dom";
 import { ArrowRight, Calendar, Clock } from "lucide-react";
-import aurenIcon from "@/assets/auren-icon.png";
+import aurenIcon from "@/assets/auren-icon-blue.png";
 
 const Blog = () => {
   const navigate = useNavigate();

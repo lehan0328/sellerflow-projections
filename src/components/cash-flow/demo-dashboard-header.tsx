@@ -1,4 +1,4 @@
-import aurenIcon from "@/assets/auren-icon.png";
+import aurenIcon from "@/assets/auren-icon-blue.png";
 
 export function DemoDashboardHeader() {
   return (
