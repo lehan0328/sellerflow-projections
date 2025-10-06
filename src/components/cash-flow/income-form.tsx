@@ -55,7 +55,7 @@ export const IncomeForm = ({
     category: editingIncome?.category || "",
     notes: editingIncome?.notes || "",
     isRecurring: editingIncome?.isRecurring || isRecurring,
-    recurringFrequency: editingIncome?.recurringFrequency || "monthly" as "weekly" | "bi-weekly" | "monthly" | "quarterly" | "yearly" | "weekdays"
+    recurringFrequency: editingIncome?.recurringFrequency || "monthly" as "weekly" | "bi-weekly" | "monthly" | "yearly" | "weekdays"
   });
 
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -427,11 +427,11 @@ export const IncomeForm = ({
                       <SelectValue placeholder="Select frequency" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="daily">Daily</SelectItem>
                       <SelectItem value="weekly">Weekly</SelectItem>
                       <SelectItem value="bi-weekly">Bi-weekly (Every 2 weeks)</SelectItem>
                       <SelectItem value="weekdays">Weekdays (Mon-Fri)</SelectItem>
                       <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="quarterly">Quarterly</SelectItem>
                       <SelectItem value="yearly">Yearly</SelectItem>
                     </SelectContent>
                   </Select>

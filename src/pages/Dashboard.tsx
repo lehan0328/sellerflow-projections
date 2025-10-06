@@ -58,7 +58,7 @@ const Dashboard = () => {
   const { transactions, addTransaction, deleteTransaction, refetch: refetchTransactions } = useTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { creditCards } = useCreditCards();
-  const { recurringExpenses } = useRecurringExpenses();
+  const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
   
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
   const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance } = useUserSettings();
@@ -451,6 +451,39 @@ const Dashboard = () => {
     console.info("Payment date:", paymentDate);
     console.info("Current bank balance:", bankAccountBalance);
     
+    // Check if this is a recurring transaction
+    if (incomeData.isRecurring) {
+      // Map quarterly to monthly for database (or handle separately)
+      let frequency = incomeData.recurringFrequency;
+      if (frequency === 'quarterly') {
+        // Convert quarterly to monthly with a note
+        frequency = 'monthly';
+      }
+
+      // Save to recurring_expenses table
+      await createRecurringExpense({
+        name: incomeData.description || 'Recurring Income',
+        transaction_name: incomeData.description || 'Recurring Income',
+        amount: amount,
+        frequency: frequency,
+        start_date: format(paymentDate, 'yyyy-MM-dd'),
+        end_date: null, // No end date by default
+        is_active: true,
+        type: 'income',
+        category: incomeData.category || null,
+        notes: incomeData.notes || null,
+      });
+
+      toast({
+        title: "Recurring income added!",
+        description: `${incomeData.description} will appear on the calendar based on ${incomeData.recurringFrequency} schedule`,
+      });
+
+      setShowIncomeForm(false);
+      setShowRecurringIncomeForm(false);
+      return;
+    }
+    
     // Note: In a real Plaid integration, this would add funds to connected account
 
     // Add to database - check if it succeeds
@@ -461,7 +494,7 @@ const Dashboard = () => {
       source: incomeData.customer || incomeData.source || 'Manual Entry',
       status: 'pending' as const,
       category: incomeData.category || '',
-      isRecurring: incomeData.isRecurring || false,
+      isRecurring: false,
       recurringFrequency: incomeData.recurringFrequency,
       notes: incomeData.notes,
       customerId: incomeData.customerId
@@ -497,6 +530,39 @@ const Dashboard = () => {
     
     console.info("Adding expense amount:", amount);
     console.info("Current bank balance:", bankAccountBalance);
+    
+    // Check if this is a recurring transaction
+    if (expenseData.isRecurring) {
+      // Map quarterly to monthly for database (or handle separately)
+      let frequency = expenseData.recurringFrequency;
+      if (frequency === 'quarterly') {
+        // Convert quarterly to monthly with a note
+        frequency = 'monthly';
+      }
+
+      // Save to recurring_expenses table
+      await createRecurringExpense({
+        name: expenseData.description || 'Recurring Expense',
+        transaction_name: expenseData.description || 'Recurring Expense',
+        amount: amount,
+        frequency: frequency,
+        start_date: format(expenseData.paymentDate || new Date(), 'yyyy-MM-dd'),
+        end_date: null, // No end date by default
+        is_active: true,
+        type: 'expense',
+        category: expenseData.category || null,
+        notes: expenseData.notes || null,
+      });
+
+      toast({
+        title: "Recurring expense added!",
+        description: `${expenseData.description} will appear on the calendar based on ${expenseData.recurringFrequency} schedule`,
+      });
+
+      setShowIncomeForm(false);
+      setShowRecurringIncomeForm(false);
+      return;
+    }
     
     // Note: In a real Plaid integration, this would deduct from connected account
 
