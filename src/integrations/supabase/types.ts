@@ -869,6 +869,7 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          remarks: string | null
           status: string | null
           transaction_date: string
           type: string
@@ -883,6 +884,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          remarks?: string | null
           status?: string | null
           transaction_date?: string
           type: string
@@ -897,6 +899,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          remarks?: string | null
           status?: string | null
           transaction_date?: string
           type?: string

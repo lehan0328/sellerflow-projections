@@ -74,7 +74,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate }: Vendo
       if (statusFilter === 'overdue') {
         matchesStatus = tx.status === 'pending' && tx.dueDate && new Date(tx.dueDate) < new Date();
       } else if (statusFilter === 'paid') {
-        matchesStatus = tx.status === 'paid';
+        matchesStatus = tx.status === 'completed' || tx.status === 'paid';
       }
       
       if (!matchesStatus) return false;
@@ -156,7 +156,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate }: Vendo
   const getStatusColor = (tx: VendorTransaction) => {
     if (!tx.dueDate) return 'default';
     
-    if (tx.status === 'paid') {
+    if (tx.status === 'completed' || tx.status === 'paid') {
       return 'default'; // Paid - neutral color
     }
     
@@ -209,7 +209,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate }: Vendo
     const timeDiff = dueDate.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
     
-    if (tx.status === 'paid') {
+    if (tx.status === 'completed' || tx.status === 'paid') {
       return 'Paid';
     }
     
@@ -226,7 +226,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate }: Vendo
   const totalOwed = filteredAndSortedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
   const overdueAmount = filteredAndSortedTransactions
     .filter(tx => {
-      if (!tx.dueDate || tx.status === 'paid') return false;
+      if (!tx.dueDate || tx.status === 'completed' || tx.status === 'paid') return false;
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const dueDate = new Date(tx.dueDate);
@@ -435,7 +435,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate }: Vendo
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        {tx.status !== 'paid' && tx.dueDate && (
+                        {tx.status !== 'completed' && tx.status !== 'paid' && tx.dueDate && (
                           <TooltipProvider>
                             <Tooltip>
                               <AlertDialog>

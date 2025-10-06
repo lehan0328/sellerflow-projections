@@ -86,13 +86,13 @@ export const useVendorTransactions = () => {
     try {
       const { error } = await supabase
         .from('transactions')
-        .update({ status: 'paid' })
+        .update({ status: 'completed' } as any)
         .eq('id', transactionId);
 
       if (error) throw error;
 
       setTransactions(prev => prev.map(tx => 
-        tx.id === transactionId ? { ...tx, status: 'paid' as const } : tx
+        tx.id === transactionId ? { ...tx, status: 'completed' as const } : tx
       ));
 
       toast({
@@ -113,7 +113,7 @@ export const useVendorTransactions = () => {
     try {
       const { error } = await supabase
         .from('transactions')
-        .update({ remarks })
+        .update({ remarks } as any)
         .eq('id', transactionId);
 
       if (error) throw error;
