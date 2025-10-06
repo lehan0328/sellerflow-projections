@@ -12,6 +12,7 @@ import { useVendors } from "@/hooks/useVendors";
 import { useIncome } from "@/hooks/useIncome";
 import { useBankTransactions } from "@/hooks/useBankTransactions";
 import { useCreditCards } from "@/hooks/useCreditCards";
+import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { ArrowLeft, Plus, Save, Trash2, TrendingUp, TrendingDown, Calculator } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -45,6 +46,7 @@ export default function ScenarioPlanner() {
   const { incomeItems } = useIncome();
   const { transactions } = useBankTransactions();
   const { creditCards } = useCreditCards();
+  const { accounts: bankAccounts } = useBankAccounts();
 
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
   const [scenarioName, setScenarioName] = useState("");
@@ -67,8 +69,13 @@ export default function ScenarioPlanner() {
   
   const projectionMonths = getProjectionWeeks(projectionPeriod) / 4;
 
-  // Calculate baseline metrics based on actual historical data
+  // Calculate baseline metrics based on actual cash and historical data
   const baselineMetrics = useMemo(() => {
+    // Get current total cash from all bank accounts
+    const currentCash = bankAccounts.reduce((sum, account) => {
+      return sum + (account.available_balance || account.balance || 0);
+    }, 0);
+    
     // Get received income from the last 6 months
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
@@ -89,24 +96,29 @@ export default function ScenarioPlanner() {
     const monthlyExpenses = totalExpenses > 0 ? totalExpenses / 6 : 0;
     
     return {
+      currentCash,
       totalRevenue,
       totalExpenses,
       monthlyRevenue,
       monthlyExpenses,
       netProfit: totalRevenue - totalExpenses,
     };
-  }, [incomeItems, vendors]);
+  }, [incomeItems, vendors, bankAccounts]);
 
   // Calculate scenario projections
   const scenarioProjection = useMemo(() => {
     const periods = [];
-    const { monthlyRevenue: baseMonthlyRevenue, monthlyExpenses: baseMonthlyExpenses } = baselineMetrics;
+    const { currentCash, monthlyRevenue: baseMonthlyRevenue, monthlyExpenses: baseMonthlyExpenses } = baselineMetrics;
     const weeks = getProjectionWeeks(projectionPeriod);
     const isWeekly = weeks < 4;
 
     // Convert monthly baseline to weekly if needed
     const basePeriodRevenue = isWeekly ? baseMonthlyRevenue / 4 : baseMonthlyRevenue;
     const basePeriodExpenses = isWeekly ? baseMonthlyExpenses / 4 : baseMonthlyExpenses;
+
+    // Start with current cash and track cumulative cash flow
+    let baselineCumulativeCash = currentCash;
+    let scenarioCumulativeCash = currentCash;
 
     // Handle case where there's no baseline data
     if (baseMonthlyRevenue === 0 && baseMonthlyExpenses === 0) {
@@ -125,10 +137,10 @@ export default function ScenarioPlanner() {
             : date.toLocaleDateString('en-US', { month: 'short' }),
           baselineRevenue: 0,
           baselineExpenses: 0,
-          baselineNet: 0,
+          baselineNet: currentCash,
           scenarioRevenue: 0,
           scenarioExpenses: 0,
-          scenarioNet: 0,
+          scenarioNet: currentCash,
         });
       }
       return periods;
@@ -155,6 +167,10 @@ export default function ScenarioPlanner() {
         adjustedExpenses = basePeriodExpenses + periodAdjustment;
       }
 
+      // Calculate cumulative cash position
+      baselineCumulativeCash += basePeriodRevenue - basePeriodExpenses;
+      scenarioCumulativeCash += adjustedRevenue - adjustedExpenses;
+
       const date = new Date();
       if (isWeekly) {
         date.setDate(date.getDate() + (i * 7));
@@ -168,10 +184,10 @@ export default function ScenarioPlanner() {
           : date.toLocaleDateString('en-US', { month: 'short' }),
         baselineRevenue: basePeriodRevenue,
         baselineExpenses: basePeriodExpenses,
-        baselineNet: basePeriodRevenue - basePeriodExpenses,
+        baselineNet: baselineCumulativeCash,
         scenarioRevenue: adjustedRevenue,
         scenarioExpenses: adjustedExpenses,
-        scenarioNet: adjustedRevenue - adjustedExpenses,
+        scenarioNet: scenarioCumulativeCash,
       });
     }
 
