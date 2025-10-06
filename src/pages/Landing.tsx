@@ -392,10 +392,16 @@ const Landing = () => {
                   
                   {/* Dashboard screenshot/component */}
                   <div className="relative h-[400px] lg:h-[500px] overflow-hidden flex items-center justify-center bg-background">
-                    <div className="w-full h-full">
+                    <div className="w-full h-full flex items-center justify-center">
                       <iframe
                         src="/demo"
                         className="w-full h-full border-0"
+                        style={{ 
+                          transform: 'scale(0.5)',
+                          transformOrigin: 'center center',
+                          width: '200%',
+                          height: '200%'
+                        }}
                         title="Demo Dashboard Preview"
                       />
                     </div>
