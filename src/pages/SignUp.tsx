@@ -60,11 +60,11 @@ export const SignUp = () => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Navigate to manage-accounts and pass enterprise parameter
+        // New signups go to onboarding with enterprise parameter if applicable
         if (isEnterprise) {
-          navigate('/manage-accounts?enterprise=true');
+          navigate('/onboarding?enterprise=true');
         } else {
-          navigate('/manage-accounts');
+          navigate('/onboarding');
         }
       }
     };
@@ -73,11 +73,11 @@ export const SignUp = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        // Navigate to manage-accounts and pass enterprise parameter
+        // New signups go to onboarding with enterprise parameter if applicable
         if (isEnterprise) {
-          navigate('/manage-accounts?enterprise=true');
+          navigate('/onboarding?enterprise=true');
         } else {
-          navigate('/manage-accounts');
+          navigate('/onboarding');
         }
       }
     });

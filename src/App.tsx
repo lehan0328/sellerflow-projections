@@ -28,7 +28,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import Admin from "./pages/Admin";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import Support from "./pages/Support";
-import ManageAccounts from "./pages/ManageAccounts";
+import Onboarding from "./pages/Onboarding";
 
 const queryClient = new QueryClient();
 
@@ -53,9 +53,9 @@ const App = () => (
               <Dashboard />
             </ProtectedRoute>
           } />
-          <Route path="/manage-accounts" element={
+          <Route path="/onboarding" element={
             <ProtectedRoute>
-              <ManageAccounts />
+              <Onboarding />
             </ProtectedRoute>
           } />
           <Route path="/settings" element={

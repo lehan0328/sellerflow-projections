@@ -27,38 +27,26 @@ export const Auth = () => {
   const [resetEmail, setResetEmail] = useState('');
 
   useEffect(() => {
-    // Check for enterprise parameter from checkout
-    const isEnterprise = searchParams.get('enterprise') === 'true';
-    
     // Check if user is already authenticated
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Navigate to manage-accounts and pass enterprise parameter
-        if (isEnterprise) {
-          navigate('/manage-accounts?enterprise=true', { replace: true });
-        } else {
-          navigate('/manage-accounts');
-        }
+        // Existing users go to dashboard
+        navigate('/dashboard');
       }
     };
     
     checkAuth();
 
-    // Listen for auth changes
+    // Listen for auth changes - redirect existing users to dashboard
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        // Navigate to manage-accounts and pass enterprise parameter
-        if (isEnterprise) {
-          navigate('/manage-accounts?enterprise=true', { replace: true });
-        } else {
-          navigate('/manage-accounts');
-        }
+        navigate('/dashboard');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, searchParams]);
+  }, [navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
