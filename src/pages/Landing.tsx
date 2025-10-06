@@ -1114,10 +1114,10 @@ const Landing = () => {
             <div className="space-y-4">
               <h4 className="font-semibold">Product</h4>
               <ul className="space-y-2 text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Features</a></li>
-                <li><a href="#" className="hover:text-foreground">Plans</a></li>
-                <li><a href="#" className="hover:text-foreground">API</a></li>
-                <li><a href="#" className="hover:text-foreground">Integrations</a></li>
+                <li><a href="#features" className="hover:text-foreground">Features</a></li>
+                <li><a href="#pricing" className="hover:text-foreground">Plans</a></li>
+                <li><a href="/blog" className="hover:text-foreground">Blog</a></li>
+                <li><a href="/docs" className="hover:text-foreground">Docs</a></li>
               </ul>
             </div>
             <div className="space-y-4">

@@ -10,6 +10,33 @@ const Blog = () => {
 
   const blogPosts = [
     {
+      slug: "forecast-amazon-payouts",
+      title: "How to Forecast Amazon Payouts with Accuracy",
+      category: "Forecasting",
+      excerpt: "Learn how to forecast Amazon payouts accurately using data-driven models. Predict disbursements, manage expenses, and plan growth confidently.",
+      readTime: "6 min read",
+      date: "October 2025",
+      color: "bg-blue-500/10 text-blue-600"
+    },
+    {
+      slug: "manage-cashflow",
+      title: "5 Cashflow Mistakes Every Amazon Seller Should Avoid",
+      category: "Management",
+      excerpt: "Avoid the most common Amazon cashflow mistakes — from overspending on ads to ignoring payout delays. Learn proven management strategies.",
+      readTime: "7 min read",
+      date: "October 2025",
+      color: "bg-red-500/10 text-red-600"
+    },
+    {
+      slug: "financing-growth",
+      title: "How to Use Cashflow Forecasts to Secure Seller Financing",
+      category: "Financing",
+      excerpt: "Learn how Amazon sellers can use cashflow forecasts to qualify for better funding and present predictable revenue to lenders.",
+      readTime: "8 min read",
+      date: "October 2025",
+      color: "bg-green-500/10 text-green-600"
+    },
+    {
       slug: "predict-amazon-payouts",
       title: "How to Predict Amazon Payouts Before They Happen",
       category: "Cashflow",

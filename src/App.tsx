@@ -35,6 +35,9 @@ import SellerFundingForecast from "./pages/blog/SellerFundingForecast";
 import ScalingToSevenFigures from "./pages/blog/ScalingToSevenFigures";
 import BestCashflowTools from "./pages/blog/BestCashflowTools";
 import InventoryTurnoverCashflow from "./pages/blog/InventoryTurnoverCashflow";
+import ForecastAmazonPayouts from "./pages/blog/ForecastAmazonPayouts";
+import ManageCashflow from "./pages/blog/ManageCashflow";
+import FinancingGrowth from "./pages/blog/FinancingGrowth";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +63,9 @@ const App = () => (
           <Route path="/blog/scaling-to-seven-figures" element={<ScalingToSevenFigures />} />
           <Route path="/blog/best-cashflow-tools" element={<BestCashflowTools />} />
           <Route path="/blog/inventory-turnover-cashflow" element={<InventoryTurnoverCashflow />} />
+          <Route path="/blog/forecast-amazon-payouts" element={<ForecastAmazonPayouts />} />
+          <Route path="/blog/manage-cashflow" element={<ManageCashflow />} />
+          <Route path="/blog/financing-growth" element={<FinancingGrowth />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
