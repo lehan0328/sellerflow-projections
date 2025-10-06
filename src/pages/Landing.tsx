@@ -298,7 +298,7 @@ const Landing = () => {
               <div className="animate-fade-in space-y-6" style={{ animationDelay: '200ms' }}>
                 <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
                   <span className="bg-gradient-primary bg-clip-text text-transparent">
-                    Cashflow Built for Marketplace Sellers
+                    Cashflow Forecasting for Marketplace Sellers
                   </span>
                 </h1>
               </div>
@@ -307,7 +307,7 @@ const Landing = () => {
                 className="text-xl text-muted-foreground max-w-xl animate-fade-in leading-relaxed font-medium" 
                 style={{ animationDelay: '600ms' }}
               >
-                Forecast Amazon payouts, see daily cash, and plan spend with confidence.
+                Auren helps you predict Amazon payouts, track expenses, and stay ahead of cash shortfalls — all in one simple dashboard.
               </p>
               
               <div 
@@ -480,97 +480,140 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
-              Cashflow Built for Marketplace Sellers
+              Why Amazon Sellers Choose Auren
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Predict Amazon payouts by day, spot cash gaps weeks ahead, and plan inventory, ads, and loan payments with confidence.
-            </p>
           </div>
           
-          <div className="grid gap-8 md:grid-cols-3 max-w-5xl mx-auto mb-16">
+          <div className="grid gap-8 md:grid-cols-2 max-w-6xl mx-auto">
             <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
               <CardHeader>
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                    <Calendar className="h-6 w-6" />
-                  </div>
-                  <CardTitle className="text-lg">Know your next payout</CardTitle>
+                  <div className="text-3xl">🔮</div>
+                  <CardTitle className="text-xl">Predict Every Payout</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Rolling forecast that updates daily</p>
+                <p className="text-muted-foreground leading-relaxed">
+                  Auren connects securely to your Amazon Seller Central account and analyzes your settlement history to forecast upcoming payouts — date, amount, and frequency — so you know exactly when cash is coming.
+                </p>
               </CardContent>
             </Card>
+            
             <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
               <CardHeader>
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                    <TrendingUp className="h-6 w-6" />
-                  </div>
-                  <CardTitle className="text-lg">Plan spend with certainty</CardTitle>
+                  <div className="text-3xl">📊</div>
+                  <CardTitle className="text-xl">See Your Entire Cash Timeline</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">See cash-in/cash-out by week</p>
+                <p className="text-muted-foreground leading-relaxed">
+                  View all inflows and outflows — sales, fees, ads, loans, inventory restocks — on a daily or weekly basis. Spot cash gaps weeks in advance and plan purchases with confidence.
+                </p>
               </CardContent>
             </Card>
+            
             <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
               <CardHeader>
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                    <Shield className="h-6 w-6" />
-                  </div>
-                  <CardTitle className="text-lg">Avoid surprise shortfalls</CardTitle>
+                  <div className="text-3xl">💡</div>
+                  <CardTitle className="text-xl">Plan Smarter, Scale Faster</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Alerts before you're tight on cash</p>
+                <p className="text-muted-foreground leading-relaxed">
+                  Use Auren's intelligent projections to test new ad budgets, plan restocks, or time supplier payments without risking liquidity. Your business decisions stay backed by real data, not guesswork.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="text-3xl">🛡️</div>
+                  <CardTitle className="text-xl">Private, Secure, and Read-Only</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed">
+                  We never sell or share your data. Auren uses read-only API permissions and encrypted connections. You stay in control — disconnect anytime with one click.
+                </p>
               </CardContent>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* Product Clarity Section */}
+      {/* How It Works Section */}
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
-              What It Actually Does
+              How Auren Works
             </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Setup takes less than 2 minutes. No spreadsheet uploads, no guesswork — just clarity.
+            </p>
           </div>
           
-          <div className="grid gap-8 md:grid-cols-3 max-w-5xl mx-auto">
-            <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="text-xl">Daily payout forecast</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-muted-foreground">
-                  Exact dates & amounts based on settlements, fees, and reserves.
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="text-xl">Cash timeline</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-muted-foreground">
-                  All inflows/outflows (COGS, ads, loan payments) in one rolling view.
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="text-xl">Credit utilization</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-muted-foreground">
-                  See available credit vs. upcoming needs at a glance.
-                </p>
-              </CardContent>
-            </Card>
+          <div className="max-w-4xl mx-auto">
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
+                <CardHeader>
+                  <div className="flex items-center space-x-3">
+                    <Badge className="text-xl font-bold">1</Badge>
+                    <CardTitle className="text-lg">Connect your Amazon account</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Securely via SP-API — no passwords required.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
+                <CardHeader>
+                  <div className="flex items-center space-x-3">
+                    <Badge className="text-xl font-bold">2</Badge>
+                    <CardTitle className="text-lg">Sync your data</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Auren analyzes settlement and transaction history instantly.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
+                <CardHeader>
+                  <div className="flex items-center space-x-3">
+                    <Badge className="text-xl font-bold">3</Badge>
+                    <CardTitle className="text-lg">View your forecast</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    See upcoming payouts, expenses, and available cash by day.
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
+                <CardHeader>
+                  <div className="flex items-center space-x-3">
+                    <Badge className="text-xl font-bold">4</Badge>
+                    <CardTitle className="text-lg">Plan ahead</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    Make confident decisions about inventory, ads, or new launches.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </section>
@@ -859,30 +902,112 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
-              Loved by Amazon Sellers
+              What Sellers Are Saying
             </h2>
-            <p className="text-xl text-muted-foreground">
-              See what our customers are saying
-            </p>
           </div>
           
-          <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="shadow-card hover:shadow-elevated transition-all duration-300">
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex space-x-1">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-current text-yellow-400" />
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground italic">"{testimonial.content}"</p>
-                  <div className="border-t pt-4">
-                    <p className="font-semibold">{testimonial.name}</p>
-                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="grid gap-8 md:grid-cols-2 max-w-5xl mx-auto">
+            <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
+              <CardContent className="p-8 space-y-4">
+                <div className="flex space-x-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 fill-current text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-lg text-muted-foreground italic leading-relaxed">
+                  "Before Auren, I never knew how much cash I'd actually have after Amazon fees. Now I can see my next payout and upcoming expenses in one view — it's a game changer."
+                </p>
+                <div className="border-t pt-4">
+                  <p className="font-semibold">Jessica M.</p>
+                  <p className="text-sm text-muted-foreground">7-figure Amazon seller</p>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
+              <CardContent className="p-8 space-y-4">
+                <div className="flex space-x-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 fill-current text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-lg text-muted-foreground italic leading-relaxed">
+                  "Auren replaced my Excel tracker and 4 different apps. It's the only tool that accurately predicts my Amazon balance two weeks out."
+                </p>
+                <div className="border-t pt-4">
+                  <p className="font-semibold">Alex P.</p>
+                  <p className="text-sm text-muted-foreground">FBA wholesaler</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center space-y-4 mb-16">
+            <h2 className="text-3xl lg:text-4xl font-bold">
+              Frequently Asked Questions
+            </h2>
+          </div>
+          
+          <div className="max-w-4xl mx-auto space-y-6">
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle>How does Auren forecast my Amazon payouts?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed">
+                  Auren uses your Amazon Seller Central data to project upcoming payouts based on settlement trends and reserve patterns. You'll know exactly when and how much to expect.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle>Can I connect multiple seller accounts?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed">
+                  Yes! Growth and Pro plans allow multiple Amazon accounts, so you can manage different brands or marketplaces in one dashboard.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle>Is my data secure?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed">
+                  Absolutely. Auren connects via read-only API access and stores data using bank-grade AES-256 encryption. You can delete your data or disconnect anytime.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle>Does Auren work with Walmart or Shopify?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed">
+                  Walmart and Shopify integrations are coming soon! Join the waitlist to get early access when they launch.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle>What happens after my free trial?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed">
+                  You can continue with your chosen plan. There are no hidden fees or surprise charges, and you can cancel anytime.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -891,11 +1016,10 @@ const Landing = () => {
       <section className="py-20 bg-gradient-primary text-primary-foreground">
         <div className="container mx-auto px-4 text-center space-y-8">
           <h2 className="text-3xl lg:text-4xl font-bold">
-            Ready to Master Your Amazon Cash Flow?
+            Start Forecasting Your Cashflow Today
           </h2>
           <p className="text-xl opacity-90 max-w-2xl mx-auto">
-            Start your 7-day free trial today. Credit card required, but you won't be charged until your trial ends. 
-            Join thousands of successful Amazon sellers who trust Auren to manage their finances and scale their businesses.
+            Join hundreds of Amazon sellers using Auren to predict payouts, plan growth, and never stress about cashflow again.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button 
@@ -910,7 +1034,7 @@ const Landing = () => {
             </Button>
           </div>
           <p className="text-sm opacity-75">
-            7-day free trial • No credit card required • Cancel anytime
+            7-day free trial • Cancel anytime
           </p>
         </div>
       </section>
