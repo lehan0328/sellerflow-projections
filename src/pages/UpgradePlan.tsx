@@ -764,14 +764,22 @@ const UpgradePlan = () => {
                     size="lg" 
                     className="w-full max-w-md bg-gradient-primary"
                     onClick={() => {
-                      // Contact sales or custom checkout flow
-                      window.open('mailto:support@aurenapp.com?subject=Enterprise Plan Inquiry&body=I am interested in the Enterprise plan for ' + ENTERPRISE_TIERS[selectedEnterpriseTier].revenue, '_blank');
+                      // Build line items: base plan
+                      const lineItems = [
+                        {
+                          price: ENTERPRISE_TIERS[selectedEnterpriseTier].priceId,
+                          quantity: 1
+                        }
+                      ];
+                      
+                      createCheckout(undefined, lineItems);
                     }}
+                    disabled={isLoading}
                   >
-                    Contact Sales for Enterprise
+                    {isLoading ? "Processing..." : "Start 7-Day Free Trial"}
                   </Button>
                   <p className="text-xs text-muted-foreground text-center">
-                    Our team will reach out within 24 hours to set up your custom plan
+                    Then ${ENTERPRISE_TIERS[selectedEnterpriseTier].price}/month. Cancel anytime during your 7-day free trial.
                   </p>
                 </div>
               </CardContent>

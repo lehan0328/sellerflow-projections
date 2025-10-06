@@ -30,9 +30,30 @@ const Landing = () => {
   });
 
   const enterpriseTiers = {
-    tier1: { revenue: "$200k - $500k", price: 149, connections: 8, amazon: 2, users: 7 },
-    tier2: { revenue: "$500k - $1M", price: 249, connections: 8, amazon: 2, users: 7 },
-    tier3: { revenue: "$1M+", price: 349, connections: 8, amazon: 2, users: 7 }
+    tier1: { 
+      revenue: "$200k - $500k", 
+      price: 149, 
+      connections: 8, 
+      amazon: 2, 
+      users: 7,
+      priceId: "price_1SF1uxB28kMY3Use2W39zzO4"
+    },
+    tier2: { 
+      revenue: "$500k - $1M", 
+      price: 299, 
+      connections: 8, 
+      amazon: 2, 
+      users: 7,
+      priceId: "price_1SF1v8B28kMY3UseVLxkFEvr"
+    },
+    tier3: { 
+      revenue: "$1M+", 
+      price: 499, 
+      connections: 8, 
+      amazon: 2, 
+      users: 7,
+      priceId: "price_1SF1vLB28kMY3UseRb0kIQNY"
+    }
   };
 
   const addonPricing = {
@@ -908,15 +929,65 @@ const Landing = () => {
             <Button 
               className="w-full bg-gradient-primary" 
               size="lg"
-              onClick={() => {
-                window.open(`mailto:support@aurenapp.com?subject=Enterprise Plan - ${enterpriseTiers[enterpriseTier].revenue}&body=I would like to sign up for the Enterprise plan with the following configuration:%0D%0A%0D%0ARevenue Tier: ${enterpriseTiers[enterpriseTier].revenue}%0D%0ABase Price: $${enterpriseTiers[enterpriseTier].price}/month%0D%0A%0D%0AAdd-ons:%0D%0A- Additional Bank Connections: ${enterpriseAddons.bankConnections}%0D%0A- Additional Amazon Connections: ${enterpriseAddons.amazonConnections}%0D%0A- Additional Users: ${enterpriseAddons.users}%0D%0A%0D%0ATotal Monthly Price: $${calculateEnterprisePrice()}`, '_blank');
+              onClick={async () => {
+                // Build line items: base plan + add-ons
+                const lineItems = [
+                  {
+                    price: enterpriseTiers[enterpriseTier].priceId,
+                    quantity: 1
+                  }
+                ];
+
+                // Add bank connection add-ons
+                if (enterpriseAddons.bankConnections > 0) {
+                  lineItems.push({
+                    price: "price_1SEHPSB28kMY3UseP1mWqne5", // Additional Bank Account price ID
+                    quantity: enterpriseAddons.bankConnections
+                  });
+                }
+
+                // Add Amazon connection add-ons
+                if (enterpriseAddons.amazonConnections > 0) {
+                  lineItems.push({
+                    price: "price_1SEHQLB28kMY3UseBmY7IIjx", // Additional Amazon Account price ID
+                    quantity: enterpriseAddons.amazonConnections
+                  });
+                }
+
+                // Add user add-ons
+                if (enterpriseAddons.users > 0) {
+                  lineItems.push({
+                    price: "price_1SEHQoB28kMY3UsedGTbBbmA", // Additional User price ID
+                    quantity: enterpriseAddons.users
+                  });
+                }
+
+                setIsLoading(true);
+                try {
+                  const { data, error } = await supabase.functions.invoke("create-guest-checkout", {
+                    body: { lineItems },
+                  });
+
+                  if (error) throw error;
+
+                  if (data?.url) {
+                    window.location.href = data.url;
+                  }
+                } catch (error) {
+                  console.error("Error creating checkout:", error);
+                  toast.error("Failed to start checkout. Please try again.");
+                } finally {
+                  setIsLoading(false);
+                }
+                
                 setShowEnterpriseCustomizer(false);
               }}
+              disabled={isLoading}
             >
-              Contact Sales to Get Started
+              {isLoading ? "Processing..." : "Start 7-Day Free Trial"}
             </Button>
             <p className="text-xs text-center text-muted-foreground">
-              Our team will reach out within 24 hours to finalize your custom plan
+              Then ${calculateEnterprisePrice()}/month. Cancel anytime during your 7-day free trial.
             </p>
           </div>
         </DialogContent>
