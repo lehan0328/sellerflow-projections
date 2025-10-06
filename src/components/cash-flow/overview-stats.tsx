@@ -138,7 +138,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <p className="text-sm text-slate-600">Total Available Cash</p>
+                <p className="text-sm text-slate-600">Total Projected</p>
                 {!balanceMatches && accounts.length > 0 && (
                   <Button
                     variant="ghost"
@@ -157,21 +157,18 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 )}
               </div>
               <p className="text-2xl font-bold text-blue-700">
-                ${accounts.length === 0 ? '0' : totalCash.toLocaleString()}
+                ${accounts.length === 0 ? '0' : (bankAccountBalance + (pendingIncomeToday?.amount || 0)).toLocaleString()}
               </p>
-              <p className="text-sm text-slate-600">
-                {accounts.length === 0 
-                  ? "No bank accounts connected" 
-                  : balanceMatches 
-                    ? "Synced with bank accounts" 
-                    : `Bank balance: ${formatCurrency(bankAccountBalance)} (${formatCurrency(balanceDifference)} difference)`
-                }
-              </p>
-              {pendingIncomeToday && pendingIncomeToday.count > 0 && (
-                <p className="text-xs text-blue-600 mt-1">
-                  +{formatCurrency(pendingIncomeToday.amount)} pending income today ({pendingIncomeToday.count} unmatched)
+              <div className="space-y-0.5">
+                <p className="text-sm text-slate-600">
+                  Cash: {formatCurrency(bankAccountBalance)}
                 </p>
-              )}
+                {pendingIncomeToday && pendingIncomeToday.amount > 0 && (
+                  <p className="text-sm text-slate-600">
+                    Pending: {formatCurrency(pendingIncomeToday.amount)}
+                  </p>
+                )}
+              </div>
             </div>
             <DollarSign className="h-8 w-8 text-blue-500" />
           </div>
