@@ -620,12 +620,30 @@ const Dashboard = () => {
 
   const handleUpdateTransactionDate = async (transactionId: string, newDate: Date, eventType: 'vendor' | 'income') => {
     if (eventType === 'vendor') {
-      // Strip the "vendor-" prefix to get the actual vendor ID
-      const vendorId = transactionId.replace('vendor-', '');
-      const vendor = vendors.find(v => v.id === vendorId);
-      if (vendor) {
-        await updateVendor(vendor.id, { nextPaymentDate: newDate });
+      // Strip the "vendor-tx-" prefix to get the actual transaction ID
+      const txId = transactionId.replace('vendor-tx-', '');
+      
+      // Format date for database (YYYY-MM-DD)
+      const formatDateForDB = (date: Date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+      
+      // Update the transaction's due_date directly
+      const { error } = await supabase
+        .from('transactions')
+        .update({ due_date: formatDateForDB(newDate) })
+        .eq('id', txId);
+      
+      if (error) {
+        console.error('Error updating transaction date:', error);
+        throw error;
       }
+      
+      // Refetch transactions to update UI
+      await refetchTransactions();
     } else if (eventType === 'income') {
       // Strip the "income-" prefix to get the actual income ID
       const incomeId = transactionId.replace('income-', '');
