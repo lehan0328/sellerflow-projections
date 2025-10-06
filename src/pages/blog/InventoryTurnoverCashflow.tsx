@@ -28,9 +28,23 @@ const InventoryTurnoverCashflow = () => {
         </div>
       </nav>
 
+      {/* Schema.org Structured Data */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          "headline": "Balance Reorders and Cashflow: The Forecasting Framework for Sellers",
+          "description": "Master the art of timing inventory purchases with your Amazon payout schedule to maintain optimal cashflow.",
+          "author": { "@type": "Organization", "name": "Auren Team" },
+          "publisher": { "@type": "Organization", "name": "Auren", "logo": { "@type": "ImageObject", "url": "https://aurenapp.com/assets/logo.png" } },
+          "datePublished": "2025-01-02",
+          "mainEntityOfPage": { "@type": "WebPage", "@id": "https://aurenapp.com/blog/inventory-turnover-cashflow" }
+        })}
+      </script>
+
       <article className="py-12">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="mx-auto" style={{ maxWidth: "780px" }}>
             <Button 
               variant="ghost" 
               size="sm" 

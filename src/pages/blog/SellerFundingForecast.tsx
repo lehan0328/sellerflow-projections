@@ -28,9 +28,23 @@ const SellerFundingForecast = () => {
         </div>
       </nav>
 
+      {/* Schema.org Structured Data */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          "headline": "Use Forecasting Data to Qualify for Amazon Lending or 8fig Capital",
+          "description": "Discover how accurate cashflow forecasting can strengthen your loan applications and unlock better financing terms for Amazon sellers.",
+          "author": { "@type": "Organization", "name": "Auren Team" },
+          "publisher": { "@type": "Organization", "name": "Auren", "logo": { "@type": "ImageObject", "url": "https://aurenapp.com/assets/logo.png" } },
+          "datePublished": "2025-01-12",
+          "mainEntityOfPage": { "@type": "WebPage", "@id": "https://aurenapp.com/blog/seller-funding-forecast" }
+        })}
+      </script>
+
       <article className="py-12">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="mx-auto" style={{ maxWidth: "780px" }}>
             <Button 
               variant="ghost" 
               size="sm" 
@@ -47,18 +61,11 @@ const SellerFundingForecast = () => {
               Use Forecasting Data to Qualify for Amazon Lending or 8fig Capital
             </h1>
 
-            <div className="flex items-center gap-6 text-muted-foreground mb-12">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span>January 12, 2025</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                <span>10 min read</span>
-              </div>
-            </div>
+            <p className="text-sm text-muted-foreground mb-8" style={{ color: "#6b7280" }}>
+              Published January 12, 2025 • 10 min read
+            </p>
 
-            <div className="prose prose-lg max-w-none space-y-6">
+            <div className="space-y-6" style={{ fontSize: "17px", lineHeight: "1.75" }}>
               <p className="text-xl text-muted-foreground leading-relaxed">
                 Scaling an Amazon business often requires external capital—whether it&apos;s for inventory purchases, advertising campaigns, or hiring support staff. But qualifying for favorable financing isn&apos;t just about your sales numbers. Lenders want to see predictable cashflow and responsible financial management.
               </p>
@@ -210,18 +217,57 @@ const SellerFundingForecast = () => {
               </ol>
             </div>
 
-            <Card className="mt-12 bg-gradient-to-r from-primary/10 to-accent/10">
+            {/* Author Bio */}
+            <Card className="mt-12 bg-muted/30" style={{ borderRadius: "12px", marginTop: "3rem" }}>
+              <CardContent className="p-6" style={{ padding: "1.5rem" }}>
+                <h3 className="text-lg font-bold mb-3">About the Author</h3>
+                <p className="leading-relaxed mb-2">
+                  <strong>The Auren Team</strong> helps Amazon and eCommerce sellers master cashflow forecasting and make smarter financial decisions. 
+                  We&apos;re on a mission to make business cash management simple, automated, and stress-free.
+                </p>
+                <p className="text-sm">
+                  Learn more at <a href="/" className="text-primary hover:underline">aurenapp.com</a>
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Related Articles */}
+            <div className="mt-12" style={{ marginTop: "3rem" }}>
+              <h2 className="text-2xl font-bold mb-6">Related Articles</h2>
+              <div className="grid gap-6 md:grid-cols-3" style={{ gap: "1.5rem" }}>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/blog/financing-growth')}>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-2 text-sm">Use Cashflow Forecasts to Secure Financing</h3>
+                    <p className="text-xs text-muted-foreground">Turn your forecasts into better funding terms.</p>
+                  </CardContent>
+                </Card>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/blog/forecast-amazon-payouts')}>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-2 text-sm">How to Forecast Amazon Payouts with Accuracy</h3>
+                    <p className="text-xs text-muted-foreground">Master data-driven payout prediction.</p>
+                  </CardContent>
+                </Card>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/blog/scaling-to-seven-figures')}>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-2 text-sm">Scale to 7 Figures with Cashflow Visibility</h3>
+                    <p className="text-xs text-muted-foreground">Real strategies from successful sellers.</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <Card className="mt-12 bg-gradient-to-br from-primary/10 to-accent/10 border-none" style={{ borderRadius: "12px", marginTop: "3rem" }}>
               <CardContent className="p-8 text-center space-y-4">
-                <h3 className="text-2xl font-bold">
-                  Build Lender-Ready Forecasts Automatically
-                </h3>
+                <h3 className="text-2xl font-bold">Build Lender-Ready Forecasts Automatically</h3>
                 <p className="text-muted-foreground">
                   Auren generates investor-grade cashflow forecasts that strengthen your loan applications. 
                   Export reports that show lenders exactly what they want to see.
                 </p>
-                <Button size="lg" className="bg-gradient-primary" onClick={() => navigate('/')}>
+                <Button size="lg" className="bg-gradient-primary font-bold" onClick={() => navigate('/')} style={{ borderRadius: "0.5rem" }}>
                   Start Free Trial
                 </Button>
+                <p className="text-sm text-muted-foreground">No credit card required • Cancel anytime</p>
               </CardContent>
             </Card>
           </div>

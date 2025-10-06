@@ -29,10 +29,37 @@ const PredictAmazonPayouts = () => {
         </div>
       </nav>
 
-      {/* Article Header */}
+      {/* Schema.org Structured Data */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          "headline": "How to Predict Amazon Payouts Before They Happen",
+          "description": "Learn the proven strategies Amazon sellers use to forecast their payouts with 95% accuracy and avoid cash shortfalls.",
+          "author": {
+            "@type": "Organization",
+            "name": "Auren Team"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "Auren",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://aurenapp.com/assets/logo.png"
+            }
+          },
+          "datePublished": "2025-01-15",
+          "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https://aurenapp.com/blog/predict-amazon-payouts"
+          }
+        })}
+      </script>
+
+      {/* Article */}
       <article className="py-12">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="mx-auto" style={{ maxWidth: '780px' }}>
             <Button 
               variant="ghost" 
               size="sm" 
@@ -49,19 +76,12 @@ const PredictAmazonPayouts = () => {
               How to Predict Amazon Payouts Before They Happen
             </h1>
 
-            <div className="flex items-center gap-6 text-muted-foreground mb-12">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span>January 15, 2025</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                <span>8 min read</span>
-              </div>
-            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Published January 15, 2025 • 8 min read
+            </p>
 
             {/* Article Content */}
-            <div className="prose prose-lg max-w-none space-y-6">
+            <div className="space-y-6" style={{ fontSize: '17px', lineHeight: '1.75' }}>
               <p className="text-xl text-muted-foreground leading-relaxed">
                 As an Amazon seller, one of the most frustrating parts of running your business is not knowing exactly when your next payout will hit your bank account. Amazon&apos;s bi-weekly settlement schedule, combined with reserves, chargebacks, and fee adjustments, can make cashflow planning feel like guesswork.
               </p>
@@ -188,21 +208,58 @@ const PredictAmazonPayouts = () => {
               </p>
             </div>
 
-            {/* CTA */}
-            <Card className="mt-12 bg-gradient-to-r from-primary/10 to-accent/10">
+            {/* CTA Section */}
+            <Card className="mt-12 bg-gradient-to-br from-primary/10 to-accent/10 border-none" style={{ borderRadius: '12px' }}>
               <CardContent className="p-8 text-center space-y-4">
-                <h3 className="text-2xl font-bold">
-                  Want to Automate Your Payout Forecasting?
-                </h3>
+                <h2 className="text-2xl font-bold">Predict Your Next Amazon Payout Today</h2>
                 <p className="text-muted-foreground">
-                  Auren connects to your Amazon Seller Central account and forecasts every payout automatically. 
-                  See exactly when cash will hit your account—weeks in advance.
+                  Join hundreds of Amazon sellers who use Auren to forecast payouts, plan cashflow, and scale confidently.
                 </p>
-                <Button size="lg" className="bg-gradient-primary" onClick={() => navigate('/')}>
+                <Button size="lg" className="bg-gradient-primary font-bold" onClick={() => navigate('/')} style={{ borderRadius: '0.5rem' }}>
                   Start Free Trial
                 </Button>
+                <p className="text-sm text-muted-foreground">No credit card required • Cancel anytime</p>
               </CardContent>
             </Card>
+
+            {/* Author Bio */}
+            <Card className="mt-12 bg-muted/30" style={{ borderRadius: '12px' }}>
+              <CardContent className="p-6">
+                <h3 className="text-lg font-bold mb-3">About the Author</h3>
+                <p className="leading-relaxed mb-2">
+                  <strong>The Auren Team</strong> helps Amazon and eCommerce sellers master cashflow forecasting and make smarter financial decisions. 
+                  We&apos;re on a mission to make business cash management simple, automated, and stress-free.
+                </p>
+                <p className="text-sm">
+                  Learn more at <a href="/" className="text-primary hover:underline">aurenapp.com</a>
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Related Articles */}
+            <div className="mt-12">
+              <h2 className="text-2xl font-bold mb-6">Related Articles</h2>
+              <div className="grid gap-6 md:grid-cols-3">
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/blog/forecast-amazon-payouts')}>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-2 text-sm">How to Forecast Amazon Payouts with Accuracy</h3>
+                    <p className="text-xs text-muted-foreground">Learn the data-driven method to predict your next disbursement.</p>
+                  </CardContent>
+                </Card>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/blog/manage-cashflow')}>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-2 text-sm">5 Cashflow Mistakes Every Amazon Seller Should Avoid</h3>
+                    <p className="text-xs text-muted-foreground">Avoid common cashflow traps and keep your business liquid.</p>
+                  </CardContent>
+                </Card>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/blog/seller-funding-forecast')}>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-2 text-sm">Use Forecasting Data to Qualify for Amazon Lending</h3>
+                    <p className="text-xs text-muted-foreground">Discover how cashflow forecasting can strengthen loan applications.</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </div>
         </div>
       </article>

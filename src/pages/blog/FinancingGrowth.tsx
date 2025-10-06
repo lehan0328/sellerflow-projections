@@ -28,9 +28,23 @@ const FinancingGrowth = () => {
         </div>
       </nav>
 
+      {/* Schema.org Structured Data */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          "headline": "How to Use Cashflow Forecasts to Secure Seller Financing",
+          "description": "Learn how Amazon sellers can use cashflow forecasts to qualify for better funding and present predictable revenue to lenders.",
+          "author": { "@type": "Organization", "name": "Auren Team" },
+          "publisher": { "@type": "Organization", "name": "Auren", "logo": { "@type": "ImageObject", "url": "https://aurenapp.com/assets/logo.png" } },
+          "datePublished": "2025-10-01",
+          "mainEntityOfPage": { "@type": "WebPage", "@id": "https://aurenapp.com/blog/financing-growth" }
+        })}
+      </script>
+
       <article className="py-12">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="mx-auto" style={{ maxWidth: "780px" }}>
             <Button 
               variant="ghost" 
               size="sm" 
@@ -47,18 +61,11 @@ const FinancingGrowth = () => {
               How to Use Cashflow Forecasts to Secure Seller Financing
             </h1>
 
-            <div className="flex items-center gap-6 text-muted-foreground mb-12">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span>October 2025</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                <span>8 min read</span>
-              </div>
-            </div>
+            <p className="text-sm text-muted-foreground mb-8" style={{ color: "#6b7280" }}>
+              Published October 2025 • 8 min read
+            </p>
 
-            <div className="prose prose-lg max-w-none space-y-6">
+            <div className="space-y-6" style={{ fontSize: "17px", lineHeight: "1.75" }}>
               <p className="text-xl text-muted-foreground leading-relaxed">
                 Access to funding can transform your Amazon business — enabling larger restocks, faster product launches, and better ad visibility. But most lenders and platforms require proof of stable, predictable cashflow. That&apos;s where forecasting comes in.
               </p>
@@ -223,54 +230,57 @@ const FinancingGrowth = () => {
               </p>
             </div>
 
-            {/* Related Posts */}
-            <Card className="mt-12 bg-muted/30">
-              <CardContent className="p-6">
-                <h3 className="text-xl font-bold mb-4">Related Articles</h3>
-                <ul className="space-y-2">
-                  <li>
-                    <a 
-                      href="/blog/forecast-amazon-payouts" 
-                      className="text-primary hover:underline"
-                      onClick={(e) => { e.preventDefault(); navigate('/blog/forecast-amazon-payouts'); }}
-                    >
-                      How to Forecast Amazon Payouts with Accuracy
-                    </a>
-                  </li>
-                  <li>
-                    <a 
-                      href="/blog/seller-funding-forecast" 
-                      className="text-primary hover:underline"
-                      onClick={(e) => { e.preventDefault(); navigate('/blog/seller-funding-forecast'); }}
-                    >
-                      Use Forecasting Data to Qualify for Amazon Lending or 8fig Capital
-                    </a>
-                  </li>
-                  <li>
-                    <a 
-                      href="/blog/scaling-to-seven-figures" 
-                      className="text-primary hover:underline"
-                      onClick={(e) => { e.preventDefault(); navigate('/blog/scaling-to-seven-figures'); }}
-                    >
-                      How Cashflow Visibility Helps You Scale to 7 Figures
-                    </a>
-                  </li>
-                </ul>
+            {/* Author Bio */}
+            <Card className="mt-12 bg-muted/30" style={{ borderRadius: "12px", marginTop: "3rem" }}>
+              <CardContent className="p-6" style={{ padding: "1.5rem" }}>
+                <h3 className="text-lg font-bold mb-3">About the Author</h3>
+                <p className="leading-relaxed mb-2">
+                  <strong>The Auren Team</strong> helps Amazon and eCommerce sellers master cashflow forecasting and make smarter financial decisions. 
+                  We&apos;re on a mission to make business cash management simple, automated, and stress-free.
+                </p>
+                <p className="text-sm">
+                  Learn more at <a href="/" className="text-primary hover:underline">aurenapp.com</a>
+                </p>
               </CardContent>
             </Card>
 
-            <Card className="mt-12 bg-gradient-to-r from-primary/10 to-accent/10">
+            {/* Related Articles */}
+            <div className="mt-12" style={{ marginTop: "3rem" }}>
+              <h2 className="text-2xl font-bold mb-6">Related Articles</h2>
+              <div className="grid gap-6 md:grid-cols-3" style={{ gap: "1.5rem" }}>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/blog/forecast-amazon-payouts')}>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-2 text-sm">How to Forecast Amazon Payouts with Accuracy</h3>
+                    <p className="text-xs text-muted-foreground">Learn the data-driven method to predict disbursements.</p>
+                  </CardContent>
+                </Card>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/blog/seller-funding-forecast')}>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-2 text-sm">Qualify for Amazon Lending or 8fig Capital</h3>
+                    <p className="text-xs text-muted-foreground">Use forecasting to access better funding terms.</p>
+                  </CardContent>
+                </Card>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/blog/scaling-to-seven-figures')}>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-2 text-sm">Scale Your Business to 7 Figures</h3>
+                    <p className="text-xs text-muted-foreground">Cashflow visibility fuels sustainable growth.</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <Card className="mt-12 bg-gradient-to-br from-primary/10 to-accent/10 border-none" style={{ borderRadius: "12px", marginTop: "3rem" }}>
               <CardContent className="p-8 text-center space-y-4">
-                <h3 className="text-2xl font-bold">
-                  Build Lender-Ready Cashflow Reports
-                </h3>
+                <h3 className="text-2xl font-bold">Build Lender-Ready Cashflow Reports</h3>
                 <p className="text-muted-foreground">
                   Auren generates professional financial forecasts that strengthen your loan applications. 
                   Show lenders exactly what they want to see — predictable, data-backed projections.
                 </p>
-                <Button size="lg" className="bg-gradient-primary" onClick={() => navigate('/')}>
+                <Button size="lg" className="bg-gradient-primary font-bold" onClick={() => navigate('/')} style={{ borderRadius: "0.5rem" }}>
                   Start Free Trial
                 </Button>
+                <p className="text-sm text-muted-foreground">No credit card required • Cancel anytime</p>
               </CardContent>
             </Card>
           </div>

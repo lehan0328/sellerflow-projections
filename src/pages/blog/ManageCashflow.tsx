@@ -28,9 +28,23 @@ const ManageCashflow = () => {
         </div>
       </nav>
 
+      {/* Schema.org Structured Data */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          "headline": "5 Cashflow Mistakes Every Amazon Seller Should Avoid",
+          "description": "Avoid the most common Amazon cashflow mistakes — from overspending on ads to ignoring payout delays. Learn proven management strategies.",
+          "author": { "@type": "Organization", "name": "Auren Team" },
+          "publisher": { "@type": "Organization", "name": "Auren", "logo": { "@type": "ImageObject", "url": "https://aurenapp.com/assets/logo.png" } },
+          "datePublished": "2025-10-01",
+          "mainEntityOfPage": { "@type": "WebPage", "@id": "https://aurenapp.com/blog/manage-cashflow" }
+        })}
+      </script>
+
       <article className="py-12">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="mx-auto" style={{ maxWidth: "780px" }}>
             <Button 
               variant="ghost" 
               size="sm" 
@@ -47,18 +61,11 @@ const ManageCashflow = () => {
               5 Cashflow Mistakes Every Amazon Seller Should Avoid
             </h1>
 
-            <div className="flex items-center gap-6 text-muted-foreground mb-12">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span>October 2025</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                <span>7 min read</span>
-              </div>
-            </div>
+            <p className="text-sm text-muted-foreground mb-8" style={{ color: "#6b7280" }}>
+              Published October 2025 • 7 min read
+            </p>
 
-            <div className="prose prose-lg max-w-none space-y-6">
+            <div className="space-y-6" style={{ fontSize: "17px", lineHeight: "1.75" }}>
               <p className="text-xl text-muted-foreground leading-relaxed">
                 Even profitable Amazon businesses can run into cash crunches. The problem usually isn&apos;t low sales — it&apos;s poor cashflow management. Here are the top five mistakes that keep sellers stuck and how to avoid them.
               </p>
@@ -179,54 +186,57 @@ const ManageCashflow = () => {
               </p>
             </div>
 
-            {/* Related Posts */}
-            <Card className="mt-12 bg-muted/30">
-              <CardContent className="p-6">
-                <h3 className="text-xl font-bold mb-4">Related Articles</h3>
-                <ul className="space-y-2">
-                  <li>
-                    <a 
-                      href="/blog/forecast-amazon-payouts" 
-                      className="text-primary hover:underline"
-                      onClick={(e) => { e.preventDefault(); navigate('/blog/forecast-amazon-payouts'); }}
-                    >
-                      How to Forecast Amazon Payouts with Accuracy
-                    </a>
-                  </li>
-                  <li>
-                    <a 
-                      href="/blog/inventory-turnover-cashflow" 
-                      className="text-primary hover:underline"
-                      onClick={(e) => { e.preventDefault(); navigate('/blog/inventory-turnover-cashflow'); }}
-                    >
-                      Balance Reorders and Cashflow: The Forecasting Framework
-                    </a>
-                  </li>
-                  <li>
-                    <a 
-                      href="/blog/financing-growth" 
-                      className="text-primary hover:underline"
-                      onClick={(e) => { e.preventDefault(); navigate('/blog/financing-growth'); }}
-                    >
-                      How to Use Cashflow Forecasts to Secure Seller Financing
-                    </a>
-                  </li>
-                </ul>
+            {/* Author Bio */}
+            <Card className="mt-12 bg-muted/30" style={{ borderRadius: "12px", marginTop: "3rem" }}>
+              <CardContent className="p-6" style={{ padding: "1.5rem" }}>
+                <h3 className="text-lg font-bold mb-3">About the Author</h3>
+                <p className="leading-relaxed mb-2">
+                  <strong>The Auren Team</strong> helps Amazon and eCommerce sellers master cashflow forecasting and make smarter financial decisions. 
+                  We&apos;re on a mission to make business cash management simple, automated, and stress-free.
+                </p>
+                <p className="text-sm">
+                  Learn more at <a href="/" className="text-primary hover:underline">aurenapp.com</a>
+                </p>
               </CardContent>
             </Card>
 
-            <Card className="mt-12 bg-gradient-to-r from-primary/10 to-accent/10">
+            {/* Related Articles */}
+            <div className="mt-12" style={{ marginTop: "3rem" }}>
+              <h2 className="text-2xl font-bold mb-6">Related Articles</h2>
+              <div className="grid gap-6 md:grid-cols-3" style={{ gap: "1.5rem" }}>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/blog/forecast-amazon-payouts')}>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-2 text-sm">How to Forecast Amazon Payouts with Accuracy</h3>
+                    <p className="text-xs text-muted-foreground">Learn the data-driven method to predict your next disbursement.</p>
+                  </CardContent>
+                </Card>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/blog/inventory-turnover-cashflow')}>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-2 text-sm">Balance Reorders and Cashflow</h3>
+                    <p className="text-xs text-muted-foreground">Master inventory timing with cashflow visibility.</p>
+                  </CardContent>
+                </Card>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/blog/financing-growth')}>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-2 text-sm">Use Cashflow Forecasts to Secure Financing</h3>
+                    <p className="text-xs text-muted-foreground">Turn forecasts into better funding terms.</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <Card className="mt-12 bg-gradient-to-br from-primary/10 to-accent/10 border-none" style={{ borderRadius: "12px", marginTop: "3rem" }}>
               <CardContent className="p-8 text-center space-y-4">
-                <h3 className="text-2xl font-bold">
-                  Stop Making These Cashflow Mistakes
-                </h3>
+                <h3 className="text-2xl font-bold">Stop Making These Cashflow Mistakes</h3>
                 <p className="text-muted-foreground">
                   Auren helps you avoid costly cashflow errors with automated forecasting, 
                   real-time payout tracking, and intelligent alerts.
                 </p>
-                <Button size="lg" className="bg-gradient-primary" onClick={() => navigate('/')}>
+                <Button size="lg" className="bg-gradient-primary font-bold" onClick={() => navigate('/')} style={{ borderRadius: "0.5rem" }}>
                   Start Free Trial
                 </Button>
+                <p className="text-sm text-muted-foreground">No credit card required • Cancel anytime</p>
               </CardContent>
             </Card>
           </div>
