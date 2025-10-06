@@ -259,11 +259,11 @@ export default function ScenarioPlanner() {
         <div>
           <Button 
             variant="ghost" 
-            onClick={() => navigate('/analytics')}
+            onClick={() => navigate('/dashboard')}
             className="mb-2"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Analytics
+            Back to Dashboard
           </Button>
           <h1 className="text-3xl font-bold">Scenario Planner</h1>
           <p className="text-muted-foreground">Model "what-if" scenarios and forecast financial outcomes</p>
