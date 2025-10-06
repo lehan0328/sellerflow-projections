@@ -26,9 +26,10 @@ import * as React from "react";
 interface VendorsOverviewProps {
   bankTransactions?: BankTransaction[];
   onVendorUpdate?: () => void;
+  refreshKey?: number;
 }
 
-export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate }: VendorsOverviewProps) => {
+export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refreshKey }: VendorsOverviewProps) => {
   const navigate = useNavigate();
   const { transactions, markAsPaid, updateRemarks, deleteTransaction, refetch } = useVendorTransactions();
   const { vendors } = useVendors();
@@ -42,6 +43,13 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate }: Vendo
   const [dateRange, setDateRange] = useState<string>("all");
   const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
   const [customToDate, setCustomToDate] = useState<Date | undefined>();
+
+  // Force refresh when parent signals
+  useEffect(() => {
+    if (refreshKey !== undefined) {
+      refetch();
+    }
+  }, [refreshKey]);
 
   // Vendor search options for autocomplete - unique vendors only
   const vendorSearchOptions = useMemo(() => {

@@ -52,6 +52,7 @@ const Dashboard = () => {
   const [editingIncome, setEditingIncome] = useState<any>(null);
   const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
   const { toast } = useToast();
+  const [vendorTxRefresh, setVendorTxRefresh] = useState(0);
   
   // Use database hooks
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, refetch: refetchVendors } = useVendors();
@@ -642,8 +643,9 @@ const Dashboard = () => {
         throw txError;
       }
       
-      // Refetch transactions to update UI
+      // Refetch transactions to update UI and signal VendorsOverview
       await refetchTransactions();
+      setVendorTxRefresh((v) => v + 1);
     } else if (eventType === 'income') {
       // Strip the "income-" prefix to get the actual income ID
       const incomeId = transactionId.replace('income-', '');
@@ -1018,7 +1020,9 @@ const Dashboard = () => {
             onVendorUpdate={() => {
               refetchVendors();
               refetchTransactions();
+              setVendorTxRefresh((v) => v + 1);
             }}
+            refreshKey={vendorTxRefresh}
           />
 
           {/* Customer Invoices */}
