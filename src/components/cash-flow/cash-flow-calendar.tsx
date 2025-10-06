@@ -614,7 +614,7 @@ export const CashFlowCalendar = ({
                               ) : (
                                 <>
                                   {/* FUTURE: Total Projected Cash, Credit */}
-                                  <div className="text-[10px] text-primary font-semibold w-full">
+                                  <div className="text-[10px] text-green-600 dark:text-green-400 font-medium w-full">
                                     Total Projected Cash: ${getTotalCashForDay(day).toLocaleString()}
                                   </div>
                                   <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium w-full">
