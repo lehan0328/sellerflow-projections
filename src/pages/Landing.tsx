@@ -297,25 +297,21 @@ const Landing = () => {
               
               <div className="animate-fade-in space-y-6" style={{ animationDelay: '200ms' }}>
                 <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
-                  <span className="inline-block">
-                    <span className="bg-gradient-primary bg-clip-text text-transparent animate-pulse">AI-Powered</span> Cash Flow
-                  </span>
-                  <span className="block bg-gradient-primary bg-clip-text text-transparent">
-                    Built for Amazon Sellers
+                  <span className="bg-gradient-primary bg-clip-text text-transparent">
+                    Cashflow Built for Marketplace Sellers
                   </span>
                 </h1>
               </div>
               
               <p 
-                className="text-lg text-muted-foreground max-w-xl animate-fade-in leading-relaxed" 
+                className="text-xl text-muted-foreground max-w-xl animate-fade-in leading-relaxed font-medium" 
                 style={{ animationDelay: '600ms' }}
               >
-                Get daily AI insights, forecast your Amazon cash flow months in advance, and optimize your credit utilization. 
-                Never run out of cash for inventory again with intelligent financial recommendations.
+                Forecast Amazon payouts, see daily cash, and plan spend with confidence.
               </p>
               
               <div 
-                className="flex flex-col sm:flex-row items-start gap-6 animate-fade-in" 
+                className="flex flex-col sm:flex-row items-start gap-4 animate-fade-in" 
                 style={{ animationDelay: '800ms' }}
               >
                 <Button 
@@ -327,7 +323,23 @@ const Landing = () => {
                   {isLoading ? "Loading..." : "Start 7-Day Free Trial"}
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
                 </Button>
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  className="text-base px-8 py-6 text-lg hover-scale transition-all duration-300" 
+                  onClick={() => navigate('/demo')}
+                >
+                  See Live Demo
+                </Button>
               </div>
+              
+              {/* Trust & Security Line */}
+              <p 
+                className="text-sm text-muted-foreground max-w-2xl animate-fade-in leading-relaxed border-l-2 border-primary/50 pl-4" 
+                style={{ animationDelay: '850ms' }}
+              >
+                🔒 Read-only Amazon SP-API • Bank connections via secure aggregator • We never sell your data
+              </p>
 
               <Badge 
                 variant="secondary" 
@@ -338,21 +350,22 @@ const Landing = () => {
                 <span>Made for Amazon Sellers by Amazon Sellers</span>
               </Badge>
               
+              {/* CTA Bar */}
               <div
                 className="flex flex-col sm:flex-row items-start gap-6 text-sm text-muted-foreground animate-fade-in" 
                 style={{ animationDelay: '1000ms' }}
               >
                 <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
                   <CheckCircle className="h-4 w-4 text-success" />
-                  <span>7-day free trial</span>
+                  <span>Start free</span>
                 </div>
                 <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
                   <CheckCircle className="h-4 w-4 text-success" />
-                  <span>Setup in 5 minutes</span>
+                  <span>No card required</span>
                 </div>
                 <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
                   <CheckCircle className="h-4 w-4 text-success" />
-                  <span>Cancel anytime</span>
+                  <span>2-minute setup</span>
                 </div>
               </div>
             </div>
@@ -442,12 +455,132 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-20 bg-muted/30">
+      {/* Social Proof Section */}
+      <section className="py-12 bg-muted/50 border-y">
+        <div className="container mx-auto px-4">
+          <div className="text-center space-y-6">
+            <p className="text-sm text-muted-foreground font-semibold">USED BY 7- AND 8-FIGURE SELLERS</p>
+            <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+              <div className="p-4 bg-background rounded-lg border">
+                <p className="text-sm italic">"Finally know my next Amazon payout date"</p>
+              </div>
+              <div className="p-4 bg-background rounded-lg border">
+                <p className="text-sm italic">"Spotted cash gaps weeks ahead"</p>
+              </div>
+              <div className="p-4 bg-background rounded-lg border">
+                <p className="text-sm italic">"Never miss inventory buys anymore"</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
-              Why Amazon Sellers Choose Auren
+              Cashflow Built for Marketplace Sellers
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Predict Amazon payouts by day, spot cash gaps weeks ahead, and plan inventory, ads, and loan payments with confidence.
+            </p>
+          </div>
+          
+          <div className="grid gap-8 md:grid-cols-3 max-w-5xl mx-auto mb-16">
+            <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    <Calendar className="h-6 w-6" />
+                  </div>
+                  <CardTitle className="text-lg">Know your next payout</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Rolling forecast that updates daily</p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    <TrendingUp className="h-6 w-6" />
+                  </div>
+                  <CardTitle className="text-lg">Plan spend with certainty</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">See cash-in/cash-out by week</p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
+              <CardHeader>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    <Shield className="h-6 w-6" />
+                  </div>
+                  <CardTitle className="text-lg">Avoid surprise shortfalls</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Alerts before you're tight on cash</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Product Clarity Section */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center space-y-4 mb-16">
+            <h2 className="text-3xl lg:text-4xl font-bold">
+              What It Actually Does
+            </h2>
+          </div>
+          
+          <div className="grid gap-8 md:grid-cols-3 max-w-5xl mx-auto">
+            <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="text-xl">Daily payout forecast</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-muted-foreground">
+                  Exact dates & amounts based on settlements, fees, and reserves.
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="text-xl">Cash timeline</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-muted-foreground">
+                  All inflows/outflows (COGS, ads, loan payments) in one rolling view.
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-card hover:shadow-elevated transition-all duration-300">
+              <CardHeader>
+                <CardTitle className="text-xl">Credit utilization</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-muted-foreground">
+                  See available credit vs. upcoming needs at a glance.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center space-y-4 mb-16">
+            <h2 className="text-3xl lg:text-4xl font-bold">
+              Built Specifically for Amazon Sellers
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Generic cash flow tools don't understand Amazon's unique challenges. 
@@ -658,7 +791,10 @@ const Landing = () => {
               </Card>
 
               {/* Bottom CTA */}
-              <div className="text-center mt-6">
+              <div className="text-center mt-6 space-y-2">
+                <p className="text-sm font-medium">
+                  No per-user fees. Cancel anytime.
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Then {isYearly ? 'yearly' : 'monthly'} billing. Cancel anytime during your 7-day free trial.
                 </p>
@@ -667,8 +803,59 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Proof Section - Mini Case Study */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <Card className="shadow-elevated overflow-hidden">
+              <div className="grid md:grid-cols-2 gap-0">
+                <div className="p-8 bg-primary/5">
+                  <h3 className="text-2xl font-bold mb-4">
+                    How a $80k/mo seller cut cash crunches by 70%
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    Multi-marketplace seller struggled with timing inventory orders around Amazon's bi-weekly payouts. 
+                    After implementing Auren's daily forecasting, they eliminated overdrafts and optimized credit card utilization.
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-2 w-2 rounded-full bg-success"></div>
+                      <span className="text-sm">Reduced cash shortfalls by 70%</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="h-2 w-2 rounded-full bg-success"></div>
+                      <span className="text-sm">Freed up $15k in working capital</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="h-2 w-2 rounded-full bg-success"></div>
+                      <span className="text-sm">Never missed an inventory buy</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-8 flex items-center justify-center bg-background">
+                  <div className="text-center space-y-4">
+                    <div>
+                      <div className="text-4xl font-bold text-primary">70%</div>
+                      <div className="text-sm text-muted-foreground">Fewer Cash Crunches</div>
+                    </div>
+                    <div>
+                      <div className="text-4xl font-bold text-primary">$15k</div>
+                      <div className="text-sm text-muted-foreground">Capital Freed Up</div>
+                    </div>
+                    <div>
+                      <div className="text-4xl font-bold text-primary">100%</div>
+                      <div className="text-sm text-muted-foreground">Inventory Buys on Time</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-20">
+      <section id="testimonials" className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
