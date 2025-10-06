@@ -13,14 +13,97 @@ interface BlogTemplateProps {
   publishDate: string;
   readTime: string;
   description: string;
+  slug: string;
   children: ReactNode;
-  schema: object;
-  relatedArticles?: {
-    title: string;
-    slug: string;
-    description: string;
-  }[];
 }
+
+// Blog posts database with all metadata
+const BLOG_POSTS = [
+  {
+    slug: "predict-amazon-payouts",
+    title: "How to Predict Amazon Payouts Before They Happen",
+    category: "Cashflow",
+    categoryColor: "bg-blue-500/10 text-blue-600",
+    publishDate: "January 15, 2025",
+    readTime: "8",
+    description: "Learn the proven strategies Amazon sellers use to forecast their payouts with 95% accuracy and avoid cash shortfalls.",
+  },
+  {
+    slug: "seller-funding-forecast",
+    title: "Use Forecasting Data to Qualify for Amazon Lending or 8fig Capital",
+    category: "Financing",
+    categoryColor: "bg-green-500/10 text-green-600",
+    publishDate: "January 12, 2025",
+    readTime: "10",
+    description: "Discover how accurate cashflow forecasting can strengthen your loan applications and unlock better financing terms.",
+  },
+  {
+    slug: "scaling-to-seven-figures",
+    title: "How Cashflow Visibility Helps You Scale to 7 Figures",
+    category: "Growth",
+    categoryColor: "bg-purple-500/10 text-purple-600",
+    publishDate: "January 8, 2025",
+    readTime: "12",
+    description: "Real stories from sellers who used cashflow forecasting to grow their Amazon business to 7 figures and beyond.",
+  },
+  {
+    slug: "best-cashflow-tools",
+    title: "Best Cashflow Tools for Marketplace Sellers in 2025",
+    category: "Tools",
+    categoryColor: "bg-orange-500/10 text-orange-600",
+    publishDate: "January 5, 2025",
+    readTime: "15",
+    description: "A comprehensive comparison of the top cashflow management tools built specifically for Amazon and multi-channel sellers.",
+  },
+  {
+    slug: "inventory-turnover-cashflow",
+    title: "Balance Reorders and Cashflow: The Forecasting Framework for Sellers",
+    category: "Strategy",
+    categoryColor: "bg-pink-500/10 text-pink-600",
+    publishDate: "January 2, 2025",
+    readTime: "11",
+    description: "Master the art of timing inventory purchases with your Amazon payout schedule to maintain optimal cashflow.",
+  },
+  {
+    slug: "forecast-amazon-payouts",
+    title: "How to Forecast Amazon Payouts with Accuracy",
+    category: "Forecasting",
+    categoryColor: "bg-blue-500/10 text-blue-600",
+    publishDate: "October 2025",
+    readTime: "6",
+    description: "Learn how to forecast Amazon payouts accurately using data-driven models to predict disbursements, manage expenses, and plan growth confidently.",
+  },
+  {
+    slug: "manage-cashflow",
+    title: "5 Cashflow Mistakes Every Amazon Seller Should Avoid",
+    category: "Management",
+    categoryColor: "bg-red-500/10 text-red-600",
+    publishDate: "October 2025",
+    readTime: "7",
+    description: "Avoid the most common Amazon cashflow mistakes — from overspending on ads to ignoring payout delays. Learn proven management strategies.",
+  },
+  {
+    slug: "financing-growth",
+    title: "How to Use Cashflow Forecasts to Secure Seller Financing",
+    category: "Financing",
+    categoryColor: "bg-green-500/10 text-green-600",
+    publishDate: "October 2025",
+    readTime: "8",
+    description: "Learn how Amazon sellers can use cashflow forecasts to qualify for better funding and present predictable revenue to lenders.",
+  },
+];
+
+// Get related articles by excluding current post and returning 3 others
+const getRelatedArticles = (currentSlug: string) => {
+  return BLOG_POSTS
+    .filter(post => post.slug !== currentSlug)
+    .slice(0, 3)
+    .map(post => ({
+      title: post.title,
+      slug: `/blog/${post.slug}`,
+      description: post.description,
+    }));
+};
 
 export const BlogTemplate = ({
   title,
@@ -29,27 +112,35 @@ export const BlogTemplate = ({
   publishDate,
   readTime,
   description,
+  slug,
   children,
-  schema,
-  relatedArticles = [
-    {
-      title: "How to Forecast Amazon Payouts with Accuracy",
-      slug: "/blog/forecast-amazon-payouts",
-      description: "Learn the data-driven method to predict your next disbursement.",
-    },
-    {
-      title: "5 Cashflow Mistakes Every Amazon Seller Should Avoid",
-      slug: "/blog/manage-cashflow",
-      description: "Avoid common cashflow traps and keep your business liquid.",
-    },
-    {
-      title: "Use Forecasting Data to Qualify for Amazon Lending",
-      slug: "/blog/financing-growth",
-      description: "Turn your forecasts into financial leverage for growth.",
-    },
-  ],
 }: BlogTemplateProps) => {
   const navigate = useNavigate();
+  
+  // Auto-generate schema from props
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": title,
+    "description": description,
+    "author": { "@type": "Organization", "name": "Auren Team" },
+    "publisher": { 
+      "@type": "Organization", 
+      "name": "Auren", 
+      "logo": { 
+        "@type": "ImageObject", 
+        "url": "https://aurenapp.com/assets/logo.png" 
+      } 
+    },
+    "datePublished": publishDate,
+    "mainEntityOfPage": { 
+      "@type": "WebPage", 
+      "@id": `https://aurenapp.com/blog/${slug}` 
+    }
+  };
+  
+  // Auto-populate related articles
+  const relatedArticles = getRelatedArticles(slug);
 
   return (
     <div className="min-h-screen bg-background">
