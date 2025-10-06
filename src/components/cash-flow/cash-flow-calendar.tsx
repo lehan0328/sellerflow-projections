@@ -190,16 +190,18 @@ export const CashFlowCalendar = ({
       })
       .reduce((sum, income) => sum + income.amount, 0);
 
-    // Get ALL recurring income events (treat all as pending since they don't have a "received" status)
-    const recurringPending = events
-      .filter(event => {
-        if (!event.id.startsWith('recurring-')) return false;
-        if (event.type !== 'inflow') return false;
-        return true; // Include all recurring income, regardless of date
-      })
-      .reduce((sum, event) => sum + event.amount, 0);
+  // Get recurring income events that are due today or earlier
+  const recurringPending = events
+    .filter(event => {
+      if (!event.id.startsWith('recurring-')) return false;
+      if (event.type !== 'inflow') return false;
+      const eventDate = startOfDay(new Date(event.date));
+      // Only include if due date is today or earlier
+      return eventDate <= today;
+    })
+    .reduce((sum, event) => sum + event.amount, 0);
 
-    return regularPending + recurringPending;
+  return regularPending + recurringPending;
   };
 
   // Get overdue income - only show on TODAY
