@@ -539,26 +539,58 @@ export const CashFlowCalendar = ({
                           {format(day, 'd')}
                         </div>
                         <div className="flex flex-col items-end text-right">
-                          {/* Cash - only show on current day */}
+                          {/* Cash - show on current day */}
                           {hasAnyData && isToday(day) && (
                             <div className="text-xs text-green-600 dark:text-green-400 font-semibold truncate">
                               Cash ${bankAccountBalance.toLocaleString()}
                             </div>
                           )}
-                          {/* Credit - only show on current day */}
-                          {hasAnyData && isToday(day) && (
-                            <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold truncate">
-                              Credit ${totalAvailableCredit.toLocaleString()}
+                          {/* Pending - show on current day */}
+                          {hasAnyData && isToday(day) && pendingIncome > 0 && (
+                            <div className="text-xs text-orange-600 dark:text-orange-400 font-semibold truncate">
+                              Pending ${pendingIncome.toLocaleString()}
                             </div>
                           )}
-                          {/* Net Amount - show for all dates with data */}
+                          {/* Total Forecasted - show on current day */}
+                          {hasAnyData && isToday(day) && (
+                            <div className="text-xs text-primary font-semibold truncate">
+                              Total ${(bankAccountBalance + pendingIncome).toLocaleString()}
+                            </div>
+                          )}
+                          {/* Future dates - show Cash, Pending, and Total Forecasted */}
                           {hasAnyData && netAmount !== null && (
                             <>
-                              <div className={`text-xs font-semibold truncate ${netAmount < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                                Net ${netAmount.toLocaleString()}
+                              <div className="text-xs text-green-600 dark:text-green-400 font-semibold truncate">
+                                Cash ${netAmount.toLocaleString()}
                               </div>
-                              <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold truncate">
-                                Credit ${totalAvailableCredit.toLocaleString()}
+                              {/* Calculate pending for this future date */}
+                              {(() => {
+                                const futurePending = incomeItems
+                                  .filter(income => {
+                                    if (income.status === 'received') return false;
+                                    const incomeDate = startOfDay(new Date(income.paymentDate));
+                                    const checkDate = startOfDay(new Date(day));
+                                    return incomeDate <= checkDate;
+                                  })
+                                  .reduce((sum, income) => sum + income.amount, 0);
+                                return futurePending > 0 ? (
+                                  <div className="text-xs text-orange-600 dark:text-orange-400 font-semibold truncate">
+                                    Pending ${futurePending.toLocaleString()}
+                                  </div>
+                                ) : null;
+                              })()}
+                              <div className="text-xs text-primary font-semibold truncate">
+                                Total ${(() => {
+                                  const futurePending = incomeItems
+                                    .filter(income => {
+                                      if (income.status === 'received') return false;
+                                      const incomeDate = startOfDay(new Date(income.paymentDate));
+                                      const checkDate = startOfDay(new Date(day));
+                                      return incomeDate <= checkDate;
+                                    })
+                                    .reduce((sum, income) => sum + income.amount, 0);
+                                  return (netAmount + futurePending).toLocaleString();
+                                })()}
                               </div>
                             </>
                           )}
@@ -782,25 +814,6 @@ export const CashFlowCalendar = ({
               )}
             </div>
             
-            <div className="text-sm text-muted-foreground">
-              {viewType === 'calendar' ? 'Monthly Net:' : 'Period Net:'} <span className="font-semibold text-foreground">
-                {(() => {
-                  // Calculate cumulative balance through end of displayed month
-                  const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-                  endOfMonth.setHours(23, 59, 59, 999);
-                  
-                  const cumulativeNet = events
-                    .filter(event => {
-                      const eventDate = new Date(event.date);
-                      return eventDate <= endOfMonth;
-                    })
-                    .reduce((sum, event) => 
-                      sum + (event.type === 'inflow' ? event.amount : -event.amount), 0
-                    );
-                  return `${cumulativeNet >= 0 ? '+' : ''}$${cumulativeNet.toLocaleString()}`;
-                })()}
-              </span>
-            </div>
           </div>
         </div>
       </CardContent>
