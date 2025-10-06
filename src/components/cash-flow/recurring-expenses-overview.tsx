@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Repeat, Pencil, Filter } from "lucide-react";
+import { Plus, Repeat, Pencil, Filter, Trash2 } from "lucide-react";
 import { useRecurringExpenses, RecurringExpense } from "@/hooks/useRecurringExpenses";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,11 +16,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 
 export const RecurringExpensesOverview = () => {
-  const { recurringExpenses, isLoading, updateRecurringExpense } = useRecurringExpenses();
+  const { recurringExpenses, isLoading, updateRecurringExpense, deleteRecurringExpense } = useRecurringExpenses();
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [showInactive, setShowInactive] = useState(false);
   const [editingExpense, setEditingExpense] = useState<RecurringExpense | null>(null);
+  const [deletingExpense, setDeletingExpense] = useState<RecurringExpense | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [formData, setFormData] = useState<{
     name: string;
     transaction_name: string;
@@ -91,6 +94,19 @@ export const RecurringExpensesOverview = () => {
       notes: expense.notes || "",
     });
     setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = (expense: RecurringExpense) => {
+    setDeletingExpense(expense);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (deletingExpense) {
+      deleteRecurringExpense(deletingExpense.id);
+      setIsDeleteDialogOpen(false);
+      setDeletingExpense(null);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -237,6 +253,14 @@ export const RecurringExpensesOverview = () => {
                       onClick={() => handleEdit(item)}
                     >
                       <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(item)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -389,6 +413,26 @@ export const RecurringExpensesOverview = () => {
         </form>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Recurring Transaction</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete "{deletingExpense?.name}"? This will remove all future occurrences from the calendar. This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setDeletingExpense(null)}>Cancel</AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={confirmDelete}
+            className="bg-destructive hover:bg-destructive/90"
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 };
