@@ -16,6 +16,7 @@ export interface BankAccount {
   last_sync: string;
   is_active: boolean;
   plaid_item_id?: string;
+  plaid_account_id?: string; // Stripe Financial Connections or Plaid account ID
   masked_account_number?: string;
   created_at: string;
   updated_at: string;

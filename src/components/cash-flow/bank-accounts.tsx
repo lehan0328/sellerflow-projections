@@ -1,13 +1,42 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, MoreVertical, Settings } from "lucide-react";
+import { Building2, MoreVertical, Settings, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export function BankAccounts() {
   const navigate = useNavigate();
   const { accounts, isLoading, totalBalance } = useBankAccounts();
+  const [syncingAccounts, setSyncingAccounts] = useState<Set<string>>(new Set());
+
+  const handleSyncTransactions = async (accountId: string, stripeAccountId: string) => {
+    setSyncingAccounts(prev => new Set(prev).add(accountId));
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-stripe-transactions', {
+        body: { 
+          accountId: stripeAccountId, 
+          bankAccountId: accountId 
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success(`Synced ${data.total} transactions (${data.inserted} new, ${data.updated} updated)`);
+    } catch (error: any) {
+      console.error('Error syncing transactions:', error);
+      toast.error("Failed to sync transactions: " + error.message);
+    } finally {
+      setSyncingAccounts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(accountId);
+        return newSet;
+      });
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -109,6 +138,18 @@ export function BankAccounts() {
                     {account.account_type}
                   </Badge>
                 </div>
+                {/* Show sync button for Stripe-connected accounts */}
+                {account.plaid_account_id && account.plaid_account_id.startsWith('fca_') && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleSyncTransactions(account.id, account.plaid_account_id!)}
+                    disabled={syncingAccounts.has(account.id)}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-1 ${syncingAccounts.has(account.id) ? 'animate-spin' : ''}`} />
+                    {syncingAccounts.has(account.id) ? 'Syncing...' : 'Sync'}
+                  </Button>
+                )}
                 <Button variant="ghost" size="sm">
                   <MoreVertical className="h-4 w-4" />
                 </Button>

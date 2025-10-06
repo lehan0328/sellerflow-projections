@@ -59,3 +59,12 @@ verify_jwt = true
 
 [functions.send-feature-request]
 verify_jwt = true
+
+[functions.create-stripe-link-session]
+verify_jwt = true
+
+[functions.exchange-stripe-session]
+verify_jwt = true
+
+[functions.sync-stripe-transactions]
+verify_jwt = true
