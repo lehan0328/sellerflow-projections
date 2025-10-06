@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun } from "lucide-react";
+import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun, ExternalLink } from "lucide-react";
 import aurenIcon from "@/assets/auren-icon.png";
 import aurenFullLogo from "@/assets/auren-full-logo.png";
 import { useNavigate } from "react-router-dom";
@@ -358,9 +358,21 @@ const Landing = () => {
 
             {/* Right Dashboard Preview */}
             <div 
-              className="relative animate-fade-in"
+              className="relative animate-fade-in space-y-6"
               style={{ animationDelay: '1200ms' }}
             >
+              {/* Try Interactive Demo Button */}
+              <div className="flex justify-center">
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/demo')}
+                  className="inline-flex items-center space-x-2 hover-scale transition-all duration-300"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  <span>Try Interactive Demo</span>
+                </Button>
+              </div>
+
               <div className="relative">
                 {/* Glow effect behind dashboard */}
                 <div className="absolute -inset-4 bg-gradient-to-b from-primary/20 via-primary/10 to-transparent rounded-2xl blur-2xl" />
@@ -379,14 +391,38 @@ const Landing = () => {
                   </div>
                   
                   {/* Dashboard screenshot/component */}
-                  <div className="relative h-[500px] lg:h-[600px] overflow-hidden">
-                    <div className="absolute inset-0 scale-90 origin-top-left">
-                      <LiveDashboardShowcase />
+                  <div className="relative h-[500px] lg:h-[600px] overflow-hidden flex items-center justify-center bg-background">
+                    <div className="w-full h-full flex items-center justify-center">
+                      <iframe
+                        src="/demo"
+                        className="w-full h-full border-0 scale-75"
+                        style={{ 
+                          width: '133.33%', 
+                          height: '133.33%'
+                        }}
+                        title="Demo Dashboard Preview"
+                      />
                     </div>
                     
                     {/* Fade out gradient at bottom */}
-                    <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-card via-card/50 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-card via-card/50 to-transparent pointer-events-none" />
                   </div>
+                </div>
+              </div>
+
+              {/* Stats below dashboard */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">Real-time</div>
+                  <div className="text-sm text-muted-foreground">Data Updates</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">Interactive</div>
+                  <div className="text-sm text-muted-foreground">Interface</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">Responsive</div>
+                  <div className="text-sm text-muted-foreground">Design</div>
                 </div>
               </div>
             </div>
