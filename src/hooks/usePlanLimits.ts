@@ -25,19 +25,19 @@ const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
     price: PRICING_PLANS.starter.price
   },
   growing: {
-    bankConnections: 4,
+    bankConnections: 3,
     amazonConnections: 1,
     name: 'Growing',
     price: 59
   },
   professional: {
-    bankConnections: 6,
+    bankConnections: 4,
     amazonConnections: 1,
     name: 'Professional', 
     price: PRICING_PLANS.professional.price
   },
   enterprise: {
-    bankConnections: 8,
+    bankConnections: 5,
     amazonConnections: 2,
     name: 'Enterprise',
     price: 149 // Starting price, varies by revenue tier

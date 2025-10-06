@@ -52,8 +52,8 @@ export const PRICING_PLANS = {
     price_id: "price_1SEH8iB28kMY3Usem3k3vElT",
     yearly_price_id: "price_1SEHZVB28kMY3Use9bH8xPlg",
     features: [
-      "Up to $75k monthly revenue",
-      "4 bank/credit card connections",
+      "Up to $100k monthly revenue",
+      "3 bank/credit card connections",
       "1 Amazon connection",
       "2 additional users",
       "AI insights & PDF extractor",
@@ -69,7 +69,7 @@ export const PRICING_PLANS = {
     yearly_price_id: "price_1SEHZfB28kMY3UseZKmLEcPk",
     features: [
       "Up to $200k monthly revenue",
-      "6 bank/credit card connections",
+      "4 bank/credit card connections",
       "1 Amazon connection",
       "5 additional users",
       "All Growing features",
@@ -89,7 +89,7 @@ export const ENTERPRISE_TIERS = {
     priceId: "price_1SF1uxB28kMY3Use2W39zzO4",
     productId: "prod_TBOiOltXIGat2d",
     features: [
-      "8 bank/credit card connections (+ add more)",
+      "5 bank/credit card connections (+ add more)",
       "2 Amazon connections",
       "7 additional users",
       "All Professional features",
@@ -104,7 +104,7 @@ export const ENTERPRISE_TIERS = {
     priceId: "price_1SF1v8B28kMY3UseVLxkFEvr",
     productId: "prod_TBOiz4xSwK3cGV",
     features: [
-      "8 bank/credit card connections (+ add more)",
+      "5 bank/credit card connections (+ add more)",
       "2 Amazon connections",
       "7 additional users",
       "All Professional features",
@@ -119,7 +119,7 @@ export const ENTERPRISE_TIERS = {
     priceId: "price_1SF1vLB28kMY3UseRb0kIQNY",
     productId: "prod_TBOiTlRX4YLU4g",
     features: [
-      "8 bank/credit card connections (+ add more)",
+      "5 bank/credit card connections (+ add more)",
       "2 Amazon connections",
       "7 additional users",
       "All Professional features",

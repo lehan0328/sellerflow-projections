@@ -33,7 +33,7 @@ const Landing = () => {
     tier1: { 
       revenue: "$200k - $500k", 
       price: 149, 
-      connections: 8, 
+      connections: 5, 
       amazon: 2, 
       users: 7,
       priceId: "price_1SF1uxB28kMY3Use2W39zzO4"
@@ -41,7 +41,7 @@ const Landing = () => {
     tier2: { 
       revenue: "$500k - $1M", 
       price: 299, 
-      connections: 8, 
+      connections: 5, 
       amazon: 2, 
       users: 7,
       priceId: "price_1SF1v8B28kMY3UseVLxkFEvr"
@@ -49,7 +49,7 @@ const Landing = () => {
     tier3: { 
       revenue: "$1M+", 
       price: 499, 
-      connections: 8, 
+      connections: 5, 
       amazon: 2, 
       users: 7,
       priceId: "price_1SF1vLB28kMY3UseRb0kIQNY"
@@ -150,7 +150,7 @@ const Landing = () => {
       yearlyPrice: "$590",
       period: "/month",
       yearlyPeriod: "/year",
-      description: "Up to $75k monthly revenue",
+      description: "Up to $100k monthly revenue",
       popular: true,
       priceId: "price_1SEH8iB28kMY3Usem3k3vElT",
       yearlyPriceId: "price_1SEHZVB28kMY3Use9bH8xPlg",
@@ -183,7 +183,7 @@ const Landing = () => {
   ];
 
   const featureComparison = [
-    { feature: "Bank/Credit Card Connections", starter: "2", growing: "4", professional: "6", enterprise: "8 + add-ons" },
+    { feature: "Bank/Credit Card Connections", starter: "2", growing: "3", professional: "4", enterprise: "5 + add-ons" },
     { feature: "Amazon Connections", starter: "1", growing: "1", professional: "1", enterprise: "2 + add-ons" },
     { feature: "Additional Users", starter: false, growing: "2", professional: "5", enterprise: "7 + add-ons" },
     { feature: "Advanced Forecasting Workflow", starter: true, growing: true, professional: true, enterprise: true },
