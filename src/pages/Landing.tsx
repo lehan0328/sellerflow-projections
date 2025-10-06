@@ -382,14 +382,6 @@ const Landing = () => {
                 {isLoading ? "Loading..." : "Start 7-Day Free Trial"}
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
               </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="text-base px-6 py-3 hover-scale transition-all duration-300 hover:bg-primary/5 hover:border-primary/30" 
-                onClick={() => navigate('/demo')}
-              >
-                See Live Demo
-              </Button>
             </div>
 
             <Badge 
@@ -708,9 +700,6 @@ const Landing = () => {
               {isLoading ? "Loading..." : "Start Your Free Trial"}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
-              Schedule Demo
-            </Button>
           </div>
           <p className="text-sm opacity-75">
             7-day free trial • No credit card required • Cancel anytime
@@ -965,7 +954,10 @@ const Landing = () => {
                 setIsLoading(true);
                 try {
                   const { data, error } = await supabase.functions.invoke("create-guest-checkout", {
-                    body: { lineItems },
+                    body: { 
+                      lineItems,
+                      isEnterprise: true 
+                    },
                   });
 
                   if (error) throw error;

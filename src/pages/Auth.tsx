@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,12 +8,15 @@ import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import aurenIcon from "@/assets/auren-icon.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { EnterpriseSetupModal } from "@/components/EnterpriseSetupModal";
 
 export const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
+  const [showEnterpriseSetup, setShowEnterpriseSetup] = useState(false);
 
   // Sign in form data
   const [signInData, setSignInData] = useState({
@@ -24,11 +27,22 @@ export const Auth = () => {
   const [resetEmail, setResetEmail] = useState('');
 
   useEffect(() => {
+    // Check for enterprise parameter from checkout
+    const isEnterprise = searchParams.get('enterprise') === 'true';
+    
     // Check if user is already authenticated
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate('/dashboard');
+        // Show enterprise setup modal if coming from enterprise checkout
+        if (isEnterprise) {
+          setShowEnterpriseSetup(true);
+          // Remove the enterprise parameter from URL
+          searchParams.delete('enterprise');
+          navigate('/dashboard', { replace: true });
+        } else {
+          navigate('/dashboard');
+        }
       }
     };
     
@@ -37,12 +51,18 @@ export const Auth = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        navigate('/dashboard');
+        // Show enterprise setup modal if coming from enterprise checkout
+        if (isEnterprise) {
+          setShowEnterpriseSetup(true);
+          navigate('/dashboard', { replace: true });
+        } else {
+          navigate('/dashboard');
+        }
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -267,6 +287,12 @@ export const Auth = () => {
         </Card>
         </div>
       </div>
+      
+      {/* Enterprise Setup Modal */}
+      <EnterpriseSetupModal 
+        open={showEnterpriseSetup} 
+        onOpenChange={setShowEnterpriseSetup}
+      />
     </div>
   );
 };

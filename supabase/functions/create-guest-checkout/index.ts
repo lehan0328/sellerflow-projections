@@ -19,16 +19,16 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const { priceId, lineItems, email } = await req.json();
+    const { priceId, lineItems, email, isEnterprise } = await req.json();
     
     // Support both single priceId and multiple lineItems
     let finalLineItems;
     if (lineItems && Array.isArray(lineItems)) {
       finalLineItems = lineItems;
-      logStep("Received line items", { lineItems, email });
+      logStep("Received line items", { lineItems, email, isEnterprise });
     } else if (priceId) {
       finalLineItems = [{ price: priceId, quantity: 1 }];
-      logStep("Received price ID", { priceId, email });
+      logStep("Received price ID", { priceId, email, isEnterprise });
     } else {
       throw new Error("Either priceId or lineItems is required");
     }
@@ -56,7 +56,7 @@ serve(async (req) => {
       subscription_data: {
         trial_period_days: 7,
       },
-      success_url: `${req.headers.get("origin")}/signup?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${req.headers.get("origin")}/signup?checkout=success&session_id={CHECKOUT_SESSION_ID}${isEnterprise ? '&enterprise=true' : ''}`,
       cancel_url: `${req.headers.get("origin")}/?checkout=canceled`,
       allow_promotion_codes: true,
     });

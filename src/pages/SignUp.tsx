@@ -10,6 +10,7 @@ import aurenIcon from "@/assets/auren-icon.png";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { EnterpriseSetupModal } from "@/components/EnterpriseSetupModal";
 
 export const SignUp = () => {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ export const SignUp = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showEnterpriseSetup, setShowEnterpriseSetup] = useState(false);
 
   const [signUpData, setSignUpData] = useState({
     email: searchParams.get('email') || '',
@@ -51,10 +53,17 @@ export const SignUp = () => {
   };
 
   useEffect(() => {
+    // Check for enterprise parameter from checkout
+    const isEnterprise = searchParams.get('enterprise') === 'true';
+    
     // Check if user is already authenticated
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        // Show enterprise setup modal if coming from enterprise checkout
+        if (isEnterprise) {
+          setShowEnterpriseSetup(true);
+        }
         navigate('/dashboard');
       }
     };
@@ -63,12 +72,16 @@ export const SignUp = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
+        // Show enterprise setup modal if coming from enterprise checkout
+        if (isEnterprise) {
+          setShowEnterpriseSetup(true);
+        }
         navigate('/dashboard');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   const validatePassword = (password: string) => {
     const hasMinLength = password.length >= 7;
@@ -321,6 +334,12 @@ export const SignUp = () => {
           </p>
         </div>
       </div>
+      
+      {/* Enterprise Setup Modal */}
+      <EnterpriseSetupModal 
+        open={showEnterpriseSetup} 
+        onOpenChange={setShowEnterpriseSetup}
+      />
     </div>
   );
 };
