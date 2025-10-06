@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { useVendorTransactions, type VendorTransaction } from "@/hooks/useVendorTransactions";
+import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { VendorOrderDetailModal } from "./vendor-order-detail-modal";
 import { useTransactionMatching } from "@/hooks/useTransactionMatching";
 import { BankTransaction } from "./bank-transaction-log";
@@ -29,12 +30,13 @@ interface VendorsOverviewProps {
 export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate }: VendorsOverviewProps) => {
   const navigate = useNavigate();
   const { transactions, markAsPaid, updateRemarks, deleteTransaction, refetch } = useVendorTransactions();
+  const { vendors } = useVendors();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVendor, setSelectedVendor] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | 'paid'>('all');
   const [sortBy, setSortBy] = useState<'vendorName' | 'amount' | 'dueDate'>('dueDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [editingTransaction, setEditingTransaction] = useState<VendorTransaction | null>(null);
+  const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
   const [dateRange, setDateRange] = useState<string>("all");
   const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
   const [customToDate, setCustomToDate] = useState<Date | undefined>();
@@ -435,6 +437,26 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate }: Vendo
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  const v = vendors.find(v => v.id === tx.vendorId);
+                                  if (v) setEditingVendor(v);
+                                  else toast.error('Vendor not found');
+                                }}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Edit vendor details</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                         {tx.status !== 'completed' && tx.status !== 'paid' && tx.dueDate && (
                           <TooltipProvider>
                             <Tooltip>
@@ -516,6 +538,14 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate }: Vendo
           </Table>
         </div>
       </CardContent>
+
+      <VendorOrderDetailModal
+        open={!!editingVendor}
+        onOpenChange={(open) => {
+          if (!open) setEditingVendor(null);
+        }}
+        vendor={editingVendor}
+      />
     </Card>
   );
 };
