@@ -29,6 +29,12 @@ import Admin from "./pages/Admin";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import Support from "./pages/Support";
 import Onboarding from "./pages/Onboarding";
+import Blog from "./pages/Blog";
+import PredictAmazonPayouts from "./pages/blog/PredictAmazonPayouts";
+import SellerFundingForecast from "./pages/blog/SellerFundingForecast";
+import ScalingToSevenFigures from "./pages/blog/ScalingToSevenFigures";
+import BestCashflowTools from "./pages/blog/BestCashflowTools";
+import InventoryTurnoverCashflow from "./pages/blog/InventoryTurnoverCashflow";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +54,12 @@ const App = () => (
           <Route path="/docs/amazon-integration" element={<DocsAmazonIntegration />} />
           <Route path="/docs/faq" element={<DocsFAQ />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/predict-amazon-payouts" element={<PredictAmazonPayouts />} />
+          <Route path="/blog/seller-funding-forecast" element={<SellerFundingForecast />} />
+          <Route path="/blog/scaling-to-seven-figures" element={<ScalingToSevenFigures />} />
+          <Route path="/blog/best-cashflow-tools" element={<BestCashflowTools />} />
+          <Route path="/blog/inventory-turnover-cashflow" element={<InventoryTurnoverCashflow />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
