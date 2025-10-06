@@ -462,16 +462,16 @@ const Dashboard = () => {
 
       // Save to recurring_expenses table
       await createRecurringExpense({
-        name: incomeData.description || 'Recurring Income',
-        transaction_name: incomeData.description || 'Recurring Income',
+        name: incomeData.transactionName || incomeData.description || 'Recurring Income',
+        transaction_name: incomeData.transactionName || incomeData.description || 'Recurring Income',
         amount: amount,
         frequency: frequency,
         start_date: format(paymentDate, 'yyyy-MM-dd'),
         end_date: incomeData.endDate ? format(incomeData.endDate, 'yyyy-MM-dd') : null,
         is_active: true,
         type: 'income',
-        category: incomeData.category || null,
-        notes: incomeData.notes || null,
+        category: null,
+        notes: incomeData.description || incomeData.notes || null,
       });
 
       toast({
@@ -542,16 +542,16 @@ const Dashboard = () => {
 
       // Save to recurring_expenses table
       await createRecurringExpense({
-        name: expenseData.description || 'Recurring Expense',
-        transaction_name: expenseData.description || 'Recurring Expense',
+        name: expenseData.transactionName || expenseData.description || 'Recurring Expense',
+        transaction_name: expenseData.transactionName || expenseData.description || 'Recurring Expense',
         amount: amount,
         frequency: frequency,
         start_date: format(expenseData.paymentDate || new Date(), 'yyyy-MM-dd'),
         end_date: expenseData.endDate ? format(expenseData.endDate, 'yyyy-MM-dd') : null,
         is_active: true,
         type: 'expense',
-        category: expenseData.category || null,
-        notes: expenseData.notes || null,
+        category: null,
+        notes: expenseData.description || expenseData.notes || null,
       });
 
       toast({
