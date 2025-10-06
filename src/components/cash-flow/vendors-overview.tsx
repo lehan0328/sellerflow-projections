@@ -17,6 +17,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useVendorTransactions, type VendorTransaction } from "@/hooks/useVendorTransactions";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { VendorOrderDetailModal } from "./vendor-order-detail-modal";
+import { TransactionEditModal } from "./transaction-edit-modal";
 import { useTransactionMatching } from "@/hooks/useTransactionMatching";
 import { BankTransaction } from "./bank-transaction-log";
 import { toast } from "sonner";
@@ -37,6 +38,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate }: Vendo
   const [sortBy, setSortBy] = useState<'vendorName' | 'amount' | 'dueDate'>('dueDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<VendorTransaction | null>(null);
   const [dateRange, setDateRange] = useState<string>("all");
   const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
   const [customToDate, setCustomToDate] = useState<Date | undefined>();
@@ -443,17 +445,13 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate }: Vendo
                               <Button 
                                 variant="outline" 
                                 size="sm"
-                                onClick={() => {
-                                  const v = vendors.find(v => v.id === tx.vendorId);
-                                  if (v) setEditingVendor(v);
-                                  else toast.error('Vendor not found');
-                                }}
+                                onClick={() => setEditingTransaction(tx)}
                               >
                                 <Edit className="h-3 w-3" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>Edit vendor details</p>
+                              <p>Edit transaction</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -545,6 +543,18 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate }: Vendo
           if (!open) setEditingVendor(null);
         }}
         vendor={editingVendor}
+      />
+
+      <TransactionEditModal
+        open={!!editingTransaction}
+        onOpenChange={(open) => {
+          if (!open) setEditingTransaction(null);
+        }}
+        transaction={editingTransaction}
+        onSuccess={() => {
+          refetch();
+          onVendorUpdate?.();
+        }}
       />
     </Card>
   );
