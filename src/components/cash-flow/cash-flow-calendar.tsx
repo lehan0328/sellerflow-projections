@@ -140,7 +140,8 @@ export const CashFlowCalendar = ({
     // Only show pending on today
     if (checkDate.getTime() !== today.getTime()) return 0;
 
-    return incomeItems
+    // Get pending from regular income items
+    const regularPending = incomeItems
       .filter(income => {
         if (income.status === 'received') return false;
         const incomeDate = startOfDay(new Date(income.paymentDate));
@@ -148,6 +149,19 @@ export const CashFlowCalendar = ({
         return incomeDate <= today;
       })
       .reduce((sum, income) => sum + income.amount, 0);
+
+    // Get pending from recurring income events that are due today or earlier
+    const recurringPending = events
+      .filter(event => {
+        if (!event.id.startsWith('recurring-')) return false;
+        if (event.type !== 'inflow') return false;
+        const eventDate = startOfDay(new Date(event.date));
+        // Only show pending if due date is today or earlier (past/current, not future)
+        return eventDate <= today;
+      })
+      .reduce((sum, event) => sum + event.amount, 0);
+
+    return regularPending + recurringPending;
   };
 
   // Get overdue income - only show on TODAY
@@ -158,7 +172,8 @@ export const CashFlowCalendar = ({
     // Only show overdue on today
     if (checkDate.getTime() !== today.getTime()) return 0;
 
-    return incomeItems
+    // Get overdue from regular income items
+    const regularOverdue = incomeItems
       .filter(income => {
         if (income.status === 'received') return false;
         const incomeDate = startOfDay(new Date(income.paymentDate));
@@ -166,6 +181,19 @@ export const CashFlowCalendar = ({
         return incomeDate < today;
       })
       .reduce((sum, income) => sum + income.amount, 0);
+
+    // Get overdue from recurring income events
+    const recurringOverdue = events
+      .filter(event => {
+        if (!event.id.startsWith('recurring-')) return false;
+        if (event.type !== 'inflow') return false;
+        const eventDate = startOfDay(new Date(event.date));
+        // Overdue if payment date is before today
+        return eventDate < today;
+      })
+      .reduce((sum, event) => sum + event.amount, 0);
+
+    return regularOverdue + recurringOverdue;
   };
 
   // Get overdue vendor payments - only show on TODAY
@@ -207,6 +235,16 @@ export const CashFlowCalendar = ({
       }
     });
 
+    // Add recurring income events up to target date
+    events.forEach(event => {
+      if (!event.id.startsWith('recurring-')) return;
+      if (event.type !== 'inflow') return;
+      const eventDate = startOfDay(new Date(event.date));
+      if (eventDate <= checkDate) {
+        netAmount += event.amount;
+      }
+    });
+
     // Subtract ALL pending/overdue vendor payments (not yet paid)
     vendors.forEach(vendor => {
       if (vendor.status === 'paid' || vendor.totalOwed <= 0) return;
@@ -217,10 +255,22 @@ export const CashFlowCalendar = ({
       }
     });
 
-  // Add all other events (excluding ones already counted via incomeItems/vendors)
+    // Subtract recurring expense events up to target date
+    events.forEach(event => {
+      if (!event.id.startsWith('recurring-')) return;
+      if (event.type !== 'outflow') return;
+      const eventDate = startOfDay(new Date(event.date));
+      if (eventDate <= checkDate) {
+        netAmount -= event.amount;
+      }
+    });
+
+  // Add all other events (excluding ones already counted via incomeItems/vendors/recurring)
   events.forEach(event => {
     const eventDate = startOfDay(new Date(event.date));
     if (eventDate > today && eventDate <= checkDate) {
+      // Skip recurring events (already counted above)
+      if (event.id.startsWith('recurring-')) return;
       // Skip income events; handled by incomeItems
       if (event.type === 'inflow') return;
       // Skip vendor-related events; handled by vendors list
