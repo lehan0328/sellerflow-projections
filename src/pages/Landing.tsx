@@ -362,9 +362,17 @@ const Landing = () => {
               className="relative animate-fade-in space-y-6"
               style={{ animationDelay: '1200ms' }}
             >
+              {/* Dashboard Description */}
+              <div className="text-center space-y-3 px-4">
+                <p className="text-lg text-muted-foreground">
+                  Experience a fully interactive cash flow dashboard with real-time projections, AI-powered insights, 
+                  and comprehensive financial tracking - all designed specifically for Amazon sellers.
+                </p>
+              </div>
+
               {/* Try Interactive Demo Button */}
               <div className="flex justify-center">
-                <Button 
+                <Button
                   variant="outline" 
                   onClick={() => navigate('/demo')}
                   className="inline-flex items-center space-x-2 hover-scale transition-all duration-300"
