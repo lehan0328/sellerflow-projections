@@ -18,20 +18,24 @@ export const RecurringExpenseManagement = () => {
   const [editingExpense, setEditingExpense] = useState<RecurringExpense | null>(null);
   const [formData, setFormData] = useState<{
     name: string;
+    transaction_name: string;
     amount: string;
-    frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'yearly' | 'weekdays';
     start_date: string;
     end_date: string;
     is_active: boolean;
+    type: 'income' | 'expense';
     category: string;
     notes: string;
   }>({
     name: "",
+    transaction_name: "",
     amount: "",
     frequency: "monthly",
     start_date: format(new Date(), 'yyyy-MM-dd'),
     end_date: "",
     is_active: true,
+    type: "expense",
     category: "",
     notes: "",
   });
@@ -39,11 +43,13 @@ export const RecurringExpenseManagement = () => {
   const resetForm = () => {
     setFormData({
       name: "",
+      transaction_name: "",
       amount: "",
       frequency: "monthly",
       start_date: format(new Date(), 'yyyy-MM-dd'),
       end_date: "",
       is_active: true,
+      type: "expense",
       category: "",
       notes: "",
     });
@@ -55,11 +61,13 @@ export const RecurringExpenseManagement = () => {
     
     const expenseData = {
       name: formData.name,
+      transaction_name: formData.transaction_name || null,
       amount: parseFloat(formData.amount),
       frequency: formData.frequency,
       start_date: formData.start_date,
       end_date: formData.end_date || null,
       is_active: formData.is_active,
+      type: formData.type,
       category: formData.category || null,
       notes: formData.notes || null,
     };
@@ -78,11 +86,13 @@ export const RecurringExpenseManagement = () => {
     setEditingExpense(expense);
     setFormData({
       name: expense.name,
+      transaction_name: expense.transaction_name || "",
       amount: expense.amount.toString(),
       frequency: expense.frequency,
       start_date: expense.start_date,
       end_date: expense.end_date || "",
       is_active: expense.is_active,
+      type: expense.type,
       category: expense.category || "",
       notes: expense.notes || "",
     });
@@ -96,10 +106,10 @@ export const RecurringExpenseManagement = () => {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Repeat className="h-5 w-5" />
-              Recurring Expenses
+              Recurring Transactions
             </CardTitle>
             <CardDescription>
-              Manage your regular monthly, weekly, or annual expenses
+              Manage your regular income and expenses that repeat automatically
             </CardDescription>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -111,19 +121,45 @@ export const RecurringExpenseManagement = () => {
             </DialogTrigger>
             <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>
-                  {editingExpense ? "Edit Recurring Expense" : "Add Recurring Expense"}
-                </DialogTitle>
+            <DialogTitle>
+              {editingExpense ? "Edit Recurring Transaction" : "Add Recurring Transaction"}
+            </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Expense Name *</Label>
+                  <Label htmlFor="type">Type *</Label>
+                  <Select
+                    value={formData.type}
+                    onValueChange={(value: 'income' | 'expense') => setFormData({ ...formData, type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="income">Income</SelectItem>
+                      <SelectItem value="expense">Expense</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="name">Name *</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="e.g., Office Rent"
                     required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="transaction_name">Transaction Name</Label>
+                  <Input
+                    id="transaction_name"
+                    value={formData.transaction_name}
+                    onChange={(e) => setFormData({ ...formData, transaction_name: e.target.value })}
+                    placeholder="e.g., Monthly Office Rent Payment"
                   />
                 </div>
 
@@ -152,6 +188,8 @@ export const RecurringExpenseManagement = () => {
                     <SelectContent>
                       <SelectItem value="daily">Daily</SelectItem>
                       <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="bi-weekly">Bi-Weekly (Every 2 weeks)</SelectItem>
+                      <SelectItem value="weekdays">Weekdays (Mon-Fri)</SelectItem>
                       <SelectItem value="monthly">Monthly</SelectItem>
                       <SelectItem value="yearly">Yearly</SelectItem>
                     </SelectContent>
@@ -211,7 +249,7 @@ export const RecurringExpenseManagement = () => {
 
                 <div className="flex gap-2">
                   <Button type="submit" className="flex-1">
-                    {editingExpense ? "Update" : "Add"} Expense
+                    {editingExpense ? "Update" : "Add"} Transaction
                   </Button>
                   <Button
                     type="button"
@@ -235,8 +273,8 @@ export const RecurringExpenseManagement = () => {
         ) : recurringExpenses.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Repeat className="h-16 w-16 mx-auto mb-4 opacity-30" />
-            <p className="text-lg font-medium">No recurring expenses yet</p>
-            <p className="text-sm mt-2">Add your first recurring expense to get started</p>
+            <p className="text-lg font-medium">No recurring transactions yet</p>
+            <p className="text-sm mt-2">Add your first recurring income or expense to get started</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -248,10 +286,16 @@ export const RecurringExpenseManagement = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-semibold">{expense.name}</h3>
+                    <Badge variant={expense.type === 'income' ? 'default' : 'destructive'} className="text-xs">
+                      {expense.type === 'income' ? 'Income' : 'Expense'}
+                    </Badge>
                     {!expense.is_active && (
                       <Badge variant="secondary" className="text-xs">Inactive</Badge>
                     )}
                   </div>
+                  {expense.transaction_name && (
+                    <p className="text-sm text-muted-foreground">{expense.transaction_name}</p>
+                  )}
                   <div className="flex items-center gap-3 text-sm text-muted-foreground">
                     <Badge variant="outline">{expense.frequency}</Badge>
                     {expense.category && <span>{expense.category}</span>}
@@ -266,7 +310,11 @@ export const RecurringExpenseManagement = () => {
                 </div>
                 <div className="flex items-center gap-3 ml-4">
                   <div className="text-right">
-                    <p className="text-lg font-bold text-red-600 dark:text-red-400">
+                    <p className={`text-lg font-bold ${
+                      expense.type === 'income' 
+                        ? 'text-green-600 dark:text-green-400' 
+                        : 'text-red-600 dark:text-red-400'
+                    }`}>
                       ${Number(expense.amount).toLocaleString()}
                     </p>
                   </div>
@@ -282,7 +330,7 @@ export const RecurringExpenseManagement = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => {
-                        if (confirm('Are you sure you want to delete this recurring expense?')) {
+                        if (confirm('Are you sure you want to delete this recurring transaction?')) {
                           deleteRecurringExpense(expense.id);
                         }
                       }}

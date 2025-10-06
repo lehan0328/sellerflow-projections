@@ -24,6 +24,8 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
+import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
+import { generateRecurringDates } from "@/lib/recurringDates";
 import { BankTransaction } from "@/components/cash-flow/bank-transaction-log";
 import { useTransactionMatching } from "@/hooks/useTransactionMatching";
 import { TransactionMatchNotification } from "@/components/cash-flow/transaction-match-notification";
@@ -56,6 +58,7 @@ const Dashboard = () => {
   const { transactions, addTransaction, deleteTransaction, refetch: refetchTransactions } = useTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { creditCards } = useCreditCards();
+  const { recurringExpenses } = useRecurringExpenses();
   
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
   const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance } = useUserSettings();
@@ -822,8 +825,33 @@ const Dashboard = () => {
       date: t.transactionDate
     }));
 
+  // Generate recurring transaction events for calendar (show next 12 months)
+  const recurringEvents: CashFlowEvent[] = useMemo(() => {
+    const events: CashFlowEvent[] = [];
+    const rangeStart = startOfDay(new Date());
+    const rangeEnd = addDays(rangeStart, 365); // Next 12 months
+
+    recurringExpenses.forEach(recurring => {
+      const dates = generateRecurringDates(recurring, rangeStart, rangeEnd);
+      
+      dates.forEach(date => {
+        events.push({
+          id: `recurring-${recurring.id}-${date.getTime()}`,
+          type: recurring.type === 'income' ? 'inflow' : 'outflow',
+          amount: Number(recurring.amount),
+          description: recurring.transaction_name || recurring.name,
+          date: date,
+          source: recurring.type === 'income' ? recurring.name : undefined,
+          vendor: recurring.type === 'expense' ? recurring.name : undefined,
+        });
+      });
+    });
+
+    return events;
+  }, [recurringExpenses]);
+
   // Combine all events for calendar - only include real user data
-  const allCalendarEvents = [...calendarEvents, ...vendorPaymentEvents, ...vendorEvents, ...incomeEvents, ...creditCardEvents];
+  const allCalendarEvents = [...calendarEvents, ...vendorPaymentEvents, ...vendorEvents, ...incomeEvents, ...creditCardEvents, ...recurringEvents];
 
   // Debug: Log all calendar events to check for duplicates
   console.log("📅 All Calendar Events:", {
@@ -832,6 +860,7 @@ const Dashboard = () => {
     vendorEvents: vendorEvents.length,
     incomeEvents: incomeEvents.length,
     creditCardEvents: creditCardEvents.length,
+    recurringEvents: recurringEvents.length,
     allEvents: allCalendarEvents.map(e => ({ 
       id: e.id, 
       type: e.type, 

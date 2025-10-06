@@ -44,7 +44,7 @@ const navigationItems = [
   },
   {
     id: 'recurring-expenses',
-    label: 'Recurring Expenses',
+    label: 'Recurring Transactions',
     icon: Repeat,
   },
   {

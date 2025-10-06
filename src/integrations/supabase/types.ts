@@ -712,6 +712,8 @@ export type Database = {
           name: string
           notes: string | null
           start_date: string
+          transaction_name: string | null
+          type: string
           updated_at: string
           user_id: string
         }
@@ -726,6 +728,8 @@ export type Database = {
           name: string
           notes?: string | null
           start_date?: string
+          transaction_name?: string | null
+          type?: string
           updated_at?: string
           user_id: string
         }
@@ -740,6 +744,8 @@ export type Database = {
           name?: string
           notes?: string | null
           start_date?: string
+          transaction_name?: string | null
+          type?: string
           updated_at?: string
           user_id?: string
         }

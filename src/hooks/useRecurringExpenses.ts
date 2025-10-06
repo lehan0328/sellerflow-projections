@@ -6,11 +6,13 @@ export interface RecurringExpense {
   id: string;
   user_id: string;
   name: string;
+  transaction_name: string | null;
   amount: number;
-  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  frequency: 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'yearly' | 'weekdays';
   start_date: string;
   end_date: string | null;
   is_active: boolean;
+  type: 'income' | 'expense';
   category: string | null;
   notes: string | null;
   created_at: string;
