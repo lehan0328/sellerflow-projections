@@ -133,7 +133,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-4 grid-cols-6">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
           <div className="flex items-center justify-between">
             <div className="flex-1">
