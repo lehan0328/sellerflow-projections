@@ -34,12 +34,9 @@ export const Auth = () => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Show enterprise setup modal if coming from enterprise checkout
+        // Navigate to manage-accounts and pass enterprise parameter
         if (isEnterprise) {
-          setShowEnterpriseSetup(true);
-          // Remove the enterprise parameter from URL
-          searchParams.delete('enterprise');
-          navigate('/manage-accounts', { replace: true });
+          navigate('/manage-accounts?enterprise=true', { replace: true });
         } else {
           navigate('/manage-accounts');
         }
@@ -51,10 +48,9 @@ export const Auth = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        // Show enterprise setup modal if coming from enterprise checkout
+        // Navigate to manage-accounts and pass enterprise parameter
         if (isEnterprise) {
-          setShowEnterpriseSetup(true);
-          navigate('/manage-accounts', { replace: true });
+          navigate('/manage-accounts?enterprise=true', { replace: true });
         } else {
           navigate('/manage-accounts');
         }
@@ -287,12 +283,6 @@ export const Auth = () => {
         </Card>
         </div>
       </div>
-      
-      {/* Enterprise Setup Modal */}
-      <EnterpriseSetupModal 
-        open={showEnterpriseSetup} 
-        onOpenChange={setShowEnterpriseSetup}
-      />
     </div>
   );
 };

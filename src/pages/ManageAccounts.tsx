@@ -1,17 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Building2, ArrowLeft, Plus, Trash2, RefreshCw, ExternalLink } from "lucide-react";
 import { usePlaidLink } from "react-plaid-link";
 import { toast } from "sonner";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
+import { EnterpriseSetupModal } from "@/components/EnterpriseSetupModal";
 
 export default function ManageAccounts() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { accounts, isLoading, totalBalance, addAccount, removeAccount, syncAccount } = useBankAccounts();
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
+  const [showEnterpriseSetup, setShowEnterpriseSetup] = useState(false);
+
+  // Check for enterprise parameter from checkout
+  useEffect(() => {
+    const isEnterprise = searchParams.get('enterprise') === 'true';
+    if (isEnterprise) {
+      setShowEnterpriseSetup(true);
+      // Remove the enterprise parameter from URL
+      searchParams.delete('enterprise');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Plaid Link configuration - In production, get token from your backend
   const config = {
@@ -278,6 +292,12 @@ export default function ManageAccounts() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Enterprise Setup Modal */}
+      <EnterpriseSetupModal 
+        open={showEnterpriseSetup} 
+        onOpenChange={setShowEnterpriseSetup}
+      />
     </div>
   );
 }

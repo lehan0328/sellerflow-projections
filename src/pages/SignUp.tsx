@@ -60,11 +60,12 @@ export const SignUp = () => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Show enterprise setup modal if coming from enterprise checkout
+        // Navigate to manage-accounts and pass enterprise parameter
         if (isEnterprise) {
-          setShowEnterpriseSetup(true);
+          navigate('/manage-accounts?enterprise=true');
+        } else {
+          navigate('/manage-accounts');
         }
-        navigate('/manage-accounts');
       }
     };
     
@@ -72,11 +73,12 @@ export const SignUp = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        // Show enterprise setup modal if coming from enterprise checkout
+        // Navigate to manage-accounts and pass enterprise parameter
         if (isEnterprise) {
-          setShowEnterpriseSetup(true);
+          navigate('/manage-accounts?enterprise=true');
+        } else {
+          navigate('/manage-accounts');
         }
-        navigate('/manage-accounts');
       }
     });
 
@@ -334,12 +336,6 @@ export const SignUp = () => {
           </p>
         </div>
       </div>
-      
-      {/* Enterprise Setup Modal */}
-      <EnterpriseSetupModal 
-        open={showEnterpriseSetup} 
-        onOpenChange={setShowEnterpriseSetup}
-      />
     </div>
   );
 };
