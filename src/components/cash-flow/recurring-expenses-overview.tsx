@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Repeat, Pencil, Filter, Trash2 } from "lucide-react";
+import { Plus, Repeat, Pencil, Filter, Trash2, Search } from "lucide-react";
 import { useRecurringExpenses, RecurringExpense } from "@/hooks/useRecurringExpenses";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ export const RecurringExpensesOverview = () => {
   const { recurringExpenses, isLoading, updateRecurringExpense, deleteRecurringExpense } = useRecurringExpenses();
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [showInactive, setShowInactive] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [editingExpense, setEditingExpense] = useState<RecurringExpense | null>(null);
   const [deletingExpense, setDeletingExpense] = useState<RecurringExpense | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -54,6 +55,14 @@ export const RecurringExpensesOverview = () => {
   }
   if (filterType !== 'all') {
     filteredTransactions = filteredTransactions.filter(item => item.type === filterType);
+  }
+  if (searchTerm) {
+    filteredTransactions = filteredTransactions.filter(item => 
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.transaction_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.notes?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   }
 
   const activeTransactions = recurringExpenses.filter(item => item.is_active);
@@ -148,12 +157,33 @@ export const RecurringExpensesOverview = () => {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <div className="flex items-center gap-4">
+        <CardHeader className="space-y-4 pb-4">
+          <div className="flex flex-row items-center justify-between">
             <CardTitle className="text-xl font-semibold flex items-center gap-2">
               <Repeat className="h-5 w-5" />
               Recurring Transactions
             </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setShowInactive(!showInactive)}
+              >
+                <Filter className="h-4 w-4 mr-1" />
+                {showInactive ? 'Hide' : 'Show'} Inactive
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.location.href = '/settings?section=recurring-expenses'}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add New
+              </Button>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
             <Tabs value={filterType} onValueChange={(v) => setFilterType(v as any)} className="h-9">
               <TabsList>
                 <TabsTrigger value="all">All</TabsTrigger>
@@ -161,24 +191,16 @@ export const RecurringExpensesOverview = () => {
                 <TabsTrigger value="expense">Expenses</TabsTrigger>
               </TabsList>
             </Tabs>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setShowInactive(!showInactive)}
-            >
-              <Filter className="h-4 w-4 mr-1" />
-              {showInactive ? 'Hide' : 'Show'} Inactive
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => window.location.href = '/settings?section=recurring-expenses'}
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Add New
-            </Button>
+            
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search transactions..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
