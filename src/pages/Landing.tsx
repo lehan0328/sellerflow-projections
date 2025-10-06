@@ -1012,6 +1012,60 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* SEO Content Section */}
+      <section id="learn" className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto space-y-8">
+            <h2 className="text-3xl lg:text-4xl font-bold text-center mb-12">
+              Learn How to Master Amazon Cashflow
+            </h2>
+            
+            <div className="prose prose-lg max-w-none space-y-6 text-muted-foreground">
+              <p className="leading-relaxed">
+                Managing cashflow as an Amazon seller can feel unpredictable — payouts come on Amazon&apos;s schedule, not yours.
+                Between advertising costs, supplier invoices, and marketplace fees, it&apos;s easy to lose track of when money is actually available.
+              </p>
+
+              <p className="leading-relaxed">
+                <strong className="text-foreground">Auren</strong> was built to solve this exact problem. By connecting directly to your Amazon Seller Central account,
+                Auren forecasts every future payout using your real settlement data. It maps sales, refunds, reserves, and fees to
+                generate a clear cashflow timeline — helping you understand when funds will hit your bank and when your next big expense is due.
+              </p>
+
+              <p className="leading-relaxed">
+                Predictable cashflow isn&apos;t just about avoiding overdrafts — it&apos;s about unlocking growth. With accurate forecasting,
+                sellers can plan new inventory orders, time product launches, and scale advertising budgets without worrying about short-term liquidity.
+                Instead of reacting to surprises, you can make proactive financial decisions that keep your business growing sustainably.
+              </p>
+
+              <p className="leading-relaxed">
+                Whether you&apos;re an FBA wholesaler, private-label brand, or multi-marketplace seller, Auren&apos;s forecasting dashboard
+                shows your <em className="text-foreground">daily available cash</em> and <em className="text-foreground">expected payouts</em> at a glance. You can even run &quot;what-if&quot; scenarios
+                to test how changes in sales volume, ad spend, or restocks affect your future cash position.
+              </p>
+
+              <p className="leading-relaxed">
+                By automating your cashflow tracking, Auren helps you replace spreadsheets with clarity — giving you back the time
+                to focus on growth. Join hundreds of sellers using Auren to take control of their finances, prevent cash gaps,
+                and scale confidently on Amazon and beyond.
+              </p>
+            </div>
+
+            <div className="flex justify-center pt-8">
+              <Button 
+                size="lg" 
+                className="bg-gradient-primary text-lg px-8"
+                onClick={() => handleStartTrial(pricingPlans[0].priceId)}
+                disabled={isLoading}
+              >
+                {isLoading ? "Loading..." : "Start Your Free Trial"}
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 bg-gradient-primary text-primary-foreground">
         <div className="container mx-auto px-4 text-center space-y-8">
