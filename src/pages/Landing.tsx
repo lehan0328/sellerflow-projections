@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun, ExternalLink } from "lucide-react";
 import aurenIcon from "@/assets/auren-icon.png";
 import aurenFullLogo from "@/assets/auren-full-logo.png";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { LiveDashboardShowcase } from "@/components/LiveDashboardShowcase";
 import { FloatingChatWidget } from "@/components/floating-chat-widget";
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
@@ -1116,7 +1116,7 @@ const Landing = () => {
               <ul className="space-y-2 text-muted-foreground">
                 <li><a href="#features" className="hover:text-foreground">Features</a></li>
                 <li><a href="#pricing" className="hover:text-foreground">Plans</a></li>
-                <li><a href="/blog" className="hover:text-foreground">Blog</a></li>
+                <li><Link to="/blog" className="hover:text-foreground">Blog</Link></li>
                 <li><a href="/docs" className="hover:text-foreground">Docs</a></li>
               </ul>
             </div>

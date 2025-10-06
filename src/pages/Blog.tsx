@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { ArrowRight, Calendar, Clock } from "lucide-react";
 import aurenIcon from "@/assets/auren-icon.png";
 
@@ -97,9 +97,9 @@ const Blog = () => {
               <span className="text-2xl font-bold">Auren</span>
             </div>
             <div className="flex items-center space-x-6">
-              <a href="/" className="text-muted-foreground hover:text-foreground transition-all duration-300">
+              <Link to="/" className="text-muted-foreground hover:text-foreground transition-all duration-300">
                 Home
-              </a>
+              </Link>
               <Button size="sm" onClick={() => navigate('/auth')}>
                 Sign In
               </Button>
