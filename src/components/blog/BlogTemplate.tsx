@@ -242,6 +242,19 @@ export const BlogTemplate = ({
               </CardContent>
             </Card>
 
+            {/* Tags */}
+            <div className="mt-8 pt-6 border-t">
+              <p className="text-sm text-muted-foreground mb-2">Tags:</p>
+              <div className="flex gap-2">
+                <Badge 
+                  className={`${categoryColor} cursor-pointer hover:opacity-80 transition-opacity`}
+                  onClick={() => navigate(`/blog/tag/${category.toLowerCase()}`)}
+                >
+                  {category}
+                </Badge>
+              </div>
+            </div>
+
             {/* Related Articles */}
             <div className="mt-12" style={{ marginTop: "3rem" }}>
               <h2 className="text-2xl font-bold mb-6">Related Articles</h2>

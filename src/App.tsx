@@ -38,6 +38,7 @@ import InventoryTurnoverCashflow from "./pages/blog/InventoryTurnoverCashflow";
 import ForecastAmazonPayouts from "./pages/blog/ForecastAmazonPayouts";
 import ManageCashflow from "./pages/blog/ManageCashflow";
 import FinancingGrowth from "./pages/blog/FinancingGrowth";
+import BlogTag from "./pages/BlogTag";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,7 @@ const App = () => (
           <Route path="/blog/forecast-amazon-payouts" element={<ForecastAmazonPayouts />} />
           <Route path="/blog/manage-cashflow" element={<ManageCashflow />} />
           <Route path="/blog/financing-growth" element={<FinancingGrowth />} />
+          <Route path="/blog/tag/:tag" element={<BlogTag />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
