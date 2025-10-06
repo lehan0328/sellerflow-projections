@@ -13,6 +13,7 @@ import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
 import { IncomeOverview } from "@/components/cash-flow/income-overview";
 import { IncomeForm } from "@/components/cash-flow/income-form";
+import { RecurringExpensesOverview } from "@/components/cash-flow/recurring-expenses-overview";
 import { useIncome } from "@/hooks/useIncome";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useCustomers } from "@/hooks/useCustomers";
@@ -996,6 +997,9 @@ const Dashboard = () => {
           <BankAccounts />
           <CreditCards />
         </div>
+
+        {/* Row 4: Recurring Expenses (Full Width) */}
+        <RecurringExpensesOverview />
 
         {/* Row 5: Amazon Payouts (Full Width) */}
         <AmazonPayouts />

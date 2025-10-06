@@ -12,7 +12,8 @@ import {
   ShoppingCart,
   MessageSquare,
   Users,
-  Database
+  Database,
+  Repeat
 } from "lucide-react";
 
 const navigationItems = [
@@ -40,6 +41,11 @@ const navigationItems = [
     id: 'customers',
     label: 'Customer Management',
     icon: Users,
+  },
+  {
+    id: 'recurring-expenses',
+    label: 'Recurring Expenses',
+    icon: Repeat,
   },
   {
     id: 'amazon',

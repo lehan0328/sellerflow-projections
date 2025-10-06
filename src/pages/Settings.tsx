@@ -36,6 +36,7 @@ import { AmazonManagement } from "@/components/settings/amazon-management";
 import { BankAccountManagement } from "@/components/settings/bank-account-management";
 import { CustomerManagement } from "@/components/settings/customer-management";
 import { FeatureRequest } from "@/components/settings/feature-request";
+import { RecurringExpenseManagement } from "@/components/settings/recurring-expense-management";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { PageLoadingWrapper } from "@/components/PageLoadingWrapper";
 
@@ -90,11 +91,16 @@ const Settings = () => {
     },
   });
 
-  // Update active section based on location state
+  // Update active section based on location state or URL params
   useEffect(() => {
     setMounted(true);
+    const params = new URLSearchParams(location.search);
+    const sectionParam = params.get('section');
     const state = location.state as { activeSection?: string };
-    if (state?.activeSection) {
+    
+    if (sectionParam) {
+      setActiveSection(sectionParam);
+    } else if (state?.activeSection) {
       setActiveSection(state.activeSection);
     }
   }, [location]);
@@ -535,6 +541,8 @@ const Settings = () => {
         return <VendorManagement />;
       case 'customers':
         return <CustomerManagement />;
+      case 'recurring-expenses':
+        return <RecurringExpenseManagement />;
       case 'amazon':
         return <AmazonManagement />;
       case 'credit-cards':
