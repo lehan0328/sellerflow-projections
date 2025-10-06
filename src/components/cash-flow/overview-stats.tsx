@@ -101,13 +101,18 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
     const eventDate = new Date(event.date);
     eventDate.setHours(0, 0, 0, 0); // Start of event day
     
+    // Exclude recurring expenses from incoming (they should be in outflows)
+    const isRecurringExpense = event.type === 'outflow' && 
+      (typeof (event as any).id === 'string' && (event as any).id.startsWith('recurring-'));
+    
     return event.type === 'inflow' &&
+           !isRecurringExpense &&
            eventDate >= now && 
            eventDate <= incomingEndDate;
   });
   const incomingTotal = incomingPayments.reduce((sum, payment) => sum + payment.amount, 0);
   
-  // Calculate upcoming payments (outflows)
+  // Calculate upcoming payments (outflows including recurring expenses)
   const upcomingEndDate = getEndDate(upcomingTimeRange);
   const upcomingPayments = events.filter(event => {
     const eventDate = new Date(event.date);

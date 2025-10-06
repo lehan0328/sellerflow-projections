@@ -881,10 +881,10 @@ const Dashboard = () => {
           id: `recurring-${recurring.id}-${date.getTime()}`,
           type: recurring.type === 'income' ? 'inflow' : 'outflow',
           amount: Number(recurring.amount),
-          description: recurring.transaction_name || recurring.name,
+          description: `${recurring.transaction_name || recurring.name}`, // Full description stored here
           date: date,
-          source: recurring.type === 'income' ? recurring.name : undefined,
-          vendor: recurring.type === 'expense' ? recurring.name : undefined,
+          source: recurring.type === 'income' ? 'Recurring' : undefined,
+          vendor: recurring.type === 'expense' ? 'Recurring' : undefined, // Show "Recurring" as vendor name
         });
       });
     });

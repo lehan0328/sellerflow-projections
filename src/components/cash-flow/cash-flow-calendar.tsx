@@ -656,18 +656,15 @@ export const CashFlowCalendar = ({
                         }}
                       >
                         <div className="text-[9px] truncate leading-tight">
-                          {dayEvents[0].id.startsWith('recurring-') && (
-                            <span className="inline-block px-1 py-0.5 mr-1 text-[8px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded">
-                              Recurring
-                            </span>
-                          )}
                           <span className="text-foreground font-medium">
-                            {/* Show vendor name only for today's single transaction */}
-                            {isToday(day) && dayEvents[0].vendor 
-                              ? dayEvents[0].vendor 
-                              : dayEvents[0].type === 'inflow' 
-                                ? dayEvents[0].description 
-                                : (dayEvents[0].vendor || dayEvents[0].description)}
+                            {/* Show "Recurring" for recurring transactions, vendor/description for others */}
+                            {dayEvents[0].id.startsWith('recurring-')
+                              ? 'Recurring'
+                              : isToday(day) && dayEvents[0].vendor 
+                                ? dayEvents[0].vendor 
+                                : dayEvents[0].type === 'inflow' 
+                                  ? dayEvents[0].description 
+                                  : (dayEvents[0].vendor || dayEvents[0].description)}
                           </span>
                           <span className={`ml-1 ${dayEvents[0].type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
                             {dayEvents[0].type === 'inflow' ? '+' : '-'}${dayEvents[0].amount.toLocaleString()}
