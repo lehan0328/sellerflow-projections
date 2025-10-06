@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp, ShoppingBag, AlertTriangle } from "lucide-react";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays, startOfWeek, endOfWeek, getDay, startOfDay } from "date-fns";
@@ -87,6 +89,7 @@ export const CashFlowCalendar = ({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDayTransactionsModal, setShowDayTransactionsModal] = useState(false);
   const [draggedTransaction, setDraggedTransaction] = useState<CashFlowEvent | null>(null);
+  const [ignoreOverdue, setIgnoreOverdue] = useState(false);
   
   // Total available cash baseline comes from Overview (displayCash)
   const totalAvailableCash = totalCash;
@@ -96,11 +99,48 @@ export const CashFlowCalendar = ({
   accountStartDate.setHours(0, 0, 0, 0);
   
   // Filter events to only those on/after the account start date
-  const events = propEvents.filter(e => {
+  let events = propEvents.filter(e => {
     const d = new Date(e.date);
     d.setHours(0, 0, 0, 0);
     return d >= accountStartDate;
   });
+
+  // Filter out overdue unmatched transactions if toggle is enabled
+  if (ignoreOverdue) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    events = events.filter(event => {
+      const eventDate = new Date(event.date);
+      eventDate.setHours(0, 0, 0, 0);
+      
+      // Keep future events
+      if (eventDate >= today) return true;
+      
+      // For past events, check if they're matched/received
+      // If it's an income event, check if corresponding income item is received
+      if (event.type === 'inflow') {
+        const correspondingIncome = incomeItems.find(income => 
+          income.description === event.description &&
+          Math.abs(income.amount - event.amount) < 0.01
+        );
+        // Keep if received, filter out if pending/overdue
+        return correspondingIncome?.status === 'received';
+      }
+      
+      // For vendor/purchase-order events, check if corresponding vendor is paid
+      if (event.type === 'purchase-order' || event.vendor) {
+        const correspondingVendor = vendors.find(vendor =>
+          vendor.name === event.vendor || vendor.poName === event.poName
+        );
+        // Keep if paid, filter out if not paid
+        return correspondingVendor?.status === 'paid';
+      }
+      
+      // Keep all other event types (credit payments, recurring, etc.)
+      return true;
+    });
+  }
 
   // Hide calendar monetary summaries if there's no user data
   const hasAnyData = events.length > 0 || (incomeItems?.length ?? 0) > 0;
@@ -498,12 +538,25 @@ export const CashFlowCalendar = ({
                 </div>
               </div>
               
-              <PendingNotificationsPanel
-                vendors={vendors}
-                incomeItems={incomeItems}
-                onVendorClick={onVendorClick}
-                onIncomeClick={onIncomeClick}
-              />
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
+                  <Switch
+                    id="ignore-overdue"
+                    checked={ignoreOverdue}
+                    onCheckedChange={setIgnoreOverdue}
+                  />
+                  <Label htmlFor="ignore-overdue" className="text-sm cursor-pointer">
+                    Ignore Overdue
+                  </Label>
+                </div>
+                
+                <PendingNotificationsPanel
+                  vendors={vendors}
+                  incomeItems={incomeItems}
+                  onVendorClick={onVendorClick}
+                  onIncomeClick={onIncomeClick}
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
