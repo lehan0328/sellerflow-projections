@@ -470,7 +470,7 @@ export const VendorsOverview = ({ vendors: propVendors, bankTransactions = [], o
                     <TableCell className="font-medium">{vendor.name}</TableCell>
                     <TableCell>{vendor.poName || vendor.description || 'N/A'}</TableCell>
                     <TableCell className="font-semibold">
-                      ${(vendor.totalOwed || 0).toLocaleString()}
+                      ${(vendor.nextPaymentAmount || 0).toLocaleString()}
                     </TableCell>
                     <TableCell>
                       {vendor.nextPaymentDate
