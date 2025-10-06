@@ -133,8 +133,8 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   
   return (
     <>
-      <div className="grid gap-4 grid-cols-6">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
+      <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2">
@@ -173,7 +173,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
             <DollarSign className="h-8 w-8 text-blue-500" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-6">
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <p className="text-sm text-slate-600">Credit Utilization</p>
@@ -184,7 +184,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
             <CreditCard className="h-8 w-8 text-purple-500" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-6">
+        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center justify-between mb-2">
@@ -213,7 +213,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
             <TrendingUp className="h-8 w-8 text-green-500" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-lg p-6">
+        <div className="bg-gradient-to-br from-amber-50 to-amber-100 border border-amber-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center justify-between mb-2">
@@ -242,7 +242,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
             <Calendar className="h-8 w-8 text-amber-500" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 rounded-lg p-6">
+        <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center justify-between mb-2">
