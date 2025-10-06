@@ -590,40 +590,38 @@ export const CashFlowCalendar = ({
                           {/* Show financial info on all dates from account start onwards */}
                           {hasAnyData && isSameMonth(day, currentDate) && (
                             <>
-                              {/* Cash */}
-                              <div className="text-[10px] text-green-600 dark:text-green-400 font-medium w-full">
-                                Cash: ${bankAccountBalance.toLocaleString()}
-                              </div>
-                              {/* Pending - calculate for this date */}
-                              {(() => {
-                                const datePending = incomeItems
-                                  .filter(income => {
-                                    if (income.status === 'received') return false;
-                                    const incomeDate = startOfDay(new Date(income.paymentDate));
-                                    const checkDate = startOfDay(new Date(day));
-                                    return incomeDate <= checkDate;
-                                  })
-                                  .reduce((sum, income) => sum + income.amount, 0);
-                                return (
-                                  <div className="text-[10px] text-orange-600 dark:text-orange-400 font-medium w-full">
-                                    Pending: ${datePending.toLocaleString()}
+                              {isToday(day) ? (
+                                <>
+                                  {/* TODAY: Cash, Pending (income), Credit */}
+                                  <div className="text-[10px] text-green-600 dark:text-green-400 font-medium w-full">
+                                    Cash: ${bankAccountBalance.toLocaleString()}
                                   </div>
-                                );
-                              })()}
-                              {/* Total Projected */}
-                              <div className="text-[10px] text-primary font-semibold w-full">
-                                Total: ${(() => {
-                                  const datePending = incomeItems
-                                    .filter(income => {
-                                      if (income.status === 'received') return false;
-                                      const incomeDate = startOfDay(new Date(income.paymentDate));
-                                      const checkDate = startOfDay(new Date(day));
-                                      return incomeDate <= checkDate;
-                                    })
-                                    .reduce((sum, income) => sum + income.amount, 0);
-                                  return (bankAccountBalance + datePending).toLocaleString();
-                                })()}
-                              </div>
+                                  {(() => {
+                                    const pendingIncome = getPendingIncomeForToday(day);
+                                    if (pendingIncome > 0) {
+                                      return (
+                                        <div className="text-[10px] text-orange-600 dark:text-orange-400 font-medium w-full">
+                                          Pending: ${pendingIncome.toLocaleString()}
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                  <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium w-full">
+                                    Credit: ${totalAvailableCredit.toLocaleString()}
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  {/* FUTURE: Total Projected Cash, Credit */}
+                                  <div className="text-[10px] text-primary font-semibold w-full">
+                                    Total Projected Cash: ${getTotalCashForDay(day).toLocaleString()}
+                                  </div>
+                                  <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium w-full">
+                                    Credit: ${totalAvailableCredit.toLocaleString()}
+                                  </div>
+                                </>
+                              )}
                             </>
                           )}
                         </div>
@@ -664,9 +662,12 @@ export const CashFlowCalendar = ({
                             </span>
                           )}
                           <span className="text-foreground font-medium">
-                            {dayEvents[0].type === 'inflow' 
-                              ? dayEvents[0].description 
-                              : (dayEvents[0].vendor || dayEvents[0].description)}
+                            {/* Show vendor name only for today's single transaction */}
+                            {isToday(day) && dayEvents[0].vendor 
+                              ? dayEvents[0].vendor 
+                              : dayEvents[0].type === 'inflow' 
+                                ? dayEvents[0].description 
+                                : (dayEvents[0].vendor || dayEvents[0].description)}
                           </span>
                           <span className={`ml-1 ${dayEvents[0].type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
                             {dayEvents[0].type === 'inflow' ? '+' : '-'}${dayEvents[0].amount.toLocaleString()}
