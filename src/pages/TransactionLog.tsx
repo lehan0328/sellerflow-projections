@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { useVendors } from "@/hooks/useVendors";
 import { useIncome } from "@/hooks/useIncome";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 import { toast } from "sonner";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ export default function TransactionLog() {
   const defaultTab = searchParams.get("tab") || "vendors";
 
   const { vendors, deleteVendor, updateVendor } = useVendors();
+  const { transactions: vendorTransactions, markAsPaid, deleteTransaction: deleteVendorTransaction } = useVendorTransactions();
   const { incomeItems, deleteIncome, updateIncome } = useIncome();
   const { transactions, deleteTransaction, addTransaction } = useTransactions();
   const [deletedTransactions, setDeletedTransactions] = useState<DeletedTransaction[]>([]);
@@ -103,31 +105,31 @@ export default function TransactionLog() {
     };
   }, []);
 
-  // Filter vendors by status and date
-  const filteredVendors = useMemo(() => {
-    let filtered = vendors;
+  // Filter vendor transactions by status and date
+  const filteredVendorTransactions = useMemo(() => {
+    let filtered = vendorTransactions;
 
     // Status filter
     if (vendorStatusFilter === "pending") {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      filtered = filtered.filter(v => {
-        if (!v.nextPaymentDate) return false;
-        const dueDate = new Date(v.nextPaymentDate);
+      filtered = filtered.filter(tx => {
+        if (!tx.dueDate) return false;
+        const dueDate = new Date(tx.dueDate);
         dueDate.setHours(0, 0, 0, 0);
-        return dueDate >= today;
+        return dueDate >= today && tx.status === 'pending';
       });
     } else if (vendorStatusFilter === "due") {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      filtered = filtered.filter(v => {
-        if (!v.nextPaymentDate) return false;
-        const dueDate = new Date(v.nextPaymentDate);
+      filtered = filtered.filter(tx => {
+        if (!tx.dueDate) return false;
+        const dueDate = new Date(tx.dueDate);
         dueDate.setHours(0, 0, 0, 0);
-        return dueDate <= today;
+        return dueDate <= today && tx.status === 'pending';
       });
     } else if (vendorStatusFilter === "paid") {
-      filtered = filtered.filter(v => v.status === "paid" || v.totalOwed === 0);
+      filtered = filtered.filter(tx => tx.status === "completed" || tx.status === "paid");
     }
 
     // Date range filter
@@ -136,20 +138,20 @@ export default function TransactionLog() {
       const days = vendorDateRange === "3days" ? 3 : vendorDateRange === "7days" ? 7 : 30;
       const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
       
-      filtered = filtered.filter(v => {
-        if (!v.nextPaymentDate) return false;
-        return new Date(v.nextPaymentDate) >= startDate;
+      filtered = filtered.filter(tx => {
+        if (!tx.dueDate) return false;
+        return new Date(tx.dueDate) >= startDate;
       });
     } else if (vendorDateRange === "custom" && customFromDate && customToDate) {
-      filtered = filtered.filter(v => {
-        if (!v.nextPaymentDate) return false;
-        const date = new Date(v.nextPaymentDate);
+      filtered = filtered.filter(tx => {
+        if (!tx.dueDate) return false;
+        const date = new Date(tx.dueDate);
         return date >= customFromDate && date <= customToDate;
       });
     }
 
     return filtered;
-  }, [vendors, vendorStatusFilter, vendorDateRange, customFromDate, customToDate]);
+  }, [vendorTransactions, vendorStatusFilter, vendorDateRange, customFromDate, customToDate]);
 
   // Filter income by status and date
   const filteredIncome = useMemo(() => {
@@ -183,17 +185,17 @@ export default function TransactionLog() {
     return filtered;
   }, [incomeItems, incomeStatusFilter, incomeDateRange, customFromDate, customToDate]);
 
-  const getVendorStatus = (vendor: any) => {
-    // Check if vendor is marked as paid
-    if (vendor.status === 'paid' || vendor.totalOwed === 0) {
+  const getTransactionStatus = (tx: any) => {
+    // Check if transaction is marked as completed/paid
+    if (tx.status === 'completed' || tx.status === 'paid') {
       return { text: "Paid", variant: "secondary" as const };
     }
     
-    if (!vendor.nextPaymentDate) return { text: "No due date", variant: "default" as const };
+    if (!tx.dueDate) return { text: "No due date", variant: "default" as const };
     
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const dueDate = new Date(vendor.nextPaymentDate);
+    const dueDate = new Date(tx.dueDate);
     dueDate.setHours(0, 0, 0, 0);
     
     const timeDiff = dueDate.getTime() - today.getTime();
@@ -214,37 +216,20 @@ export default function TransactionLog() {
     }
   };
 
-  const handlePayVendor = async (vendor: any) => {
+  const handlePayTransaction = async (tx: any) => {
     try {
-      const paymentAmount = vendor.nextPaymentAmount ?? vendor.totalOwed ?? 0;
-
-      // Record the payment as a transaction for logging and calendar outflow
-      await addTransaction({
-        type: 'vendor_payment',
-        amount: paymentAmount,
-        description: `Payment to ${vendor.name}${vendor.poName ? ' - ' + vendor.poName : ''}`,
-        vendorId: vendor.id,
-        transactionDate: new Date(),
-        status: 'completed'
-      });
-
-      // Mark vendor as paid and clear the outstanding balance
-      await updateVendor(vendor.id, { 
-        status: 'paid' as const,
-        totalOwed: 0 
-      });
-
+      await markAsPaid(tx.id);
       toast.success("Payment recorded", {
-        description: `${vendor.name} has been marked as paid.`
+        description: `${tx.description} has been marked as paid.`
       });
     } catch (error) {
       toast.error("Failed to record payment");
     }
   };
 
-  const handleDeleteVendor = async (vendor: any) => {
+  const handleDeleteTransaction = async (tx: any) => {
     try {
-      await deleteVendor(vendor.id);
+      await deleteVendorTransaction(tx.id);
       await fetchDeletedTransactions();
       toast.success("Transaction deleted");
     } catch (error) {
@@ -393,32 +378,32 @@ export default function TransactionLog() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredVendors.length === 0 ? (
+                    {filteredVendorTransactions.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                           No vendor transactions found
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredVendors.map((vendor) => {
-                        const status = getVendorStatus(vendor);
+                      filteredVendorTransactions.map((tx) => {
+                        const status = getTransactionStatus(tx);
                         return (
-                          <TableRow key={vendor.id}>
+                          <TableRow key={tx.id}>
                             <TableCell>
-                              {vendor.created_at
-                                ? new Date(vendor.created_at).toLocaleDateString()
+                              {tx.transactionDate
+                                ? new Date(tx.transactionDate).toLocaleDateString()
                                 : "N/A"}
                             </TableCell>
                             <TableCell className="font-medium">
-                              {vendor.poName || vendor.description || "N/A"}
+                              {tx.description || "N/A"}
                             </TableCell>
-                            <TableCell>{vendor.name}</TableCell>
+                            <TableCell>{tx.vendorName}</TableCell>
                             <TableCell className="font-semibold">
-                              ${((vendor.nextPaymentAmount ?? vendor.totalOwed ?? 0) as number).toLocaleString()}
+                              ${tx.amount.toLocaleString()}
                             </TableCell>
                             <TableCell>
-                              {vendor.nextPaymentDate
-                                ? new Date(vendor.nextPaymentDate).toLocaleDateString()
+                              {tx.dueDate
+                                ? new Date(tx.dueDate).toLocaleDateString()
                                 : "N/A"}
                             </TableCell>
                             <TableCell>
@@ -427,24 +412,17 @@ export default function TransactionLog() {
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end space-x-2">
                                 <Button
-                                  variant="outline"
+                                  variant="default"
                                   size="sm"
-                                  onClick={() => setEditingVendor(vendor)}
-                                >
-                                  <Edit className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                 variant="default"
-                                 size="sm"
-                                 onClick={() => handlePayVendor(vendor)}
-                                 disabled={vendor.status === 'paid' || vendor.totalOwed === 0}
+                                  onClick={() => handlePayTransaction(tx)}
+                                  disabled={tx.status === 'completed' || tx.status === 'paid'}
                                 >
                                   <DollarSign className="h-3 w-3" />
                                 </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleDeleteVendor(vendor)}
+                                  onClick={() => handleDeleteTransaction(tx)}
                                   className="text-destructive hover:text-destructive"
                                 >
                                   <Trash2 className="h-3 w-3" />
@@ -674,7 +652,11 @@ export default function TransactionLog() {
               toast.success("Vendor order updated");
             }}
             onDelete={async (vendor) => {
-              await handleDeleteVendor(vendor);
+              // Find the transaction for this vendor and delete it
+              const txToDelete = vendorTransactions.find(tx => tx.vendorId === vendor.id);
+              if (txToDelete) {
+                await handleDeleteTransaction(txToDelete);
+              }
               setEditingVendor(null);
             }}
           />
