@@ -28,7 +28,7 @@ interface VendorsOverviewProps {
 
 export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate }: VendorsOverviewProps) => {
   const navigate = useNavigate();
-  const { transactions, markAsPaid, deleteTransaction, refetch } = useVendorTransactions();
+  const { transactions, markAsPaid, updateRemarks, deleteTransaction, refetch } = useVendorTransactions();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVendor, setSelectedVendor] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | 'paid'>('all');
@@ -418,7 +418,20 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate }: Vendo
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <span className="text-xs text-muted-foreground">{tx.category || '-'}</span>
+                      <Select
+                        value={tx.remarks || 'Ordered'}
+                        onValueChange={(value) => updateRemarks(tx.id, value)}
+                      >
+                        <SelectTrigger className="h-8 text-xs max-w-[130px] bg-background border border-border">
+                          <SelectValue placeholder="Ordered" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border border-border z-[100]">
+                          <SelectItem value="Ordered">Ordered</SelectItem>
+                          <SelectItem value="Shipped">Shipped</SelectItem>
+                          <SelectItem value="Delayed">Delayed</SelectItem>
+                          <SelectItem value="Received">Received</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">

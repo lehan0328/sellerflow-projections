@@ -750,17 +750,20 @@ const Dashboard = () => {
   // Convert cash flow events to calendar format (no conversion needed since types now match)
   const calendarEvents = cashFlowEvents;
 
-  // Convert vendor due dates to calendar events (exclude paid vendors)
-  const vendorEvents: CashFlowEvent[] = vendors
-    .filter(vendor => vendor.totalOwed > 0 && vendor.nextPaymentDate && vendor.status !== 'paid')
-    .map(vendor => ({
-      id: `vendor-${vendor.id}`,
-      type: 'outflow' as const,
-      amount: vendor.nextPaymentAmount,
-      description: `${vendor.name} - ${vendor.poName || 'Payment Due'}`,
-      vendor: vendor.name,
-      date: vendor.nextPaymentDate
-    }));
+  // Convert vendor transactions to calendar events (show all pending PO transactions)
+  const vendorEvents: CashFlowEvent[] = transactions
+    .filter(tx => tx.type === 'purchase_order' && tx.status !== 'paid')
+    .map(tx => {
+      const vendor = vendors.find(v => v.id === tx.vendorId);
+      return {
+        id: `vendor-tx-${tx.id}`,
+        type: 'outflow' as const,
+        amount: tx.amount,
+        description: tx.description || `${vendor?.name || 'Vendor'} - Payment Due`,
+        vendor: vendor?.name,
+        date: tx.dueDate || tx.transactionDate
+      };
+    });
 
   // Convert income items to calendar events (exclude received income)
   const incomeEvents: CashFlowEvent[] = incomeItems

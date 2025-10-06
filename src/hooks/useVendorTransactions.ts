@@ -13,6 +13,7 @@ export interface VendorTransaction {
   description: string;
   category?: string;
   type: string;
+  remarks?: string;
 }
 
 export const useVendorTransactions = () => {
@@ -64,7 +65,8 @@ export const useVendorTransactions = () => {
         status: tx.status as VendorTransaction['status'],
         description: tx.description || '',
         category: tx.vendors?.category || '',
-        type: tx.type
+        type: tx.type,
+        remarks: (tx as any).remarks || 'Ordered'
       })) || [];
 
       setTransactions(formattedTransactions);
@@ -102,6 +104,28 @@ export const useVendorTransactions = () => {
       toast({
         title: "Error",
         description: "Failed to update transaction",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateRemarks = async (transactionId: string, remarks: string) => {
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({ remarks })
+        .eq('id', transactionId);
+
+      if (error) throw error;
+
+      setTransactions(prev => prev.map(tx => 
+        tx.id === transactionId ? { ...tx, remarks } : tx
+      ));
+    } catch (error) {
+      console.error('Error updating remarks:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update remarks",
         variant: "destructive",
       });
     }
@@ -165,6 +189,7 @@ export const useVendorTransactions = () => {
     transactions,
     loading,
     markAsPaid,
+    updateRemarks,
     deleteTransaction,
     refetch: fetchVendorTransactions
   };
