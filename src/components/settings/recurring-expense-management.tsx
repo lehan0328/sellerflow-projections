@@ -116,7 +116,7 @@ export const RecurringExpenseManagement = () => {
             <DialogTrigger asChild>
               <Button onClick={resetForm}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Expense
+                Add Transaction
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
