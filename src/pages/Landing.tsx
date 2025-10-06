@@ -274,7 +274,7 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-4 pb-12 lg:pt-8 lg:pb-20">
+      <section className="relative overflow-hidden pt-8 pb-0">
         {/* Animated Background */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
@@ -282,82 +282,9 @@ const Landing = () => {
           <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse opacity-30" style={{ animationDelay: '1s' }} />
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-primary/10 to-accent/10 rounded-full blur-3xl animate-pulse opacity-10" style={{ animationDelay: '2s' }} />
         </div>
-
-        {/* Floating Dashboard Cards - Left */}
-        <div className="hidden lg:block absolute left-10 top-32 animate-fade-in" style={{ animationDelay: '600ms' }}>
-          <Card className="w-72 shadow-2xl rotate-[-6deg] hover:rotate-[-3deg] transition-transform duration-500 bg-card/80 backdrop-blur-md border-2">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">Revenue Overview</CardTitle>
-                <Badge variant="secondary" className="text-xs">Live</Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div>
-                  <div className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">$25,056.55</div>
-                  <div className="text-xs text-muted-foreground mt-1">Oct 15 - $45,863</div>
-                </div>
-                <ResponsiveContainer width="100%" height={60}>
-                  <LineChart data={[
-                    { value: 35000 }, { value: 38000 }, { value: 42000 }, 
-                    { value: 39000 }, { value: 45000 }, { value: 43000 }, { value: 45863 }
-                  ]}>
-                    <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Floating Dashboard Cards - Right Top */}
-        <div className="hidden lg:block absolute right-10 top-28 animate-fade-in" style={{ animationDelay: '800ms' }}>
-          <Card className="w-64 shadow-2xl rotate-[6deg] hover:rotate-[3deg] transition-transform duration-500 bg-card/80 backdrop-blur-md border-2">
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">Total active users</div>
-                  <div className="text-2xl font-bold">120K+</div>
-                  <div className="flex items-center gap-1 mt-2">
-                    <div className="flex -space-x-2">
-                      {[1,2,3].map(i => (
-                        <div key={i} className="w-8 h-8 rounded-full bg-gradient-primary border-2 border-background" />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Floating Dashboard Cards - Right Bottom */}
-        <div className="hidden lg:block absolute right-16 bottom-32 animate-fade-in" style={{ animationDelay: '1000ms' }}>
-          <Card className="w-56 shadow-2xl rotate-[-4deg] hover:rotate-[-2deg] transition-transform duration-500 bg-card/80 backdrop-blur-md border-2">
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                <div>
-                  <div className="text-xs text-muted-foreground">Physical Item</div>
-                  <div className="text-2xl font-bold text-success flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
-                    7,830
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">Digital Item</div>
-                  <div className="text-2xl font-bold text-primary flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
-                    4,540
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
         
         <div className="container relative mx-auto px-4">
-          <div className="text-center space-y-8">
+          <div className="text-center space-y-8 pt-12 pb-16 lg:pt-20 lg:pb-20">
             {/* New Smart AI Features Badge */}
             <Badge className="inline-flex items-center gap-2 bg-foreground text-background px-4 py-2 text-sm font-semibold animate-fade-in">
               <span>New</span>
@@ -371,7 +298,7 @@ const Landing = () => {
             </div>
             
             <div className="animate-fade-in space-y-6" style={{ animationDelay: '400ms' }}>
-              <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
+              <h1 className="text-4xl lg:text-6xl xl:text-7xl font-bold leading-tight">
                 <span className="inline-block hover:scale-105 transition-transform duration-300">
                   <span className="bg-gradient-primary bg-clip-text text-transparent animate-pulse">AI-Powered</span> Cash Flow
                 </span>
@@ -382,7 +309,7 @@ const Landing = () => {
             </div>
             
             <p 
-              className="text-lg text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed" 
+              className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed" 
               style={{ animationDelay: '600ms' }}
             >
               Get daily AI insights, forecast your Amazon cash flow months in advance, and optimize your credit utilization. 
@@ -395,7 +322,7 @@ const Landing = () => {
             >
               <Button 
                 size="lg" 
-                className="bg-gradient-primary text-base px-6 py-3 hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-primary/25" 
+                className="bg-gradient-primary text-base px-8 py-6 text-lg hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-primary/25" 
                 onClick={() => handleStartTrial(pricingPlans[1].priceId)}
                 disabled={isLoading}
               >
@@ -431,18 +358,54 @@ const Landing = () => {
               </div>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* Live Dashboard Showcase Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <LiveDashboardShowcase />
+          {/* Dashboard Preview */}
+          <div 
+            className="relative max-w-7xl mx-auto px-4 pb-0 animate-fade-in"
+            style={{ animationDelay: '1200ms' }}
+          >
+            <div className="relative">
+              {/* Glow effect behind dashboard */}
+              <div className="absolute -inset-4 bg-gradient-to-b from-primary/20 via-primary/10 to-transparent rounded-t-3xl blur-2xl" />
+              
+              {/* Dashboard preview card */}
+              <div className="relative rounded-t-2xl border-2 border-primary/20 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden">
+                <div className="p-2 border-b border-border/50 bg-muted/30 flex items-center gap-2">
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                    <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                  </div>
+                  <div className="flex-1 text-center text-xs text-muted-foreground font-medium">
+                    Live Dashboard Preview
+                  </div>
+                </div>
+                
+                {/* Dashboard screenshot/component */}
+                <div className="relative h-[400px] lg:h-[500px] overflow-hidden">
+                  <div className="absolute inset-0">
+                    <LiveDashboardShowcase />
+                  </div>
+                  
+                  {/* Fade out gradient at bottom to indicate more content */}
+                  <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background via-background/80 to-transparent" />
+                </div>
+              </div>
+
+              {/* Scroll indicator */}
+              <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce">
+                <div className="text-xs text-muted-foreground">Scroll to explore</div>
+                <div className="w-6 h-10 border-2 border-muted-foreground/30 rounded-full flex items-start justify-center p-2">
+                  <div className="w-1 h-3 bg-muted-foreground/50 rounded-full animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-muted/30">
+      <section id="features" className="py-20 bg-muted/30 mt-20">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
