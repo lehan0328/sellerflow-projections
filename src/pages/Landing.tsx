@@ -555,22 +555,6 @@ const Landing = () => {
                     {/* Fade gradient */}
                     <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-card/80 via-card/40 to-transparent pointer-events-none" />
                   </div>
-                  
-                  {/* Dashboard Stats */}
-                  <div className="grid grid-cols-3 gap-4 mt-4 px-4">
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-primary">Real-time</div>
-                      <div className="text-xs text-muted-foreground">Data Updates</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-primary">Interactive</div>
-                      <div className="text-xs text-muted-foreground">Interface</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-bold text-primary">Responsive</div>
-                      <div className="text-xs text-muted-foreground">Design</div>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Floating stats */}
@@ -587,6 +571,22 @@ const Landing = () => {
                     <TrendingUp className="h-3 w-3" />
                     <span>+2.3% this month</span>
                   </div>
+                </div>
+              </div>
+              
+              {/* Dashboard Stats - Outside the card */}
+              <div className="grid grid-cols-3 gap-4 mt-6">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-primary">Real-time</div>
+                  <div className="text-xs text-muted-foreground">Data Updates</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-primary">Interactive</div>
+                  <div className="text-xs text-muted-foreground">Interface</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-primary">Responsive</div>
+                  <div className="text-xs text-muted-foreground">Design</div>
                 </div>
               </div>
             </div>
