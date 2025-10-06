@@ -47,10 +47,10 @@ export const LiveDashboardShowcase = () => {
             </div>
 
             {/* Dashboard Content Preview */}
-            <div className="h-full bg-background">
+            <div className="h-full bg-background flex items-center justify-center">
               <iframe
                 src="/demo"
-                className="w-full h-full border-0 scale-75 origin-top-left"
+                className="w-full h-full border-0 scale-75 origin-center"
                 style={{ 
                   width: '133.33%', 
                   height: '133.33%'
