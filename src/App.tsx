@@ -18,6 +18,7 @@ import ScheduleDemo from "./pages/ScheduleDemo";
 import PauseSubscription from "./pages/PauseSubscription";
 import OAuthRedirect from "./pages/OAuthRedirect";
 import NotFound from "./pages/NotFound";
+import Features from "./pages/Features";
 import Docs from "./pages/Docs";
 import DocsGettingStarted from "./pages/DocsGettingStarted";
 import DocsAmazonIntegration from "./pages/DocsAmazonIntegration";
@@ -50,6 +51,7 @@ const App = () => (
         <Sonner />
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/features" element={<Features />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/demo" element={<DemoPage />} />
