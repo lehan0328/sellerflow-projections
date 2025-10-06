@@ -56,7 +56,16 @@ export default function ScenarioPlanner() {
   const [expenseAdjustment, setExpenseAdjustment] = useState(0);
   const [expenseAdjustmentType, setExpenseAdjustmentType] = useState<'percentage' | 'absolute'>('percentage');
   const [creditUtilizationTarget, setCreditUtilizationTarget] = useState(30);
-  const [projectionMonths, setProjectionMonths] = useState(6);
+  const [projectionPeriod, setProjectionPeriod] = useState<string>('1m'); // '1w', '2w', '3w', '1m', '2m', etc.
+  
+  // Helper to convert projection period to weeks for calculations
+  const getProjectionWeeks = (period: string): number => {
+    if (period.endsWith('w')) return parseInt(period);
+    if (period.endsWith('m')) return parseInt(period) * 4;
+    return 4; // default to 1 month
+  };
+  
+  const projectionMonths = getProjectionWeeks(projectionPeriod) / 4;
 
   // Calculate baseline metrics based on actual historical data
   const baselineMetrics = useMemo(() => {
@@ -90,17 +99,30 @@ export default function ScenarioPlanner() {
 
   // Calculate scenario projections
   const scenarioProjection = useMemo(() => {
-    const months = [];
+    const periods = [];
     const { monthlyRevenue: baseMonthlyRevenue, monthlyExpenses: baseMonthlyExpenses } = baselineMetrics;
+    const weeks = getProjectionWeeks(projectionPeriod);
+    const isWeekly = weeks < 4;
+
+    // Convert monthly baseline to weekly if needed
+    const basePeriodRevenue = isWeekly ? baseMonthlyRevenue / 4 : baseMonthlyRevenue;
+    const basePeriodExpenses = isWeekly ? baseMonthlyExpenses / 4 : baseMonthlyExpenses;
 
     // Handle case where there's no baseline data
     if (baseMonthlyRevenue === 0 && baseMonthlyExpenses === 0) {
-      for (let i = 0; i < projectionMonths; i++) {
-        const month = new Date();
-        month.setMonth(month.getMonth() + i);
+      const numPeriods = isWeekly ? weeks : Math.ceil(weeks / 4);
+      for (let i = 0; i < numPeriods; i++) {
+        const date = new Date();
+        if (isWeekly) {
+          date.setDate(date.getDate() + (i * 7));
+        } else {
+          date.setMonth(date.getMonth() + i);
+        }
         
-        months.push({
-          month: month.toLocaleDateString('en-US', { month: 'short' }),
+        periods.push({
+          month: isWeekly 
+            ? `Week ${i + 1}` 
+            : date.toLocaleDateString('en-US', { month: 'short' }),
           baselineRevenue: 0,
           baselineExpenses: 0,
           baselineNet: 0,
@@ -109,41 +131,52 @@ export default function ScenarioPlanner() {
           scenarioNet: 0,
         });
       }
-      return months;
+      return periods;
     }
 
-    for (let i = 0; i < projectionMonths; i++) {
-      let adjustedRevenue = baseMonthlyRevenue;
-      let adjustedExpenses = baseMonthlyExpenses;
+    const numPeriods = isWeekly ? weeks : Math.ceil(weeks / 4);
+    for (let i = 0; i < numPeriods; i++) {
+      let adjustedRevenue = basePeriodRevenue;
+      let adjustedExpenses = basePeriodExpenses;
 
       if (revenueAdjustmentType === 'percentage') {
-        adjustedRevenue = baseMonthlyRevenue * (1 + revenueAdjustment / 100);
+        adjustedRevenue = basePeriodRevenue * (1 + revenueAdjustment / 100);
       } else {
-        adjustedRevenue = baseMonthlyRevenue + revenueAdjustment;
+        // For absolute adjustments, scale to period
+        const periodAdjustment = isWeekly ? revenueAdjustment / 4 : revenueAdjustment;
+        adjustedRevenue = basePeriodRevenue + periodAdjustment;
       }
 
       if (expenseAdjustmentType === 'percentage') {
-        adjustedExpenses = baseMonthlyExpenses * (1 + expenseAdjustment / 100);
+        adjustedExpenses = basePeriodExpenses * (1 + expenseAdjustment / 100);
       } else {
-        adjustedExpenses = baseMonthlyExpenses + expenseAdjustment;
+        // For absolute adjustments, scale to period
+        const periodAdjustment = isWeekly ? expenseAdjustment / 4 : expenseAdjustment;
+        adjustedExpenses = basePeriodExpenses + periodAdjustment;
       }
 
-      const month = new Date();
-      month.setMonth(month.getMonth() + i);
+      const date = new Date();
+      if (isWeekly) {
+        date.setDate(date.getDate() + (i * 7));
+      } else {
+        date.setMonth(date.getMonth() + i);
+      }
       
-      months.push({
-        month: month.toLocaleDateString('en-US', { month: 'short' }),
-        baselineRevenue: baseMonthlyRevenue,
-        baselineExpenses: baseMonthlyExpenses,
-        baselineNet: baseMonthlyRevenue - baseMonthlyExpenses,
+      periods.push({
+        month: isWeekly 
+          ? `Week ${i + 1}` 
+          : date.toLocaleDateString('en-US', { month: 'short' }),
+        baselineRevenue: basePeriodRevenue,
+        baselineExpenses: basePeriodExpenses,
+        baselineNet: basePeriodRevenue - basePeriodExpenses,
         scenarioRevenue: adjustedRevenue,
         scenarioExpenses: adjustedExpenses,
         scenarioNet: adjustedRevenue - adjustedExpenses,
       });
     }
 
-    return months;
-  }, [baselineMetrics, revenueAdjustment, revenueAdjustmentType, expenseAdjustment, expenseAdjustmentType, projectionMonths]);
+    return periods;
+  }, [baselineMetrics, revenueAdjustment, revenueAdjustmentType, expenseAdjustment, expenseAdjustmentType, projectionPeriod]);
 
   // Calculate cumulative impact
   const cumulativeImpact = useMemo(() => {
@@ -167,7 +200,7 @@ export default function ScenarioPlanner() {
       expenseAdjustment,
       expenseAdjustmentType,
       creditUtilizationTarget,
-      projectionMonths,
+      projectionMonths: getProjectionWeeks(projectionPeriod) / 4, // Store as months equivalent
     };
 
     if (selectedScenarioId) {
@@ -198,7 +231,14 @@ export default function ScenarioPlanner() {
     setExpenseAdjustment(scenario.scenario_data.expenseAdjustment);
     setExpenseAdjustmentType(scenario.scenario_data.expenseAdjustmentType);
     setCreditUtilizationTarget(scenario.scenario_data.creditUtilizationTarget || 30);
-    setProjectionMonths(scenario.scenario_data.projectionMonths);
+    // Convert months back to period format
+    const months = scenario.scenario_data.projectionMonths;
+    if (months === 0.25) setProjectionPeriod('1w');
+    else if (months === 0.5) setProjectionPeriod('2w');
+    else if (months === 0.75) setProjectionPeriod('3w');
+    else if (months === 1) setProjectionPeriod('1m');
+    else if (months === 2) setProjectionPeriod('2m');
+    else setProjectionPeriod(`${Math.round(months)}m`);
   };
 
   const handleNewScenario = () => {
@@ -210,7 +250,7 @@ export default function ScenarioPlanner() {
     setExpenseAdjustment(0);
     setExpenseAdjustmentType('percentage');
     setCreditUtilizationTarget(30);
-    setProjectionMonths(6);
+    setProjectionPeriod('1m');
   };
 
   return (
@@ -330,16 +370,22 @@ export default function ScenarioPlanner() {
               </div>
 
               <div>
-                <Label htmlFor="projection-months">Projection Period: {projectionMonths} months</Label>
-                <Slider
-                  id="projection-months"
-                  value={[projectionMonths]}
-                  onValueChange={(value) => setProjectionMonths(value[0])}
-                  min={3}
-                  max={12}
-                  step={1}
-                  className="mt-2"
-                />
+                <Label htmlFor="projection-period">Projection Period</Label>
+                <Select value={projectionPeriod} onValueChange={setProjectionPeriod}>
+                  <SelectTrigger id="projection-period">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-background">
+                    <SelectItem value="1w">1 Week</SelectItem>
+                    <SelectItem value="2w">2 Weeks</SelectItem>
+                    <SelectItem value="3w">3 Weeks</SelectItem>
+                    <SelectItem value="1m">1 Month</SelectItem>
+                    <SelectItem value="2m">2 Months</SelectItem>
+                    <SelectItem value="3m">3 Months</SelectItem>
+                    <SelectItem value="6m">6 Months</SelectItem>
+                    <SelectItem value="12m">12 Months</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
