@@ -57,7 +57,7 @@ const Landing = () => {
   };
 
   const addonPricing = {
-    bankConnection: 7,
+    bankConnection: 10,
     amazonConnection: 50,
     user: 5
   };

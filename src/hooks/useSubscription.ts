@@ -5,9 +5,9 @@ import { useToast } from "@/hooks/use-toast";
 export const ADDON_PRODUCTS = {
   bank_account: {
     name: "Additional Bank Account",
-    price: 7,
-    product_id: "prod_TAceumMQgcebjQ",
-    price_id: "price_1SEHPSB28kMY3UseP1mWqne5",
+    price: 10,
+    product_id: "prod_TBP7lVqLYQDIU8",
+    price_id: "price_1SF2J6B28kMY3UseQW6ATKt1",
     description: "Add one more bank/credit card connection"
   },
   amazon_account: {
