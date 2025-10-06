@@ -604,13 +604,6 @@ export const CashFlowCalendar = ({
                     {/* Compact financial info - stacked vertically below */}
                     {hasAnyData && (
                       <div className="space-y-0 text-[10px] leading-tight">
-                        {/* Pending - only show on current day */}
-                        {isToday(day) && pendingIncome > 0 && (
-                          <div className="text-orange-600 dark:text-orange-400 font-medium truncate">
-                            Pending +${pendingIncome.toLocaleString()}
-                          </div>
-                        )}
-                        
                         {/* Overdue - show on current day and past dates */}
                         {(isToday(day) || isPast) && overdueVendors > 0 && (
                           <div className="text-red-600 dark:text-red-400 font-medium truncate">
