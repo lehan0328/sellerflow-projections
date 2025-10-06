@@ -984,7 +984,7 @@ const Landing = () => {
                 // Add bank connection add-ons
                 if (enterpriseAddons.bankConnections > 0) {
                   lineItems.push({
-                    price: "price_1SF2J6B28kMY3UseQW6ATKt1", // Additional Bank Account price ID (updated)
+                    price: isYearly ? "price_1SF2TuB28kMY3Use4DiYnkp6" : "price_1SF2J6B28kMY3UseQW6ATKt1",
                     quantity: enterpriseAddons.bankConnections
                   });
                 }
@@ -992,7 +992,7 @@ const Landing = () => {
                 // Add Amazon connection add-ons
                 if (enterpriseAddons.amazonConnections > 0) {
                   lineItems.push({
-                    price: "price_1SEHQLB28kMY3UseBmY7IIjx", // Additional Amazon Account price ID
+                    price: isYearly ? "price_1SF2U4B28kMY3Usez8rm1I7f" : "price_1SEHQLB28kMY3UseBmY7IIjx",
                     quantity: enterpriseAddons.amazonConnections
                   });
                 }
@@ -1000,7 +1000,7 @@ const Landing = () => {
                 // Add user add-ons
                 if (enterpriseAddons.users > 0) {
                   lineItems.push({
-                    price: "price_1SEHQoB28kMY3UsedGTbBbmA", // Additional User price ID
+                    price: isYearly ? "price_1SF2UFB28kMY3UseHmvICumx" : "price_1SEHQoB28kMY3UsedGTbBbmA",
                     quantity: enterpriseAddons.users
                   });
                 }

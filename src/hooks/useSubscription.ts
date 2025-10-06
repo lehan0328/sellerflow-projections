@@ -8,6 +8,7 @@ export const ADDON_PRODUCTS = {
     price: 10,
     product_id: "prod_TBP7lVqLYQDIU8",
     price_id: "price_1SF2J6B28kMY3UseQW6ATKt1",
+    yearly_price_id: "price_1SF2TuB28kMY3Use4DiYnkp6",
     description: "Add one more bank/credit card connection"
   },
   amazon_account: {
@@ -15,6 +16,7 @@ export const ADDON_PRODUCTS = {
     price: 50,
     product_id: "prod_TAcfNXVQRUFHSC",
     price_id: "price_1SEHQLB28kMY3UseBmY7IIjx",
+    yearly_price_id: "price_1SF2U4B28kMY3Usez8rm1I7f",
     description: "Add one more Amazon account connection"
   },
   user: {
@@ -22,6 +24,7 @@ export const ADDON_PRODUCTS = {
     price: 5,
     product_id: "prod_TAcgWMdZxz6voS",
     price_id: "price_1SEHQoB28kMY3UsedGTbBbmA",
+    yearly_price_id: "price_1SF2UFB28kMY3UseHmvICumx",
     description: "Add one more user to your account"
   }
 } as const;
