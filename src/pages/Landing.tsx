@@ -795,7 +795,9 @@ const Landing = () => {
               <span className={`text-sm font-medium ${isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
                 Yearly
                 {isYearly && (
-                  <span className="ml-2 text-xs text-primary font-semibold">Save 2 months!</span>
+                  <span className="ml-2 text-xs text-primary font-semibold">
+                    Save ${(enterpriseTiers[enterpriseTier].price * 12) - enterpriseTiers[enterpriseTier].yearlyPrice}!
+                  </span>
                 )}
               </span>
             </div>
