@@ -39,9 +39,9 @@ export const Auth = () => {
           setShowEnterpriseSetup(true);
           // Remove the enterprise parameter from URL
           searchParams.delete('enterprise');
-          navigate('/dashboard', { replace: true });
+          navigate('/manage-accounts', { replace: true });
         } else {
-          navigate('/dashboard');
+          navigate('/manage-accounts');
         }
       }
     };
@@ -54,9 +54,9 @@ export const Auth = () => {
         // Show enterprise setup modal if coming from enterprise checkout
         if (isEnterprise) {
           setShowEnterpriseSetup(true);
-          navigate('/dashboard', { replace: true });
+          navigate('/manage-accounts', { replace: true });
         } else {
-          navigate('/dashboard');
+          navigate('/manage-accounts');
         }
       }
     });

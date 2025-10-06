@@ -64,7 +64,7 @@ export const SignUp = () => {
         if (isEnterprise) {
           setShowEnterpriseSetup(true);
         }
-        navigate('/dashboard');
+        navigate('/manage-accounts');
       }
     };
     
@@ -76,7 +76,7 @@ export const SignUp = () => {
         if (isEnterprise) {
           setShowEnterpriseSetup(true);
         }
-        navigate('/dashboard');
+        navigate('/manage-accounts');
       }
     });
 
