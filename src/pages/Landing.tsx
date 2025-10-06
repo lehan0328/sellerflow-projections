@@ -274,7 +274,7 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-8 pb-0">
+      <section className="relative overflow-hidden pt-4 pb-0">
         {/* Animated Background */}
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
@@ -284,119 +284,114 @@ const Landing = () => {
         </div>
         
         <div className="container relative mx-auto px-4">
-          <div className="text-center space-y-8 pt-12 pb-16 lg:pt-20 lg:pb-20">
-            {/* New Smart AI Features Badge */}
-            <Badge className="inline-flex items-center gap-2 bg-foreground text-background px-4 py-2 text-sm font-semibold animate-fade-in">
-              <span>New</span>
-              <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-              <span>Smart AI Features</span>
-            </Badge>
-            
-            {/* Full Logo */}
-            <div className="flex justify-center animate-fade-in" style={{ animationDelay: '200ms' }}>
-              <img src={aurenFullLogo} alt="Auren" className="h-20 lg:h-28 w-auto" />
-            </div>
-            
-            <div className="animate-fade-in space-y-6" style={{ animationDelay: '400ms' }}>
-              <h1 className="text-4xl lg:text-6xl xl:text-7xl font-bold leading-tight">
-                <span className="inline-block hover:scale-105 transition-transform duration-300">
-                  <span className="bg-gradient-primary bg-clip-text text-transparent animate-pulse">AI-Powered</span> Cash Flow
-                </span>
-                <span className="block bg-gradient-primary bg-clip-text text-transparent">
-                  Built for Amazon Sellers
-                </span>
-              </h1>
-            </div>
-            
-            <p 
-              className="text-lg lg:text-xl text-muted-foreground max-w-3xl mx-auto animate-fade-in leading-relaxed" 
-              style={{ animationDelay: '600ms' }}
-            >
-              Get daily AI insights, forecast your Amazon cash flow months in advance, and optimize your credit utilization. 
-              Never run out of cash for inventory again with intelligent financial recommendations.
-            </p>
-            
-            <div 
-              className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-fade-in" 
-              style={{ animationDelay: '800ms' }}
-            >
-              <Button 
-                size="lg" 
-                className="bg-gradient-primary text-base px-8 py-6 text-lg hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-primary/25" 
-                onClick={() => handleStartTrial(pricingPlans[1].priceId)}
-                disabled={isLoading}
-              >
-                {isLoading ? "Loading..." : "Start 7-Day Free Trial"}
-                <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
-              </Button>
-            </div>
-
-            <Badge 
-              variant="secondary" 
-              className="inline-flex items-center space-x-2 animate-fade-in hover-scale transition-all duration-300 hover:bg-primary/10"
-              style={{ animationDelay: '900ms' }}
-            >
-              <Star className="h-4 w-4 fill-current" />
-              <span>Made for Amazon Sellers by Amazon Sellers</span>
-            </Badge>
-            
-            <div
-              className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-muted-foreground animate-fade-in" 
-              style={{ animationDelay: '1000ms' }}
-            >
-              <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
-                <CheckCircle className="h-4 w-4 text-success" />
-                <span>7-day free trial</span>
-              </div>
-              <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
-                <CheckCircle className="h-4 w-4 text-success" />
-                <span>Setup in 5 minutes</span>
-              </div>
-              <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
-                <CheckCircle className="h-4 w-4 text-success" />
-                <span>Cancel anytime</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Dashboard Preview */}
-          <div 
-            className="relative max-w-7xl mx-auto px-4 pb-0 animate-fade-in"
-            style={{ animationDelay: '1200ms' }}
-          >
-            <div className="relative">
-              {/* Glow effect behind dashboard */}
-              <div className="absolute -inset-4 bg-gradient-to-b from-primary/20 via-primary/10 to-transparent rounded-t-3xl blur-2xl" />
+          <div className="grid lg:grid-cols-2 gap-12 items-center pt-8 pb-12 lg:pt-12 lg:pb-16">
+            {/* Left Content */}
+            <div className="space-y-8">
+              {/* New Smart AI Features Badge */}
+              <Badge className="inline-flex items-center gap-2 bg-foreground text-background px-4 py-2 text-sm font-semibold animate-fade-in">
+                <span>New</span>
+                <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+                <span>Smart AI Features</span>
+              </Badge>
               
-              {/* Dashboard preview card */}
-              <div className="relative rounded-t-2xl border-2 border-primary/20 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden">
-                <div className="p-2 border-b border-border/50 bg-muted/30 flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                    <div className="w-3 h-3 rounded-full bg-green-500/80" />
-                  </div>
-                  <div className="flex-1 text-center text-xs text-muted-foreground font-medium">
-                    Live Dashboard Preview
-                  </div>
+              {/* Full Logo */}
+              <div className="flex justify-start animate-fade-in" style={{ animationDelay: '200ms' }}>
+                <img src={aurenFullLogo} alt="Auren" className="h-16 lg:h-20 w-auto" />
+              </div>
+              
+              <div className="animate-fade-in space-y-6" style={{ animationDelay: '400ms' }}>
+                <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
+                  <span className="inline-block">
+                    <span className="bg-gradient-primary bg-clip-text text-transparent animate-pulse">AI-Powered</span> Cash Flow
+                  </span>
+                  <span className="block bg-gradient-primary bg-clip-text text-transparent">
+                    Built for Amazon Sellers
+                  </span>
+                </h1>
+              </div>
+              
+              <p 
+                className="text-lg text-muted-foreground max-w-xl animate-fade-in leading-relaxed" 
+                style={{ animationDelay: '600ms' }}
+              >
+                Get daily AI insights, forecast your Amazon cash flow months in advance, and optimize your credit utilization. 
+                Never run out of cash for inventory again with intelligent financial recommendations.
+              </p>
+              
+              <div 
+                className="flex flex-col sm:flex-row items-start gap-6 animate-fade-in" 
+                style={{ animationDelay: '800ms' }}
+              >
+                <Button 
+                  size="lg" 
+                  className="bg-gradient-primary text-base px-8 py-6 text-lg hover-scale transition-all duration-300 hover:shadow-lg hover:shadow-primary/25" 
+                  onClick={() => handleStartTrial(pricingPlans[1].priceId)}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Loading..." : "Start 7-Day Free Trial"}
+                  <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
+                </Button>
+              </div>
+
+              <Badge 
+                variant="secondary" 
+                className="inline-flex items-center space-x-2 animate-fade-in hover-scale transition-all duration-300 hover:bg-primary/10"
+                style={{ animationDelay: '900ms' }}
+              >
+                <Star className="h-4 w-4 fill-current" />
+                <span>Made for Amazon Sellers by Amazon Sellers</span>
+              </Badge>
+              
+              <div
+                className="flex flex-col sm:flex-row items-start gap-6 text-sm text-muted-foreground animate-fade-in" 
+                style={{ animationDelay: '1000ms' }}
+              >
+                <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
+                  <CheckCircle className="h-4 w-4 text-success" />
+                  <span>7-day free trial</span>
                 </div>
+                <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
+                  <CheckCircle className="h-4 w-4 text-success" />
+                  <span>Setup in 5 minutes</span>
+                </div>
+                <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
+                  <CheckCircle className="h-4 w-4 text-success" />
+                  <span>Cancel anytime</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Dashboard Preview */}
+            <div 
+              className="relative animate-fade-in"
+              style={{ animationDelay: '1200ms' }}
+            >
+              <div className="relative">
+                {/* Glow effect behind dashboard */}
+                <div className="absolute -inset-4 bg-gradient-to-b from-primary/20 via-primary/10 to-transparent rounded-2xl blur-2xl" />
                 
-                {/* Dashboard screenshot/component */}
-                <div className="relative h-[400px] lg:h-[500px] overflow-hidden">
-                  <div className="absolute inset-0">
-                    <LiveDashboardShowcase />
+                {/* Dashboard preview card */}
+                <div className="relative rounded-2xl border-2 border-primary/20 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden hover-scale transition-all duration-500">
+                  <div className="p-2 border-b border-border/50 bg-muted/30 flex items-center gap-2">
+                    <div className="flex gap-1.5">
+                      <div className="w-3 h-3 rounded-full bg-red-500/80" />
+                      <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+                      <div className="w-3 h-3 rounded-full bg-green-500/80" />
+                    </div>
+                    <div className="flex-1 text-center text-xs text-muted-foreground font-medium">
+                      Live Dashboard
+                    </div>
                   </div>
                   
-                  {/* Fade out gradient at bottom to indicate more content */}
-                  <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background via-background/80 to-transparent" />
-                </div>
-              </div>
-
-              {/* Scroll indicator */}
-              <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce">
-                <div className="text-xs text-muted-foreground">Scroll to explore</div>
-                <div className="w-6 h-10 border-2 border-muted-foreground/30 rounded-full flex items-start justify-center p-2">
-                  <div className="w-1 h-3 bg-muted-foreground/50 rounded-full animate-pulse" />
+                  {/* Dashboard screenshot/component */}
+                  <div className="relative h-[500px] lg:h-[600px] overflow-hidden">
+                    <div className="absolute inset-0 scale-90 origin-top-left">
+                      <LiveDashboardShowcase />
+                    </div>
+                    
+                    {/* Fade out gradient at bottom */}
+                    <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-card via-card/50 to-transparent" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -405,7 +400,7 @@ const Landing = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-muted/30 mt-20">
+      <section id="features" className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
