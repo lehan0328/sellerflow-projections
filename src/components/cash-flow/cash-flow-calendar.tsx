@@ -551,17 +551,17 @@ export const CashFlowCalendar = ({
                               Pending ${pendingIncome.toLocaleString()}
                             </div>
                           )}
-                          {/* Total Forecasted - show on current day */}
+                          {/* Total Projected - show on current day */}
                           {hasAnyData && isToday(day) && (
                             <div className="text-xs text-primary font-semibold truncate">
-                              Total ${(bankAccountBalance + pendingIncome).toLocaleString()}
+                              Total Projected ${(bankAccountBalance + pendingIncome).toLocaleString()}
                             </div>
                           )}
-                          {/* Future dates - show Cash, Pending, and Total Forecasted */}
+                          {/* Future dates - show Cash, Pending, and Total Projected */}
                           {hasAnyData && netAmount !== null && (
                             <>
                               <div className="text-xs text-green-600 dark:text-green-400 font-semibold truncate">
-                                Cash ${netAmount.toLocaleString()}
+                                Cash ${bankAccountBalance.toLocaleString()}
                               </div>
                               {/* Calculate pending for this future date */}
                               {(() => {
@@ -580,7 +580,7 @@ export const CashFlowCalendar = ({
                                 ) : null;
                               })()}
                               <div className="text-xs text-primary font-semibold truncate">
-                                Total ${(() => {
+                                Total Projected ${(() => {
                                   const futurePending = incomeItems
                                     .filter(income => {
                                       if (income.status === 'received') return false;
@@ -589,7 +589,7 @@ export const CashFlowCalendar = ({
                                       return incomeDate <= checkDate;
                                     })
                                     .reduce((sum, income) => sum + income.amount, 0);
-                                  return (netAmount + futurePending).toLocaleString();
+                                  return (bankAccountBalance + futurePending).toLocaleString();
                                 })()}
                               </div>
                             </>
