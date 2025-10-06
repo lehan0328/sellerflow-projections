@@ -590,7 +590,7 @@ const Landing = () => {
                             <span className="text-3xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
                             <span className="text-muted-foreground text-xs">{isYearly ? plan.yearlyPeriod : plan.period}</span>
                           </div>
-                          {isYearly && (
+                          {isYearly && plan.savings && (
                             <Badge variant="secondary" className="text-xs py-0.5 px-2">
                               Save {plan.savings}/year
                             </Badge>
