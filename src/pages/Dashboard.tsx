@@ -631,19 +631,35 @@ const Dashboard = () => {
         return `${year}-${month}-${day}`;
       };
       
-      // Update the transaction's due_date directly
-      const { error } = await supabase
+      // Get the transaction to find the vendor_id
+      const { data: transaction } = await supabase
+        .from('transactions')
+        .select('vendor_id')
+        .eq('id', txId)
+        .single();
+      
+      // Update the transaction's due_date
+      const { error: txError } = await supabase
         .from('transactions')
         .update({ due_date: formatDateForDB(newDate) })
         .eq('id', txId);
       
-      if (error) {
-        console.error('Error updating transaction date:', error);
-        throw error;
+      if (txError) {
+        console.error('Error updating transaction date:', txError);
+        throw txError;
       }
       
-      // Refetch transactions to update UI
+      // Also update the vendor's next_payment_date if vendor exists
+      if (transaction?.vendor_id) {
+        const vendor = vendors.find(v => v.id === transaction.vendor_id);
+        if (vendor) {
+          await updateVendor(vendor.id, { nextPaymentDate: newDate });
+        }
+      }
+      
+      // Refetch both transactions and vendors to update UI
       await refetchTransactions();
+      await refetchVendors();
     } else if (eventType === 'income') {
       // Strip the "income-" prefix to get the actual income ID
       const incomeId = transactionId.replace('income-', '');
