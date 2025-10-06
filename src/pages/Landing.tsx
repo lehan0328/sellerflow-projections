@@ -287,24 +287,14 @@ const Landing = () => {
           <div className="grid lg:grid-cols-2 gap-12 items-center pt-8 pb-12 lg:pt-12 lg:pb-16">
             {/* Left Content */}
             <div className="space-y-8">
-              {/* Hero Image */}
-              <div className="relative animate-fade-in">
-                <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur-2xl opacity-50" />
-                <div className="relative rounded-2xl overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-primary/10 via-background to-accent/10 p-8 lg:p-12">
-                  <div className="flex items-center justify-center h-48 lg:h-56">
-                    <div className="text-center space-y-4">
-                      <img src={aurenIcon} alt="Auren" className="h-20 lg:h-24 w-auto mx-auto" />
-                      <Badge className="inline-flex items-center gap-2 bg-foreground text-background px-4 py-2 text-sm font-semibold">
-                        <span>New</span>
-                        <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-                        <span>Smart AI Features</span>
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {/* New Smart AI Features Badge */}
+              <Badge className="inline-flex items-center gap-2 bg-foreground text-background px-4 py-2 text-sm font-semibold animate-fade-in">
+                <span>New</span>
+                <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+                <span>Smart AI Features</span>
+              </Badge>
               
-              <div className="animate-fade-in space-y-6" style={{ animationDelay: '400ms' }}>
+              <div className="animate-fade-in space-y-6" style={{ animationDelay: '200ms' }}>
                 <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight">
                   <span className="inline-block">
                     <span className="bg-gradient-primary bg-clip-text text-transparent animate-pulse">AI-Powered</span> Cash Flow
