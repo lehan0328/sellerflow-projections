@@ -24,8 +24,15 @@ export function generateRecurringDates(
   if (!transaction.is_active) return [];
 
   const dates: Date[] = [];
-  const startDate = startOfDay(new Date(transaction.start_date));
-  const endDate = transaction.end_date ? startOfDay(new Date(transaction.end_date)) : null;
+  
+  // Parse dates locally to avoid timezone shifts
+  const parseLocalDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return startOfDay(new Date(year, month - 1, day));
+  };
+  
+  const startDate = parseLocalDate(transaction.start_date);
+  const endDate = transaction.end_date ? parseLocalDate(transaction.end_date) : null;
   
   let currentDate = startDate;
   const maxIterations = 1000; // Safety limit
