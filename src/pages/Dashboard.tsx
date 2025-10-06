@@ -999,6 +999,7 @@ const Dashboard = () => {
             bankTransactions={exampleBankTransactions}
             onVendorUpdate={() => {
               refetchVendors();
+              refetchTransactions();
             }}
           />
 
