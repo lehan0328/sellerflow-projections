@@ -400,7 +400,8 @@ const Landing = () => {
                           transform: 'scale(0.35)',
                           transformOrigin: 'center center',
                           width: '285.71%',
-                          height: '285.71%'
+                          height: '285.71%',
+                          minWidth: '1920px'
                         }}
                         title="Demo Dashboard Preview"
                       />

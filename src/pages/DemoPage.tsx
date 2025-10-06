@@ -136,7 +136,7 @@ const DemoPage = () => {
   const allCalendarEvents = [...vendorEvents, ...creditCardEvents];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90" style={{ minWidth: '1920px' }}>
       <DemoDashboardHeader />
       
       <div className="p-6 space-y-6">
@@ -147,8 +147,8 @@ const DemoPage = () => {
         />
         
         {/* Row 1: Cash Flow Calendar and AI Insights (Side by Side) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[700px]">
-          <div className="lg:col-span-2 h-full">
+        <div className="grid grid-cols-3 gap-6 h-[700px]">
+          <div className="col-span-2 h-full">
             <CashFlowCalendar 
               events={allCalendarEvents} 
               totalCash={totalCash}
@@ -158,7 +158,7 @@ const DemoPage = () => {
               upcomingExpenses={upcomingExpenses}
             />
           </div>
-          <div className="lg:col-span-1 h-full">
+          <div className="col-span-1 h-full">
             <CashFlowInsights
               currentBalance={totalCash}
               dailyInflow={todayInflow}
@@ -170,7 +170,7 @@ const DemoPage = () => {
         </div>
 
         {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-6">
           <VendorsOverview 
             vendors={activeVendors}
             bankTransactions={exampleBankTransactions}
@@ -198,7 +198,7 @@ const DemoPage = () => {
         </div>
 
         {/* Row 3: Bank Accounts and Credit Cards (Side by Side) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-6">
           <BankAccounts />
           <CreditCards />
         </div>
