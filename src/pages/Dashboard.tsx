@@ -750,9 +750,9 @@ const Dashboard = () => {
   // Convert cash flow events to calendar format (no conversion needed since types now match)
   const calendarEvents = cashFlowEvents;
 
-  // Convert vendor transactions to calendar events (show all pending PO transactions)
+  // Convert vendor transactions to calendar events (only show POs with vendors assigned)
   const vendorEvents: CashFlowEvent[] = transactions
-    .filter(tx => tx.type === 'purchase_order' && tx.status !== 'completed')
+    .filter(tx => tx.type === 'purchase_order' && tx.status !== 'completed' && tx.vendorId)
     .map(tx => {
       const vendor = vendors.find(v => v.id === tx.vendorId);
       return {
