@@ -46,14 +46,14 @@ export default function Analytics() {
 
   // Calculate key metrics
   const metrics = useMemo(() => {
-    // Total revenue
+    // Total revenue from received income
     const totalRevenue = incomeItems
       .filter(i => i.status === 'received')
       .reduce((sum, i) => sum + i.amount, 0);
 
-    // Total expenses
+    // Total expenses from vendors
     const totalExpenses = vendors
-      .reduce((sum, v) => sum + v.totalOwed, 0);
+      .reduce((sum, v) => sum + (v.totalOwed || 0), 0);
 
     // Pending income
     const pendingIncome = incomeItems
@@ -61,21 +61,25 @@ export default function Analytics() {
       .reduce((sum, i) => sum + i.amount, 0);
 
     // Credit card utilization
-    const totalCreditLimit = creditCards.reduce((sum, c) => sum + c.credit_limit, 0);
-    const totalCreditUsed = creditCards.reduce((sum, c) => sum + c.balance, 0);
+    const totalCreditLimit = creditCards.reduce((sum, c) => sum + (c.credit_limit || 0), 0);
+    const totalCreditUsed = creditCards.reduce((sum, c) => sum + (c.balance || 0), 0);
     const creditUtilization = totalCreditLimit > 0 ? (totalCreditUsed / totalCreditLimit) * 100 : 0;
 
     // Amazon revenue
-    const amazonRevenue = amazonPayouts.reduce((sum, p) => sum + p.total_amount, 0);
+    const amazonRevenue = amazonPayouts.reduce((sum, p) => sum + (p.total_amount || 0), 0);
+
+    // Calculate profit margin
+    const netProfit = totalRevenue - totalExpenses;
+    const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
     return {
       totalRevenue,
       totalExpenses,
-      netProfit: totalRevenue - totalExpenses,
+      netProfit,
       pendingIncome,
       creditUtilization,
       amazonRevenue,
-      profitMargin: totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue) * 100 : 0
+      profitMargin
     };
   }, [incomeItems, vendors, creditCards, amazonPayouts]);
 

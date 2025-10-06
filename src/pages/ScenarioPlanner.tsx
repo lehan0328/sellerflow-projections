@@ -58,16 +58,26 @@ export default function ScenarioPlanner() {
   const [creditUtilizationTarget, setCreditUtilizationTarget] = useState(30);
   const [projectionMonths, setProjectionMonths] = useState(6);
 
-  // Calculate baseline metrics
+  // Calculate baseline metrics based on actual historical data
   const baselineMetrics = useMemo(() => {
-    const totalRevenue = incomeItems
-      .filter(i => i.status === 'received')
-      .reduce((sum, i) => sum + i.amount, 0);
+    // Get received income from the last 6 months
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
     
-    const totalExpenses = vendors.reduce((sum, v) => sum + v.totalOwed, 0);
+    const recentIncome = incomeItems.filter(i => {
+      if (i.status !== 'received') return false;
+      const paymentDate = new Date(i.paymentDate);
+      return paymentDate >= sixMonthsAgo;
+    });
     
-    const monthlyRevenue = totalRevenue / 6; // Estimate
-    const monthlyExpenses = totalExpenses / 6; // Estimate
+    const totalRevenue = recentIncome.reduce((sum, i) => sum + i.amount, 0);
+    
+    // Calculate actual monthly average from historical data
+    const monthlyRevenue = recentIncome.length > 0 ? totalRevenue / 6 : 0;
+    
+    // For expenses, use the total owed divided by 6 as an estimate
+    const totalExpenses = vendors.reduce((sum, v) => sum + (v.totalOwed || 0), 0);
+    const monthlyExpenses = totalExpenses > 0 ? totalExpenses / 6 : 0;
     
     return {
       totalRevenue,
@@ -81,8 +91,26 @@ export default function ScenarioPlanner() {
   // Calculate scenario projections
   const scenarioProjection = useMemo(() => {
     const months = [];
-    const baseMonthlyRevenue = baselineMetrics.monthlyRevenue;
-    const baseMonthlyExpenses = baselineMetrics.monthlyExpenses;
+    const { monthlyRevenue: baseMonthlyRevenue, monthlyExpenses: baseMonthlyExpenses } = baselineMetrics;
+
+    // Handle case where there's no baseline data
+    if (baseMonthlyRevenue === 0 && baseMonthlyExpenses === 0) {
+      for (let i = 0; i < projectionMonths; i++) {
+        const month = new Date();
+        month.setMonth(month.getMonth() + i);
+        
+        months.push({
+          month: month.toLocaleDateString('en-US', { month: 'short' }),
+          baselineRevenue: 0,
+          baselineExpenses: 0,
+          baselineNet: 0,
+          scenarioRevenue: 0,
+          scenarioExpenses: 0,
+          scenarioNet: 0,
+        });
+      }
+      return months;
+    }
 
     for (let i = 0; i < projectionMonths; i++) {
       let adjustedRevenue = baseMonthlyRevenue;
