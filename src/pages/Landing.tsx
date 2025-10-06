@@ -32,27 +32,33 @@ const Landing = () => {
   const enterpriseTiers = {
     tier1: { 
       revenue: "$200k - $500k", 
-      price: 149, 
+      price: 149,
+      yearlyPrice: 1490,
       connections: 5, 
       amazon: 2, 
       users: 7,
-      priceId: "price_1SF1uxB28kMY3Use2W39zzO4"
+      priceId: "price_1SF1uxB28kMY3Use2W39zzO4",
+      yearlyPriceId: "price_1SF2OZB28kMY3Use6rLIlv5g"
     },
     tier2: { 
       revenue: "$500k - $1M", 
-      price: 299, 
+      price: 299,
+      yearlyPrice: 2990,
       connections: 5, 
       amazon: 2, 
       users: 7,
-      priceId: "price_1SF1v8B28kMY3UseVLxkFEvr"
+      priceId: "price_1SF1v8B28kMY3UseVLxkFEvr",
+      yearlyPriceId: "price_1SF2OnB28kMY3UseHsTG7DNZ"
     },
     tier3: { 
       revenue: "$1M+", 
-      price: 499, 
+      price: 499,
+      yearlyPrice: 4990,
       connections: 5, 
       amazon: 2, 
       users: 7,
-      priceId: "price_1SF1vLB28kMY3UseRb0kIQNY"
+      priceId: "price_1SF1vLB28kMY3UseRb0kIQNY",
+      yearlyPriceId: "price_1SF2OxB28kMY3UseUanKSxA2"
     }
   };
 
@@ -63,11 +69,13 @@ const Landing = () => {
   };
 
   const calculateEnterprisePrice = () => {
-    const basePrice = enterpriseTiers[enterpriseTier].price;
+    const tier = enterpriseTiers[enterpriseTier];
+    const basePrice = isYearly ? tier.yearlyPrice : tier.price;
+    const multiplier = isYearly ? 10 : 1; // Yearly addon prices are 10 months worth
     const addonCost = 
-      (enterpriseAddons.bankConnections * addonPricing.bankConnection) +
-      (enterpriseAddons.amazonConnections * addonPricing.amazonConnection) +
-      (enterpriseAddons.users * addonPricing.user);
+      (enterpriseAddons.bankConnections * addonPricing.bankConnection * multiplier) +
+      (enterpriseAddons.amazonConnections * addonPricing.amazonConnection * multiplier) +
+      (enterpriseAddons.users * addonPricing.user * multiplier);
     return basePrice + addonCost;
   };
 
@@ -767,6 +775,31 @@ const Landing = () => {
           </DialogHeader>
 
           <div className="space-y-6 py-4">
+            {/* Billing Cycle Toggle */}
+            <div className="flex items-center justify-center gap-4 p-4 bg-muted rounded-lg">
+              <span className={`text-sm font-medium ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
+                Monthly
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsYearly(!isYearly)}
+                className="relative h-6 w-12 rounded-full p-0"
+              >
+                <span
+                  className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-primary transition-transform ${
+                    isYearly ? 'translate-x-6' : 'translate-x-0'
+                  }`}
+                />
+              </Button>
+              <span className={`text-sm font-medium ${isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
+                Yearly
+                {isYearly && (
+                  <span className="ml-2 text-xs text-primary font-semibold">Save 2 months!</span>
+                )}
+              </span>
+            </div>
+
             {/* Revenue Tier Selector */}
             <div className="space-y-3">
               <label className="text-sm font-medium">Monthly Revenue</label>
@@ -784,7 +817,9 @@ const Landing = () => {
 
             {/* Base Features */}
             <div className="p-4 bg-primary/5 rounded-lg space-y-2">
-              <h4 className="font-semibold">Included in base price (${enterpriseTiers[enterpriseTier].price}/month):</h4>
+              <h4 className="font-semibold">
+                Included in base price (${isYearly ? enterpriseTiers[enterpriseTier].yearlyPrice : enterpriseTiers[enterpriseTier].price}/{isYearly ? 'year' : 'month'}):
+              </h4>
               <ul className="space-y-1 text-sm">
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-primary" />
@@ -823,7 +858,10 @@ const Landing = () => {
               <div className="flex items-center justify-between p-3 border rounded-lg">
                 <div>
                   <div className="font-medium">Additional Bank Connections</div>
-                  <div className="text-sm text-muted-foreground">${addonPricing.bankConnection}/month each</div>
+                  <div className="text-sm text-muted-foreground">
+                    ${addonPricing.bankConnection}/{isYearly ? 'year' : 'month'} each
+                    {isYearly && <span className="ml-1 text-xs">(${addonPricing.bankConnection * 10}/year - 2 months free)</span>}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -849,7 +887,10 @@ const Landing = () => {
               <div className="flex items-center justify-between p-3 border rounded-lg">
                 <div>
                   <div className="font-medium">Additional Amazon Connections</div>
-                  <div className="text-sm text-muted-foreground">${addonPricing.amazonConnection}/month each</div>
+                  <div className="text-sm text-muted-foreground">
+                    ${addonPricing.amazonConnection}/{isYearly ? 'year' : 'month'} each
+                    {isYearly && <span className="ml-1 text-xs">(${addonPricing.amazonConnection * 10}/year - 2 months free)</span>}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -875,7 +916,10 @@ const Landing = () => {
               <div className="flex items-center justify-between p-3 border rounded-lg">
                 <div>
                   <div className="font-medium">Additional Users</div>
-                  <div className="text-sm text-muted-foreground">${addonPricing.user}/month each</div>
+                  <div className="text-sm text-muted-foreground">
+                    ${addonPricing.user}/{isYearly ? 'year' : 'month'} each
+                    {isYearly && <span className="ml-1 text-xs">(${addonPricing.user * 10}/year - 2 months free)</span>}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -906,10 +950,18 @@ const Landing = () => {
                 <div className="text-sm text-muted-foreground">Your Custom Enterprise Price</div>
                 <div className="text-5xl font-bold">
                   ${calculateEnterprisePrice()}
-                  <span className="text-lg font-normal text-muted-foreground">/month</span>
+                  <span className="text-lg font-normal text-muted-foreground">/{isYearly ? 'year' : 'month'}</span>
                 </div>
+                {isYearly && (
+                  <div className="text-xs text-primary font-semibold">
+                    Save ${(enterpriseTiers[enterpriseTier].price * 12) - enterpriseTiers[enterpriseTier].yearlyPrice + 
+                      (enterpriseAddons.bankConnections * addonPricing.bankConnection * 2) +
+                      (enterpriseAddons.amazonConnections * addonPricing.amazonConnection * 2) +
+                      (enterpriseAddons.users * addonPricing.user * 2)} per year with annual billing!
+                  </div>
+                )}
                 <div className="text-xs text-muted-foreground">
-                  Base: ${enterpriseTiers[enterpriseTier].price} + Add-ons: ${calculateEnterprisePrice() - enterpriseTiers[enterpriseTier].price}
+                  Base: ${isYearly ? enterpriseTiers[enterpriseTier].yearlyPrice : enterpriseTiers[enterpriseTier].price} + Add-ons: ${calculateEnterprisePrice() - (isYearly ? enterpriseTiers[enterpriseTier].yearlyPrice : enterpriseTiers[enterpriseTier].price)}
                 </div>
               </div>
             </div>
@@ -922,7 +974,7 @@ const Landing = () => {
                 // Build line items: base plan + add-ons
                 const lineItems = [
                   {
-                    price: enterpriseTiers[enterpriseTier].priceId,
+                    price: isYearly ? enterpriseTiers[enterpriseTier].yearlyPriceId : enterpriseTiers[enterpriseTier].priceId,
                     quantity: 1
                   }
                 ];
@@ -930,7 +982,7 @@ const Landing = () => {
                 // Add bank connection add-ons
                 if (enterpriseAddons.bankConnections > 0) {
                   lineItems.push({
-                    price: "price_1SEHPSB28kMY3UseP1mWqne5", // Additional Bank Account price ID
+                    price: "price_1SF2J6B28kMY3UseQW6ATKt1", // Additional Bank Account price ID (updated)
                     quantity: enterpriseAddons.bankConnections
                   });
                 }
@@ -979,7 +1031,7 @@ const Landing = () => {
               {isLoading ? "Processing..." : "Start 7-Day Free Trial"}
             </Button>
             <p className="text-xs text-center text-muted-foreground">
-              Then ${calculateEnterprisePrice()}/month. Cancel anytime during your 7-day free trial.
+              Then ${calculateEnterprisePrice()}/{isYearly ? 'year' : 'month'}. Cancel anytime during your 7-day free trial.
             </p>
           </div>
         </DialogContent>

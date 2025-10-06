@@ -86,7 +86,9 @@ export const ENTERPRISE_TIERS = {
     name: "Enterprise - Tier 1",
     revenue: "$200k - $500k monthly revenue",
     price: 149,
+    yearlyPrice: 1490,
     priceId: "price_1SF1uxB28kMY3Use2W39zzO4",
+    yearlyPriceId: "price_1SF2OZB28kMY3Use6rLIlv5g",
     productId: "prod_TBOiOltXIGat2d",
     features: [
       "5 bank/credit card connections (+ add more)",
@@ -101,7 +103,9 @@ export const ENTERPRISE_TIERS = {
     name: "Enterprise - Tier 2",
     revenue: "$500k - $1M monthly revenue",
     price: 299,
+    yearlyPrice: 2990,
     priceId: "price_1SF1v8B28kMY3UseVLxkFEvr",
+    yearlyPriceId: "price_1SF2OnB28kMY3UseHsTG7DNZ",
     productId: "prod_TBOiz4xSwK3cGV",
     features: [
       "5 bank/credit card connections (+ add more)",
@@ -116,7 +120,9 @@ export const ENTERPRISE_TIERS = {
     name: "Enterprise - Tier 3",
     revenue: "$1M+ monthly revenue",
     price: 499,
+    yearlyPrice: 4990,
     priceId: "price_1SF1vLB28kMY3UseRb0kIQNY",
+    yearlyPriceId: "price_1SF2OxB28kMY3UseUanKSxA2",
     productId: "prod_TBOiTlRX4YLU4g",
     features: [
       "5 bank/credit card connections (+ add more)",
