@@ -539,33 +539,16 @@ export const CashFlowCalendar = ({
                           {format(day, 'd')}
                         </div>
                         <div className="flex flex-col items-end text-right gap-0.5 flex-1 min-w-0">
-                          {/* Cash - show on current day */}
-                          {hasAnyData && isToday(day) && (
-                            <div className="text-[10px] text-green-600 dark:text-green-400 font-medium w-full">
-                              Cash: ${bankAccountBalance.toLocaleString()}
-                            </div>
-                          )}
-                          {/* Pending - show on current day */}
-                          {hasAnyData && isToday(day) && pendingIncome > 0 && (
-                            <div className="text-[10px] text-orange-600 dark:text-orange-400 font-medium w-full">
-                              Pending: ${pendingIncome.toLocaleString()}
-                            </div>
-                          )}
-                          {/* Total Projected - show on current day */}
-                          {hasAnyData && isToday(day) && (
-                            <div className="text-[10px] text-primary font-semibold w-full">
-                              Total: ${(bankAccountBalance + pendingIncome).toLocaleString()}
-                            </div>
-                          )}
-                          {/* Future dates - show Cash, Pending, and Total Projected */}
-                          {hasAnyData && netAmount !== null && (
+                          {/* Show financial info on today and all future dates */}
+                          {hasAnyData && (isToday(day) || (!isPast && day >= startOfDay(new Date()))) && (
                             <>
+                              {/* Cash */}
                               <div className="text-[10px] text-green-600 dark:text-green-400 font-medium w-full">
                                 Cash: ${bankAccountBalance.toLocaleString()}
                               </div>
-                              {/* Calculate pending for this future date */}
+                              {/* Pending - calculate for this date */}
                               {(() => {
-                                const futurePending = incomeItems
+                                const datePending = incomeItems
                                   .filter(income => {
                                     if (income.status === 'received') return false;
                                     const incomeDate = startOfDay(new Date(income.paymentDate));
@@ -573,15 +556,16 @@ export const CashFlowCalendar = ({
                                     return incomeDate <= checkDate;
                                   })
                                   .reduce((sum, income) => sum + income.amount, 0);
-                                return futurePending > 0 ? (
+                                return (
                                   <div className="text-[10px] text-orange-600 dark:text-orange-400 font-medium w-full">
-                                    Pending: ${futurePending.toLocaleString()}
+                                    Pending: ${datePending.toLocaleString()}
                                   </div>
-                                ) : null;
+                                );
                               })()}
+                              {/* Total Projected */}
                               <div className="text-[10px] text-primary font-semibold w-full">
                                 Total: ${(() => {
-                                  const futurePending = incomeItems
+                                  const datePending = incomeItems
                                     .filter(income => {
                                       if (income.status === 'received') return false;
                                       const incomeDate = startOfDay(new Date(income.paymentDate));
@@ -589,7 +573,7 @@ export const CashFlowCalendar = ({
                                       return incomeDate <= checkDate;
                                     })
                                     .reduce((sum, income) => sum + income.amount, 0);
-                                  return (bankAccountBalance + futurePending).toLocaleString();
+                                  return (bankAccountBalance + datePending).toLocaleString();
                                 })()}
                               </div>
                             </>
