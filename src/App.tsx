@@ -28,6 +28,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import Admin from "./pages/Admin";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import Support from "./pages/Support";
+import ManageAccounts from "./pages/ManageAccounts";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,11 @@ const App = () => (
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/manage-accounts" element={
+            <ProtectedRoute>
+              <ManageAccounts />
             </ProtectedRoute>
           } />
           <Route path="/settings" element={
