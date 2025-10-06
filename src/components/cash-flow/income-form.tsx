@@ -52,10 +52,11 @@ export const IncomeForm = ({
     description: editingIncome?.description || "",
     amount: editingIncome?.amount ? editingIncome.amount.toString() : "",
     paymentDate: editingIncome?.paymentDate || undefined as Date | undefined,
+    endDate: undefined as Date | undefined,
     category: editingIncome?.category || "",
     notes: editingIncome?.notes || "",
     isRecurring: editingIncome?.isRecurring || isRecurring,
-    recurringFrequency: editingIncome?.recurringFrequency || "monthly" as "weekly" | "bi-weekly" | "monthly" | "yearly" | "weekdays"
+    recurringFrequency: editingIncome?.recurringFrequency || "monthly" as "daily" | "weekly" | "bi-weekly" | "monthly" | "yearly" | "weekdays"
   });
 
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -80,6 +81,7 @@ export const IncomeForm = ({
         description: editingIncome.description || "",
         amount: editingIncome.amount ? editingIncome.amount.toString() : "",
         paymentDate: editingIncome.paymentDate || undefined,
+        endDate: undefined,
         category: editingIncome.category || "",
         notes: editingIncome.notes || "",
         isRecurring: editingIncome.isRecurring || isRecurring,
@@ -94,6 +96,7 @@ export const IncomeForm = ({
         description: "",
         amount: "",
         paymentDate: undefined,
+        endDate: undefined,
         category: "",
         notes: "",
         isRecurring: isRecurring,
@@ -179,6 +182,7 @@ export const IncomeForm = ({
       description: "",
       amount: "",
       paymentDate: undefined,
+      endDate: undefined,
       category: "",
       notes: "",
       isRecurring: isRecurring,
@@ -417,25 +421,54 @@ export const IncomeForm = ({
               </div>
 
               {(formData.isRecurring || isRecurring) && (
-                <div className="space-y-2">
-                  <Label htmlFor="frequency">Recurring Frequency</Label>
-                  <Select 
-                    value={formData.recurringFrequency}
-                    onValueChange={(value) => handleInputChange("recurringFrequency", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="bi-weekly">Bi-weekly (Every 2 weeks)</SelectItem>
-                      <SelectItem value="weekdays">Weekdays (Mon-Fri)</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="yearly">Yearly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="frequency">Recurring Frequency</Label>
+                    <Select 
+                      value={formData.recurringFrequency}
+                      onValueChange={(value) => handleInputChange("recurringFrequency", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select frequency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="bi-weekly">Bi-weekly (Every 2 weeks)</SelectItem>
+                        <SelectItem value="weekdays">Weekdays (Mon-Fri)</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="yearly">Yearly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>End Date (Optional)</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !formData.endDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {formData.endDate ? format(formData.endDate, "PPP") : "No end date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formData.endDate}
+                          onSelect={(date) => handleInputChange("endDate", date || undefined)}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </>
               )}
               
               <div className="space-y-2">

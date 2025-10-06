@@ -57,13 +57,24 @@ export const RecurringExpensesOverview = () => {
   const activeIncome = activeTransactions.filter(item => item.type === 'income');
   const activeExpenses = activeTransactions.filter(item => item.type === 'expense');
   
+  // Convert all frequencies to monthly equivalent
+  const getMonthlyAmount = (amount: number, frequency: string) => {
+    switch (frequency) {
+      case 'daily': return amount * 30; // Average days per month
+      case 'weekly': return amount * 4.33; // Average weeks per month
+      case 'bi-weekly': return amount * 2.17; // Half of weekly
+      case 'weekdays': return amount * 22; // Average weekdays per month
+      case 'monthly': return amount;
+      case 'yearly': return amount / 12;
+      default: return amount;
+    }
+  };
+  
   const totalMonthlyIncome = activeIncome
-    .filter(item => item.frequency === 'monthly')
-    .reduce((sum, item) => sum + Number(item.amount), 0);
+    .reduce((sum, item) => sum + getMonthlyAmount(Number(item.amount), item.frequency), 0);
     
   const totalMonthlyExpense = activeExpenses
-    .filter(item => item.frequency === 'monthly')
-    .reduce((sum, item) => sum + Number(item.amount), 0);
+    .reduce((sum, item) => sum + getMonthlyAmount(Number(item.amount), item.frequency), 0);
 
   const handleEdit = (expense: RecurringExpense) => {
     setEditingExpense(expense);

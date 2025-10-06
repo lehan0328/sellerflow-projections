@@ -467,7 +467,7 @@ const Dashboard = () => {
         amount: amount,
         frequency: frequency,
         start_date: format(paymentDate, 'yyyy-MM-dd'),
-        end_date: null, // No end date by default
+        end_date: incomeData.endDate ? format(incomeData.endDate, 'yyyy-MM-dd') : null,
         is_active: true,
         type: 'income',
         category: incomeData.category || null,
@@ -547,7 +547,7 @@ const Dashboard = () => {
         amount: amount,
         frequency: frequency,
         start_date: format(expenseData.paymentDate || new Date(), 'yyyy-MM-dd'),
-        end_date: null, // No end date by default
+        end_date: expenseData.endDate ? format(expenseData.endDate, 'yyyy-MM-dd') : null,
         is_active: true,
         type: 'expense',
         category: expenseData.category || null,

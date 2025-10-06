@@ -610,6 +610,11 @@ export const CashFlowCalendar = ({
                         }}
                       >
                         <div className="text-[9px] truncate leading-tight">
+                          {dayEvents[0].id.startsWith('recurring-') && (
+                            <span className="inline-block px-1 py-0.5 mr-1 text-[8px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded">
+                              Recurring
+                            </span>
+                          )}
                           <span className="text-foreground font-medium">
                             {dayEvents[0].type === 'inflow' 
                               ? dayEvents[0].description 
