@@ -8,16 +8,22 @@ export interface VendorTransaction {
   vendorName: string;
   amount: number;
   dueDate: Date;
-  status: 'pending' | 'paid' | 'overdue';
-  category: string;
-  description?: string;
-  type: 'expense' | 'payable';
+  transactionDate: Date;
+  status: 'pending' | 'completed' | 'paid';
+  description: string;
+  category?: string;
+  type: string;
 }
 
 export const useVendorTransactions = () => {
   const [transactions, setTransactions] = useState<VendorTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  const parseDateFromDB = (dateString: string) => {
+    const [y, m, d] = dateString.split('-').map(Number);
+    return new Date(y, (m || 1) - 1, d || 1);
+  };
 
   const formatDateForDB = (date: Date) => {
     const year = date.getFullYear();
@@ -28,27 +34,37 @@ export const useVendorTransactions = () => {
 
   const fetchVendorTransactions = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setTransactions([]);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch transactions with vendor information
       const { data, error } = await supabase
         .from('transactions')
         .select(`
           *,
-          vendors (name, category)
+          vendors!inner(name, category)
         `)
-        .eq('type', 'expense')
+        .eq('user_id', user.id)
+        .eq('type', 'purchase_order')
         .order('due_date', { ascending: true });
 
       if (error) throw error;
 
-      const formattedTransactions = data?.map(transaction => ({
-        id: transaction.id,
-        vendorId: transaction.vendor_id || '',
-        vendorName: transaction.vendors?.name || 'Unknown Vendor',
-        amount: Number(transaction.amount),
-        dueDate: transaction.due_date ? new Date(transaction.due_date) : new Date(),
-        status: transaction.status as VendorTransaction['status'],
-        category: transaction.vendors?.category || 'Uncategorized',
-        description: transaction.description || '',
-        type: transaction.type as VendorTransaction['type']
+      const formattedTransactions = data?.map(tx => ({
+        id: tx.id,
+        vendorId: tx.vendor_id,
+        vendorName: tx.vendors?.name || 'Unknown',
+        amount: Number(tx.amount),
+        dueDate: tx.due_date ? parseDateFromDB(tx.due_date) : new Date(),
+        transactionDate: tx.transaction_date ? parseDateFromDB(tx.transaction_date) : new Date(),
+        status: tx.status as VendorTransaction['status'],
+        description: tx.description || '',
+        category: tx.vendors?.category || '',
+        type: tx.type
       })) || [];
 
       setTransactions(formattedTransactions);
@@ -68,23 +84,18 @@ export const useVendorTransactions = () => {
     try {
       const { error } = await supabase
         .from('transactions')
-        .update({ 
-          status: 'paid',
-          transaction_date: formatDateForDB(new Date())
-        })
+        .update({ status: 'paid' })
         .eq('id', transactionId);
 
       if (error) throw error;
 
-      setTransactions(prev => prev.map(transaction => 
-        transaction.id === transactionId 
-          ? { ...transaction, status: 'paid' as const }
-          : transaction
+      setTransactions(prev => prev.map(tx => 
+        tx.id === transactionId ? { ...tx, status: 'paid' as const } : tx
       ));
 
       toast({
         title: "Success",
-        description: "Transaction marked as paid",
+        description: "Payment marked as paid",
       });
     } catch (error) {
       console.error('Error updating transaction:', error);
@@ -96,14 +107,65 @@ export const useVendorTransactions = () => {
     }
   };
 
+  const deleteTransaction = async (transactionId: string) => {
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', transactionId);
+
+      if (error) throw error;
+
+      setTransactions(prev => prev.filter(tx => tx.id !== transactionId));
+
+      toast({
+        title: "Success",
+        description: "Transaction deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete transaction",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     fetchVendorTransactions();
+  }, []);
+
+  // Realtime subscription
+  useEffect(() => {
+    let channel: any;
+    const setup = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      channel = supabase
+        .channel('vendor-transactions-changes')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'transactions',
+          filter: `user_id=eq.${user.id}`,
+        }, () => {
+          fetchVendorTransactions();
+        })
+        .subscribe();
+    };
+    setup();
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   return {
     transactions,
     loading,
     markAsPaid,
+    deleteTransaction,
     refetch: fetchVendorTransactions
   };
 };

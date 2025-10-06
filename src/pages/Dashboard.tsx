@@ -253,8 +253,6 @@ const Dashboard = () => {
 
   const handlePurchaseOrderSubmit = async (orderData: any) => {
     console.info("Purchase order received in Dashboard:", orderData);
-    console.info("Order data vendorId:", orderData.vendorId);
-    console.info("Current vendors:", vendors.map(v => ({ id: v.id, name: v.name })));
     
     const amount = typeof orderData.amount === 'string' ? 
       parseFloat(orderData.amount) : orderData.amount;
@@ -263,51 +261,13 @@ const Dashboard = () => {
     const today = startOfDay(new Date());
     const dueDateStartOfDay = startOfDay(dueDate);
     
-    // Only deduct cash if due date is today or in the past (for display purposes only)
-    // Note: In a real Plaid integration, this would schedule/execute the payment
-    if (dueDateStartOfDay <= today) {
-      console.info("Due date is today or past - payment would be processed:", amount);
-      console.info("Current bank balance:", bankAccountBalance);
-    } else {
-      console.info("Due date is in the future - payment scheduled for:", format(dueDate, "PPP"));
-    }
-
     // Check if vendor already exists (selected from dropdown)
-    let vendor;
-    if (orderData.vendorId) {
-      console.info("Using existing vendor with ID:", orderData.vendorId);
-      // Use existing vendor and update it with PO details
-      vendor = vendors.find(v => v.id === orderData.vendorId);
-      console.info("Found vendor:", vendor);
-      if (vendor) {
-        console.info("Updating vendor with new PO details");
-        // Update the existing vendor with new PO info
-        await updateVendor(vendor.id, {
-          totalOwed: (vendor.totalOwed || 0) + amount,
-          nextPaymentDate: orderData.dueDate || orderData.poDate || new Date(),
-          nextPaymentAmount: amount,
-          poName: orderData.poName,
-          description: orderData.description,
-          notes: orderData.notes,
-          status: 'upcoming' as any
-        });
-        console.info("Vendor updated successfully");
-      } else {
-        console.error("Vendor not found with ID:", orderData.vendorId);
-      }
-    } else {
-      console.info("Creating new vendor for PO");
-      // Create new vendor record for this PO
-      const paymentSchedule = orderData.paymentSchedule || [];
-      let nextPaymentDate = orderData.paymentType === 'due-upon-order' ? orderData.poDate : orderData.dueDate;
-      let nextPaymentAmount = amount;
+    let vendorId = orderData.vendorId;
+    
+    if (!vendorId) {
+      // Create new vendor profile if it doesn't exist
+      console.info("Creating new vendor profile");
       
-      // For preorder, use first payment from schedule
-      if (orderData.paymentType === 'preorder' && paymentSchedule.length > 0) {
-        nextPaymentDate = paymentSchedule[0].dueDate;
-        nextPaymentAmount = parseFloat(paymentSchedule[0].amount);
-      }
-
       // Map form payment types to database payment types
       let dbPaymentType: 'total' | 'preorder' | 'net-terms' = 'total';
       switch (orderData.paymentType) {
@@ -324,44 +284,37 @@ const Dashboard = () => {
           break;
       }
 
-      vendor = await addVendor({
+      const newVendor = await addVendor({
         name: orderData.vendor,
-        totalOwed: amount,
-        nextPaymentDate: nextPaymentDate || orderData.poDate || new Date(),
-        nextPaymentAmount: nextPaymentAmount,
+        totalOwed: 0, // Don't store aggregate data here
+        nextPaymentDate: new Date(),
+        nextPaymentAmount: 0,
         status: 'upcoming',
         category: orderData.category || '',
         paymentType: dbPaymentType,
         netTermsDays: orderData.netTermsDays,
-        poName: orderData.poName,
-        description: orderData.description,
-        notes: orderData.notes,
-        remarks: 'Ordered',
-        paymentSchedule: paymentSchedule,
-        source: 'management'
+        source: 'management',
+        poName: '',
+        description: '',
+        notes: ''
       });
+      
+      vendorId = newVendor?.id;
     }
 
-    console.info("Final vendor object:", vendor);
-    console.info("Creating transaction with vendorId:", vendor?.id || orderData.vendorId);
-
+    // Create transaction for this PO (individual record)
     await addTransaction({
       type: 'purchase_order',
       amount: amount,
-      description: `${orderData.poName} - ${orderData.vendor}`,
-      vendorId: vendor?.id || orderData.vendorId,
-      transactionDate: new Date(),
-      dueDate: orderData.dueDate,
+      description: orderData.poName || `PO - ${orderData.vendor}`,
+      vendorId: vendorId,
+      transactionDate: orderData.poDate || new Date(),
+      dueDate: dueDate,
       status: dueDateStartOfDay <= today ? 'completed' : 'pending'
     });
 
-    // Don't create cash flow events since vendors automatically generate calendar events
-    // This prevents duplication in the calendar
-
-    console.info("Transaction created, refreshing vendors and transactions");
-    // Refresh vendors and transactions to show updated data and update calendar
+    console.info("Transaction created, refreshing data");
     await Promise.all([refetchVendors(), refetchTransactions()]);
-    console.info("Vendors and transactions refetched");
     
     setShowPurchaseOrderForm(false);
   };
@@ -1040,33 +993,13 @@ const Dashboard = () => {
         {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <VendorsOverview 
-            vendors={activeVendors}
             bankTransactions={exampleBankTransactions}
             onVendorUpdate={() => {
               refetchVendors();
             }}
-            onDeleteVendor={async (vendorId) => {
-              // Find the vendor to get full details
-              const vendor = vendors.find(v => v.id === vendorId);
-              if (vendor) {
-                await handleDeleteVendorOrder(vendor);
-              }
-            }}
-            onEditOrder={(vendor) => {
-              console.log('Edit order for vendor:', vendor);
-            }}
-            onMatchTransaction={async (vendor) => {
-              // Create a completed transaction record when matching
-              await addTransaction({
-                type: 'vendor_payment',
-                amount: vendor.totalOwed || 0,
-                description: `Matched: ${vendor.name} - ${vendor.poName || 'Payment'}`,
-                vendorId: vendor.id,
-                transactionDate: new Date(),
-                status: 'completed'
-              });
-            }}
           />
+
+          {/* Customer Invoices */}
           <IncomeOverview
             incomeItems={incomeItems}
             bankTransactions={exampleBankTransactions}

@@ -172,18 +172,8 @@ const DemoPage = () => {
         {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
         <div className="grid grid-cols-2 gap-6">
           <VendorsOverview 
-            vendors={activeVendors}
             bankTransactions={exampleBankTransactions}
             onVendorUpdate={() => {}}
-            onDeleteVendor={async (vendorId) => {
-              alert('Demo: Vendor deletion not available in demo');
-            }}
-            onEditOrder={(vendor) => {
-              alert('Demo: Vendor editing not available in demo');
-            }}
-            onMatchTransaction={async (vendor) => {
-              alert('Demo: Transaction matching not available in demo');
-            }}
           />
           <IncomeOverview
             incomeItems={demoIncomeItems}
