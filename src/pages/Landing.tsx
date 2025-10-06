@@ -361,7 +361,7 @@ const Landing = () => {
                 </div>
                 <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
                   <CheckCircle className="h-4 w-4 text-success" />
-                  <span>No card required</span>
+                  <span>Cancel anytime</span>
                 </div>
                 <div className="flex items-center space-x-2 hover-scale transition-all duration-300 hover:text-success">
                   <CheckCircle className="h-4 w-4 text-success" />
