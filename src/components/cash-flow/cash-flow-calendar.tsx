@@ -542,26 +542,26 @@ export const CashFlowCalendar = ({
                           {/* Cash - show on current day */}
                           {hasAnyData && isToday(day) && (
                             <div className="text-[10px] text-green-600 dark:text-green-400 font-medium truncate w-full">
-                              C: ${bankAccountBalance.toLocaleString()}
+                              Cash: ${bankAccountBalance.toLocaleString()}
                             </div>
                           )}
                           {/* Pending - show on current day */}
                           {hasAnyData && isToday(day) && pendingIncome > 0 && (
                             <div className="text-[10px] text-orange-600 dark:text-orange-400 font-medium truncate w-full">
-                              P: ${pendingIncome.toLocaleString()}
+                              Pending: ${pendingIncome.toLocaleString()}
                             </div>
                           )}
                           {/* Total Projected - show on current day */}
                           {hasAnyData && isToday(day) && (
                             <div className="text-[10px] text-primary font-semibold truncate w-full">
-                              T: ${(bankAccountBalance + pendingIncome).toLocaleString()}
+                              Total: ${(bankAccountBalance + pendingIncome).toLocaleString()}
                             </div>
                           )}
                           {/* Future dates - show Cash, Pending, and Total Projected */}
                           {hasAnyData && netAmount !== null && (
                             <>
                               <div className="text-[10px] text-green-600 dark:text-green-400 font-medium truncate w-full">
-                                C: ${bankAccountBalance.toLocaleString()}
+                                Cash: ${bankAccountBalance.toLocaleString()}
                               </div>
                               {/* Calculate pending for this future date */}
                               {(() => {
@@ -575,12 +575,12 @@ export const CashFlowCalendar = ({
                                   .reduce((sum, income) => sum + income.amount, 0);
                                 return futurePending > 0 ? (
                                   <div className="text-[10px] text-orange-600 dark:text-orange-400 font-medium truncate w-full">
-                                    P: ${futurePending.toLocaleString()}
+                                    Pending: ${futurePending.toLocaleString()}
                                   </div>
                                 ) : null;
                               })()}
                               <div className="text-[10px] text-primary font-semibold truncate w-full">
-                                T: ${(() => {
+                                Total: ${(() => {
                                   const futurePending = incomeItems
                                     .filter(income => {
                                       if (income.status === 'received') return false;
