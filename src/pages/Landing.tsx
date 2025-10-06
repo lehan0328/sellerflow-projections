@@ -383,7 +383,7 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20 lg:py-32">
+      <section className="relative overflow-hidden py-12 lg:py-16">
         {/* Grid Pattern Background */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
         
@@ -528,7 +528,7 @@ const Landing = () => {
                     <div className="w-full h-full flex items-center justify-center">
                       <iframe
                         src="/demo"
-                        className="w-full h-full border-0"
+                        className="w-full h-full border-0 cursor-pointer"
                         style={{ 
                           transform: 'scale(0.35)',
                           transformOrigin: 'center center',
@@ -537,11 +537,39 @@ const Landing = () => {
                           minWidth: '1920px'
                         }}
                         title="Demo Dashboard Preview"
+                        onClick={() => navigate('/demo')}
                       />
+                    </div>
+                    
+                    {/* Try Me Pointer */}
+                    <div className="absolute top-6 right-6 flex items-start gap-2 animate-float pointer-events-none">
+                      <div className="bg-primary/90 backdrop-blur-sm text-primary-foreground px-4 py-2 rounded-full shadow-lg border border-primary/20">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-sm">Try Interactive Demo</span>
+                          <ExternalLink className="h-4 w-4" />
+                        </div>
+                      </div>
+                      <div className="text-4xl animate-bounce" style={{ animationDuration: '2s' }}>👆</div>
                     </div>
                     
                     {/* Fade gradient */}
                     <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-card/80 via-card/40 to-transparent pointer-events-none" />
+                  </div>
+                  
+                  {/* Dashboard Stats */}
+                  <div className="grid grid-cols-3 gap-4 mt-4 px-4">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-primary">Real-time</div>
+                      <div className="text-xs text-muted-foreground">Data Updates</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-primary">Interactive</div>
+                      <div className="text-xs text-muted-foreground">Interface</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-primary">Responsive</div>
+                      <div className="text-xs text-muted-foreground">Design</div>
+                    </div>
                   </div>
                 </div>
 
