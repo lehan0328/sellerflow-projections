@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Helmet } from "react-helmet";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import aurenIcon from "@/assets/auren-icon-blue.png";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -35,6 +36,7 @@ const Features = () => {
       description: "Visualize your entire financial future on an interactive calendar. See exactly when money comes in and goes out.",
       category: "Core",
       badge: "Popular",
+      slug: "cash-flow-calendar"
     },
     {
       icon: Target,
@@ -42,6 +44,7 @@ const Features = () => {
       description: "Model what-if scenarios to understand how revenue changes, new expenses, or vendor terms affect your cash position.",
       category: "Planning",
       badge: "New",
+      slug: "scenario-planning"
     },
     {
       icon: BarChart3,
@@ -49,6 +52,7 @@ const Features = () => {
       description: "Multi-dashboard analytics covering cashflow, profitability, inventory forecasts, ad performance, and account health.",
       category: "Analytics",
       badge: "Pro",
+      slug: "advanced-analytics"
     },
     {
       icon: Brain,
@@ -56,6 +60,7 @@ const Features = () => {
       description: "Get daily AI-generated insights about your cash position, spending patterns, and optimization opportunities.",
       category: "AI",
       badge: "AI",
+      slug: "ai-cash-flow-insights"
     },
     {
       icon: FileText,
@@ -63,6 +68,7 @@ const Features = () => {
       description: "Upload purchase orders and invoices - our AI automatically extracts vendor details, amounts, and payment terms.",
       category: "AI",
       badge: "AI",
+      slug: "ai-pdf-extractor"
     },
     {
       icon: MessageSquare,
@@ -70,6 +76,7 @@ const Features = () => {
       description: "Chat with AI about your finances. Ask questions, get advice, and understand your cash flow in plain English.",
       category: "AI",
       badge: "AI",
+      slug: "ai-financial-assistant"
     },
     {
       icon: ShoppingCart,
@@ -77,6 +84,7 @@ const Features = () => {
       description: "Automatically sync Amazon payouts, orders, fees, and refunds. Support for multiple marketplaces.",
       category: "Integrations",
       badge: null,
+      slug: "amazon-integration"
     },
     {
       icon: Building2,
@@ -84,6 +92,7 @@ const Features = () => {
       description: "Connect unlimited bank accounts via Plaid. Real-time balance updates and automatic transaction syncing.",
       category: "Integrations",
       badge: null,
+      slug: "bank-account-sync"
     },
     {
       icon: CreditCard,
@@ -91,6 +100,7 @@ const Features = () => {
       description: "Track credit utilization, payment due dates, and available credit across all your business cards.",
       category: "Core",
       badge: null,
+      slug: "credit-card-management"
     },
     {
       icon: Users,
@@ -98,6 +108,7 @@ const Features = () => {
       description: "Manage all vendor relationships, payment schedules, and purchase orders in one place.",
       category: "Core",
       badge: null,
+      slug: "vendor-management"
     },
     {
       icon: DollarSign,
@@ -105,6 +116,7 @@ const Features = () => {
       description: "Log one-time and recurring income. Track customer payments and manage receivables.",
       category: "Core",
       badge: null,
+      slug: "income-tracking"
     },
     {
       icon: Repeat,
@@ -112,6 +124,7 @@ const Features = () => {
       description: "Set up subscriptions and recurring costs. Automatically project future expenses on your calendar.",
       category: "Core",
       badge: null,
+      slug: "recurring-expenses"
     },
     {
       icon: Zap,
@@ -119,6 +132,7 @@ const Features = () => {
       description: "AI-powered matching between bank transactions and purchase orders. One-click reconciliation.",
       category: "AI",
       badge: "AI",
+      slug: "smart-transaction-matching"
     },
     {
       icon: Wallet,
@@ -126,6 +140,7 @@ const Features = () => {
       description: "Know exactly how much cash is safe to spend without risking upcoming obligations.",
       category: "Planning",
       badge: null,
+      slug: "safe-spending-calculator"
     },
     {
       icon: TrendingUp,
@@ -133,6 +148,7 @@ const Features = () => {
       description: "Predict future revenue based on historical patterns and Amazon payout schedules.",
       category: "Analytics",
       badge: null,
+      slug: "revenue-forecasting"
     },
     {
       icon: Lock,
@@ -140,6 +156,7 @@ const Features = () => {
       description: "All financial data encrypted at rest and in transit. SOC 2 compliant infrastructure.",
       category: "Security",
       badge: null,
+      slug: "bank-level-security"
     },
   ];
 
@@ -173,7 +190,7 @@ const Features = () => {
         <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
           <div className="container mx-auto px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-              <img src="/src/assets/auren-logo.png" alt="Auren" className="h-8" />
+              <img src={aurenIcon} alt="Auren" className="h-8" />
             </div>
             <nav className="hidden md:flex items-center gap-6">
               <Button variant="ghost" onClick={() => navigate("/")}>Home</Button>
@@ -232,10 +249,14 @@ const Features = () => {
               {filteredFeatures.map((feature, index) => {
                 const Icon = feature.icon;
                 return (
-                  <Card key={index} className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                  <Card 
+                    key={index} 
+                    className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group" 
+                    onClick={() => navigate(`/features/${feature.slug}`)}
+                  >
                     <CardHeader>
                       <div className="flex items-start justify-between mb-2">
-                        <div className="p-2 rounded-lg bg-primary/10">
+                        <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
                           <Icon className="h-6 w-6 text-primary" />
                         </div>
                         {feature.badge && (
@@ -244,12 +265,16 @@ const Features = () => {
                           </Badge>
                         )}
                       </div>
-                      <CardTitle className="text-xl">{feature.title}</CardTitle>
+                      <CardTitle className="text-xl group-hover:text-primary transition-colors">{feature.title}</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <CardDescription className="text-base">
                         {feature.description}
                       </CardDescription>
+                      <div className="mt-4 flex items-center text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span>Learn more</span>
+                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
                     </CardContent>
                   </Card>
                 );

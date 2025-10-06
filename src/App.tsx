@@ -19,6 +19,7 @@ import PauseSubscription from "./pages/PauseSubscription";
 import OAuthRedirect from "./pages/OAuthRedirect";
 import NotFound from "./pages/NotFound";
 import Features from "./pages/Features";
+import FeatureDetail from "./pages/FeatureDetail";
 import Docs from "./pages/Docs";
 import DocsGettingStarted from "./pages/DocsGettingStarted";
 import DocsAmazonIntegration from "./pages/DocsAmazonIntegration";
@@ -52,6 +53,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/features" element={<Features />} />
+          <Route path="/features/:slug" element={<FeatureDetail />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/demo" element={<DemoPage />} />
