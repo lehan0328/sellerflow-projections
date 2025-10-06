@@ -539,8 +539,8 @@ export const CashFlowCalendar = ({
                           {format(day, 'd')}
                         </div>
                         <div className="flex flex-col items-end text-right gap-0.5 flex-1 min-w-0">
-                          {/* Show financial info on today and all future dates where we have any data */}
-                          {hasAnyData && !isPast && (
+                          {/* Show financial info on all dates from account start onwards */}
+                          {hasAnyData && isSameMonth(day, currentDate) && (
                             <>
                               {/* Cash */}
                               <div className="text-[10px] text-green-600 dark:text-green-400 font-medium w-full">
