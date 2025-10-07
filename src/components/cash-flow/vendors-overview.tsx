@@ -471,6 +471,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                           <SelectItem value="Delayed">Delayed</SelectItem>
                           <SelectItem value="Received">Received</SelectItem>
                           <SelectItem value="Partially Paid">Partially Paid</SelectItem>
+                          <SelectItem value="Pending Due">Pending Due</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
