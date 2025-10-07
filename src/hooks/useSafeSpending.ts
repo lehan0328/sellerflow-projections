@@ -5,6 +5,8 @@ import { generateRecurringDates } from "@/lib/recurringDates";
 interface SafeSpendingData {
   safe_spending_limit: number;
   reserve_amount: number;
+  will_go_negative: boolean;
+  negative_date: string | null;
   calculation: {
     available_balance: number;
     lowest_projected_balance: number;
@@ -217,6 +219,8 @@ export const useSafeSpending = () => {
       setData({
         safe_spending_limit: safeSpendingLimit,
         reserve_amount: userReserve,
+        will_go_negative: willGoNegative,
+        negative_date: willGoNegative ? lowestBalance.date.toISOString().split('T')[0] : null,
         calculation: {
           available_balance: totalCash,
           lowest_projected_balance: lowestBalance.balance,

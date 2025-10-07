@@ -286,12 +286,31 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 </div>
               ) : safeSpendingData ? (
                 <>
-                  <p className="text-2xl font-bold text-indigo-700">
-                    {formatCurrency(safeSpendingData.safe_spending_limit)}
-                  </p>
-                  <p className="text-xs text-indigo-600 mt-1">
-                    Available after expenses & ${safeSpendingData.reserve_amount.toLocaleString()} reserve
-                  </p>
+                  {safeSpendingData.will_go_negative ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-red-500" />
+                        <p className="text-2xl font-bold text-red-700">
+                          {formatCurrency(0)}
+                        </p>
+                      </div>
+                      <p className="text-xs text-red-600 mt-1 font-semibold">
+                        ⚠️ Will go negative on {new Date(safeSpendingData.negative_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                      <p className="text-xs text-slate-600 mt-1">
+                        Reserve: ${safeSpendingData.reserve_amount.toLocaleString()}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold text-indigo-700">
+                        {formatCurrency(safeSpendingData.safe_spending_limit)}
+                      </p>
+                      <p className="text-xs text-indigo-600 mt-1">
+                        Available after expenses & ${safeSpendingData.reserve_amount.toLocaleString()} reserve
+                      </p>
+                    </>
+                  )}
                 </>
               ) : (
                 <p className="text-sm text-slate-500">Unable to calculate</p>
