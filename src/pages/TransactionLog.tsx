@@ -50,6 +50,7 @@ export default function TransactionLog() {
   const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
   const [customToDate, setCustomToDate] = useState<Date | undefined>();
   const [editingVendor, setEditingVendor] = useState<any>(null);
+  const [expandedTransactions, setExpandedTransactions] = useState<Set<string>>(new Set());
 
   // Fetch deleted transactions
   const fetchDeletedTransactions = useCallback(async () => {
@@ -107,7 +108,14 @@ export default function TransactionLog() {
 
   // Filter vendor transactions by status and date
   const filteredVendorTransactions = useMemo(() => {
-    let filtered = vendorTransactions;
+    let filtered = vendorTransactions.filter(tx => {
+      // Only show parent transactions (without .1 or .2) and .2 (remaining balance)
+      // Hide .1 (paid portion) transactions
+      if (tx.description.endsWith('.1')) {
+        return false;
+      }
+      return true;
+    });
 
     // Status filter
     if (vendorStatusFilter === "pending") {
@@ -267,6 +275,24 @@ export default function TransactionLog() {
     }
   };
 
+  const toggleExpanded = (txId: string) => {
+    setExpandedTransactions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(txId)) {
+        newSet.delete(txId);
+      } else {
+        newSet.add(txId);
+      }
+      return newSet;
+    });
+  };
+
+  const getChildTransactions = (parentDesc: string) => {
+    return vendorTransactions.filter(tx => 
+      tx.description === `${parentDesc}.1` || tx.description === `${parentDesc}.2`
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -387,68 +413,125 @@ export default function TransactionLog() {
                          </TableCell>
                        </TableRow>
                      ) : (
-                      filteredVendorTransactions.map((tx) => {
-                        const status = getTransactionStatus(tx);
-                        return (
-                          <TableRow key={tx.id}>
-                            <TableCell>
-                              {tx.transactionDate
-                                ? new Date(tx.transactionDate).toLocaleDateString()
-                                : "N/A"}
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              {tx.description || "N/A"}
-                            </TableCell>
-                            <TableCell>{tx.vendorName}</TableCell>
-                            <TableCell className="font-semibold">
-                              ${tx.amount.toLocaleString()}
-                            </TableCell>
-                            <TableCell>
-                              {tx.dueDate
-                                ? new Date(tx.dueDate).toLocaleDateString()
-                                : "N/A"}
-                            </TableCell>
-                             <TableCell>
-                               <Badge variant={status.variant}>{status.text}</Badge>
-                             </TableCell>
-                             <TableCell>
-                               <span className="text-xs">
-                                 {tx.remarks || 'Ordered'}
-                               </span>
-                             </TableCell>
-                             <TableCell>
-                               {tx.status === 'partially_paid' && tx.remainingBalance ? (
-                                 <span className="text-xs font-semibold text-primary">
-                                   ${tx.remainingBalance.toLocaleString()}
-                                 </span>
-                               ) : (
-                                 <span className="text-xs text-muted-foreground">-</span>
-                               )}
-                             </TableCell>
-                             <TableCell className="text-right">
-                               <div className="flex items-center justify-end space-x-2">
-                                <Button
-                                  variant="default"
-                                  size="sm"
-                                  onClick={() => handlePayTransaction(tx)}
-                                  disabled={tx.status === 'completed' || tx.status === 'paid'}
-                                >
-                                  <DollarSign className="h-3 w-3" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleDeleteTransaction(tx)}
-                                  className="text-destructive hover:text-destructive"
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    )}
+                       filteredVendorTransactions.map((tx) => {
+                         const status = getTransactionStatus(tx);
+                         const isPartiallyPaid = tx.status === 'partially_paid';
+                         const isExpanded = expandedTransactions.has(tx.id);
+                         const childTransactions = isPartiallyPaid ? getChildTransactions(tx.description) : [];
+                         
+                         return (
+                           <>
+                             <TableRow key={tx.id} className={isPartiallyPaid ? "cursor-pointer hover:bg-muted/50" : ""} onClick={() => isPartiallyPaid && toggleExpanded(tx.id)}>
+                               <TableCell>
+                                 {tx.transactionDate
+                                   ? new Date(tx.transactionDate).toLocaleDateString()
+                                   : "N/A"}
+                               </TableCell>
+                               <TableCell className="font-medium flex items-center gap-2">
+                                 {isPartiallyPaid && (
+                                   <span className="text-muted-foreground">
+                                     {isExpanded ? "▼" : "▶"}
+                                   </span>
+                                 )}
+                                 {tx.description || "N/A"}
+                               </TableCell>
+                               <TableCell>{tx.vendorName}</TableCell>
+                               <TableCell className="font-semibold">
+                                 ${tx.amount.toLocaleString()}
+                               </TableCell>
+                               <TableCell>
+                                 {tx.dueDate
+                                   ? new Date(tx.dueDate).toLocaleDateString()
+                                   : "N/A"}
+                               </TableCell>
+                                <TableCell>
+                                  <Badge variant={status.variant}>{status.text}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <span className="text-xs">
+                                    {tx.remarks || 'Ordered'}
+                                  </span>
+                                </TableCell>
+                                <TableCell>
+                                  {tx.status === 'partially_paid' && tx.remainingBalance ? (
+                                    <span className="text-xs font-semibold text-primary">
+                                      ${tx.remainingBalance.toLocaleString()}
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">-</span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex items-center justify-end space-x-2">
+                                   <Button
+                                     variant="default"
+                                     size="sm"
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       handlePayTransaction(tx);
+                                     }}
+                                     disabled={tx.status === 'completed' || tx.status === 'paid' || tx.status === 'partially_paid'}
+                                   >
+                                     <DollarSign className="h-3 w-3" />
+                                   </Button>
+                                   <Button
+                                     variant="outline"
+                                     size="sm"
+                                     onClick={(e) => {
+                                       e.stopPropagation();
+                                       handleDeleteTransaction(tx);
+                                     }}
+                                     className="text-destructive hover:text-destructive"
+                                   >
+                                     <Trash2 className="h-3 w-3" />
+                                   </Button>
+                                 </div>
+                               </TableCell>
+                             </TableRow>
+                             
+                             {/* Child transactions for partially paid */}
+                             {isPartiallyPaid && isExpanded && childTransactions.map((childTx) => {
+                               const childStatus = getTransactionStatus(childTx);
+                               return (
+                                 <TableRow key={childTx.id} className="bg-muted/30">
+                                   <TableCell className="pl-8">
+                                     {childTx.transactionDate
+                                       ? new Date(childTx.transactionDate).toLocaleDateString()
+                                       : "N/A"}
+                                   </TableCell>
+                                   <TableCell className="font-medium pl-8">
+                                     {childTx.description}
+                                   </TableCell>
+                                   <TableCell>{childTx.vendorName}</TableCell>
+                                   <TableCell className="font-semibold">
+                                     ${childTx.amount.toLocaleString()}
+                                   </TableCell>
+                                   <TableCell>
+                                     {childTx.dueDate
+                                       ? new Date(childTx.dueDate).toLocaleDateString()
+                                       : "N/A"}
+                                   </TableCell>
+                                   <TableCell>
+                                     <Badge variant={childStatus.variant}>{childStatus.text}</Badge>
+                                   </TableCell>
+                                   <TableCell>
+                                     <span className="text-xs">
+                                       {childTx.remarks || 'Ordered'}
+                                     </span>
+                                   </TableCell>
+                                   <TableCell>
+                                     <span className="text-xs text-muted-foreground">-</span>
+                                   </TableCell>
+                                   <TableCell className="text-right">
+                                     <span className="text-xs text-muted-foreground">-</span>
+                                   </TableCell>
+                                 </TableRow>
+                               );
+                             })}
+                           </>
+                         );
+                       })
+                     )}
                   </TableBody>
                 </Table>
               </CardContent>

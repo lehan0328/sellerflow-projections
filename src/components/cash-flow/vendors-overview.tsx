@@ -71,6 +71,12 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
   // Filter and sort transactions
   const filteredAndSortedTransactions = useMemo(() => {
     let filtered = transactions.filter(tx => {
+      // Hide parent transactions marked as partially_paid (they'll be shown via .1 and .2)
+      // Also hide .1 transactions (the paid portion) from vendors overview
+      if (tx.status === 'partially_paid' || tx.description.endsWith('.1')) {
+        return false;
+      }
+      
       // If a specific vendor is selected, show only that vendor's transactions
       if (selectedVendor) {
         const matchesSelectedVendor = tx.vendorName.toLowerCase() === selectedVendor.toLowerCase();
