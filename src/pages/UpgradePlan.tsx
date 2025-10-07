@@ -516,12 +516,20 @@ const UpgradePlan = () => {
                   <CardContent className="space-y-4">
                     <p className="text-sm text-muted-foreground text-center">Your current features</p>
                     <ul className="space-y-3">
-                      {currentTierData.features.map((feature, index) => (
-                        <li key={index} className="flex items-start text-sm">
-                          <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
+                      {currentTierData.features.map((feature, index) => {
+                        const isExcluded = feature.startsWith('❌');
+                        const featureText = isExcluded ? feature.substring(2) : feature;
+                        return (
+                          <li key={index} className="flex items-start text-sm">
+                            {isExcluded ? (
+                              <X className="h-4 w-4 text-muted-foreground mr-2 mt-0.5 flex-shrink-0" />
+                            ) : (
+                              <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                            )}
+                            <span className={isExcluded ? "text-muted-foreground" : ""}>{featureText}</span>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </CardContent>
                 </Card>
@@ -567,12 +575,16 @@ const UpgradePlan = () => {
                     <ul className="space-y-3">
                       {nextTier.features
                         .filter((feature: string) => !currentTierData.features.some((cf: string) => cf === feature))
-                        .map((feature, index) => (
-                          <li key={index} className="flex items-start text-sm">
-                            <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                            <span className="font-medium">{feature}</span>
-                          </li>
-                        ))}
+                        .map((feature, index) => {
+                          const isExcluded = feature.startsWith('❌');
+                          const featureText = isExcluded ? feature.substring(2) : feature;
+                          return (
+                            <li key={index} className="flex items-start text-sm">
+                              <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                              <span className="font-medium">{featureText}</span>
+                            </li>
+                          );
+                        })}
                     </ul>
                     <Button 
                       className="w-full bg-gradient-primary" 
@@ -717,13 +729,21 @@ const UpgradePlan = () => {
                       )}
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <ul className="space-y-2">
-                        {planItem.features.map((feature, index) => (
-                          <li key={index} className="flex items-start text-sm">
-                            <Check className="h-4 w-4 text-primary mr-2 mt-0.5 flex-shrink-0" />
-                            <span>{feature}</span>
-                          </li>
-                        ))}
+                    <ul className="space-y-2">
+                        {planItem.features.map((feature, index) => {
+                          const isExcluded = feature.startsWith('❌');
+                          const featureText = isExcluded ? feature.substring(2) : feature;
+                          return (
+                            <li key={index} className="flex items-start text-sm">
+                              {isExcluded ? (
+                                <X className="h-4 w-4 text-muted-foreground mr-2 mt-0.5 flex-shrink-0" />
+                              ) : (
+                                <Check className="h-4 w-4 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                              )}
+                              <span className={isExcluded ? "text-muted-foreground" : ""}>{featureText}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                       <div className="text-center pt-4">
                         <p className="text-sm text-muted-foreground">

@@ -44,7 +44,12 @@ export const PRICING_PLANS = {
       "Advanced forecasting workflow",
       "365-day cashflow projection",
       "Bank transaction matching",
-      "Email support"
+      "Email support",
+      "❌ Additional users",
+      "❌ AI insights",
+      "❌ AI PDF extractor",
+      "❌ Automated notifications",
+      "❌ Scenario planning"
     ]
   },
   growing: {
@@ -65,7 +70,9 @@ export const PRICING_PLANS = {
       "365-day cashflow projection",
       "Bank transaction matching",
       "Basic analytics",
-      "Priority support"
+      "Priority support",
+      "❌ Automated notifications",
+      "❌ Scenario planning"
     ]
   },
   professional: {
