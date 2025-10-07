@@ -30,6 +30,7 @@ import Admin from "./pages/Admin";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import Support from "./pages/Support";
 import Onboarding from "./pages/Onboarding";
+import DocumentStorage from "./pages/DocumentStorage";
 import Blog from "./pages/Blog";
 import PredictAmazonPayouts from "./pages/blog/PredictAmazonPayouts";
 import SellerFundingForecast from "./pages/blog/SellerFundingForecast";
@@ -131,6 +132,11 @@ const App = () => (
             <Route path="/support" element={
               <ProtectedRoute>
                 <Support />
+              </ProtectedRoute>
+            } />
+            <Route path="/document-storage" element={
+              <ProtectedRoute>
+                <DocumentStorage />
               </ProtectedRoute>
             } />
           <Route path="/oauth-redirect" element={<OAuthRedirect />} />

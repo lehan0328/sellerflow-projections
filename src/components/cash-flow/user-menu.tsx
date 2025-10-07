@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Settings, CreditCard, LogOut, RotateCcw, Building2 } from "lucide-react";
+import { Settings, CreditCard, LogOut, Calculator, MessageSquare, FolderOpen } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -84,7 +84,7 @@ export function UserMenu() {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
+      <DropdownMenuContent className="w-56 bg-background z-50" align="end" forceMount>
         <DropdownMenuItem onClick={() => navigate('/settings')}>
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
@@ -92,6 +92,19 @@ export function UserMenu() {
         <DropdownMenuItem onClick={() => navigate('/upgrade-plan')}>
           <CreditCard className="mr-2 h-4 w-4" />
           <span>Manage Subscription</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => navigate('/scenario-planner')}>
+          <Calculator className="mr-2 h-4 w-4" />
+          <span>Scenario Planner</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/document-storage')}>
+          <FolderOpen className="mr-2 h-4 w-4" />
+          <span>Document Storage</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/support')}>
+          <MessageSquare className="mr-2 h-4 w-4" />
+          <span>Support</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
