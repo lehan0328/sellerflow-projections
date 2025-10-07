@@ -183,9 +183,31 @@ export default function Onboarding() {
                 <ShoppingCart className="h-16 w-16 text-primary mx-auto" />
                 <div>
                   <h3 className="font-semibold text-lg mb-2">One-Click Store Connection</h3>
-                  <p className="text-muted-foreground">
-                    Securely connect your Amazon store with a single click
+                  <p className="text-muted-foreground mb-4">
+                    Securely connect your Amazon store to automatically sync:
                   </p>
+                  <div className="text-left max-w-md mx-auto space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      <span>Amazon payout schedules and amounts</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      <span>Order transactions and fees</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      <span>Settlement reports</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      <span>Refunds and chargebacks</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      <span>FBA fees and storage costs</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
