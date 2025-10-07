@@ -170,13 +170,14 @@ const Features = () => {
   return (
     <>
       <Helmet>
-        <title>Features - Cash Flow Management for Amazon Sellers | Auren</title>
+        <title>Amazon Cash Flow Forecasting Features | AI Tools for Sellers | Auren</title>
         <meta
           name="description"
-          content="Explore Auren's powerful features: AI-powered insights, Amazon integration, scenario planning, advanced analytics, PDF extraction, and more. Everything you need to manage seller cash flow."
+          content="AI-powered forecasting, 365-day projections, scenario planning & automated alerts. Comprehensive cash flow tools for Amazon FBA sellers. View all features."
         />
+        <meta name="keywords" content="amazon cashflow forecasting features, payout prediction tools, FBA financial planning, cash flow calendar, scenario planning for sellers, AI forecasting" />
         <link rel="canonical" href="https://aurenapp.com/features" />
-        <meta property="og:title" content="Features - Cash Flow Management for Amazon Sellers | Auren" />
+        <meta property="og:title" content="Amazon Cash Flow Forecasting Features | Auren" />
         <meta property="og:description" content="AI-powered cash flow forecasting, Amazon integration, scenario planning, and advanced analytics for marketplace sellers." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://aurenapp.com/features" />

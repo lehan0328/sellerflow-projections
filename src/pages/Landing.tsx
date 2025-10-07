@@ -272,30 +272,56 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Auren - Cash Flow Forecasting for Amazon Sellers | Predict Payouts & Manage Finances</title>
-        <meta name="description" content="Forecast Amazon payouts, track expenses, and avoid cash shortfalls with Auren. AI-powered insights, 365-day projections, and real-time dashboards. Start your 7-day free trial - no credit card required." />
+        <title>Amazon Cash Flow Forecasting Tool | Auren - Predict Payouts & Plan Growth</title>
+        <meta name="description" content="Forecast Amazon payouts with 95% accuracy. AI-powered cash flow management for FBA & marketplace sellers. 7-day free trial, no credit card required." />
+        <meta name="keywords" content="amazon cash flow forecasting, amazon payout prediction, FBA financial tools, seller cashflow management, amazon seller finance software, marketplace cashflow planner" />
         <link rel="canonical" href="https://aurenapp.com" />
         
         {/* Open Graph */}
-        <meta property="og:title" content="Auren - Cash Flow Forecasting for Amazon Sellers" />
-        <meta property="og:description" content="Predict Amazon payouts and manage seller cash flow with 95% accuracy. Start your free trial today - no credit card required." />
+        <meta property="og:title" content="Amazon Cash Flow Forecasting | Auren - Predict Payouts & Manage Finances" />
+        <meta property="og:description" content="AI-powered cash flow forecasting for Amazon sellers. Predict payouts, track expenses, and prevent cash shortfalls. Start free trial today." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://aurenapp.com" />
         <meta property="og:image" content="https://aurenapp.com/assets/og-image.png" />
         
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Auren - Cash Flow Forecasting for Amazon Sellers" />
-        <meta name="twitter:description" content="Predict payouts and manage finances with AI-powered insights." />
+        <meta name="twitter:title" content="Amazon Cash Flow Forecasting | Auren" />
+        <meta name="twitter:description" content="AI-powered cash flow forecasting for Amazon sellers. Predict payouts with 95% accuracy." />
         <meta name="twitter:image" content="https://aurenapp.com/assets/og-image.png" />
         
-        {/* Schema.org */}
+        {/* Organization Schema */}
+        <script type="application/ld+json">{`
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "Auren",
+            "url": "https://aurenapp.com",
+            "logo": "https://aurenapp.com/assets/auren-full-logo.png",
+            "description": "Cash flow forecasting software for Amazon and marketplace sellers",
+            "contactPoint": {
+              "@type": "ContactPoint",
+              "email": "support@aurenapp.com",
+              "contactType": "Customer Support",
+              "availableLanguage": "English"
+            },
+            "sameAs": [
+              "https://twitter.com/aurenapp",
+              "https://linkedin.com/company/aurenapp"
+            ]
+          }
+        `}</script>
+        
+        {/* SoftwareApplication Schema */}
         <script type="application/ld+json">{`
           {
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
             "name": "Auren",
             "applicationCategory": "FinanceApplication",
+            "operatingSystem": "Web",
+            "description": "AI-powered cash flow forecasting and financial management software for Amazon FBA and marketplace sellers",
+            "url": "https://aurenapp.com",
             "offers": {
               "@type": "Offer",
               "price": "29",
@@ -1232,7 +1258,76 @@ const Landing = () => {
                 </p>
               </CardContent>
             </Card>
+            
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle>How accurate is the Amazon payout forecasting?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed">
+                  Auren uses real settlement data to forecast payouts with 95% accuracy. Our AI models continuously learn from your sales patterns to provide increasingly precise predictions.
+                </p>
+              </CardContent>
+            </Card>
           </div>
+          
+          {/* FAQ Schema Markup */}
+          <script type="application/ld+json">{`
+            {
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              "mainEntity": [
+                {
+                  "@type": "Question",
+                  "name": "How does Auren forecast my Amazon payouts?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Auren uses your Amazon Seller Central data to project upcoming payouts based on settlement trends and reserve patterns. You'll know exactly when and how much to expect."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Can I connect multiple seller accounts?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes! Growth and Pro plans allow multiple Amazon accounts, so you can manage different brands or marketplaces in one dashboard."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Is my data secure?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Absolutely. Auren connects via read-only API access and stores data using bank-grade AES-256 encryption. You can delete your data or disconnect anytime."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Does Auren work with Walmart or Shopify?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Walmart and Shopify integrations are coming soon! Join the waitlist to get early access when they launch."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "What happens after my free trial?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "You can continue with your chosen plan. There are no hidden fees or surprise charges, and you can cancel anytime."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "How accurate is the Amazon payout forecasting?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Auren uses real settlement data to forecast payouts with 95% accuracy. Our AI models continuously learn from your sales patterns to provide increasingly precise predictions."
+                  }
+                }
+              ]
+            }
+          `}</script>
         </div>
       </section>
 
