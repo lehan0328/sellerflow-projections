@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { LoadingScreen } from './LoadingScreen';
 import { TrialExpiredModal } from './TrialExpiredModal';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,8 +12,10 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
-  const { subscribed, is_trialing, trial_end, isLoading: subLoading } = useSubscription();
+  const { subscribed, isLoading: subLoading } = useSubscription();
   const navigate = useNavigate();
+  const [trialEnd, setTrialEnd] = useState<string | null>(null);
+  const [checkingTrial, setCheckingTrial] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -20,13 +23,30 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     }
   }, [user, loading, navigate]);
 
-  // DEMO: Force show trial expired for demonstration
-  const isDemoAccount = user?.email === 'chuandy914@gmail.com';
-  
-  // Check if trial has expired
-  const isTrialExpired = isDemoAccount || (!subscribed && !is_trialing && trial_end && new Date(trial_end) < new Date());
+  useEffect(() => {
+    const fetchTrialStatus = async () => {
+      if (!user) {
+        setCheckingTrial(false);
+        return;
+      }
 
-  if (loading || subLoading) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('trial_end')
+        .eq('user_id', user.id)
+        .single();
+
+      setTrialEnd(profile?.trial_end || null);
+      setCheckingTrial(false);
+    };
+
+    fetchTrialStatus();
+  }, [user]);
+
+  // Check if trial has expired
+  const isTrialExpired = !subscribed && trialEnd && new Date(trialEnd) < new Date();
+
+  if (loading || subLoading || checkingTrial) {
     return <LoadingScreen message="Verifying your session..." />;
   }
 

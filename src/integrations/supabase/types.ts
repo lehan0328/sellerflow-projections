@@ -664,6 +664,8 @@ export type Database = {
           monthly_revenue: string | null
           plan_override: string | null
           plan_override_reason: string | null
+          trial_end: string | null
+          trial_start: string | null
           updated_at: string
           user_id: string
         }
@@ -681,6 +683,8 @@ export type Database = {
           monthly_revenue?: string | null
           plan_override?: string | null
           plan_override_reason?: string | null
+          trial_end?: string | null
+          trial_start?: string | null
           updated_at?: string
           user_id: string
         }
@@ -698,6 +702,8 @@ export type Database = {
           monthly_revenue?: string | null
           plan_override?: string | null
           plan_override_reason?: string | null
+          trial_end?: string | null
+          trial_start?: string | null
           updated_at?: string
           user_id?: string
         }
