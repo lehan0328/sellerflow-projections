@@ -280,8 +280,8 @@ export default function Onboarding() {
                   <div className="flex items-start gap-2 p-2 rounded bg-primary/5">
                     <div className="text-primary mt-0.5 text-sm">✓</div>
                     <div>
-                      <div className="font-medium">Powered by Plaid</div>
-                      <div className="text-muted-foreground">Trusted by major apps</div>
+                      <div className="font-medium">Your Login Stays Private</div>
+                      <div className="text-muted-foreground">We never see credentials</div>
                     </div>
                   </div>
                   
