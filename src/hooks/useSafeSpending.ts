@@ -154,11 +154,26 @@ export const useSafeSpending = () => {
           }
         });
 
-        // Subtract vendor payments
+        // Subtract vendor payments (both next_payment_date and payment_schedule)
         vendors?.forEach(vendor => {
-          const vendorPaymentDate = new Date(vendor.next_payment_date).toISOString().split('T')[0];
-          if (vendorPaymentDate === dateStr) {
-            dailyChange -= Math.abs(Number(vendor.next_payment_amount || 0));
+          // Add next payment if it falls on this date
+          if (vendor.next_payment_date) {
+            const vendorPaymentDate = new Date(vendor.next_payment_date).toISOString().split('T')[0];
+            if (vendorPaymentDate === dateStr) {
+              dailyChange -= Math.abs(Number(vendor.next_payment_amount || 0));
+            }
+          }
+          
+          // Add scheduled payments from payment_schedule
+          if (vendor.payment_schedule && Array.isArray(vendor.payment_schedule)) {
+            vendor.payment_schedule.forEach((payment: any) => {
+              if (payment.date) {
+                const scheduleDate = new Date(payment.date).toISOString().split('T')[0];
+                if (scheduleDate === dateStr) {
+                  dailyChange -= Math.abs(Number(payment.amount || 0));
+                }
+              }
+            });
           }
         });
 
