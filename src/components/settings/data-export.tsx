@@ -116,14 +116,33 @@ export const DataExport = () => {
   const convertToCSV = (data: any[]) => {
     if (data.length === 0) return '';
 
-    const headers = Object.keys(data[0]).join(',');
-    const rows = data.map(row => 
-      Object.values(row).map(val => 
-        typeof val === 'object' ? JSON.stringify(val) : val
-      ).join(',')
-    );
+    // Define headers
+    const headers = ['Created Date', 'Description/PO', 'Amount', 'Due Date', 'Last Remarks'];
+    
+    // Map data to required fields based on transaction type
+    const rows = data.map(row => {
+      const createdDate = format(new Date(row.created_at), 'yyyy-MM-dd');
+      const description = row.description || row.name || row.transaction_name || '';
+      const amount = row.amount || 0;
+      const dueDate = row.due_date ? format(new Date(row.due_date), 'yyyy-MM-dd') : 
+                      row.payment_date ? format(new Date(row.payment_date), 'yyyy-MM-dd') : '';
+      const remarks = row.remarks || row.notes || row.status || '';
+      
+      // Escape commas and quotes in CSV
+      const escapeCSV = (val: any) => {
+        const str = String(val);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      };
+      
+      return [createdDate, description, amount, dueDate, remarks]
+        .map(escapeCSV)
+        .join(',');
+    });
 
-    return [headers, ...rows].join('\n');
+    return [headers.join(','), ...rows].join('\n');
   };
 
   const downloadFile = (content: string, filename: string, mimeType: string) => {
