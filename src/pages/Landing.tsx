@@ -329,9 +329,43 @@ const Landing = () => {
             },
             "aggregateRating": {
               "@type": "AggregateRating",
-              "ratingValue": "5",
-              "ratingCount": "127"
+              "ratingValue": "4.9",
+              "ratingCount": "500"
             }
+          }
+        `}</script>
+        
+        {/* BreadcrumbList Schema */}
+        <script type="application/ld+json">{`
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://aurenapp.com"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Features",
+                "item": "https://aurenapp.com/features"
+              },
+              {
+                "@type": "ListItem",
+                "position": 3,
+                "name": "Pricing",
+                "item": "https://aurenapp.com#pricing"
+              },
+              {
+                "@type": "ListItem",
+                "position": 4,
+                "name": "Blog",
+                "item": "https://aurenapp.com/blog"
+              }
+            ]
           }
         `}</script>
       </Helmet>
@@ -366,7 +400,7 @@ const Landing = () => {
             <div className="flex items-center gap-3 animate-scale-in">
               <div className="relative">
                 <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-glow-pulse" />
-                <img src={aurenIcon} alt="Auren" className="relative h-12 w-12 hover-scale transition-all duration-300" />
+                <img src={aurenIcon} alt="Auren - Amazon Cash Flow Forecasting Software" className="relative h-12 w-12 hover-scale transition-all duration-300" />
               </div>
               <span className="text-2xl font-display font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
                 Auren
@@ -499,12 +533,12 @@ const Landing = () => {
                 style={{ animationDelay: '800ms' }}
               >
                 <div className="flex items-center gap-2 text-sm">
-                  <div className="flex -space-x-1">
-                    <img src={avatar1} alt="Seller testimonial" className="w-8 h-8 rounded-full border-2 border-background object-cover" />
-                    <img src={avatar2} alt="Seller testimonial" className="w-8 h-8 rounded-full border-2 border-background object-cover" />
-                    <img src={avatar3} alt="Seller testimonial" className="w-8 h-8 rounded-full border-2 border-background object-cover" />
-                    <img src={avatar4} alt="Seller testimonial" className="w-8 h-8 rounded-full border-2 border-background object-cover" />
-                  </div>
+                <div className="flex -space-x-1">
+                  <img src={avatar1} alt="Amazon FBA seller using Auren for cash flow forecasting" className="w-8 h-8 rounded-full border-2 border-background object-cover" />
+                  <img src={avatar2} alt="Marketplace seller managing finances with Auren" className="w-8 h-8 rounded-full border-2 border-background object-cover" />
+                  <img src={avatar3} alt="eCommerce seller tracking Amazon payouts" className="w-8 h-8 rounded-full border-2 border-background object-cover" />
+                  <img src={avatar4} alt="Online seller forecasting cash flow with Auren" className="w-8 h-8 rounded-full border-2 border-background object-cover" />
+                </div>
                   <span className="text-muted-foreground">
                     <span className="font-semibold text-foreground">500+</span> sellers trust Auren
                   </span>
@@ -1336,37 +1370,44 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto space-y-8">
             <h2 className="text-3xl lg:text-4xl font-bold text-center mb-12">
-              Learn How to Master Amazon Cashflow
+              Master Amazon Seller Cash Flow Management
             </h2>
             
             <div className="prose prose-lg max-w-none space-y-6 text-muted-foreground">
+              <h3 className="text-2xl font-bold text-foreground">Why Amazon Cash Flow Forecasting Matters</h3>
               <p className="leading-relaxed">
-                Managing cashflow as an Amazon seller can feel unpredictable — payouts come on Amazon&apos;s schedule, not yours.
+                Managing cash flow as an <strong className="text-foreground">Amazon seller</strong> can feel unpredictable — payouts come on Amazon&apos;s schedule, not yours.
                 Between advertising costs, supplier invoices, and marketplace fees, it&apos;s easy to lose track of when money is actually available.
+                Understanding your <strong className="text-foreground">Amazon payout schedule</strong> and <strong className="text-foreground">FBA financial planning</strong> is crucial for sustainable growth.
               </p>
 
+              <h3 className="text-2xl font-bold text-foreground">How Auren Solves Cash Flow Challenges for Marketplace Sellers</h3>
               <p className="leading-relaxed">
-                <strong className="text-foreground">Auren</strong> was built to solve this exact problem. By connecting directly to your Amazon Seller Central account,
-                Auren forecasts every future payout using your real settlement data. It maps sales, refunds, reserves, and fees to
-                generate a clear cashflow timeline — helping you understand when funds will hit your bank and when your next big expense is due.
+                <strong className="text-foreground">Auren</strong> was built specifically to solve the <strong className="text-foreground">cash flow management challenges</strong> faced by Amazon FBA and marketplace sellers. By connecting directly to your <a href="/docs/amazon-integration" className="text-primary hover:underline">Amazon Seller Central account</a>,
+                Auren forecasts every future payout using your real settlement data. Our AI-powered system maps sales, refunds, reserves, and fees to
+                generate a clear <strong className="text-foreground">365-day cash flow timeline</strong> — helping you understand exactly when funds will hit your bank and when your next big expense is due.
               </p>
 
+              <h3 className="text-2xl font-bold text-foreground">Scale Your Amazon Business with Predictable Cash Flow</h3>
               <p className="leading-relaxed">
-                Predictable cashflow isn&apos;t just about avoiding overdrafts — it&apos;s about unlocking growth. With accurate forecasting,
-                sellers can plan new inventory orders, time product launches, and scale advertising budgets without worrying about short-term liquidity.
-                Instead of reacting to surprises, you can make proactive financial decisions that keep your business growing sustainably.
+                Predictable cash flow isn&apos;t just about avoiding overdrafts — it&apos;s about <strong className="text-foreground">unlocking sustainable growth</strong>. With accurate <strong className="text-foreground">Amazon payout forecasting</strong>,
+                sellers can confidently plan new inventory orders, time product launches, and scale advertising budgets without worrying about short-term liquidity.
+                Instead of reacting to cash flow surprises, you can make proactive financial decisions that keep your eCommerce business growing sustainably. Learn more about <a href="/features" className="text-primary hover:underline">all our forecasting features</a>.
               </p>
 
+              <h3 className="text-2xl font-bold text-foreground">Advanced Features for Amazon FBA & Multi-Channel Sellers</h3>
               <p className="leading-relaxed">
-                Whether you&apos;re an FBA wholesaler, private-label brand, or multi-marketplace seller, Auren&apos;s forecasting dashboard
-                shows your <em className="text-foreground">daily available cash</em> and <em className="text-foreground">expected payouts</em> at a glance. You can even run &quot;what-if&quot; scenarios
-                to test how changes in sales volume, ad spend, or restocks affect your future cash position.
+                Whether you&apos;re an FBA wholesaler, private-label brand, or multi-marketplace seller, Auren&apos;s <strong className="text-foreground">cash flow forecasting dashboard</strong>
+                shows your <em className="text-foreground">daily available cash</em> and <em className="text-foreground">expected Amazon payouts</em> at a glance. You can even run <a href="/features/scenario-planning" className="text-primary hover:underline">what-if scenarios</a>
+                to test how changes in sales volume, ad spend, or restocks affect your future cash position. Our <strong className="text-foreground">AI-powered insights</strong> help you optimize spending and maximize profitability.
               </p>
 
+              <h3 className="text-2xl font-bold text-foreground">Replace Spreadsheets with Automated Cash Flow Tracking</h3>
               <p className="leading-relaxed">
-                By automating your cashflow tracking, Auren helps you replace spreadsheets with clarity — giving you back the time
-                to focus on growth. Join hundreds of sellers using Auren to take control of their finances, prevent cash gaps,
-                and scale confidently on Amazon and beyond.
+                By automating your <strong className="text-foreground">seller cash flow tracking</strong>, Auren helps you replace complex spreadsheets with clarity and confidence. Our platform integrates with
+                your bank accounts, credit cards, and Amazon seller accounts to provide real-time visibility into your financial health.
+                Join hundreds of sellers using Auren to take control of their finances, prevent cash gaps,
+                and scale confidently on Amazon and beyond. Start your <a href="#pricing" className="text-primary hover:underline">free 7-day trial</a> today — no credit card required.
               </p>
             </div>
 
@@ -1419,7 +1460,7 @@ const Landing = () => {
             <div className="space-y-4 md:col-span-2">
               <div className="flex items-center space-x-2">
                 <div className="h-8 w-8 rounded-lg flex items-center justify-center">
-                  <img src={aurenIcon} alt="Auren" className="h-8 w-8" />
+                  <img src={aurenIcon} alt="Auren - Cash Flow Management for Amazon Sellers" className="h-8 w-8" />
                 </div>
                 <span className="text-xl font-bold">Auren</span>
               </div>
