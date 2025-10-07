@@ -244,60 +244,52 @@ export default function Onboarding() {
                 Securely connect your bank account via Plaid
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               {amazonSkipped && (
                 <div className="p-4 bg-muted rounded-lg text-sm text-muted-foreground">
                   You skipped the Amazon connection. You can add it later in Settings.
                 </div>
               )}
 
-              <div className="text-center py-8 space-y-4">
-                <Building2 className="h-16 w-16 text-primary mx-auto" />
+              <div className="text-center space-y-3">
+                <Building2 className="h-12 w-12 text-primary mx-auto" />
                 <div>
-                  <h3 className="font-semibold text-lg mb-2">Secure Bank Connection</h3>
-                  <p className="text-muted-foreground mb-4">
+                  <h3 className="font-semibold mb-1">Secure Bank Connection</h3>
+                  <p className="text-sm text-muted-foreground">
                     Connect your bank account securely with industry-leading protection
                   </p>
                 </div>
                 
-                <div className="space-y-3 text-sm text-left max-w-md mx-auto">
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5">
-                    <div className="text-primary mt-0.5">✓</div>
+                <div className="grid grid-cols-2 gap-2 text-xs text-left pt-2">
+                  <div className="flex items-start gap-2 p-2 rounded bg-primary/5">
+                    <div className="text-primary mt-0.5 text-sm">✓</div>
                     <div>
                       <div className="font-medium">Bank-Level Security</div>
-                      <div className="text-muted-foreground text-xs">256-bit encryption protects all your data in transit and at rest</div>
+                      <div className="text-muted-foreground">256-bit encryption</div>
                     </div>
                   </div>
                   
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5">
-                    <div className="text-primary mt-0.5">✓</div>
+                  <div className="flex items-start gap-2 p-2 rounded bg-primary/5">
+                    <div className="text-primary mt-0.5 text-sm">✓</div>
                     <div>
                       <div className="font-medium">Read-Only Access</div>
-                      <div className="text-muted-foreground text-xs">We can only view transactions - we cannot move money or make changes</div>
+                      <div className="text-muted-foreground">Cannot move money</div>
                     </div>
                   </div>
                   
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5">
-                    <div className="text-primary mt-0.5">✓</div>
+                  <div className="flex items-start gap-2 p-2 rounded bg-primary/5">
+                    <div className="text-primary mt-0.5 text-sm">✓</div>
                     <div>
                       <div className="font-medium">Powered by Plaid</div>
-                      <div className="text-muted-foreground text-xs">Trusted by thousands of apps including Venmo, Robinhood, and Coinbase</div>
+                      <div className="text-muted-foreground">Trusted by major apps</div>
                     </div>
                   </div>
                   
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5">
-                    <div className="text-primary mt-0.5">✓</div>
+                  <div className="flex items-start gap-2 p-2 rounded bg-primary/5">
+                    <div className="text-primary mt-0.5 text-sm">✓</div>
                     <div>
-                      <div className="font-medium">Your Credentials Stay Private</div>
-                      <div className="text-muted-foreground text-xs">Your bank login never touches our servers - authentication happens directly with your bank</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5">
-                    <div className="text-primary mt-0.5">✓</div>
-                    <div>
-                      <div className="font-medium">11,000+ Banks Supported</div>
-                      <div className="text-muted-foreground text-xs">Works with all major financial institutions across the country</div>
+                      <div className="font-medium">11,000+ Banks</div>
+                      <div className="text-muted-foreground">All major institutions</div>
                     </div>
                   </div>
                 </div>
