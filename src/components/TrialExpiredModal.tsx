@@ -95,10 +95,6 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
     fetchUserProfile();
   }, []);
 
-  const handlePayNow = () => {
-    navigate('/upgrade-plan');
-  };
-
   if (!recommendedPlan || availablePlans.length === 0) return null;
 
   return (
