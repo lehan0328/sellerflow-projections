@@ -559,17 +559,6 @@ const Landing = () => {
                       />
                     </div>
                     
-                    {/* Try Me Pointer */}
-                    <div className="absolute top-6 right-6 flex items-start gap-2 animate-float pointer-events-none">
-                      <div className="bg-primary/90 backdrop-blur-sm text-primary-foreground px-4 py-2 rounded-full shadow-lg border border-primary/20">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-sm">Try Interactive Demo</span>
-                          <ExternalLink className="h-4 w-4" />
-                        </div>
-                      </div>
-                      <div className="text-4xl animate-bounce" style={{ animationDuration: '2s' }}>👆</div>
-                    </div>
-                    
                     {/* Fade gradient */}
                     <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-card/80 via-card/40 to-transparent pointer-events-none" />
                   </div>
