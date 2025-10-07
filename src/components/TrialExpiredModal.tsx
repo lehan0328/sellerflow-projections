@@ -95,14 +95,31 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
 
   if (!recommendedPlan || availablePlans.length === 0) return null;
 
-  // Get all unique features across all plans for comparison
-  const allFeatures = Array.from(
-    new Set(availablePlans.flatMap(p => p.plan.features))
-  );
+  // Define feature comparison data
+  const featureRows = [
+    { name: 'Bank/Credit Card Connections', values: { starter: '2', growing: '3', professional: '4' } },
+    { name: 'Amazon Connections', values: { starter: '1', growing: '1', professional: '1' } },
+    { name: 'Additional Users', values: { starter: false, growing: '2', professional: '5' } },
+    { name: 'Advanced Forecasting Workflow', values: { starter: true, growing: true, professional: true } },
+    { name: '365-Day Cash Flow Projection', values: { starter: true, growing: true, professional: true } },
+    { name: 'Bank Transaction Matching', values: { starter: true, growing: true, professional: true } },
+    { name: '✨ AI Insights', values: { starter: false, growing: true, professional: true } },
+    { name: '✨ AI PDF Extractor', values: { starter: false, growing: true, professional: true } },
+    { name: 'Automated Notifications', values: { starter: false, growing: false, professional: true } },
+    { name: 'Scenario Planning', values: { starter: false, growing: false, professional: true } },
+    { name: 'Analytics', values: { starter: false, growing: 'Basic', professional: 'Advanced' } },
+  ];
+
+  const getPlanKey = (planName: string) => {
+    if (planName.includes('Starter')) return 'starter';
+    if (planName.includes('Growing')) return 'growing';
+    if (planName.includes('Professional')) return 'professional';
+    return 'growing';
+  };
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-[900px]" hideClose>
+      <DialogContent className="max-w-[1000px] max-h-[90vh] overflow-y-auto" hideClose>
         <DialogHeader>
           <div className="flex items-center gap-2 text-destructive">
             <AlertCircle className="h-5 w-5" />
@@ -125,77 +142,89 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
             </div>
           </div>
 
-          {/* Available Plans - Side by Side with Comparison */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          {/* Pricing Header Row */}
+          <div className="grid grid-cols-3 gap-4 mb-0">
             {availablePlans.map((planData, index) => {
               const plan = planData.plan;
               const isRecommended = index === 0;
-              const isSelected = selectedPlanId === plan.priceId;
+              const planKey = getPlanKey(plan.name);
+              
+              // Get revenue range based on plan
+              let revenueRange = '';
+              if (planKey === 'starter') revenueRange = 'Up to $20k monthly revenue';
+              else if (planKey === 'growing') revenueRange = 'Up to $100k monthly revenue';
+              else if (planKey === 'professional') revenueRange = 'Up to $200k monthly revenue';
               
               return (
                 <div
                   key={plan.priceId}
-                  className={`border rounded-lg p-6 space-y-4 transition-all ${
-                    isSelected
-                      ? 'bg-gradient-to-br from-primary/10 to-accent/10 border-primary shadow-lg'
-                      : 'bg-gradient-to-br from-primary/5 to-accent/5 border-border'
+                  className={`border rounded-t-lg p-6 text-center ${
+                    isRecommended 
+                      ? 'bg-primary/5 border-primary' 
+                      : 'bg-background border-border'
                   }`}
                 >
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-xl font-bold">{plan.name}</h3>
-                      {isRecommended && (
-                        <Badge variant="default" className="text-xs">Recommended</Badge>
-                      )}
-                    </div>
-                    {isRecommended && userRevenue && (
-                      <Badge variant="secondary" className="text-xs mb-3">
-                        For {userRevenue} revenue
-                      </Badge>
-                    )}
-                    <div className="mt-3 mb-4">
-                      <div className="text-3xl font-bold">${plan.price}</div>
-                      <div className="text-sm text-muted-foreground">/month</div>
-                    </div>
-
-                    <Button 
-                      onClick={(e) => {
-                        e.preventDefault();
-                        window.location.href = `/upgrade-plan?priceId=${plan.priceId}`;
-                      }}
-                      className="w-full bg-gradient-primary h-11 text-sm font-semibold mb-4"
-                      size="lg"
-                    >
-                      Pay Now - ${plan.price}/mo
-                    </Button>
+                  <p className="text-sm text-muted-foreground mb-3">{revenueRange}</p>
+                  <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                  <div className="mb-4">
+                    <span className="text-4xl font-bold">${plan.price}</span>
+                    <span className="text-muted-foreground">/month</span>
                   </div>
-
-                  <div className="space-y-2 pt-2 border-t">
-                    <p className="font-semibold text-xs uppercase text-muted-foreground mb-3">Features</p>
-                    <ul className="space-y-2.5">
-                      {allFeatures.map((feature: string, featureIndex: number) => {
-                        const hasFeature = plan.features.includes(feature);
-                        return (
-                          <li key={featureIndex} className="flex items-start gap-2">
-                            {hasFeature ? (
-                              <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                            ) : (
-                              <X className="h-4 w-4 text-muted-foreground/40 shrink-0 mt-0.5" />
-                            )}
-                            <span className={`text-xs leading-relaxed ${!hasFeature && 'text-muted-foreground/60 line-through'}`}>
-                              {feature}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
+                  <Button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.location.href = `/upgrade-plan?priceId=${plan.priceId}`;
+                    }}
+                    className={`w-full h-11 font-semibold mb-3 ${
+                      isRecommended 
+                        ? 'bg-primary hover:bg-primary/90' 
+                        : 'bg-background hover:bg-accent border border-input'
+                    }`}
+                    variant={isRecommended ? 'default' : 'outline'}
+                  >
+                    Start Trial
+                  </Button>
+                  <p className="text-xs text-muted-foreground">No credit card required</p>
                 </div>
               );
             })}
           </div>
 
-          <p className="text-xs text-center text-muted-foreground">
+          {/* Feature Comparison Table */}
+          <div className="border border-t-0 rounded-b-lg overflow-hidden">
+            {featureRows.map((feature, index) => (
+              <div 
+                key={index}
+                className={`grid grid-cols-[2fr_1fr_1fr_1fr] ${
+                  index % 2 === 0 ? 'bg-muted/30' : 'bg-background'
+                }`}
+              >
+                <div className="p-4 font-medium text-sm border-r">
+                  {feature.name}
+                </div>
+                {availablePlans.map((planData) => {
+                  const planKey = getPlanKey(planData.plan.name);
+                  const value = feature.values[planKey as keyof typeof feature.values];
+                  
+                  return (
+                    <div key={planData.plan.priceId} className="p-4 text-center border-r last:border-r-0">
+                      {typeof value === 'boolean' ? (
+                        value ? (
+                          <Check className="h-5 w-5 text-success mx-auto" />
+                        ) : (
+                          <X className="h-5 w-5 text-destructive mx-auto" />
+                        )
+                      ) : (
+                        <span className="text-sm font-medium">{value}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          <p className="text-xs text-center text-muted-foreground mt-6">
             All plans include secure payment processing and can be cancelled anytime
           </p>
         </div>
