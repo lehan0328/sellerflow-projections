@@ -182,13 +182,9 @@ export const DataExport = () => {
       const timestamp = format(new Date(), 'yyyy-MM-dd-HHmmss');
       const filename = `${selectedExportType}-transactions-${timestamp}`;
 
-      if (exportFormat === 'csv') {
-        const csvContent = convertToCSV(data);
-        downloadFile(csvContent, `${filename}.csv`, 'text/csv');
-        toast.success(`Exported ${data.length} transactions as CSV`);
-      } else if (exportFormat === 'excel' || exportFormat === 'pdf') {
-        toast.error(`${exportFormat.toUpperCase()} export is coming soon! Please use CSV for now.`);
-      }
+      const csvContent = convertToCSV(data);
+      downloadFile(csvContent, `${filename}.csv`, 'text/csv');
+      toast.success(`Exported ${data.length} transactions as CSV`);
     } catch (error) {
       console.error('Export error:', error);
       toast.error('Failed to export data');
@@ -300,8 +296,6 @@ export const DataExport = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="csv">Export CSV</SelectItem>
-                  <SelectItem value="excel">Export Excel</SelectItem>
-                  <SelectItem value="pdf">Export PDF</SelectItem>
                 </SelectContent>
               </Select>
             </div>
