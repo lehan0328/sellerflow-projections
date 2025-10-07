@@ -43,8 +43,11 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     fetchTrialStatus();
   }, [user]);
 
+  // DEMO: Force show trial expired for demonstration
+  const isDemoAccount = user?.email === 'chuandy914@gmail.com';
+  
   // Check if trial has expired
-  const isTrialExpired = !subscribed && trialEnd && new Date(trialEnd) < new Date();
+  const isTrialExpired = isDemoAccount || (!subscribed && trialEnd && new Date(trialEnd) < new Date());
 
   if (loading || subLoading || checkingTrial) {
     return <LoadingScreen message="Verifying your session..." />;
