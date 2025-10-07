@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { generateRecurringDates } from "@/lib/recurringDates";
 
 interface SafeSpendingData {
   safe_spending_limit: number;
@@ -123,21 +124,31 @@ export const useSafeSpending = () => {
 
         let netChange = 0;
 
-        // 1. Add transactions up to target date
+        // 1. Process ALL transactions (including vendor-linked ones) up to target date
         transactionsResult.data?.forEach((tx) => {
-          const txDate = new Date(tx.transaction_date);
+          // Use due_date if available, otherwise transaction_date
+          const txDateStr = tx.due_date || tx.transaction_date;
+          const txDate = new Date(txDateStr);
           txDate.setHours(0, 0, 0, 0);
+          
           if (txDate <= targetDate) {
+            // Skip partially_paid parent transactions (they're replaced by split transactions)
+            if (tx.status === 'partially_paid') return;
+            
+            // Inflows: sales orders and customer payments
             if (tx.type === 'sales_order' || tx.type === 'customer_payment') {
               netChange += Number(tx.amount);
-            } else if (tx.type === 'purchase_order' || tx.type === 'expense') {
+            } 
+            // Outflows: purchase orders, expenses, and vendor-linked transactions
+            else if (tx.type === 'purchase_order' || tx.type === 'expense' || tx.vendor_id) {
               netChange -= Number(tx.amount);
             }
           }
         });
 
-        // 2. Add income up to target date
+        // 2. Add income up to target date (exclude received)
         incomeResult.data?.forEach((income) => {
+          if (income.status === 'received') return;
           const incomeDate = new Date(income.payment_date);
           incomeDate.setHours(0, 0, 0, 0);
           if (incomeDate <= targetDate) {
@@ -154,29 +165,42 @@ export const useSafeSpending = () => {
           }
         });
 
-        // 4. Add/subtract recurring expenses up to target date
+        // 4. Process recurring expenses/income up to target date
         recurringResult.data?.forEach((recurring) => {
-          const startDate = new Date(recurring.start_date);
-          const endDate = recurring.end_date ? new Date(recurring.end_date) : targetDate;
+          if (!recurring.is_active) return;
           
-          // Simple recurring logic - proper implementation would use generateRecurringDates
-          // For now, just check if this is a recurring date
-          // This is simplified - full implementation would need the generateRecurringDates function
-          if (recurring.type === 'income') {
-            // Add recurring income (simplified)
-          } else {
-            // Subtract recurring expense (simplified)
-          }
+          const occurrences = generateRecurringDates(
+            {
+              id: recurring.id,
+              transaction_name: recurring.name,
+              amount: recurring.amount,
+              frequency: recurring.frequency as 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'yearly' | 'weekdays',
+              start_date: recurring.start_date,
+              end_date: recurring.end_date,
+              is_active: recurring.is_active,
+              type: recurring.type as 'income' | 'expense'
+            },
+            today,
+            targetDate
+          );
+          
+          occurrences.forEach(() => {
+            if (recurring.type === 'income') {
+              netChange += Number(recurring.amount);
+            } else {
+              netChange -= Number(recurring.amount);
+            }
+          });
         });
 
-        // 5. Subtract vendor payments up to target date
+        // 5. Subtract vendor payments up to target date (for vendors without transactions)
         vendorsResult.data?.forEach((vendor) => {
-          if (vendor.next_payment_date) {
-            const vendorDate = new Date(vendor.next_payment_date);
-            vendorDate.setHours(0, 0, 0, 0);
-            if (vendorDate <= targetDate) {
-              netChange -= Number(vendor.next_payment_amount || 0);
-            }
+          if (vendor.status === 'paid' || !vendor.next_payment_date || Number(vendor.total_owed || 0) <= 0) return;
+          
+          const vendorDate = new Date(vendor.next_payment_date);
+          vendorDate.setHours(0, 0, 0, 0);
+          if (vendorDate <= targetDate) {
+            netChange -= Number(vendor.next_payment_amount || 0);
           }
         });
 
