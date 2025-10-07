@@ -109,9 +109,10 @@ export default function TransactionLog() {
   // Filter vendor transactions by status and date
   const filteredVendorTransactions = useMemo(() => {
     let filtered = vendorTransactions.filter(tx => {
-      // Only show parent transactions (without .1 or .2) and .2 (remaining balance)
-      // Hide .1 (paid portion) transactions
-      if (tx.description.endsWith('.1')) {
+      // Only show parent transactions (without .1 or .2)
+      // Hide both .1 (paid portion) and .2 (remaining balance) transactions
+      // They will be shown in the collapsible section
+      if (tx.description.endsWith('.1') || tx.description.endsWith('.2')) {
         return false;
       }
       return true;
