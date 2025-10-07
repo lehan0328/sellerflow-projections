@@ -274,6 +274,23 @@ export const useSafeSpending = () => {
       const willGoNegative = lowestBalance.balance < 0;
       const safeSpendingLimit = willGoNegative ? 0 : Math.max(0, lowestBalance.balance - userReserve);
 
+      // Detailed debugging for Oct 20-22
+      const oct20 = dailyBalances.find(d => formatDate(d.date) === '2025-10-20');
+      const oct21 = dailyBalances.find(d => formatDate(d.date) === '2025-10-21');
+      const oct22 = dailyBalances.find(d => formatDate(d.date) === '2025-10-22');
+      
+      console.log('Detailed Transaction Analysis:', {
+        allTransactions: cashFlowData.futureTransactions.map(tx => ({
+          date: tx.transaction_date,
+          type: tx.type,
+          amount: tx.amount,
+          status: tx.status
+        })),
+        oct20Balance: oct20?.balance,
+        oct21Balance: oct21?.balance,
+        oct22Balance: oct22?.balance,
+      });
+
       console.log('Safe Spending Calculation:', {
         totalCash,
         lowestBalanceAmount: lowestBalance.balance,
