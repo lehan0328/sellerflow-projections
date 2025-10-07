@@ -57,13 +57,14 @@ export const useSafeSpending = () => {
       // Get all completed transactions up to today
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+      const todayStr = today.toISOString().split('T')[0];
       
       const { data: completedTransactions } = await supabase
         .from('transactions')
         .select('amount, type, transaction_date')
         .eq('user_id', session.user.id)
         .eq('status', 'completed')
-        .lte('transaction_date', today.toISOString());
+        .lte('transaction_date', todayStr);
 
       const transactionTotal = completedTransactions?.reduce((total, tx) => {
         const amount = Number(tx.amount);
@@ -80,26 +81,25 @@ export const useSafeSpending = () => {
       const availableBalance = totalCash + totalAvailableCredit;
 
       // Calculate projected cash flow for next 180 days
-      today.setHours(0, 0, 0, 0);
-      today.setHours(0, 0, 0, 0);
       const endDate = new Date(today);
       endDate.setDate(endDate.getDate() + 180);
+      const endDateStr = endDate.toISOString().split('T')[0];
 
       // Get all transactions in next 180 days
       const { data: futureTransactions } = await supabase
         .from('transactions')
         .select('amount, type, transaction_date')
         .eq('user_id', session.user.id)
-        .gte('transaction_date', today.toISOString())
-        .lte('transaction_date', endDate.toISOString());
+        .gte('transaction_date', todayStr)
+        .lte('transaction_date', endDateStr);
 
       // Get all income in next 180 days
       const { data: futureIncome } = await supabase
         .from('income')
         .select('amount, payment_date')
         .eq('user_id', session.user.id)
-        .gte('payment_date', today.toISOString())
-        .lte('payment_date', endDate.toISOString());
+        .gte('payment_date', todayStr)
+        .lte('payment_date', endDateStr);
 
       // Get recurring expenses
       const { data: recurringExpenses } = await supabase
@@ -113,8 +113,8 @@ export const useSafeSpending = () => {
         .from('amazon_payouts')
         .select('total_amount, payout_date')
         .eq('user_id', session.user.id)
-        .gte('payout_date', today.toISOString())
-        .lte('payout_date', endDate.toISOString());
+        .gte('payout_date', todayStr)
+        .lte('payout_date', endDateStr);
 
       // Build daily cash flow projection
       const dailyBalances: { date: Date; balance: number }[] = [];
