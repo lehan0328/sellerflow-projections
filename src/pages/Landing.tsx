@@ -425,8 +425,7 @@ const Landing = () => {
                 className="text-xl text-muted-foreground max-w-xl animate-fade-in leading-relaxed" 
                 style={{ animationDelay: '400ms' }}
               >
-                Predict Amazon payouts with <span className="text-primary font-semibold">95% accuracy</span>, track expenses in real-time, 
-                and stay ahead of cash shortfalls with AI-powered insights.
+                Forecast Amazon payouts and expenses—all in one place. See your upcoming disbursements, loans, ads, and purchase orders perfectly aligned, so you can plan inventory and cash flow with confidence.
               </p>
               
               <div 
