@@ -189,10 +189,9 @@ export const useSafeSpending = () => {
         : { date: today, balance: totalCash };
 
       // Safe Spending Logic:
-      // = Current Cash - Lowest Projected Cash in next 180 days - Reserve
-      // This tells you how much you can safely spend TODAY without going below your reserve
-      const projectedDrop = totalCash - lowestBalance.balance;
-      const safeSpendingLimit = Math.max(0, totalCash - projectedDrop - userReserve);
+      // = Lowest Projected Cash Balance - Reserve Amount
+      // Example: If lowest cash is $78,500 and reserve is $2,000, safe spending is $76,500
+      const safeSpendingLimit = Math.max(0, lowestBalance.balance - userReserve);
 
       setData({
         safe_spending_limit: safeSpendingLimit,
