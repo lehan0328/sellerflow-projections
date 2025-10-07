@@ -140,6 +140,83 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   return (
     <>
       <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className={`bg-gradient-to-br ${safeSpendingData?.will_go_negative ? 'from-red-50 to-red-100 border-red-300' : 'from-indigo-50 to-indigo-100 border-indigo-200'} border rounded-lg p-4`}>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-slate-600">Safe Spending Limit</p>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    placeholder="Reserve"
+                    value={reserveInput || safeSpendingData?.reserve_amount || ""}
+                    onChange={(e) => setReserveInput(e.target.value)}
+                    onBlur={() => {
+                      const amount = parseFloat(reserveInput);
+                      if (!isNaN(amount) && amount >= 0) {
+                        updateReserveAmount(amount);
+                      }
+                      setReserveInput("");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const amount = parseFloat(reserveInput);
+                        if (!isNaN(amount) && amount >= 0) {
+                          updateReserveAmount(amount);
+                        }
+                        setReserveInput("");
+                      }
+                    }}
+                    className="w-24 h-6 text-xs px-2 border rounded"
+                  />
+                </div>
+              </div>
+              {isLoadingSafeSpending ? (
+                <div className="space-y-2">
+                  <div className="h-8 w-32 bg-indigo-200 animate-pulse rounded"></div>
+                  <div className="h-4 w-24 bg-indigo-100 animate-pulse rounded"></div>
+                </div>
+              ) : safeSpendingData ? (
+                <>
+                  {safeSpendingData.will_go_negative ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-6 w-6 text-red-600" />
+                        <p className="text-2xl font-bold text-red-700">
+                          {formatCurrency(0)}
+                        </p>
+                      </div>
+                      <div className="bg-red-200 border border-red-300 rounded p-2 mt-2">
+                        <p className="text-sm text-red-800 font-semibold">
+                          ⚠️ Cash will go {formatCurrency(Math.abs(safeSpendingData.calculation.lowest_projected_balance))} negative
+                        </p>
+                        <p className="text-xs text-red-700 mt-1">
+                          on {new Date(safeSpendingData.negative_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold text-indigo-700">
+                        {formatCurrency(safeSpendingData.safe_spending_limit)}
+                      </p>
+                      <p className="text-xs text-indigo-600 mt-1">
+                        Available after expenses & ${safeSpendingData.reserve_amount.toLocaleString()} reserve
+                      </p>
+                    </>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-slate-500">Unable to calculate</p>
+              )}
+            </div>
+            {safeSpendingData?.will_go_negative ? (
+              <AlertTriangle className="h-8 w-8 text-red-500" />
+            ) : (
+              <TrendingUp className="h-8 w-8 text-indigo-500" />
+            )}
+          </div>
+        </div>
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
@@ -246,83 +323,6 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               </p>
             </div>
             <Calendar className="h-8 w-8 text-amber-500" />
-          </div>
-        </div>
-        <div className={`bg-gradient-to-br ${safeSpendingData?.will_go_negative ? 'from-red-50 to-red-100 border-red-300' : 'from-indigo-50 to-indigo-100 border-indigo-200'} border rounded-lg p-4`}>
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-slate-600">Safe Spending Limit</p>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    placeholder="Reserve"
-                    value={reserveInput || safeSpendingData?.reserve_amount || ""}
-                    onChange={(e) => setReserveInput(e.target.value)}
-                    onBlur={() => {
-                      const amount = parseFloat(reserveInput);
-                      if (!isNaN(amount) && amount >= 0) {
-                        updateReserveAmount(amount);
-                      }
-                      setReserveInput("");
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const amount = parseFloat(reserveInput);
-                        if (!isNaN(amount) && amount >= 0) {
-                          updateReserveAmount(amount);
-                        }
-                        setReserveInput("");
-                      }
-                    }}
-                    className="w-24 h-6 text-xs px-2 border rounded"
-                  />
-                </div>
-              </div>
-              {isLoadingSafeSpending ? (
-                <div className="space-y-2">
-                  <div className="h-8 w-32 bg-indigo-200 animate-pulse rounded"></div>
-                  <div className="h-4 w-24 bg-indigo-100 animate-pulse rounded"></div>
-                </div>
-              ) : safeSpendingData ? (
-                <>
-                  {safeSpendingData.will_go_negative ? (
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-6 w-6 text-red-600" />
-                        <p className="text-2xl font-bold text-red-700">
-                          {formatCurrency(0)}
-                        </p>
-                      </div>
-                      <div className="bg-red-200 border border-red-300 rounded p-2 mt-2">
-                        <p className="text-sm text-red-800 font-semibold">
-                          ⚠️ Cash will go {formatCurrency(Math.abs(safeSpendingData.calculation.lowest_projected_balance))} negative
-                        </p>
-                        <p className="text-xs text-red-700 mt-1">
-                          on {new Date(safeSpendingData.negative_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <p className="text-2xl font-bold text-indigo-700">
-                        {formatCurrency(safeSpendingData.safe_spending_limit)}
-                      </p>
-                      <p className="text-xs text-indigo-600 mt-1">
-                        Available after expenses & ${safeSpendingData.reserve_amount.toLocaleString()} reserve
-                      </p>
-                    </>
-                  )}
-                </>
-              ) : (
-                <p className="text-sm text-slate-500">Unable to calculate</p>
-              )}
-            </div>
-            {safeSpendingData?.will_go_negative ? (
-              <AlertTriangle className="h-8 w-8 text-red-500" />
-            ) : (
-              <TrendingUp className="h-8 w-8 text-indigo-500" />
-            )}
           </div>
         </div>
       </div>

@@ -210,6 +210,18 @@ export const useSafeSpending = () => {
           date: targetDateStr,
           balance: projectedBalance
         });
+
+        // Log first few days for debugging
+        if (i <= 3) {
+          console.log(`💰 Day ${i} (${targetDateStr}):`, {
+            netChange,
+            projectedBalance,
+            runningTotal: {
+              bankBalance,
+              totalNetChange: netChange
+            }
+          });
+        }
       }
 
       // Find lowest balance
@@ -221,14 +233,18 @@ export const useSafeSpending = () => {
       const willGoNegative = lowestBalance.balance < 0;
       const safeSpendingLimit = willGoNegative ? 0 : Math.max(0, lowestBalance.balance - reserve);
 
-      console.log('💰 Safe Spending Calculation:', {
+      console.log('💰 Safe Spending Final Calculation:', {
         bankBalance,
         reserve,
         lowestBalance: lowestBalance.balance,
         lowestDate: lowestBalance.date,
         willGoNegative,
         safeSpendingLimit,
-        first10Days: dailyBalances.slice(0, 10)
+        calculation: `${lowestBalance.balance.toFixed(2)} - ${reserve.toFixed(2)} = ${safeSpendingLimit.toFixed(2)}`,
+        first5Days: dailyBalances.slice(0, 5).map(d => ({
+          date: d.date,
+          balance: d.balance.toFixed(2)
+        }))
       });
 
       setData({
