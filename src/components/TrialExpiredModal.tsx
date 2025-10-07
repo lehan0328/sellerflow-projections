@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PRICING_PLANS, ENTERPRISE_TIERS } from "@/hooks/useSubscription";
-import { AlertCircle, Check } from "lucide-react";
+import { AlertCircle, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -54,7 +54,6 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
           recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.starter };
           higherPlans = [
             { type: 'standard', plan: PRICING_PLANS.growing },
-            { type: 'standard', plan: PRICING_PLANS.professional },
           ];
         } else if (revenueNum <= 100000) {
           recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.growing };
@@ -63,12 +62,11 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
           ];
         } else if (revenueNum <= 200000) {
           recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.professional };
-          higherPlans = [];
+          higherPlans = []; // No upgrade for Professional
         } else if (revenueNum <= 500000) {
           recommendedPlanData = { type: 'enterprise', plan: ENTERPRISE_TIERS.tier1 };
           higherPlans = [
             { type: 'enterprise', plan: ENTERPRISE_TIERS.tier2 },
-            { type: 'enterprise', plan: ENTERPRISE_TIERS.tier3 },
           ];
         } else if (revenueNum <= 1000000) {
           recommendedPlanData = { type: 'enterprise', plan: ENTERPRISE_TIERS.tier2 };
@@ -97,9 +95,14 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
 
   if (!recommendedPlan || availablePlans.length === 0) return null;
 
+  // Get all unique features across all plans for comparison
+  const allFeatures = Array.from(
+    new Set(availablePlans.flatMap(p => p.plan.features))
+  );
+
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-[600px]" hideClose>
+      <DialogContent className="sm:max-w-[900px]" hideClose>
         <DialogHeader>
           <div className="flex items-center gap-2 text-destructive">
             <AlertCircle className="h-5 w-5" />
@@ -121,8 +124,9 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
               {currentRevenue === 45000 ? 'Amazon integration pending - showing estimated revenue' : 'Based on Amazon sales data'}
             </div>
           </div>
-          {/* Available Plans */}
-          <div className="space-y-4">
+
+          {/* Available Plans - Side by Side */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
             {availablePlans.map((planData, index) => {
               const plan = planData.plan;
               const isRecommended = index === 0;
@@ -138,37 +142,42 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                   }`}
                   onClick={() => setSelectedPlanId(plan.priceId)}
                 >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-2xl font-bold">{plan.name}</h3>
-                        {isRecommended && (
-                          <Badge variant="default">Recommended</Badge>
-                        )}
-                      </div>
-                      {isRecommended && userRevenue && (
-                        <Badge variant="secondary" className="mt-2">
-                          For {userRevenue} revenue
-                        </Badge>
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-xl font-bold">{plan.name}</h3>
+                      {isRecommended && (
+                        <Badge variant="default" className="text-xs">Recommended</Badge>
                       )}
                     </div>
-                    <div className="text-right">
+                    {isRecommended && userRevenue && (
+                      <Badge variant="secondary" className="text-xs">
+                        For {userRevenue} revenue
+                      </Badge>
+                    )}
+                    <div className="mt-3">
                       <div className="text-3xl font-bold">${plan.price}</div>
                       <div className="text-sm text-muted-foreground">/month</div>
                     </div>
                   </div>
 
-                  <div className="space-y-3 pt-4">
-                    <p className="font-semibold text-sm">
-                      {isRecommended ? 'Included features:' : 'Additional features:'}
-                    </p>
+                  <div className="space-y-2 pt-4">
+                    <p className="font-semibold text-xs uppercase text-muted-foreground">Features</p>
                     <ul className="space-y-2">
-                      {plan.features.map((feature: string, featureIndex: number) => (
-                        <li key={featureIndex} className="flex items-start gap-2">
-                          <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                          <span className="text-sm">{feature}</span>
-                        </li>
-                      ))}
+                      {allFeatures.map((feature: string, featureIndex: number) => {
+                        const hasFeature = plan.features.includes(feature);
+                        return (
+                          <li key={featureIndex} className="flex items-start gap-2">
+                            {hasFeature ? (
+                              <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                            ) : (
+                              <X className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                            )}
+                            <span className={`text-xs ${!hasFeature && 'text-muted-foreground'}`}>
+                              {feature}
+                            </span>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 </div>
@@ -181,7 +190,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
               e.preventDefault();
               window.location.href = `/upgrade-plan?priceId=${selectedPlanId}`;
             }}
-            className="w-full bg-gradient-primary h-12 text-base font-semibold mt-6"
+            className="w-full bg-gradient-primary h-12 text-base font-semibold"
             size="lg"
           >
             Pay Now - ${availablePlans.find(p => p.plan.priceId === selectedPlanId)?.plan.price}/month
