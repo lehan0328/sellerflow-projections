@@ -65,10 +65,12 @@ export const useSafeSpending = () => {
     // 1. Fetch transactions (purchase orders and sales orders)
     const { data: transactions } = await supabase
       .from('transactions')
-      .select('transaction_date, amount, type')
+      .select('transaction_date, amount, type, description')
       .eq('user_id', userId)
       .gte('transaction_date', startDate)
       .lte('transaction_date', endDate);
+
+    console.log('Raw transactions from DB:', transactions);
 
     transactions?.forEach(tx => {
       if (tx.type === 'purchase_order' || tx.type === 'expense') {
@@ -76,14 +78,14 @@ export const useSafeSpending = () => {
           date: formatDate(tx.transaction_date),
           amount: Math.abs(Number(tx.amount)),
           type: 'outflow',
-          source: `transaction-${tx.type}`
+          source: `${tx.type}: ${tx.description}`
         });
       } else if (tx.type === 'sales_order' || tx.type === 'customer_payment') {
         events.push({
           date: formatDate(tx.transaction_date),
           amount: Math.abs(Number(tx.amount)),
           type: 'inflow',
-          source: `transaction-${tx.type}`
+          source: `${tx.type}: ${tx.description}`
         });
       }
     });
@@ -210,7 +212,7 @@ export const useSafeSpending = () => {
   // Project daily balances
   const projectBalances = (startingBalance: number, events: CashFlowEvent[], days: number, today: string): DailyBalance[] => {
     const balances: DailyBalance[] = [];
-    let currentBalance = startingBalance;
+    let runningBalance = startingBalance;
 
     // Group events by date
     const eventsByDate = events.reduce((acc, event) => {
@@ -219,24 +221,47 @@ export const useSafeSpending = () => {
       return acc;
     }, {} as Record<string, CashFlowEvent[]>);
 
+    console.log('Events by date:', eventsByDate);
+
     // Project each day
-    for (let i = 0; i < days; i++) {
+    for (let i = 1; i <= days; i++) {
       const date = new Date(today);
       date.setDate(date.getDate() + i);
       const dateStr = formatDate(date);
 
-      // Calculate net change for this day
+      // Get events for this day
       const dayEvents = eventsByDate[dateStr] || [];
-      const netChange = dayEvents.reduce((sum, event) => {
-        return sum + (event.type === 'inflow' ? event.amount : -event.amount);
-      }, 0);
+      
+      // Calculate net change
+      let dayInflow = 0;
+      let dayOutflow = 0;
+      
+      dayEvents.forEach(event => {
+        if (event.type === 'inflow') {
+          dayInflow += event.amount;
+        } else {
+          dayOutflow += event.amount;
+        }
+      });
 
-      currentBalance += netChange;
+      const netChange = dayInflow - dayOutflow;
+      runningBalance += netChange;
 
       balances.push({
         date: dateStr,
-        balance: currentBalance
+        balance: runningBalance
       });
+
+      // Log first 15 days for debugging
+      if (i <= 15) {
+        console.log(`Day ${i} (${dateStr}):`, {
+          inflow: dayInflow,
+          outflow: dayOutflow,
+          netChange,
+          runningBalance,
+          events: dayEvents.map(e => `${e.type}: $${e.amount} (${e.source})`)
+        });
+      }
     }
 
     return balances;
