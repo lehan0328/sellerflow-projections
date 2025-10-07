@@ -399,6 +399,43 @@ export const useVendors = () => {
     }
   };
 
+  const cleanupOrphanedVendors = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Delete vendors with $0 total_owed/next_payment_amount and no next_payment_date
+      const { data: orphaned, error: queryError } = await supabase
+        .from('vendors')
+        .select('id, name')
+        .eq('user_id', user.id)
+        .or('total_owed.eq.0,total_owed.is.null')
+        .or('next_payment_amount.eq.0,next_payment_amount.is.null');
+
+      if (queryError) throw queryError;
+
+      if (orphaned && orphaned.length > 0) {
+        console.log('🧹 Cleaning up orphaned vendors:', orphaned.map(v => v.name));
+        
+        const { error: deleteError } = await supabase
+          .from('vendors')
+          .delete()
+          .in('id', orphaned.map(v => v.id));
+
+        if (deleteError) throw deleteError;
+
+        await fetchVendors();
+
+        toast({
+          title: "Cleanup Complete",
+          description: `Removed ${orphaned.length} orphaned vendor${orphaned.length > 1 ? 's' : ''}`,
+        });
+      }
+    } catch (error) {
+      console.error('Error cleaning up orphaned vendors:', error);
+    }
+  };
+
   return {
     vendors,
     loading,
@@ -406,6 +443,7 @@ export const useVendors = () => {
     updateVendor,
     deleteVendor,
     deleteAllVendors,
+    cleanupOrphanedVendors,
     refetch: fetchVendors
   };
 };

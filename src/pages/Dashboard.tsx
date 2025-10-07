@@ -57,7 +57,7 @@ const Dashboard = () => {
   const [vendorTxRefresh, setVendorTxRefresh] = useState(0);
   
   // Use database hooks
-  const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, refetch: refetchVendors } = useVendors();
+  const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, cleanupOrphanedVendors, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction, refetch: refetchTransactions } = useTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { creditCards } = useCreditCards();
@@ -117,6 +117,16 @@ const Dashboard = () => {
       localStorage.setItem('balance_start_0', 'true');
     }
   }, [userSettingsCash, setStartingBalance]);
+
+  // Cleanup orphaned vendors on mount
+  React.useEffect(() => {
+    const cleaned = localStorage.getItem('vendors_cleaned');
+    if (!cleaned) {
+      cleanupOrphanedVendors?.();
+      localStorage.setItem('vendors_cleaned', 'true');
+    }
+  }, [cleanupOrphanedVendors]);
+
   const { customers, addCustomer, deleteAllCustomers } = useCustomers();
   
   // State for vendors used in forms (derived from database vendors) - always fresh data
