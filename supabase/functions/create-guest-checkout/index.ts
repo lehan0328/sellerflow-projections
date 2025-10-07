@@ -53,6 +53,7 @@ serve(async (req) => {
       customer_email: customerId ? undefined : email,
       line_items: finalLineItems,
       mode: "subscription",
+      payment_method_collection: "if_required", // No card needed for trial
       subscription_data: {
         trial_period_days: 7,
       },

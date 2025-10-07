@@ -270,12 +270,12 @@ const Landing = () => {
     <div className="min-h-screen bg-background">
       <Helmet>
         <title>Auren - Cash Flow Forecasting for Amazon Sellers | Predict Payouts & Manage Finances</title>
-        <meta name="description" content="Forecast Amazon payouts, track expenses, and avoid cash shortfalls with Auren. AI-powered insights, 365-day projections, and real-time dashboards for marketplace sellers." />
+        <meta name="description" content="Forecast Amazon payouts, track expenses, and avoid cash shortfalls with Auren. AI-powered insights, 365-day projections, and real-time dashboards. Start your 7-day free trial - no credit card required." />
         <link rel="canonical" href="https://aurenapp.com" />
         
         {/* Open Graph */}
         <meta property="og:title" content="Auren - Cash Flow Forecasting for Amazon Sellers" />
-        <meta property="og:description" content="Predict Amazon payouts and manage seller cash flow with 95% accuracy. Start your free trial today." />
+        <meta property="og:description" content="Predict Amazon payouts and manage seller cash flow with 95% accuracy. Start your free trial today - no credit card required." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://aurenapp.com" />
         <meta property="og:image" content="https://aurenapp.com/assets/og-image.png" />
@@ -310,14 +310,17 @@ const Landing = () => {
       {/* Sticky CTA */}
       {showStickyCTA && (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t shadow-lg animate-slide-up">
-          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-primary" />
-              <span className="font-semibold">Get clarity before your next Amazon payout</span>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                <span className="font-semibold">Get clarity before your next Amazon payout</span>
+                <span className="text-xs text-muted-foreground hidden sm:inline">No credit card required</span>
+              </div>
             </div>
             <Button 
               onClick={() => handleStartTrial(pricingPlans[1].priceId)}
-              className="bg-gradient-primary"
+              className="bg-gradient-primary whitespace-nowrap"
               disabled={isLoading}
             >
               Start Free Trial
@@ -446,6 +449,10 @@ const Landing = () => {
                   <ArrowRight className="relative z-10 ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
                   <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </Button>
+                <div className="flex flex-col sm:hidden text-xs text-muted-foreground">
+                  <span>✓ No credit card required</span>
+                  <span>✓ Cancel anytime</span>
+                </div>
                 <Button 
                   size="lg" 
                   variant="outline"
@@ -480,6 +487,10 @@ const Landing = () => {
                   <span className="ml-2 text-sm text-muted-foreground">
                     <span className="font-semibold text-foreground">4.9</span>/5 rating
                   </span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-primary">No credit card required</span>
                 </div>
               </div>
               
@@ -939,6 +950,11 @@ const Landing = () => {
                         >
                           {isLoading ? "Loading..." : plan.name === "Enterprise" ? "Customize Plan" : "Start Trial"}
                         </Button>
+                        {plan.name !== "Enterprise" && (
+                          <p className="text-xs text-muted-foreground text-center mt-2">
+                            No credit card required
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1289,7 +1305,7 @@ const Landing = () => {
             </Button>
           </div>
           <p className="text-sm opacity-75">
-            7-day free trial • Cancel anytime
+            7-day free trial • No credit card required • Cancel anytime
           </p>
         </div>
       </section>
@@ -1636,7 +1652,7 @@ const Landing = () => {
               {isLoading ? "Processing..." : "Start 7-Day Free Trial"}
             </Button>
             <p className="text-xs text-center text-muted-foreground">
-              Then ${calculateEnterprisePrice()}/{isYearly ? 'year' : 'month'}. Cancel anytime during your 7-day free trial.
+              No credit card required. Then ${calculateEnterprisePrice()}/{isYearly ? 'year' : 'month'}. Cancel anytime during your 7-day free trial.
             </p>
           </div>
         </DialogContent>

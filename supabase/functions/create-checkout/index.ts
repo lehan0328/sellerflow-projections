@@ -112,6 +112,7 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: finalLineItems,
       mode: "subscription",
+      payment_method_collection: "if_required", // No card needed for trial
       success_url: `${req.headers.get("origin")}/dashboard?subscription=success`,
       cancel_url: `${req.headers.get("origin")}/upgrade-plan?subscription=canceled`,
     };
