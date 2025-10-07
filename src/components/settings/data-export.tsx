@@ -113,11 +113,17 @@ export const DataExport = () => {
     return data || [];
   };
 
-  const convertToCSV = (data: any[]) => {
+  const convertToCSV = (data: any[], exportType: string) => {
     if (data.length === 0) return '';
 
-    // Define headers
-    const headers = ['Created Date', 'Description/PO', 'Amount', 'Due Date', 'Last Remarks'];
+    // Define headers based on transaction type
+    let headers: string[];
+    if (exportType === 'vendor') {
+      headers = ['Created Date', 'PO', 'Amount', 'Due Date', 'Remarks'];
+    } else {
+      // For income and recurring transactions
+      headers = ['Created Date', 'Description', 'Amount', 'Due Date', 'Remarks'];
+    }
     
     // Map data to required fields based on transaction type
     const rows = data.map(row => {
@@ -182,7 +188,7 @@ export const DataExport = () => {
       const timestamp = format(new Date(), 'yyyy-MM-dd-HHmmss');
       const filename = `${selectedExportType}-transactions-${timestamp}`;
 
-      const csvContent = convertToCSV(data);
+      const csvContent = convertToCSV(data, selectedExportType);
       downloadFile(csvContent, `${filename}.csv`, 'text/csv');
       toast.success(`Exported ${data.length} transactions as CSV`);
     } catch (error) {
