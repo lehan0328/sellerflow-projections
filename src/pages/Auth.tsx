@@ -169,52 +169,6 @@ export const Auth = () => {
     }
   };
 
-  const handleNewPasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!newPasswordData.password || !newPasswordData.confirmPassword) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-
-    if (newPasswordData.password.length < 6) {
-      toast.error('Password must be at least 6 characters long');
-      return;
-    }
-
-    if (newPasswordData.password !== newPasswordData.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.updateUser({
-        password: newPasswordData.password
-      });
-
-      if (error) {
-        console.error('Password update error:', error);
-        toast.error(error.message || 'Failed to update password. Please try again.');
-      } else {
-        console.log('Password updated successfully:', data);
-        toast.success('Password updated successfully! Redirecting to dashboard...');
-        setShowNewPasswordForm(false);
-        setNewPasswordData({ password: '', confirmPassword: '' });
-        // Clear the hash from URL
-        window.location.hash = '';
-        // Wait a moment then redirect
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1500);
-      }
-    } catch (error: any) {
-      console.error('Password update error:', error);
-      toast.error('An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
 
 
   return (
