@@ -159,17 +159,10 @@ export const SignUp = () => {
           
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              Complete Your Account
+              Create Your Account
             </h1>
             <p className="text-muted-foreground mt-2">
-              Your payment method is saved! Create your account to get started.
-            </p>
-          </div>
-
-          <div className="p-4 bg-success/10 border border-success/20 rounded-lg">
-            <p className="text-sm text-success font-medium flex items-center justify-center gap-2">
-              <CheckCircle className="h-5 w-5" />
-              Payment method secured! Complete your registration below.
+              Start your 7-day free trial - no credit card required.
             </p>
           </div>
         </div>
