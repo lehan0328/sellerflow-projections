@@ -33,16 +33,17 @@ export const Auth = () => {
   });
 
   useEffect(() => {
+    // Check for password reset token
+    const token = searchParams.get('token');
+    if (token) {
+      setShowNewPasswordForm(true);
+      return;
+    }
+
     // Check if user is already authenticated
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Check if this is a password recovery session
-        if (window.location.hash.includes('type=recovery')) {
-          setShowNewPasswordForm(true);
-          return;
-        }
-        // Existing users go to dashboard
         navigate('/dashboard');
       }
     };
@@ -51,13 +52,7 @@ export const Auth = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth event:', event);
-      
-      if (event === 'PASSWORD_RECOVERY') {
-        setShowNewPasswordForm(true);
-      }
-      
-      if (event === 'SIGNED_IN' && session && !window.location.hash.includes('type=recovery')) {
+      if (event === 'SIGNED_IN' && session) {
         navigate('/dashboard');
       }
     });
@@ -102,12 +97,8 @@ export const Auth = () => {
 
     setLoading(true);
     try {
-      // Send our custom branded email with password reset link
-      const { error } = await supabase.functions.invoke('send-password-reset', {
-        body: {
-          email: resetEmail,
-          resetUrl: `${window.location.origin}/auth?mode=reset`
-        }
+      const { error } = await supabase.functions.invoke('request-password-reset', {
+        body: { email: resetEmail }
       });
 
       if (error) {
@@ -120,6 +111,58 @@ export const Auth = () => {
       }
     } catch (error) {
       console.error('Password reset error:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNewPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newPasswordData.password || !newPasswordData.confirmPassword) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    if (newPasswordData.password.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
+
+    if (newPasswordData.password !== newPasswordData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    const token = searchParams.get('token');
+    if (!token) {
+      toast.error('Invalid reset link');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-reset-token', {
+        body: {
+          token: token,
+          newPassword: newPasswordData.password
+        }
+      });
+
+      if (error) {
+        console.error('Password update error:', error);
+        toast.error(error.message || 'Failed to update password. Please try again.');
+      } else {
+        toast.success('Password updated successfully! Redirecting to sign in...');
+        setShowNewPasswordForm(false);
+        setNewPasswordData({ password: '', confirmPassword: '' });
+        setTimeout(() => {
+          navigate('/auth');
+        }, 1500);
+      }
+    } catch (error: any) {
+      console.error('Password update error:', error);
       toast.error('An unexpected error occurred');
     } finally {
       setLoading(false);
