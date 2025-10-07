@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "next-themes";
+import { CheckoutModal } from "@/components/CheckoutModal";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ const Landing = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showEnterpriseCustomizer, setShowEnterpriseCustomizer] = useState(false);
   const [showStickyCTA, setShowStickyCTA] = useState(false);
+  const [checkoutPriceId, setCheckoutPriceId] = useState<string | null>(null);
 
   // Track scroll for sticky CTA
   useEffect(() => {
@@ -106,18 +108,11 @@ const Landing = () => {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke("create-guest-checkout", {
-        body: { priceId },
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        window.location.href = data.url;
-      }
+      // Open embedded checkout modal
+      setCheckoutPriceId(priceId);
     } catch (error) {
-      console.error("Error creating checkout:", error);
-      toast.error("Failed to start checkout. Please try again.");
+      console.error("Error opening checkout:", error);
+      toast.error("Failed to open checkout. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -1660,6 +1655,15 @@ const Landing = () => {
 
       {/* Floating AI Chat Widget */}
       <FloatingChatWidget />
+
+      {/* Embedded Checkout Modal */}
+      {checkoutPriceId && (
+        <CheckoutModal
+          open={!!checkoutPriceId}
+          onOpenChange={(open) => !open && setCheckoutPriceId(null)}
+          priceId={checkoutPriceId}
+        />
+      )}
     </div>
   );
 };
