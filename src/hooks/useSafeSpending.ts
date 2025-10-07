@@ -143,12 +143,15 @@ export const useSafeSpending = () => {
           }
         });
 
-        // Subtract transactions (expenses and purchase orders)
+        // Process future transactions (both income and expenses)
         futureTransactions?.forEach(tx => {
           const txDate = new Date(tx.transaction_date).toISOString().split('T')[0];
           if (txDate === dateStr) {
-            if (tx.type === 'purchase-order' || tx.type === 'expense') {
-              dailyChange -= Math.abs(Number(tx.amount));
+            const amount = Number(tx.amount);
+            if (tx.type === 'purchase_order' || tx.type === 'expense') {
+              dailyChange -= Math.abs(amount);
+            } else if (tx.type === 'sales_order' || tx.type === 'customer_payment') {
+              dailyChange += Math.abs(amount);
             }
           }
         });
@@ -186,15 +189,25 @@ export const useSafeSpending = () => {
         ? dailyBalances.reduce((min, day) => day.balance < min.balance ? day : min)
         : { date: today, balance: totalCash };
 
+      // Check if balance ever goes negative
+      const willGoNegative = lowestBalance.balance < 0;
+      const daysUntilNegative = willGoNegative 
+        ? Math.ceil((lowestBalance.date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+        : null;
+
       // Safe Spending Logic:
-      // = Lowest Projected Cash Balance - Reserve Amount
-      // Example: If lowest cash is $78,500 and reserve is $2,000, safe spending is $76,500
-      const safeSpendingLimit = Math.max(0, lowestBalance.balance - userReserve);
+      // If balance goes negative: show 0 with warning
+      // Otherwise: = Lowest Projected Cash Balance - Reserve Amount
+      const safeSpendingLimit = willGoNegative 
+        ? 0 
+        : Math.max(0, lowestBalance.balance - userReserve);
 
       console.log('Safe Spending Debug:', {
         totalCash,
         lowestBalanceAmount: lowestBalance.balance,
         lowestBalanceDate: lowestBalance.date,
+        willGoNegative,
+        daysUntilNegative,
         userReserve,
         safeSpendingLimit,
         dailyBalancesCount: dailyBalances.length,
