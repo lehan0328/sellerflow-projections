@@ -5,17 +5,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Download, CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { format, subMonths, startOfMonth, endOfMonth, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export const DataExport = () => {
+  const { user } = useAuth();
   const [selectedExportType, setSelectedExportType] = useState<string>('');
   const [dateRange, setDateRange] = useState<string>('');
   const [exportFormat, setExportFormat] = useState<string>('');
   const [customStartDate, setCustomStartDate] = useState<Date>();
   const [customEndDate, setCustomEndDate] = useState<Date>();
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleExportTypeChange = (value: string) => {
     setSelectedExportType(value);
@@ -31,7 +35,110 @@ export const DataExport = () => {
     setShowCustomDatePicker(value === 'custom');
   };
 
-  const handleExportClick = () => {
+  const getDateRangeValues = () => {
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date = now;
+
+    switch (dateRange) {
+      case 'last-month':
+        startDate = startOfMonth(subMonths(now, 1));
+        endDate = endOfMonth(subMonths(now, 1));
+        break;
+      case 'this-month':
+        startDate = startOfMonth(now);
+        endDate = endOfMonth(now);
+        break;
+      case 'last-90-days':
+        startDate = subDays(now, 90);
+        break;
+      case 'custom':
+        startDate = customStartDate!;
+        endDate = customEndDate!;
+        break;
+      default:
+        startDate = now;
+    }
+
+    return { startDate, endDate };
+  };
+
+  const fetchTransactionData = async () => {
+    if (!user) return [];
+
+    const { startDate, endDate } = getDateRangeValues();
+    const startDateStr = format(startDate, 'yyyy-MM-dd');
+    const endDateStr = format(endDate, 'yyyy-MM-dd');
+
+    let query;
+    
+    switch (selectedExportType) {
+      case 'vendor':
+        query = supabase
+          .from('transactions')
+          .select('*, vendors(name, category)')
+          .eq('user_id', user.id)
+          .eq('type', 'purchase_order')
+          .gte('transaction_date', startDateStr)
+          .lte('transaction_date', endDateStr)
+          .order('transaction_date', { ascending: false });
+        break;
+      case 'income':
+        query = supabase
+          .from('income')
+          .select('*, customers(name)')
+          .eq('user_id', user.id)
+          .gte('payment_date', startDateStr)
+          .lte('payment_date', endDateStr)
+          .order('payment_date', { ascending: false });
+        break;
+      case 'recurring':
+        query = supabase
+          .from('recurring_expenses')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('start_date', { ascending: false });
+        break;
+      default:
+        return [];
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('Error fetching data:', error);
+      toast.error('Failed to fetch transaction data');
+      return [];
+    }
+
+    return data || [];
+  };
+
+  const convertToCSV = (data: any[]) => {
+    if (data.length === 0) return '';
+
+    const headers = Object.keys(data[0]).join(',');
+    const rows = data.map(row => 
+      Object.values(row).map(val => 
+        typeof val === 'object' ? JSON.stringify(val) : val
+      ).join(',')
+    );
+
+    return [headers, ...rows].join('\n');
+  };
+
+  const downloadFile = (content: string, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleExportClick = async () => {
     if (!selectedExportType || !dateRange || !exportFormat) {
       toast.error("Please select transaction type, date range, and export format.");
       return;
@@ -42,7 +149,33 @@ export const DataExport = () => {
       return;
     }
 
-    toast.success(`Exporting ${selectedExportType} as ${exportFormat.toUpperCase()}...`);
+    setIsExporting(true);
+
+    try {
+      const data = await fetchTransactionData();
+
+      if (data.length === 0) {
+        toast.error("No transactions found for the selected date range.");
+        setIsExporting(false);
+        return;
+      }
+
+      const timestamp = format(new Date(), 'yyyy-MM-dd-HHmmss');
+      const filename = `${selectedExportType}-transactions-${timestamp}`;
+
+      if (exportFormat === 'csv') {
+        const csvContent = convertToCSV(data);
+        downloadFile(csvContent, `${filename}.csv`, 'text/csv');
+        toast.success(`Exported ${data.length} transactions as CSV`);
+      } else if (exportFormat === 'excel' || exportFormat === 'pdf') {
+        toast.error(`${exportFormat.toUpperCase()} export is coming soon! Please use CSV for now.`);
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export data');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -157,10 +290,10 @@ export const DataExport = () => {
             <Button 
               onClick={handleExportClick}
               className="w-full"
-              disabled={!dateRange || !exportFormat || (dateRange === 'custom' && (!customStartDate || !customEndDate))}
+              disabled={!dateRange || !exportFormat || (dateRange === 'custom' && (!customStartDate || !customEndDate)) || isExporting}
             >
               <Download className="mr-2 h-4 w-4" />
-              Export
+              {isExporting ? 'Exporting...' : 'Export'}
             </Button>
           </>
         )}
