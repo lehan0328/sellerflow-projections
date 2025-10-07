@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -48,6 +49,7 @@ const Settings = () => {
   const [mounted, setMounted] = useState(false);
   const [activeSection, setActiveSection] = useState('profile');
   const queryClient = useQueryClient();
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
 
   // Fetch user profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -71,7 +73,7 @@ const Settings = () => {
 
   // Update profile mutation
   const updateProfileMutation = useMutation({
-    mutationFn: async (profileData: { first_name?: string; last_name?: string; company?: string }) => {
+    mutationFn: async (profileData: { first_name?: string; last_name?: string; company?: string; currency?: string }) => {
       if (!user?.id) throw new Error('No user ID');
       
       const { error } = await supabase
@@ -83,13 +85,20 @@ const Settings = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
-      toast.success('Profile updated successfully');
+      toast.success('Settings updated successfully');
     },
     onError: (error) => {
       console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
+      toast.error('Failed to update settings');
     },
   });
+
+  // Set currency from profile data
+  useEffect(() => {
+    if (profile?.currency) {
+      setSelectedCurrency(profile.currency);
+    }
+  }, [profile]);
 
   // Update active section based on location state or URL params
   useEffect(() => {
@@ -310,13 +319,32 @@ const Settings = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
+        <div className="space-y-2">
           <Label htmlFor="default-currency">Default Currency</Label>
-          <Input id="default-currency" value="USD" disabled />
-        </div>
-        <div>
-          <Label htmlFor="fiscal-year">Fiscal Year Start</Label>
-          <Input id="fiscal-year" type="month" defaultValue="2024-01" />
+          <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+            <SelectTrigger id="default-currency" className="bg-background">
+              <SelectValue placeholder="Select currency" />
+            </SelectTrigger>
+            <SelectContent className="bg-popover z-50">
+              <SelectItem value="USD">USD - US Dollar ($)</SelectItem>
+              <SelectItem value="EUR">EUR - Euro (€)</SelectItem>
+              <SelectItem value="GBP">GBP - British Pound (£)</SelectItem>
+              <SelectItem value="CAD">CAD - Canadian Dollar (C$)</SelectItem>
+              <SelectItem value="AUD">AUD - Australian Dollar (A$)</SelectItem>
+              <SelectItem value="JPY">JPY - Japanese Yen (¥)</SelectItem>
+              <SelectItem value="CNY">CNY - Chinese Yuan (¥)</SelectItem>
+              <SelectItem value="INR">INR - Indian Rupee (₹)</SelectItem>
+              <SelectItem value="MXN">MXN - Mexican Peso ($)</SelectItem>
+              <SelectItem value="BRL">BRL - Brazilian Real (R$)</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button 
+            onClick={() => updateProfileMutation.mutate({ currency: selectedCurrency })}
+            disabled={updateProfileMutation.isPending || selectedCurrency === profile?.currency}
+            className="w-full mt-2"
+          >
+            {updateProfileMutation.isPending ? 'Saving...' : 'Save Currency'}
+          </Button>
         </div>
         <div className="flex items-center space-x-2">
           <Switch id="auto-categorize" />
