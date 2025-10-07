@@ -125,7 +125,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
             </div>
           </div>
 
-          {/* Available Plans - Side by Side */}
+          {/* Available Plans - Side by Side with Comparison */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             {availablePlans.map((planData, index) => {
               const plan = planData.plan;
@@ -135,12 +135,11 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
               return (
                 <div
                   key={plan.priceId}
-                  className={`border rounded-lg p-6 space-y-4 cursor-pointer transition-all ${
+                  className={`border rounded-lg p-6 space-y-4 transition-all ${
                     isSelected
                       ? 'bg-gradient-to-br from-primary/10 to-accent/10 border-primary shadow-lg'
-                      : 'bg-gradient-to-br from-primary/5 to-accent/5 hover:border-primary/50'
+                      : 'bg-gradient-to-br from-primary/5 to-accent/5 border-border'
                   }`}
-                  onClick={() => setSelectedPlanId(plan.priceId)}
                 >
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -150,19 +149,30 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                       )}
                     </div>
                     {isRecommended && userRevenue && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-xs mb-3">
                         For {userRevenue} revenue
                       </Badge>
                     )}
-                    <div className="mt-3">
+                    <div className="mt-3 mb-4">
                       <div className="text-3xl font-bold">${plan.price}</div>
                       <div className="text-sm text-muted-foreground">/month</div>
                     </div>
+
+                    <Button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        window.location.href = `/upgrade-plan?priceId=${plan.priceId}`;
+                      }}
+                      className="w-full bg-gradient-primary h-11 text-sm font-semibold mb-4"
+                      size="lg"
+                    >
+                      Pay Now - ${plan.price}/mo
+                    </Button>
                   </div>
 
-                  <div className="space-y-2 pt-4">
-                    <p className="font-semibold text-xs uppercase text-muted-foreground">Features</p>
-                    <ul className="space-y-2">
+                  <div className="space-y-2 pt-2 border-t">
+                    <p className="font-semibold text-xs uppercase text-muted-foreground mb-3">Features</p>
+                    <ul className="space-y-2.5">
                       {allFeatures.map((feature: string, featureIndex: number) => {
                         const hasFeature = plan.features.includes(feature);
                         return (
@@ -170,9 +180,9 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                             {hasFeature ? (
                               <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                             ) : (
-                              <X className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                              <X className="h-4 w-4 text-muted-foreground/40 shrink-0 mt-0.5" />
                             )}
-                            <span className={`text-xs ${!hasFeature && 'text-muted-foreground'}`}>
+                            <span className={`text-xs leading-relaxed ${!hasFeature && 'text-muted-foreground/60 line-through'}`}>
                               {feature}
                             </span>
                           </li>
@@ -185,16 +195,9 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
             })}
           </div>
 
-          <Button 
-            onClick={(e) => {
-              e.preventDefault();
-              window.location.href = `/upgrade-plan?priceId=${selectedPlanId}`;
-            }}
-            className="w-full bg-gradient-primary h-12 text-base font-semibold"
-            size="lg"
-          >
-            Pay Now - ${availablePlans.find(p => p.plan.priceId === selectedPlanId)?.plan.price}/month
-          </Button>
+          <p className="text-xs text-center text-muted-foreground">
+            All plans include secure payment processing and can be cancelled anytime
+          </p>
         </div>
       </DialogContent>
     </Dialog>
