@@ -55,37 +55,17 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId;
     let hasExistingSubscription = false;
-    let hasEverHadTrial = false;
     let currentSubscription = null;
     
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-      const customer = customers.data[0];
       logStep("Existing customer found", { customerId });
       
-      // Check metadata for trial usage tracking
-      hasEverHadTrial = customer.metadata?.trial_used === 'true';
-      logStep("Customer trial history from metadata", { hasEverHadTrial });
-      
-      // Check ALL subscriptions (including canceled) to verify trial usage
+      // Check ALL subscriptions to find current active one
       const allSubscriptions = await stripe.subscriptions.list({
         customer: customerId,
-        limit: 100, // Get all subscriptions to check history
+        limit: 100,
       });
-      
-      // Check if customer has ever had a trial (even if canceled)
-      const hadTrialBefore = allSubscriptions.data.some(
-        sub => sub.trial_end !== null || sub.status === 'trialing'
-      );
-      
-      if (hadTrialBefore && !hasEverHadTrial) {
-        // Update customer metadata to mark trial as used
-        await stripe.customers.update(customerId, {
-          metadata: { trial_used: 'true' }
-        });
-        hasEverHadTrial = true;
-        logStep("Updated customer metadata - trial marked as used");
-      }
       
       // Check for current active or trialing subscription
       currentSubscription = allSubscriptions.data.find(
@@ -96,17 +76,15 @@ serve(async (req) => {
       
       logStep("Checked subscription history", { 
         hasExistingSubscription,
-        hasEverHadTrial,
         currentSubscriptionId: currentSubscription?.id,
         currentStatus: currentSubscription?.status,
         totalSubscriptions: allSubscriptions.data.length
       });
     } else {
-      // New customer - create with metadata
-      logStep("New customer - will track trial usage");
+      logStep("New customer");
     }
 
-    // Create checkout session
+    // Create checkout session - simplified without trial logic
     const sessionConfig: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -115,24 +93,12 @@ serve(async (req) => {
       success_url: `${req.headers.get("origin")}/dashboard?subscription=success`,
       cancel_url: `${req.headers.get("origin")}/upgrade-plan?subscription=canceled`,
       allow_promotion_codes: true,
+      payment_method_collection: "always", // Always require payment method
     };
     
-    // Trial logic: Only offer trial if customer has NEVER had one before
-    if (!hasEverHadTrial && !hasExistingSubscription) {
-      sessionConfig.subscription_data = {
-        trial_period_days: 7,
-        metadata: {
-          trial_used: 'true'
-        }
-      };
-      sessionConfig.payment_method_collection = "if_required"; // No card needed for trial
-      logStep("Adding 7-day trial for first-time customer");
-    } else if (hasEverHadTrial && !hasExistingSubscription) {
-      sessionConfig.payment_method_collection = "always"; // Require payment for non-trial
-      logStep("Skipping trial - customer has used trial before");
-    } else if (hasExistingSubscription && currentSubscription) {
-      // When upgrading from existing subscription, schedule new subscription 
-      // to start when current period ends (no immediate charge)
+    // If upgrading from existing subscription, schedule new subscription 
+    // to start when current period ends (no immediate charge)
+    if (hasExistingSubscription && currentSubscription) {
       const currentPeriodEnd = currentSubscription.current_period_end;
       sessionConfig.subscription_data = {
         trial_end: currentPeriodEnd, // New subscription starts after current one
@@ -146,8 +112,7 @@ serve(async (req) => {
         currentPeriodEndDate: new Date(currentPeriodEnd * 1000).toISOString()
       });
     } else {
-      // Default case: require payment method
-      sessionConfig.payment_method_collection = "always";
+      logStep("Creating standard subscription checkout - payment required");
     }
     
     const session = await stripe.checkout.sessions.create(sessionConfig);
