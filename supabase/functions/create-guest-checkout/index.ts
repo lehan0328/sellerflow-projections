@@ -47,18 +47,18 @@ serve(async (req) => {
       }
     }
 
-    // Create checkout session for guest
+    // Create checkout session with trial that doesn't require payment
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : email,
       line_items: finalLineItems,
       mode: "subscription",
-      payment_method_collection: "if_required", // No card needed for trial
-      subscription_data: {
+      payment_method_collection: isEnterprise ? 'always' : 'if_required', // No card for trial
+      subscription_data: isEnterprise ? undefined : {
         trial_period_days: 7,
       },
-      success_url: `${req.headers.get("origin")}/signup?checkout=success&session_id={CHECKOUT_SESSION_ID}${isEnterprise ? '&enterprise=true' : ''}`,
-      cancel_url: `${req.headers.get("origin")}/?checkout=canceled`,
+      success_url: `${req.headers.get("origin")}/dashboard?payment=success`,
+      cancel_url: `${req.headers.get("origin")}/?payment=canceled`,
       allow_promotion_codes: true,
     });
 

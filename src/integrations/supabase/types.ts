@@ -932,6 +932,7 @@ export type Database = {
           created_at: string
           id: string
           safe_spending_percentage: number | null
+          safe_spending_reserve: number | null
           total_cash: number | null
           updated_at: string
           user_id: string
@@ -940,6 +941,7 @@ export type Database = {
           created_at?: string
           id?: string
           safe_spending_percentage?: number | null
+          safe_spending_reserve?: number | null
           total_cash?: number | null
           updated_at?: string
           user_id: string
@@ -948,6 +950,7 @@ export type Database = {
           created_at?: string
           id?: string
           safe_spending_percentage?: number | null
+          safe_spending_reserve?: number | null
           total_cash?: number | null
           updated_at?: string
           user_id?: string

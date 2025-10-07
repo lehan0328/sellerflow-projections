@@ -21,8 +21,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "next-themes";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -109,11 +107,29 @@ const Landing = () => {
         return;
       }
 
-      // Open embedded checkout modal
-      setCheckoutPriceId(priceId);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        navigate("/auth");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-guest-checkout', {
+        body: { 
+          priceId,
+          email: session.user.email,
+          isEnterprise: false
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
     } catch (error) {
-      console.error("Error opening checkout:", error);
-      toast.error("Failed to open checkout. Please try again.");
+      console.error("Error starting trial:", error);
+      toast.error("Failed to start trial. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -1656,15 +1672,6 @@ const Landing = () => {
 
       {/* Floating AI Chat Widget */}
       <FloatingChatWidget />
-
-      {/* Embedded Checkout Modal */}
-      {checkoutPriceId && (
-        <CheckoutModal
-          open={!!checkoutPriceId}
-          onOpenChange={(open) => !open && setCheckoutPriceId(null)}
-          priceId={checkoutPriceId}
-        />
-      )}
     </div>
   );
 };
