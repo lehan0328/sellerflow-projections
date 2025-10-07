@@ -515,9 +515,24 @@ const Landing = () => {
 
             {/* Right Dashboard Preview */}
             <div 
-              className="relative animate-fade-in"
+              className="relative animate-fade-in space-y-4"
               style={{ animationDelay: '400ms' }}
             >
+              {/* Try Interactive Demo Button - Above Dashboard */}
+              <div className="flex justify-center">
+                <Button 
+                  size="lg"
+                  onClick={() => navigate('/demo')}
+                  className="bg-gradient-primary text-lg px-8 py-6 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 relative overflow-hidden group"
+                >
+                  <span className="relative z-10 flex items-center gap-2">
+                    <ExternalLink className="h-5 w-5" />
+                    Try Interactive Demo
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                </Button>
+              </div>
+
               {/* Floating Card Effect */}
               <div className="relative animate-float">
                 {/* Glow effect */}
