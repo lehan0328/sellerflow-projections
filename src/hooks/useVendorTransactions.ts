@@ -9,11 +9,13 @@ export interface VendorTransaction {
   amount: number;
   dueDate: Date;
   transactionDate: Date;
-  status: 'pending' | 'completed' | 'paid';
+  status: 'pending' | 'completed' | 'paid' | 'partially_paid';
   description: string;
   category?: string;
   type: string;
   remarks?: string;
+  amountPaid?: number;
+  remainingBalance?: number;
 }
 
 export const useVendorTransactions = () => {
@@ -185,10 +187,72 @@ export const useVendorTransactions = () => {
     };
   }, []);
 
+  const markAsPartiallyPaid = async (
+    transactionId: string,
+    amountPaid: number,
+    remainingBalance: number,
+    newDueDate: Date
+  ) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Get the original transaction
+      const originalTx = transactions.find(tx => tx.id === transactionId);
+      if (!originalTx) throw new Error('Transaction not found');
+
+      // Update the current transaction as partially paid
+      const { error: updateError } = await supabase
+        .from('transactions')
+        .update({
+          status: 'partially_paid',
+          remarks: 'Partially Paid',
+          amount: amountPaid,
+        } as any)
+        .eq('id', transactionId);
+
+      if (updateError) throw updateError;
+
+      // Create a new transaction for the remaining balance
+      const { error: insertError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          vendor_id: originalTx.vendorId,
+          type: 'purchase_order',
+          amount: remainingBalance,
+          due_date: formatDateForDB(newDueDate),
+          transaction_date: formatDateForDB(new Date()),
+          status: 'pending',
+          description: `${originalTx.description} - Remaining Balance`,
+          remarks: `Partially Paid - Remaining from ${originalTx.description}`,
+        } as any);
+
+      if (insertError) throw insertError;
+
+      // Refresh the transactions list
+      await fetchVendorTransactions();
+
+      toast({
+        title: "Success",
+        description: `Partial payment recorded. New transaction created for remaining balance of $${remainingBalance.toLocaleString()}`,
+      });
+    } catch (error) {
+      console.error('Error processing partial payment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process partial payment",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   return {
     transactions,
     loading,
     markAsPaid,
+    markAsPartiallyPaid,
     updateRemarks,
     deleteTransaction,
     refetch: fetchVendorTransactions

@@ -18,6 +18,7 @@ import { useVendorTransactions, type VendorTransaction } from "@/hooks/useVendor
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { VendorOrderDetailModal } from "./vendor-order-detail-modal";
 import { TransactionEditModal } from "./transaction-edit-modal";
+import { PartialPaymentModal } from "./partial-payment-modal";
 import { useTransactionMatching } from "@/hooks/useTransactionMatching";
 import { BankTransaction } from "./bank-transaction-log";
 import { toast } from "sonner";
@@ -31,7 +32,7 @@ interface VendorsOverviewProps {
 
 export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refreshKey }: VendorsOverviewProps) => {
   const navigate = useNavigate();
-  const { transactions, markAsPaid, updateRemarks, deleteTransaction, refetch } = useVendorTransactions();
+  const { transactions, markAsPaid, markAsPartiallyPaid, updateRemarks, deleteTransaction, refetch } = useVendorTransactions();
   const { vendors } = useVendors();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVendor, setSelectedVendor] = useState<string>('');
@@ -43,6 +44,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
   const [dateRange, setDateRange] = useState<string>("all");
   const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
   const [customToDate, setCustomToDate] = useState<Date | undefined>();
+  const [partialPaymentTx, setPartialPaymentTx] = useState<VendorTransaction | null>(null);
 
   // Force refresh when parent signals
   useEffect(() => {
@@ -162,6 +164,25 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
       onVendorUpdate?.();
     } catch (error) {
       console.error('Error processing payment:', error);
+    }
+  };
+
+  const handlePartialPayment = async (data: {
+    transactionId: string;
+    amountPaid: number;
+    remainingBalance: number;
+    newDueDate: Date;
+  }) => {
+    try {
+      await markAsPartiallyPaid(
+        data.transactionId,
+        data.amountPaid,
+        data.remainingBalance,
+        data.newDueDate
+      );
+      onVendorUpdate?.();
+    } catch (error) {
+      console.error('Error processing partial payment:', error);
     }
   };
 
@@ -398,13 +419,14 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                 <TableHead>Due Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Remarks</TableHead>
+                <TableHead>Remaining</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAndSortedTransactions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                     {selectedVendor ? `No purchase orders found for ${vendorSearchOptions.find(v => v.value === selectedVendor)?.label || selectedVendor}.` :
                      searchTerm ? 'No transactions found matching your search.' : 
                      'No vendor purchase orders.'}
@@ -442,8 +464,18 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                           <SelectItem value="Shipped">Shipped</SelectItem>
                           <SelectItem value="Delayed">Delayed</SelectItem>
                           <SelectItem value="Received">Received</SelectItem>
+                          <SelectItem value="Partially Paid">Partially Paid</SelectItem>
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell>
+                      {tx.status === 'partially_paid' && tx.remainingBalance ? (
+                        <span className="text-xs font-semibold text-primary">
+                          ${tx.remainingBalance.toLocaleString()}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">
@@ -485,13 +517,21 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Mark as Paid</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      This will mark the payment as completed. Continue?
+                                      This will mark the payment as fully completed. Continue?
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <Button
+                                      variant="outline"
+                                      onClick={() => {
+                                        setPartialPaymentTx(tx);
+                                      }}
+                                    >
+                                      Mark as Partially Paid
+                                    </Button>
                                     <AlertDialogAction onClick={() => handlePayToday(tx.id)}>
-                                      Mark as Paid
+                                      Mark as Fully Paid
                                     </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
@@ -563,6 +603,18 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
           refetch();
           onVendorUpdate?.();
         }}
+      />
+
+      <PartialPaymentModal
+        open={!!partialPaymentTx}
+        onOpenChange={(open) => {
+          if (!open) setPartialPaymentTx(null);
+        }}
+        transactionId={partialPaymentTx?.id || ''}
+        totalAmount={partialPaymentTx?.amount || 0}
+        vendorName={partialPaymentTx?.vendorName || ''}
+        poNumber={partialPaymentTx?.description || ''}
+        onConfirm={handlePartialPayment}
       />
     </Card>
   );
