@@ -96,44 +96,51 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
 
   if (!recommendedPlan || availablePlans.length === 0) return null;
 
-  // Define complete feature lists for each plan
+  // Define complete feature lists for each plan with included flag
   const planFeatures = {
     starter: [
-      "Up to $20k monthly Amazon payout",
-      "2 bank/credit card connections",
-      "1 Amazon connection",
-      "Advance forecasting workflow",
-      "365 day cashflow projection",
-      "Bank transaction matching",
-      "Email support"
+      { text: "Up to $20k monthly Amazon payout", included: true },
+      { text: "2 bank/credit card connections", included: true },
+      { text: "1 Amazon connection", included: true },
+      { text: "Advance forecasting workflow", included: true },
+      { text: "365 day cashflow projection", included: true },
+      { text: "Bank transaction matching", included: true },
+      { text: "Email support", included: true },
+      { text: "Additional users", included: false },
+      { text: "AI insights", included: false },
+      { text: "AI PDF extractor", included: false },
+      { text: "Automated notifications", included: false },
+      { text: "Scenario planning", included: false },
     ],
     growing: [
-      "Up to $50k monthly Amazon payout",
-      "4 bank/credit card connections",
-      "1 Amazon connection",
-      "AI insights",
-      "AI PDF extractor",
-      "2 additional users",
-      "Advance forecasting workflow",
-      "365 day cashflow projection",
-      "Bank transaction matching",
-      "Basic analytics",
-      "Priority support"
+      { text: "Up to $50k monthly Amazon payout", included: true },
+      { text: "4 bank/credit card connections", included: true },
+      { text: "1 Amazon connection", included: true },
+      { text: "AI insights", included: true },
+      { text: "AI PDF extractor", included: true },
+      { text: "2 additional users", included: true },
+      { text: "Advance forecasting workflow", included: true },
+      { text: "365 day cashflow projection", included: true },
+      { text: "Bank transaction matching", included: true },
+      { text: "Basic analytics", included: true },
+      { text: "Priority support", included: true },
+      { text: "Automated notifications", included: false },
+      { text: "Scenario planning", included: false },
     ],
     professional: [
-      "Up to $200k monthly Amazon payout",
-      "7 bank/credit card connections",
-      "1 Amazon connection",
-      "AI insights",
-      "AI PDF extractor",
-      "5 additional users",
-      "Automated notification",
-      "Advance forecasting workflow",
-      "365 day cashflow projection",
-      "Bank transaction matching",
-      "Scenario planning",
-      "Advanced analytics",
-      "Priority support"
+      { text: "Up to $200k monthly Amazon payout", included: true },
+      { text: "7 bank/credit card connections", included: true },
+      { text: "1 Amazon connection", included: true },
+      { text: "AI insights", included: true },
+      { text: "AI PDF extractor", included: true },
+      { text: "5 additional users", included: true },
+      { text: "Automated notification", included: true },
+      { text: "Advance forecasting workflow", included: true },
+      { text: "365 day cashflow projection", included: true },
+      { text: "Bank transaction matching", included: true },
+      { text: "Scenario planning", included: true },
+      { text: "Advanced analytics", included: true },
+      { text: "Priority support", included: true },
     ]
   };
 
@@ -141,7 +148,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
   const plansToDisplay = availablePlans.slice(0, 2).map((planData, index) => {
     const plan = planData.plan;
     const isRecommended = index === 0;
-    let features: string[] = [];
+    let features: Array<{ text: string; included: boolean }> = [];
 
     // Match features based on plan name
     if (plan.name === "Starter") {
@@ -229,9 +236,13 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                   <ul className="space-y-1.5">
                     {plan.features.map((feature, index) => (
                       <li key={index} className="flex items-start gap-2">
-                        <Check className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-                        <span className="text-xs leading-relaxed">
-                          {feature}
+                        {feature.included ? (
+                          <Check className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                        ) : (
+                          <X className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 mt-0.5" />
+                        )}
+                        <span className={`text-xs leading-relaxed ${!feature.included && 'text-muted-foreground/60'}`}>
+                          {feature.text}
                         </span>
                       </li>
                     ))}
