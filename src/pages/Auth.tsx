@@ -15,7 +15,9 @@ export const Auth = () => {
   const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showResetForm, setShowResetForm] = useState(false);
+  const [showNewPasswordForm, setShowNewPasswordForm] = useState(false);
   const [showEnterpriseSetup, setShowEnterpriseSetup] = useState(false);
 
   // Sign in form data
@@ -25,8 +27,19 @@ export const Auth = () => {
   });
 
   const [resetEmail, setResetEmail] = useState('');
+  const [newPasswordData, setNewPasswordData] = useState({
+    password: '',
+    confirmPassword: ''
+  });
 
   useEffect(() => {
+    // Check if we're in password reset mode
+    const mode = searchParams.get('mode');
+    if (mode === 'reset') {
+      setShowNewPasswordForm(true);
+      return;
+    }
+
     // Check if user is already authenticated
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -43,10 +56,15 @@ export const Auth = () => {
       if (event === 'SIGNED_IN' && session) {
         navigate('/dashboard');
       }
+      
+      // Handle password recovery
+      if (event === 'PASSWORD_RECOVERY') {
+        setShowNewPasswordForm(true);
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,11 +103,8 @@ export const Auth = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('send-password-reset', {
-        body: {
-          email: resetEmail,
-          resetUrl: `${window.location.origin}/auth?mode=reset&email=${encodeURIComponent(resetEmail)}`
-        }
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/auth?mode=reset`,
       });
 
       if (error) {
@@ -102,6 +117,47 @@ export const Auth = () => {
       }
     } catch (error) {
       console.error('Password reset error:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNewPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newPasswordData.password || !newPasswordData.confirmPassword) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    if (newPasswordData.password.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
+
+    if (newPasswordData.password !== newPasswordData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPasswordData.password
+      });
+
+      if (error) {
+        console.error('Password update error:', error);
+        toast.error('Failed to update password. Please try again.');
+      } else {
+        toast.success('Password updated successfully! You can now sign in.');
+        setShowNewPasswordForm(false);
+        setNewPasswordData({ password: '', confirmPassword: '' });
+        navigate('/auth');
+      }
+    } catch (error) {
+      console.error('Password update error:', error);
       toast.error('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -148,10 +204,12 @@ export const Auth = () => {
           
           <div className="space-y-3">
             <h1 className="text-4xl font-bold tracking-tight">
-              {showResetForm ? 'Reset Password' : 'Welcome Back'}
+              {showNewPasswordForm ? 'Set New Password' : showResetForm ? 'Reset Password' : 'Welcome Back'}
             </h1>
             <p className="text-muted-foreground text-lg">
-              {showResetForm 
+              {showNewPasswordForm 
+                ? 'Enter your new password below'
+                : showResetForm 
                 ? 'Enter your email to receive a password reset link'
                 : 'Sign in to manage your Amazon business cash flow'
               }
@@ -164,7 +222,61 @@ export const Auth = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           
           <CardContent className="p-10 relative z-10">
-            {showResetForm ? (
+            {showNewPasswordForm ? (
+              <div className="space-y-4">
+                <form onSubmit={handleNewPasswordSubmit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword" className="text-base">New Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="newPassword"
+                        type={showPassword ? "text" : "password"}
+                        value={newPasswordData.password}
+                        onChange={(e) => setNewPasswordData(prev => ({ ...prev, password: e.target.value }))}
+                        required
+                        className="h-12 pr-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                        placeholder="Enter new password"
+                        minLength={6}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword" className="text-base">Confirm Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={newPasswordData.confirmPassword}
+                        onChange={(e) => setNewPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                        required
+                        className="h-12 pr-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                        placeholder="Confirm new password"
+                        minLength={6}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <Button type="submit" className="w-full bg-gradient-primary h-12 text-base font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all" disabled={loading}>
+                    {loading ? 'Updating Password...' : 'Update Password'}
+                  </Button>
+                </form>
+              </div>
+            ) : showResetForm ? (
               <div className="space-y-4">
                 <form onSubmit={handlePasswordReset} className="space-y-4">
                   <div className="space-y-2">

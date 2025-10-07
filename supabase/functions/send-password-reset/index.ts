@@ -33,7 +33,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: "Auren <noreply@aurenapp.com>",
         to: [email],
-        subject: "Reset Your CashFlow Pro Password",
+        subject: "Reset Your Auren Password",
         html: `
           <!DOCTYPE html>
           <html>
@@ -46,10 +46,8 @@ const handler = async (req: Request): Promise<Response> => {
             <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
               <!-- Header -->
               <div style="text-align: center; margin-bottom: 40px;">
-                <div style="display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; background: linear-gradient(135deg, #1e40af, #3b82f6); border-radius: 12px; margin-bottom: 16px;">
-                  <span style="color: white; font-size: 24px; font-weight: bold;">$</span>
-                </div>
-                <h1 style="margin: 0; color: #1e293b; font-size: 24px; font-weight: bold;">CashFlow Pro</h1>
+                <img src="https://ruvdqtqyfzaxlobmxgaj.supabase.co/storage/v1/object/public/assets/auren-icon-blue.png" alt="Auren" style="width: 64px; height: 64px; margin-bottom: 16px;" />
+                <h1 style="margin: 0; color: #1e293b; font-size: 24px; font-weight: bold;">Auren</h1>
               </div>
 
               <!-- Main Content -->
@@ -57,7 +55,7 @@ const handler = async (req: Request): Promise<Response> => {
                 <h2 style="margin: 0 0 24px 0; color: #1e293b; font-size: 24px; font-weight: bold;">Reset Your Password</h2>
                 
                 <p style="margin: 0 0 24px 0; color: #64748b; font-size: 16px; line-height: 1.6;">
-                  We received a request to reset your password for your CashFlow Pro account. Click the button below to create a new password.
+                  We received a request to reset your password for your Auren account. Click the button below to create a new password.
                 </p>
 
                 <div style="text-align: center; margin: 32px 0;">
@@ -84,7 +82,7 @@ const handler = async (req: Request): Promise<Response> => {
               <!-- Footer -->
               <div style="text-align: center; margin-top: 40px;">
                 <p style="margin: 0; color: #94a3b8; font-size: 14px;">
-                  © 2024 CashFlow Pro. All rights reserved.
+                  © 2024 Auren. All rights reserved.
                 </p>
                 <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 12px;">
                   This email was sent to ${email}
