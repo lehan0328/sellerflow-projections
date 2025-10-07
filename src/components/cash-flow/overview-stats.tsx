@@ -295,10 +295,10 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                         </p>
                       </div>
                       <p className="text-xs text-red-600 mt-1 font-semibold">
-                        ⚠️ Will go negative on {new Date(safeSpendingData.negative_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        ⚠️ Will go {formatCurrency(Math.abs(safeSpendingData.calculation.lowest_projected_balance))} negative
                       </p>
-                      <p className="text-xs text-slate-600 mt-1">
-                        Reserve: ${safeSpendingData.reserve_amount.toLocaleString()}
+                      <p className="text-xs text-red-600">
+                        on {new Date(safeSpendingData.negative_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </p>
                     </>
                   ) : (
