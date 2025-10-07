@@ -66,9 +66,41 @@ const handler = async (req: Request): Promise<Response> => {
       .update({ used: true })
       .eq('token', token);
 
-    console.log("Password reset successful");
+    // Get user's email to sign them in
+    const { data: userData, error: userError } = await supabase.auth.admin.getUserById(
+      tokenData.user_id
+    );
 
-    return new Response(JSON.stringify({ success: true }), {
+    if (userError || !userData?.user?.email) {
+      console.error('Failed to get user data:', userError);
+      throw new Error('Failed to retrieve user information');
+    }
+
+    // Sign in the user and get session
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: userData.user.email,
+      password: newPassword
+    });
+
+    if (signInError) {
+      console.error('Failed to sign in user:', signInError);
+      // Still return success since password was updated
+      return new Response(JSON.stringify({ 
+        success: true,
+        message: 'Password updated. Please sign in with your new password.'
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    console.log("Password reset and auto-login successful");
+
+    return new Response(JSON.stringify({ 
+      success: true,
+      session: signInData.session,
+      user: signInData.user
+    }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });

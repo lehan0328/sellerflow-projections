@@ -153,8 +153,24 @@ export const Auth = () => {
       if (error) {
         console.error('Password update error:', error);
         toast.error(error.message || 'Failed to update password. Please try again.');
+      } else if (data?.session) {
+        // Auto-login with the session returned from the edge function
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+        
+        toast.success('Password updated successfully! Logging you in...');
+        setShowNewPasswordForm(false);
+        setNewPasswordData({ password: '', confirmPassword: '' });
+        
+        // Redirect to dashboard after successful login
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1000);
       } else {
-        toast.success('Password updated successfully! Redirecting to sign in...');
+        // Fallback if session wasn't returned
+        toast.success('Password updated successfully! Please sign in.');
         setShowNewPasswordForm(false);
         setNewPasswordData({ password: '', confirmPassword: '' });
         setTimeout(() => {
