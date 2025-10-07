@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const resendApiKey = Deno.env.get("RESEND_API_KEY");
+const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,6 +25,33 @@ const handler = async (req: Request): Promise<Response> => {
     const { email, resetUrl }: PasswordResetRequest = await req.json();
 
     console.log("Sending password reset email to:", email);
+
+    // Generate password reset token using Supabase Auth Admin API
+    const authResponse = await fetch(`${supabaseUrl}/auth/v1/admin/generate_link`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${supabaseServiceKey}`,
+        "Content-Type": "application/json",
+        "apikey": supabaseServiceKey || "",
+      },
+      body: JSON.stringify({
+        type: 'recovery',
+        email: email,
+        options: {
+          redirectTo: resetUrl
+        }
+      })
+    });
+
+    if (!authResponse.ok) {
+      const authError = await authResponse.text();
+      console.error('Auth API error:', authError);
+      throw new Error(`Failed to generate reset token: ${authError}`);
+    }
+
+    const authData = await authResponse.json();
+    const actualResetUrl = authData.properties?.action_link || resetUrl;
+    console.log('Generated reset URL');
 
     const emailResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -59,7 +88,7 @@ const handler = async (req: Request): Promise<Response> => {
                 </p>
 
                 <div style="text-align: center; margin: 32px 0;">
-                  <a href="${resetUrl}" 
+                  <a href="${actualResetUrl}" 
                      style="display: inline-block; padding: 16px 32px; background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
                     Reset Password
                   </a>
@@ -69,7 +98,7 @@ const handler = async (req: Request): Promise<Response> => {
                   If the button doesn't work, you can copy and paste this link into your browser:
                 </p>
                 <p style="margin: 8px 0 0 0; color: #3b82f6; font-size: 14px; word-break: break-all;">
-                  ${resetUrl}
+                  ${actualResetUrl}
                 </p>
 
                 <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0;">

@@ -103,33 +103,22 @@ export const Auth = () => {
 
     setLoading(true);
     try {
-      // First, trigger Supabase password reset to get the magic link token
-      const { error: supabaseError } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo: `${window.location.origin}/auth?mode=reset`,
-      });
-
-      if (supabaseError) {
-        console.error('Supabase reset error:', supabaseError);
-        toast.error('Failed to send reset email. Please try again.');
-        return;
-      }
-
-      // Then send our custom branded email
-      const { error: emailError } = await supabase.functions.invoke('send-password-reset', {
+      // Send our custom branded email with password reset link
+      const { error } = await supabase.functions.invoke('send-password-reset', {
         body: {
           email: resetEmail,
           resetUrl: `${window.location.origin}/auth?mode=reset`
         }
       });
 
-      if (emailError) {
-        console.error('Custom email error:', emailError);
-        // Don't fail completely, the Supabase email was already sent
+      if (error) {
+        console.error('Password reset error:', error);
+        toast.error('Failed to send reset email. Please try again.');
+      } else {
+        toast.success('Password reset email sent! Check your inbox for instructions.');
+        setShowResetForm(false);
+        setResetEmail('');
       }
-
-      toast.success('Password reset email sent! Check your inbox for instructions.');
-      setShowResetForm(false);
-      setResetEmail('');
     } catch (error) {
       console.error('Password reset error:', error);
       toast.error('An unexpected error occurred');
