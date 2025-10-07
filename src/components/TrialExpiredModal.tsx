@@ -162,7 +162,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-[900px]" hideClose>
+      <DialogContent className="sm:max-w-[700px]" hideClose>
         <DialogHeader>
           <div className="flex items-center gap-2 text-destructive">
             <AlertCircle className="h-5 w-5" />
@@ -173,39 +173,36 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-6">
+        <div className="py-4">
           {/* Current Revenue Display */}
-          <div className="mb-6 p-4 rounded-lg bg-muted/50 border">
-            <div className="text-sm text-muted-foreground mb-1">Your Current Monthly Revenue</div>
-            <div className="text-2xl font-bold">
+          <div className="mb-4 p-3 rounded-lg bg-muted/50 border">
+            <div className="text-xs text-muted-foreground mb-1">Your Current Monthly Revenue</div>
+            <div className="text-xl font-bold">
               ${currentRevenue.toLocaleString()}
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {currentRevenue === 45000 ? 'Amazon integration pending - showing estimated revenue' : 'Based on Amazon sales data'}
             </div>
           </div>
 
           {/* Display only recommended plan and one upsell plan */}
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4">
             {plansToDisplay.map((plan) => (
               <div
                 key={plan.priceId}
-                className={`border rounded-lg p-6 space-y-4 ${
+                className={`border rounded-lg p-4 space-y-3 ${
                   plan.isRecommended
                     ? 'bg-primary/5 border-primary shadow-lg'
                     : 'bg-card border-border'
                 }`}
               >
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-xl font-bold">{plan.name}</h3>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-lg font-bold">{plan.name}</h3>
                     {plan.isRecommended && (
                       <Badge variant="default" className="text-xs">Recommended</Badge>
                     )}
                   </div>
-                  <div className="mb-4">
-                    <div className="text-3xl font-bold">${plan.price}</div>
-                    <div className="text-sm text-muted-foreground">/month</div>
+                  <div className="mb-3">
+                    <div className="text-2xl font-bold">${plan.price}</div>
+                    <div className="text-xs text-muted-foreground">/month</div>
                   </div>
 
                   <Button 
@@ -213,7 +210,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                       e.preventDefault();
                       window.location.href = `/upgrade-plan?priceId=${plan.priceId}`;
                     }}
-                    className={`w-full h-11 text-sm font-semibold mb-4 ${
+                    className={`w-full h-10 text-xs font-semibold mb-3 ${
                       plan.isRecommended ? 'bg-gradient-primary' : ''
                     }`}
                     variant={plan.isRecommended ? 'default' : 'outline'}
@@ -223,12 +220,12 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                   </Button>
                 </div>
 
-                <div className="space-y-2 pt-2 border-t">
-                  <ul className="space-y-2.5">
+                <div className="space-y-1.5 pt-2 border-t">
+                  <ul className="space-y-1.5">
                     {plan.features.map((feature, index) => (
                       <li key={index} className="flex items-start gap-2">
-                        <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                        <span className="text-sm leading-relaxed">
+                        <Check className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                        <span className="text-xs leading-relaxed">
                           {feature}
                         </span>
                       </li>
@@ -239,7 +236,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
             ))}
           </div>
 
-          <p className="text-xs text-center text-muted-foreground mt-6">
+          <p className="text-xs text-center text-muted-foreground mt-4">
             All plans include secure payment processing and can be cancelled anytime
           </p>
         </div>
