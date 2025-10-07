@@ -39,7 +39,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Trash2, Shield, Users } from "lucide-react";
+import { DialogFooter } from "@/components/ui/dialog";
+import { UserPlus, Trash2, Shield, Users, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -67,8 +68,17 @@ export function TeamManagement() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<'admin' | 'staff'>('staff');
+  const [createForm, setCreateForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [isSending, setIsSending] = useState(false);
 
   // Fetch user's profile to get account_id and role
   const { data: profile } = useQuery({
@@ -76,7 +86,7 @@ export function TeamManagement() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('account_id, max_team_members')
+        .select('account_id, max_team_members, plan_override, company')
         .eq('user_id', user!.id)
         .single();
       
@@ -139,6 +149,24 @@ export function TeamManagement() {
     enabled: !!profile?.account_id,
   });
 
+  // Calculate seats based on subscription plan (after teamMembers is loaded)
+  const calculateTotalSeats = () => {
+    // Check for plan override first
+    if (profile?.plan_override) {
+      const planName = profile.plan_override.toLowerCase();
+      if (planName.includes('starter')) return 1;
+      if (planName.includes('growing')) return 3;
+      if (planName.includes('professional')) return 6;
+      if (planName.includes('enterprise')) return 8;
+    }
+    // Default to max_team_members or 1
+    return profile?.max_team_members || 1;
+  };
+  
+  const totalSeats = calculateTotalSeats();
+  const usedSeats = teamMembers?.length || 0;
+  const availableSeats = totalSeats - usedSeats;
+
   // Fetch pending invitations
   const { data: pendingInvites = [] } = useQuery({
     queryKey: ['pending-invites', profile?.account_id],
@@ -159,6 +187,10 @@ export function TeamManagement() {
   // Send invitation mutation
   const sendInviteMutation = useMutation({
     mutationFn: async () => {
+      if (availableSeats <= 0) {
+        throw new Error('No available seats. Please upgrade your plan.');
+      }
+
       const { data, error } = await supabase.functions.invoke('send-team-invitation', {
         body: { email: inviteEmail, role: inviteRole },
       });
@@ -175,6 +207,82 @@ export function TeamManagement() {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to send invitation');
+    },
+  });
+
+  // Create account directly
+  const createAccountMutation = useMutation({
+    mutationFn: async () => {
+      if (!createForm.email || !createForm.firstName || !createForm.lastName || !createForm.password || !profile?.account_id) {
+        throw new Error('Please fill in all fields');
+      }
+
+      if (createForm.password !== createForm.confirmPassword) {
+        throw new Error('Passwords do not match');
+      }
+
+      if (createForm.password.length < 6) {
+        throw new Error('Password must be at least 6 characters');
+      }
+
+      if (availableSeats <= 0) {
+        throw new Error('No available seats. Please upgrade your plan.');
+      }
+
+      // Create the user account
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: createForm.email,
+        password: createForm.password,
+        options: {
+          data: {
+            first_name: createForm.firstName,
+            last_name: createForm.lastName,
+          }
+        }
+      });
+
+      if (signUpError) throw signUpError;
+      if (!signUpData.user) throw new Error('Failed to create user');
+
+      // Update the user's profile with account_id
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ 
+          account_id: profile.account_id,
+          is_account_owner: false 
+        })
+        .eq('user_id', signUpData.user.id);
+
+      if (profileError) throw profileError;
+
+      // Create user role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: signUpData.user.id,
+          account_id: profile.account_id,
+          role: inviteRole
+        });
+
+      if (roleError) throw roleError;
+
+      return { firstName: createForm.firstName, lastName: createForm.lastName };
+    },
+    onSuccess: (data) => {
+      toast.success(`Account created successfully for ${data.firstName} ${data.lastName}!`);
+      setShowCreateDialog(false);
+      setCreateForm({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+      });
+      setInviteRole('staff');
+      queryClient.invalidateQueries({ queryKey: ['team-members'] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create account');
     },
   });
 
@@ -254,21 +362,23 @@ export function TeamManagement() {
         <div>
           <h3 className="text-lg font-semibold">Team Management</h3>
           <p className="text-sm text-muted-foreground">
-            Manage team members and their permissions
+            Manage team members and their permissions for {profile?.company || 'your account'}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             <Users className="inline h-3 w-3 mr-1" />
-            {teamMembers.length} / {profile?.max_team_members || 1} seats used
+            {usedSeats} / {totalSeats} seats used
+            {availableSeats <= 0 && <span className="ml-2 text-amber-600">• Upgrade for more seats</span>}
           </p>
         </div>
         {isAdmin && (
-          <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Invite Member
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" disabled={availableSeats <= 0}>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Send Invite Email
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Invite Team Member</DialogTitle>
@@ -313,6 +423,88 @@ export function TeamManagement() {
               </div>
             </DialogContent>
           </Dialog>
+          
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogTrigger asChild>
+              <Button disabled={availableSeats <= 0}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Create Account
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Account for {profile?.company || 'Your Team'}</DialogTitle>
+                <DialogDescription>
+                  Create a new team member account directly
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>First Name</Label>
+                  <Input
+                    placeholder="John"
+                    value={createForm.firstName}
+                    onChange={(e) => setCreateForm({ ...createForm, firstName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Last Name</Label>
+                  <Input
+                    placeholder="Doe"
+                    value={createForm.lastName}
+                    onChange={(e) => setCreateForm({ ...createForm, lastName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    placeholder="john.doe@example.com"
+                    value={createForm.email}
+                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Password</Label>
+                  <Input
+                    type="password"
+                    placeholder="Minimum 6 characters"
+                    value={createForm.password}
+                    onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Confirm Password</Label>
+                  <Input
+                    type="password"
+                    value={createForm.confirmPassword}
+                    onChange={(e) => setCreateForm({ ...createForm, confirmPassword: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Role</Label>
+                  <Select value={inviteRole} onValueChange={(value: 'admin' | 'staff') => setInviteRole(value)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="staff">Staff</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => createAccountMutation.mutate()} disabled={createAccountMutation.isPending}>
+                  {createAccountMutation.isPending ? "Creating..." : "Create Account"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          </div>
         )}
       </div>
 
@@ -331,7 +523,10 @@ export function TeamManagement() {
             {teamMembers.map((member) => (
               <TableRow key={member.id}>
                 <TableCell>
-                  {member.profiles.first_name} {member.profiles.last_name}
+                  {member.profiles.first_name && member.profiles.last_name 
+                    ? `${member.profiles.first_name} ${member.profiles.last_name}`
+                    : member.profiles.email
+                  }
                 </TableCell>
                 <TableCell>{member.profiles.email}</TableCell>
                 <TableCell>
@@ -353,7 +548,7 @@ export function TeamManagement() {
                   ) : (
                     <Badge variant={getRoleBadgeVariant(member.role)}>
                       {member.role === 'owner' && <Shield className="mr-1 h-3 w-3" />}
-                      {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                      {member.role === 'owner' ? 'Admin (Account Owner)' : member.role.charAt(0).toUpperCase() + member.role.slice(1)}
                     </Badge>
                   )}
                 </TableCell>
