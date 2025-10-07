@@ -235,7 +235,15 @@ export const useSubscription = () => {
       });
     } catch (error) {
       console.error("Error checking subscription:", error);
-      setSubscriptionState(prev => ({ ...prev, isLoading: false }));
+      setSubscriptionState({
+        subscribed: false,
+        product_id: null,
+        subscription_end: null,
+        plan: null,
+        isLoading: false,
+        is_trialing: false,
+        trial_end: null,
+      });
     }
   };
 

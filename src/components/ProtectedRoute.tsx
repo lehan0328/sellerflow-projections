@@ -34,7 +34,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         .from('profiles')
         .select('trial_end')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       setTrialEnd(profile?.trial_end || null);
       setCheckingTrial(false);
