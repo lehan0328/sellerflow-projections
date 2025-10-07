@@ -420,14 +420,13 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                 <TableHead>Due Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Remarks</TableHead>
-                <TableHead>Remaining</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAndSortedTransactions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     {selectedVendor ? `No purchase orders found for ${vendorSearchOptions.find(v => v.value === selectedVendor)?.label || selectedVendor}.` :
                      searchTerm ? 'No transactions found matching your search.' : 
                      'No vendor purchase orders.'}
@@ -468,15 +467,6 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                           <SelectItem value="Partially Paid">Partially Paid</SelectItem>
                         </SelectContent>
                       </Select>
-                    </TableCell>
-                    <TableCell>
-                      {tx.status === 'partially_paid' && tx.remainingBalance ? (
-                        <span className="text-xs font-semibold text-primary">
-                          ${tx.remainingBalance.toLocaleString()}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">

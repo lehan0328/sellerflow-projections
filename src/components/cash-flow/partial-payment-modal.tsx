@@ -36,6 +36,7 @@ export const PartialPaymentModal = ({
   const [amountPaid, setAmountPaid] = useState<string>("");
   const [newDueDate, setNewDueDate] = useState<Date | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dateOpen, setDateOpen] = useState(false);
 
   const remainingBalance = totalAmount - (parseFloat(amountPaid) || 0);
 
@@ -134,7 +135,7 @@ export const PartialPaymentModal = ({
           {/* New Due Date */}
           <div className="space-y-2">
             <Label htmlFor="newDueDate">New Due Date for Remaining Balance *</Label>
-            <Popover>
+            <Popover open={dateOpen} onOpenChange={setDateOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -151,7 +152,10 @@ export const PartialPaymentModal = ({
                 <Calendar
                   mode="single"
                   selected={newDueDate}
-                  onSelect={setNewDueDate}
+                  onSelect={(date) => {
+                    setNewDueDate(date);
+                    if (date) setDateOpen(false);
+                  }}
                   initialFocus
                   className="p-3 pointer-events-auto"
                   disabled={(date) => date < new Date()}

@@ -366,25 +366,27 @@ export default function TransactionLog() {
               </CardHeader>
               <CardContent>
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>PO#</TableHead>
-                      <TableHead>Vendor</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                   <TableHeader>
+                     <TableRow>
+                       <TableHead>Date</TableHead>
+                       <TableHead>PO#</TableHead>
+                       <TableHead>Vendor</TableHead>
+                       <TableHead>Amount</TableHead>
+                       <TableHead>Due Date</TableHead>
+                       <TableHead>Status</TableHead>
+                       <TableHead>Remarks</TableHead>
+                       <TableHead>Remaining</TableHead>
+                       <TableHead className="text-right">Actions</TableHead>
+                     </TableRow>
+                   </TableHeader>
                   <TableBody>
-                    {filteredVendorTransactions.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                          No vendor transactions found
-                        </TableCell>
-                      </TableRow>
-                    ) : (
+                     {filteredVendorTransactions.length === 0 ? (
+                       <TableRow>
+                         <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                           No vendor transactions found
+                         </TableCell>
+                       </TableRow>
+                     ) : (
                       filteredVendorTransactions.map((tx) => {
                         const status = getTransactionStatus(tx);
                         return (
@@ -406,11 +408,25 @@ export default function TransactionLog() {
                                 ? new Date(tx.dueDate).toLocaleDateString()
                                 : "N/A"}
                             </TableCell>
-                            <TableCell>
-                              <Badge variant={status.variant}>{status.text}</Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end space-x-2">
+                             <TableCell>
+                               <Badge variant={status.variant}>{status.text}</Badge>
+                             </TableCell>
+                             <TableCell>
+                               <span className="text-xs">
+                                 {tx.remarks || 'Ordered'}
+                               </span>
+                             </TableCell>
+                             <TableCell>
+                               {tx.status === 'partially_paid' && tx.remainingBalance ? (
+                                 <span className="text-xs font-semibold text-primary">
+                                   ${tx.remainingBalance.toLocaleString()}
+                                 </span>
+                               ) : (
+                                 <span className="text-xs text-muted-foreground">-</span>
+                               )}
+                             </TableCell>
+                             <TableCell className="text-right">
+                               <div className="flex items-center justify-end space-x-2">
                                 <Button
                                   variant="default"
                                   size="sm"
