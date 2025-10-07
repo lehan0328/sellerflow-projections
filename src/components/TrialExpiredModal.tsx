@@ -93,16 +93,65 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
     fetchUserProfile();
   }, []);
 
-  if (!recommendedPlan || availablePlans.length === 0) return null;
-
-  // Get all unique features across all plans for comparison
-  const allFeatures = Array.from(
-    new Set(availablePlans.flatMap(p => p.plan.features))
-  );
+  const plans = [
+    {
+      name: "Starter",
+      price: 29,
+      priceId: PRICING_PLANS.starter.price_id,
+      features: [
+        "Up to $20k monthly Amazon payout",
+        "2 bank/credit card connections",
+        "1 Amazon connection",
+        "Advance forecasting workflow",
+        "365 day cashflow projection",
+        "Bank transaction matching",
+        "Email support"
+      ]
+    },
+    {
+      name: "Growing",
+      price: 59,
+      priceId: PRICING_PLANS.growing.price_id,
+      isRecommended: true,
+      features: [
+        "Up to $50k monthly Amazon payout",
+        "4 bank/credit card connections",
+        "1 Amazon connection",
+        "AI insights",
+        "AI PDF extractor",
+        "2 additional users",
+        "Advance forecasting workflow",
+        "365 day cashflow projection",
+        "Bank transaction matching",
+        "Basic analytics",
+        "Priority support"
+      ]
+    },
+    {
+      name: "Professional",
+      price: 89,
+      priceId: PRICING_PLANS.professional.price_id,
+      features: [
+        "Up to $200k monthly Amazon payout",
+        "7 bank/credit card connections",
+        "1 Amazon connection",
+        "AI insights",
+        "AI PDF extractor",
+        "5 additional users",
+        "Automated notification",
+        "Advance forecasting workflow",
+        "365 day cashflow projection",
+        "Bank transaction matching",
+        "Scenario planning",
+        "Advanced analytics",
+        "Priority support"
+      ]
+    }
+  ];
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-[900px]" hideClose>
+      <DialogContent className="sm:max-w-[1000px]" hideClose>
         <DialogHeader>
           <div className="flex items-center gap-2 text-destructive">
             <AlertCircle className="h-5 w-5" />
@@ -114,88 +163,60 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
         </DialogHeader>
 
         <div className="py-6">
-          {/* Current Revenue Display */}
-          <div className="mb-6 p-4 rounded-lg bg-muted/50 border">
-            <div className="text-sm text-muted-foreground mb-1">Your Current Monthly Revenue</div>
-            <div className="text-2xl font-bold">
-              ${currentRevenue.toLocaleString()}
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {currentRevenue === 45000 ? 'Amazon integration pending - showing estimated revenue' : 'Based on Amazon sales data'}
-            </div>
-          </div>
-
-          {/* Available Plans - Side by Side with Comparison */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            {availablePlans.map((planData, index) => {
-              const plan = planData.plan;
-              const isRecommended = index === 0;
-              const isSelected = selectedPlanId === plan.priceId;
-              
-              return (
-                <div
-                  key={plan.priceId}
-                  className={`border rounded-lg p-6 space-y-4 transition-all ${
-                    isSelected
-                      ? 'bg-gradient-to-br from-primary/10 to-accent/10 border-primary shadow-lg'
-                      : 'bg-gradient-to-br from-primary/5 to-accent/5 border-border'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-xl font-bold">{plan.name}</h3>
-                      {isRecommended && (
-                        <Badge variant="default" className="text-xs">Recommended</Badge>
-                      )}
-                    </div>
-                    {isRecommended && userRevenue && (
-                      <Badge variant="secondary" className="text-xs mb-3">
-                        For {userRevenue} revenue
-                      </Badge>
+          <div className="grid grid-cols-3 gap-6">
+            {plans.map((plan) => (
+              <div
+                key={plan.priceId}
+                className={`border rounded-lg p-6 space-y-4 ${
+                  plan.isRecommended
+                    ? 'bg-primary/5 border-primary shadow-lg'
+                    : 'bg-card border-border'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-xl font-bold">{plan.name}</h3>
+                    {plan.isRecommended && (
+                      <Badge variant="default" className="text-xs">Recommended</Badge>
                     )}
-                    <div className="mt-3 mb-4">
-                      <div className="text-3xl font-bold">${plan.price}</div>
-                      <div className="text-sm text-muted-foreground">/month</div>
-                    </div>
-
-                    <Button 
-                      onClick={(e) => {
-                        e.preventDefault();
-                        window.location.href = `/upgrade-plan?priceId=${plan.priceId}`;
-                      }}
-                      className="w-full bg-gradient-primary h-11 text-sm font-semibold mb-4"
-                      size="lg"
-                    >
-                      Pay Now - ${plan.price}/mo
-                    </Button>
+                  </div>
+                  <div className="mb-4">
+                    <div className="text-3xl font-bold">${plan.price}</div>
+                    <div className="text-sm text-muted-foreground">/month</div>
                   </div>
 
-                  <div className="space-y-2 pt-2 border-t">
-                    <p className="font-semibold text-xs uppercase text-muted-foreground mb-3">Features</p>
-                    <ul className="space-y-2.5">
-                      {allFeatures.map((feature: string, featureIndex: number) => {
-                        const hasFeature = plan.features.includes(feature);
-                        return (
-                          <li key={featureIndex} className="flex items-start gap-2">
-                            {hasFeature ? (
-                              <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                            ) : (
-                              <X className="h-4 w-4 text-muted-foreground/40 shrink-0 mt-0.5" />
-                            )}
-                            <span className={`text-xs leading-relaxed ${!hasFeature && 'text-muted-foreground/60 line-through'}`}>
-                              {feature}
-                            </span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
+                  <Button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.location.href = `/upgrade-plan?priceId=${plan.priceId}`;
+                    }}
+                    className={`w-full h-11 text-sm font-semibold mb-4 ${
+                      plan.isRecommended ? 'bg-gradient-primary' : ''
+                    }`}
+                    variant={plan.isRecommended ? 'default' : 'outline'}
+                    size="lg"
+                  >
+                    Start Trial
+                  </Button>
                 </div>
-              );
-            })}
+
+                <div className="space-y-2 pt-2 border-t">
+                  <ul className="space-y-2.5">
+                    {plan.features.map((feature, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                        <span className="text-sm leading-relaxed">
+                          {feature}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ))}
           </div>
 
-          <p className="text-xs text-center text-muted-foreground">
+          <p className="text-xs text-center text-muted-foreground mt-6">
             All plans include secure payment processing and can be cancelled anytime
           </p>
         </div>
