@@ -147,13 +147,13 @@ export const PartialPaymentModal = ({
                   {newDueDate ? format(newDueDate, "PPP") : "Pick a date"}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
+              <PopoverContent className="z-[60] w-auto p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={newDueDate}
                   onSelect={setNewDueDate}
                   initialFocus
-                  className="pointer-events-auto"
+                  className="p-3 pointer-events-auto"
                   disabled={(date) => date < new Date()}
                 />
               </PopoverContent>
