@@ -91,7 +91,7 @@ export function UserMenu() {
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate('/upgrade-plan')}>
           <CreditCard className="mr-2 h-4 w-4" />
-          <span>Upgrade Plan</span>
+          <span>Manage Subscription</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
