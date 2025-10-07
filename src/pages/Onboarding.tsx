@@ -318,14 +318,6 @@ export default function Onboarding() {
                   Connect Bank Account
                 </Button>
               </div>
-
-              <Button
-                onClick={handleFinish}
-                variant="ghost"
-                className="w-full"
-              >
-                I'll do this later
-              </Button>
             </CardContent>
           </Card>
         )}
