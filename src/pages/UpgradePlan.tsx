@@ -22,6 +22,9 @@ import { useNavigate } from "react-router-dom";
 import { useSubscription, PRICING_PLANS, ADDON_PRODUCTS, ENTERPRISE_TIERS } from "@/hooks/useSubscription";
 import { CancellationFlow } from "@/components/subscription/CancellationFlow";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface CartItem {
   priceId: string;
@@ -32,6 +35,7 @@ interface CartItem {
 
 const UpgradePlan = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, createCheckout, purchaseAddon, openCustomerPortal, removePlanOverride, isLoading } = useSubscription();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
   const [isYearly, setIsYearly] = useState(false);
@@ -40,6 +44,26 @@ const UpgradePlan = () => {
     bank_account: 0,
     amazon_account: 0,
     user: 0
+  });
+
+  // Fetch profile to get trial dates
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('trial_start, trial_end')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!user?.id,
   });
 
   const plans = [
@@ -398,10 +422,29 @@ const UpgradePlan = () => {
                 <>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Plan</span>
-                    <Badge variant="secondary">No Active Plan</Badge>
+                    <Badge variant="secondary">Professional (Trial)</Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground text-center">
-                    Upgrade to unlock all features and grow your business
+                  
+                  {profile?.trial_start && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Trial Started</span>
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(profile.trial_start).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {profile?.trial_end && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Trial Ends</span>
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(profile.trial_end).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                  
+                  <p className="text-xs text-muted-foreground text-center pt-2">
+                    You're on a 7-day free trial of the Professional plan
                   </p>
                 </>
               )}
