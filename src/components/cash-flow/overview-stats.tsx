@@ -248,7 +248,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
             <Calendar className="h-8 w-8 text-amber-500" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 border border-indigo-200 rounded-lg p-4">
+        <div className={`bg-gradient-to-br ${safeSpendingData?.will_go_negative ? 'from-red-50 to-red-100 border-red-300' : 'from-indigo-50 to-indigo-100 border-indigo-200'} border rounded-lg p-4`}>
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center justify-between mb-2">
@@ -287,20 +287,22 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               ) : safeSpendingData ? (
                 <>
                   {safeSpendingData.will_go_negative ? (
-                    <>
+                    <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-red-500" />
+                        <AlertTriangle className="h-6 w-6 text-red-600" />
                         <p className="text-2xl font-bold text-red-700">
                           {formatCurrency(0)}
                         </p>
                       </div>
-                      <p className="text-xs text-red-600 mt-1 font-semibold">
-                        ⚠️ Will go {formatCurrency(Math.abs(safeSpendingData.calculation.lowest_projected_balance))} negative
-                      </p>
-                      <p className="text-xs text-red-600">
-                        on {new Date(safeSpendingData.negative_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </p>
-                    </>
+                      <div className="bg-red-200 border border-red-300 rounded p-2 mt-2">
+                        <p className="text-sm text-red-800 font-semibold">
+                          ⚠️ Cash will go {formatCurrency(Math.abs(safeSpendingData.calculation.lowest_projected_balance))} negative
+                        </p>
+                        <p className="text-xs text-red-700 mt-1">
+                          on {new Date(safeSpendingData.negative_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
                   ) : (
                     <>
                       <p className="text-2xl font-bold text-indigo-700">
@@ -316,7 +318,11 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 <p className="text-sm text-slate-500">Unable to calculate</p>
               )}
             </div>
-            <TrendingUp className="h-8 w-8 text-indigo-500" />
+            {safeSpendingData?.will_go_negative ? (
+              <AlertTriangle className="h-8 w-8 text-red-500" />
+            ) : (
+              <TrendingUp className="h-8 w-8 text-indigo-500" />
+            )}
           </div>
         </div>
       </div>
