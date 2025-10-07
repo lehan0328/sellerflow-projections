@@ -678,6 +678,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_id: string | null
           amazon_marketplaces: string[] | null
           company: string | null
           created_at: string
@@ -686,8 +687,10 @@ export type Database = {
           email: string | null
           first_name: string | null
           id: string
+          is_account_owner: boolean
           is_admin: boolean
           last_name: string | null
+          max_team_members: number
           monthly_revenue: string | null
           plan_override: string | null
           plan_override_reason: string | null
@@ -697,6 +700,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           amazon_marketplaces?: string[] | null
           company?: string | null
           created_at?: string
@@ -705,8 +709,10 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id?: string
+          is_account_owner?: boolean
           is_admin?: boolean
           last_name?: string | null
+          max_team_members?: number
           monthly_revenue?: string | null
           plan_override?: string | null
           plan_override_reason?: string | null
@@ -716,6 +722,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           amazon_marketplaces?: string[] | null
           company?: string | null
           created_at?: string
@@ -724,8 +731,10 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id?: string
+          is_account_owner?: boolean
           is_admin?: boolean
           last_name?: string | null
+          max_team_members?: number
           monthly_revenue?: string | null
           plan_override?: string | null
           plan_override_reason?: string | null
@@ -862,6 +871,42 @@ export type Database = {
         }
         Relationships: []
       }
+      team_invitations: {
+        Row: {
+          accepted_at: string | null
+          account_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["app_role"]
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          account_id: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by: string
+          role?: Database["public"]["Enums"]["app_role"]
+          token: string
+        }
+        Update: {
+          accepted_at?: string | null
+          account_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          token?: string
+        }
+        Relationships: []
+      }
       ticket_messages: {
         Row: {
           created_at: string
@@ -959,6 +1004,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_roles: {
+        Row: {
+          account_id: string
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_settings: {
         Row: {
@@ -1070,6 +1142,18 @@ export type Database = {
         Args: { plain_text: string }
         Returns: string
       }
+      get_user_account_id: {
+        Args: { _user_id: string }
+        Returns: string
+      }
+      has_role: {
+        Args: {
+          _account_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       insert_secure_amazon_account: {
         Args: {
           p_access_token?: string
@@ -1156,6 +1240,10 @@ export type Database = {
         }
         Returns: string
       }
+      is_account_admin: {
+        Args: { _account_id: string; _user_id: string }
+        Returns: boolean
+      }
       update_secure_amazon_account: {
         Args: {
           p_access_token?: string
@@ -1228,7 +1316,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "owner" | "admin" | "staff"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1355,6 +1443,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["owner", "admin", "staff"],
+    },
   },
 } as const

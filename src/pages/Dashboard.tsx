@@ -11,6 +11,7 @@ import { CreditCards, getCreditCardDueDates } from "@/components/cash-flow/credi
 import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
+import { PdfConverterModal } from "@/components/cash-flow/pdf-converter-modal";
 import { IncomeOverview } from "@/components/cash-flow/income-overview";
 import { IncomeForm } from "@/components/cash-flow/income-form";
 import { RecurringExpensesOverview } from "@/components/cash-flow/recurring-expenses-overview";
@@ -48,6 +49,7 @@ interface CashFlowEvent {
 const Dashboard = () => {
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
+  const [showPdfConverter, setShowPdfConverter] = useState(false);
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
   const [editingIncome, setEditingIncome] = useState<any>(null);
   const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
@@ -1074,6 +1076,7 @@ const Dashboard = () => {
         onAddPurchaseOrder={handleOpenPurchaseOrderForm}
         onAddIncome={() => setShowIncomeForm(true)}
         onAddRecurringIncome={() => setShowRecurringIncomeForm(true)}
+        onConvertPdf={() => setShowPdfConverter(true)}
       />
 
       {showPurchaseOrderForm && (
@@ -1135,6 +1138,11 @@ const Dashboard = () => {
           onDelete={handleDeleteVendorOrder}
         />
       )}
+      
+      <PdfConverterModal
+        open={showPdfConverter}
+        onOpenChange={setShowPdfConverter}
+      />
     </div>
   );
 };

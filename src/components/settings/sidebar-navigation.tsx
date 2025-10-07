@@ -23,6 +23,11 @@ const navigationItems = [
     icon: User,
   },
   {
+    id: 'team',
+    label: 'Team Management',
+    icon: Users,
+  },
+  {
     id: 'bank-accounts',
     label: 'Bank Accounts',
     icon: Building2,

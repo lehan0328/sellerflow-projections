@@ -13,16 +13,46 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.generate-daily-insights]
+verify_jwt = true
+
+[functions.check-subscription]
+verify_jwt = true
+
+[functions.create-checkout]
+verify_jwt = true
+
+[functions.customer-portal]
+verify_jwt = true
+
+[functions.create-guest-checkout]
 verify_jwt = false
 
-[functions.cash-flow-chat]
+[functions.create-payment-intent]
 verify_jwt = false
 
 [functions.parse-purchase-order]
-verify_jwt = false
+verify_jwt = true
+
+[functions.cash-flow-chat]
+verify_jwt = true
+
+[functions.support-chat]
+verify_jwt = true
+
+[functions.send-feature-request]
+verify_jwt = true
+
+[functions.calculate-safe-spending]
+verify_jwt = true
 
 [functions.match-transactions]
-verify_jwt = false
+verify_jwt = true
+
+[functions.apply-retention-discount]
+verify_jwt = true
+
+[functions.remove-plan-override]
+verify_jwt = true
 
 [functions.create-plaid-link-token]
 verify_jwt = true
@@ -36,37 +66,7 @@ verify_jwt = true
 [functions.sync-plaid-transactions]
 verify_jwt = true
 
-[functions.create-checkout]
-verify_jwt = true
-
-[functions.create-payment-intent]
-verify_jwt = true
-
-[functions.check-subscription]
-verify_jwt = true
-
-[functions.customer-portal]
-verify_jwt = true
-
-[functions.remove-plan-override]
-verify_jwt = true
-
-[functions.create-guest-checkout]
-verify_jwt = false
-
-[functions.support-chat]
-verify_jwt = true
-
-[functions.calculate-safe-spending]
-verify_jwt = true
-
 [functions.sync-amazon-data]
-verify_jwt = true
-
-[functions.apply-retention-discount]
-verify_jwt = true
-
-[functions.send-feature-request]
 verify_jwt = true
 
 [functions.create-stripe-link-session]
@@ -76,4 +76,13 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.sync-stripe-transactions]
+verify_jwt = true
+
+[functions.send-team-invitation]
+verify_jwt = true
+
+[functions.accept-team-invitation]
+verify_jwt = true
+
+[functions.convert-pdf-to-png]
 verify_jwt = true

@@ -33,6 +33,13 @@ export const Auth = () => {
   });
 
   useEffect(() => {
+    // Check for invite token
+    const inviteToken = searchParams.get('invite');
+    if (inviteToken) {
+      // Store invite token for after authentication
+      sessionStorage.setItem('pendingInvite', inviteToken);
+    }
+
     // Check for password reset token
     const token = searchParams.get('token');
     if (token) {
@@ -44,6 +51,22 @@ export const Auth = () => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        // Check for pending invite
+        const pendingInvite = sessionStorage.getItem('pendingInvite');
+        if (pendingInvite) {
+          try {
+            const { data, error } = await supabase.functions.invoke('accept-team-invitation', {
+              body: { inviteToken: pendingInvite }
+            });
+            
+            if (error) throw error;
+            
+            sessionStorage.removeItem('pendingInvite');
+            toast.success(`Successfully joined team as ${data.role}!`);
+          } catch (error: any) {
+            toast.error(error.message || 'Failed to accept invitation');
+          }
+        }
         navigate('/dashboard');
       }
     };

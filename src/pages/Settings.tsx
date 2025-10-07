@@ -33,6 +33,7 @@ import { SidebarNavigation } from "@/components/settings/sidebar-navigation";
 import { CreditCardManagement } from "@/components/settings/credit-card-management";
 import { VendorManagement } from "@/components/settings/vendor-management";
 import { AmazonManagement } from "@/components/settings/amazon-management";
+import { TeamManagement } from "@/components/settings/team-management";
 import { BankAccountManagement } from "@/components/settings/bank-account-management";
 import { CustomerManagement } from "@/components/settings/customer-management";
 import { FeatureRequest } from "@/components/settings/feature-request";
@@ -513,6 +514,8 @@ const Settings = () => {
     switch (activeSection) {
       case 'profile':
         return renderProfileSettings();
+      case 'team':
+        return <TeamManagement />;
       case 'bank-accounts':
         return <BankAccountManagement />;
       case 'vendors':
