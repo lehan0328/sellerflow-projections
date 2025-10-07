@@ -1,40 +1,11 @@
-import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PRICING_PLANS } from "@/hooks/useSubscription";
-import { EmbeddedCheckout } from "./EmbeddedCheckout";
 import { AlertCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const TrialExpiredModal = ({ open }: { open: boolean }) => {
-  const [selectedPriceId, setSelectedPriceId] = useState<string | null>(null);
-
-  const handleSuccess = () => {
-    window.location.href = "/dashboard?payment=success";
-  };
-
-  const handleCancel = () => {
-    setSelectedPriceId(null);
-  };
-
-  if (selectedPriceId) {
-    return (
-      <Dialog open={open} modal>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Complete Your Subscription</DialogTitle>
-            <DialogDescription>
-              Enter your payment details to start your 7-day free trial.
-            </DialogDescription>
-          </DialogHeader>
-          <EmbeddedCheckout 
-            priceId={selectedPriceId} 
-            onSuccess={handleSuccess}
-            onCancel={handleCancel}
-          />
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  const navigate = useNavigate();
 
   return (
     <Dialog open={open} modal>
@@ -45,7 +16,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
             <DialogTitle>Your Trial Has Ended</DialogTitle>
           </div>
           <DialogDescription>
-            Your 7-day free trial has expired. Please choose a plan to continue using Auren.
+            Your free trial has expired. Please choose a plan to continue using Auren.
           </DialogDescription>
         </DialogHeader>
 
@@ -61,7 +32,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                   ${plan.price}/month
                 </p>
               </div>
-              <Button onClick={() => setSelectedPriceId(plan.price_id)}>
+              <Button onClick={() => navigate('/upgrade-plan')}>
                 Select Plan
               </Button>
             </div>
