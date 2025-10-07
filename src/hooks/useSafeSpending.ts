@@ -131,6 +131,15 @@ export const useSafeSpending = () => {
         .gt('payout_date', todayStr) // Only future dates
         .lte('payout_date', endDateStr);
 
+      console.log('Future data being used:', {
+        futureTransactionsCount: futureTransactions?.length || 0,
+        futureIncomeCount: futureIncome?.length || 0,
+        recurringExpensesCount: recurringExpenses?.length || 0,
+        amazonPayoutsCount: amazonPayouts?.length || 0,
+        sampleFutureTransaction: futureTransactions?.[0],
+        sampleFutureIncome: futureIncome?.[0],
+      });
+
       // Build daily cash flow projection starting from TODAY
       // This represents the lowest cash point we'll hit in the next 180 days
       const dailyBalances: { date: Date; balance: number }[] = [];
