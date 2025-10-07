@@ -178,100 +178,34 @@ export default function Onboarding() {
                 Enter your Amazon Seller Central credentials
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="account_name">Account Name *</Label>
-                <Input
-                  id="account_name"
-                  placeholder="My Amazon Store"
-                  value={amazonFormData.account_name}
-                  onChange={(e) => setAmazonFormData(prev => ({ ...prev, account_name: e.target.value }))}
-                />
+            <CardContent className="space-y-6">
+              <div className="text-center py-8 space-y-4">
+                <ShoppingCart className="h-16 w-16 text-primary mx-auto" />
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">One-Click Store Connection</h3>
+                  <p className="text-muted-foreground">
+                    Securely connect your Amazon store with a single click
+                  </p>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="seller_id">Seller ID *</Label>
-                <Input
-                  id="seller_id"
-                  placeholder="A1BCDEFGH2IJKL"
-                  value={amazonFormData.seller_id}
-                  onChange={(e) => setAmazonFormData(prev => ({ ...prev, seller_id: e.target.value }))}
-                />
-              </div>
+              <Button 
+                onClick={() => {
+                  toast.info("Store connection API coming soon!");
+                  setCurrentStep('bank');
+                }}
+                className="w-full bg-gradient-primary h-12 text-base font-semibold"
+              >
+                Connect Your Store
+              </Button>
 
-              <div className="space-y-2">
-                <Label htmlFor="marketplace">Marketplace *</Label>
-                <Select
-                  value={amazonFormData.marketplace_id}
-                  onValueChange={(value) => {
-                    const marketplace = marketplaces.find(m => m.id === value);
-                    setAmazonFormData(prev => ({
-                      ...prev,
-                      marketplace_id: value,
-                      marketplace_name: marketplace?.name || ''
-                    }));
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select marketplace" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {marketplaces.map((marketplace) => (
-                      <SelectItem key={marketplace.id} value={marketplace.id}>
-                        {marketplace.name} ({marketplace.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="client_id">Client ID (Optional)</Label>
-                <Input
-                  id="client_id"
-                  placeholder="amzn1.application-oa2-client..."
-                  value={amazonFormData.client_id}
-                  onChange={(e) => setAmazonFormData(prev => ({ ...prev, client_id: e.target.value }))}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="client_secret">Client Secret (Optional)</Label>
-                <Input
-                  id="client_secret"
-                  type="password"
-                  placeholder="••••••••"
-                  value={amazonFormData.client_secret}
-                  onChange={(e) => setAmazonFormData(prev => ({ ...prev, client_secret: e.target.value }))}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="refresh_token">Refresh Token (Optional)</Label>
-                <Input
-                  id="refresh_token"
-                  type="password"
-                  placeholder="Atzr|..."
-                  value={amazonFormData.refresh_token}
-                  onChange={(e) => setAmazonFormData(prev => ({ ...prev, refresh_token: e.target.value }))}
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button 
-                  onClick={handleSkipAmazon}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  Skip for now
-                </Button>
-                <Button 
-                  onClick={handleAddAmazonAccount}
-                  className="flex-1 bg-gradient-primary"
-                >
-                  Connect Account
-                </Button>
-              </div>
+              <Button 
+                onClick={handleSkipAmazon}
+                variant="outline"
+                className="w-full"
+              >
+                Skip for now
+              </Button>
             </CardContent>
           </Card>
         )}
