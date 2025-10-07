@@ -58,11 +58,6 @@ export const CancellationFlow = ({ open, onOpenChange }: CancellationFlowProps) 
     navigate('/schedule-demo');
   };
 
-  const handlePauseSubscription = () => {
-    handleClose();
-    navigate('/pause-subscription');
-  };
-
   const handleDowngrade = () => {
     toast.info('Redirecting to plan selection...');
     handleClose();
