@@ -193,6 +193,16 @@ export const useSafeSpending = () => {
       // Example: If lowest cash is $78,500 and reserve is $2,000, safe spending is $76,500
       const safeSpendingLimit = Math.max(0, lowestBalance.balance - userReserve);
 
+      console.log('Safe Spending Debug:', {
+        totalCash,
+        lowestBalanceAmount: lowestBalance.balance,
+        lowestBalanceDate: lowestBalance.date,
+        userReserve,
+        safeSpendingLimit,
+        dailyBalancesCount: dailyBalances.length,
+        firstFewDays: dailyBalances.slice(0, 5).map(d => ({ date: d.date.toISOString().split('T')[0], balance: d.balance }))
+      });
+
       setData({
         safe_spending_limit: safeSpendingLimit,
         reserve_amount: userReserve,
