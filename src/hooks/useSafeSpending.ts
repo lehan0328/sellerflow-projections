@@ -107,13 +107,22 @@ export const useSafeSpending = () => {
         .gt('payout_date', todayStr) // Only future dates
         .lte('payout_date', endDateStr);
 
+      // Get vendor payments (from vendors with next_payment_date)
+      const { data: vendors } = await supabase
+        .from('vendors')
+        .select('next_payment_date, next_payment_amount, payment_schedule')
+        .eq('user_id', session.user.id)
+        .not('next_payment_date', 'is', null);
+
       console.log('Future data being used:', {
         futureTransactionsCount: futureTransactions?.length || 0,
         futureIncomeCount: futureIncome?.length || 0,
         recurringExpensesCount: recurringExpenses?.length || 0,
         amazonPayoutsCount: amazonPayouts?.length || 0,
+        vendorsCount: vendors?.length || 0,
         sampleFutureTransaction: futureTransactions?.[0],
         sampleFutureIncome: futureIncome?.[0],
+        sampleVendor: vendors?.[0],
       });
 
       // Build daily cash flow projection starting from TODAY
@@ -142,6 +151,14 @@ export const useSafeSpending = () => {
           const payoutDate = new Date(payout.payout_date).toISOString().split('T')[0];
           if (payoutDate === dateStr) {
             dailyChange += Number(payout.total_amount);
+          }
+        });
+
+        // Subtract vendor payments
+        vendors?.forEach(vendor => {
+          const vendorPaymentDate = new Date(vendor.next_payment_date).toISOString().split('T')[0];
+          if (vendorPaymentDate === dateStr) {
+            dailyChange -= Math.abs(Number(vendor.next_payment_amount || 0));
           }
         });
 
