@@ -772,7 +772,18 @@ const Dashboard = () => {
 
   // Convert vendor transactions to calendar events (only show POs with vendors assigned)
   const vendorEvents: CashFlowEvent[] = transactions
-    .filter(tx => tx.type === 'purchase_order' && tx.status !== 'completed' && tx.vendorId)
+    .filter(tx => {
+      // Exclude completed transactions
+      if (tx.type !== 'purchase_order' || !tx.vendorId) return false;
+      if (tx.status === 'completed') return false;
+      // Exclude .1 transactions (paid portion of partial payments)
+      if (tx.description?.endsWith('.1')) return false;
+      // Exclude partially_paid parent transactions (they're replaced by .2 transactions)
+      const dbStatus = (tx as any).status;
+      if (dbStatus === 'partially_paid') return false;
+      // Allow .2 transactions (remaining balance with new due date) to show
+      return true;
+    })
     .map(tx => {
       const vendor = vendors.find(v => v.id === tx.vendorId);
       return {
