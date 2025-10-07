@@ -251,6 +251,55 @@ export const useSafeSpending = () => {
 
   useEffect(() => {
     fetchSafeSpending();
+
+    // Subscribe to realtime changes for all tables that affect safe spending
+    const channel = supabase
+      .channel('safe-spending-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'transactions' },
+        () => {
+          console.log('Transaction changed - refetching safe spending');
+          fetchSafeSpending();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'income' },
+        () => {
+          console.log('Income changed - refetching safe spending');
+          fetchSafeSpending();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'recurring_expenses' },
+        () => {
+          console.log('Recurring expense changed - refetching safe spending');
+          fetchSafeSpending();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'bank_accounts' },
+        () => {
+          console.log('Bank account changed - refetching safe spending');
+          fetchSafeSpending();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'amazon_payouts' },
+        () => {
+          console.log('Amazon payout changed - refetching safe spending');
+          fetchSafeSpending();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return { data, isLoading, error, reserveAmount, updateReserveAmount, refetch: fetchSafeSpending };
