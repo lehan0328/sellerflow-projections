@@ -93,65 +93,76 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
     fetchUserProfile();
   }, []);
 
-  const plans = [
-    {
-      name: "Starter",
-      price: 29,
-      priceId: PRICING_PLANS.starter.price_id,
-      features: [
-        "Up to $20k monthly Amazon payout",
-        "2 bank/credit card connections",
-        "1 Amazon connection",
-        "Advance forecasting workflow",
-        "365 day cashflow projection",
-        "Bank transaction matching",
-        "Email support"
-      ]
-    },
-    {
-      name: "Growing",
-      price: 59,
-      priceId: PRICING_PLANS.growing.price_id,
-      isRecommended: true,
-      features: [
-        "Up to $50k monthly Amazon payout",
-        "4 bank/credit card connections",
-        "1 Amazon connection",
-        "AI insights",
-        "AI PDF extractor",
-        "2 additional users",
-        "Advance forecasting workflow",
-        "365 day cashflow projection",
-        "Bank transaction matching",
-        "Basic analytics",
-        "Priority support"
-      ]
-    },
-    {
-      name: "Professional",
-      price: 89,
-      priceId: PRICING_PLANS.professional.price_id,
-      features: [
-        "Up to $200k monthly Amazon payout",
-        "7 bank/credit card connections",
-        "1 Amazon connection",
-        "AI insights",
-        "AI PDF extractor",
-        "5 additional users",
-        "Automated notification",
-        "Advance forecasting workflow",
-        "365 day cashflow projection",
-        "Bank transaction matching",
-        "Scenario planning",
-        "Advanced analytics",
-        "Priority support"
-      ]
+  if (!recommendedPlan || availablePlans.length === 0) return null;
+
+  // Define complete feature lists for each plan
+  const planFeatures = {
+    starter: [
+      "Up to $20k monthly Amazon payout",
+      "2 bank/credit card connections",
+      "1 Amazon connection",
+      "Advance forecasting workflow",
+      "365 day cashflow projection",
+      "Bank transaction matching",
+      "Email support"
+    ],
+    growing: [
+      "Up to $50k monthly Amazon payout",
+      "4 bank/credit card connections",
+      "1 Amazon connection",
+      "AI insights",
+      "AI PDF extractor",
+      "2 additional users",
+      "Advance forecasting workflow",
+      "365 day cashflow projection",
+      "Bank transaction matching",
+      "Basic analytics",
+      "Priority support"
+    ],
+    professional: [
+      "Up to $200k monthly Amazon payout",
+      "7 bank/credit card connections",
+      "1 Amazon connection",
+      "AI insights",
+      "AI PDF extractor",
+      "5 additional users",
+      "Automated notification",
+      "Advance forecasting workflow",
+      "365 day cashflow projection",
+      "Bank transaction matching",
+      "Scenario planning",
+      "Advanced analytics",
+      "Priority support"
+    ]
+  };
+
+  // Get features for the displayed plans
+  const plansToDisplay = availablePlans.slice(0, 2).map((planData, index) => {
+    const plan = planData.plan;
+    const isRecommended = index === 0;
+    let features: string[] = [];
+
+    // Match features based on plan name
+    if (plan.name === "Starter") {
+      features = planFeatures.starter;
+    } else if (plan.name === "Growing") {
+      features = planFeatures.growing;
+    } else if (plan.name === "Professional") {
+      features = planFeatures.professional;
     }
-  ];
+
+    return {
+      name: plan.name,
+      price: plan.price,
+      priceId: plan.price_id,
+      isRecommended,
+      features
+    };
+  });
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-[1000px]" hideClose>
+      <DialogContent className="sm:max-w-[900px]" hideClose>
         <DialogHeader>
           <div className="flex items-center gap-2 text-destructive">
             <AlertCircle className="h-5 w-5" />
@@ -163,8 +174,20 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
         </DialogHeader>
 
         <div className="py-6">
-          <div className="grid grid-cols-3 gap-6">
-            {plans.map((plan) => (
+          {/* Current Revenue Display */}
+          <div className="mb-6 p-4 rounded-lg bg-muted/50 border">
+            <div className="text-sm text-muted-foreground mb-1">Your Current Monthly Revenue</div>
+            <div className="text-2xl font-bold">
+              ${currentRevenue.toLocaleString()}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {currentRevenue === 45000 ? 'Amazon integration pending - showing estimated revenue' : 'Based on Amazon sales data'}
+            </div>
+          </div>
+
+          {/* Display only recommended plan and one upsell plan */}
+          <div className="grid grid-cols-2 gap-6">
+            {plansToDisplay.map((plan) => (
               <div
                 key={plan.priceId}
                 className={`border rounded-lg p-6 space-y-4 ${
