@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { generateRecurringDates } from "@/lib/recurringDates";
 
 interface SafeSpendingData {
   safe_spending_limit: number;
   reserve_amount: number;
   calculation: {
     available_balance: number;
-    upcoming_expenses: number;
-    reserve_buffer: number;
+    lowest_projected_balance: number;
+    lowest_balance_date: string;
   };
 }
 
@@ -55,71 +56,123 @@ export const useSafeSpending = () => {
       const totalAvailableCredit = creditCards?.reduce((sum, card) => sum + Number(card.available_credit || 0), 0) || 0;
       const availableBalance = totalCash + totalAvailableCredit;
 
-      // Calculate upcoming expenses (next 30 days)
-      const thirtyDaysFromNow = new Date();
-      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      // Calculate projected cash flow for next 180 days
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endDate = new Date(today);
+      endDate.setDate(endDate.getDate() + 180);
 
-      const { data: upcomingTransactions } = await supabase
+      // Get all transactions in next 180 days
+      const { data: futureTransactions } = await supabase
         .from('transactions')
-        .select('amount, type')
+        .select('amount, type, transaction_date')
         .eq('user_id', session.user.id)
-        .in('type', ['purchase-order', 'expense'])
-        .lte('transaction_date', thirtyDaysFromNow.toISOString())
-        .gte('transaction_date', new Date().toISOString());
+        .gte('transaction_date', today.toISOString())
+        .lte('transaction_date', endDate.toISOString());
 
+      // Get all income in next 180 days
+      const { data: futureIncome } = await supabase
+        .from('income')
+        .select('amount, payment_date')
+        .eq('user_id', session.user.id)
+        .gte('payment_date', today.toISOString())
+        .lte('payment_date', endDate.toISOString());
+
+      // Get recurring expenses
       const { data: recurringExpenses } = await supabase
         .from('recurring_expenses')
-        .select('amount, frequency, start_date, end_date')
+        .select('*')
         .eq('user_id', session.user.id)
         .eq('is_active', true);
 
-      // Calculate upcoming expenses from transactions
-      let upcomingExpenses = upcomingTransactions?.reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0) || 0;
+      // Get Amazon payouts
+      const { data: amazonPayouts } = await supabase
+        .from('amazon_payouts')
+        .select('total_amount, payout_date')
+        .eq('user_id', session.user.id)
+        .gte('payout_date', today.toISOString())
+        .lte('payout_date', endDate.toISOString());
 
-      // Add recurring expenses for next 30 days
-      if (recurringExpenses) {
-        const now = new Date();
-        recurringExpenses.forEach(expense => {
-          const startDate = new Date(expense.start_date);
-          const endDate = expense.end_date ? new Date(expense.end_date) : thirtyDaysFromNow;
-          
-          if (startDate <= thirtyDaysFromNow && endDate >= now) {
-            let occurrences = 0;
-            switch (expense.frequency) {
-              case 'daily':
-                occurrences = 30;
-                break;
-              case 'weekly':
-                occurrences = 4;
-                break;
-              case 'bi-weekly':
-                occurrences = 2;
-                break;
-              case 'monthly':
-                occurrences = 1;
-                break;
-              case 'quarterly':
-                occurrences = 0.33;
-                break;
-              case 'yearly':
-                occurrences = 0.083;
-                break;
-            }
-            upcomingExpenses += Number(expense.amount) * occurrences;
+      // Build daily cash flow projection
+      const dailyBalances: { date: Date; balance: number }[] = [];
+      let runningBalance = availableBalance;
+
+      for (let i = 0; i <= 180; i++) {
+        const currentDate = new Date(today);
+        currentDate.setDate(currentDate.getDate() + i);
+        const dateStr = currentDate.toISOString().split('T')[0];
+
+        let dailyChange = 0;
+
+        // Add income
+        futureIncome?.forEach(income => {
+          const incomeDate = new Date(income.payment_date).toISOString().split('T')[0];
+          if (incomeDate === dateStr) {
+            dailyChange += Number(income.amount);
           }
         });
+
+        // Add Amazon payouts
+        amazonPayouts?.forEach(payout => {
+          const payoutDate = new Date(payout.payout_date).toISOString().split('T')[0];
+          if (payoutDate === dateStr) {
+            dailyChange += Number(payout.total_amount);
+          }
+        });
+
+        // Subtract transactions (expenses and purchase orders)
+        futureTransactions?.forEach(tx => {
+          const txDate = new Date(tx.transaction_date).toISOString().split('T')[0];
+          if (txDate === dateStr) {
+            if (tx.type === 'purchase-order' || tx.type === 'expense') {
+              dailyChange -= Math.abs(Number(tx.amount));
+            }
+          }
+        });
+
+        // Handle recurring expenses
+        recurringExpenses?.forEach(expense => {
+          const dates = generateRecurringDates(
+            {
+              ...expense,
+              frequency: expense.frequency as any,
+              type: expense.type as 'expense' | 'income',
+            },
+            today,
+            endDate
+          );
+          
+          dates.forEach(date => {
+            const recurringDateStr = date.toISOString().split('T')[0];
+            if (recurringDateStr === dateStr) {
+              if (expense.type === 'expense') {
+                dailyChange -= Math.abs(Number(expense.amount));
+              } else {
+                dailyChange += Number(expense.amount);
+              }
+            }
+          });
+        });
+
+        runningBalance += dailyChange;
+        dailyBalances.push({ date: currentDate, balance: runningBalance });
       }
 
-      // Safe spending = Available - Upcoming Expenses - Reserve Amount
-      const safeSpendingLimit = Math.max(0, availableBalance - upcomingExpenses - userReserve);
+      // Find the lowest projected balance
+      const lowestBalance = dailyBalances.reduce((min, day) => 
+        day.balance < min.balance ? day : min
+      );
+
+      // Safe spending = Lowest Projected Balance - Reserve Amount
+      const safeSpendingLimit = Math.max(0, lowestBalance.balance - userReserve);
 
       setData({
         safe_spending_limit: safeSpendingLimit,
         reserve_amount: userReserve,
         calculation: {
           available_balance: availableBalance,
-          upcoming_expenses: upcomingExpenses,
-          reserve_buffer: userReserve,
+          lowest_projected_balance: lowestBalance.balance,
+          lowest_balance_date: lowestBalance.date.toISOString().split('T')[0],
         }
       });
     } catch (err) {
