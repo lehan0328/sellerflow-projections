@@ -45,6 +45,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
   const [customFromDate, setCustomFromDate] = useState<Date | undefined>();
   const [customToDate, setCustomToDate] = useState<Date | undefined>();
   const [partialPaymentTx, setPartialPaymentTx] = useState<VendorTransaction | null>(null);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState<string | null>(null);
 
   // Force refresh when parent signals
   useEffect(() => {
@@ -498,7 +499,10 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                         {tx.status !== 'completed' && tx.status !== 'paid' && tx.dueDate && (
                           <TooltipProvider>
                             <Tooltip>
-                              <AlertDialog>
+                              <AlertDialog 
+                                open={paymentDialogOpen === tx.id}
+                                onOpenChange={(open) => setPaymentDialogOpen(open ? tx.id : null)}
+                              >
                                 <TooltipTrigger asChild>
                                   <AlertDialogTrigger asChild>
                                     <Button 
@@ -525,6 +529,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                                     <Button
                                       variant="outline"
                                       onClick={() => {
+                                        setPaymentDialogOpen(null);
                                         setPartialPaymentTx(tx);
                                       }}
                                     >
