@@ -12,6 +12,8 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
   const [userRevenue, setUserRevenue] = useState<string | null>(null);
   const [currentRevenue, setCurrentRevenue] = useState<number>(0);
   const [recommendedPlan, setRecommendedPlan] = useState<any>(null);
+  const [availablePlans, setAvailablePlans] = useState<any[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -29,6 +31,9 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       const placeholderRevenue = 45000; // $45k placeholder
       setCurrentRevenue(placeholderRevenue);
 
+      let recommendedPlanData = null;
+      let higherPlans: any[] = [];
+
       if (profile?.monthly_revenue) {
         setUserRevenue(profile.monthly_revenue);
         
@@ -44,24 +49,47 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
           revenueNum = parseFloat(revenueStr);
         }
 
-        // Determine appropriate plan based on revenue
+        // Determine appropriate plan based on revenue and get higher plans
         if (revenueNum <= 20000) {
-          setRecommendedPlan({ type: 'standard', plan: PRICING_PLANS.starter });
+          recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.starter };
+          higherPlans = [
+            { type: 'standard', plan: PRICING_PLANS.growing },
+            { type: 'standard', plan: PRICING_PLANS.professional },
+          ];
         } else if (revenueNum <= 100000) {
-          setRecommendedPlan({ type: 'standard', plan: PRICING_PLANS.growing });
+          recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.growing };
+          higherPlans = [
+            { type: 'standard', plan: PRICING_PLANS.professional },
+          ];
         } else if (revenueNum <= 200000) {
-          setRecommendedPlan({ type: 'standard', plan: PRICING_PLANS.professional });
+          recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.professional };
+          higherPlans = [];
         } else if (revenueNum <= 500000) {
-          setRecommendedPlan({ type: 'enterprise', plan: ENTERPRISE_TIERS.tier1 });
+          recommendedPlanData = { type: 'enterprise', plan: ENTERPRISE_TIERS.tier1 };
+          higherPlans = [
+            { type: 'enterprise', plan: ENTERPRISE_TIERS.tier2 },
+            { type: 'enterprise', plan: ENTERPRISE_TIERS.tier3 },
+          ];
         } else if (revenueNum <= 1000000) {
-          setRecommendedPlan({ type: 'enterprise', plan: ENTERPRISE_TIERS.tier2 });
+          recommendedPlanData = { type: 'enterprise', plan: ENTERPRISE_TIERS.tier2 };
+          higherPlans = [
+            { type: 'enterprise', plan: ENTERPRISE_TIERS.tier3 },
+          ];
         } else {
-          setRecommendedPlan({ type: 'enterprise', plan: ENTERPRISE_TIERS.tier3 });
+          recommendedPlanData = { type: 'enterprise', plan: ENTERPRISE_TIERS.tier3 };
+          higherPlans = [];
         }
       } else {
         // Default to Growing plan if no revenue info
-        setRecommendedPlan({ type: 'standard', plan: PRICING_PLANS.growing });
+        recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.growing };
+        higherPlans = [
+          { type: 'standard', plan: PRICING_PLANS.professional },
+        ];
       }
+
+      setRecommendedPlan(recommendedPlanData);
+      setAvailablePlans([recommendedPlanData, ...higherPlans]);
+      setSelectedPlanId(recommendedPlanData.plan.priceId);
     };
 
     fetchUserProfile();
@@ -71,9 +99,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
     navigate('/upgrade-plan');
   };
 
-  if (!recommendedPlan) return null;
-
-  const plan = recommendedPlan.plan;
+  if (!recommendedPlan || availablePlans.length === 0) return null;
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
@@ -99,49 +125,71 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
               {currentRevenue === 45000 ? 'Amazon integration pending - showing estimated revenue' : 'Based on Amazon sales data'}
             </div>
           </div>
-          <div className="border rounded-lg p-6 space-y-4 bg-gradient-to-br from-primary/5 to-accent/5">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-2xl font-bold">{plan.name}</h3>
-                {userRevenue && (
-                  <Badge variant="secondary" className="mt-2">
-                    Recommended for {userRevenue} revenue
-                  </Badge>
-                )}
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold">${plan.price}</div>
-                <div className="text-sm text-muted-foreground">/month</div>
-              </div>
-            </div>
+          {/* Available Plans */}
+          <div className="space-y-4">
+            {availablePlans.map((planData, index) => {
+              const plan = planData.plan;
+              const isRecommended = index === 0;
+              const isSelected = selectedPlanId === plan.priceId;
+              
+              return (
+                <div
+                  key={plan.priceId}
+                  className={`border rounded-lg p-6 space-y-4 cursor-pointer transition-all ${
+                    isSelected
+                      ? 'bg-gradient-to-br from-primary/10 to-accent/10 border-primary shadow-lg'
+                      : 'bg-gradient-to-br from-primary/5 to-accent/5 hover:border-primary/50'
+                  }`}
+                  onClick={() => setSelectedPlanId(plan.priceId)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-2xl font-bold">{plan.name}</h3>
+                        {isRecommended && (
+                          <Badge variant="default">Recommended</Badge>
+                        )}
+                      </div>
+                      {isRecommended && userRevenue && (
+                        <Badge variant="secondary" className="mt-2">
+                          For {userRevenue} revenue
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold">${plan.price}</div>
+                      <div className="text-sm text-muted-foreground">/month</div>
+                    </div>
+                  </div>
 
-            <div className="space-y-3 pt-4">
-              <p className="font-semibold text-sm">Included features:</p>
-              <ul className="space-y-2">
-                {plan.features.map((feature: string, index: number) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <span className="text-sm">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <Button 
-              onClick={(e) => {
-                e.preventDefault();
-                window.location.href = '/upgrade-plan';
-              }}
-              className="w-full bg-gradient-primary h-12 text-base font-semibold mt-6"
-              size="lg"
-            >
-              Pay Now - ${plan.price}/month
-            </Button>
-
-            <p className="text-xs text-center text-muted-foreground mt-4">
-              Need a different plan? You can choose another option on the next page.
-            </p>
+                  <div className="space-y-3 pt-4">
+                    <p className="font-semibold text-sm">
+                      {isRecommended ? 'Included features:' : 'Additional features:'}
+                    </p>
+                    <ul className="space-y-2">
+                      {plan.features.map((feature: string, featureIndex: number) => (
+                        <li key={featureIndex} className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                          <span className="text-sm">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              );
+            })}
           </div>
+
+          <Button 
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.href = `/upgrade-plan?priceId=${selectedPlanId}`;
+            }}
+            className="w-full bg-gradient-primary h-12 text-base font-semibold mt-6"
+            size="lg"
+          >
+            Pay Now - ${availablePlans.find(p => p.plan.priceId === selectedPlanId)?.plan.price}/month
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
