@@ -15,19 +15,18 @@ export const LiveDashboardShowcase = () => {
           <span>Live Dashboard Preview</span>
         </Badge>
         <h3 className="text-2xl font-bold mb-2">Experience Your Financial Command Center</h3>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground mb-4">
           See the actual dashboard interface that thousands of Amazon sellers use daily
         </p>
+        <Button 
+          variant="outline" 
+          onClick={() => navigate('/demo')}
+          className="inline-flex items-center space-x-2"
+        >
+          <ExternalLink className="h-4 w-4" />
+          <span>Try Interactive Demo</span>
+        </Button>
       </div>
-
-      <Button 
-        variant="outline" 
-        onClick={() => navigate('/demo')}
-        className="inline-flex items-center space-x-2 mx-auto block mb-6"
-      >
-        <ExternalLink className="h-4 w-4" />
-        <span>Try Interactive Demo</span>
-      </Button>
 
       <Card className="relative overflow-hidden shadow-2xl border-0 bg-gradient-to-br from-primary/5 to-accent/5">
         {/* Dashboard Preview Frame */}
