@@ -41,7 +41,8 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
-  const { data: safeSpendingData, isLoading: isLoadingSafeSpending, updatePercentage, refetch: refetchSafeSpending } = useSafeSpending();
+  const { data: safeSpendingData, isLoading: isLoadingSafeSpending, updateReserveAmount, refetch: refetchSafeSpending } = useSafeSpending();
+  const [reserveInput, setReserveInput] = useState<string>("");
   
   // Calculate dynamic values based on events
   const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
@@ -252,21 +253,31 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
             <div className="flex-1">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm text-slate-600">Safe Spending Limit</p>
-                <Select 
-                  value={safeSpendingData?.percentage?.toString() || "20"} 
-                  onValueChange={(value) => updatePercentage(parseInt(value))}
-                >
-                  <SelectTrigger className="w-20 h-6 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70].map((pct) => (
-                      <SelectItem key={pct} value={pct.toString()}>
-                        {pct}%
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    placeholder="Reserve"
+                    value={reserveInput || safeSpendingData?.reserve_amount || ""}
+                    onChange={(e) => setReserveInput(e.target.value)}
+                    onBlur={() => {
+                      const amount = parseFloat(reserveInput);
+                      if (!isNaN(amount) && amount >= 0) {
+                        updateReserveAmount(amount);
+                      }
+                      setReserveInput("");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const amount = parseFloat(reserveInput);
+                        if (!isNaN(amount) && amount >= 0) {
+                          updateReserveAmount(amount);
+                        }
+                        setReserveInput("");
+                      }
+                    }}
+                    className="w-24 h-6 text-xs px-2 border rounded"
+                  />
+                </div>
               </div>
               {isLoadingSafeSpending ? (
                 <div className="space-y-2">
@@ -279,7 +290,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                     {formatCurrency(safeSpendingData.safe_spending_limit)}
                   </p>
                   <p className="text-xs text-indigo-600 mt-1">
-                    Available after upcoming expenses & {safeSpendingData.percentage}% buffer
+                    Available after expenses & ${safeSpendingData.reserve_amount.toLocaleString()} reserve
                   </p>
                 </>
               ) : (

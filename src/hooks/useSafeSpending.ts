@@ -3,11 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface SafeSpendingData {
   safe_spending_limit: number;
-  percentage: number;
+  reserve_amount: number;
   calculation: {
     available_balance: number;
     upcoming_expenses: number;
-    grace_buffer: number;
+    reserve_buffer: number;
   };
 }
 
@@ -15,7 +15,7 @@ export const useSafeSpending = () => {
   const [data, setData] = useState<SafeSpendingData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [percentage, setPercentage] = useState(20);
+  const [reserveAmount, setReserveAmount] = useState(0);
 
   const fetchSafeSpending = async () => {
     try {
@@ -31,14 +31,14 @@ export const useSafeSpending = () => {
       // Get user settings
       const { data: settings, error: settingsError } = await supabase
         .from('user_settings')
-        .select('safe_spending_percentage, total_cash')
+        .select('safe_spending_reserve, total_cash')
         .eq('user_id', session.user.id)
         .single();
 
       if (settingsError) throw settingsError;
 
-      const userPercentage = settings?.safe_spending_percentage || 20;
-      setPercentage(userPercentage);
+      const userReserve = settings?.safe_spending_reserve || 0;
+      setReserveAmount(userReserve);
 
       // Get available balance (cash + available credit)
       const { data: bankAccounts } = await supabase
@@ -110,19 +110,16 @@ export const useSafeSpending = () => {
         });
       }
 
-      // Calculate grace buffer
-      const graceBuffer = availableBalance * (userPercentage / 100);
-
-      // Safe spending = Available - Upcoming Expenses - Grace Buffer
-      const safeSpendingLimit = Math.max(0, availableBalance - upcomingExpenses - graceBuffer);
+      // Safe spending = Available - Upcoming Expenses - Reserve Amount
+      const safeSpendingLimit = Math.max(0, availableBalance - upcomingExpenses - userReserve);
 
       setData({
         safe_spending_limit: safeSpendingLimit,
-        percentage: userPercentage,
+        reserve_amount: userReserve,
         calculation: {
           available_balance: availableBalance,
           upcoming_expenses: upcomingExpenses,
-          grace_buffer: graceBuffer,
+          reserve_buffer: userReserve,
         }
       });
     } catch (err) {
@@ -133,21 +130,21 @@ export const useSafeSpending = () => {
     }
   };
 
-  const updatePercentage = async (newPercentage: number) => {
+  const updateReserveAmount = async (newAmount: number) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
       const { error: updateError } = await supabase
         .from('user_settings')
-        .update({ safe_spending_percentage: newPercentage })
+        .update({ safe_spending_reserve: newAmount })
         .eq('user_id', session.user.id);
 
       if (updateError) throw updateError;
 
       await fetchSafeSpending();
     } catch (err) {
-      console.error("Error updating percentage:", err);
+      console.error("Error updating reserve amount:", err);
     }
   };
 
@@ -155,5 +152,5 @@ export const useSafeSpending = () => {
     fetchSafeSpending();
   }, []);
 
-  return { data, isLoading, error, percentage, updatePercentage, refetch: fetchSafeSpending };
+  return { data, isLoading, error, reserveAmount, updateReserveAmount, refetch: fetchSafeSpending };
 };

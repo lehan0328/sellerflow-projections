@@ -21,7 +21,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "next-themes";
-import { CheckoutModal } from "@/components/CheckoutModal";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const Landing = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showEnterpriseCustomizer, setShowEnterpriseCustomizer] = useState(false);
   const [showStickyCTA, setShowStickyCTA] = useState(false);
-  const [checkoutPriceId, setCheckoutPriceId] = useState<string | null>(null);
+  const [isStartingTrial, setIsStartingTrial] = useState(false);
 
   // Track scroll for sticky CTA
   useEffect(() => {
