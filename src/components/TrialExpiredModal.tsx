@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 export const TrialExpiredModal = ({ open }: { open: boolean }) => {
   const navigate = useNavigate();
   const [userRevenue, setUserRevenue] = useState<string | null>(null);
+  const [currentRevenue, setCurrentRevenue] = useState<number>(0);
   const [recommendedPlan, setRecommendedPlan] = useState<any>(null);
 
   useEffect(() => {
@@ -22,6 +23,11 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
         .select('monthly_revenue')
         .eq('user_id', user.id)
         .single();
+
+      // Fetch actual Amazon revenue (placeholder for now)
+      // TODO: Replace with actual Amazon revenue when integration is set up
+      const placeholderRevenue = 45000; // $45k placeholder
+      setCurrentRevenue(placeholderRevenue);
 
       if (profile?.monthly_revenue) {
         setUserRevenue(profile.monthly_revenue);
@@ -70,7 +76,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
   const plan = recommendedPlan.plan;
 
   return (
-    <Dialog open={open} modal>
+    <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-[600px]" hideClose>
         <DialogHeader>
           <div className="flex items-center gap-2 text-destructive">
@@ -83,6 +89,16 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
         </DialogHeader>
 
         <div className="py-6">
+          {/* Current Revenue Display */}
+          <div className="mb-6 p-4 rounded-lg bg-muted/50 border">
+            <div className="text-sm text-muted-foreground mb-1">Your Current Monthly Revenue</div>
+            <div className="text-2xl font-bold">
+              ${currentRevenue.toLocaleString()}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {currentRevenue === 45000 ? 'Amazon integration pending - showing estimated revenue' : 'Based on Amazon sales data'}
+            </div>
+          </div>
           <div className="border rounded-lg p-6 space-y-4 bg-gradient-to-br from-primary/5 to-accent/5">
             <div className="flex items-start justify-between">
               <div>
@@ -112,7 +128,10 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
             </div>
 
             <Button 
-              onClick={handlePayNow}
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.href = '/upgrade-plan';
+              }}
               className="w-full bg-gradient-primary h-12 text-base font-semibold mt-6"
               size="lg"
             >
