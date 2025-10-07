@@ -58,7 +58,7 @@ export const FloatingChatWidget = () => {
     <>
       {/* Floating Chat Button with Tooltip */}
       {!isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center space-x-3">
+        <div className="fixed bottom-24 right-6 z-50 flex items-center space-x-3">
           {showTooltip && (
             <div className="bg-card border shadow-lg rounded-lg px-4 py-2 animate-fade-in">
               <p className="text-sm font-medium">Here to help! 💬</p>
@@ -79,7 +79,7 @@ export const FloatingChatWidget = () => {
 
       {/* Chat Widget */}
       {isOpen && (
-        <Card className="fixed bottom-6 right-6 w-96 h-[500px] shadow-2xl z-50 flex flex-col animate-scale-in">
+        <Card className="fixed bottom-24 right-6 w-96 h-[500px] shadow-2xl z-50 flex flex-col animate-scale-in">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b">
             <div className="flex items-center space-x-2">
               <div className="h-8 w-8 rounded-full bg-gradient-primary flex items-center justify-center">

@@ -31,7 +31,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Auren <noreply@imarand.com>",
+        from: "Auren <noreply@aurenapp.com>",
         to: [email],
         subject: "Reset Your CashFlow Pro Password",
         html: `
