@@ -727,7 +727,7 @@ const UpgradePlan = () => {
                       </ul>
                       <div className="text-center pt-4">
                         <p className="text-sm text-muted-foreground">
-                          Plan will be automatically selected when trial ends
+                          Plan will be automatically selected based on your revenue when trial ends
                         </p>
                       </div>
                     </CardContent>
@@ -816,27 +816,9 @@ const UpgradePlan = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-col items-center gap-4 pt-4">
-                  <Button 
-                    size="lg" 
-                    className="w-full max-w-md bg-gradient-primary"
-                    onClick={() => {
-                      // Build line items: base plan
-                      const lineItems = [
-                        {
-                          price: ENTERPRISE_TIERS[selectedEnterpriseTier].priceId,
-                          quantity: 1
-                        }
-                      ];
-                      
-                      createCheckout(undefined, lineItems);
-                    }}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Processing..." : "Start Free Trial - No Card Required"}
-                  </Button>
-                  <p className="text-xs text-muted-foreground text-center">
-                    Then ${ENTERPRISE_TIERS[selectedEnterpriseTier].price}/month. Cancel anytime during your 7-day free trial.
+                <div className="text-center pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Enterprise plan will be automatically selected based on your revenue when trial ends
                   </p>
                 </div>
               </CardContent>
