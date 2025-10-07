@@ -112,42 +112,42 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: finalLineItems,
       mode: "subscription",
-      payment_method_collection: "if_required", // No card needed for trial
       success_url: `${req.headers.get("origin")}/dashboard?subscription=success`,
       cancel_url: `${req.headers.get("origin")}/upgrade-plan?subscription=canceled`,
+      allow_promotion_codes: true,
     };
-    
-    // If new customer is created, mark trial as used in metadata
-    if (!customerId) {
-      sessionConfig.customer_creation = "always";
-      sessionConfig.subscription_data = {
-        metadata: {
-          trial_used: 'true'
-        }
-      };
-    }
     
     // Trial logic: Only offer trial if customer has NEVER had one before
     if (!hasEverHadTrial && !hasExistingSubscription) {
       sessionConfig.subscription_data = {
-        ...sessionConfig.subscription_data,
         trial_period_days: 7,
+        metadata: {
+          trial_used: 'true'
+        }
       };
+      sessionConfig.payment_method_collection = "if_required"; // No card needed for trial
       logStep("Adding 7-day trial for first-time customer");
     } else if (hasEverHadTrial && !hasExistingSubscription) {
+      sessionConfig.payment_method_collection = "always"; // Require payment for non-trial
       logStep("Skipping trial - customer has used trial before");
     } else if (hasExistingSubscription && currentSubscription) {
       // When upgrading from existing subscription, schedule new subscription 
       // to start when current period ends (no immediate charge)
       const currentPeriodEnd = currentSubscription.current_period_end;
       sessionConfig.subscription_data = {
-        ...sessionConfig.subscription_data,
         trial_end: currentPeriodEnd, // New subscription starts after current one
+        metadata: {
+          upgraded_from: currentSubscription.id
+        }
       };
+      sessionConfig.payment_method_collection = "if_required";
       logStep("Scheduling new subscription after current period", { 
         currentPeriodEnd,
         currentPeriodEndDate: new Date(currentPeriodEnd * 1000).toISOString()
       });
+    } else {
+      // Default case: require payment method
+      sessionConfig.payment_method_collection = "always";
     }
     
     const session = await stripe.checkout.sessions.create(sessionConfig);
