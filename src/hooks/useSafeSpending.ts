@@ -45,19 +45,42 @@ export const useSafeSpending = () => {
       const { data: bankAccounts } = await supabase
         .from('bank_accounts')
         .select('balance, available_balance')
-        .eq('user_id', session.user.id);
+        .eq('user_id', session.user.id)
+        .eq('is_active', true);
 
       const { data: creditCards } = await supabase
         .from('credit_cards')
         .select('available_credit')
         .eq('user_id', session.user.id);
 
-      const totalCash = Number(settings?.total_cash || 0);
+      // Calculate starting balance same way as Dashboard
+      // Get all completed transactions up to today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const { data: completedTransactions } = await supabase
+        .from('transactions')
+        .select('amount, type, transaction_date')
+        .eq('user_id', session.user.id)
+        .eq('status', 'completed')
+        .lte('transaction_date', today.toISOString());
+
+      const transactionTotal = completedTransactions?.reduce((total, tx) => {
+        const amount = Number(tx.amount);
+        const isIncome = tx.type === 'customer_payment' || tx.type === 'sales_order';
+        return isIncome ? total + amount : total - amount;
+      }, 0) || 0;
+
+      const userSettingsCash = Number(settings?.total_cash || 0);
+      const bankBalance = bankAccounts?.reduce((sum, acc) => sum + Number(acc.balance || 0), 0) || 0;
+      
+      // Use bank balance if available, otherwise calculate from user settings + transactions
+      const totalCash = bankAccounts && bankAccounts.length > 0 ? bankBalance : userSettingsCash + transactionTotal;
       const totalAvailableCredit = creditCards?.reduce((sum, card) => sum + Number(card.available_credit || 0), 0) || 0;
       const availableBalance = totalCash + totalAvailableCredit;
 
       // Calculate projected cash flow for next 180 days
-      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       today.setHours(0, 0, 0, 0);
       const endDate = new Date(today);
       endDate.setDate(endDate.getDate() + 180);
