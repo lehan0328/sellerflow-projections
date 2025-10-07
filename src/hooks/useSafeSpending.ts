@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { generateRecurringDates } from "@/lib/recurringDates";
 
 interface SafeSpendingData {
   safe_spending_limit: number;
@@ -19,256 +18,17 @@ interface DailyBalance {
   balance: number;
 }
 
-interface CashFlowEvent {
-  date: string;
-  amount: number;
-  type: 'inflow' | 'outflow';
-  source: string;
-}
-
 export const useSafeSpending = () => {
   const [data, setData] = useState<SafeSpendingData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reserveAmount, setReserveAmount] = useState(0);
 
-  // Format date consistently
   const formatDate = (date: Date | string): string => {
     if (typeof date === 'string') return date.split('T')[0];
     return date.toISOString().split('T')[0];
   };
 
-  // Get today at midnight
-  const getToday = (): string => formatDate(new Date());
-
-  // Get starting cash balance
-  const getStartingBalance = async (userId: string): Promise<{ balance: number; reserve: number }> => {
-    const [settingsResult, accountsResult] = await Promise.all([
-      supabase.from('user_settings').select('total_cash, safe_spending_reserve').eq('user_id', userId).single(),
-      supabase.from('bank_accounts').select('balance').eq('user_id', userId).eq('is_active', true)
-    ]);
-
-    const settingsCash = Number(settingsResult.data?.total_cash || 0);
-    const banksCash = accountsResult.data?.reduce((sum, acc) => sum + Number(acc.balance || 0), 0) || 0;
-    const reserve = Number(settingsResult.data?.safe_spending_reserve || 0);
-
-    // Use bank balance if available, otherwise user settings
-    const balance = accountsResult.data && accountsResult.data.length > 0 ? banksCash : settingsCash;
-
-    return { balance, reserve };
-  };
-
-  // Collect all cash flow events for the projection period
-  const collectCashFlowEvents = async (userId: string, startDate: string, endDate: string): Promise<CashFlowEvent[]> => {
-    const events: CashFlowEvent[] = [];
-
-    // 1. Fetch transactions (purchase orders and sales orders)
-    const { data: transactions } = await supabase
-      .from('transactions')
-      .select('transaction_date, amount, type, description')
-      .eq('user_id', userId)
-      .gte('transaction_date', startDate)
-      .lte('transaction_date', endDate);
-
-    console.log('Raw transactions from DB:', transactions);
-
-    transactions?.forEach(tx => {
-      if (tx.type === 'purchase_order' || tx.type === 'expense') {
-        events.push({
-          date: formatDate(tx.transaction_date),
-          amount: Math.abs(Number(tx.amount)),
-          type: 'outflow',
-          source: `${tx.type}: ${tx.description}`
-        });
-      } else if (tx.type === 'sales_order' || tx.type === 'customer_payment') {
-        events.push({
-          date: formatDate(tx.transaction_date),
-          amount: Math.abs(Number(tx.amount)),
-          type: 'inflow',
-          source: `${tx.type}: ${tx.description}`
-        });
-      }
-    });
-
-    // 2. Fetch income
-    const { data: income } = await supabase
-      .from('income')
-      .select('payment_date, amount')
-      .eq('user_id', userId)
-      .gte('payment_date', startDate)
-      .lte('payment_date', endDate);
-
-    income?.forEach(inc => {
-      events.push({
-        date: formatDate(inc.payment_date),
-        amount: Number(inc.amount),
-        type: 'inflow',
-        source: 'income'
-      });
-    });
-
-    // 3. Fetch Amazon payouts
-    const { data: payouts } = await supabase
-      .from('amazon_payouts')
-      .select('payout_date, total_amount')
-      .eq('user_id', userId)
-      .gte('payout_date', startDate)
-      .lte('payout_date', endDate);
-
-    payouts?.forEach(payout => {
-      events.push({
-        date: formatDate(payout.payout_date),
-        amount: Number(payout.total_amount),
-        type: 'inflow',
-        source: 'amazon-payout'
-      });
-    });
-
-    // 4. Fetch recurring expenses/income
-    const { data: recurring } = await supabase
-      .from('recurring_expenses')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('is_active', true);
-
-    const startDateObj = new Date(startDate);
-    const endDateObj = new Date(endDate);
-
-    recurring?.forEach(exp => {
-      const dates = generateRecurringDates(
-        {
-          ...exp,
-          frequency: exp.frequency as any,
-          type: exp.type as 'expense' | 'income'
-        },
-        startDateObj,
-        endDateObj
-      );
-
-      dates.forEach(date => {
-        events.push({
-          date: formatDate(date),
-          amount: Math.abs(Number(exp.amount)),
-          type: exp.type === 'expense' ? 'outflow' : 'inflow',
-          source: `recurring-${exp.type}`
-        });
-      });
-    });
-
-    // 5. Fetch vendor payments
-    const { data: vendors } = await supabase
-      .from('vendors')
-      .select('next_payment_date, next_payment_amount, payment_schedule')
-      .eq('user_id', userId);
-
-    vendors?.forEach(vendor => {
-      // Add next payment date
-      if (vendor.next_payment_date && vendor.next_payment_amount) {
-        const paymentDate = formatDate(vendor.next_payment_date);
-        if (paymentDate >= startDate && paymentDate <= endDate) {
-          events.push({
-            date: paymentDate,
-            amount: Math.abs(Number(vendor.next_payment_amount)),
-            type: 'outflow',
-            source: 'vendor-payment'
-          });
-        }
-      }
-
-      // Add payment schedule
-      if (vendor.payment_schedule && Array.isArray(vendor.payment_schedule)) {
-        vendor.payment_schedule.forEach((payment: any) => {
-          if (payment.date && payment.amount) {
-            const paymentDate = formatDate(payment.date);
-            if (paymentDate >= startDate && paymentDate <= endDate) {
-              events.push({
-                date: paymentDate,
-                amount: Math.abs(Number(payment.amount)),
-                type: 'outflow',
-                source: 'vendor-schedule'
-              });
-            }
-          }
-        });
-      }
-    });
-
-    console.log('📊 Cash Flow Events Collected:', {
-      totalEvents: events.length,
-      byType: {
-        inflow: events.filter(e => e.type === 'inflow').length,
-        outflow: events.filter(e => e.type === 'outflow').length
-      },
-      bySource: events.reduce((acc, e) => {
-        acc[e.source] = (acc[e.source] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>),
-      sampleEvents: events.slice(0, 5)
-    });
-
-    return events;
-  };
-
-  // Project daily balances
-  const projectBalances = (startingBalance: number, events: CashFlowEvent[], days: number, today: string): DailyBalance[] => {
-    const balances: DailyBalance[] = [];
-    let runningBalance = startingBalance;
-
-    // Group events by date
-    const eventsByDate = events.reduce((acc, event) => {
-      if (!acc[event.date]) acc[event.date] = [];
-      acc[event.date].push(event);
-      return acc;
-    }, {} as Record<string, CashFlowEvent[]>);
-
-    console.log('Events by date:', eventsByDate);
-
-    // Project each day
-    for (let i = 1; i <= days; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() + i);
-      const dateStr = formatDate(date);
-
-      // Get events for this day
-      const dayEvents = eventsByDate[dateStr] || [];
-      
-      // Calculate net change
-      let dayInflow = 0;
-      let dayOutflow = 0;
-      
-      dayEvents.forEach(event => {
-        if (event.type === 'inflow') {
-          dayInflow += event.amount;
-        } else {
-          dayOutflow += event.amount;
-        }
-      });
-
-      const netChange = dayInflow - dayOutflow;
-      runningBalance += netChange;
-
-      balances.push({
-        date: dateStr,
-        balance: runningBalance
-      });
-
-      // Log first 15 days for debugging
-      if (i <= 15) {
-        console.log(`Day ${i} (${dateStr}):`, {
-          inflow: dayInflow,
-          outflow: dayOutflow,
-          netChange,
-          runningBalance,
-          events: dayEvents.map(e => `${e.type}: $${e.amount} (${e.source})`)
-        });
-      }
-    }
-
-    return balances;
-  };
-
-
-  // Main calculation
   const fetchSafeSpending = async () => {
     try {
       setIsLoading(true);
@@ -280,38 +40,96 @@ export const useSafeSpending = () => {
         return;
       }
 
-      const today = getToday();
-      const endDate = new Date(today);
-      endDate.setDate(endDate.getDate() + 180);
-      const endDateStr = formatDate(endDate);
+      // Get user settings for reserve
+      const { data: settings } = await supabase
+        .from('user_settings')
+        .select('safe_spending_reserve')
+        .eq('user_id', session.user.id)
+        .single();
 
-      // Get starting balance and reserve
-      const { balance: startingBalance, reserve } = await getStartingBalance(session.user.id);
+      const reserve = Number(settings?.safe_spending_reserve || 0);
       setReserveAmount(reserve);
 
-      // Collect all cash flow events
-      const events = await collectCashFlowEvents(session.user.id, today, endDateStr);
+      // Get bank account balance
+      const { data: bankAccounts } = await supabase
+        .from('bank_accounts')
+        .select('balance')
+        .eq('user_id', session.user.id)
+        .eq('is_active', true);
 
-      // Project balances
-      const projectedBalances = projectBalances(startingBalance, events, 180, today);
+      const bankBalance = bankAccounts?.reduce((sum, acc) => sum + Number(acc.balance || 0), 0) || 0;
+
+      // Get ALL events (transactions, income, recurring, vendors, etc.)
+      // This should match what the calendar receives
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = formatDate(today);
+
+      const futureDate = new Date(today);
+      futureDate.setDate(futureDate.getDate() + 180);
+      const futureDateStr = formatDate(futureDate);
+
+      // Get all transactions
+      const { data: transactions } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .gte('transaction_date', todayStr)
+        .lte('transaction_date', futureDateStr);
+
+      console.log('📊 Fetched transactions:', transactions?.length || 0);
+
+      // Project balance for next 180 days using calendar logic
+      const dailyBalances: DailyBalance[] = [];
+
+      for (let i = 1; i <= 180; i++) {
+        const targetDate = new Date(today);
+        targetDate.setDate(targetDate.getDate() + i);
+        targetDate.setHours(0, 0, 0, 0);
+        const targetDateStr = formatDate(targetDate);
+
+        // Calculate cumulative net change from all events up to and including target day
+        // (This matches getTotalCashForDay from calendar)
+        const eventsUpToDay = transactions?.filter((tx) => {
+          const txDate = new Date(tx.transaction_date);
+          txDate.setHours(0, 0, 0, 0);
+          return txDate <= targetDate;
+        }) || [];
+
+        const netChange = eventsUpToDay.reduce((total, tx) => {
+          if (tx.type === 'sales_order' || tx.type === 'customer_payment') {
+            return total + Number(tx.amount);
+          } else if (tx.type === 'purchase_order' || tx.type === 'expense') {
+            return total - Number(tx.amount);
+          }
+          return total;
+        }, 0);
+
+        const projectedBalance = bankBalance + netChange;
+
+        dailyBalances.push({
+          date: targetDateStr,
+          balance: projectedBalance
+        });
+      }
 
       // Find lowest balance
-      const lowestBalance = projectedBalances.reduce((min, day) => 
+      const lowestBalance = dailyBalances.reduce((min, day) =>
         day.balance < min.balance ? day : min,
-        projectedBalances[0] || { date: today, balance: startingBalance }
+        dailyBalances[0] || { date: todayStr, balance: bankBalance }
       );
 
       const willGoNegative = lowestBalance.balance < 0;
       const safeSpendingLimit = willGoNegative ? 0 : Math.max(0, lowestBalance.balance - reserve);
 
-      console.log('💰 Safe Spending Result:', {
-        startingBalance,
+      console.log('💰 Safe Spending Calculation:', {
+        bankBalance,
         reserve,
         lowestBalance: lowestBalance.balance,
         lowestDate: lowestBalance.date,
         willGoNegative,
         safeSpendingLimit,
-        next7Days: projectedBalances.slice(0, 7)
+        first10Days: dailyBalances.slice(0, 10)
       });
 
       setData({
@@ -320,7 +138,7 @@ export const useSafeSpending = () => {
         will_go_negative: willGoNegative,
         negative_date: willGoNegative ? lowestBalance.date : null,
         calculation: {
-          available_balance: startingBalance,
+          available_balance: bankBalance,
           lowest_projected_balance: lowestBalance.balance,
           lowest_balance_date: lowestBalance.date
         }
@@ -354,14 +172,12 @@ export const useSafeSpending = () => {
   useEffect(() => {
     fetchSafeSpending();
 
-    // Subscribe to realtime changes
     const channel = supabase
       .channel('safe-spending-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, fetchSafeSpending)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'income' }, fetchSafeSpending)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'recurring_expenses' }, fetchSafeSpending)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bank_accounts' }, fetchSafeSpending)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'amazon_payouts' }, fetchSafeSpending)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'vendors' }, fetchSafeSpending)
       .subscribe();
 
