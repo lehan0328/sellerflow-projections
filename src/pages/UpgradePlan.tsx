@@ -682,17 +682,11 @@ const UpgradePlan = () => {
                           </li>
                         ))}
                       </ul>
-                      <Button 
-                        className="w-full" 
-                        variant={planItem.popular ? "default" : "outline"}
-                        onClick={() => handleUpgrade(getCurrentPriceId(planItem))}
-                        disabled={isLoading}
-                      >
-                        Start Free Trial - No Card Required
-                      </Button>
-                      <p className="text-xs text-muted-foreground text-center">
-                        Then ${isYearly ? planItem.yearlyPrice + '/year' : planItem.price + '/month'}. Cancel anytime.
-                      </p>
+                      <div className="text-center pt-4">
+                        <p className="text-sm text-muted-foreground">
+                          Plan will be automatically selected when trial ends
+                        </p>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
