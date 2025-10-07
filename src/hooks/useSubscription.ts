@@ -38,11 +38,11 @@ export const PRICING_PLANS = {
     price_id: "price_1SEH8NB28kMY3UseBj2w9HgH",
     yearly_price_id: "price_1SEHZGB28kMY3UseCkWIlnWw",
     features: [
-      "Up to $20k monthly revenue",
+      "Under $20k monthly Amazon payout",
       "2 bank/credit card connections",
       "1 Amazon connection",
       "Advanced forecasting workflow",
-      "365-day cash flow projection",
+      "365-day cashflow projection",
       "Bank transaction matching",
       "Email support"
     ]
@@ -55,11 +55,16 @@ export const PRICING_PLANS = {
     price_id: "price_1SEH8iB28kMY3Usem3k3vElT",
     yearly_price_id: "price_1SEHZVB28kMY3Use9bH8xPlg",
     features: [
-      "Up to $100k monthly revenue",
-      "3 bank/credit card connections",
+      "Under $50k monthly Amazon payout",
+      "4 bank/credit card connections",
       "1 Amazon connection",
+      "AI insights",
+      "AI PDF extractor",
       "2 additional users",
-      "AI insights & PDF extractor",
+      "Advanced forecasting workflow",
+      "365-day cashflow projection",
+      "Bank transaction matching",
+      "Basic analytics",
       "Priority support"
     ]
   },
@@ -71,12 +76,16 @@ export const PRICING_PLANS = {
     price_id: "price_1SEHBHB28kMY3UsenQEY0qoT",
     yearly_price_id: "price_1SEHZfB28kMY3UseZKmLEcPk",
     features: [
-      "Up to $200k monthly revenue",
-      "4 bank/credit card connections",
+      "Under $200k monthly Amazon payout",
+      "7 bank/credit card connections",
       "1 Amazon connection",
+      "AI insights",
+      "AI PDF extractor",
       "5 additional users",
-      "All Growing features",
       "Automated notifications",
+      "Advanced forecasting workflow",
+      "365-day cashflow projection",
+      "Bank transaction matching",
       "Scenario planning",
       "Advanced analytics",
       "Priority support"
