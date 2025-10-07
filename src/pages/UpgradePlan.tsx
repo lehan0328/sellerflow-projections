@@ -291,8 +291,22 @@ const UpgradePlan = () => {
                         )}
                       </div>
                       {!isYearly && (
-                        <div className="text-xs text-muted-foreground text-right">
-                          Annual total: ${PRICING_PLANS[plan].price * 12}
+                        <div className="space-y-2">
+                          <div className="text-xs text-muted-foreground text-right">
+                            Annual total: ${PRICING_PLANS[plan].price * 12}
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full text-xs"
+                            onClick={() => handleUpgrade(PRICING_PLANS[plan].yearly_price_id)}
+                          >
+                            <Calendar className="h-3 w-3 mr-2" />
+                            Switch to Yearly & Pay ${PRICING_PLANS[plan].yearlyPrice}
+                            <Badge variant="secondary" className="ml-2 text-xs">
+                              Save {plans.find(p => p.key === plan)?.savings}
+                            </Badge>
+                          </Button>
                         </div>
                       )}
                     </div>
