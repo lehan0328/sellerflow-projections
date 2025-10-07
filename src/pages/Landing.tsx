@@ -109,24 +109,15 @@ const Landing = () => {
 
       const { data: { session } } = await supabase.auth.getSession();
       
+      // If not logged in, redirect to signup to create account first
       if (!session) {
-        navigate("/auth");
+        navigate("/signup");
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('create-guest-checkout', {
-        body: { 
-          priceId,
-          email: session.user.email,
-          isEnterprise: false
-        }
-      });
-
-      if (error) throw error;
-      
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
+      // If logged in, redirect to dashboard (they already have trial access)
+      navigate("/dashboard");
+      toast.success("Welcome! Your trial has started.");
     } catch (error) {
       console.error("Error starting trial:", error);
       toast.error("Failed to start trial. Please try again.");
@@ -457,7 +448,7 @@ const Landing = () => {
                   onClick={() => handleStartTrial(pricingPlans[1].priceId)}
                   disabled={isLoading}
                 >
-                  <span className="relative z-10">{isLoading ? "Loading..." : "Start 7-Day Free Trial"}</span>
+                  <span className="relative z-10">{isLoading ? "Loading..." : "Start Free Trial - No Card Required"}</span>
                   <ArrowRight className="relative z-10 ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
                   <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </Button>
@@ -1638,21 +1629,21 @@ const Landing = () => {
 
                 setIsLoading(true);
                 try {
-                  const { data, error } = await supabase.functions.invoke("create-guest-checkout", {
-                    body: { 
-                      lineItems,
-                      isEnterprise: true 
-                    },
-                  });
-
-                  if (error) throw error;
-
-                  if (data?.url) {
-                    window.location.href = data.url;
+                  const { data: { session } } = await supabase.auth.getSession();
+                  
+                  // If not logged in, redirect to signup
+                  if (!session) {
+                    navigate("/signup?enterprise=true");
+                    setShowEnterpriseCustomizer(false);
+                    return;
                   }
+
+                  // If logged in, redirect to dashboard
+                  navigate("/dashboard");
+                  toast.success("Welcome! Your enterprise trial has started.");
                 } catch (error) {
-                  console.error("Error creating checkout:", error);
-                  toast.error("Failed to start checkout. Please try again.");
+                  console.error("Error:", error);
+                  toast.error("Failed to start trial. Please try again.");
                 } finally {
                   setIsLoading(false);
                 }
@@ -1661,7 +1652,7 @@ const Landing = () => {
               }}
               disabled={isLoading}
             >
-              {isLoading ? "Processing..." : "Start 7-Day Free Trial"}
+              {isLoading ? "Processing..." : "Start Free Trial - No Card Required"}
             </Button>
             <p className="text-xs text-center text-muted-foreground">
               No credit card required. Then ${calculateEnterprisePrice()}/{isYearly ? 'year' : 'month'}. Cancel anytime during your 7-day free trial.

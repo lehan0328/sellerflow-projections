@@ -79,6 +79,12 @@ const UpgradePlan = () => {
   ];
 
   const handleUpgrade = (priceId: string) => {
+    // For non-subscribed users, redirect to signup instead of Stripe
+    if (!subscribed) {
+      navigate('/signup');
+      return;
+    }
+    // For existing subscribers upgrading their plan
     createCheckout(priceId);
   };
 
@@ -682,7 +688,7 @@ const UpgradePlan = () => {
                         onClick={() => handleUpgrade(getCurrentPriceId(planItem))}
                         disabled={isLoading}
                       >
-                        Start 7-Day Free Trial
+                        Start Free Trial - No Card Required
                       </Button>
                       <p className="text-xs text-muted-foreground text-center">
                         Then ${isYearly ? planItem.yearlyPrice + '/year' : planItem.price + '/month'}. Cancel anytime.
@@ -790,7 +796,7 @@ const UpgradePlan = () => {
                     }}
                     disabled={isLoading}
                   >
-                    {isLoading ? "Processing..." : "Start 7-Day Free Trial"}
+                    {isLoading ? "Processing..." : "Start Free Trial - No Card Required"}
                   </Button>
                   <p className="text-xs text-muted-foreground text-center">
                     Then ${ENTERPRISE_TIERS[selectedEnterpriseTier].price}/month. Cancel anytime during your 7-day free trial.
