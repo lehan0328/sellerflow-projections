@@ -80,25 +80,25 @@ export const useSafeSpending = () => {
       const totalAvailableCredit = creditCards?.reduce((sum, card) => sum + Number(card.available_credit || 0), 0) || 0;
       const availableBalance = totalCash + totalAvailableCredit;
 
-      // Calculate projected cash flow for next 180 days
+      // Calculate projected cash flow for next 180 days (ignore overdue items)
       const endDate = new Date(today);
       endDate.setDate(endDate.getDate() + 180);
       const endDateStr = endDate.toISOString().split('T')[0];
 
-      // Get all transactions in next 180 days
+      // Get all FUTURE transactions in next 180 days (ignore overdue/past transactions)
       const { data: futureTransactions } = await supabase
         .from('transactions')
-        .select('amount, type, transaction_date')
+        .select('amount, type, transaction_date, status')
         .eq('user_id', session.user.id)
-        .gte('transaction_date', todayStr)
+        .gt('transaction_date', todayStr) // Only future dates (not today, not past)
         .lte('transaction_date', endDateStr);
 
-      // Get all income in next 180 days
+      // Get all FUTURE income in next 180 days (ignore overdue/past income)
       const { data: futureIncome } = await supabase
         .from('income')
-        .select('amount, payment_date')
+        .select('amount, payment_date, status')
         .eq('user_id', session.user.id)
-        .gte('payment_date', todayStr)
+        .gt('payment_date', todayStr) // Only future dates
         .lte('payment_date', endDateStr);
 
       // Get recurring expenses
@@ -108,19 +108,21 @@ export const useSafeSpending = () => {
         .eq('user_id', session.user.id)
         .eq('is_active', true);
 
-      // Get Amazon payouts
+      // Get FUTURE Amazon payouts only (ignore past payouts)
       const { data: amazonPayouts } = await supabase
         .from('amazon_payouts')
         .select('total_amount, payout_date')
         .eq('user_id', session.user.id)
-        .gte('payout_date', todayStr)
+        .gt('payout_date', todayStr) // Only future dates
         .lte('payout_date', endDateStr);
 
-      // Build daily cash flow projection
+      // Build daily cash flow projection starting from TODAY
+      // This represents the lowest cash point we'll hit in the next 180 days
       const dailyBalances: { date: Date; balance: number }[] = [];
-      let runningBalance = availableBalance;
+      let runningBalance = totalCash; // Start with actual cash (not including credit)
 
-      for (let i = 0; i <= 180; i++) {
+      // Start from day 1 (tomorrow) through day 180
+      for (let i = 1; i <= 180; i++) {
         const currentDate = new Date(today);
         currentDate.setDate(currentDate.getDate() + i);
         const dateStr = currentDate.toISOString().split('T')[0];
@@ -181,19 +183,22 @@ export const useSafeSpending = () => {
         dailyBalances.push({ date: currentDate, balance: runningBalance });
       }
 
-      // Find the lowest projected balance
-      const lowestBalance = dailyBalances.reduce((min, day) => 
-        day.balance < min.balance ? day : min
-      );
+      // Find the lowest projected CASH balance (not including credit) in the next 180 days
+      const lowestBalance = dailyBalances.length > 0 
+        ? dailyBalances.reduce((min, day) => day.balance < min.balance ? day : min)
+        : { date: today, balance: totalCash };
 
-      // Safe spending = Lowest Projected Balance - Reserve Amount
-      const safeSpendingLimit = Math.max(0, lowestBalance.balance - userReserve);
+      // Safe Spending Logic:
+      // = Current Cash - Lowest Projected Cash in next 180 days - Reserve
+      // This tells you how much you can safely spend TODAY without going below your reserve
+      const projectedDrop = totalCash - lowestBalance.balance;
+      const safeSpendingLimit = Math.max(0, totalCash - projectedDrop - userReserve);
 
       setData({
         safe_spending_limit: safeSpendingLimit,
         reserve_amount: userReserve,
         calculation: {
-          available_balance: availableBalance,
+          available_balance: totalCash,
           lowest_projected_balance: lowestBalance.balance,
           lowest_balance_date: lowestBalance.date.toISOString().split('T')[0],
         }
