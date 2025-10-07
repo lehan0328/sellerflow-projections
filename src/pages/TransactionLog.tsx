@@ -313,9 +313,9 @@ export default function TransactionLog() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="vendors">Vendor Transactions</TabsTrigger>
-            <TabsTrigger value="income">Income Transactions</TabsTrigger>
-            <TabsTrigger value="deleted">Deleted Transactions</TabsTrigger>
+            <TabsTrigger value="vendors">Vendor</TabsTrigger>
+            <TabsTrigger value="income">Income</TabsTrigger>
+            <TabsTrigger value="deleted">Deleted</TabsTrigger>
           </TabsList>
 
           <TabsContent value="vendors" className="space-y-4">
