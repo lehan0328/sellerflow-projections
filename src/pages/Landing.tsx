@@ -6,6 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun, ExternalLink, Lock, AlertCircle, BookOpen } from "lucide-react";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import aurenFullLogo from "@/assets/auren-full-logo.png";
+import avatar1 from "@/assets/avatar-1.jpg";
+import avatar2 from "@/assets/avatar-2.jpg";
+import avatar3 from "@/assets/avatar-3.jpg";
+import avatar4 from "@/assets/avatar-4.jpg";
 import { useNavigate, Link } from "react-router-dom";
 import { LiveDashboardShowcase } from "@/components/LiveDashboardShowcase";
 import { FloatingChatWidget } from "@/components/floating-chat-widget";
@@ -460,9 +464,10 @@ const Landing = () => {
               >
                 <div className="flex items-center gap-2 text-sm">
                   <div className="flex -space-x-1">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent border-2 border-background" />
-                    ))}
+                    <img src={avatar1} alt="Seller testimonial" className="w-8 h-8 rounded-full border-2 border-background object-cover" />
+                    <img src={avatar2} alt="Seller testimonial" className="w-8 h-8 rounded-full border-2 border-background object-cover" />
+                    <img src={avatar3} alt="Seller testimonial" className="w-8 h-8 rounded-full border-2 border-background object-cover" />
+                    <img src={avatar4} alt="Seller testimonial" className="w-8 h-8 rounded-full border-2 border-background object-cover" />
                   </div>
                   <span className="text-muted-foreground">
                     <span className="font-semibold text-foreground">500+</span> sellers trust Auren
