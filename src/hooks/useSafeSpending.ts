@@ -54,14 +54,15 @@ export const useSafeSpending = () => {
         .eq('user_id', session.user.id);
 
       // Calculate starting balance same way as Dashboard
-      // Get all completed transactions up to today
+      // Get all completed transactions up to TODAY (ignore overdue)
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todayStr = today.toISOString().split('T')[0];
       
+      // ONLY get completed transactions (ignore pending/overdue)
       const { data: completedTransactions } = await supabase
         .from('transactions')
-        .select('amount, type, transaction_date')
+        .select('amount, type, transaction_date, status')
         .eq('user_id', session.user.id)
         .eq('status', 'completed')
         .lte('transaction_date', todayStr);
@@ -72,11 +73,25 @@ export const useSafeSpending = () => {
         return isIncome ? total + amount : total - amount;
       }, 0) || 0;
 
+      // Get ONLY completed income up to today (ignore overdue pending income)
+      const { data: completedIncome } = await supabase
+        .from('income')
+        .select('amount, payment_date, status')
+        .eq('user_id', session.user.id)
+        .eq('status', 'completed')
+        .lte('payment_date', todayStr);
+
+      const incomeTotal = completedIncome?.reduce((total, income) => {
+        return total + Number(income.amount);
+      }, 0) || 0;
+
       const userSettingsCash = Number(settings?.total_cash || 0);
       const bankBalance = bankAccounts?.reduce((sum, acc) => sum + Number(acc.balance || 0), 0) || 0;
       
-      // Use bank balance if available, otherwise calculate from user settings + transactions
-      const totalCash = bankAccounts && bankAccounts.length > 0 ? bankBalance : userSettingsCash + transactionTotal;
+      // Use bank balance if available, otherwise calculate from user settings + completed transactions + completed income
+      const totalCash = bankAccounts && bankAccounts.length > 0 
+        ? bankBalance 
+        : userSettingsCash + transactionTotal + incomeTotal;
       const totalAvailableCredit = creditCards?.reduce((sum, card) => sum + Number(card.available_credit || 0), 0) || 0;
       const availableBalance = totalCash + totalAvailableCredit;
 
