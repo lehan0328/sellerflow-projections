@@ -276,13 +276,10 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               ) : safeSpendingData ? (
                 <>
                   <p className="text-2xl font-bold text-indigo-700">
-                    {formatCurrency(safeSpendingData.safe_daily_limit)}<span className="text-sm font-normal">/day</span>
-                  </p>
-                  <p className="text-sm text-slate-600">
-                    {formatCurrency(safeSpendingData.total_180day_limit)} for 180 days
+                    {formatCurrency(safeSpendingData.safe_spending_limit)}
                   </p>
                   <p className="text-xs text-indigo-600 mt-1">
-                    {safeSpendingData.percentage}% of current balance
+                    Available after upcoming expenses & {safeSpendingData.percentage}% buffer
                   </p>
                 </>
               ) : (
