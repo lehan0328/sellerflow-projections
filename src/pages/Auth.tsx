@@ -33,17 +33,15 @@ export const Auth = () => {
   });
 
   useEffect(() => {
-    // Check if we're in password reset mode
-    const mode = searchParams.get('mode');
-    if (mode === 'reset') {
-      setShowNewPasswordForm(true);
-      return;
-    }
-
     // Check if user is already authenticated
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
+        // Check if this is a password recovery session
+        if (window.location.hash.includes('type=recovery')) {
+          setShowNewPasswordForm(true);
+          return;
+        }
         // Existing users go to dashboard
         navigate('/dashboard');
       }
@@ -51,15 +49,16 @@ export const Auth = () => {
     
     checkAuth();
 
-    // Listen for auth changes - redirect existing users to dashboard
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        navigate('/dashboard');
-      }
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth event:', event);
       
-      // Handle password recovery
       if (event === 'PASSWORD_RECOVERY') {
         setShowNewPasswordForm(true);
+      }
+      
+      if (event === 'SIGNED_IN' && session && !window.location.hash.includes('type=recovery')) {
+        navigate('/dashboard');
       }
     });
 
@@ -147,20 +146,26 @@ export const Auth = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
+      const { data, error } = await supabase.auth.updateUser({
         password: newPasswordData.password
       });
 
       if (error) {
         console.error('Password update error:', error);
-        toast.error('Failed to update password. Please try again.');
+        toast.error(error.message || 'Failed to update password. Please try again.');
       } else {
-        toast.success('Password updated successfully! You can now sign in.');
+        console.log('Password updated successfully:', data);
+        toast.success('Password updated successfully! Redirecting to dashboard...');
         setShowNewPasswordForm(false);
         setNewPasswordData({ password: '', confirmPassword: '' });
-        navigate('/auth');
+        // Clear the hash from URL
+        window.location.hash = '';
+        // Wait a moment then redirect
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1500);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Password update error:', error);
       toast.error('An unexpected error occurred');
     } finally {
