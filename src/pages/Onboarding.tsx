@@ -255,15 +255,51 @@ export default function Onboarding() {
                 <Building2 className="h-16 w-16 text-primary mx-auto" />
                 <div>
                   <h3 className="font-semibold text-lg mb-2">Secure Bank Connection</h3>
-                  <p className="text-muted-foreground">
-                    Connect your bank account securely with Plaid
+                  <p className="text-muted-foreground mb-4">
+                    Connect your bank account securely with industry-leading protection
                   </p>
                 </div>
                 
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>✓ Bank-level security with 256-bit encryption</p>
-                  <p>✓ Read-only access - we cannot move money</p>
-                  <p>✓ Supports 11,000+ financial institutions</p>
+                <div className="space-y-3 text-sm text-left max-w-md mx-auto">
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5">
+                    <div className="text-primary mt-0.5">✓</div>
+                    <div>
+                      <div className="font-medium">Bank-Level Security</div>
+                      <div className="text-muted-foreground text-xs">256-bit encryption protects all your data in transit and at rest</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5">
+                    <div className="text-primary mt-0.5">✓</div>
+                    <div>
+                      <div className="font-medium">Read-Only Access</div>
+                      <div className="text-muted-foreground text-xs">We can only view transactions - we cannot move money or make changes</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5">
+                    <div className="text-primary mt-0.5">✓</div>
+                    <div>
+                      <div className="font-medium">Powered by Plaid</div>
+                      <div className="text-muted-foreground text-xs">Trusted by thousands of apps including Venmo, Robinhood, and Coinbase</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5">
+                    <div className="text-primary mt-0.5">✓</div>
+                    <div>
+                      <div className="font-medium">Your Credentials Stay Private</div>
+                      <div className="text-muted-foreground text-xs">Your bank login never touches our servers - authentication happens directly with your bank</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5">
+                    <div className="text-primary mt-0.5">✓</div>
+                    <div>
+                      <div className="font-medium">11,000+ Banks Supported</div>
+                      <div className="text-muted-foreground text-xs">Works with all major financial institutions across the country</div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
