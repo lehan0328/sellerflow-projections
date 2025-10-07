@@ -241,7 +241,7 @@ export const useVendorTransactions = () => {
           transaction_date: formatDateForDB(new Date()),
           status: 'pending',
           description: `${originalTx.description}.2`,
-          remarks: 'Remaining Balance',
+          remarks: 'Pending Due',
         } as any);
 
       if (remainingError) throw remainingError;
