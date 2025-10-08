@@ -978,15 +978,15 @@ const Dashboard = () => {
                  t.status === 'completed')
     .reduce((sum, t) => sum + Number(t.amount), 0);
 
-  const upcomingExpenses = transactions
-    .filter(t => {
-      const txDate = startOfDay(t.transactionDate);
+  const upcomingExpenses = allCalendarEvents
+    .filter(event => {
+      const eventDate = new Date(event.date);
+      eventDate.setHours(0, 0, 0, 0);
       const sevenDaysOut = addDays(today, 7);
-      return txDate > today && txDate <= sevenDaysOut &&
-             (t.type === 'purchase_order' || t.type === 'vendor_payment') &&
-             t.status === 'pending';
+      return eventDate > today && eventDate <= sevenDaysOut &&
+             event.type === 'outflow';
     })
-    .reduce((sum, t) => sum + Number(t.amount), 0);
+    .reduce((sum, event) => sum + event.amount, 0);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
