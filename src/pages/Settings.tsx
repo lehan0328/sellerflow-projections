@@ -49,6 +49,7 @@ const Settings = () => {
   const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [activeSection, setActiveSection] = useState('profile');
+  const [clearDataConfirmation, setClearDataConfirmation] = useState('');
   const queryClient = useQueryClient();
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
 
@@ -479,24 +480,44 @@ const Settings = () => {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogTitle>⚠️ Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDescription asChild>
-                      <div>
-                        <p className="mb-2">This will permanently delete all of your:</p>
-                        <ul className="list-disc list-inside mt-2 space-y-1 mb-3">
-                          <li>Vendor purchase orders</li>
-                          <li>Income transactions</li>
-                          <li>Transaction history</li>
-                        </ul>
-                        <p>This action cannot be undone and you will start from zero.</p>
+                      <div className="space-y-4">
+                        <p className="text-destructive font-semibold">This action cannot be undone!</p>
+                        <div>
+                          <p className="mb-2">This will permanently delete all of your:</p>
+                          <ul className="list-disc list-inside mt-2 space-y-1 mb-3">
+                            <li>Vendor purchase orders</li>
+                            <li>Income transactions</li>
+                            <li>Transaction history</li>
+                            <li>All financial data</li>
+                          </ul>
+                          <p className="font-semibold">You will start from zero balance with no records.</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="confirm-text" className="text-foreground">
+                            Type <span className="font-mono font-bold">CLEAR ALL DATA</span> to confirm:
+                          </Label>
+                          <Input
+                            id="confirm-text"
+                            value={clearDataConfirmation}
+                            onChange={(e) => setClearDataConfirmation(e.target.value)}
+                            placeholder="Type here to confirm"
+                            className="font-mono"
+                          />
+                        </div>
                       </div>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel onClick={() => setClearDataConfirmation('')}>Cancel</AlertDialogCancel>
                     <AlertDialogAction
-                      onClick={handleClearAllData}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={() => {
+                        handleClearAllData();
+                        setClearDataConfirmation('');
+                      }}
+                      disabled={clearDataConfirmation !== 'CLEAR ALL DATA'}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Yes, Clear All Data
                     </AlertDialogAction>
