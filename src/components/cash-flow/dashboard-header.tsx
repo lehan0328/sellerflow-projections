@@ -64,11 +64,17 @@ export function DashboardHeader({ onRefresh, isRefreshing = false, lastRefreshTi
           variant="outline"
           size="sm"
           onClick={() => navigate('/referral-dashboard')}
-          className="h-10 px-4 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-accent hover:text-accent-foreground"
-          title="Referral Rewards"
+          className="relative h-10 px-4 bg-gradient-to-r from-primary/10 to-accent/10 backdrop-blur-sm border-primary/50 hover:border-primary hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 group overflow-hidden"
+          title="Referral Rewards - Earn up to $3,000"
         >
-          <Gift className="h-4 w-4 mr-2" />
-          Referrals
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="relative flex items-center gap-2">
+            <Gift className="h-4 w-4 text-primary animate-pulse" />
+            <span className="font-semibold">Referrals</span>
+            <span className="hidden lg:inline text-xs font-bold text-primary">
+              • Earn $3K
+            </span>
+          </div>
         </Button>
         <Button
           variant="outline"
