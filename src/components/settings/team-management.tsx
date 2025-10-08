@@ -151,21 +151,25 @@ export function TeamManagement() {
 
   // Calculate seats based on subscription plan (after teamMembers is loaded)
   const calculateTotalSeats = () => {
-    // Check for plan override first
+    // Always prioritize max_team_members from profile
+    if (profile?.max_team_members) {
+      return profile.max_team_members;
+    }
+    // Fallback to plan override
     if (profile?.plan_override) {
       const planName = profile.plan_override.toLowerCase();
       if (planName.includes('starter')) return 1;
       if (planName.includes('growing')) return 3;
-      if (planName.includes('professional')) return 6;
+      if (planName.includes('professional')) return 5;
       if (planName.includes('enterprise')) return 8;
     }
-    // Default to max_team_members or 1
-    return profile?.max_team_members || 1;
+    // Default to 1 if nothing is set
+    return 1;
   };
   
   const totalSeats = calculateTotalSeats();
   const usedSeats = teamMembers?.length || 0;
-  const availableSeats = totalSeats - usedSeats;
+  const availableSeats = Math.max(0, totalSeats - usedSeats);
 
   // Fetch pending invitations
   const { data: pendingInvites = [] } = useQuery({
