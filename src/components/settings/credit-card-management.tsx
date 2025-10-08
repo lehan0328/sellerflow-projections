@@ -64,16 +64,24 @@ export function CreditCardManagement() {
 
         if (error) throw error;
 
-        // Store the new card IDs for onboarding
-        const connectedCardIds = metadata.accounts?.map((acc: any) => acc.id) || [];
-        setNewCardIds(connectedCardIds);
-        
         toast.success(data.message || "Credit card connected successfully!");
         setIsConnecting(false);
         setLinkToken(null);
         
-        // Show onboarding dialog
-        setShowOnboardingDialog(true);
+        // Wait for cards to be refetched and then show onboarding
+        setTimeout(() => {
+          // Get cards that were just created (within last 10 seconds)
+          const justCreated = creditCards.filter(card => {
+            const createdTime = new Date(card.created_at).getTime();
+            const now = Date.now();
+            return (now - createdTime) < 10000; // 10 seconds
+          });
+          
+          if (justCreated.length > 0) {
+            setNewCardIds(justCreated.map(c => c.id));
+            setShowOnboardingDialog(true);
+          }
+        }, 2000); // Wait 2 seconds for refetch
       } catch (error) {
         console.error("Error exchanging token:", error);
         toast.error("Failed to connect credit card");
@@ -479,10 +487,7 @@ export function CreditCardManagement() {
               try {
                 // Update all newly connected cards with forecast setting
                 for (const cardId of newCardIds) {
-                  const card = creditCards.find(c => c.plaid_account_id === cardId);
-                  if (card) {
-                    await updateCreditCard(card.id, { forecast_next_month: enableForecast });
-                  }
+                  await updateCreditCard(cardId, { forecast_next_month: enableForecast });
                 }
                 
                 toast.success(enableForecast ? "Forecast enabled for your credit cards" : "Settings saved");
