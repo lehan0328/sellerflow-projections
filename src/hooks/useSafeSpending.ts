@@ -174,7 +174,11 @@ export const useSafeSpending = () => {
           if (income.status !== 'received') {
             const incomeDate = parseLocalDate(income.payment_date);
             if (incomeDate.getTime() === targetDate.getTime()) {
-              dayChange += Number(income.amount);
+              const amt = Number(income.amount);
+              if (isKeyDate) {
+                console.log(`  💰 Income: ${income.description} +$${amt} (status: ${income.status})`);
+              }
+              dayChange += amt;
             }
           }
         });
@@ -203,7 +207,11 @@ export const useSafeSpending = () => {
               targetDate
             );
             if (occurrences.length > 0) {
-              dayChange += recurring.type === 'income' ? Number(recurring.amount) : -Number(recurring.amount);
+              const amt = Number(recurring.amount);
+              if (isKeyDate) {
+                console.log(`  🔄 Recurring ${recurring.type}: ${recurring.name} ${recurring.type === 'income' ? '+' : '-'}$${amt}`);
+              }
+              dayChange += recurring.type === 'income' ? amt : -amt;
             }
           }
         });
@@ -214,13 +222,21 @@ export const useSafeSpending = () => {
               vendor.payment_schedule.forEach((payment: any) => {
                 const paymentDate = parseLocalDate(payment.date);
                 if (paymentDate.getTime() === targetDate.getTime()) {
-                  dayChange -= Number(payment.amount || 0);
+                  const amt = Number(payment.amount || 0);
+                  if (isKeyDate) {
+                    console.log(`  📦 Vendor payment: ${vendor.name} -$${amt}`);
+                  }
+                  dayChange -= amt;
                 }
               });
             } else if (vendor.next_payment_date) {
               const vendorDate = parseLocalDate(vendor.next_payment_date);
               if (vendorDate.getTime() === targetDate.getTime()) {
-                dayChange -= Number(vendor.next_payment_amount || 0);
+                const amt = Number(vendor.next_payment_amount || 0);
+                if (isKeyDate) {
+                  console.log(`  📦 Vendor payment (next): ${vendor.name} -$${amt}`);
+                }
+                dayChange -= amt;
               }
             }
           }
