@@ -1,4 +1,4 @@
-import { TrendingUp, Calculator } from "lucide-react";
+import { TrendingUp, Calculator, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "./user-menu";
 import aurenIcon from "@/assets/auren-icon-blue.png";
@@ -60,6 +60,16 @@ export function DashboardHeader({ onRefresh, isRefreshing = false, lastRefreshTi
 
       {/* Navigation and User Menu - Top Right */}
       <div className="absolute top-6 right-6 z-40 flex items-center space-x-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate('/referral-dashboard')}
+          className="h-10 px-4 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-accent hover:text-accent-foreground"
+          title="Referral Rewards"
+        >
+          <Gift className="h-4 w-4 mr-2" />
+          Referrals
+        </Button>
         <Button
           variant="outline"
           size="sm"
