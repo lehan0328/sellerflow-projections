@@ -118,6 +118,15 @@ export const useSafeSpending = () => {
         amazonPayouts: amazonResult.data?.length || 0
       });
 
+      console.log('🔍 VENDOR DATA:', vendorsResult.data?.map(v => ({
+        name: v.name,
+        total_owed: v.total_owed,
+        next_payment_date: v.next_payment_date,
+        next_payment_amount: v.next_payment_amount,
+        payment_schedule: v.payment_schedule,
+        status: v.status
+      })));
+
       console.log('💰 STARTING Safe Spending Calculation:', {
         bankBalance,
         reserve,
