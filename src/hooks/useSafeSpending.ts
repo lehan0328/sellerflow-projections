@@ -140,6 +140,12 @@ export const useSafeSpending = () => {
 
         let dayNetChange = 0;
 
+        // Log key dates
+        const isKeyDate = i <= 3 || targetDateStr === '2025-10-20' || targetDateStr === '2025-10-10' || targetDateStr === '2025-10-17';
+        if (isKeyDate) {
+          console.log(`\n📅 Processing ${targetDateStr} (day ${i})`);
+        }
+
         // 1. Process transactions for this specific day only
         transactionsResult.data?.forEach((tx) => {
           const txDateStr = tx.due_date || tx.transaction_date;
@@ -161,7 +167,11 @@ export const useSafeSpending = () => {
           if (income.status === 'received') return;
           const incomeDate = parseLocalDate(income.payment_date);
           if (incomeDate.getTime() === targetDate.getTime()) {
-            dayNetChange += Number(income.amount);
+            const amt = Number(income.amount);
+            if (isKeyDate) {
+              console.log(`💰 Income on ${targetDateStr}: ${income.description} +$${amt}`);
+            }
+            dayNetChange += amt;
           }
         });
 
@@ -169,7 +179,11 @@ export const useSafeSpending = () => {
         amazonResult.data?.forEach((payout) => {
           const payoutDate = parseLocalDate(payout.payout_date);
           if (payoutDate.getTime() === targetDate.getTime()) {
-            dayNetChange += Number(payout.total_amount);
+            const amt = Number(payout.total_amount);
+            if (isKeyDate) {
+              console.log(`📦 Amazon payout on ${targetDateStr}: +$${amt}`);
+            }
+            dayNetChange += amt;
           }
         });
 
@@ -193,10 +207,17 @@ export const useSafeSpending = () => {
           );
           
           if (occurrences.length > 0) {
+            const amt = Number(recurring.amount);
             if (recurring.type === 'income') {
-              dayNetChange += Number(recurring.amount);
+              if (isKeyDate) {
+                console.log(`🔄 Recurring income on ${targetDateStr}: ${recurring.name} +$${amt}`);
+              }
+              dayNetChange += amt;
             } else {
-              dayNetChange -= Number(recurring.amount);
+              if (isKeyDate) {
+                console.log(`🔄 Recurring expense on ${targetDateStr}: ${recurring.name} -$${amt}`);
+              }
+              dayNetChange -= amt;
             }
           }
         });
@@ -207,17 +228,28 @@ export const useSafeSpending = () => {
           
           // Check payment_schedule if it exists
           if (vendor.payment_schedule && Array.isArray(vendor.payment_schedule)) {
+            if (i <= 3 || targetDateStr === '2025-10-20') {
+              console.log(`📦 Vendor ${vendor.name} payment_schedule:`, vendor.payment_schedule);
+            }
             vendor.payment_schedule.forEach((payment: any) => {
               const paymentDate = parseLocalDate(payment.date);
               if (paymentDate.getTime() === targetDate.getTime()) {
-                dayNetChange -= Number(payment.amount || 0);
+                const amt = Number(payment.amount || 0);
+                if (i <= 3 || targetDateStr === '2025-10-20') {
+                  console.log(`💸 Vendor payment on ${targetDateStr}: ${vendor.name} -$${amt}`);
+                }
+                dayNetChange -= amt;
               }
             });
           } else if (vendor.next_payment_date) {
             // Fallback to next_payment_date if no schedule
             const vendorDate = parseLocalDate(vendor.next_payment_date);
             if (vendorDate.getTime() === targetDate.getTime()) {
-              dayNetChange -= Number(vendor.next_payment_amount || 0);
+              const amt = Number(vendor.next_payment_amount || 0);
+              if (i <= 3 || targetDateStr === '2025-10-20') {
+                console.log(`💸 Vendor payment (next_payment) on ${targetDateStr}: ${vendor.name} -$${amt}`);
+              }
+              dayNetChange -= amt;
             }
           }
         });
