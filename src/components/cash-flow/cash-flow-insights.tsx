@@ -6,7 +6,6 @@ import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useCreditCards } from "@/hooks/useCreditCards";
 interface CashFlowInsightsProps {
   currentBalance: number;
   dailyInflow: number;
@@ -35,8 +34,9 @@ export const CashFlowInsights = ({
   lowestBalanceDate = "",
   onUpdateReserveAmount
 }: CashFlowInsightsProps) => {
-  const { toast } = useToast();
-  const { creditCards, totalAvailableCredit, isLoading: cardsLoading } = useCreditCards();
+  const {
+    toast
+  } = useToast();
   const [chatMode, setChatMode] = useState(false);
   const [chatQuestion, setChatQuestion] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -214,12 +214,7 @@ export const CashFlowInsights = ({
                 </div>
 
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                    <span className="text-muted-foreground">Current Balance</span>
-                    <span className="font-semibold">
-                      ${currentBalance.toLocaleString()}
-                    </span>
-                  </div>
+                  
                 <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
                   <span className="text-muted-foreground">Reserve Amount</span>
                   {isEditingReserve ? <div className="flex items-center gap-2">
@@ -265,50 +260,26 @@ export const CashFlowInsights = ({
                 <CreditCard className="h-4 w-4" />
                 Credit Card Spending Power
               </h4>
-              
-              {cardsLoading ? (
-                <div className="flex items-center justify-center p-4">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                  <span className="text-muted-foreground">Today's Inflow</span>
+                  <span className="font-semibold text-green-600">
+                    +${dailyInflow.toLocaleString()}
+                  </span>
                 </div>
-              ) : creditCards.length === 0 ? (
-                <div className="p-4 bg-muted/50 rounded text-center">
-                  <p className="text-sm text-muted-foreground">No credit cards added yet</p>
+                <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                  <span className="text-muted-foreground">Today's Outflow</span>
+                  <span className="font-semibold text-red-600">
+                    -${dailyOutflow.toLocaleString()}
+                  </span>
                 </div>
-              ) : (
-                <>
-                  <div className="p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-muted-foreground">Total Available Credit</span>
-                      <span className="text-2xl font-bold text-primary">
-                        ${totalAvailableCredit.toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Combined spending power across all cards
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    {creditCards.map((card) => (
-                      <div key={card.id} className="p-3 bg-muted/50 rounded-lg border border-muted">
-                        <div className="flex justify-between items-start mb-1">
-                          <div>
-                            <p className="text-sm font-semibold">{card.account_name}</p>
-                            <p className="text-xs text-muted-foreground">{card.institution_name}</p>
-                          </div>
-                          <span className="text-sm font-bold text-green-600">
-                            ${card.available_credit.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                          <span>Used: ${card.balance.toLocaleString()}</span>
-                          <span>Limit: ${card.credit_limit.toLocaleString()}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
+                <div className="flex justify-between items-center p-2 bg-primary/10 rounded">
+                  <span className="font-medium">Net Daily</span>
+                  <span className={`font-bold ${healthStatus === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
+                    {netDaily >= 0 ? '+' : ''}${netDaily.toLocaleString()}
+                  </span>
+                </div>
+              </div>
             </div>
           </>}
       </CardContent>
