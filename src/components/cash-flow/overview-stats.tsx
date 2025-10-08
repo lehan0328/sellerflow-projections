@@ -184,9 +184,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
     }
   }
 
-  const displayNegative = tpcFirstNegativeDay || (safeSpendingData?.will_go_negative && safeSpendingData.negative_date
-    ? { date: safeSpendingData.negative_date, balance: safeSpendingData.calculation.lowest_projected_balance }
-    : null);
+  const displayNegative = tpcFirstNegativeDay;
   const displayBelow = !displayNegative ? tpcFirstBelowLimitDay : null;
 
   const formatDateKey = (k: string) => new Date(`${k}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
