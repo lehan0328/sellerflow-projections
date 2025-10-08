@@ -317,7 +317,7 @@ export const SignUp = () => {
                   className="h-11"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Have a referral code? Enter it here to get special benefits!
+                  🎁 Have a referral code? Enter it here to get an <strong>instant 10% discount</strong> on your subscription!
                 </p>
               </div>
 

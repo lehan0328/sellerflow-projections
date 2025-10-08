@@ -18,7 +18,7 @@ export const useReferrals = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get or create referral code
+      // Get referral code (don't auto-create)
       const { data: codeData } = await supabase
         .from('referral_codes')
         .select('*')
@@ -27,15 +27,6 @@ export const useReferrals = () => {
 
       if (codeData) {
         setReferralCode(codeData.code);
-      } else {
-        // Generate a new code
-        const code = user.email?.split('@')[0].toUpperCase() || `USER${user.id.substring(0, 8)}`;
-        const { data: newCode } = await supabase
-          .from('referral_codes')
-          .insert({ user_id: user.id, code })
-          .select()
-          .single();
-        setReferralCode(newCode?.code || null);
       }
 
       // Get referrals
@@ -76,12 +67,56 @@ export const useReferrals = () => {
     });
   };
 
+  const createReferralCode = async (code: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return { success: false, error: 'User not authenticated' };
+      }
+
+      // Validate code format (alphanumeric, 3-20 chars)
+      const codeRegex = /^[A-Z0-9]{3,20}$/;
+      if (!codeRegex.test(code)) {
+        return { 
+          success: false, 
+          error: 'Code must be 3-20 characters, uppercase letters and numbers only' 
+        };
+      }
+
+      // Try to create the code
+      const { data, error } = await supabase
+        .from('referral_codes')
+        .insert({ user_id: user.id, code })
+        .select()
+        .single();
+
+      if (error) {
+        // Check if it's a duplicate code error
+        if (error.code === '23505' || error.message.includes('unique')) {
+          return { success: false, error: 'This referral code is already taken. Please try another one.' };
+        }
+        return { success: false, error: error.message };
+      }
+
+      setReferralCode(data.code);
+      toast({
+        title: 'Success!',
+        description: 'Your referral code has been created',
+      });
+      
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  };
+
   return {
     loading,
     referralCode,
     referrals,
     rewards,
     copyReferralLink,
+    createReferralCode,
     refreshData: fetchReferralData,
   };
 };
