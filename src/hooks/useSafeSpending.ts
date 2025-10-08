@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRecurringDates } from "@/lib/recurringDates";
 
@@ -38,7 +38,7 @@ export const useSafeSpending = () => {
     return dt;
   };
 
-  const fetchSafeSpending = async () => {
+  const fetchSafeSpending = useCallback(async () => {
     try {
       console.log('🔄 [SAFE SPENDING] Starting fresh calculation...');
       setIsLoading(true);
@@ -345,7 +345,7 @@ export const useSafeSpending = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const updateReserveAmount = async (newAmount: number) => {
     try {
@@ -381,7 +381,7 @@ export const useSafeSpending = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [fetchSafeSpending]);
 
   return { data, isLoading, error, reserveAmount, updateReserveAmount, refetch: fetchSafeSpending };
 };

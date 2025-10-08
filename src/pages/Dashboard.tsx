@@ -63,7 +63,7 @@ const Dashboard = () => {
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { creditCards } = useCreditCards();
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
-  const { data: safeSpendingData, updateReserveAmount } = useSafeSpending();
+  const { data: safeSpendingData, updateReserveAmount, refetch: refetchSafeSpending } = useSafeSpending();
   
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
   const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance } = useUserSettings();
@@ -919,6 +919,12 @@ const Dashboard = () => {
 
   // Combine all events for calendar - only include real user data
   const allCalendarEvents = [...calendarEvents, ...vendorPaymentEvents, ...vendorEvents, ...incomeEvents, ...creditCardEvents, ...recurringEvents];
+
+  // Trigger safe spending recalculation when any financial data changes
+  useEffect(() => {
+    console.log('📊 Calendar events changed, triggering safe spending recalculation');
+    refetchSafeSpending();
+  }, [transactions.length, incomeItems.length, vendors.length, recurringExpenses.length, creditCards.length, refetchSafeSpending]);
 
   // Debug: Log all calendar events to check for duplicates
   console.log("📅 All Calendar Events:", {
