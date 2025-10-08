@@ -1226,6 +1226,7 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          credit_card_id: string | null
           customer_id: string | null
           description: string | null
           due_date: string | null
@@ -1241,6 +1242,7 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string
+          credit_card_id?: string | null
           customer_id?: string | null
           description?: string | null
           due_date?: string | null
@@ -1256,6 +1258,7 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          credit_card_id?: string | null
           customer_id?: string | null
           description?: string | null
           due_date?: string | null
@@ -1269,6 +1272,13 @@ export type Database = {
           vendor_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "transactions_credit_card_id_fkey"
+            columns: ["credit_card_id"]
+            isOneToOne: false
+            referencedRelation: "credit_cards"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_customer_id_fkey"
             columns: ["customer_id"]

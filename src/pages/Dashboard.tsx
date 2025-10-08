@@ -345,7 +345,8 @@ const Dashboard = () => {
       vendorId: vendorId,
       transactionDate: orderData.poDate || new Date(),
       dueDate: dueDate,
-      status: dueDateStartOfDay <= today ? 'completed' : 'pending'
+      status: dueDateStartOfDay <= today ? 'completed' : 'pending',
+      creditCardId: orderData.paymentMethod === 'credit-card' ? orderData.selectedCreditCard : null
     });
 
     console.info("Transaction created, refreshing data");

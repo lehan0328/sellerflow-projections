@@ -9,6 +9,7 @@ export interface Transaction {
   description: string;
   vendorId?: string;
   customerId?: string;
+  creditCardId?: string;
   transactionDate: Date;
   dueDate?: Date;
   status: 'pending' | 'completed' | 'cancelled';
@@ -57,6 +58,7 @@ export const useTransactions = () => {
         description: transaction.description || '',
         vendorId: transaction.vendor_id,
         customerId: transaction.customer_id,
+        creditCardId: transaction.credit_card_id,
         transactionDate: parseDateFromDB(transaction.transaction_date),
         dueDate: transaction.due_date ? parseDateFromDB(transaction.due_date) : undefined,
         status: transaction.status as Transaction['status']
@@ -89,6 +91,7 @@ export const useTransactions = () => {
           description: transactionData.description,
           vendor_id: transactionData.vendorId,
           customer_id: transactionData.customerId,
+          credit_card_id: transactionData.creditCardId,
           transaction_date: formatDateForDB(transactionData.transactionDate),
           due_date: transactionData.dueDate ? formatDateForDB(transactionData.dueDate) : null,
           status: transactionData.status
@@ -105,6 +108,7 @@ export const useTransactions = () => {
         description: data.description || '',
         vendorId: data.vendor_id,
         customerId: data.customer_id,
+        creditCardId: data.credit_card_id,
         transactionDate: parseDateFromDB(data.transaction_date),
         dueDate: data.due_date ? parseDateFromDB(data.due_date) : undefined,
         status: data.status as Transaction['status']

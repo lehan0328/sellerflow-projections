@@ -39,6 +39,7 @@ export const CashFlowInsights = ({
     toast
   } = useToast();
   const { creditCards, isLoading: cardsLoading } = useCreditCards();
+  const [pendingOrdersByCard, setPendingOrdersByCard] = useState<Record<string, number>>({});
   const [chatMode, setChatMode] = useState(false);
   const [chatQuestion, setChatQuestion] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -95,6 +96,36 @@ export const CashFlowInsights = ({
   useEffect(() => {
     localStorage.setItem('cashflow-chat-history', JSON.stringify(conversationHistory));
   }, [conversationHistory]);
+
+  // Fetch pending purchase orders for each credit card
+  useEffect(() => {
+    const fetchPendingOrders = async () => {
+      if (!creditCards || creditCards.length === 0) return;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: transactions } = await supabase
+        .from('transactions')
+        .select('credit_card_id, amount')
+        .eq('user_id', user.id)
+        .eq('type', 'purchase_order')
+        .eq('status', 'pending')
+        .not('credit_card_id', 'is', null);
+
+      if (transactions) {
+        const ordersByCard: Record<string, number> = {};
+        transactions.forEach(tx => {
+          if (tx.credit_card_id) {
+            ordersByCard[tx.credit_card_id] = (ordersByCard[tx.credit_card_id] || 0) + Number(tx.amount);
+          }
+        });
+        setPendingOrdersByCard(ordersByCard);
+      }
+    };
+
+    fetchPendingOrders();
+  }, [creditCards]);
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatQuestion.trim()) return;
@@ -273,40 +304,36 @@ export const CashFlowInsights = ({
               ) : (
                 <div className="space-y-2">
                   {creditCards.map((card) => {
-                    const availableSpend = card.available_credit;
-                    const usedCredit = card.credit_limit - card.available_credit;
+                    const pendingOrders = pendingOrdersByCard[card.id] || 0;
+                    const availableSpend = card.available_credit - pendingOrders;
                     
                     return (
                       <div key={card.id} className="p-3 bg-muted/50 rounded-lg space-y-2">
-                        <div className="flex justify-between items-start">
+                        <div className="flex justify-between items-center">
                           <div className="flex-1">
                             <p className="font-medium text-sm">{card.account_name}</p>
                             <p className="text-xs text-muted-foreground">{card.institution_name}</p>
                           </div>
+                          <span className="text-xl font-bold text-green-600">
+                            ${availableSpend.toLocaleString()}
+                          </span>
                         </div>
                         
-                        <div className="space-y-1 text-xs">
-                          <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Credit Limit</span>
-                            <span className="font-medium">${card.credit_limit.toLocaleString()}</span>
+                        {(pendingOrders > 0 || card.payment_due_date) && (
+                          <div className="space-y-1 text-xs pt-2 border-t border-border">
+                            {pendingOrders > 0 && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-muted-foreground">Pending Orders</span>
+                                <span className="font-medium text-orange-600">-${pendingOrders.toLocaleString()}</span>
+                              </div>
+                            )}
+                            {card.payment_due_date && (
+                              <p className="text-muted-foreground italic">
+                                Payment due: {new Date(card.payment_due_date).toLocaleDateString()}
+                              </p>
+                            )}
                           </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Pending Orders</span>
-                            <span className="font-medium text-orange-600">-${usedCredit.toLocaleString()}</span>
-                          </div>
-                          <div className="h-px bg-border my-1" />
-                          <div className="flex justify-between items-center">
-                            <span className="font-semibold">Available Spend</span>
-                            <span className="text-lg font-bold text-green-600">
-                              ${availableSpend.toLocaleString()}
-                            </span>
-                          </div>
-                          {card.payment_due_date && (
-                            <p className="text-[10px] text-muted-foreground italic mt-1">
-                              Payment due: {new Date(card.payment_due_date).toLocaleDateString()}
-                            </p>
-                          )}
-                        </div>
+                        )}
                       </div>
                     );
                   })}
