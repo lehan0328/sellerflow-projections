@@ -410,9 +410,9 @@ const Landing = () => {
               <Link to="/features" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Features
               </Link>
-              <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
-                Plans
-              </a>
+              <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+                Pricing
+              </Link>
               <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Reviews
               </a>
@@ -1419,7 +1419,7 @@ const Landing = () => {
                 By automating your <strong className="text-foreground">seller cash flow tracking</strong>, Auren helps you replace complex spreadsheets with clarity and confidence. Our platform integrates with
                 your bank accounts, credit cards, and Amazon seller accounts to provide real-time visibility into your financial health.
                 Join hundreds of sellers using Auren to take control of their finances, prevent cash gaps,
-                and scale confidently on Amazon and beyond. Start your <a href="#pricing" className="text-primary hover:underline">free 7-day trial</a> today — no credit card required.
+                and scale confidently on Amazon and beyond. Start your <Link to="/pricing" className="text-primary hover:underline">free 7-day trial</Link> today — no credit card required.
               </p>
             </div>
 
@@ -1496,7 +1496,7 @@ const Landing = () => {
               <h4 className="font-semibold">Product</h4>
               <ul className="space-y-2 text-muted-foreground">
                 <li><a href="#features" className="hover:text-foreground transition-colors">Features</a></li>
-                <li><a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a></li>
+                <li><Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
                 <li><Link to="/demo" className="hover:text-foreground transition-colors">Live Demo</Link></li>
                 <li><Link to="/features" className="hover:text-foreground transition-colors">All Features</Link></li>
               </ul>

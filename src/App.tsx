@@ -44,6 +44,7 @@ import BlogTag from "./pages/BlogTag";
 import Partners from "./pages/Partners";
 import ReferralDashboard from "./pages/ReferralDashboard";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
+import Pricing from "./pages/Pricing";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const App = () => (
         <Sonner />
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/pricing" element={<Pricing />} />
           <Route path="/features" element={<Features />} />
           <Route path="/features/:slug" element={<FeatureDetail />} />
           <Route path="/auth" element={<Auth />} />
