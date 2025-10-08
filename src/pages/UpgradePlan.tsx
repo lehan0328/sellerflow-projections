@@ -103,12 +103,7 @@ const UpgradePlan = () => {
   ];
 
   const handleUpgrade = (priceId: string) => {
-    // For non-subscribed users, redirect to signup instead of Stripe
-    if (!subscribed) {
-      navigate('/signup');
-      return;
-    }
-    // For existing subscribers upgrading their plan
+    // Allow trial users and subscribed users to upgrade
     createCheckout(priceId);
   };
 
@@ -418,7 +413,7 @@ const UpgradePlan = () => {
                     </div>
                   )}
                 </>
-              ) : (
+              ) : is_trialing ? (
                 <>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Plan</span>
@@ -447,13 +442,23 @@ const UpgradePlan = () => {
                     You're on a 7-day free trial of the Professional plan
                   </p>
                 </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Plan</span>
+                    <Badge variant="secondary">No Active Plan</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Choose a plan below to get started
+                  </p>
+                </>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Plan Comparison */}
-        {subscribed && plan && (
+        {/* Plan Comparison for subscribed non-trial users */}
+        {subscribed && plan && !is_trialing && (
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <h2 className="text-2xl font-bold">Upgrade Benefits</h2>
@@ -662,8 +667,8 @@ const UpgradePlan = () => {
           </div>
         )}
 
-        {/* Plans for non-subscribed users */}
-        {!subscribed && (
+        {/* Plans for non-subscribed or trial users */}
+        {(!subscribed || is_trialing) && (
           <div>
             <div className="mb-6 space-y-4">
               <div className="flex items-center justify-center gap-4">
@@ -758,7 +763,7 @@ const UpgradePlan = () => {
         )}
 
         {/* Enterprise Section */}
-        {!subscribed && (
+        {(!subscribed || is_trialing) && (
           <div className="mt-12">
             <div className="text-center mb-8 space-y-4">
               <h2 className="text-3xl font-bold">Enterprise Plan</h2>
