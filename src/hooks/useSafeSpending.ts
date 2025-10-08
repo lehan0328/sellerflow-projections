@@ -40,6 +40,7 @@ export const useSafeSpending = () => {
 
   const fetchSafeSpending = async () => {
     try {
+      console.log('🔄 [SAFE SPENDING] Starting fresh calculation...');
       setIsLoading(true);
       setError(null);
 
