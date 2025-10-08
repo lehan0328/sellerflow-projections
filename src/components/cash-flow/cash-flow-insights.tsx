@@ -225,49 +225,6 @@ export const CashFlowInsights = ({
           </div>
         ) : (
           <>
-            {/* Daily Overview */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-semibold flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Daily Overview
-              </h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                  <span className="text-muted-foreground">Today's Inflow</span>
-                  <span className="font-semibold text-green-600">
-                    +${dailyInflow.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                  <span className="text-muted-foreground">Today's Outflow</span>
-                  <span className="font-semibold text-red-600">
-                    -${dailyOutflow.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-primary/10 rounded">
-                  <span className="font-medium">Net Daily</span>
-                  <span className={`font-bold ${healthStatus === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
-                    {netDaily >= 0 ? '+' : ''}${netDaily.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Upcoming Alert */}
-            {upcomingExpenses > 0 && (
-              <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm">
-                  <p className="font-medium text-amber-900 dark:text-amber-100">
-                    Upcoming Expenses
-                  </p>
-                  <p className="text-amber-700 dark:text-amber-300">
-                    ${upcomingExpenses.toLocaleString()} due in next 7 days
-                  </p>
-                </div>
-              </div>
-            )}
-
             {/* Safe Spending Power */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold flex items-center gap-2">
@@ -340,6 +297,49 @@ export const CashFlowInsights = ({
                       Your balance will reach its lowest point on {new Date(lowestBalanceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </p>
                   )}
+                </div>
+              </div>
+            </div>
+
+            {/* Upcoming Alert */}
+            {upcomingExpenses > 0 && (
+              <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium text-amber-900 dark:text-amber-100">
+                    Upcoming Expenses
+                  </p>
+                  <p className="text-amber-700 dark:text-amber-300">
+                    ${upcomingExpenses.toLocaleString()} due in next 7 days
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Daily Overview */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Daily Overview
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                  <span className="text-muted-foreground">Today's Inflow</span>
+                  <span className="font-semibold text-green-600">
+                    +${dailyInflow.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                  <span className="text-muted-foreground">Today's Outflow</span>
+                  <span className="font-semibold text-red-600">
+                    -${dailyOutflow.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-2 bg-primary/10 rounded">
+                  <span className="font-medium">Net Daily</span>
+                  <span className={`font-bold ${healthStatus === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
+                    {netDaily >= 0 ? '+' : ''}${netDaily.toLocaleString()}
+                  </span>
                 </div>
               </div>
             </div>
