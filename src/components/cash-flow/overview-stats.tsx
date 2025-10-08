@@ -188,7 +188,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                       </div>
                       <div className="bg-red-200 border border-red-300 rounded p-2 mt-2">
                         <p className="text-sm text-red-800 font-semibold">
-                          ⚠️ Cash will go {formatCurrency(Math.abs(safeSpendingData.calculation.lowest_projected_balance))} negative
+                          ⚠️ Total projected cash will go {formatCurrency(Math.abs(safeSpendingData.calculation.lowest_projected_balance))} negative
                         </p>
                         <p className="text-xs text-red-700 mt-1">
                           First occurs on {new Date(safeSpendingData.negative_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
