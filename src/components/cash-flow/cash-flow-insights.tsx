@@ -234,16 +234,27 @@ export const CashFlowInsights = ({
                 Safe Spending Power
               </h4>
               <div className="space-y-3">
-                <div className="p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
+                <div className={`p-4 rounded-lg border-2 ${safeSpendingLimit < 0 ? 'bg-red-50 dark:bg-red-950/20 border-red-500' : 'bg-primary/10 border-primary/20'}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">Available to Spend</span>
-                    <span className="text-2xl font-bold text-primary">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-muted-foreground">Available to Spend</span>
+                      {safeSpendingLimit < 0 && <AlertCircle className="h-4 w-4 text-red-600" />}
+                    </div>
+                    <span className={`text-2xl font-bold ${safeSpendingLimit < 0 ? 'text-red-600' : 'text-primary'}`}>
                       ${safeSpendingLimit.toLocaleString()}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     This is what you can safely spend without risking shortfalls
                   </p>
+                  {safeSpendingLimit < 0 && (
+                    <div className="flex items-start gap-2 mt-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs">
+                      <AlertCircle className="h-3 w-3 text-red-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-red-700 dark:text-red-400">
+                        Warning: Your upcoming expenses exceed available funds. Consider reducing spending or increasing reserves.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2 text-sm">
@@ -274,11 +285,15 @@ export const CashFlowInsights = ({
                     </span>
                   </div>
                   {lowestBalanceDate && <p className="text-xs text-muted-foreground italic p-2">
-                      Your balance will reach its lowest point on {new Date(lowestBalanceDate).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric'
-                })}
+                      Your balance will reach its lowest point on {(() => {
+                        const [year, month, day] = lowestBalanceDate.split('-').map(Number);
+                        const date = new Date(year, month - 1, day);
+                        return date.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        });
+                      })()}
                     </p>}
                 </div>
               </div>
