@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Settings, CreditCard, LogOut, MessageSquare, FolderOpen, History } from "lucide-react";
+import { Settings, CreditCard, LogOut, MessageSquare, FolderOpen, History, Lightbulb } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -105,6 +105,10 @@ export function UserMenu() {
         <DropdownMenuItem onClick={() => navigate('/support')}>
           <MessageSquare className="mr-2 h-4 w-4" />
           <span>Support</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/settings?section=feature-request')}>
+          <Lightbulb className="mr-2 h-4 w-4" />
+          <span>Feature Request</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
