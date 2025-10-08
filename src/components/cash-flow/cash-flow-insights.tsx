@@ -6,6 +6,7 @@ import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useCreditCards } from "@/hooks/useCreditCards";
 interface CashFlowInsightsProps {
   currentBalance: number;
   dailyInflow: number;
@@ -37,6 +38,7 @@ export const CashFlowInsights = ({
   const {
     toast
   } = useToast();
+  const { creditCards, isLoading: cardsLoading } = useCreditCards();
   const [chatMode, setChatMode] = useState(false);
   const [chatQuestion, setChatQuestion] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -260,26 +262,56 @@ export const CashFlowInsights = ({
                 <CreditCard className="h-4 w-4" />
                 Credit Card Spending Power
               </h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                  <span className="text-muted-foreground">Today's Inflow</span>
-                  <span className="font-semibold text-green-600">
-                    +${dailyInflow.toLocaleString()}
-                  </span>
+              {cardsLoading ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
-                <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                  <span className="text-muted-foreground">Today's Outflow</span>
-                  <span className="font-semibold text-red-600">
-                    -${dailyOutflow.toLocaleString()}
-                  </span>
+              ) : creditCards.length === 0 ? (
+                <div className="p-4 bg-muted/50 rounded-lg text-center">
+                  <p className="text-sm text-muted-foreground">No credit cards added yet</p>
                 </div>
-                <div className="flex justify-between items-center p-2 bg-primary/10 rounded">
-                  <span className="font-medium">Net Daily</span>
-                  <span className={`font-bold ${healthStatus === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
-                    {netDaily >= 0 ? '+' : ''}${netDaily.toLocaleString()}
-                  </span>
+              ) : (
+                <div className="space-y-2">
+                  {creditCards.map((card) => {
+                    const availableSpend = card.available_credit;
+                    const usedCredit = card.credit_limit - card.available_credit;
+                    
+                    return (
+                      <div key={card.id} className="p-3 bg-muted/50 rounded-lg space-y-2">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{card.account_name}</p>
+                            <p className="text-xs text-muted-foreground">{card.institution_name}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Credit Limit</span>
+                            <span className="font-medium">${card.credit_limit.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Pending Orders</span>
+                            <span className="font-medium text-orange-600">-${usedCredit.toLocaleString()}</span>
+                          </div>
+                          <div className="h-px bg-border my-1" />
+                          <div className="flex justify-between items-center">
+                            <span className="font-semibold">Available Spend</span>
+                            <span className="text-lg font-bold text-green-600">
+                              ${availableSpend.toLocaleString()}
+                            </span>
+                          </div>
+                          {card.payment_due_date && (
+                            <p className="text-[10px] text-muted-foreground italic mt-1">
+                              Payment due: {new Date(card.payment_due_date).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
+              )}
             </div>
           </>}
       </CardContent>
