@@ -3,17 +3,19 @@ import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Check, X, ArrowLeft, Moon, Sun, Lock, Shield } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import aurenIcon from "@/assets/auren-icon-blue.png";
+import { useTheme } from "next-themes";
 
 export default function Pricing() {
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
   const [isYearly, setIsYearly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showEnterpriseCustomizer, setShowEnterpriseCustomizer] = useState(false);
@@ -180,16 +182,53 @@ export default function Pricing() {
       <nav className="border-b bg-background/60 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <button onClick={() => navigate('/')} className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-3">
               <img src={aurenIcon} alt="Auren" className="h-12 w-12" />
               <span className="text-2xl font-display font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
                 Auren
               </span>
-            </button>
-            <Button onClick={() => navigate(-1)} variant="ghost">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
+            </Link>
+            <div className="hidden md:flex items-center space-x-6">
+              <Link to="/features" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+                Features
+              </Link>
+              <Link to="/pricing" className="text-foreground font-semibold">
+                Pricing
+              </Link>
+              <Link to="/blog" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+                Blog
+              </Link>
+              <Link to="/partners" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+                Partners
+              </Link>
+              <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+                Docs
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="hover-scale transition-all duration-200"
+              >
+                <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <span className="sr-only">Toggle theme</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="border-primary/20 hover:border-primary/40" 
+                onClick={() => navigate('/auth')}
+              >
+                Sign In
+              </Button>
+              <Link to="/">
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
@@ -339,6 +378,79 @@ export default function Pricing() {
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="bg-muted/30 border-t">
+        <div className="container mx-auto px-6 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="space-y-4">
+              <Link to="/" className="flex items-center gap-2">
+                <img src={aurenIcon} alt="Auren" className="h-10 w-10" />
+                <span className="text-xl font-display font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+                  Auren
+                </span>
+              </Link>
+              <p className="text-muted-foreground">
+                The cash flow management solution built specifically for Amazon sellers. Forecast payouts, track expenses, and grow with confidence.
+              </p>
+              <div className="flex gap-4 pt-2">
+                <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
+                  <a href="https://twitter.com/aurenapp" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                  </a>
+                </Button>
+                <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
+                  <a href="https://linkedin.com/company/aurenapp" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                    <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                  </a>
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h4 className="font-semibold">Product</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><Link to="/features" className="hover:text-foreground transition-colors">Features</Link></li>
+                <li><Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
+                <li><Link to="/demo" className="hover:text-foreground transition-colors">Live Demo</Link></li>
+                <li><Link to="/features" className="hover:text-foreground transition-colors">All Features</Link></li>
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <h4 className="font-semibold">Resources</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><Link to="/blog" className="hover:text-foreground transition-colors">Blog</Link></li>
+                <li><Link to="/docs" className="hover:text-foreground transition-colors">Documentation</Link></li>
+                <li><Link to="/docs/getting-started" className="hover:text-foreground transition-colors">Getting Started</Link></li>
+                <li><Link to="/docs/faq" className="hover:text-foreground transition-colors">FAQ</Link></li>
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <h4 className="font-semibold">Company</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><Link to="/support" className="hover:text-foreground transition-colors">Support</Link></li>
+                <li><Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
+                <li><a href="#" className="hover:text-foreground transition-colors">Terms of Service</a></li>
+                <li><a href="mailto:support@aurenapp.com" className="hover:text-foreground transition-colors">Contact Us</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t mt-8 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-muted-foreground text-center md:text-left">
+              &copy; 2025 Auren. All rights reserved.
+            </p>
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                <span>Secure & Encrypted</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                <span>Read-Only Access</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
 
       {/* Enterprise Customizer Modal */}
       <Dialog open={showEnterpriseCustomizer} onOpenChange={setShowEnterpriseCustomizer}>
