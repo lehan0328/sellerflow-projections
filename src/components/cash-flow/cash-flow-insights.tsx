@@ -320,38 +320,40 @@ export const CashFlowInsights = ({
                   
                   {nextBuyingOpportunityBalance !== undefined && nextBuyingOpportunityDate && (
                     <>
-                      <div className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800">
-                        <span className="text-muted-foreground">Next Buying Opportunity</span>
-                        <span className="font-semibold text-blue-600">
-                          ${nextBuyingOpportunityBalance.toLocaleString()}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground italic p-2">
-                        Next low point will be on {(() => {
-                          const [year, month, day] = nextBuyingOpportunityDate.split('-').map(Number);
-                          const date = new Date(year, month - 1, day);
-                          return date.toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          });
-                        })()}
-                      </p>
-                      {nextBuyingOpportunityAvailableDate && (
-                        <div className="flex justify-between items-center p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
-                          <span className="text-muted-foreground text-xs">Earliest Purchase Date</span>
-                          <span className="font-semibold text-green-600 text-sm">
-                            {(() => {
-                              const [year, month, day] = nextBuyingOpportunityAvailableDate.split('-').map(Number);
-                              const date = new Date(year, month - 1, day);
-                              return date.toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric'
-                              });
-                            })()}
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800 space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">Next Buying Opportunity</span>
+                          <span className="text-xl font-bold text-blue-600">
+                            ${nextBuyingOpportunityBalance.toLocaleString()}
                           </span>
                         </div>
-                      )}
+                        <p className="text-xs text-muted-foreground">
+                          Low point: {(() => {
+                            const [year, month, day] = nextBuyingOpportunityDate.split('-').map(Number);
+                            const date = new Date(year, month - 1, day);
+                            return date.toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            });
+                          })()}
+                        </p>
+                        {nextBuyingOpportunityAvailableDate && (
+                          <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
+                            <span className="text-xs text-muted-foreground">Earliest Purchase Date</span>
+                            <span className="text-sm font-semibold text-green-600">
+                              {(() => {
+                                const [year, month, day] = nextBuyingOpportunityAvailableDate.split('-').map(Number);
+                                const date = new Date(year, month - 1, day);
+                                return date.toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric'
+                                });
+                              })()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                       {allBuyingOpportunities.length > 1 && (
                         <Button 
                           variant="outline" 
@@ -453,7 +455,7 @@ export const CashFlowInsights = ({
           <ScrollArea className="max-h-[400px] pr-4">
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground mb-4">
-                These are the predicted low points in your cash balance over the next 6 months - ideal times for strategic spending or investments.
+                These are the predicted low points in your cash balance over the next 3 months - ideal times for strategic spending or investments.
               </p>
               {allBuyingOpportunities.map((opp, index) => {
                 const [year, month, day] = opp.date.split('-').map(Number);

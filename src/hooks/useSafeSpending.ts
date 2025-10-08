@@ -84,7 +84,7 @@ export const useSafeSpending = () => {
       const todayStr = formatDate(today);
 
       const futureDate = new Date(today);
-      futureDate.setDate(futureDate.getDate() + 180);
+      futureDate.setDate(futureDate.getDate() + 90); // Next 3 months
       const futureDateStr = formatDate(futureDate);
 
       // Get ALL events that affect cash flow (matching calendar logic)
@@ -152,8 +152,8 @@ export const useSafeSpending = () => {
       const dailyBalances: DailyBalance[] = [];
       let runningBalance = bankBalance;
 
-      // Process each day in the next 180 days
-      for (let i = 0; i <= 180; i++) {
+      // Process each day in the next 90 days (3 months)
+      for (let i = 0; i <= 90; i++) {
         const targetDate = new Date(today);
         targetDate.setDate(targetDate.getDate() + i);
         targetDate.setHours(0, 0, 0, 0);
@@ -321,18 +321,19 @@ export const useSafeSpending = () => {
           }
           
           if (willRise) {
-            // Find the earliest date after the previous low where balance > current buying opportunity
+            // Find the earliest date after the previous low where balance > current buying opportunity + reserve
             let availableDate: string | undefined;
             for (let j = previousLowIndex + 1; j < dailyBalances.length; j++) {
-              if (dailyBalances[j].balance > current.balance) {
+              if (dailyBalances[j].balance > (current.balance + reserve)) {
                 availableDate = dailyBalances[j].date;
                 break;
               }
             }
             
+            // Store the buying opportunity with reserve deducted
             allBuyingOpportunities.push({ 
               date: current.date, 
-              balance: current.balance,
+              balance: Math.max(0, current.balance - reserve), // Deduct reserve amount
               available_date: availableDate
             });
             
