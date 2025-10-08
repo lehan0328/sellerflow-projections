@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, TrendingDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +22,7 @@ interface CashFlowInsightsProps {
   lowestBalanceDate?: string;
   nextBuyingOpportunityBalance?: number;
   nextBuyingOpportunityDate?: string;
+  allBuyingOpportunities?: Array<{ date: string; balance: number }>;
   onUpdateReserveAmount?: (amount: number) => Promise<void>;
 }
 export const CashFlowInsights = ({
@@ -37,6 +39,7 @@ export const CashFlowInsights = ({
   lowestBalanceDate = "",
   nextBuyingOpportunityBalance,
   nextBuyingOpportunityDate,
+  allBuyingOpportunities = [],
   onUpdateReserveAmount
 }: CashFlowInsightsProps) => {
   const {
@@ -44,6 +47,7 @@ export const CashFlowInsights = ({
   } = useToast();
   const { creditCards, isLoading: cardsLoading } = useCreditCards();
   const [pendingOrdersByCard, setPendingOrdersByCard] = useState<Record<string, number>>({});
+  const [showAllOpportunities, setShowAllOpportunities] = useState(false);
   const [chatMode, setChatMode] = useState(false);
   const [chatQuestion, setChatQuestion] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -319,6 +323,17 @@ export const CashFlowInsights = ({
                           });
                         })()}
                       </p>
+                      {allBuyingOpportunities.length > 1 && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setShowAllOpportunities(true)}
+                          className="w-full"
+                        >
+                          <TrendingDown className="h-4 w-4 mr-2" />
+                          View All {allBuyingOpportunities.length} Opportunities
+                        </Button>
+                      )}
                     </>
                   )}
                 </div>
@@ -396,5 +411,45 @@ export const CashFlowInsights = ({
             </div>
           </>}
       </CardContent>
+
+      {/* All Buying Opportunities Modal */}
+      <Dialog open={showAllOpportunities} onOpenChange={setShowAllOpportunities}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <TrendingDown className="h-5 w-5 text-blue-600" />
+              All Buying Opportunities
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[400px] pr-4">
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground mb-4">
+                These are the predicted low points in your cash balance over the next 6 months - ideal times for strategic spending or investments.
+              </p>
+              {allBuyingOpportunities.map((opp, index) => {
+                const [year, month, day] = opp.date.split('-').map(Number);
+                const date = new Date(year, month - 1, day);
+                const formattedDate = date.toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                });
+                
+                return (
+                  <div key={index} className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-semibold text-sm">Opportunity #{index + 1}</span>
+                      <span className="text-lg font-bold text-blue-600">
+                        ${opp.balance.toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{formattedDate}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </Card>;
 };

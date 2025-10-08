@@ -13,6 +13,7 @@ interface SafeSpendingData {
     lowest_balance_date: string;
     next_buying_opportunity_balance?: number;
     next_buying_opportunity_date?: string;
+    all_buying_opportunities?: Array<{ date: string; balance: number }>;
   };
 }
 
@@ -287,11 +288,11 @@ export const useSafeSpending = () => {
       const minBalance = Math.min(...dailyBalances.map(d => d.balance));
       const minDay = dailyBalances.find(d => d.balance === minBalance)!;
       
-      // Find next buying opportunity (next local minimum after the lowest balance date)
+      // Find ALL buying opportunities (all local minimums after the lowest balance date)
       const minDayIndex = dailyBalances.findIndex(d => d.date === minDay.date);
-      let nextBuyingOpportunity: DailyBalance | null = null;
+      const allBuyingOpportunities: Array<{ date: string; balance: number }> = [];
       
-      // Look for next local minimum after the lowest point
+      // Look for all local minimums after the lowest point
       // A local minimum is a point where the balance is lower than both neighbors
       for (let i = minDayIndex + 2; i < dailyBalances.length - 1; i++) {
         const current = dailyBalances[i];
@@ -302,18 +303,16 @@ export const useSafeSpending = () => {
         if (current.balance < prev.balance && 
             current.balance < next.balance && 
             current.balance !== minBalance) {
-          nextBuyingOpportunity = current;
-          break;
+          allBuyingOpportunities.push({ date: current.date, balance: current.balance });
         }
       }
       
+      const nextBuyingOpportunity = allBuyingOpportunities.length > 0 ? allBuyingOpportunities[0] : null;
+      
       console.log('🎯 ALL BALANCES:', dailyBalances.slice(0, 20).map(d => `${d.date}: $${d.balance.toFixed(2)}`).join('\n'));
       
-      if (nextBuyingOpportunity) {
-        console.log('🛒 NEXT BUYING OPPORTUNITY:', {
-          date: nextBuyingOpportunity.date,
-          balance: nextBuyingOpportunity.balance.toFixed(2)
-        });
+      if (allBuyingOpportunities.length > 0) {
+        console.log('🛒 ALL BUYING OPPORTUNITIES:', allBuyingOpportunities.map(o => `${o.date}: $${o.balance.toFixed(2)}`).join(', '));
       }
       
       // Safe Spending = Min Balance - Reserve
@@ -367,7 +366,8 @@ export const useSafeSpending = () => {
             ? firstNegativeDay!.date 
             : (willDropBelowLimit ? firstBelowLimitDay!.date : minDay.date),
           next_buying_opportunity_balance: nextBuyingOpportunity?.balance,
-          next_buying_opportunity_date: nextBuyingOpportunity?.date
+          next_buying_opportunity_date: nextBuyingOpportunity?.date,
+          all_buying_opportunities: allBuyingOpportunities
         }
       });
     } catch (err) {
