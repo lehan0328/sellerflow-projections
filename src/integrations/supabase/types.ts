@@ -610,6 +610,7 @@ export type Database = {
           payment_due_date: string | null
           plaid_account_id: string | null
           priority: number | null
+          statement_balance: number | null
           statement_close_date: string | null
           updated_at: string
           user_id: string
@@ -638,6 +639,7 @@ export type Database = {
           payment_due_date?: string | null
           plaid_account_id?: string | null
           priority?: number | null
+          statement_balance?: number | null
           statement_close_date?: string | null
           updated_at?: string
           user_id: string
@@ -666,6 +668,7 @@ export type Database = {
           payment_due_date?: string | null
           plaid_account_id?: string | null
           priority?: number | null
+          statement_balance?: number | null
           statement_close_date?: string | null
           updated_at?: string
           user_id?: string

@@ -130,6 +130,9 @@ serve(async (req) => {
 
       // Add liabilities data if available
       if (liabilitiesData) {
+        if (liabilitiesData.last_statement_balance !== undefined) {
+          updateParams.p_statement_balance = Math.abs(liabilitiesData.last_statement_balance);
+        }
         if (liabilitiesData.minimum_payment_amount !== undefined) {
           updateParams.p_minimum_payment = liabilitiesData.minimum_payment_amount;
         }

@@ -11,6 +11,7 @@ export interface CreditCard {
   account_type: string;
   masked_account_number?: string;
   balance: number;
+  statement_balance: number;
   credit_limit: number;
   available_credit: number;
   currency_code: string;

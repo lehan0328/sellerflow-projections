@@ -256,9 +256,9 @@ export function CreditCards() {
 
                   <div className="grid grid-cols-4 gap-3 text-sm">
                     <div>
-                      <p className="text-muted-foreground">Total Due</p>
+                      <p className="text-muted-foreground">Statement Balance</p>
                       <p className="font-semibold text-finance-negative">
-                        {formatCurrency(card.balance)}
+                        {formatCurrency(card.statement_balance || card.balance)}
                       </p>
                     </div>
                     <div>
