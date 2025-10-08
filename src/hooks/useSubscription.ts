@@ -174,6 +174,14 @@ export interface SubscriptionState {
   discount_ever_redeemed?: boolean;
 }
 
+// Cache configuration
+const CACHE_KEY = 'auren_subscription_cache';
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+interface CachedSubscription extends SubscriptionState {
+  cachedAt: number;
+}
+
 export const useSubscription = () => {
   const { toast } = useToast();
   const [subscriptionState, setSubscriptionState] = useState<SubscriptionState>({
@@ -186,17 +194,73 @@ export const useSubscription = () => {
     trial_end: null,
   });
 
-  const checkSubscription = async () => {
+  // Load from cache
+  const loadFromCache = (): CachedSubscription | null => {
     try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (!cached) return null;
+      
+      const parsed: CachedSubscription = JSON.parse(cached);
+      const age = Date.now() - parsed.cachedAt;
+      
+      // Return cached data if less than 5 minutes old
+      if (age < CACHE_DURATION) {
+        return parsed;
+      }
+      
+      // Clear expired cache
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Save to cache
+  const saveToCache = (state: SubscriptionState) => {
+    try {
+      const cached: CachedSubscription = {
+        ...state,
+        cachedAt: Date.now(),
+      };
+      localStorage.setItem(CACHE_KEY, JSON.stringify(cached));
+    } catch (error) {
+      console.error("Failed to cache subscription:", error);
+    }
+  };
+
+  // Clear cache (called on explicit actions like checkout)
+  const clearCache = () => {
+    try {
+      localStorage.removeItem(CACHE_KEY);
+    } catch (error) {
+      console.error("Failed to clear cache:", error);
+    }
+  };
+
+  const checkSubscription = async (forceRefresh = false) => {
+    try {
+      // Try to load from cache first (unless forced refresh)
+      if (!forceRefresh) {
+        const cached = loadFromCache();
+        if (cached) {
+          const { cachedAt, ...state } = cached;
+          setSubscriptionState(state);
+          return;
+        }
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        setSubscriptionState({
+        const state = {
           subscribed: false,
           product_id: null,
           subscription_end: null,
           plan: null,
           isLoading: false,
-        });
+        };
+        setSubscriptionState(state);
+        saveToCache(state);
         return;
       }
 
@@ -222,7 +286,7 @@ export const useSubscription = () => {
         }
       }
 
-      setSubscriptionState({
+      const state = {
         subscribed: data.subscribed || false,
         product_id: data.product_id,
         subscription_end: data.subscription_end,
@@ -232,10 +296,13 @@ export const useSubscription = () => {
         trial_end: data.trial_end || null,
         discount: data.discount || null,
         discount_ever_redeemed: data.discount_ever_redeemed || false,
-      });
+      };
+      
+      setSubscriptionState(state);
+      saveToCache(state);
     } catch (error) {
       console.error("Error checking subscription:", error);
-      setSubscriptionState({
+      const state = {
         subscribed: false,
         product_id: null,
         subscription_end: null,
@@ -243,7 +310,9 @@ export const useSubscription = () => {
         isLoading: false,
         is_trialing: false,
         trial_end: null,
-      });
+      };
+      setSubscriptionState(state);
+      saveToCache(state);
     }
   };
 
@@ -271,6 +340,8 @@ export const useSubscription = () => {
       if (error) throw error;
 
       if (data?.url) {
+        // Clear cache since subscription will change
+        clearCache();
         window.open(data.url, '_blank');
       }
     } catch (error) {
@@ -375,8 +446,9 @@ export const useSubscription = () => {
         description: "Plan override removed. You can now subscribe to a regular plan.",
       });
 
-      // Refresh subscription status
-      await checkSubscription();
+      // Clear cache and refresh subscription status
+      clearCache();
+      await checkSubscription(true);
     } catch (error) {
       console.error("Error removing plan override:", error);
       toast({
@@ -390,19 +462,19 @@ export const useSubscription = () => {
   useEffect(() => {
     checkSubscription();
 
-    // Check subscription on auth state change
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      setTimeout(() => {
-        checkSubscription();
-      }, 0);
+    // Check subscription on auth state change only (cache will handle the rest)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      // Only refresh on significant auth events
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'SIGNED_OUT') {
+        clearCache();
+        setTimeout(() => {
+          checkSubscription(true);
+        }, 0);
+      }
     });
-
-    // Refresh subscription every 10 seconds
-    const interval = setInterval(checkSubscription, 10000);
 
     return () => {
       subscription.unsubscribe();
-      clearInterval(interval);
     };
   }, []);
 
@@ -413,5 +485,6 @@ export const useSubscription = () => {
     purchaseAddon,
     openCustomerPortal,
     removePlanOverride,
+    clearCache,
   };
 };

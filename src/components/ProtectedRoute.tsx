@@ -30,14 +30,45 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         return;
       }
 
+      // Check cache first
+      const cacheKey = `trial_status_${user.id}`;
+      const cached = sessionStorage.getItem(cacheKey);
+      
+      if (cached) {
+        try {
+          const { trialEnd: cachedTrialEnd, timestamp } = JSON.parse(cached);
+          const age = Date.now() - timestamp;
+          
+          // Use cache if less than 5 minutes old
+          if (age < 5 * 60 * 1000) {
+            setTrialEnd(cachedTrialEnd);
+            setCheckingTrial(false);
+            return;
+          }
+        } catch {
+          // Invalid cache, continue to fetch
+        }
+      }
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('trial_end')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      setTrialEnd(profile?.trial_end || null);
+      const trialEndDate = profile?.trial_end || null;
+      setTrialEnd(trialEndDate);
       setCheckingTrial(false);
+      
+      // Cache the result
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify({
+          trialEnd: trialEndDate,
+          timestamp: Date.now()
+        }));
+      } catch {
+        // Ignore cache errors
+      }
     };
 
     fetchTrialStatus();
