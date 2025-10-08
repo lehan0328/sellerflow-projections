@@ -64,10 +64,6 @@ export const CashFlowInsights = ({
   const netDaily = dailyInflow - dailyOutflow;
   const healthStatus = netDaily >= 0 ? "positive" : "negative";
 
-  // Debug logging
-  console.log('CashFlowInsights - allBuyingOpportunities:', allBuyingOpportunities);
-  console.log('CashFlowInsights - allBuyingOpportunities.length:', allBuyingOpportunities.length);
-
   // Update edit value when reserveAmount prop changes
   useEffect(() => {
     setEditReserveValue(reserveAmount.toString());

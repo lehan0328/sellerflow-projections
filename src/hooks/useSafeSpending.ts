@@ -293,17 +293,32 @@ export const useSafeSpending = () => {
       const allBuyingOpportunities: Array<{ date: string; balance: number }> = [];
       
       // Look for all local minimums after the lowest point
-      // A local minimum is a point where the balance is lower than both neighbors
+      // A local minimum is detected when:
+      // 1. Balance drops from previous day (start of a dip or plateau)
+      // 2. Eventually rises again (end of the dip/plateau)
+      // 3. Is different from the global minimum
       for (let i = minDayIndex + 2; i < dailyBalances.length - 1; i++) {
         const current = dailyBalances[i];
         const prev = dailyBalances[i - 1];
-        const next = dailyBalances[i + 1];
         
-        // Check if this is a local minimum and different from the global minimum
-        if (current.balance < prev.balance && 
-            current.balance < next.balance && 
-            current.balance !== minBalance) {
-          allBuyingOpportunities.push({ date: current.date, balance: current.balance });
+        // Check if this is the start of a dip (balance dropped from previous day)
+        if (current.balance < prev.balance && current.balance !== minBalance) {
+          // Look ahead to see if balance eventually rises
+          let willRise = false;
+          for (let j = i + 1; j < dailyBalances.length; j++) {
+            if (dailyBalances[j].balance > current.balance) {
+              willRise = true;
+              break;
+            }
+          }
+          
+          if (willRise) {
+            allBuyingOpportunities.push({ date: current.date, balance: current.balance });
+            // Skip ahead past any plateau at this level
+            while (i < dailyBalances.length - 1 && dailyBalances[i + 1].balance === current.balance) {
+              i++;
+            }
+          }
         }
       }
       
