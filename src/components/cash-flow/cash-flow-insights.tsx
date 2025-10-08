@@ -318,54 +318,16 @@ export const CashFlowInsights = ({
                       })()}
                     </p>}
                   
-                  {nextBuyingOpportunityBalance !== undefined && nextBuyingOpportunityDate && (
-                    <>
-                      <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800 space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">Next Buying Opportunity</span>
-                          <span className="text-xl font-bold text-blue-600">
-                            ${nextBuyingOpportunityBalance.toLocaleString()}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Low point: {(() => {
-                            const [year, month, day] = nextBuyingOpportunityDate.split('-').map(Number);
-                            const date = new Date(year, month - 1, day);
-                            return date.toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric'
-                            });
-                          })()}
-                        </p>
-                        {nextBuyingOpportunityAvailableDate && (
-                          <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
-                            <span className="text-xs text-muted-foreground">Earliest Purchase Date</span>
-                            <span className="text-sm font-semibold text-green-600">
-                              {(() => {
-                                const [year, month, day] = nextBuyingOpportunityAvailableDate.split('-').map(Number);
-                                const date = new Date(year, month - 1, day);
-                                return date.toLocaleDateString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric'
-                                });
-                              })()}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      {allBuyingOpportunities.length > 1 && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => setShowAllOpportunities(true)}
-                          className="w-full"
-                        >
-                          <TrendingDown className="h-4 w-4 mr-2" />
-                          View All {allBuyingOpportunities.length} Opportunities
-                        </Button>
-                      )}
-                    </>
+                  {allBuyingOpportunities && allBuyingOpportunities.length > 0 && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setShowAllOpportunities(true)}
+                      className="w-full"
+                    >
+                      <TrendingDown className="h-4 w-4 mr-2" />
+                      View All {allBuyingOpportunities.length} {allBuyingOpportunities.length === 1 ? 'Opportunity' : 'Opportunities'}
+                    </Button>
                   )}
                 </div>
               </div>
