@@ -65,11 +65,11 @@ export default function ReferralDashboard() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/dashboard')}
             className="mb-4 hover-scale"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            Back to Dashboard
           </Button>
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl bg-gradient-primary">
