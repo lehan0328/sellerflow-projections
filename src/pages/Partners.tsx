@@ -90,7 +90,7 @@ export default function Partners() {
               Partner Programs • Earn Up To $3,000+
             </span>
           </div>
-          <h1 className="text-6xl md:text-7xl font-bold leading-tight">
+          <h1 className="text-6xl md:text-7xl font-bold leading-relaxed pb-2">
             <span className="block bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
               Grow Together,
             </span>
