@@ -127,34 +127,61 @@ export default function ReferralDashboard() {
           </Card>
         )}
 
-        {/* Partners Highlight Banner */}
-        <Card className="relative overflow-hidden border-primary/30 bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 backdrop-blur">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-radial from-primary/30 to-transparent blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-radial from-accent/30 to-transparent blur-3xl" />
-          <CardContent className="relative p-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-4">
-                <div className="p-4 rounded-2xl bg-gradient-primary animate-glow-pulse">
-                  <Sparkles className="h-8 w-8 text-primary-foreground" />
+        {/* Partners Highlight Banner - LOUD VERSION */}
+        <Card className="relative overflow-hidden border-primary shadow-2xl shadow-primary/30">
+          {/* Animated Background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary via-accent to-primary animate-gradient-xy opacity-90" />
+          <div className="absolute inset-0 bg-grid-pattern opacity-20" />
+          
+          {/* Floating Orbs */}
+          <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-accent/50 rounded-full blur-3xl animate-glow-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/50 rounded-full blur-3xl animate-glow-pulse" style={{ animationDelay: "1s" }} />
+          
+          <CardContent className="relative p-10 md:p-12">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+              {/* Left Side - Main Message */}
+              <div className="flex-1 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-foreground/20 backdrop-blur mb-4 animate-bounce">
+                  <Sparkles className="h-5 w-5 text-primary-foreground animate-pulse" />
+                  <span className="text-sm font-bold text-primary-foreground uppercase tracking-wider">
+                    Limited Time Bonus
+                  </span>
                 </div>
-                <div>
-                  <h3 className="text-2xl font-bold mb-2">Earn Up To $3,000!</h3>
-                  <p className="text-muted-foreground">
-                    Reach 100 referrals and unlock 6 months free + $3,000 cash bonus
-                  </p>
+                
+                <h2 className="text-5xl md:text-7xl font-black mb-4 text-primary-foreground leading-none animate-scale-in">
+                  EARN UP TO
+                  <span className="block text-6xl md:text-8xl bg-gradient-to-r from-yellow-300 via-yellow-100 to-yellow-300 bg-clip-text text-transparent animate-pulse mt-2">
+                    $3,000!
+                  </span>
+                </h2>
+                
+                <p className="text-xl md:text-2xl text-primary-foreground/90 font-semibold mb-2">
+                  💰 Refer 100 friends = 6 months FREE + $3,000 cash!
+                </p>
+                <p className="text-lg text-primary-foreground/80">
+                  Start earning rewards at just 1 referral!
+                </p>
+              </div>
+
+              {/* Right Side - CTA */}
+              <div className="flex flex-col gap-4 items-center md:items-end">
+                <Button 
+                  size="lg" 
+                  onClick={() => navigate("/partners")}
+                  className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 hover-scale group relative overflow-hidden text-lg px-8 py-6 h-auto shadow-2xl"
+                >
+                  <span className="relative z-10 flex items-center gap-3 font-bold">
+                    <Target className="h-6 w-6" />
+                    See All Reward Tiers
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                </Button>
+                
+                <div className="flex items-center gap-2 text-primary-foreground/80 text-sm">
+                  <Gift className="h-4 w-4" />
+                  <span className="font-medium">Rewards starting at 1 referral</span>
                 </div>
               </div>
-              <Button 
-                size="lg" 
-                onClick={() => navigate('/partners')}
-                className="bg-gradient-primary hover-scale group relative overflow-hidden"
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  View All Rewards
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-accent/0 via-accent/20 to-accent/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-              </Button>
             </div>
           </CardContent>
         </Card>

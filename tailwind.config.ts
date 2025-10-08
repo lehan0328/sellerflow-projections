@@ -173,6 +173,20 @@ export default {
           "100%": {
             backgroundPosition: "1000px 0"
           }
+        },
+        "gradient-xy": {
+          "0%, 100%": {
+            backgroundPosition: "0% 0%"
+          },
+          "25%": {
+            backgroundPosition: "100% 0%"
+          },
+          "50%": {
+            backgroundPosition: "100% 100%"
+          },
+          "75%": {
+            backgroundPosition: "0% 100%"
+          }
         }
       },
       animation: {
@@ -184,7 +198,8 @@ export default {
         "slide-up": "slide-up 0.5s ease-out",
         "glow-pulse": "glow-pulse 3s ease-in-out infinite",
         "float": "float 6s ease-in-out infinite",
-        "shimmer": "shimmer 2s linear infinite"
+        "shimmer": "shimmer 2s linear infinite",
+        "gradient-xy": "gradient-xy 8s ease infinite"
       },
     },
   },
