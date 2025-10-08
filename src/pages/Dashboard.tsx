@@ -873,7 +873,7 @@ const Dashboard = () => {
         .map(card => ({
           id: `credit-payment-${card.id}`,
           type: 'credit-payment' as const,
-          amount: card.balance, // Use statement balance as the amount
+          amount: card.statement_balance || card.balance, // Use statement balance, fallback to current balance
           description: `${card.institution_name} - ${card.account_name} Payment`,
           creditCard: card.institution_name,
           date: new Date(card.payment_due_date!)
