@@ -28,7 +28,8 @@ export const SignUp = () => {
     lastName: '',
     company: '',
     monthlyRevenue: '',
-    marketplaces: [] as string[]
+    marketplaces: [] as string[],
+    referralCode: ''
   });
 
   const ecommerceMarketplaces = [
@@ -123,7 +124,8 @@ export const SignUp = () => {
             last_name: signUpData.lastName,
             company: signUpData.company,
             monthly_revenue: signUpData.monthlyRevenue,
-            ecommerce_marketplaces: signUpData.marketplaces
+            ecommerce_marketplaces: signUpData.marketplaces,
+            referral_code: signUpData.referralCode
           }
         }
       });
@@ -303,6 +305,20 @@ export const SignUp = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="referralCode" className="text-sm font-medium">Referral Code (Optional)</Label>
+                <Input
+                  id="referralCode"
+                  placeholder="Enter referral code"
+                  value={signUpData.referralCode}
+                  onChange={(e) => setSignUpData(prev => ({ ...prev, referralCode: e.target.value.toUpperCase() }))}
+                  className="h-11"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Have a referral code? Enter it to help your referrer earn rewards!
+                </p>
               </div>
 
               <Button type="submit" className="w-full bg-gradient-primary h-12 text-base font-medium shadow-lg hover:shadow-xl transition-all" disabled={loading}>
