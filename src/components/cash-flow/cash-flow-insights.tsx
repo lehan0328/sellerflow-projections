@@ -19,6 +19,8 @@ interface CashFlowInsightsProps {
   reserveAmount?: number;
   projectedLowestBalance?: number;
   lowestBalanceDate?: string;
+  nextBuyingOpportunityBalance?: number;
+  nextBuyingOpportunityDate?: string;
   onUpdateReserveAmount?: (amount: number) => Promise<void>;
 }
 export const CashFlowInsights = ({
@@ -33,6 +35,8 @@ export const CashFlowInsights = ({
   reserveAmount = 0,
   projectedLowestBalance = 0,
   lowestBalanceDate = "",
+  nextBuyingOpportunityBalance,
+  nextBuyingOpportunityDate,
   onUpdateReserveAmount
 }: CashFlowInsightsProps) => {
   const {
@@ -295,6 +299,28 @@ export const CashFlowInsights = ({
                         });
                       })()}
                     </p>}
+                  
+                  {nextBuyingOpportunityBalance !== undefined && nextBuyingOpportunityDate && (
+                    <>
+                      <div className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800">
+                        <span className="text-muted-foreground">Next Buying Opportunity</span>
+                        <span className="font-semibold text-blue-600">
+                          ${nextBuyingOpportunityBalance.toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground italic p-2">
+                        Next low point will be on {(() => {
+                          const [year, month, day] = nextBuyingOpportunityDate.split('-').map(Number);
+                          const date = new Date(year, month - 1, day);
+                          return date.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          });
+                        })()}
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

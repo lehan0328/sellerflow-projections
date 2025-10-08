@@ -11,6 +11,8 @@ interface SafeSpendingData {
     available_balance: number;
     lowest_projected_balance: number;
     lowest_balance_date: string;
+    next_buying_opportunity_balance?: number;
+    next_buying_opportunity_date?: string;
   };
 }
 
@@ -285,7 +287,34 @@ export const useSafeSpending = () => {
       const minBalance = Math.min(...dailyBalances.map(d => d.balance));
       const minDay = dailyBalances.find(d => d.balance === minBalance)!;
       
+      // Find next buying opportunity (next local minimum after the lowest balance date)
+      const minDayIndex = dailyBalances.findIndex(d => d.date === minDay.date);
+      let nextBuyingOpportunity: DailyBalance | null = null;
+      
+      // Look for next local minimum after the lowest point
+      // A local minimum is a point where the balance is lower than both neighbors
+      for (let i = minDayIndex + 2; i < dailyBalances.length - 1; i++) {
+        const current = dailyBalances[i];
+        const prev = dailyBalances[i - 1];
+        const next = dailyBalances[i + 1];
+        
+        // Check if this is a local minimum and different from the global minimum
+        if (current.balance < prev.balance && 
+            current.balance < next.balance && 
+            current.balance !== minBalance) {
+          nextBuyingOpportunity = current;
+          break;
+        }
+      }
+      
       console.log('🎯 ALL BALANCES:', dailyBalances.slice(0, 20).map(d => `${d.date}: $${d.balance.toFixed(2)}`).join('\n'));
+      
+      if (nextBuyingOpportunity) {
+        console.log('🛒 NEXT BUYING OPPORTUNITY:', {
+          date: nextBuyingOpportunity.date,
+          balance: nextBuyingOpportunity.balance.toFixed(2)
+        });
+      }
       
       // Safe Spending = Min Balance - Reserve
       const safeSpendingLimit = Math.max(0, minBalance - reserve);
@@ -336,7 +365,9 @@ export const useSafeSpending = () => {
             : (willDropBelowLimit ? firstBelowLimitDay!.balance : minBalance),
           lowest_balance_date: willGoNegative 
             ? firstNegativeDay!.date 
-            : (willDropBelowLimit ? firstBelowLimitDay!.date : minDay.date)
+            : (willDropBelowLimit ? firstBelowLimitDay!.date : minDay.date),
+          next_buying_opportunity_balance: nextBuyingOpportunity?.balance,
+          next_buying_opportunity_date: nextBuyingOpportunity?.date
         }
       });
     } catch (err) {
