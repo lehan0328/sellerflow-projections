@@ -41,6 +41,9 @@ import ForecastAmazonPayouts from "./pages/blog/ForecastAmazonPayouts";
 import ManageCashflow from "./pages/blog/ManageCashflow";
 import FinancingGrowth from "./pages/blog/FinancingGrowth";
 import BlogTag from "./pages/BlogTag";
+import Partners from "./pages/Partners";
+import ReferralDashboard from "./pages/ReferralDashboard";
+import AffiliateDashboard from "./pages/AffiliateDashboard";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +75,17 @@ const App = () => (
           <Route path="/blog/manage-cashflow" element={<ManageCashflow />} />
           <Route path="/blog/financing-growth" element={<FinancingGrowth />} />
           <Route path="/blog/tag/:tag" element={<BlogTag />} />
+          <Route path="/partners" element={<Partners />} />
+          <Route path="/referral-dashboard" element={
+            <ProtectedRoute>
+              <ReferralDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/affiliate-dashboard" element={
+            <ProtectedRoute>
+              <AffiliateDashboard />
+            </ProtectedRoute>
+          } />
           <Route path="/dashboard" element={
             <ProtectedRoute>
               <Dashboard />

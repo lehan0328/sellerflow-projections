@@ -14,6 +14,163 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_payouts: {
+        Row: {
+          affiliate_id: string
+          amount: number
+          created_at: string
+          id: string
+          paid_at: string | null
+          payment_email: string | null
+          payment_method: string
+          payment_status: string
+          updated_at: string
+        }
+        Insert: {
+          affiliate_id: string
+          amount: number
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          payment_email?: string | null
+          payment_method: string
+          payment_status?: string
+          updated_at?: string
+        }
+        Update: {
+          affiliate_id?: string
+          amount?: number
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          payment_email?: string | null
+          payment_method?: string
+          payment_status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_payouts_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_referrals: {
+        Row: {
+          affiliate_code: string
+          affiliate_id: string
+          commission_amount: number | null
+          commission_paid: boolean | null
+          converted_at: string | null
+          created_at: string
+          id: string
+          last_commission_date: string | null
+          referred_user_id: string
+          status: string
+          subscription_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          affiliate_code: string
+          affiliate_id: string
+          commission_amount?: number | null
+          commission_paid?: boolean | null
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          last_commission_date?: string | null
+          referred_user_id: string
+          status?: string
+          subscription_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          affiliate_code?: string
+          affiliate_id?: string
+          commission_amount?: number | null
+          commission_paid?: boolean | null
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          last_commission_date?: string | null
+          referred_user_id?: string
+          status?: string
+          subscription_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_referrals_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliates: {
+        Row: {
+          affiliate_code: string
+          approved_at: string | null
+          audience_description: string | null
+          commission_rate: number
+          company_name: string | null
+          created_at: string
+          id: string
+          monthly_referrals: number | null
+          pending_commission: number | null
+          promotional_methods: string | null
+          status: string
+          tier: string
+          total_commission_earned: number | null
+          total_referrals: number | null
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          affiliate_code: string
+          approved_at?: string | null
+          audience_description?: string | null
+          commission_rate?: number
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          monthly_referrals?: number | null
+          pending_commission?: number | null
+          promotional_methods?: string | null
+          status?: string
+          tier?: string
+          total_commission_earned?: number | null
+          total_referrals?: number | null
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          affiliate_code?: string
+          approved_at?: string | null
+          audience_description?: string | null
+          commission_rate?: number
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          monthly_referrals?: number | null
+          pending_commission?: number | null
+          promotional_methods?: string | null
+          status?: string
+          tier?: string
+          total_commission_earned?: number | null
+          total_referrals?: number | null
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       amazon_accounts: {
         Row: {
           account_name: string
@@ -793,6 +950,111 @@ export type Database = {
           type?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referral_rewards: {
+        Row: {
+          annual_reset_date: string | null
+          cash_bonus: number | null
+          created_at: string
+          discount_end_date: string | null
+          discount_percentage: number | null
+          discount_start_date: string | null
+          id: string
+          referral_count: number
+          reward_status: string
+          tier_level: number
+          total_cash_earned: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          annual_reset_date?: string | null
+          cash_bonus?: number | null
+          created_at?: string
+          discount_end_date?: string | null
+          discount_percentage?: number | null
+          discount_start_date?: string | null
+          id?: string
+          referral_count?: number
+          reward_status?: string
+          tier_level?: number
+          total_cash_earned?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          annual_reset_date?: string | null
+          cash_bonus?: number | null
+          created_at?: string
+          discount_end_date?: string | null
+          discount_percentage?: number | null
+          discount_start_date?: string | null
+          id?: string
+          referral_count?: number
+          reward_status?: string
+          tier_level?: number
+          total_cash_earned?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          converted_at: string | null
+          created_at: string
+          id: string
+          referral_code: string
+          referred_user_id: string
+          referrer_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          referral_code: string
+          referred_user_id: string
+          referrer_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referred_user_id?: string
+          referrer_id?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
