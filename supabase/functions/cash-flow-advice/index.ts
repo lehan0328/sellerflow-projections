@@ -53,22 +53,20 @@ serve(async (req) => {
       throw new Error("Failed to fetch income");
     }
 
-    // Fetch user's bank accounts to calculate current balance
-    const { data: bankAccounts, error: bankError } = await supabase
-      .from('bank_accounts')
-      .select('balance, available_balance')
+    // Fetch user's actual cash balance from user_settings (this is the authoritative source)
+    const { data: userSettings, error: settingsError } = await supabase
+      .from('user_settings')
+      .select('total_cash')
       .eq('user_id', user.id)
-      .eq('is_active', true);
+      .single();
 
-    if (bankError) {
-      console.error("Error fetching bank accounts:", bankError);
-      throw new Error("Failed to fetch bank accounts");
+    if (settingsError && settingsError.code !== 'PGRST116') {
+      console.error("Error fetching user settings:", settingsError);
+      throw new Error("Failed to fetch user settings");
     }
 
-    // Calculate current balance from user's bank accounts
-    const currentBalance = (bankAccounts || []).reduce((sum, account) => {
-      return sum + (Number(account.balance) || 0);
-    }, 0);
+    // Use total_cash from user_settings as the current balance (this matches the dashboard)
+    const currentBalance = Number(userSettings?.total_cash || 0);
 
     console.log("Starting cash flow analysis with:", {
       currentBalance,
