@@ -297,54 +297,69 @@ export const useSafeSpending = () => {
       const minDayIndex = dailyBalances.findIndex(d => d.date === minDay.date);
       const allBuyingOpportunities: Array<{ date: string; balance: number; available_date?: string }> = [];
       
-      // Track the previous low point (starts with the global minimum)
-      let previousLowIndex = minDayIndex;
-      
-      // Look for all local minimums after the lowest point
-      // A local minimum is detected when:
-      // 1. Balance drops from previous day (start of a dip or plateau)
-      // 2. Eventually rises again (end of the dip/plateau)
-      // 3. Is different from the global minimum
-      for (let i = minDayIndex + 2; i < dailyBalances.length - 1; i++) {
+      // Scan through all days after the global minimum to find local minimums
+      let i = minDayIndex + 1;
+      while (i < dailyBalances.length) {
         const current = dailyBalances[i];
-        const prev = dailyBalances[i - 1];
         
-        // Check if this is the start of a dip (balance dropped from previous day)
-        if (current.balance < prev.balance && current.balance !== minBalance) {
-          // Look ahead to see if balance eventually rises
-          let willRise = false;
-          for (let j = i + 1; j < dailyBalances.length; j++) {
-            if (dailyBalances[j].balance > current.balance) {
-              willRise = true;
-              break;
-            }
+        // Check if this is a local minimum:
+        // 1. Balance is different from previous day (start of new level)
+        // 2. Balance is lower than or equal to next days (forms a trough)
+        // 3. Eventually rises again OR plateaus at end
+        if (i > minDayIndex && current.balance !== minBalance) {
+          // Find the end of this level (where balance stays same or is lowest point)
+          let levelEnd = i;
+          while (levelEnd < dailyBalances.length - 1 && dailyBalances[levelEnd + 1].balance === current.balance) {
+            levelEnd++;
           }
           
-          if (willRise) {
-            // Find the earliest date after the previous low where balance > current low point
+          // Check if balance rises after this level OR we're at the end with no more changes
+          const willRise = levelEnd < dailyBalances.length - 1 && dailyBalances[levelEnd + 1].balance > current.balance;
+          const isPlateauEnd = levelEnd >= dailyBalances.length - 5; // Last few days with no change
+          
+          if (willRise || isPlateauEnd) {
+            // Check if balance remains flat until the end (plateau scenario)
+            let isTerminalPlateauBool = false;
+            if (isPlateauEnd) {
+              isTerminalPlateauBool = true;
+              for (let j = levelEnd + 1; j < dailyBalances.length; j++) {
+                if (dailyBalances[j].balance !== current.balance) {
+                  isTerminalPlateauBool = false;
+                  break;
+                }
+              }
+            }
+            
+            // Find earliest available date (when balance rises above this level)
             let availableDate: string | undefined;
-            for (let j = previousLowIndex + 1; j < dailyBalances.length; j++) {
+            for (let j = i; j < dailyBalances.length; j++) {
               if (dailyBalances[j].balance > current.balance) {
                 availableDate = dailyBalances[j].date;
                 break;
               }
             }
             
-            // Store the buying opportunity with reserve deducted
-            allBuyingOpportunities.push({ 
-              date: current.date, 
-              balance: Math.max(0, current.balance - reserve), // Deduct reserve amount
-              available_date: availableDate
-            });
-            
-            // Update previous low index for next opportunity
-            previousLowIndex = i;
-            
-            // Skip ahead past any plateau at this level
-            while (i < dailyBalances.length - 1 && dailyBalances[i + 1].balance === current.balance) {
-              i++;
+            // Only add if this is truly a buying opportunity (will rise or is terminal)
+            if (willRise || isTerminalPlateauBool) {
+              allBuyingOpportunities.push({ 
+                date: current.date, 
+                balance: Math.max(0, current.balance - reserve),
+                available_date: availableDate
+              });
             }
+            
+            // Move past this level
+            i = levelEnd + 1;
+            
+            // If this was a terminal plateau, stop looking
+            if (isTerminalPlateauBool) {
+              break;
+            }
+          } else {
+            i++;
           }
+        } else {
+          i++;
         }
       }
       
