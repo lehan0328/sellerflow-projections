@@ -69,11 +69,10 @@ export const useReferrals = () => {
 
   const copyReferralLink = () => {
     if (!referralCode) return;
-    const link = `${window.location.origin}/?ref=${referralCode}`;
-    navigator.clipboard.writeText(link);
+    navigator.clipboard.writeText(referralCode);
     toast({
       title: 'Copied!',
-      description: 'Referral link copied to clipboard',
+      description: 'Referral code copied to clipboard',
     });
   };
 

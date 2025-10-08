@@ -311,6 +311,20 @@ export const SignUp = () => {
                 <Label htmlFor="referralCode" className="text-sm font-medium">Referral Code (Optional)</Label>
                 <Input
                   id="referralCode"
+                  placeholder="Enter a referral code"
+                  value={signUpData.referralCode}
+                  onChange={(e) => setSignUpData(prev => ({ ...prev, referralCode: e.target.value.toUpperCase() }))}
+                  className="h-11"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Have a referral code? Enter it here to get special benefits!
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="referralCode" className="text-sm font-medium">Referral Code (Optional)</Label>
+                <Input
+                  id="referralCode"
                   placeholder="Enter referral code"
                   value={signUpData.referralCode}
                   onChange={(e) => setSignUpData(prev => ({ ...prev, referralCode: e.target.value.toUpperCase() }))}

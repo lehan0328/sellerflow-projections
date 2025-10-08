@@ -255,22 +255,27 @@ export default function ReferralDashboard() {
           </Card>
         </div>
 
-        {/* Referral Link */}
+        {/* Referral Code */}
         <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-card via-card/80 to-primary/5 backdrop-blur">
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-radial from-primary/20 to-transparent blur-2xl" />
           <CardHeader className="relative">
-            <CardTitle className="text-xl">Your Referral Link</CardTitle>
-            <CardDescription>Share this link with fellow Amazon sellers</CardDescription>
+            <CardTitle className="text-xl">Your Referral Code</CardTitle>
+            <CardDescription>Share this code with fellow Amazon sellers - they'll enter it during signup</CardDescription>
           </CardHeader>
-          <CardContent className="relative">
+          <CardContent className="relative space-y-4">
             <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1 p-4 bg-muted/50 backdrop-blur rounded-lg border border-primary/20 font-mono text-sm overflow-x-auto">
-                {`${window.location.origin}/?ref=${referralCode}`}
+              <div className="flex-1 p-6 bg-gradient-to-r from-primary/20 to-accent/20 backdrop-blur rounded-lg border-2 border-primary/40 flex items-center justify-center">
+                <span className="font-mono text-4xl font-bold tracking-wider text-primary">
+                  {referralCode}
+                </span>
               </div>
-              <Button onClick={copyReferralLink} className="bg-gradient-primary hover-scale">
-                <Copy className="h-4 w-4 mr-2" />
-                Copy Link
+              <Button onClick={copyReferralLink} className="bg-gradient-primary hover-scale h-auto py-4">
+                <Copy className="h-5 w-5 mr-2" />
+                Copy Code
               </Button>
+            </div>
+            <div className="text-sm text-muted-foreground text-center sm:text-left">
+              💡 Your friends enter this code during signup to unlock rewards for both of you!
             </div>
           </CardContent>
         </Card>
