@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSubscription, PRICING_PLANS } from './useSubscription';
+import { useTrialAddonUsage } from './useTrialAddonUsage';
 import { supabase } from '@/integrations/supabase/client';
 
 export type PlanType = 'starter' | 'growing' | 'professional' | 'enterprise';
@@ -46,6 +47,7 @@ const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
 
 export const usePlanLimits = () => {
   const subscription = useSubscription();
+  const { updateTrialUsage } = useTrialAddonUsage();
   const [currentUsage, setCurrentUsage] = useState<CurrentUsage>({
     bankConnections: 0,
     amazonConnections: 0
@@ -76,17 +78,35 @@ export const usePlanLimits = () => {
         supabase.from('amazon_accounts').select('id', { count: 'exact' }).eq('user_id', user.id)
       ]);
 
+      const bankCount = (bankAccounts.count || 0) + (creditCards.count || 0);
+      const amazonCount = amazonAccounts.count || 0;
+
       setCurrentUsage({
-        bankConnections: (bankAccounts.count || 0) + (creditCards.count || 0),
-        amazonConnections: amazonAccounts.count || 0
+        bankConnections: bankCount,
+        amazonConnections: amazonCount
       });
+
+      // If in trial, track addon usage beyond plan limits
+      if (subscription.is_trialing) {
+        // Calculate how many beyond the limit
+        const bankExcess = Math.max(0, bankCount - planLimits.bankConnections);
+        const amazonExcess = Math.max(0, amazonCount - planLimits.amazonConnections);
+
+        if (bankExcess > 0) {
+          updateTrialUsage({ addonType: 'bank_account', quantity: bankExcess });
+        }
+        if (amazonExcess > 0) {
+          updateTrialUsage({ addonType: 'amazon_account', quantity: amazonExcess });
+        }
+      }
     };
 
     fetchUsage();
-  }, []);
+  }, [subscription.is_trialing, planLimits.bankConnections, planLimits.amazonConnections]);
 
-  const canAddBankConnection = currentUsage.bankConnections < planLimits.bankConnections;
-  const canAddAmazonConnection = currentUsage.amazonConnections < planLimits.amazonConnections;
+  // During trial, allow unlimited connections
+  const canAddBankConnection = subscription.is_trialing ? true : currentUsage.bankConnections < planLimits.bankConnections;
+  const canAddAmazonConnection = subscription.is_trialing ? true : currentUsage.amazonConnections < planLimits.amazonConnections;
 
   return {
     currentPlan,
@@ -94,6 +114,7 @@ export const usePlanLimits = () => {
     currentUsage,
     canAddBankConnection,
     canAddAmazonConnection,
-    PLAN_LIMITS
+    PLAN_LIMITS,
+    isInTrial: subscription.is_trialing || false,
   };
 };

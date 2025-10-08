@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSubscription, PRICING_PLANS, ADDON_PRODUCTS, ENTERPRISE_TIERS } from "@/hooks/useSubscription";
+import { useTrialAddonUsage } from "@/hooks/useTrialAddonUsage";
+import { TrialAddonNotice } from "@/components/TrialAddonNotice";
 import { CancellationFlow } from "@/components/subscription/CancellationFlow";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
@@ -37,6 +39,7 @@ const UpgradePlan = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, isLoading } = useSubscription();
+  const { calculatePostTrialCost } = useTrialAddonUsage();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
   const [isYearly, setIsYearly] = useState(false);
   const [selectedEnterpriseTier, setSelectedEnterpriseTier] = useState<keyof typeof ENTERPRISE_TIERS>("tier1");
@@ -458,6 +461,13 @@ const UpgradePlan = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Trial Add-on Usage Notice */}
+        {is_trialing && (
+          <div className="max-w-4xl mx-auto">
+            <TrialAddonNotice trialEnd={trial_end || undefined} />
+          </div>
+        )}
 
         {/* Plan Comparison for subscribed non-trial users */}
         {subscribed && plan && !is_trialing && (
