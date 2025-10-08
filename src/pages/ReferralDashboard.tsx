@@ -47,10 +47,14 @@ export default function ReferralDashboard() {
   }
 
   const activeReferrals = referrals.filter(r => r.status === 'active').length;
-  const currentTier = REWARD_TIERS.find((tier, index) => {
-    const nextTier = REWARD_TIERS[index + 1];
-    return activeReferrals >= tier.referrals && (!nextTier || activeReferrals < nextTier.referrals);
-  }) || REWARD_TIERS[0];
+  
+  // Only show tier if user has active referrals
+  const currentTier = activeReferrals > 0 
+    ? REWARD_TIERS.find((tier, index) => {
+        const nextTier = REWARD_TIERS[index + 1];
+        return activeReferrals >= tier.referrals && (!nextTier || activeReferrals < nextTier.referrals);
+      })
+    : null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,6 +86,16 @@ export default function ReferralDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        {/* Important Info Alert */}
+        <Alert className="border-blue-500/50 bg-blue-500/10">
+          <AlertCircle className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-600">Active Subscriptions Only</AlertTitle>
+          <AlertDescription className="text-blue-600/80">
+            Referral rewards are only earned when your friends sign up for an <strong>active paid subscription</strong>. 
+            Free trial signups do not count toward your referral rewards until they convert to a paid plan.
+          </AlertDescription>
+        </Alert>
+
         {/* Pending Cash Bonus Alert */}
         {rewards && rewards.pending_cash_bonus > 0 && (
           <Alert className="border-yellow-500/50 bg-yellow-500/10">
@@ -156,10 +170,10 @@ export default function ReferralDashboard() {
                 </h2>
                 
                 <p className="text-xl md:text-2xl text-primary-foreground/90 font-semibold mb-2">
-                  💰 Refer 100 friends = 6 months FREE + $3,000 cash!
+                  💰 Refer 100 friends with active subscriptions = 6 months FREE + $3,000 cash!
                 </p>
                 <p className="text-lg text-primary-foreground/80">
-                  Start earning rewards at just 1 referral!
+                  Start earning rewards at just 1 active subscription referral!
                 </p>
               </div>
 
@@ -179,7 +193,7 @@ export default function ReferralDashboard() {
                 
                 <div className="flex items-center gap-2 text-primary-foreground/80 text-sm">
                   <Gift className="h-4 w-4" />
-                  <span className="font-medium">Rewards starting at 1 referral</span>
+                  <span className="font-medium">Rewards for active paid subscriptions</span>
                 </div>
               </div>
             </div>
@@ -201,7 +215,7 @@ export default function ReferralDashboard() {
                 {activeReferrals}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {referrals.length - activeReferrals} pending
+                {referrals.length - activeReferrals} pending (trial accounts)
               </p>
             </CardContent>
           </Card>
@@ -216,10 +230,10 @@ export default function ReferralDashboard() {
             </CardHeader>
             <CardContent className="relative">
               <div className="text-3xl font-bold bg-gradient-to-br from-primary to-accent bg-clip-text text-transparent">
-                {currentTier.special || `${currentTier.discount}% off`}
+                {currentTier ? (currentTier.special || `${currentTier.discount}% off`) : "No rewards yet"}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {currentTier.bonus > 0 && `+ $${currentTier.bonus} bonus`}
+                {currentTier && currentTier.bonus > 0 ? `+ $${currentTier.bonus} bonus` : (currentTier ? "" : "Get 1 active referral to unlock")}
               </p>
             </CardContent>
           </Card>
