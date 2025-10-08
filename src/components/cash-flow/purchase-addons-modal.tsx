@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building, ShoppingCart, Check, Zap, Crown } from "lucide-react";
+import { Building, ShoppingCart, Check, Zap, Crown, UserPlus } from "lucide-react";
 import { usePlanLimits, PlanType } from "@/hooks/usePlanLimits";
 import { useSubscription, ADDON_PRODUCTS, PRICING_PLANS } from "@/hooks/useSubscription";
 import { toast } from "sonner";
@@ -16,8 +16,12 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
   const { currentPlan, planLimits, currentUsage, PLAN_LIMITS } = usePlanLimits();
   const { purchaseAddon, createCheckout } = useSubscription();
 
-  const handlePurchaseAddon = async (type: 'bank' | 'amazon') => {
-    const priceId = type === 'bank' ? ADDON_PRODUCTS.bank_account.price_id : ADDON_PRODUCTS.amazon_account.price_id;
+  const handlePurchaseAddon = async (type: 'bank' | 'amazon' | 'user') => {
+    let priceId = '';
+    if (type === 'bank') priceId = ADDON_PRODUCTS.bank_account.price_id;
+    else if (type === 'amazon') priceId = ADDON_PRODUCTS.amazon_account.price_id;
+    else if (type === 'user') priceId = ADDON_PRODUCTS.user.price_id;
+    
     await purchaseAddon(priceId);
     onOpenChange(false);
   };
@@ -32,7 +36,8 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
 
   const addOnPrice = {
     bank: ADDON_PRODUCTS.bank_account.price,
-    amazon: ADDON_PRODUCTS.amazon_account.price
+    amazon: ADDON_PRODUCTS.amazon_account.price,
+    user: ADDON_PRODUCTS.user.price
   };
 
   return (
@@ -95,7 +100,7 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
           {/* Individual Add-ons */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Purchase Individual Add-ons</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -149,6 +154,35 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                       onClick={() => handlePurchaseAddon('amazon')}
                     >
                       Purchase Now - ${addOnPrice.amazon}/mo
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <UserPlus className="h-5 w-5" />
+                    <span>Additional Team Member</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Add one more team member seat to your account for collaboration.
+                  </p>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold">${addOnPrice.user}/month per user</span>
+                    </div>
+                    <p className="text-xs text-orange-600 font-medium">Billed immediately, no trial period</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Button 
+                      className="w-full" 
+                      size="sm"
+                      onClick={() => handlePurchaseAddon('user')}
+                    >
+                      Purchase Now - ${addOnPrice.user}/mo
                     </Button>
                   </div>
                 </CardContent>

@@ -109,6 +109,48 @@ serve(async (req) => {
       totalItems: updatedSubscription.items.data.length,
       addedCount: addedItems.length
     });
+    
+    // Update max_team_members if user addon was purchased
+    const userAddonPriceId = "price_1SEHQoB28kMY3UsedGTbBbmA";
+    const userAddonsAdded = addedItems.filter(item => item.priceId === userAddonPriceId);
+    
+    if (userAddonsAdded.length > 0) {
+      const totalUserSeatsAdded = userAddonsAdded.reduce((sum, item) => sum + item.quantity, 0);
+      
+      // Use service role client for admin operations
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+        { auth: { persistSession: false } }
+      );
+      
+      // Get current max_team_members
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('max_team_members')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (profile) {
+        const newMaxTeamMembers = (profile.max_team_members || 1) + totalUserSeatsAdded;
+        
+        // Update profile with new limit
+        const { error: updateError } = await supabaseAdmin
+          .from('profiles')
+          .update({ max_team_members: newMaxTeamMembers })
+          .eq('user_id', user.id);
+        
+        if (updateError) {
+          logStep("Warning: Failed to update max_team_members", { error: updateError.message });
+        } else {
+          logStep("Updated max_team_members", { 
+            oldValue: profile.max_team_members, 
+            newValue: newMaxTeamMembers,
+            added: totalUserSeatsAdded 
+          });
+        }
+      }
+    }
 
     return new Response(JSON.stringify({ 
       success: true,
