@@ -261,12 +261,6 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                       <p className="text-xs text-indigo-600 mt-1">
                         Available after expenses & ${safeSpendingData.reserve_amount.toLocaleString()} reserve
                       </p>
-                      <div className="mt-2 p-2 bg-indigo-50 border border-indigo-200 rounded text-xs text-indigo-700">
-                        <p className="font-semibold mb-1">Formula:</p>
-                        <p className="text-[10px] leading-tight">
-                          Current Cash + Projected Income - Projected Expenses - Reserve Amount
-                        </p>
-                      </div>
                       <div className="bg-green-100 border border-green-300 rounded p-2 mt-2">
                         <p className="text-sm text-green-800 font-semibold flex items-center gap-1">
                           <CheckCircle className="h-4 w-4" />
