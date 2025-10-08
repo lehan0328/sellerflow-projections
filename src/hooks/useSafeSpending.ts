@@ -113,8 +113,9 @@ export const useSafeSpending = () => {
         amazonPayouts: amazonResult.data?.length || 0
       });
 
-      // Project balance for next 180 days (matching calendar's getTotalCashForDay)
+      // Track running balance day-by-day to match calendar's total projected cash
       const dailyBalances: DailyBalance[] = [];
+      let runningBalance = bankBalance;
 
       for (let i = 1; i <= 180; i++) {
         const targetDate = new Date(today);
@@ -122,50 +123,45 @@ export const useSafeSpending = () => {
         targetDate.setHours(0, 0, 0, 0);
         const targetDateStr = formatDate(targetDate);
 
-        let netChange = 0;
+        let dayNetChange = 0;
 
-        // 1. Process ALL transactions (including vendor-linked ones) up to target date
+        // 1. Process transactions for this specific day only
         transactionsResult.data?.forEach((tx) => {
-          // Use due_date if available, otherwise transaction_date
           const txDateStr = tx.due_date || tx.transaction_date;
           const txDate = new Date(txDateStr);
           txDate.setHours(0, 0, 0, 0);
           
-          if (txDate <= targetDate) {
-            // Skip partially_paid parent transactions (they're replaced by split transactions)
+          if (txDate.getTime() === targetDate.getTime()) {
             if (tx.status === 'partially_paid') return;
             
-            // Inflows: sales orders and customer payments
             if (tx.type === 'sales_order' || tx.type === 'customer_payment') {
-              netChange += Number(tx.amount);
-            } 
-            // Outflows: purchase orders, expenses, and vendor-linked transactions
-            else if (tx.type === 'purchase_order' || tx.type === 'expense' || tx.vendor_id) {
-              netChange -= Number(tx.amount);
+              dayNetChange += Number(tx.amount);
+            } else if (tx.type === 'purchase_order' || tx.type === 'expense' || tx.vendor_id) {
+              dayNetChange -= Number(tx.amount);
             }
           }
         });
 
-        // 2. Add income up to target date (exclude received)
+        // 2. Process income for this specific day only (exclude received)
         incomeResult.data?.forEach((income) => {
           if (income.status === 'received') return;
           const incomeDate = new Date(income.payment_date);
           incomeDate.setHours(0, 0, 0, 0);
-          if (incomeDate <= targetDate) {
-            netChange += Number(income.amount);
+          if (incomeDate.getTime() === targetDate.getTime()) {
+            dayNetChange += Number(income.amount);
           }
         });
 
-        // 3. Add Amazon payouts up to target date
+        // 3. Process Amazon payouts for this specific day only
         amazonResult.data?.forEach((payout) => {
           const payoutDate = new Date(payout.payout_date);
           payoutDate.setHours(0, 0, 0, 0);
-          if (payoutDate <= targetDate) {
-            netChange += Number(payout.total_amount);
+          if (payoutDate.getTime() === targetDate.getTime()) {
+            dayNetChange += Number(payout.total_amount);
           }
         });
 
-        // 4. Process recurring expenses/income up to target date
+        // 4. Process recurring expenses/income for this specific day only
         recurringResult.data?.forEach((recurring) => {
           if (!recurring.is_active) return;
           
@@ -180,82 +176,80 @@ export const useSafeSpending = () => {
               is_active: recurring.is_active,
               type: recurring.type as 'income' | 'expense'
             },
-            today,
+            targetDate,
             targetDate
           );
           
-          occurrences.forEach(() => {
+          if (occurrences.length > 0) {
             if (recurring.type === 'income') {
-              netChange += Number(recurring.amount);
+              dayNetChange += Number(recurring.amount);
             } else {
-              netChange -= Number(recurring.amount);
+              dayNetChange -= Number(recurring.amount);
             }
-          });
+          }
         });
 
-        // 5. Subtract vendor payments up to target date (for vendors without transactions)
+        // 5. Process vendor payments for this specific day only
         vendorsResult.data?.forEach((vendor) => {
           if (vendor.status === 'paid' || !vendor.next_payment_date || Number(vendor.total_owed || 0) <= 0) return;
           
           const vendorDate = new Date(vendor.next_payment_date);
           vendorDate.setHours(0, 0, 0, 0);
-          if (vendorDate <= targetDate) {
-            netChange -= Number(vendor.next_payment_amount || 0);
+          if (vendorDate.getTime() === targetDate.getTime()) {
+            dayNetChange -= Number(vendor.next_payment_amount || 0);
           }
         });
 
-        const projectedBalance = bankBalance + netChange;
+        // Update running balance
+        runningBalance += dayNetChange;
 
         dailyBalances.push({
           date: targetDateStr,
-          balance: projectedBalance
+          balance: runningBalance
         });
 
         // Log first few days for debugging
-        if (i <= 3) {
+        if (i <= 5) {
           console.log(`💰 Day ${i} (${targetDateStr}):`, {
-            netChange,
-            projectedBalance,
-            runningTotal: {
-              bankBalance,
-              totalNetChange: netChange
-            }
+            dayNetChange: dayNetChange.toFixed(2),
+            runningBalance: runningBalance.toFixed(2)
           });
         }
       }
 
-      // Find lowest balance
+      // Find the FIRST day balance goes negative (not the lowest)
+      const firstNegativeDay = dailyBalances.find(day => day.balance < 0);
+      const willGoNegative = firstNegativeDay !== undefined;
+      
+      // Find lowest balance for safe spending calculation
       const lowestBalance = dailyBalances.reduce((min, day) =>
         day.balance < min.balance ? day : min,
         dailyBalances[0] || { date: todayStr, balance: bankBalance }
       );
 
-      const willGoNegative = lowestBalance.balance < 0;
       const safeSpendingLimit = willGoNegative ? 0 : Math.max(0, lowestBalance.balance - reserve);
 
       console.log('💰 Safe Spending Final Calculation:', {
         bankBalance,
         reserve,
-        lowestBalance: lowestBalance.balance,
+        lowestBalance: lowestBalance.balance.toFixed(2),
         lowestDate: lowestBalance.date,
         willGoNegative,
-        safeSpendingLimit,
-        calculation: `${lowestBalance.balance.toFixed(2)} - ${reserve.toFixed(2)} = ${safeSpendingLimit.toFixed(2)}`,
-        first5Days: dailyBalances.slice(0, 5).map(d => ({
-          date: d.date,
-          balance: d.balance.toFixed(2)
-        }))
+        firstNegativeDate: firstNegativeDay?.date || null,
+        firstNegativeAmount: firstNegativeDay?.balance.toFixed(2) || null,
+        safeSpendingLimit: safeSpendingLimit.toFixed(2),
+        calculation: `${lowestBalance.balance.toFixed(2)} - ${reserve.toFixed(2)} = ${safeSpendingLimit.toFixed(2)}`
       });
 
       setData({
         safe_spending_limit: safeSpendingLimit,
         reserve_amount: reserve,
         will_go_negative: willGoNegative,
-        negative_date: willGoNegative ? lowestBalance.date : null,
+        negative_date: willGoNegative ? firstNegativeDay!.date : null,
         calculation: {
           available_balance: bankBalance,
-          lowest_projected_balance: lowestBalance.balance,
-          lowest_balance_date: lowestBalance.date
+          lowest_projected_balance: willGoNegative ? firstNegativeDay!.balance : lowestBalance.balance,
+          lowest_balance_date: willGoNegative ? firstNegativeDay!.date : lowestBalance.date
         }
       });
     } catch (err) {
