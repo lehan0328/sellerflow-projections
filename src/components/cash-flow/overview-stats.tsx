@@ -190,10 +190,11 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const displayBelow = !displayNegative ? tpcFirstBelowLimitDay : null;
 
   const formatDateKey = (k: string) => new Date(`${k}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const isBreach = Boolean(displayNegative || displayBelow);
 
   return (<>
       <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <div className={`bg-gradient-to-br ${safeSpendingData?.will_go_negative ? 'from-red-50 to-red-100 border-red-300' : 'from-indigo-50 to-indigo-100 border-indigo-200'} border rounded-lg p-4`}>
+        <div className={`bg-gradient-to-br ${isBreach ? 'from-red-50 to-red-100 border-red-300' : 'from-indigo-50 to-indigo-100 border-indigo-200'} border rounded-lg p-4`}>
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center justify-between mb-2">
@@ -231,7 +232,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 </div>
               ) : safeSpendingData ? (
                 <>
-                  {safeSpendingData.will_go_negative ? (
+                  {isBreach ? (
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <AlertTriangle className="h-6 w-6 text-red-600" />
@@ -240,15 +241,15 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                         </p>
                       </div>
                       <div className="bg-red-200 border border-red-300 rounded p-2 mt-2">
-                        {safeSpendingData.calculation.lowest_projected_balance < 0 ? (
+                        {displayNegative ? (
                           <p className="text-sm text-red-800 font-semibold">
-                            🔴 Cash will go {formatCurrency(Math.abs(safeSpendingData.calculation.lowest_projected_balance))} negative on {new Date(safeSpendingData.negative_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            🔴 Cash will go {formatCurrency(Math.abs(displayNegative.balance))} negative on {formatDateKey(displayNegative.date)}
                           </p>
-                        ) : (
+                        ) : displayBelow ? (
                           <p className="text-sm text-red-800 font-semibold">
-                            🔶 Cash will drop to {formatCurrency(safeSpendingData.calculation.lowest_projected_balance)} (below safe limit) on {new Date(safeSpendingData.negative_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            🔶 Cash will drop to {formatCurrency(displayBelow.balance)} (below safe limit) on {formatDateKey(displayBelow.date)}
                           </p>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   ) : (
@@ -272,7 +273,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 <p className="text-sm text-slate-500">Unable to calculate</p>
               )}
             </div>
-            {safeSpendingData?.will_go_negative ? (
+            {isBreach ? (
               <AlertTriangle className="h-8 w-8 text-red-500" />
             ) : (
               <TrendingUp className="h-8 w-8 text-indigo-500" />
