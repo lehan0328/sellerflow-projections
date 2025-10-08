@@ -217,18 +217,18 @@ export const useSafeSpending = () => {
         }
       }
 
-      // Find lowest balance for safe spending calculation
+      // Find lowest balance and first negative day
       const lowestBalance = dailyBalances.reduce((min, day) =>
         day.balance < min.balance ? day : min,
         dailyBalances[0] || { date: todayStr, balance: bankBalance }
       );
 
-      // Calculate safe spending limit first
-      const safeSpendingLimit = Math.max(0, lowestBalance.balance - reserve);
+      // Find the FIRST day balance goes negative (< 0)
+      const firstNegativeDay = dailyBalances.find(day => day.balance < 0);
+      const willGoNegative = firstNegativeDay !== undefined;
       
-      // Find the FIRST day balance goes below the safe spending limit
-      const firstBelowLimitDay = dailyBalances.find(day => day.balance < safeSpendingLimit);
-      const willGoNegative = firstBelowLimitDay !== undefined;
+      // Calculate safe spending limit
+      const safeSpendingLimit = willGoNegative ? 0 : Math.max(0, lowestBalance.balance - reserve);
 
       console.log('💰 Safe Spending Final Calculation:', {
         bankBalance,
@@ -237,8 +237,8 @@ export const useSafeSpending = () => {
         lowestDate: lowestBalance.date,
         safeSpendingLimit: safeSpendingLimit.toFixed(2),
         willGoNegative,
-        firstBelowLimitDate: firstBelowLimitDay?.date || null,
-        firstBelowLimitAmount: firstBelowLimitDay?.balance.toFixed(2) || null,
+        firstNegativeDate: firstNegativeDay?.date || null,
+        firstNegativeAmount: firstNegativeDay?.balance.toFixed(2) || null,
         calculation: `${lowestBalance.balance.toFixed(2)} - ${reserve.toFixed(2)} = ${safeSpendingLimit.toFixed(2)}`
       });
 
@@ -246,11 +246,11 @@ export const useSafeSpending = () => {
         safe_spending_limit: safeSpendingLimit,
         reserve_amount: reserve,
         will_go_negative: willGoNegative,
-        negative_date: willGoNegative ? firstBelowLimitDay!.date : null,
+        negative_date: willGoNegative ? firstNegativeDay!.date : null,
         calculation: {
           available_balance: bankBalance,
-          lowest_projected_balance: willGoNegative ? firstBelowLimitDay!.balance : lowestBalance.balance,
-          lowest_balance_date: willGoNegative ? firstBelowLimitDay!.date : lowestBalance.date
+          lowest_projected_balance: willGoNegative ? firstNegativeDay!.balance : lowestBalance.balance,
+          lowest_balance_date: willGoNegative ? firstNegativeDay!.date : lowestBalance.date
         }
       });
     } catch (err) {
