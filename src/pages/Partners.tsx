@@ -1,13 +1,75 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Gift, DollarSign, Users, TrendingUp } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Gift, DollarSign, Users, TrendingUp, Sun, Moon } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { useTheme } from "next-themes";
+import aurenIcon from "@/assets/auren-icon-blue.png";
 
 export default function Partners() {
   const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Navigation */}
+      <nav className="border-b bg-background/60 backdrop-blur-xl sticky top-0 z-50 animate-fade-in">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 animate-scale-in cursor-pointer" onClick={() => navigate('/')}>
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-glow-pulse" />
+                <img src={aurenIcon} alt="Auren Logo" className="relative h-12 w-12 hover-scale transition-all duration-300" />
+              </div>
+              <span className="text-2xl font-display font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+                Auren
+              </span>
+            </div>
+            <div className="hidden md:flex items-center space-x-6">
+              <Link to="/features" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+                Features
+              </Link>
+              <Link to="/#pricing" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+                Plans
+              </Link>
+              <Link to="/blog" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+                Blog
+              </Link>
+              <Link to="/partners" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+                Partners
+              </Link>
+              <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+                Docs
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="hover-scale transition-all duration-200"
+              >
+                <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <span className="sr-only">Toggle theme</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="hover-scale transition-all duration-200 border-primary/20 hover:border-primary/40" 
+                onClick={() => navigate('/auth')}
+              >
+                Sign In
+              </Button>
+              <Button 
+                size="sm" 
+                className="bg-gradient-primary hover-scale transition-all duration-200 hover:shadow-lg hover:shadow-primary/50" 
+                onClick={() => navigate('/#pricing')}
+              >
+                Start Free Trial
+              </Button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center space-y-6">
@@ -175,6 +237,48 @@ export default function Partners() {
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="py-12 px-6 border-t bg-muted/30">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <h3 className="font-bold mb-4">Product</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/features" className="hover:text-foreground transition-colors">Features</Link></li>
+                <li><Link to="/#pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
+                <li><Link to="/docs" className="hover:text-foreground transition-colors">Documentation</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-bold mb-4">Partners</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/referral-dashboard" className="hover:text-foreground transition-colors">Referral Program</Link></li>
+                <li><Link to="/affiliate-dashboard" className="hover:text-foreground transition-colors">Affiliate Program</Link></li>
+                <li><Link to="/partners" className="hover:text-foreground transition-colors">Partner Benefits</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-bold mb-4">Resources</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/blog" className="hover:text-foreground transition-colors">Blog</Link></li>
+                <li><Link to="/support" className="hover:text-foreground transition-colors">Support</Link></li>
+                <li><Link to="/schedule-demo" className="hover:text-foreground transition-colors">Schedule Demo</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-bold mb-4">Legal</h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/privacy-policy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
+                <li><a href="mailto:support@aurenapp.com" className="hover:text-foreground transition-colors">Contact Us</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className="pt-8 border-t text-center text-sm text-muted-foreground">
+            <p>&copy; {new Date().getFullYear()} Auren. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
