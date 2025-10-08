@@ -127,165 +127,105 @@ export const useSafeSpending = () => {
         startDate: todayStr
       });
 
-      // Track running balance day-by-day to match calendar's total projected cash
+      // Simple calculation: Track Total Projected Cash for each day, find minimum, subtract reserve
       const dailyBalances: DailyBalance[] = [];
       let runningBalance = bankBalance;
 
-      // Start from today (i=0) to include all events happening today
+      // Process each day in the next 180 days
       for (let i = 0; i <= 180; i++) {
         const targetDate = new Date(today);
         targetDate.setDate(targetDate.getDate() + i);
         targetDate.setHours(0, 0, 0, 0);
         const targetDateStr = formatDate(targetDate);
 
-        let dayNetChange = 0;
+        let dayChange = 0;
 
-        // Log key dates
-        const isKeyDate = i <= 3 || targetDateStr === '2025-10-20' || targetDateStr === '2025-10-10' || targetDateStr === '2025-10-17';
-        if (isKeyDate) {
-          console.log(`\n📅 Processing ${targetDateStr} (day ${i})`);
-        }
-
-        // 1. Process transactions for this specific day only
+        // Add all inflows for this day
         transactionsResult.data?.forEach((tx) => {
-          const txDateStr = tx.due_date || tx.transaction_date;
-          const txDate = parseLocalDate(txDateStr);
-          
-          if (txDate.getTime() === targetDate.getTime()) {
-            if (tx.status === 'partially_paid') return;
-            
+          const txDate = parseLocalDate(tx.due_date || tx.transaction_date);
+          if (txDate.getTime() === targetDate.getTime() && tx.status !== 'partially_paid') {
             if (tx.type === 'sales_order' || tx.type === 'customer_payment') {
-              dayNetChange += Number(tx.amount);
+              dayChange += Number(tx.amount);
             } else if (tx.type === 'purchase_order' || tx.type === 'expense' || tx.vendor_id) {
-              dayNetChange -= Number(tx.amount);
+              dayChange -= Number(tx.amount);
             }
           }
         });
 
-        // 2. Process income for this specific day only (exclude received)
         incomeResult.data?.forEach((income) => {
-          if (income.status === 'received') return;
-          const incomeDate = parseLocalDate(income.payment_date);
-          if (incomeDate.getTime() === targetDate.getTime()) {
-            const amt = Number(income.amount);
-            if (isKeyDate) {
-              console.log(`💰 Income on ${targetDateStr}: ${income.description} +$${amt}`);
+          if (income.status !== 'received') {
+            const incomeDate = parseLocalDate(income.payment_date);
+            if (incomeDate.getTime() === targetDate.getTime()) {
+              dayChange += Number(income.amount);
             }
-            dayNetChange += amt;
           }
         });
 
-        // 3. Process Amazon payouts for this specific day only
         amazonResult.data?.forEach((payout) => {
           const payoutDate = parseLocalDate(payout.payout_date);
           if (payoutDate.getTime() === targetDate.getTime()) {
-            const amt = Number(payout.total_amount);
-            if (isKeyDate) {
-              console.log(`📦 Amazon payout on ${targetDateStr}: +$${amt}`);
-            }
-            dayNetChange += amt;
+            dayChange += Number(payout.total_amount);
           }
         });
 
-        // 4. Process recurring expenses/income for this specific day only
         recurringResult.data?.forEach((recurring) => {
-          if (!recurring.is_active) return;
-          
-          const occurrences = generateRecurringDates(
-            {
-              id: recurring.id,
-              transaction_name: recurring.name,
-              amount: recurring.amount,
-              frequency: recurring.frequency as 'daily' | 'weekly' | 'bi-weekly' | 'monthly' | 'yearly' | 'weekdays',
-              start_date: recurring.start_date,
-              end_date: recurring.end_date,
-              is_active: recurring.is_active,
-              type: recurring.type as 'income' | 'expense'
-            },
-            targetDate,
-            targetDate
-          );
-          
-          if (occurrences.length > 0) {
-            const amt = Number(recurring.amount);
-            if (recurring.type === 'income') {
-              if (isKeyDate) {
-                console.log(`🔄 Recurring income on ${targetDateStr}: ${recurring.name} +$${amt}`);
-              }
-              dayNetChange += amt;
-            } else {
-              if (isKeyDate) {
-                console.log(`🔄 Recurring expense on ${targetDateStr}: ${recurring.name} -$${amt}`);
-              }
-              dayNetChange -= amt;
+          if (recurring.is_active) {
+            const occurrences = generateRecurringDates(
+              {
+                id: recurring.id,
+                transaction_name: recurring.name,
+                amount: recurring.amount,
+                frequency: recurring.frequency as any,
+                start_date: recurring.start_date,
+                end_date: recurring.end_date,
+                is_active: recurring.is_active,
+                type: recurring.type as any
+              },
+              targetDate,
+              targetDate
+            );
+            if (occurrences.length > 0) {
+              dayChange += recurring.type === 'income' ? Number(recurring.amount) : -Number(recurring.amount);
             }
           }
         });
 
-        // 5. Process vendor payments for this specific day only
         vendorsResult.data?.forEach((vendor) => {
-          if (vendor.status === 'paid' || Number(vendor.total_owed || 0) <= 0) return;
-          
-          // Check payment_schedule if it exists
-          if (vendor.payment_schedule && Array.isArray(vendor.payment_schedule)) {
-            if (i <= 3 || targetDateStr === '2025-10-20') {
-              console.log(`📦 Vendor ${vendor.name} payment_schedule:`, vendor.payment_schedule);
-            }
-            vendor.payment_schedule.forEach((payment: any) => {
-              const paymentDate = parseLocalDate(payment.date);
-              if (paymentDate.getTime() === targetDate.getTime()) {
-                const amt = Number(payment.amount || 0);
-                if (i <= 3 || targetDateStr === '2025-10-20') {
-                  console.log(`💸 Vendor payment on ${targetDateStr}: ${vendor.name} -$${amt}`);
+          if (vendor.status !== 'paid' && Number(vendor.total_owed || 0) > 0) {
+            if (vendor.payment_schedule && Array.isArray(vendor.payment_schedule)) {
+              vendor.payment_schedule.forEach((payment: any) => {
+                const paymentDate = parseLocalDate(payment.date);
+                if (paymentDate.getTime() === targetDate.getTime()) {
+                  dayChange -= Number(payment.amount || 0);
                 }
-                dayNetChange -= amt;
+              });
+            } else if (vendor.next_payment_date) {
+              const vendorDate = parseLocalDate(vendor.next_payment_date);
+              if (vendorDate.getTime() === targetDate.getTime()) {
+                dayChange -= Number(vendor.next_payment_amount || 0);
               }
-            });
-          } else if (vendor.next_payment_date) {
-            // Fallback to next_payment_date if no schedule
-            const vendorDate = parseLocalDate(vendor.next_payment_date);
-            if (vendorDate.getTime() === targetDate.getTime()) {
-              const amt = Number(vendor.next_payment_amount || 0);
-              if (i <= 3 || targetDateStr === '2025-10-20') {
-                console.log(`💸 Vendor payment (next_payment) on ${targetDateStr}: ${vendor.name} -$${amt}`);
-              }
-              dayNetChange -= amt;
             }
           }
         });
 
-        // Update running balance
-        runningBalance += dayNetChange;
-
-        dailyBalances.push({
-          date: targetDateStr,
-          balance: runningBalance
-        });
-
-        // Log every significant day (where something happens or balance changes)
-        if (dayNetChange !== 0 || i <= 3 || i === 12 || i === 19) {
-          console.log(`💰 Day ${i} (${targetDateStr}):`, {
-            dayNetChange: dayNetChange.toFixed(2),
-            runningBalance: runningBalance.toFixed(2)
-          });
-        }
+        runningBalance += dayChange;
+        dailyBalances.push({ date: targetDateStr, balance: runningBalance });
       }
 
-      // Find lowest balance
-      const lowestBalance = dailyBalances.reduce((min, day) =>
-        day.balance < min.balance ? day : min,
-        dailyBalances[0] || { date: todayStr, balance: bankBalance }
-      );
+      // Find minimum balance
+      const minBalance = Math.min(...dailyBalances.map(d => d.balance));
+      const minDay = dailyBalances.find(d => d.balance === minBalance)!;
+      
+      // Safe Spending = Min Balance - Reserve
+      const safeSpendingLimit = Math.max(0, minBalance - reserve);
 
-      console.log('🎯 FOUND Lowest Balance:', {
-        date: lowestBalance.date,
-        balance: lowestBalance.balance.toFixed(2),
+      console.log('💰 Safe Spending Result:', {
+        minBalance: minBalance.toFixed(2),
+        minDate: minDay.date,
         reserve,
-        calculation: `${lowestBalance.balance.toFixed(2)} - ${reserve} = ${(lowestBalance.balance - reserve).toFixed(2)}`
+        safeSpendingLimit: safeSpendingLimit.toFixed(2),
+        formula: `${minBalance.toFixed(2)} - ${reserve} = ${safeSpendingLimit.toFixed(2)}`
       });
-
-      // Calculate safe spending limit first
-      const safeSpendingLimit = Math.max(0, lowestBalance.balance - reserve);
       
       // Find the FIRST day balance goes below safe spending limit (SSL)
       const firstBelowLimitDay = dailyBalances.find(day => day.balance < safeSpendingLimit);
@@ -300,8 +240,8 @@ export const useSafeSpending = () => {
       console.log('💰 Safe Spending Final Calculation:', {
         bankBalance,
         reserve,
-        lowestBalance: lowestBalance.balance.toFixed(2),
-        lowestDate: lowestBalance.date,
+        minBalance: minBalance.toFixed(2),
+        minDate: minDay.date,
         safeSpendingLimit: safeSpendingLimit.toFixed(2),
         willGoNegative,
         willDropBelowLimit,
@@ -309,7 +249,7 @@ export const useSafeSpending = () => {
         firstNegativeAmount: firstNegativeDay?.balance.toFixed(2) || null,
         firstBelowLimitDate: firstBelowLimitDay?.date || null,
         firstBelowLimitAmount: firstBelowLimitDay?.balance.toFixed(2) || null,
-        calculation: `${lowestBalance.balance.toFixed(2)} - ${reserve.toFixed(2)} = ${safeSpendingLimit.toFixed(2)}`
+        calculation: `${minBalance.toFixed(2)} - ${reserve.toFixed(2)} = ${safeSpendingLimit.toFixed(2)}`
       });
 
       setData({
@@ -323,10 +263,10 @@ export const useSafeSpending = () => {
           available_balance: bankBalance,
           lowest_projected_balance: willGoNegative 
             ? firstNegativeDay!.balance 
-            : (willDropBelowLimit ? firstBelowLimitDay!.balance : lowestBalance.balance),
+            : (willDropBelowLimit ? firstBelowLimitDay!.balance : minBalance),
           lowest_balance_date: willGoNegative 
             ? firstNegativeDay!.date 
-            : (willDropBelowLimit ? firstBelowLimitDay!.date : lowestBalance.date)
+            : (willDropBelowLimit ? firstBelowLimitDay!.date : minDay.date)
         }
       });
     } catch (err) {
