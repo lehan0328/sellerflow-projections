@@ -449,7 +449,7 @@ export const CashFlowInsights = ({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <TrendingDown className="h-5 w-5 text-blue-600" />
-              All Buying Opportunities
+              All Buying Opportunities (Next 3 Months)
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[400px] pr-4">
@@ -487,7 +487,7 @@ export const CashFlowInsights = ({
                     <p className="text-xs text-muted-foreground">Low point: {formattedDate}</p>
                     {availableDate && (
                       <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
-                        <span className="text-xs text-muted-foreground">Can purchase from:</span>
+                        <span className="text-xs text-muted-foreground">Earliest Purchase Date:</span>
                         <span className="text-sm font-semibold text-green-600">{availableDate}</span>
                       </div>
                     )}

@@ -321,10 +321,10 @@ export const useSafeSpending = () => {
           }
           
           if (willRise) {
-            // Find the earliest date after the previous low where balance > current buying opportunity + reserve
+            // Find the earliest date after the previous low where balance > current low point
             let availableDate: string | undefined;
             for (let j = previousLowIndex + 1; j < dailyBalances.length; j++) {
-              if (dailyBalances[j].balance > (current.balance + reserve)) {
+              if (dailyBalances[j].balance > current.balance) {
                 availableDate = dailyBalances[j].date;
                 break;
               }
