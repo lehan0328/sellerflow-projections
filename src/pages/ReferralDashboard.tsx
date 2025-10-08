@@ -1,9 +1,12 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Gift, TrendingUp, Users, ArrowLeft, Sparkles, Target } from "lucide-react";
+import { Copy, Gift, TrendingUp, Users, ArrowLeft, Sparkles, Target, DollarSign, AlertCircle } from "lucide-react";
 import { useReferrals } from "@/hooks/useReferrals";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const REWARD_TIERS = [
   { referrals: 1, discount: 15, bonus: 0, duration: 3 },
@@ -18,6 +21,26 @@ const REWARD_TIERS = [
 export default function ReferralDashboard() {
   const { loading, referralCode, referrals, rewards, copyReferralLink } = useReferrals();
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleApplyDiscount = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("apply-referral-discount");
+      
+      if (error) throw error;
+
+      toast({
+        title: "Success!",
+        description: data.message || "Discount applied to your subscription",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to apply discount",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return <LoadingScreen message="Loading referral dashboard..." />;
@@ -58,7 +81,53 @@ export default function ReferralDashboard() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">{/* Partners Highlight Banner */}
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        {/* Pending Cash Bonus Alert */}
+        {rewards && rewards.pending_cash_bonus > 0 && (
+          <Alert className="border-yellow-500/50 bg-yellow-500/10">
+            <AlertCircle className="h-4 w-4 text-yellow-600" />
+            <AlertTitle className="text-yellow-600">Cash Bonus Available!</AlertTitle>
+            <AlertDescription className="text-yellow-600/80">
+              You have ${rewards.pending_cash_bonus} in pending cash bonuses. A support ticket has been created for you to redeem these rewards.
+              <Button 
+                variant="link" 
+                className="text-yellow-600 underline pl-1 h-auto py-0"
+                onClick={() => navigate('/support')}
+              >
+                View Support Tickets →
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Apply Discount Button */}
+        {rewards && rewards.discount_percentage > 0 && (
+          <Card className="border-primary/50 bg-gradient-to-r from-primary/10 to-accent/10">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-gradient-primary">
+                    <DollarSign className="h-6 w-6 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold">Referral Discount Available</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Apply your {rewards.discount_percentage}% discount to your active subscription
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  onClick={handleApplyDiscount}
+                  className="bg-gradient-primary hover-scale"
+                >
+                  Apply Discount
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Partners Highlight Banner */}
         <Card className="relative overflow-hidden border-primary/30 bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 backdrop-blur">
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-radial from-primary/30 to-transparent blur-3xl" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-radial from-accent/30 to-transparent blur-3xl" />

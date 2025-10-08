@@ -9,11 +9,13 @@ import {
   CreditCard, 
   Settings,
   ArrowLeft,
-  Shield
+  Shield,
+  Gift
 } from "lucide-react";
 import { AdminCustomers } from "@/components/admin/AdminCustomers";
 import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
 import { AdminSubscriptions } from "@/components/admin/AdminSubscriptions";
+import AdminReferrals from "@/components/admin/AdminReferrals";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -45,7 +47,7 @@ const Admin = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 max-w-2xl">
+          <TabsList className="grid w-full grid-cols-4 max-w-3xl">
             <TabsTrigger value="customers" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Customers
@@ -57,6 +59,10 @@ const Admin = () => {
             <TabsTrigger value="subscriptions" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
               Subscriptions
+            </TabsTrigger>
+            <TabsTrigger value="referrals" className="flex items-center gap-2">
+              <Gift className="h-4 w-4" />
+              Referrals
             </TabsTrigger>
           </TabsList>
 
@@ -70,6 +76,10 @@ const Admin = () => {
 
           <TabsContent value="subscriptions" className="mt-6">
             <AdminSubscriptions />
+          </TabsContent>
+
+          <TabsContent value="referrals" className="mt-6">
+            <AdminReferrals />
           </TabsContent>
         </Tabs>
       </div>

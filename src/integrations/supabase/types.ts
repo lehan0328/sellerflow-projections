@@ -986,6 +986,8 @@ export type Database = {
           discount_percentage: number | null
           discount_start_date: string | null
           id: string
+          last_ticket_tier: number | null
+          pending_cash_bonus: number | null
           referral_count: number
           reward_status: string
           tier_level: number
@@ -1001,6 +1003,8 @@ export type Database = {
           discount_percentage?: number | null
           discount_start_date?: string | null
           id?: string
+          last_ticket_tier?: number | null
+          pending_cash_bonus?: number | null
           referral_count?: number
           reward_status?: string
           tier_level?: number
@@ -1016,6 +1020,8 @@ export type Database = {
           discount_percentage?: number | null
           discount_start_date?: string | null
           id?: string
+          last_ticket_tier?: number | null
+          pending_cash_bonus?: number | null
           referral_count?: number
           reward_status?: string
           tier_level?: number
