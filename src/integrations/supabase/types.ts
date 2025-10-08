@@ -608,6 +608,7 @@ export type Database = {
           masked_account_number: string | null
           minimum_payment: number | null
           nickname: string | null
+          pay_minimum: boolean | null
           payment_due_date: string | null
           plaid_account_id: string | null
           priority: number | null
@@ -638,6 +639,7 @@ export type Database = {
           masked_account_number?: string | null
           minimum_payment?: number | null
           nickname?: string | null
+          pay_minimum?: boolean | null
           payment_due_date?: string | null
           plaid_account_id?: string | null
           priority?: number | null
@@ -668,6 +670,7 @@ export type Database = {
           masked_account_number?: string | null
           minimum_payment?: number | null
           nickname?: string | null
+          pay_minimum?: boolean | null
           payment_due_date?: string | null
           plaid_account_id?: string | null
           priority?: number | null

@@ -870,14 +870,21 @@ const Dashboard = () => {
   const creditCardEvents: CashFlowEvent[] = hasRealData && creditCards.length > 0
     ? creditCards
         .filter(card => card.payment_due_date && card.balance > 0)
-        .map(card => ({
-          id: `credit-payment-${card.id}`,
-          type: 'credit-payment' as const,
-          amount: card.statement_balance || card.balance, // Use statement balance, fallback to current balance
-          description: `${card.institution_name} - ${card.account_name} Payment`,
-          creditCard: card.institution_name,
-          date: new Date(card.payment_due_date!)
-        }))
+        .map(card => {
+          // If pay_minimum is enabled, show minimum payment; otherwise show statement balance
+          const paymentAmount = card.pay_minimum 
+            ? card.minimum_payment 
+            : (card.statement_balance || card.balance);
+          
+          return {
+            id: `credit-payment-${card.id}`,
+            type: 'credit-payment' as const,
+            amount: paymentAmount,
+            description: `${card.institution_name} - ${card.account_name} Payment${card.pay_minimum ? ' (Min Only)' : ''}`,
+            creditCard: card.institution_name,
+            date: new Date(card.payment_due_date!)
+          };
+        })
     : [];
 
   // Add forecasted next month payments for cards with forecast enabled

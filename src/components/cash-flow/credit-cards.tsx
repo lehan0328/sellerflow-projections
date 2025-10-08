@@ -16,12 +16,11 @@ import { toast } from "sonner";
 interface CreditCardFormData {
   nickname: string;
   minimum_payment: number;
-  payment_due_date?: string;
-  statement_close_date?: string;
   annual_fee: number;
   cash_back: number;
   priority: number;
   forecast_next_month: boolean;
+  pay_minimum: boolean;
 }
 
 export function CreditCards() {
@@ -32,12 +31,11 @@ export function CreditCards() {
   const [formData, setFormData] = useState<CreditCardFormData>({
     nickname: '',
     minimum_payment: 0,
-    payment_due_date: '',
-    statement_close_date: '',
     annual_fee: 0,
     cash_back: 0,
     priority: 3,
     forecast_next_month: false,
+    pay_minimum: false,
   });
 
   const formatCurrency = (amount: number) => {
@@ -61,12 +59,11 @@ export function CreditCards() {
     setFormData({
       nickname: '',
       minimum_payment: 0,
-      payment_due_date: '',
-      statement_close_date: '',
       annual_fee: 0,
       cash_back: 0,
       priority: 3,
       forecast_next_month: false,
+      pay_minimum: false,
     });
   };
 
@@ -80,12 +77,11 @@ export function CreditCards() {
     setFormData({
       nickname: card.nickname || '',
       minimum_payment: card.minimum_payment || 0,
-      payment_due_date: card.payment_due_date || '',
-      statement_close_date: card.statement_close_date || '',
       annual_fee: card.annual_fee || 0,
       cash_back: card.cash_back || 0,
       priority: card.priority || 3,
       forecast_next_month: card.forecast_next_month || false,
+      pay_minimum: card.pay_minimum || false,
     });
     setShowEditDialog(true);
   };
@@ -347,27 +343,25 @@ export function CreditCards() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit_payment_due_date">Payment Due Date</Label>
-                  <Input
-                    id="edit_payment_due_date"
-                    type="date"
-                    value={formData.payment_due_date}
-                    onChange={(e) => setFormData({...formData, payment_due_date: e.target.value})}
-                  />
+                  <Label>Payment Due Date</Label>
+                  <div className="flex items-center h-10 px-3 py-2 text-sm border border-input rounded-md bg-muted">
+                    {editingCard?.payment_due_date 
+                      ? new Date(editingCard.payment_due_date).toLocaleDateString()
+                      : 'Not set'}
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Synced from Plaid or set manually
+                    Automatically imported from bank (read-only)
                   </p>
                 </div>
                 <div>
-                  <Label htmlFor="edit_statement_close_date">Statement Close Date</Label>
-                  <Input
-                    id="edit_statement_close_date"
-                    type="date"
-                    value={formData.statement_close_date}
-                    onChange={(e) => setFormData({...formData, statement_close_date: e.target.value})}
-                  />
+                  <Label>Statement Close Date</Label>
+                  <div className="flex items-center h-10 px-3 py-2 text-sm border border-input rounded-md bg-muted">
+                    {editingCard?.statement_close_date 
+                      ? new Date(editingCard.statement_close_date).toLocaleDateString()
+                      : 'Not set'}
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Synced from Plaid or set manually
+                    Automatically imported from bank (read-only)
                   </p>
                 </div>
               </div>
@@ -388,6 +382,24 @@ export function CreditCards() {
                     <SelectItem value="5">5 - Lowest Priority</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="flex items-center justify-between p-3 border border-destructive/50 bg-destructive/5 rounded-md">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                    <Label htmlFor="edit_pay_minimum" className="text-destructive font-semibold">
+                      Pay Minimum Only (Emergency Use)
+                    </Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    ⚠️ Not recommended - You will pay interest charges. Use only for emergencies.
+                  </p>
+                </div>
+                <Switch
+                  id="edit_pay_minimum"
+                  checked={formData.pay_minimum}
+                  onCheckedChange={(checked) => setFormData({...formData, pay_minimum: checked})}
+                />
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">

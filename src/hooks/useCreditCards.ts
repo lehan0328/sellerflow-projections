@@ -24,6 +24,7 @@ export interface CreditCard {
   priority: number;
   nickname?: string;
   forecast_next_month: boolean;
+  pay_minimum: boolean;
   last_sync: string;
   is_active: boolean;
   created_at: string;
