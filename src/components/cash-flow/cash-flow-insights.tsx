@@ -6,7 +6,6 @@ import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
 interface CashFlowInsightsProps {
   currentBalance: number;
   dailyInflow: number;
@@ -21,7 +20,6 @@ interface CashFlowInsightsProps {
   lowestBalanceDate?: string;
   onUpdateReserveAmount?: (amount: number) => Promise<void>;
 }
-
 export const CashFlowInsights = ({
   currentBalance,
   dailyInflow,
@@ -34,20 +32,24 @@ export const CashFlowInsights = ({
   reserveAmount = 0,
   projectedLowestBalance = 0,
   lowestBalanceDate = "",
-  onUpdateReserveAmount,
+  onUpdateReserveAmount
 }: CashFlowInsightsProps) => {
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [chatMode, setChatMode] = useState(false);
   const [chatQuestion, setChatQuestion] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [isEditingReserve, setIsEditingReserve] = useState(false);
   const [editReserveValue, setEditReserveValue] = useState(reserveAmount.toString());
-  const [conversationHistory, setConversationHistory] = useState<Array<{ role: 'user' | 'assistant', content: string }>>(() => {
+  const [conversationHistory, setConversationHistory] = useState<Array<{
+    role: 'user' | 'assistant';
+    content: string;
+  }>>(() => {
     // Load conversation history from localStorage on mount
     const saved = localStorage.getItem('cashflow-chat-history');
     return saved ? JSON.parse(saved) : [];
   });
-
   const netDaily = dailyInflow - dailyOutflow;
   const healthStatus = netDaily >= 0 ? "positive" : "negative";
 
@@ -55,36 +57,33 @@ export const CashFlowInsights = ({
   useEffect(() => {
     setEditReserveValue(reserveAmount.toString());
   }, [reserveAmount]);
-
   const handleSaveReserve = async () => {
     const newAmount = parseFloat(editReserveValue);
     if (isNaN(newAmount) || newAmount < 0) {
       toast({
         title: "Invalid amount",
         description: "Please enter a valid positive number",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     if (onUpdateReserveAmount) {
       try {
         await onUpdateReserveAmount(newAmount);
         setIsEditingReserve(false);
         toast({
           title: "Reserve amount updated",
-          description: `Your reserve is now set to $${newAmount.toLocaleString()}`,
+          description: `Your reserve is now set to $${newAmount.toLocaleString()}`
         });
       } catch (error) {
         toast({
           title: "Error updating reserve",
           description: "Please try again",
-          variant: "destructive",
+          variant: "destructive"
         });
       }
     }
   };
-
   const handleCancelEdit = () => {
     setEditReserveValue(reserveAmount.toString());
     setIsEditingReserve(false);
@@ -94,49 +93,57 @@ export const CashFlowInsights = ({
   useEffect(() => {
     localStorage.setItem('cashflow-chat-history', JSON.stringify(conversationHistory));
   }, [conversationHistory]);
-
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatQuestion.trim()) return;
-
     const currentQuestion = chatQuestion.trim();
-    
+
     // Add user message to history immediately
-    setConversationHistory(prev => [...prev, { role: 'user', content: currentQuestion }]);
+    setConversationHistory(prev => [...prev, {
+      role: 'user',
+      content: currentQuestion
+    }]);
     setChatQuestion(""); // Clear input field
     setChatLoading(true);
-
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-
-      const { data, error } = await supabase.functions.invoke("cash-flow-chat", {
-        body: { 
-          question: currentQuestion, 
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke("cash-flow-chat", {
+        body: {
+          question: currentQuestion,
           userId: user.id,
           conversationHistory: conversationHistory
-        },
+        }
       });
-
       if (error) throw error;
-
       if (data?.answer) {
         // Add assistant response to history
-        setConversationHistory(prev => [...prev, { role: 'assistant', content: data.answer }]);
+        setConversationHistory(prev => [...prev, {
+          role: 'assistant',
+          content: data.answer
+        }]);
       }
     } catch (error: any) {
       console.error("Chat error:", error);
       let errorMessage = "Unable to get an answer. Please try again later.";
-      
+
       // Add error message to history
-      setConversationHistory(prev => [...prev, { role: 'assistant', content: errorMessage }]);
+      setConversationHistory(prev => [...prev, {
+        role: 'assistant',
+        content: errorMessage
+      }]);
     } finally {
       setChatLoading(false);
     }
   };
-
-  return (
-    <Card className="shadow-card h-full flex flex-col">
+  return <Card className="shadow-card h-full flex flex-col">
       <CardHeader>
         <CardTitle className="text-lg flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -144,11 +151,7 @@ export const CashFlowInsights = ({
             AI Insights
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant={chatMode ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setChatMode(!chatMode)}
-            >
+            <Button variant={chatMode ? "default" : "ghost"} size="sm" onClick={() => setChatMode(!chatMode)}>
               <MessageCircle className="h-4 w-4 mr-1" />
               {chatMode ? "Back" : "Chat"}
             </Button>
@@ -156,75 +159,41 @@ export const CashFlowInsights = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 flex-1 overflow-auto">
-        {chatMode ? (
-          <div className="flex flex-col h-full space-y-4">
+        {chatMode ? <div className="flex flex-col h-full space-y-4">
             {/* Conversation History */}
-            {conversationHistory.length > 0 && (
-              <ScrollArea className="flex-1 h-[400px]">
+            {conversationHistory.length > 0 && <ScrollArea className="flex-1 h-[400px]">
                 <div className="space-y-3 pr-4">
-                  {conversationHistory.map((message, index) => (
-                  <div 
-                    key={index}
-                    className={`p-3 rounded-lg ${
-                      message.role === 'user' 
-                        ? 'bg-primary/10 ml-8' 
-                        : 'bg-muted mr-8'
-                    }`}
-                  >
+                  {conversationHistory.map((message, index) => <div key={index} className={`p-3 rounded-lg ${message.role === 'user' ? 'bg-primary/10 ml-8' : 'bg-muted mr-8'}`}>
                     <p className="text-xs font-semibold mb-1 text-muted-foreground">
                       {message.role === 'user' ? 'You' : 'AI Assistant'}
                     </p>
                     <p className="text-sm leading-relaxed whitespace-pre-wrap">
                       {message.content}
                     </p>
-                  </div>
-                  ))}
-                  {chatLoading && (
-                    <div className="flex items-center gap-2 p-3 bg-muted mr-8 rounded-lg">
+                  </div>)}
+                  {chatLoading && <div className="flex items-center gap-2 p-3 bg-muted mr-8 rounded-lg">
                       <Loader2 className="h-4 w-4 animate-spin text-primary" />
                       <span className="text-sm text-muted-foreground">AI is thinking...</span>
-                    </div>
-                  )}
+                    </div>}
                 </div>
-              </ScrollArea>
-            )}
+              </ScrollArea>}
 
             {/* Input Form */}
             <form onSubmit={handleChatSubmit} className="space-y-3 flex-shrink-0">
               <div className="flex gap-2">
-                <Input
-                  placeholder="Ask about your cash flow..."
-                  value={chatQuestion}
-                  onChange={(e) => setChatQuestion(e.target.value)}
-                  disabled={chatLoading}
-                  className="flex-1"
-                />
+                <Input placeholder="Ask about your cash flow..." value={chatQuestion} onChange={e => setChatQuestion(e.target.value)} disabled={chatLoading} className="flex-1" />
                 <Button type="submit" disabled={chatLoading || !chatQuestion.trim()} size="icon">
-                  {chatLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
+                  {chatLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </Button>
               </div>
-              {conversationHistory.length > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setConversationHistory([]);
-                    localStorage.removeItem('cashflow-chat-history');
-                  }}
-                  className="w-full"
-                >
+              {conversationHistory.length > 0 && <Button type="button" variant="outline" size="sm" onClick={() => {
+            setConversationHistory([]);
+            localStorage.removeItem('cashflow-chat-history');
+          }} className="w-full">
                   Clear Chat History
-                </Button>
-              )}
+                </Button>}
             </form>
-          </div>
-        ) : (
-          <>
+          </div> : <>
             {/* Safe Spending Power */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold flex items-center gap-2">
@@ -253,38 +222,22 @@ export const CashFlowInsights = ({
                   </div>
                 <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
                   <span className="text-muted-foreground">Reserve Amount</span>
-                  {isEditingReserve ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        value={editReserveValue}
-                        onChange={(e) => setEditReserveValue(e.target.value)}
-                        className="h-7 w-24 text-right"
-                        min="0"
-                        step="100"
-                      />
+                  {isEditingReserve ? <div className="flex items-center gap-2">
+                      <Input type="number" value={editReserveValue} onChange={e => setEditReserveValue(e.target.value)} className="h-7 w-24 text-right" min="0" step="100" />
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSaveReserve}>
                         <Check className="h-4 w-4 text-green-600" />
                       </Button>
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleCancelEdit}>
                         <X className="h-4 w-4 text-red-600" />
                       </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
+                    </div> : <div className="flex items-center gap-2">
                       <span className="font-semibold text-amber-600">
                         -${reserveAmount.toLocaleString()}
                       </span>
-                      <Button 
-                        size="icon" 
-                        variant="ghost" 
-                        className="h-7 w-7" 
-                        onClick={() => setIsEditingReserve(true)}
-                      >
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setIsEditingReserve(true)}>
                         <Pencil className="h-3 w-3" />
                       </Button>
-                    </div>
-                  )}
+                    </div>}
                 </div>
                   <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
                     <span className="text-muted-foreground">Lowest Projected</span>
@@ -292,29 +245,19 @@ export const CashFlowInsights = ({
                       ${projectedLowestBalance.toLocaleString()}
                     </span>
                   </div>
-                  {lowestBalanceDate && (
-                    <p className="text-xs text-muted-foreground italic p-2">
-                      Your balance will reach its lowest point on {new Date(lowestBalanceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </p>
-                  )}
+                  {lowestBalanceDate && <p className="text-xs text-muted-foreground italic p-2">
+                      Your balance will reach its lowest point on {new Date(lowestBalanceDate).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+                    </p>}
                 </div>
               </div>
             </div>
 
             {/* Upcoming Alert */}
-            {upcomingExpenses > 0 && (
-              <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm">
-                  <p className="font-medium text-amber-900 dark:text-amber-100">
-                    Upcoming Expenses
-                  </p>
-                  <p className="text-amber-700 dark:text-amber-300">
-                    ${upcomingExpenses.toLocaleString()} due in next 7 days
-                  </p>
-                </div>
-              </div>
-            )}
+            {upcomingExpenses > 0}
 
             {/* Credit Card Spending Power */}
             <div className="space-y-3">
@@ -343,9 +286,7 @@ export const CashFlowInsights = ({
                 </div>
               </div>
             </div>
-          </>
-        )}
+          </>}
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
