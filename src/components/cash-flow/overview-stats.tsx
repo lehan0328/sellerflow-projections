@@ -3,6 +3,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
@@ -197,8 +198,10 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
             <div className="flex-1">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm text-slate-600">Safe Spending Limit</p>
-                <div className="flex items-center gap-1">
+                <div className="flex flex-col items-end gap-1">
+                  <Label htmlFor="reserve-input" className="text-xs text-slate-500">Reserve Amount</Label>
                   <input
+                    id="reserve-input"
                     type="number"
                     placeholder="Reserve"
                     value={reserveInput || safeSpendingData?.reserve_amount || ""}
