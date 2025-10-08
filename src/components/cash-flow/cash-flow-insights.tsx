@@ -237,10 +237,22 @@ export const CashFlowInsights = ({
           </div> : <>
             {/* Safe Spending Power */}
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                Safe Spending Power
-              </h4>
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Safe Spending Power
+                </h4>
+                {allBuyingOpportunities.length > 0 && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowAllOpportunities(true)}
+                    className="text-xs"
+                  >
+                    See All ({allBuyingOpportunities.length})
+                  </Button>
+                )}
+              </div>
               <div className="space-y-3">
                 <div className={`p-4 rounded-lg border-2 ${safeSpendingLimit < 0 ? 'bg-red-50 dark:bg-red-950/20 border-red-500' : 'bg-primary/10 border-primary/20'}`}>
                   <div className="flex items-center justify-between mb-2">
