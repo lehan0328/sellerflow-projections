@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X } from "lucide-react";
+import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -316,11 +316,11 @@ export const CashFlowInsights = ({
               </div>
             )}
 
-            {/* Daily Overview */}
+            {/* Credit Card Spending Power */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" />
-                Daily Overview
+                <CreditCard className="h-4 w-4" />
+                Credit Card Spending Power
               </h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
