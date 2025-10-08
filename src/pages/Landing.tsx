@@ -484,13 +484,13 @@ const Landing = () => {
               </div>
               
               <div className="animate-fade-in space-y-6" style={{ animationDelay: '200ms' }}>
-                <h1 className="text-5xl lg:text-6xl xl:text-7xl font-display font-bold leading-[1.1] tracking-tight">
-                  <span className="block text-foreground">Cashflow</span>
-                  <span className="block bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+                <h1 className="text-5xl lg:text-6xl xl:text-7xl font-display font-bold leading-relaxed tracking-tight">
+                  <span className="block text-foreground pb-2">Cashflow</span>
+                  <span className="block bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%] pb-2">
                     Forecasting
                   </span>
-                  <span className="block text-foreground">for Marketplace</span>
-                  <span className="block text-foreground">Sellers</span>
+                  <span className="block text-foreground pb-2">for Marketplace</span>
+                  <span className="block text-foreground pb-2">Sellers</span>
                 </h1>
               </div>
               
