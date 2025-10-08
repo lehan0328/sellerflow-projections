@@ -1,0 +1,36 @@
+-- Insert sample credit card for chuandy914@gmail.com
+INSERT INTO public.credit_cards (
+  user_id,
+  institution_name,
+  account_name,
+  account_type,
+  balance,
+  credit_limit,
+  available_credit,
+  currency_code,
+  minimum_payment,
+  payment_due_date,
+  statement_close_date,
+  annual_fee,
+  cash_back,
+  priority,
+  last_sync,
+  is_active
+) VALUES (
+  '514bb5ae-8645-4e4f-94bd-8701a156a8ee',
+  'Chase Bank',
+  'Chase Sapphire Preferred',
+  'credit',
+  2500.00,
+  10000.00,
+  7500.00,
+  'USD',
+  125.00,
+  '2025-11-15',
+  '2025-10-31',
+  95.00,
+  2.5,
+  3,
+  NOW(),
+  true
+);
