@@ -159,16 +159,21 @@ export const useSafeSpending = () => {
           console.log(`\n📅 Processing ${targetDateStr} (day ${i})`);
         }
 
-        // Add all inflows for this day
+        // Add all inflows for this day (skip sales_orders without status=completed as they're pending)
         transactionsResult.data?.forEach((tx) => {
           const txDate = parseLocalDate(tx.due_date || tx.transaction_date);
           if (txDate.getTime() === targetDate.getTime() && tx.status !== 'partially_paid') {
             if (tx.type === 'sales_order' || tx.type === 'customer_payment') {
-              const amt = Number(tx.amount);
-              if (isKeyDate) {
-                console.log(`  ✅ Transaction (inflow): ${tx.type} +$${amt}`);
+              // Only count completed sales orders, not pending ones (they should be in income table)
+              if (tx.status === 'completed') {
+                const amt = Number(tx.amount);
+                if (isKeyDate) {
+                  console.log(`  ✅ Transaction (inflow): ${tx.type} +$${amt} (${tx.status})`);
+                }
+                dayChange += amt;
+              } else if (isKeyDate) {
+                console.log(`  ⏭️ SKIPPING pending transaction: ${tx.type} $${tx.amount} (${tx.status})`);
               }
-              dayChange += amt;
             } else if (tx.type === 'purchase_order' || tx.type === 'expense' || tx.vendor_id) {
               const amt = Number(tx.amount);
               if (isKeyDate) {
