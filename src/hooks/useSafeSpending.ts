@@ -230,13 +230,12 @@ export const useSafeSpending = () => {
       // Safe Spending = Min Balance - Reserve
       const safeSpendingLimit = Math.max(0, minBalance - reserve);
 
-      console.log('💰 Safe Spending Result:', {
-        minBalance: minBalance.toFixed(2),
-        minDate: minDay.date,
-        reserve,
-        safeSpendingLimit: safeSpendingLimit.toFixed(2),
-        formula: `${minBalance.toFixed(2)} - ${reserve} = ${safeSpendingLimit.toFixed(2)}`
-      });
+      console.log('🎯🎯🎯 SAFE SPENDING CALCULATION 🎯🎯🎯');
+      console.log('Minimum Balance Found:', minBalance);
+      console.log('On Date:', minDay.date);
+      console.log('Reserve Amount:', reserve);
+      console.log('Safe Spending Limit:', safeSpendingLimit);
+      console.log('Formula: $' + minBalance + ' - $' + reserve + ' = $' + safeSpendingLimit);
       
       // Find the FIRST day balance goes below safe spending limit (SSL)
       const firstBelowLimitDay = dailyBalances.find(day => day.balance < safeSpendingLimit);
