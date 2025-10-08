@@ -19,7 +19,10 @@ import {
   TrendingUp,
   AlertTriangle,
   Building,
-  Info
+  Info,
+  Sun,
+  Moon,
+  Monitor
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -27,8 +30,10 @@ import { cn } from "@/lib/utils";
 import { usePlaidLink } from "react-plaid-link";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
+import { useTheme } from "next-themes";
 
 export function CreditCardManagement() {
+  const { theme, setTheme } = useTheme();
   const { 
     creditCards, 
     isLoading, 
@@ -45,6 +50,7 @@ export function CreditCardManagement() {
   const [showOnboardingDialog, setShowOnboardingDialog] = useState(false);
   const [newCardIds, setNewCardIds] = useState<string[]>([]);
   const [enableForecast, setEnableForecast] = useState(true);
+  const [selectedTheme, setSelectedTheme] = useState<string>("system");
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
@@ -471,6 +477,49 @@ export function CreditCardManagement() {
               <p>Formula: Credit Limit - Available Credit - Statement Balance</p>
               <p className="mt-2">This shows you what your next payment might be if you continue spending at the same rate.</p>
             </div>
+
+            <Separator />
+
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <p className="font-medium text-sm">Dashboard Appearance</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  variant={selectedTheme === 'light' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedTheme('light')}
+                  className="flex flex-col items-center gap-2 h-auto py-3"
+                >
+                  <Sun className="h-5 w-5" />
+                  <span className="text-xs">Light</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant={selectedTheme === 'dark' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedTheme('dark')}
+                  className="flex flex-col items-center gap-2 h-auto py-3"
+                >
+                  <Moon className="h-5 w-5" />
+                  <span className="text-xs">Dark</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant={selectedTheme === 'system' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedTheme('system')}
+                  className="flex flex-col items-center gap-2 h-auto py-3"
+                >
+                  <Monitor className="h-5 w-5" />
+                  <span className="text-xs">System</span>
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Choose how your dashboard looks. You can change this later in Settings.
+              </p>
+            </div>
           </div>
 
           <DialogFooter>
@@ -485,16 +534,24 @@ export function CreditCardManagement() {
             </Button>
             <Button onClick={async () => {
               try {
+                // Apply theme selection
+                setTheme(selectedTheme);
+                
                 // Update all newly connected cards with forecast setting
                 for (const cardId of newCardIds) {
                   await updateCreditCard(cardId, { forecast_next_month: enableForecast });
                 }
                 
-                toast.success(enableForecast ? "Forecast enabled for your credit cards" : "Settings saved");
+                toast.success(
+                  enableForecast 
+                    ? "Forecast enabled and theme applied" 
+                    : "Settings saved"
+                );
                 setShowOnboardingDialog(false);
                 setEnableForecast(true);
+                setSelectedTheme("system");
               } catch (error) {
-                console.error("Error updating cards:", error);
+                console.error("Error updating settings:", error);
                 toast.error("Failed to update settings");
               }
             }}>
