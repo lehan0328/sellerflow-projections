@@ -2,10 +2,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, RefreshCw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send } from "lucide-react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 
 interface CashFlowInsightsProps {
   currentBalance: number;
@@ -15,6 +14,10 @@ interface CashFlowInsightsProps {
   events?: any[];
   vendors?: any[];
   income?: any[];
+  safeSpendingLimit?: number;
+  reserveAmount?: number;
+  projectedLowestBalance?: number;
+  lowestBalanceDate?: string;
 }
 
 export const CashFlowInsights = ({
@@ -25,9 +28,11 @@ export const CashFlowInsights = ({
   events = [],
   vendors = [],
   income = [],
+  safeSpendingLimit = 0,
+  reserveAmount = 0,
+  projectedLowestBalance = 0,
+  lowestBalanceDate = "",
 }: CashFlowInsightsProps) => {
-  const [advice, setAdvice] = useState<string>("");
-  const [loading, setLoading] = useState(false);
   const [chatMode, setChatMode] = useState(false);
   const [chatQuestion, setChatQuestion] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -36,108 +41,14 @@ export const CashFlowInsights = ({
     const saved = localStorage.getItem('cashflow-chat-history');
     return saved ? JSON.parse(saved) : [];
   });
-  const { toast } = useToast();
 
   const netDaily = dailyInflow - dailyOutflow;
   const healthStatus = netDaily >= 0 ? "positive" : "negative";
-
-  useEffect(() => {
-    fetchDailyInsight();
-  }, []);
 
   // Save conversation history to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('cashflow-chat-history', JSON.stringify(conversationHistory));
   }, [conversationHistory]);
-
-  const fetchDailyInsight = async () => {
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const today = new Date().toISOString().split("T")[0];
-
-      // Try to fetch today's insight from database
-      const { data: insight, error } = await supabase
-        .from("cash_flow_insights")
-        .select("advice")
-        .eq("user_id", user.id)
-        .eq("insight_date", today)
-        .single();
-
-      if (error && error.code !== "PGRST116") throw error;
-
-      if (insight?.advice) {
-        setAdvice(insight.advice);
-      } else {
-        // If no insight for today, generate one on-demand
-        await generateInsight();
-      }
-    } catch (error: any) {
-      console.error("Failed to fetch insight:", error);
-      setAdvice("Unable to load insights. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const generateInsight = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke("cash-flow-advice", {
-        body: {},
-      });
-
-      if (error) throw error;
-      
-      if (data?.advice) {
-        setAdvice(data.advice);
-        
-        // Save the insight to the database for persistence
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const today = new Date().toISOString().split("T")[0];
-          
-          // Insert or update today's insight
-          await supabase
-            .from("cash_flow_insights")
-            .upsert({
-              user_id: user.id,
-              insight_date: today,
-              advice: data.advice,
-              current_balance: currentBalance,
-              daily_inflow: dailyInflow,
-              daily_outflow: dailyOutflow,
-              upcoming_expenses: upcomingExpenses
-            }, {
-              onConflict: 'user_id,insight_date'
-            });
-        }
-      }
-    } catch (error: any) {
-      console.error("Failed to generate insight:", error);
-      setAdvice("Unable to generate insights at this time.");
-    }
-  };
-
-  const handleRefresh = async () => {
-    setLoading(true);
-    try {
-      await generateInsight();
-      toast({
-        title: "Insights Updated",
-        description: "Financial health analysis has been refreshed with latest data.",
-      });
-    } catch (error) {
-      toast({
-        title: "Refresh Failed",
-        description: "Unable to refresh insights. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,22 +83,6 @@ export const CashFlowInsights = ({
       console.error("Chat error:", error);
       let errorMessage = "Unable to get an answer. Please try again later.";
       
-      if (error.message?.includes("429")) {
-        toast({
-          title: "Rate Limit",
-          description: "Too many requests. Please try again in a moment.",
-          variant: "destructive",
-        });
-        errorMessage = "Rate limit reached. Please try again in a moment.";
-      } else if (error.message?.includes("402")) {
-        toast({
-          title: "Credits Required",
-          description: "Please add credits to your workspace to use AI chat.",
-          variant: "destructive",
-        });
-        errorMessage = "Credits required. Please add credits to continue.";
-      }
-      
       // Add error message to history
       setConversationHistory(prev => [...prev, { role: 'assistant', content: errorMessage }]);
     } finally {
@@ -204,15 +99,6 @@ export const CashFlowInsights = ({
             AI Insights
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={loading}
-              title="Refresh insights with latest data"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
             <Button
               variant={chatMode ? "default" : "ghost"}
               size="sm"
@@ -337,28 +223,51 @@ export const CashFlowInsights = ({
               </div>
             )}
 
-            {/* AI Advice */}
+            {/* Safe Spending Power */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
-                AI Recommendations
+                Safe Spending Power
               </h4>
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <div className="space-y-3">
+                <div className="p-4 bg-primary/10 rounded-lg border-2 border-primary/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-muted-foreground">Available to Spend</span>
+                    <span className="text-2xl font-bold text-primary">
+                      ${safeSpendingLimit.toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    This is what you can safely spend without risking shortfalls
+                  </p>
                 </div>
-              ) : (
-                <ScrollArea className="h-[300px]">
-                  <div 
-                    className="text-sm text-muted-foreground leading-relaxed pr-4"
-                    dangerouslySetInnerHTML={{ 
-                      __html: advice
-                        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>')
-                        .replace(/\n/g, '<br />')
-                    }}
-                  />
-                </ScrollArea>
-              )}
+
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                    <span className="text-muted-foreground">Current Balance</span>
+                    <span className="font-semibold">
+                      ${currentBalance.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                    <span className="text-muted-foreground">Reserve Amount</span>
+                    <span className="font-semibold text-amber-600">
+                      -${reserveAmount.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                    <span className="text-muted-foreground">Lowest Projected</span>
+                    <span className="font-semibold text-orange-600">
+                      ${projectedLowestBalance.toLocaleString()}
+                    </span>
+                  </div>
+                  {lowestBalanceDate && (
+                    <p className="text-xs text-muted-foreground italic p-2">
+                      Your balance will reach its lowest point on {new Date(lowestBalanceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </>
         )}

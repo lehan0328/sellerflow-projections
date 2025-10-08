@@ -26,6 +26,7 @@ import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
+import { useSafeSpending } from "@/hooks/useSafeSpending";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { BankTransaction } from "@/components/cash-flow/bank-transaction-log";
 import { useTransactionMatching } from "@/hooks/useTransactionMatching";
@@ -62,6 +63,7 @@ const Dashboard = () => {
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { creditCards } = useCreditCards();
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
+  const { data: safeSpendingData } = useSafeSpending();
   
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
   const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance } = useUserSettings();
@@ -1032,6 +1034,10 @@ const Dashboard = () => {
               events={allCalendarEvents}
               vendors={vendors}
               income={incomeItems}
+              safeSpendingLimit={safeSpendingData?.safe_spending_limit || 0}
+              reserveAmount={safeSpendingData?.reserve_amount || 0}
+              projectedLowestBalance={safeSpendingData?.calculation?.lowest_projected_balance || 0}
+              lowestBalanceDate={safeSpendingData?.calculation?.lowest_balance_date || ""}
             />
           </div>
         </div>
