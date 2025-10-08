@@ -11,6 +11,7 @@ interface SafeSpendingData {
     available_balance: number;
     lowest_projected_balance: number;
     lowest_balance_date: string;
+    safe_spending_available_date?: string;
     next_buying_opportunity_balance?: number;
     next_buying_opportunity_date?: string;
     next_buying_opportunity_available_date?: string;
@@ -365,6 +366,15 @@ export const useSafeSpending = () => {
       
       const nextBuyingOpportunity = allBuyingOpportunities.length > 0 ? allBuyingOpportunities[0] : null;
       
+      // Find when balance rises back above the safe spending limit (earliest purchase date for safe spending)
+      let safeSpendingAvailableDate: string | undefined;
+      for (let j = minDayIndex + 1; j < dailyBalances.length; j++) {
+        if (dailyBalances[j].balance > minBalance) {
+          safeSpendingAvailableDate = dailyBalances[j].date;
+          break;
+        }
+      }
+      
       console.log('🎯 ALL BALANCES:', dailyBalances.slice(0, 20).map(d => `${d.date}: $${d.balance.toFixed(2)}`).join('\n'));
       
       if (allBuyingOpportunities.length > 0) {
@@ -423,6 +433,7 @@ export const useSafeSpending = () => {
           lowest_balance_date: willGoNegative 
             ? firstNegativeDay!.date 
             : (willDropBelowLimit ? firstBelowLimitDay!.date : minDay.date),
+          safe_spending_available_date: safeSpendingAvailableDate,
           next_buying_opportunity_balance: nextBuyingOpportunity?.balance,
           next_buying_opportunity_date: nextBuyingOpportunity?.date,
           next_buying_opportunity_available_date: nextBuyingOpportunity?.available_date,

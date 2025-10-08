@@ -1098,6 +1098,7 @@ const Dashboard = () => {
               reserveAmount={safeSpendingData?.reserve_amount || 0}
               projectedLowestBalance={safeSpendingData?.calculation?.lowest_projected_balance || 0}
               lowestBalanceDate={safeSpendingData?.calculation?.lowest_balance_date || ""}
+              safeSpendingAvailableDate={safeSpendingData?.calculation?.safe_spending_available_date}
               nextBuyingOpportunityBalance={safeSpendingData?.calculation?.next_buying_opportunity_balance}
               nextBuyingOpportunityDate={safeSpendingData?.calculation?.next_buying_opportunity_date}
               nextBuyingOpportunityAvailableDate={safeSpendingData?.calculation?.next_buying_opportunity_available_date}

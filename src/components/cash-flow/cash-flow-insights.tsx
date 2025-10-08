@@ -20,6 +20,7 @@ interface CashFlowInsightsProps {
   reserveAmount?: number;
   projectedLowestBalance?: number;
   lowestBalanceDate?: string;
+  safeSpendingAvailableDate?: string;
   nextBuyingOpportunityBalance?: number;
   nextBuyingOpportunityDate?: string;
   nextBuyingOpportunityAvailableDate?: string;
@@ -38,6 +39,7 @@ export const CashFlowInsights = ({
   reserveAmount = 0,
   projectedLowestBalance = 0,
   lowestBalanceDate = "",
+  safeSpendingAvailableDate,
   nextBuyingOpportunityBalance,
   nextBuyingOpportunityDate,
   nextBuyingOpportunityAvailableDate,
@@ -275,6 +277,21 @@ export const CashFlowInsights = ({
                       <p className="text-red-700 dark:text-red-400">
                         Warning: Your upcoming expenses exceed available funds. Consider reducing spending or increasing reserves.
                       </p>
+                    </div>
+                  )}
+                  {safeSpendingAvailableDate && (
+                    <div className="flex items-center justify-between mt-2 p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
+                      <span className="text-xs text-muted-foreground">Earliest Purchase Date:</span>
+                      <span className="text-sm font-semibold text-green-600">
+                        {(() => {
+                          const [year, month, day] = safeSpendingAvailableDate.split('-').map(Number);
+                          const date = new Date(year, month - 1, day);
+                          return date.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric'
+                          });
+                        })()}
+                      </span>
                     </div>
                   )}
                 </div>
