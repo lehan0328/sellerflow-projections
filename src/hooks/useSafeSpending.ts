@@ -366,11 +366,15 @@ export const useSafeSpending = () => {
       
       const nextBuyingOpportunity = allBuyingOpportunities.length > 0 ? allBuyingOpportunities[0] : null;
       
-      // Find when balance rises back above the safe spending limit (earliest purchase date for safe spending)
+      // Find earliest date when you can make purchases for safe spending
+      // This is the first date from today where balance is sufficient to cover the safe spending amount
       let safeSpendingAvailableDate: string | undefined;
-      for (let j = minDayIndex + 1; j < dailyBalances.length; j++) {
-        if (dailyBalances[j].balance > minBalance) {
-          safeSpendingAvailableDate = dailyBalances[j].date;
+      const calculatedSafeSpending = Math.max(0, minBalance - reserve);
+      
+      // Start from today and find when we have enough balance to spend the safe spending amount
+      for (let i = 0; i < dailyBalances.length && i <= minDayIndex; i++) {
+        if (dailyBalances[i].balance >= minBalance + calculatedSafeSpending) {
+          safeSpendingAvailableDate = dailyBalances[i].date;
           break;
         }
       }
