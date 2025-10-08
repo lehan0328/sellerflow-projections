@@ -117,7 +117,7 @@ export default function Partners() {
               size="lg" 
               variant="outline" 
               className="border-2 border-primary/40 hover:bg-gradient-to-r hover:from-primary/10 hover:to-accent/10 hover-scale backdrop-blur text-lg px-8 py-7 hover:border-primary"
-              onClick={() => navigate('/affiliate-dashboard')}
+              onClick={() => document.getElementById('affiliate-section')?.scrollIntoView({ behavior: 'smooth' })}
             >
               <TrendingUp className="mr-2 h-5 w-5" />
               Become an Affiliate
@@ -289,7 +289,7 @@ export default function Partners() {
       </section>
 
       {/* Affiliate Program */}
-      <section className="relative py-24 px-6 overflow-hidden">
+      <section id="affiliate-section" className="relative py-24 px-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-background via-accent/5 to-background" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(var(--accent-rgb),0.15),transparent_70%)]" />
         <div className="relative max-w-7xl mx-auto">
