@@ -203,7 +203,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <p className="text-sm text-slate-600">Total Projected</p>
+                <p className="text-sm text-slate-600">Cash</p>
                 {!balanceMatches && accounts.length > 0 && (
                   <Button
                     variant="ghost"
@@ -222,17 +222,17 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 )}
               </div>
               <p className="text-2xl font-bold text-blue-700">
-                ${accounts.length === 0 ? '0' : (bankAccountBalance + (pendingIncomeToday?.amount || 0)).toLocaleString()}
+                {formatCurrency(bankAccountBalance)}
               </p>
               <div className="space-y-0.5">
-                <p className="text-sm text-slate-600">
-                  Cash: {formatCurrency(bankAccountBalance)}
-                </p>
                 {pendingIncomeToday && pendingIncomeToday.amount > 0 && (
                   <p className="text-sm text-slate-600">
                     Pending: {formatCurrency(pendingIncomeToday.amount)}
                   </p>
                 )}
+                <p className="text-sm text-slate-600">
+                  Total Projected: {formatCurrency(accounts.length === 0 ? 0 : (bankAccountBalance + (pendingIncomeToday?.amount || 0)))}
+                </p>
               </div>
             </div>
             <DollarSign className="h-8 w-8 text-blue-500" />
