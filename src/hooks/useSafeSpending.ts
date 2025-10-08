@@ -121,6 +121,12 @@ export const useSafeSpending = () => {
         amazonPayouts: amazonResult.data?.length || 0
       });
 
+      console.log('💰 STARTING Safe Spending Calculation:', {
+        bankBalance,
+        reserve,
+        startDate: todayStr
+      });
+
       // Track running balance day-by-day to match calendar's total projected cash
       const dailyBalances: DailyBalance[] = [];
       let runningBalance = bankBalance;
@@ -213,28 +219,11 @@ export const useSafeSpending = () => {
           balance: runningBalance
         });
 
-        // Log first few days for debugging
-        if (i <= 10) {
+        // Log every significant day (where something happens or balance changes)
+        if (dayNetChange !== 0 || i <= 3 || i === 12 || i === 19) {
           console.log(`💰 Day ${i} (${targetDateStr}):`, {
             dayNetChange: dayNetChange.toFixed(2),
-            runningBalance: runningBalance.toFixed(2),
-            hasRecurring: recurringResult.data?.some(r => {
-              const occurrences = generateRecurringDates(
-                {
-                  id: r.id,
-                  transaction_name: r.name,
-                  amount: r.amount,
-                  frequency: r.frequency as any,
-                  start_date: r.start_date,
-                  end_date: r.end_date,
-                  is_active: r.is_active,
-                  type: r.type as any
-                },
-                targetDate,
-                targetDate
-              );
-              return occurrences.length > 0;
-            })
+            runningBalance: runningBalance.toFixed(2)
           });
         }
       }
@@ -244,6 +233,13 @@ export const useSafeSpending = () => {
         day.balance < min.balance ? day : min,
         dailyBalances[0] || { date: todayStr, balance: bankBalance }
       );
+
+      console.log('🎯 FOUND Lowest Balance:', {
+        date: lowestBalance.date,
+        balance: lowestBalance.balance.toFixed(2),
+        reserve,
+        calculation: `${lowestBalance.balance.toFixed(2)} - ${reserve} = ${(lowestBalance.balance - reserve).toFixed(2)}`
+      });
 
       // Calculate safe spending limit first
       const safeSpendingLimit = Math.max(0, lowestBalance.balance - reserve);
