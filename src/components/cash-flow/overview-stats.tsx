@@ -136,9 +136,62 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   
   // Calculate net (incoming - upcoming)
   const netAmount = incomingTotal - upcomingTotal;
-  
-  return (
-    <>
+
+  // Projected cash (TPC) breach detection aligned with calendar events
+  const keyFor = (d: Date) => {
+    const dt = new Date(d);
+    dt.setHours(0, 0, 0, 0);
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+  const todayKey = keyFor(new Date());
+
+  const sortedEvents = [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  // Start from bank balance + all events occurring today or earlier
+  let tpcRunning = bankAccountBalance;
+  for (const e of sortedEvents) {
+    const k = keyFor(e.date);
+    if (k <= todayKey) {
+      tpcRunning += (e.type === 'inflow' ? e.amount : -e.amount);
+    }
+  }
+
+  // Group future events by day
+  const dayMap = new Map<string, number>();
+  for (const e of sortedEvents) {
+    const k = keyFor(e.date);
+    if (k > todayKey) {
+      dayMap.set(k, (dayMap.get(k) || 0) + (e.type === 'inflow' ? e.amount : -e.amount));
+    }
+  }
+
+  const futureKeys = Array.from(dayMap.keys()).sort();
+  let tpcFirstNegativeDay: { date: string; balance: number } | null = null;
+  let tpcFirstBelowLimitDay: { date: string; balance: number } | null = null;
+  const ssl = safeSpendingData?.safe_spending_limit ?? 0;
+
+  let tpcCursor = tpcRunning;
+  for (const k of futureKeys) {
+    tpcCursor += dayMap.get(k)!;
+    if (!tpcFirstNegativeDay && tpcCursor < 0) {
+      tpcFirstNegativeDay = { date: k, balance: tpcCursor };
+    }
+    if (!tpcFirstBelowLimitDay && tpcCursor < ssl) {
+      tpcFirstBelowLimitDay = { date: k, balance: tpcCursor };
+    }
+  }
+
+  const displayNegative = tpcFirstNegativeDay || (safeSpendingData?.will_go_negative && safeSpendingData.negative_date
+    ? { date: safeSpendingData.negative_date, balance: safeSpendingData.calculation.lowest_projected_balance }
+    : null);
+  const displayBelow = !displayNegative ? tpcFirstBelowLimitDay : null;
+
+  const formatDateKey = (k: string) => new Date(`${k}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  return (<>
       <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <div className={`bg-gradient-to-br ${safeSpendingData?.will_go_negative ? 'from-red-50 to-red-100 border-red-300' : 'from-indigo-50 to-indigo-100 border-indigo-200'} border rounded-lg p-4`}>
           <div className="flex items-center justify-between">

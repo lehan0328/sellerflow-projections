@@ -30,6 +30,14 @@ export const useSafeSpending = () => {
     return date.toISOString().split('T')[0];
   };
 
+  // Parse a date string (YYYY-MM-DD or ISO) to a local Date at start of day to avoid timezone drift
+  const parseLocalDate = (dateStr: string): Date => {
+    const [y, m, d] = (dateStr.includes('T') ? dateStr.split('T')[0] : dateStr).split('-').map(Number);
+    const dt = new Date(y, (m || 1) - 1, d || 1);
+    dt.setHours(0, 0, 0, 0);
+    return dt;
+  };
+
   const fetchSafeSpending = async () => {
     try {
       setIsLoading(true);
@@ -128,8 +136,7 @@ export const useSafeSpending = () => {
         // 1. Process transactions for this specific day only
         transactionsResult.data?.forEach((tx) => {
           const txDateStr = tx.due_date || tx.transaction_date;
-          const txDate = new Date(txDateStr);
-          txDate.setHours(0, 0, 0, 0);
+          const txDate = parseLocalDate(txDateStr);
           
           if (txDate.getTime() === targetDate.getTime()) {
             if (tx.status === 'partially_paid') return;
@@ -145,8 +152,7 @@ export const useSafeSpending = () => {
         // 2. Process income for this specific day only (exclude received)
         incomeResult.data?.forEach((income) => {
           if (income.status === 'received') return;
-          const incomeDate = new Date(income.payment_date);
-          incomeDate.setHours(0, 0, 0, 0);
+          const incomeDate = parseLocalDate(income.payment_date);
           if (incomeDate.getTime() === targetDate.getTime()) {
             dayNetChange += Number(income.amount);
           }
@@ -154,8 +160,7 @@ export const useSafeSpending = () => {
 
         // 3. Process Amazon payouts for this specific day only
         amazonResult.data?.forEach((payout) => {
-          const payoutDate = new Date(payout.payout_date);
-          payoutDate.setHours(0, 0, 0, 0);
+          const payoutDate = parseLocalDate(payout.payout_date);
           if (payoutDate.getTime() === targetDate.getTime()) {
             dayNetChange += Number(payout.total_amount);
           }
@@ -193,8 +198,7 @@ export const useSafeSpending = () => {
         vendorsResult.data?.forEach((vendor) => {
           if (vendor.status === 'paid' || !vendor.next_payment_date || Number(vendor.total_owed || 0) <= 0) return;
           
-          const vendorDate = new Date(vendor.next_payment_date);
-          vendorDate.setHours(0, 0, 0, 0);
+          const vendorDate = parseLocalDate(vendor.next_payment_date);
           if (vendorDate.getTime() === targetDate.getTime()) {
             dayNetChange -= Number(vendor.next_payment_amount || 0);
           }
