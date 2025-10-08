@@ -84,16 +84,12 @@ export const useSafeSpending = () => {
         supabase
           .from('transactions')
           .select('*')
-          .eq('user_id', session.user.id)
-          .gte('transaction_date', todayStr)
-          .lte('transaction_date', futureDateStr),
+          .eq('user_id', session.user.id),
         
         supabase
           .from('income')
           .select('*')
-          .eq('user_id', session.user.id)
-          .gte('payment_date', todayStr)
-          .lte('payment_date', futureDateStr),
+          .eq('user_id', session.user.id),
         
         supabase
           .from('recurring_expenses')
@@ -125,7 +121,14 @@ export const useSafeSpending = () => {
       console.log('💰 STARTING Safe Spending Calculation:', {
         bankBalance,
         reserve,
-        startDate: todayStr
+        startDate: todayStr,
+        allTransactions: transactionsResult.data?.map(t => ({
+          type: t.type,
+          amount: t.amount,
+          transaction_date: t.transaction_date,
+          due_date: t.due_date,
+          status: t.status
+        }))
       });
 
       // Simple calculation: Track Total Projected Cash for each day, find minimum, subtract reserve
