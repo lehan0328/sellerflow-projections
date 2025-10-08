@@ -892,8 +892,8 @@ const Dashboard = () => {
     ? creditCards
         .filter(card => card.forecast_next_month && card.payment_due_date)
         .map(card => {
-          // Calculate projected usage: limit - available - current balance
-          const projectedAmount = card.credit_limit - card.available_credit - card.balance;
+          // Calculate projected usage: limit - available - statement balance
+          const projectedAmount = card.credit_limit - card.available_credit - (card.statement_balance || card.balance);
           
           if (projectedAmount <= 0) return null;
           

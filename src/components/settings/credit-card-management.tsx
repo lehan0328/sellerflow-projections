@@ -18,13 +18,15 @@ import {
   TrendingDown,
   TrendingUp,
   AlertTriangle,
-  Building
+  Building,
+  Info
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { cn } from "@/lib/utils";
 import { usePlaidLink } from "react-plaid-link";
 import { supabase } from "@/integrations/supabase/client";
+import { Switch } from "@/components/ui/switch";
 
 export function CreditCardManagement() {
   const { 
@@ -35,10 +37,14 @@ export function CreditCardManagement() {
     totalAvailableCredit,
     addCreditCard, 
     removeCreditCard, 
-    syncCreditCard 
+    syncCreditCard,
+    updateCreditCard
   } = useCreditCards();
   
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const [showOnboardingDialog, setShowOnboardingDialog] = useState(false);
+  const [newCardIds, setNewCardIds] = useState<string[]>([]);
+  const [enableForecast, setEnableForecast] = useState(true);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
@@ -58,9 +64,16 @@ export function CreditCardManagement() {
 
         if (error) throw error;
 
+        // Store the new card IDs for onboarding
+        const connectedCardIds = metadata.accounts?.map((acc: any) => acc.id) || [];
+        setNewCardIds(connectedCardIds);
+        
         toast.success(data.message || "Credit card connected successfully!");
         setIsConnecting(false);
         setLinkToken(null);
+        
+        // Show onboarding dialog
+        setShowOnboardingDialog(true);
       } catch (error) {
         console.error("Error exchanging token:", error);
         toast.error("Failed to connect credit card");
@@ -414,6 +427,77 @@ export function CreditCardManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Onboarding Dialog for New Credit Cards */}
+      <Dialog open={showOnboardingDialog} onOpenChange={setShowOnboardingDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              Credit Card Forecast Setup
+            </DialogTitle>
+            <DialogDescription>
+              We recommend enabling payment forecasting to help you plan ahead
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-sm">Enable Next Month Forecast</p>
+                  <Badge variant="secondary" className="text-xs">Recommended</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Automatically project next month's payment based on your current spending pattern
+                </p>
+              </div>
+              <Switch
+                checked={enableForecast}
+                onCheckedChange={setEnableForecast}
+              />
+            </div>
+            
+            <div className="text-xs text-muted-foreground bg-primary/5 p-3 rounded-md">
+              <p className="font-medium mb-1">How it works:</p>
+              <p>Formula: Credit Limit - Available Credit - Statement Balance</p>
+              <p className="mt-2">This shows you what your next payment might be if you continue spending at the same rate.</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={async () => {
+                setShowOnboardingDialog(false);
+                setEnableForecast(true);
+              }}
+            >
+              Skip for Now
+            </Button>
+            <Button onClick={async () => {
+              try {
+                // Update all newly connected cards with forecast setting
+                for (const cardId of newCardIds) {
+                  const card = creditCards.find(c => c.plaid_account_id === cardId);
+                  if (card) {
+                    await updateCreditCard(card.id, { forecast_next_month: enableForecast });
+                  }
+                }
+                
+                toast.success(enableForecast ? "Forecast enabled for your credit cards" : "Settings saved");
+                setShowOnboardingDialog(false);
+                setEnableForecast(true);
+              } catch (error) {
+                console.error("Error updating cards:", error);
+                toast.error("Failed to update settings");
+              }
+            }}>
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
 
       {/* Remove Credit Card Dialog */}

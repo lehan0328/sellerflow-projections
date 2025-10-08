@@ -15,7 +15,6 @@ import { toast } from "sonner";
 
 interface CreditCardFormData {
   nickname: string;
-  minimum_payment: number;
   annual_fee: number;
   cash_back: number;
   priority: number;
@@ -30,7 +29,6 @@ export function CreditCards() {
   const [editingCard, setEditingCard] = useState<any>(null);
   const [formData, setFormData] = useState<CreditCardFormData>({
     nickname: '',
-    minimum_payment: 0,
     annual_fee: 0,
     cash_back: 0,
     priority: 3,
@@ -58,7 +56,6 @@ export function CreditCards() {
   const resetForm = () => {
     setFormData({
       nickname: '',
-      minimum_payment: 0,
       annual_fee: 0,
       cash_back: 0,
       priority: 3,
@@ -76,7 +73,6 @@ export function CreditCards() {
     setEditingCard(card);
     setFormData({
       nickname: card.nickname || '',
-      minimum_payment: card.minimum_payment || 0,
       annual_fee: card.annual_fee || 0,
       cash_back: card.cash_back || 0,
       priority: card.priority || 3,
@@ -322,13 +318,15 @@ export function CreditCards() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit_minimum_payment">Minimum Payment</Label>
-                  <Input
-                    id="edit_minimum_payment"
-                    type="number"
-                    value={formData.minimum_payment}
-                    onChange={(e) => setFormData({...formData, minimum_payment: parseFloat(e.target.value) || 0})}
-                  />
+                  <Label>Minimum Payment</Label>
+                  <div className="flex items-center h-10 px-3 py-2 text-sm border border-input rounded-md bg-muted">
+                    {editingCard?.minimum_payment 
+                      ? formatCurrency(editingCard.minimum_payment)
+                      : 'Not set'}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Automatically imported from bank (read-only)
+                  </p>
                 </div>
                 <div>
                   <Label htmlFor="edit_cash_back">Cash Back (%)</Label>
@@ -403,9 +401,12 @@ export function CreditCards() {
               </div>
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="edit_forecast_next_month">Forecast Next Month</Label>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="edit_forecast_next_month">Forecast Next Month</Label>
+                    <Badge variant="secondary" className="text-xs">Recommended</Badge>
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    Project next month's payment based on current usage pattern
+                    Project next month's payment based on current spending pattern
                   </p>
                 </div>
                 <Switch
