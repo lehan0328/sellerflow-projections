@@ -255,83 +255,29 @@ export default function Partners() {
                 Auren Partners
               </span>
             </h2>
-            <p className="text-xl text-muted-foreground">For Influencers, CPAs & Agencies • <span className="text-accent font-semibold">30% Lifetime Commission</span></p>
+            <p className="text-xl text-muted-foreground">For Influencers, CPAs & Agencies</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
-            <Card className="relative group hover-scale border-primary/30 bg-gradient-to-br from-primary/10 via-card to-background backdrop-blur overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-primary/30">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-50 group-hover:opacity-70 transition-opacity duration-500" />
-              <div className="absolute top-4 right-4 w-20 h-20 bg-primary/30 rounded-full blur-2xl animate-glow-pulse" />
-              <CardHeader className="relative">
-                <div className="p-4 w-fit rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-lg shadow-primary/40">
-                  <DollarSign className="h-8 w-8 text-primary-foreground" />
+          {/* Commission Highlight */}
+          <div className="max-w-3xl mx-auto mb-16">
+            <Card className="relative group border-2 border-accent bg-gradient-to-br from-accent/15 via-primary/10 to-accent/15 backdrop-blur overflow-hidden shadow-2xl shadow-accent/40">
+              <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-primary/20 opacity-60" />
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-accent/40 rounded-full blur-3xl animate-glow-pulse" />
+              <CardContent className="relative py-16 px-8 text-center">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-accent/30 to-primary/30 border border-accent/40 mb-6">
+                  <DollarSign className="h-5 w-5 text-accent" />
+                  <span className="text-sm font-bold text-accent-foreground">Lifetime Commission</span>
                 </div>
-                <CardTitle className="text-2xl mt-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Starter Tier</CardTitle>
-                <CardDescription className="text-base">1-5 monthly referrals</CardDescription>
-              </CardHeader>
-              <CardContent className="relative">
-                <div className="mb-6">
-                  <p className="text-6xl font-bold bg-gradient-to-br from-primary via-accent to-primary bg-clip-text text-transparent">20%</p>
-                  <p className="text-base text-muted-foreground mt-3">Recurring commission on all referrals</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="relative group hover-scale border-2 border-accent bg-gradient-to-br from-accent/15 via-primary/10 to-accent/15 backdrop-blur overflow-hidden scale-105 shadow-2xl shadow-accent/40 hover:shadow-accent/60 transition-all duration-500">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 px-6 py-2 bg-gradient-to-r from-accent via-primary to-accent rounded-b-2xl shadow-lg animate-shimmer bg-[length:200%_100%]">
-                <span className="text-sm font-bold text-white flex items-center gap-1">
-                  <TrendingUp className="h-4 w-4" />
-                  MOST POPULAR
-                </span>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-accent/20 to-primary/20 opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
-              <div className="absolute bottom-4 right-4 w-24 h-24 bg-accent/40 rounded-full blur-3xl animate-glow-pulse" />
-              <CardHeader className="relative pt-12">
-                <div className="p-5 w-fit rounded-2xl bg-gradient-to-br from-accent to-primary shadow-xl shadow-accent/50 animate-glow-pulse">
-                  <TrendingUp className="h-10 w-10 text-primary-foreground" />
-                </div>
-                <CardTitle className="text-3xl mt-4 bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">Growth Tier</CardTitle>
-                <CardDescription className="text-base font-medium">6-20 monthly referrals</CardDescription>
-              </CardHeader>
-              <CardContent className="relative">
-                <div className="mb-4">
-                  <p className="text-7xl font-bold bg-gradient-to-br from-accent via-primary to-accent bg-clip-text text-transparent">25%</p>
-                  <p className="text-base text-muted-foreground mt-3 mb-4">Recurring commission</p>
-                  <div className="p-4 rounded-2xl bg-gradient-to-r from-accent/30 to-primary/30 border-2 border-accent/40 backdrop-blur shadow-lg">
-                    <p className="text-lg font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">+ $100 per 10 referrals</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="relative group hover-scale border-accent/30 bg-gradient-to-br from-accent/10 via-card to-background backdrop-blur overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-accent/30">
-              <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-transparent opacity-50 group-hover:opacity-70 transition-opacity duration-500" />
-              <div className="absolute bottom-4 left-4 w-20 h-20 bg-accent/30 rounded-full blur-2xl animate-glow-pulse" style={{ animationDelay: '1s' }} />
-              <CardHeader className="relative">
-                <div className="p-4 w-fit rounded-2xl bg-gradient-to-br from-accent to-primary shadow-lg shadow-accent/40">
-                  <Users className="h-8 w-8 text-primary-foreground" />
-                </div>
-                <CardTitle className="text-2xl mt-4 bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">Pro Tier</CardTitle>
-                <CardDescription className="text-base">21+ monthly referrals</CardDescription>
-              </CardHeader>
-              <CardContent className="relative">
-                <div className="mb-6">
-                  <p className="text-6xl font-bold bg-gradient-to-br from-accent via-primary to-accent bg-clip-text text-transparent">30%</p>
-                  <p className="text-base text-muted-foreground mt-3 mb-4">Recurring commission</p>
-                  <div className="space-y-3">
-                    <p className="text-base font-medium flex items-center gap-3 group/item">
-                      <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-                      Co-branding opportunities
-                    </p>
-                    <p className="text-base font-medium flex items-center gap-3 group/item">
-                      <div className="h-2 w-2 rounded-full bg-primary animate-pulse" style={{ animationDelay: '0.5s' }} />
-                      Dedicated support
-                    </p>
-                  </div>
-                </div>
+                <p className="text-8xl md:text-9xl font-bold bg-gradient-to-br from-accent via-primary to-accent bg-clip-text text-transparent mb-4">
+                  40%
+                </p>
+                <p className="text-2xl text-muted-foreground">
+                  Earn up to <span className="text-accent font-bold">40% recurring commission</span> on every referral
+                </p>
               </CardContent>
             </Card>
           </div>
+
 
           <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-card via-card/80 to-primary/5 backdrop-blur">
             <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-radial from-primary/20 to-transparent blur-3xl" />
@@ -339,7 +285,7 @@ export default function Partners() {
               <CardTitle className="text-2xl">Affiliate Benefits</CardTitle>
             </CardHeader>
             <CardContent className="relative">
-              <div className="grid md:grid-cols-2 gap-8">
+              <div className="grid md:grid-cols-2 gap-8 mb-8">
                 <div className="space-y-4">
                   <h3 className="font-semibold text-lg flex items-center gap-2">
                     <div className="h-1 w-1 rounded-full bg-primary" />
@@ -381,6 +327,37 @@ export default function Partners() {
                       </li>
                     ))}
                   </ul>
+                </div>
+              </div>
+
+              {/* How to Become an Affiliate */}
+              <div className="mt-8 pt-8 border-t border-border">
+                <h3 className="font-semibold text-xl mb-6 bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
+                  How to Become an Affiliate
+                </h3>
+                <div className="p-6 rounded-2xl bg-gradient-to-r from-accent/10 via-primary/10 to-accent/10 border border-accent/30 backdrop-blur">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg shadow-accent/30">
+                      <DollarSign className="h-6 w-6 text-primary-foreground" />
+                    </div>
+                    <div className="space-y-3">
+                      <p className="text-base font-medium text-foreground">
+                        Interested in joining our affiliate program?
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        We carefully select partners who align with our mission to help marketplace sellers succeed. To apply, please reach out to us directly and tell us about your audience and how you can help promote Auren.
+                      </p>
+                      <a 
+                        href="mailto:andy@aurenapp.com" 
+                        className="inline-flex items-center gap-2 text-base font-semibold text-accent hover:text-primary transition-colors group"
+                      >
+                        <span className="underline decoration-accent/30 group-hover:decoration-primary">
+                          Email andy@aurenapp.com
+                        </span>
+                        <span className="group-hover:translate-x-1 transition-transform">→</span>
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
