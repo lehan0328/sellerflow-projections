@@ -317,6 +317,26 @@ const Dashboard = () => {
       vendorId = newVendor?.id;
     }
 
+    // If payment method is credit card, deduct from that card's available credit
+    if (orderData.paymentMethod === 'credit-card' && orderData.selectedCreditCard) {
+      const selectedCard = creditCards.find(card => card.id === orderData.selectedCreditCard);
+      if (selectedCard) {
+        const newBalance = selectedCard.balance + amount;
+        const newAvailableCredit = selectedCard.available_credit - amount;
+        
+        await supabase
+          .from('credit_cards')
+          .update({
+            balance: newBalance,
+            available_credit: newAvailableCredit,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', orderData.selectedCreditCard);
+        
+        console.info(`Credit card ${selectedCard.account_name} charged: $${amount}`);
+      }
+    }
+
     // Create transaction for this PO (individual record)
     await addTransaction({
       type: 'purchase_order',
