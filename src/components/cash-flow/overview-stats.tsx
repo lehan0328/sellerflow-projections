@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -44,6 +44,12 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const { totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
   const { data: safeSpendingData, isLoading: isLoadingSafeSpending, updateReserveAmount, refetch: refetchSafeSpending } = useSafeSpending();
   const [reserveInput, setReserveInput] = useState<string>("");
+  
+  // Force fresh calculation on mount
+  useEffect(() => {
+    console.log('🔄 OverviewStats mounted - fetching safe spending data');
+    refetchSafeSpending();
+  }, []);
   
   // Calculate dynamic values based on events
   const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
@@ -193,17 +199,18 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
 
   return (<>
       <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {/* Safe Spending Limit Card - Completely Rewritten */}
         <div className={`bg-gradient-to-br ${isBreach ? 'from-red-50 to-red-100 border-red-300' : 'from-indigo-50 to-indigo-100 border-indigo-200'} border rounded-lg p-4`}>
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm text-slate-600">Safe Spending Limit</p>
                 <div className="flex flex-col items-end gap-1">
-                  <Label htmlFor="reserve-input" className="text-xs text-slate-500">Reserve Amount</Label>
+                  <Label htmlFor="reserve-input" className="text-xs text-slate-500">Reserve</Label>
                   <input
                     id="reserve-input"
                     type="number"
-                    placeholder="Reserve"
+                    placeholder="0"
                     value={reserveInput || safeSpendingData?.reserve_amount || ""}
                     onChange={(e) => setReserveInput(e.target.value)}
                     onBlur={() => {
@@ -226,50 +233,47 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                   />
                 </div>
               </div>
+              
               {isLoadingSafeSpending ? (
                 <div className="space-y-2">
                   <div className="h-8 w-32 bg-indigo-200 animate-pulse rounded"></div>
                   <div className="h-4 w-24 bg-indigo-100 animate-pulse rounded"></div>
                 </div>
               ) : safeSpendingData ? (
-                <>
-                  {isBreach ? (
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-6 w-6 text-red-600" />
-                        <p className="text-2xl font-bold text-red-700">
-                          {formatCurrency(0)}
-                        </p>
-                      </div>
-                      <div className="bg-red-200 border border-red-300 rounded p-2 mt-2">
-                        {displayNegative ? (
-                          <p className="text-sm text-red-800 font-semibold">
-                            🔴 Cash will go {formatCurrency(Math.abs(displayNegative.balance))} negative on {formatDateKey(displayNegative.date)}
-                          </p>
-                        ) : displayBelow ? (
-                          <p className="text-sm text-red-800 font-semibold">
-                            🔶 Cash will drop to {formatCurrency(displayBelow.balance)} (below safe limit) on {formatDateKey(displayBelow.date)}
-                          </p>
-                        ) : null}
-                      </div>
+                isBreach ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-6 w-6 text-red-600" />
+                      <p className="text-2xl font-bold text-red-700">$0</p>
                     </div>
-                  ) : (
-                    <>
-                      <p className="text-2xl font-bold text-indigo-700">
-                        {formatCurrency(safeSpendingData.safe_spending_limit)}
-                      </p>
-                      <p className="text-xs text-indigo-600 mt-1">
-                        Available after expenses & ${safeSpendingData.reserve_amount.toLocaleString()} reserve
-                      </p>
-                      <div className="bg-green-100 border border-green-300 rounded p-2 mt-2">
-                        <p className="text-sm text-green-800 font-semibold flex items-center gap-1">
-                          <CheckCircle className="h-4 w-4" />
-                          🟢 Cash flow is healthy — no projected drop below your limit.
+                    <div className="bg-red-200 border border-red-300 rounded p-2 mt-2">
+                      {displayNegative ? (
+                        <p className="text-sm text-red-800 font-semibold">
+                          🔴 Cash will go {formatCurrency(Math.abs(displayNegative.balance))} negative on {formatDateKey(displayNegative.date)}
                         </p>
-                      </div>
-                    </>
-                  )}
-                </>
+                      ) : displayBelow ? (
+                        <p className="text-sm text-red-800 font-semibold">
+                          🔶 Cash will drop to {formatCurrency(displayBelow.balance)} (below safe limit) on {formatDateKey(displayBelow.date)}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-2xl font-bold text-indigo-700">
+                      {formatCurrency(safeSpendingData.safe_spending_limit)}
+                    </p>
+                    <p className="text-xs text-indigo-600 mt-1">
+                      Min balance: {formatCurrency(safeSpendingData.calculation.lowest_projected_balance)} - Reserve: ${safeSpendingData.reserve_amount.toLocaleString()}
+                    </p>
+                    <div className="bg-green-100 border border-green-300 rounded p-2 mt-2">
+                      <p className="text-sm text-green-800 font-semibold flex items-center gap-1">
+                        <CheckCircle className="h-4 w-4" />
+                        🟢 Cash flow healthy
+                      </p>
+                    </div>
+                  </>
+                )
               ) : (
                 <p className="text-sm text-slate-500">Unable to calculate</p>
               )}
