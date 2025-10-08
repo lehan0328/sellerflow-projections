@@ -36,7 +36,7 @@ interface CartItem {
 const UpgradePlan = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, createCheckout, purchaseAddon, openCustomerPortal, removePlanOverride, isLoading } = useSubscription();
+  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, isLoading } = useSubscription();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
   const [isYearly, setIsYearly] = useState(false);
   const [selectedEnterpriseTier, setSelectedEnterpriseTier] = useState<keyof typeof ENTERPRISE_TIERS>("tier1");
@@ -152,14 +152,16 @@ const UpgradePlan = () => {
       return;
     }
     
-    await createCheckout(undefined, lineItems);
+    const success = await purchaseAddons(lineItems);
     
-    // Reset quantities after checkout
-    setAddonQuantities({
-      bank_account: 0,
-      amazon_account: 0,
-      user: 0
-    });
+    // Reset quantities after successful purchase
+    if (success) {
+      setAddonQuantities({
+        bank_account: 0,
+        amazon_account: 0,
+        user: 0
+      });
+    }
   };
 
   const cartTotal = addons.reduce((sum, addon) => 

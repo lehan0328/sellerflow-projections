@@ -366,8 +366,10 @@ export const useSubscription = () => {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { priceId },
+      const { data, error } = await supabase.functions.invoke("add-subscription-items", {
+        body: { 
+          lineItems: [{ price: priceId, quantity: 1 }]
+        },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -375,16 +377,65 @@ export const useSubscription = () => {
 
       if (error) throw error;
 
-      if (data?.url) {
-        window.open(data.url, '_blank');
+      if (data?.success) {
+        toast({
+          title: "Success!",
+          description: data.message || "Add-on successfully added to your subscription",
+        });
+        // Clear cache and refresh subscription
+        clearCache();
+        await checkSubscription(true);
       }
     } catch (error) {
       console.error("Error purchasing addon:", error);
       toast({
         title: "Error",
-        description: "Failed to initiate add-on purchase. Please try again.",
+        description: error.userMessage || "Failed to add item to subscription. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  const purchaseAddons = async (lineItems: Array<{ price: string; quantity: number }>) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to purchase add-ons.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("add-subscription-items", {
+        body: { lineItems },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast({
+          title: "Success!",
+          description: data.message || "Add-ons successfully added to your subscription",
+        });
+        // Clear cache and refresh subscription
+        clearCache();
+        await checkSubscription(true);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error purchasing addons:", error);
+      toast({
+        title: "Error",
+        description: error.userMessage || "Failed to add items to subscription. Please try again.",
+        variant: "destructive",
+      });
+      return false;
     }
   };
 
@@ -483,6 +534,7 @@ export const useSubscription = () => {
     checkSubscription,
     createCheckout,
     purchaseAddon,
+    purchaseAddons,
     openCustomerPortal,
     removePlanOverride,
     clearCache,
