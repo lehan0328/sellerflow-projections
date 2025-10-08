@@ -209,10 +209,27 @@ export const useSafeSpending = () => {
         });
 
         // Log first few days for debugging
-        if (i <= 5) {
+        if (i <= 10) {
           console.log(`💰 Day ${i} (${targetDateStr}):`, {
             dayNetChange: dayNetChange.toFixed(2),
-            runningBalance: runningBalance.toFixed(2)
+            runningBalance: runningBalance.toFixed(2),
+            hasRecurring: recurringResult.data?.some(r => {
+              const occurrences = generateRecurringDates(
+                {
+                  id: r.id,
+                  transaction_name: r.name,
+                  amount: r.amount,
+                  frequency: r.frequency as any,
+                  start_date: r.start_date,
+                  end_date: r.end_date,
+                  is_active: r.is_active,
+                  type: r.type as any
+                },
+                targetDate,
+                targetDate
+              );
+              return occurrences.length > 0;
+            })
           });
         }
       }
