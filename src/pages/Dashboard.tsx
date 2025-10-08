@@ -880,6 +880,32 @@ const Dashboard = () => {
         }))
     : [];
 
+  // Add forecasted next month payments for cards with forecast enabled
+  const forecastedCreditCardEvents: CashFlowEvent[] = hasRealData && creditCards.length > 0
+    ? creditCards
+        .filter(card => card.forecast_next_month && card.payment_due_date)
+        .map(card => {
+          // Calculate projected usage: limit - available - current balance
+          const projectedAmount = card.credit_limit - card.available_credit - card.balance;
+          
+          if (projectedAmount <= 0) return null;
+          
+          // Add one month to the current due date
+          const nextDueDate = new Date(card.payment_due_date!);
+          nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+          
+          return {
+            id: `credit-forecast-${card.id}`,
+            type: 'credit-payment' as const,
+            amount: projectedAmount,
+            description: `${card.institution_name} - ${card.account_name} (Forecasted)`,
+            creditCard: card.institution_name,
+            date: nextDueDate
+          };
+        })
+        .filter(Boolean) as CashFlowEvent[]
+    : [];
+
   // Convert vendor payments (actual cash outflows) to calendar events
   const vendorPaymentEvents: CashFlowEvent[] = transactions
     .filter(t => t.type === 'vendor_payment')
@@ -918,7 +944,7 @@ const Dashboard = () => {
   }, [recurringExpenses]);
 
   // Combine all events for calendar - only include real user data
-  const allCalendarEvents = [...calendarEvents, ...vendorPaymentEvents, ...vendorEvents, ...incomeEvents, ...creditCardEvents, ...recurringEvents];
+  const allCalendarEvents = [...calendarEvents, ...vendorPaymentEvents, ...vendorEvents, ...incomeEvents, ...creditCardEvents, ...forecastedCreditCardEvents, ...recurringEvents];
 
   // Trigger safe spending recalculation when any financial data changes
   useEffect(() => {

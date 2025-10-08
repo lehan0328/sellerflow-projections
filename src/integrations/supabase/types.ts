@@ -599,6 +599,7 @@ export type Database = {
           encrypted_access_token: string | null
           encrypted_account_number: string | null
           encrypted_plaid_item_id: string | null
+          forecast_next_month: boolean | null
           id: string
           institution_name: string
           interest_rate: number | null
@@ -628,6 +629,7 @@ export type Database = {
           encrypted_access_token?: string | null
           encrypted_account_number?: string | null
           encrypted_plaid_item_id?: string | null
+          forecast_next_month?: boolean | null
           id?: string
           institution_name: string
           interest_rate?: number | null
@@ -657,6 +659,7 @@ export type Database = {
           encrypted_access_token?: string | null
           encrypted_account_number?: string | null
           encrypted_plaid_item_id?: string | null
+          forecast_next_month?: boolean | null
           id?: string
           institution_name?: string
           interest_rate?: number | null

@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { CreditCard, Calendar, AlertTriangle, Settings, Plus, Edit, Trash2 } from "lucide-react";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useState } from "react";
@@ -20,6 +21,7 @@ interface CreditCardFormData {
   annual_fee: number;
   cash_back: number;
   priority: number;
+  forecast_next_month: boolean;
 }
 
 export function CreditCards() {
@@ -35,6 +37,7 @@ export function CreditCards() {
     annual_fee: 0,
     cash_back: 0,
     priority: 3,
+    forecast_next_month: false,
   });
 
   const formatCurrency = (amount: number) => {
@@ -63,6 +66,7 @@ export function CreditCards() {
       annual_fee: 0,
       cash_back: 0,
       priority: 3,
+      forecast_next_month: false,
     });
   };
 
@@ -81,6 +85,7 @@ export function CreditCards() {
       annual_fee: card.annual_fee || 0,
       cash_back: card.cash_back || 0,
       priority: card.priority || 3,
+      forecast_next_month: card.forecast_next_month || false,
     });
     setShowEditDialog(true);
   };
@@ -383,6 +388,19 @@ export function CreditCards() {
                     <SelectItem value="5">5 - Lowest Priority</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="edit_forecast_next_month">Forecast Next Month</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Project next month's payment based on current usage pattern
+                  </p>
+                </div>
+                <Switch
+                  id="edit_forecast_next_month"
+                  checked={formData.forecast_next_month}
+                  onCheckedChange={(checked) => setFormData({...formData, forecast_next_month: checked})}
+                />
               </div>
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setShowEditDialog(false)}>

@@ -23,6 +23,7 @@ export interface CreditCard {
   cash_back: number;
   priority: number;
   nickname?: string;
+  forecast_next_month: boolean;
   last_sync: string;
   is_active: boolean;
   created_at: string;
