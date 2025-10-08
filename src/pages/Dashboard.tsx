@@ -63,7 +63,7 @@ const Dashboard = () => {
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { creditCards } = useCreditCards();
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
-  const { data: safeSpendingData } = useSafeSpending();
+  const { data: safeSpendingData, updateReserveAmount } = useSafeSpending();
   
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
   const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance } = useUserSettings();
@@ -1038,6 +1038,7 @@ const Dashboard = () => {
               reserveAmount={safeSpendingData?.reserve_amount || 0}
               projectedLowestBalance={safeSpendingData?.calculation?.lowest_projected_balance || 0}
               lowestBalanceDate={safeSpendingData?.calculation?.lowest_balance_date || ""}
+              onUpdateReserveAmount={updateReserveAmount}
             />
           </div>
         </div>

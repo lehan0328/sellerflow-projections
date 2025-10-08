@@ -2,9 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send } from "lucide-react";
+import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface CashFlowInsightsProps {
   currentBalance: number;
@@ -18,6 +19,7 @@ interface CashFlowInsightsProps {
   reserveAmount?: number;
   projectedLowestBalance?: number;
   lowestBalanceDate?: string;
+  onUpdateReserveAmount?: (amount: number) => Promise<void>;
 }
 
 export const CashFlowInsights = ({
@@ -32,10 +34,14 @@ export const CashFlowInsights = ({
   reserveAmount = 0,
   projectedLowestBalance = 0,
   lowestBalanceDate = "",
+  onUpdateReserveAmount,
 }: CashFlowInsightsProps) => {
+  const { toast } = useToast();
   const [chatMode, setChatMode] = useState(false);
   const [chatQuestion, setChatQuestion] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [isEditingReserve, setIsEditingReserve] = useState(false);
+  const [editReserveValue, setEditReserveValue] = useState(reserveAmount.toString());
   const [conversationHistory, setConversationHistory] = useState<Array<{ role: 'user' | 'assistant', content: string }>>(() => {
     // Load conversation history from localStorage on mount
     const saved = localStorage.getItem('cashflow-chat-history');
@@ -44,6 +50,45 @@ export const CashFlowInsights = ({
 
   const netDaily = dailyInflow - dailyOutflow;
   const healthStatus = netDaily >= 0 ? "positive" : "negative";
+
+  // Update edit value when reserveAmount prop changes
+  useEffect(() => {
+    setEditReserveValue(reserveAmount.toString());
+  }, [reserveAmount]);
+
+  const handleSaveReserve = async () => {
+    const newAmount = parseFloat(editReserveValue);
+    if (isNaN(newAmount) || newAmount < 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid positive number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (onUpdateReserveAmount) {
+      try {
+        await onUpdateReserveAmount(newAmount);
+        setIsEditingReserve(false);
+        toast({
+          title: "Reserve amount updated",
+          description: `Your reserve is now set to $${newAmount.toLocaleString()}`,
+        });
+      } catch (error) {
+        toast({
+          title: "Error updating reserve",
+          description: "Please try again",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditReserveValue(reserveAmount.toString());
+    setIsEditingReserve(false);
+  };
 
   // Save conversation history to localStorage whenever it changes
   useEffect(() => {
@@ -249,12 +294,41 @@ export const CashFlowInsights = ({
                       ${currentBalance.toLocaleString()}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                    <span className="text-muted-foreground">Reserve Amount</span>
-                    <span className="font-semibold text-amber-600">
-                      -${reserveAmount.toLocaleString()}
-                    </span>
-                  </div>
+                <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                  <span className="text-muted-foreground">Reserve Amount</span>
+                  {isEditingReserve ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        value={editReserveValue}
+                        onChange={(e) => setEditReserveValue(e.target.value)}
+                        className="h-7 w-24 text-right"
+                        min="0"
+                        step="100"
+                      />
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSaveReserve}>
+                        <Check className="h-4 w-4 text-green-600" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleCancelEdit}>
+                        <X className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-amber-600">
+                        -${reserveAmount.toLocaleString()}
+                      </span>
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-7 w-7" 
+                        onClick={() => setIsEditingReserve(true)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
                   <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
                     <span className="text-muted-foreground">Lowest Projected</span>
                     <span className="font-semibold text-orange-600">
