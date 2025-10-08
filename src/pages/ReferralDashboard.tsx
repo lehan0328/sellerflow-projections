@@ -206,7 +206,9 @@ export default function ReferralDashboard() {
               <div className="flex flex-col gap-4 items-center md:items-end">
                 <Button 
                   size="lg" 
-                  onClick={() => navigate("/partners")}
+                  onClick={() => {
+                    document.getElementById('reward-tiers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }}
                   className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 hover-scale group relative overflow-hidden text-lg px-8 py-6 h-auto shadow-2xl"
                 >
                   <span className="relative z-10 flex items-center gap-3 font-bold">
@@ -371,7 +373,7 @@ export default function ReferralDashboard() {
         </Card>
 
         {/* Reward Tiers */}
-        <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-card to-card/50 backdrop-blur">
+        <Card id="reward-tiers" className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-card to-card/50 backdrop-blur scroll-mt-20">
           <CardHeader>
             <CardTitle className="text-xl">Reward Tiers</CardTitle>
             <CardDescription>Unlock bigger rewards as you refer more users</CardDescription>
