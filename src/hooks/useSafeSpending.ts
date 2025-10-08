@@ -211,11 +211,18 @@ export const useSafeSpending = () => {
 
         runningBalance += dayChange;
         dailyBalances.push({ date: targetDateStr, balance: runningBalance });
+        
+        // Log all days with changes
+        if (dayChange !== 0) {
+          console.log(`📊 ${targetDateStr}: change=${dayChange.toFixed(2)}, balance=${runningBalance.toFixed(2)}`);
+        }
       }
 
       // Find minimum balance
       const minBalance = Math.min(...dailyBalances.map(d => d.balance));
       const minDay = dailyBalances.find(d => d.balance === minBalance)!;
+      
+      console.log('🎯 ALL BALANCES:', dailyBalances.slice(0, 20).map(d => `${d.date}: $${d.balance.toFixed(2)}`).join('\n'));
       
       // Safe Spending = Min Balance - Reserve
       const safeSpendingLimit = Math.max(0, minBalance - reserve);
