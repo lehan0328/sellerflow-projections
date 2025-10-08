@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Gift, DollarSign, Users, TrendingUp, Sun, Moon } from "lucide-react";
+import { Gift, DollarSign, Users, TrendingUp, Sun, Moon, Lock } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTheme } from "next-themes";
 import aurenIcon from "@/assets/auren-icon-blue.png";
@@ -122,6 +122,29 @@ export default function Partners() {
               <TrendingUp className="mr-2 h-5 w-5" />
               Become an Affiliate
             </Button>
+          </div>
+          
+          {/* Sign-in Notice */}
+          <div className="mt-12 p-6 rounded-2xl bg-gradient-to-r from-muted/50 to-muted/30 border border-primary/20 backdrop-blur max-w-2xl mx-auto">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Lock className="h-5 w-5 text-primary" />
+              </div>
+              <div className="space-y-2 text-left">
+                <p className="text-sm font-medium text-foreground">
+                  Sign in required to access partner programs
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  You need to create an account or sign in to access the referral dashboard and affiliate program. Have questions?{' '}
+                  <a 
+                    href="mailto:andy@aurenapp.com" 
+                    className="text-primary hover:text-accent transition-colors font-semibold underline decoration-primary/30 hover:decoration-accent"
+                  >
+                    Email andy@aurenapp.com
+                  </a>
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
