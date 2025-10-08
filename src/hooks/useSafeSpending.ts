@@ -203,11 +203,22 @@ export const useSafeSpending = () => {
 
         // 5. Process vendor payments for this specific day only
         vendorsResult.data?.forEach((vendor) => {
-          if (vendor.status === 'paid' || !vendor.next_payment_date || Number(vendor.total_owed || 0) <= 0) return;
+          if (vendor.status === 'paid' || Number(vendor.total_owed || 0) <= 0) return;
           
-          const vendorDate = parseLocalDate(vendor.next_payment_date);
-          if (vendorDate.getTime() === targetDate.getTime()) {
-            dayNetChange -= Number(vendor.next_payment_amount || 0);
+          // Check payment_schedule if it exists
+          if (vendor.payment_schedule && Array.isArray(vendor.payment_schedule)) {
+            vendor.payment_schedule.forEach((payment: any) => {
+              const paymentDate = parseLocalDate(payment.date);
+              if (paymentDate.getTime() === targetDate.getTime()) {
+                dayNetChange -= Number(payment.amount || 0);
+              }
+            });
+          } else if (vendor.next_payment_date) {
+            // Fallback to next_payment_date if no schedule
+            const vendorDate = parseLocalDate(vendor.next_payment_date);
+            if (vendorDate.getTime() === targetDate.getTime()) {
+              dayNetChange -= Number(vendor.next_payment_amount || 0);
+            }
           }
         });
 
