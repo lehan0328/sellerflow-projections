@@ -1,4 +1,4 @@
-import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw } from "lucide-react";
+import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw, CheckCircle } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -187,9 +187,15 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                         </p>
                       </div>
                       <div className="bg-red-200 border border-red-300 rounded p-2 mt-2">
-                        <p className="text-sm text-red-800 font-semibold">
-                          ⚠️ Cash will go {formatCurrency(Math.abs(safeSpendingData.calculation.lowest_projected_balance))} negative on {new Date(safeSpendingData.negative_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </p>
+                        {safeSpendingData.calculation.lowest_projected_balance < 0 ? (
+                          <p className="text-sm text-red-800 font-semibold">
+                            🔴 Cash will go {formatCurrency(Math.abs(safeSpendingData.calculation.lowest_projected_balance))} negative on {new Date(safeSpendingData.negative_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-red-800 font-semibold">
+                            🔶 Cash will drop to {formatCurrency(safeSpendingData.calculation.lowest_projected_balance)} (below safe limit) on {new Date(safeSpendingData.negative_date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </p>
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -200,6 +206,12 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                       <p className="text-xs text-indigo-600 mt-1">
                         Available after expenses & ${safeSpendingData.reserve_amount.toLocaleString()} reserve
                       </p>
+                      <div className="bg-green-100 border border-green-300 rounded p-2 mt-2">
+                        <p className="text-sm text-green-800 font-semibold flex items-center gap-1">
+                          <CheckCircle className="h-4 w-4" />
+                          🟢 Cash flow is healthy — no projected drop below your limit.
+                        </p>
+                      </div>
                     </>
                   )}
                 </>
