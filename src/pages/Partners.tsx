@@ -186,11 +186,9 @@ export default function Partners() {
                     { count: '2 friends', reward: '20% off next 3 months' },
                     { count: '5 friends', reward: '25% off + $50' },
                     { count: '10 friends', reward: '30% off + $100' },
-                    { count: '20 friends', reward: '40% off + $200' },
-                    { count: '50 friends', reward: '50% off + $1,000', highlight: true },
-                    { count: '100 friends', reward: '6 months free + $3,000', highlight: true }
+                    { count: '20 friends', reward: '40% off + $200' }
                   ].map((item, i) => (
-                    <li key={i} className={`flex items-center gap-3 p-2 rounded-lg ${item.highlight ? 'bg-primary/10 border border-primary/20' : ''}`}>
+                    <li key={i} className="flex items-center gap-3 p-2 rounded-lg">
                       <div className="h-2 w-2 rounded-full bg-primary" />
                       <span className="text-sm">
                         <span className="font-semibold text-foreground">{item.count}</span>
@@ -199,6 +197,56 @@ export default function Partners() {
                     </li>
                   ))}
                 </ul>
+
+                {/* Premium Tiers - Extra Loud */}
+                <div className="mt-6 space-y-4">
+                  {/* 50 Friends Tier */}
+                  <div className="relative group p-6 rounded-2xl bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 border-2 border-primary/40 hover:border-primary transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-primary/50 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 animate-shimmer bg-[length:200%_100%]" />
+                    <div className="absolute top-2 right-2 px-3 py-1 bg-primary rounded-full">
+                      <span className="text-xs font-bold text-primary-foreground">PREMIUM</span>
+                    </div>
+                    <div className="relative flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center shadow-lg shadow-primary/50 animate-glow-pulse">
+                          <Gift className="h-6 w-6 text-primary-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+                            50 friends
+                          </p>
+                          <p className="text-lg font-semibold text-foreground mt-1">
+                            50% off + <span className="text-primary">$1,000</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 100 Friends Tier - Even Bigger */}
+                  <div className="relative group p-8 rounded-2xl bg-gradient-to-r from-accent/30 via-primary/30 to-accent/30 border-2 border-accent hover:border-accent/80 transition-all duration-300 shadow-2xl hover:shadow-accent/60 overflow-hidden scale-105">
+                    <div className="absolute inset-0 bg-gradient-to-r from-accent/20 via-primary/20 to-accent/20 animate-shimmer bg-[length:200%_100%]" />
+                    <div className="absolute -top-1 -right-1 w-32 h-32 bg-accent/40 rounded-full blur-3xl animate-glow-pulse" />
+                    <div className="absolute top-2 right-2 px-4 py-1.5 bg-gradient-to-r from-accent to-primary rounded-full shadow-lg">
+                      <span className="text-sm font-bold text-primary-foreground">🔥 ULTIMATE REWARD</span>
+                    </div>
+                    <div className="relative flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-6">
+                        <div className="flex-shrink-0 w-16 h-16 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-2xl shadow-accent/50 animate-glow-pulse">
+                          <TrendingUp className="h-8 w-8 text-primary-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-4xl font-bold bg-gradient-to-r from-accent via-primary to-accent bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+                            100 friends
+                          </p>
+                          <p className="text-2xl font-bold text-foreground mt-2">
+                            6 months FREE + <span className="text-accent">$3,000</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
