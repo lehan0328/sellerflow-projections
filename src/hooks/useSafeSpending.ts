@@ -125,7 +125,8 @@ export const useSafeSpending = () => {
       const dailyBalances: DailyBalance[] = [];
       let runningBalance = bankBalance;
 
-      for (let i = 1; i <= 180; i++) {
+      // Start from today (i=0) to include all events happening today
+      for (let i = 0; i <= 180; i++) {
         const targetDate = new Date(today);
         targetDate.setDate(targetDate.getDate() + i);
         targetDate.setHours(0, 0, 0, 0);
