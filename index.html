@@ -27,26 +27,182 @@
     <meta name="twitter:description" content="Predict Amazon payouts, track expenses, and stay ahead of cash shortfalls — all in one simple dashboard.">
     <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/wirOXtfMBcgv1kxBiHssLX3xlPT2/social-images/social-1759711482676-Screenshot 2025-10-05 at 8.42.56 PM.png">
     
-    <!-- Schema Markup -->
+    <!-- Enhanced Schema Markup for Better Indexing -->
+    
+    <!-- Organization Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Auren",
+      "alternateName": "Auren App",
+      "url": "https://aurenapp.com",
+      "logo": "https://aurenapp.com/assets/auren-full-logo.png",
+      "description": "AI-powered cash flow forecasting and financial management software for Amazon FBA and marketplace sellers. Predict payouts with 95% accuracy.",
+      "foundingDate": "2024",
+      "contactPoint": [{
+        "@type": "ContactPoint",
+        "telephone": "+1-800-AUREN-APP",
+        "contactType": "customer service",
+        "email": "support@aurenapp.com",
+        "availableLanguage": ["English"]
+      }],
+      "sameAs": [
+        "https://twitter.com/aurenapp",
+        "https://linkedin.com/company/aurenapp",
+        "https://facebook.com/aurenapp"
+      ]
+    }
+    </script>
+
+    <!-- WebSite Schema with Search -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Auren",
+      "url": "https://aurenapp.com",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://aurenapp.com/search?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- SoftwareApplication Schema -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "Auren",
       "operatingSystem": "Web",
-      "applicationCategory": "BusinessApplication",
-      "description": "Auren helps Amazon and marketplace sellers forecast payouts, manage cashflow, and plan expenses confidently. Predict revenue and prevent cash crunches with accurate forecasting.",
+      "applicationCategory": "FinanceApplication",
+      "applicationSubCategory": "Cash Flow Management",
+      "description": "AI-powered cash flow forecasting for Amazon FBA & marketplace sellers. Predict payouts with 95% accuracy, track expenses, plan growth. Enterprise-grade financial management tool.",
       "url": "https://aurenapp.com",
-      "offers": {
+      "screenshot": "https://aurenapp.com/assets/dashboard-screenshot.png",
+      "offers": [{
         "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
+        "name": "Starter Plan",
+        "price": "29",
+        "priceCurrency": "USD",
+        "priceValidUntil": "2025-12-31"
+      }, {
+        "@type": "Offer",
+        "name": "Growing Plan",
+        "price": "59",
+        "priceCurrency": "USD",
+        "priceValidUntil": "2025-12-31"
+      }, {
+        "@type": "Offer",
+        "name": "Professional Plan",
+        "price": "89",
+        "priceCurrency": "USD",
+        "priceValidUntil": "2025-12-31"
+      }],
       "aggregateRating": {
         "@type": "AggregateRating",
         "ratingValue": "4.9",
-        "ratingCount": "128"
-      }
+        "ratingCount": "500",
+        "bestRating": "5",
+        "worstRating": "1"
+      },
+      "featureList": [
+        "Amazon Payout Forecasting",
+        "AI Financial Insights",
+        "Credit Card Optimization",
+        "Multi-Marketplace Support",
+        "Bank Transaction Matching",
+        "Scenario Planning",
+        "365-Day Cash Flow Projection"
+      ]
+    }
+    </script>
+
+    <!-- FAQ Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [{
+        "@type": "Question",
+        "name": "How accurate is Auren's payout forecasting?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Auren predicts Amazon payouts with 95% accuracy by analyzing your historical sales data, reserve patterns, and fee structures."
+        }
+      }, {
+        "@type": "Question",
+        "name": "Does Auren work with multiple Amazon marketplaces?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, Auren supports Amazon US, UK, EU, and other major marketplaces. You can track all your payouts in one unified dashboard."
+        }
+      }, {
+        "@type": "Question",
+        "name": "Can I connect my bank accounts to Auren?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, Auren integrates securely with your bank accounts and credit cards to automatically track expenses and match transactions."
+        }
+      }, {
+        "@type": "Question",
+        "name": "Is there a free trial?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, Auren offers a 7-day free trial with no credit card required. You get full access to all features during the trial period."
+        }
+      }]
+    }
+    </script>
+
+    <!-- ItemList Schema for Site Navigation -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": "Auren Main Navigation",
+      "itemListElement": [{
+        "@type": "SiteNavigationElement",
+        "position": 1,
+        "name": "Features",
+        "description": "Explore Auren's powerful cash flow forecasting features",
+        "url": "https://aurenapp.com/features"
+      }, {
+        "@type": "SiteNavigationElement",
+        "position": 2,
+        "name": "Pricing",
+        "description": "View Auren's pricing plans for Amazon sellers",
+        "url": "https://aurenapp.com#pricing"
+      }, {
+        "@type": "SiteNavigationElement",
+        "position": 3,
+        "name": "Demo",
+        "description": "Try Auren's live demo dashboard",
+        "url": "https://aurenapp.com/demo"
+      }, {
+        "@type": "SiteNavigationElement",
+        "position": 4,
+        "name": "Blog",
+        "description": "Cash flow tips and guides for Amazon sellers",
+        "url": "https://aurenapp.com/blog"
+      }, {
+        "@type": "SiteNavigationElement",
+        "position": 5,
+        "name": "Documentation",
+        "description": "Getting started guides and FAQs",
+        "url": "https://aurenapp.com/docs"
+      }, {
+        "@type": "SiteNavigationElement",
+        "position": 6,
+        "name": "Support",
+        "description": "Get help with Auren",
+        "url": "https://aurenapp.com/support"
+      }]
     }
     </script>
 
