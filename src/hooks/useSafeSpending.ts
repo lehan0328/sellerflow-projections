@@ -144,14 +144,28 @@ export const useSafeSpending = () => {
 
         let dayChange = 0;
 
+        // Log key dates
+        const isKeyDate = i <= 3 || targetDateStr === '2025-10-20' || targetDateStr === '2025-10-10' || targetDateStr === '2025-10-17';
+        if (isKeyDate) {
+          console.log(`\n📅 Processing ${targetDateStr} (day ${i})`);
+        }
+
         // Add all inflows for this day
         transactionsResult.data?.forEach((tx) => {
           const txDate = parseLocalDate(tx.due_date || tx.transaction_date);
           if (txDate.getTime() === targetDate.getTime() && tx.status !== 'partially_paid') {
             if (tx.type === 'sales_order' || tx.type === 'customer_payment') {
-              dayChange += Number(tx.amount);
+              const amt = Number(tx.amount);
+              if (isKeyDate) {
+                console.log(`  ✅ Transaction (inflow): ${tx.type} +$${amt}`);
+              }
+              dayChange += amt;
             } else if (tx.type === 'purchase_order' || tx.type === 'expense' || tx.vendor_id) {
-              dayChange -= Number(tx.amount);
+              const amt = Number(tx.amount);
+              if (isKeyDate) {
+                console.log(`  ❌ Transaction (outflow): ${tx.type} -$${amt}`);
+              }
+              dayChange -= amt;
             }
           }
         });
