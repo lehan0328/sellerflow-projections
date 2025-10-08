@@ -22,7 +22,8 @@ interface CashFlowInsightsProps {
   lowestBalanceDate?: string;
   nextBuyingOpportunityBalance?: number;
   nextBuyingOpportunityDate?: string;
-  allBuyingOpportunities?: Array<{ date: string; balance: number }>;
+  nextBuyingOpportunityAvailableDate?: string;
+  allBuyingOpportunities?: Array<{ date: string; balance: number; available_date?: string }>;
   onUpdateReserveAmount?: (amount: number) => Promise<void>;
 }
 export const CashFlowInsights = ({
@@ -39,6 +40,7 @@ export const CashFlowInsights = ({
   lowestBalanceDate = "",
   nextBuyingOpportunityBalance,
   nextBuyingOpportunityDate,
+  nextBuyingOpportunityAvailableDate,
   allBuyingOpportunities = [],
   onUpdateReserveAmount
 }: CashFlowInsightsProps) => {
@@ -335,6 +337,21 @@ export const CashFlowInsights = ({
                           });
                         })()}
                       </p>
+                      {nextBuyingOpportunityAvailableDate && (
+                        <div className="flex justify-between items-center p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
+                          <span className="text-muted-foreground text-xs">Earliest Purchase Date</span>
+                          <span className="font-semibold text-green-600 text-sm">
+                            {(() => {
+                              const [year, month, day] = nextBuyingOpportunityAvailableDate.split('-').map(Number);
+                              const date = new Date(year, month - 1, day);
+                              return date.toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric'
+                              });
+                            })()}
+                          </span>
+                        </div>
+                      )}
                       {allBuyingOpportunities.length > 1 && (
                         <Button 
                           variant="outline" 
@@ -447,15 +464,31 @@ export const CashFlowInsights = ({
                   year: 'numeric'
                 });
                 
+                let availableDate = '';
+                if (opp.available_date) {
+                  const [aYear, aMonth, aDay] = opp.available_date.split('-').map(Number);
+                  const aDate = new Date(aYear, aMonth - 1, aDay);
+                  availableDate = aDate.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                  });
+                }
+                
                 return (
-                  <div key={index} className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <div className="flex justify-between items-center mb-1">
+                  <div key={index} className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800 space-y-2">
+                    <div className="flex justify-between items-center">
                       <span className="font-semibold text-sm">Opportunity #{index + 1}</span>
                       <span className="text-lg font-bold text-blue-600">
                         ${opp.balance.toLocaleString()}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground">{formattedDate}</p>
+                    <p className="text-xs text-muted-foreground">Low point: {formattedDate}</p>
+                    {availableDate && (
+                      <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
+                        <span className="text-xs text-muted-foreground">Can purchase from:</span>
+                        <span className="text-sm font-semibold text-green-600">{availableDate}</span>
+                      </div>
+                    )}
                   </div>
                 );
               })}

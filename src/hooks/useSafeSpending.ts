@@ -13,7 +13,12 @@ interface SafeSpendingData {
     lowest_balance_date: string;
     next_buying_opportunity_balance?: number;
     next_buying_opportunity_date?: string;
-    all_buying_opportunities?: Array<{ date: string; balance: number }>;
+    next_buying_opportunity_available_date?: string;
+    all_buying_opportunities?: Array<{ 
+      date: string; 
+      balance: number;
+      available_date?: string;
+    }>;
   };
 }
 
@@ -290,7 +295,10 @@ export const useSafeSpending = () => {
       
       // Find ALL buying opportunities (all local minimums after the lowest balance date)
       const minDayIndex = dailyBalances.findIndex(d => d.date === minDay.date);
-      const allBuyingOpportunities: Array<{ date: string; balance: number }> = [];
+      const allBuyingOpportunities: Array<{ date: string; balance: number; available_date?: string }> = [];
+      
+      // Track the previous low point (starts with the global minimum)
+      let previousLowIndex = minDayIndex;
       
       // Look for all local minimums after the lowest point
       // A local minimum is detected when:
@@ -313,7 +321,24 @@ export const useSafeSpending = () => {
           }
           
           if (willRise) {
-            allBuyingOpportunities.push({ date: current.date, balance: current.balance });
+            // Find the earliest date after the previous low where balance > current buying opportunity
+            let availableDate: string | undefined;
+            for (let j = previousLowIndex + 1; j < dailyBalances.length; j++) {
+              if (dailyBalances[j].balance > current.balance) {
+                availableDate = dailyBalances[j].date;
+                break;
+              }
+            }
+            
+            allBuyingOpportunities.push({ 
+              date: current.date, 
+              balance: current.balance,
+              available_date: availableDate
+            });
+            
+            // Update previous low index for next opportunity
+            previousLowIndex = i;
+            
             // Skip ahead past any plateau at this level
             while (i < dailyBalances.length - 1 && dailyBalances[i + 1].balance === current.balance) {
               i++;
@@ -327,7 +352,9 @@ export const useSafeSpending = () => {
       console.log('🎯 ALL BALANCES:', dailyBalances.slice(0, 20).map(d => `${d.date}: $${d.balance.toFixed(2)}`).join('\n'));
       
       if (allBuyingOpportunities.length > 0) {
-        console.log('🛒 ALL BUYING OPPORTUNITIES:', allBuyingOpportunities.map(o => `${o.date}: $${o.balance.toFixed(2)}`).join(', '));
+        console.log('🛒 ALL BUYING OPPORTUNITIES:', allBuyingOpportunities.map(o => 
+          `${o.date}: $${o.balance.toFixed(2)} (available: ${o.available_date || 'N/A'})`
+        ).join(', '));
       }
       
       // Safe Spending = Min Balance - Reserve
@@ -382,6 +409,7 @@ export const useSafeSpending = () => {
             : (willDropBelowLimit ? firstBelowLimitDay!.date : minDay.date),
           next_buying_opportunity_balance: nextBuyingOpportunity?.balance,
           next_buying_opportunity_date: nextBuyingOpportunity?.date,
+          next_buying_opportunity_available_date: nextBuyingOpportunity?.available_date,
           all_buying_opportunities: allBuyingOpportunities
         }
       });
