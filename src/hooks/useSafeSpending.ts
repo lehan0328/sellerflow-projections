@@ -232,6 +232,22 @@ export const useSafeSpending = () => {
 
         vendorsResult.data?.forEach((vendor) => {
           if (vendor.status !== 'paid' && Number(vendor.total_owed || 0) > 0) {
+            // Check if there's already a transaction for this vendor on this date
+            const hasTransactionOnDate = transactionsResult.data?.some((tx) => {
+              const txDate = parseLocalDate(tx.due_date || tx.transaction_date);
+              return tx.vendor_id === vendor.id && 
+                     txDate.getTime() === targetDate.getTime() &&
+                     tx.status !== 'partially_paid';
+            });
+
+            // Skip vendor payment if there's already a transaction for it
+            if (hasTransactionOnDate) {
+              if (isKeyDate) {
+                console.log(`  ⏭️ SKIPPING vendor payment (already in transactions): ${vendor.name}`);
+              }
+              return;
+            }
+
             if (vendor.payment_schedule && Array.isArray(vendor.payment_schedule)) {
               vendor.payment_schedule.forEach((payment: any) => {
                 const paymentDate = parseLocalDate(payment.date);
