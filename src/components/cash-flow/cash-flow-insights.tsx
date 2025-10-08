@@ -306,18 +306,31 @@ export const CashFlowInsights = ({
                   {creditCards.map((card) => {
                     const pendingOrders = pendingOrdersByCard[card.id] || 0;
                     const availableSpend = card.available_credit - pendingOrders;
+                    const isOverLimit = availableSpend < 0;
                     
                     return (
-                      <div key={card.id} className="p-3 bg-muted/50 rounded-lg space-y-2">
+                      <div key={card.id} className={`p-3 rounded-lg space-y-2 ${isOverLimit ? 'bg-red-50 dark:bg-red-950/20 border-2 border-red-500' : 'bg-muted/50'}`}>
                         <div className="flex justify-between items-center">
                           <div className="flex-1">
-                            <p className="font-medium text-sm">{card.account_name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-sm">{card.account_name}</p>
+                              {isOverLimit && <AlertCircle className="h-4 w-4 text-red-600" />}
+                            </div>
                             <p className="text-xs text-muted-foreground">{card.institution_name}</p>
                           </div>
-                          <span className="text-xl font-bold text-green-600">
+                          <span className={`text-xl font-bold ${isOverLimit ? 'text-red-600' : 'text-green-600'}`}>
                             ${availableSpend.toLocaleString()}
                           </span>
                         </div>
+                        
+                        {isOverLimit && (
+                          <div className="flex items-start gap-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs">
+                            <AlertCircle className="h-3 w-3 text-red-600 flex-shrink-0 mt-0.5" />
+                            <p className="text-red-700 dark:text-red-400">
+                              Warning: Pending orders exceed available credit by ${Math.abs(availableSpend).toLocaleString()}
+                            </p>
+                          </div>
+                        )}
                         
                         {(pendingOrders > 0 || card.payment_due_date) && (
                           <div className="space-y-1 text-xs pt-2 border-t border-border">
