@@ -100,9 +100,9 @@ serve(async (req) => {
       })
     }
 
-    // Generate bi-weekly payouts
+    // Generate bi-weekly payouts (current and next upcoming only)
     const payoutDates = []
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 2; i++) {
       const payoutDate = new Date(now)
       payoutDate.setDate(now.getDate() + (i * 14))
       payoutDates.push(payoutDate)
