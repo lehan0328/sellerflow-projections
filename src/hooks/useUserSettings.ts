@@ -120,29 +120,51 @@ export const useUserSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Reset user settings
-      await supabase
-        .from('user_settings')
-        .update({ total_cash: 0 })
-        .eq('user_id', user.id);
+      // Delete all user data from all tables
+      await Promise.all([
+        // Financial accounts
+        supabase.from('bank_accounts').delete().eq('user_id', user.id),
+        supabase.from('bank_transactions').delete().eq('user_id', user.id),
+        supabase.from('credit_cards').delete().eq('user_id', user.id),
+        supabase.from('amazon_accounts').delete().eq('user_id', user.id),
+        supabase.from('amazon_payouts').delete().eq('user_id', user.id),
+        supabase.from('amazon_transactions').delete().eq('user_id', user.id),
+        
+        // Transactions and records
+        supabase.from('transactions').delete().eq('user_id', user.id),
+        supabase.from('income').delete().eq('user_id', user.id),
+        supabase.from('vendors').delete().eq('user_id', user.id),
+        supabase.from('customers').delete().eq('user_id', user.id),
+        supabase.from('recurring_expenses').delete().eq('user_id', user.id),
+        
+        // Planning and insights
+        supabase.from('scenarios').delete().eq('user_id', user.id),
+        supabase.from('cash_flow_events').delete().eq('user_id', user.id),
+        supabase.from('cash_flow_insights').delete().eq('user_id', user.id),
+        
+        // Deleted records
+        supabase.from('deleted_transactions').delete().eq('user_id', user.id),
+        
+        // Trial addons
+        supabase.from('trial_addon_usage').delete().eq('user_id', user.id),
+        
+        // Delete user settings
+        supabase.from('user_settings').delete().eq('user_id', user.id),
+      ]);
 
-      // Delete all transactions
-      await supabase
-        .from('transactions')
-        .delete()
-        .eq('user_id', user.id);
-
-      // Delete all vendors
-      await supabase
-        .from('vendors')
-        .delete()
-        .eq('user_id', user.id);
+      // Create fresh default settings
+      await supabase.from('user_settings').insert({
+        user_id: user.id,
+        total_cash: 0,
+        safe_spending_percentage: 20,
+        safe_spending_reserve: 0
+      });
 
       setTotalCash(0);
       
       toast({
         title: "Success",
-        description: "Account data has been reset",
+        description: "All account data has been completely reset",
       });
 
       // Refresh the page to show clean state
