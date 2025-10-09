@@ -92,3 +92,6 @@ verify_jwt = true
 
 [functions.convert-pdf-to-png]
 verify_jwt = true
+
+[functions.cleanup-orphaned-transactions]
+verify_jwt = true

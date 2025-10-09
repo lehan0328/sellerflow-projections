@@ -129,6 +129,32 @@ const Dashboard = () => {
     }
   }, [cleanupOrphanedVendors]);
 
+  // Cleanup orphaned transactions on mount (one-time)
+  React.useEffect(() => {
+    const cleanupOrphanedTransactions = async () => {
+      const cleaned = localStorage.getItem('transactions_cleaned_v2');
+      if (!cleaned) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const { data } = await supabase.functions.invoke('cleanup-orphaned-transactions', {
+              headers: { Authorization: `Bearer ${session.access_token}` }
+            });
+            console.log('🧹 Orphaned transactions cleanup:', data);
+            localStorage.setItem('transactions_cleaned_v2', 'true');
+            // Refresh calculations after cleanup
+            setTimeout(() => {
+              refetchSafeSpending();
+            }, 1000);
+          }
+        } catch (error) {
+          console.error('Error cleaning up orphaned transactions:', error);
+        }
+      }
+    };
+    cleanupOrphanedTransactions();
+  }, [refetchSafeSpending]);
+
   const { customers, addCustomer, deleteAllCustomers } = useCustomers();
   
   // State for vendors used in forms (derived from database vendors) - always fresh data
@@ -367,6 +393,18 @@ const Dashboard = () => {
         event.description === income.description && 
         Math.abs(event.amount - income.amount) < 0.01)
     ));
+    
+    // Clean up any orphaned transactions
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.functions.invoke('cleanup-orphaned-transactions', {
+          headers: { Authorization: `Bearer ${session.access_token}` }
+        });
+      }
+    } catch (error) {
+      console.error('Error cleaning up orphaned transactions:', error);
+    }
     
     // Refresh safe spending calculations with a delay to ensure DB changes propagate
     setTimeout(() => {
