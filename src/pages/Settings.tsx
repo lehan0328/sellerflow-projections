@@ -41,6 +41,7 @@ import { RecurringExpenseManagement } from "@/components/settings/recurring-expe
 import { DataExport } from "@/components/settings/data-export";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { PageLoadingWrapper } from "@/components/PageLoadingWrapper";
+import { useUserSettings } from "@/hooks/useUserSettings";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -52,6 +53,7 @@ const Settings = () => {
   const [clearDataConfirmation, setClearDataConfirmation] = useState('');
   const queryClient = useQueryClient();
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
+  const { resetAccount } = useUserSettings();
 
   // Fetch user profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -129,60 +131,9 @@ const Settings = () => {
   };
 
   const handleClearAllData = async () => {
-    try {
-      if (!user?.id) {
-        toast.error("No user found");
-        return;
-      }
-
-      // Delete all transactions FIRST to avoid foreign key issues
-      const { error: transactionsError } = await supabase
-        .from('transactions')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (transactionsError) throw transactionsError;
-
-      // Delete all income
-      const { error: incomeError } = await supabase
-        .from('income')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (incomeError) throw incomeError;
-
-      // Delete all vendors LAST (after dependent transactions are gone)
-      const { error: vendorsError } = await supabase
-        .from('vendors')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (vendorsError) throw vendorsError;
-
-      // Reset total cash to 0
-      const { error: settingsError } = await supabase
-        .from('user_settings')
-        .update({ total_cash: 0 })
-        .eq('user_id', user.id);
-
-      if (settingsError) throw settingsError;
-
-      // Clear local storage balance flag
-      localStorage.removeItem('balance_start_0');
-
-      // Invalidate all relevant queries
-      queryClient.invalidateQueries({ queryKey: ['vendors'] });
-      queryClient.invalidateQueries({ queryKey: ['income'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['user-settings'] });
-
-      toast.success("All data cleared successfully", {
-        description: "Your account has been reset to zero balance and zero transactions"
-      });
-    } catch (error) {
-      console.error('Error clearing data:', error);
-      toast.error("Failed to clear data");
-    }
+    console.log('🗑️ Settings page - calling resetAccount');
+    await resetAccount();
+    // Note: resetAccount already handles page reload, no need to invalidate queries
   };
 
   const getThemeIcon = (themeType: string) => {
