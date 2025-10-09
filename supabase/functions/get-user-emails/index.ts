@@ -42,17 +42,23 @@ serve(async (req) => {
 
     const { userIds } = await req.json();
 
-    // Get user emails from auth.users
+    // Get user emails and last sign-in from auth.users
     const emailMap: Record<string, string> = {};
+    const lastSignInMap: Record<string, string> = {};
     
     for (const userId of userIds) {
       const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(userId);
-      if (authUser?.user?.email) {
-        emailMap[userId] = authUser.user.email;
+      if (authUser?.user) {
+        if (authUser.user.email) {
+          emailMap[userId] = authUser.user.email;
+        }
+        if (authUser.user.last_sign_in_at) {
+          lastSignInMap[userId] = authUser.user.last_sign_in_at;
+        }
       }
     }
 
-    return new Response(JSON.stringify({ emails: emailMap }), {
+    return new Response(JSON.stringify({ emails: emailMap, lastSignIn: lastSignInMap }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

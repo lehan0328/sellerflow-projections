@@ -23,8 +23,18 @@ interface Customer {
   created_at: string;
   plan_override?: string;
   discount_redeemed_at?: string;
-  email?: string; // Fetched separately from auth.users
-  is_admin?: boolean; // Fetched separately from user_roles
+  email?: string;
+  is_admin?: boolean;
+  trial_end?: string;
+  last_sign_in_at?: string;
+}
+
+interface ConversionMetrics {
+  totalUsers: number;
+  trialUsers: number;
+  paidUsers: number;
+  conversionRate: number;
+  discountUsers: number;
 }
 
 export const AdminCustomers = () => {
@@ -33,6 +43,7 @@ export const AdminCustomers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
+  const [metrics, setMetrics] = useState<ConversionMetrics | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -66,10 +77,30 @@ export const AdminCustomers = () => {
       const customersWithEmail = profiles?.map(profile => ({
         ...profile,
         email: emailData?.emails?.[profile.user_id] || 'Unknown',
-        is_admin: adminUserIds.has(profile.user_id)
+        is_admin: adminUserIds.has(profile.user_id),
+        last_sign_in_at: emailData?.lastSignIn?.[profile.user_id]
       })) || [];
 
       setCustomers(customersWithEmail);
+
+      // Calculate metrics
+      const now = new Date();
+      const trialUsers = customersWithEmail.filter(c => 
+        c.trial_end && new Date(c.trial_end) > now && !c.plan_override
+      ).length;
+      const paidUsers = customersWithEmail.filter(c => c.plan_override).length;
+      const discountUsers = customersWithEmail.filter(c => c.discount_redeemed_at).length;
+      const conversionRate = customersWithEmail.length > 0 
+        ? (paidUsers / customersWithEmail.length) * 100 
+        : 0;
+
+      setMetrics({
+        totalUsers: customersWithEmail.length,
+        trialUsers,
+        paidUsers,
+        conversionRate,
+        discountUsers
+      });
     } catch (error: any) {
       console.error('Error fetching customers:', error);
       toast({
@@ -160,27 +191,60 @@ export const AdminCustomers = () => {
     );
   }
 
+  const getAccountStatus = (customer: Customer) => {
+    const now = new Date();
+    if (customer.plan_override) return { label: 'Paid', variant: 'default' as const };
+    if (customer.trial_end && new Date(customer.trial_end) > now) return { label: 'Trial', variant: 'secondary' as const };
+    return { label: 'Expired', variant: 'destructive' as const };
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Customer Management</span>
-          <span className="text-sm font-normal text-muted-foreground">
-            {filteredCustomers.length} customer{filteredCustomers.length !== 1 ? 's' : ''}
-          </span>
-        </CardTitle>
-        <div className="mt-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by email, name, or company..."
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+    <div className="space-y-4">
+      {metrics && (
+        <div className="grid grid-cols-5 gap-4">
+          <Card className="p-4">
+            <div className="text-sm text-muted-foreground">Total Users</div>
+            <div className="text-2xl font-bold">{metrics.totalUsers}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-sm text-muted-foreground">Trial Users</div>
+            <div className="text-2xl font-bold">{metrics.trialUsers}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-sm text-muted-foreground">Paid Users</div>
+            <div className="text-2xl font-bold">{metrics.paidUsers}</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-sm text-muted-foreground">Conversion Rate</div>
+            <div className="text-2xl font-bold">{metrics.conversionRate.toFixed(1)}%</div>
+          </Card>
+          <Card className="p-4">
+            <div className="text-sm text-muted-foreground">Discount Users</div>
+            <div className="text-2xl font-bold">{metrics.discountUsers}</div>
+          </Card>
         </div>
-      </CardHeader>
+      )}
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Customer Management</span>
+            <span className="text-sm font-normal text-muted-foreground">
+              {filteredCustomers.length} customer{filteredCustomers.length !== 1 ? 's' : ''}
+            </span>
+          </CardTitle>
+          <div className="mt-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by email, name, or company..."
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+        </CardHeader>
       <CardContent>
         <div className="rounded-md border">
           <Table>
@@ -189,64 +253,70 @@ export const AdminCustomers = () => {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Company</TableHead>
-                <TableHead>Joined</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead>Last Used</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Discount</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedCustomers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No customers found
                   </TableCell>
                 </TableRow>
               ) : (
-                paginatedCustomers.map((customer) => (
-                  <TableRow key={customer.user_id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {customer.first_name || customer.last_name
-                          ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
-                          : 'Unnamed User'}
-                        {customer.is_admin && (
-                          <Badge variant="secondary" className="bg-primary/10 text-primary">
-                            <Shield className="h-3 w-3 mr-1" />
-                            Admin
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm">{customer.email}</TableCell>
-                    <TableCell className="text-sm">{customer.company || '-'}</TableCell>
-                    <TableCell className="text-sm">
-                      {new Date(customer.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        {customer.plan_override && (
-                          <Badge variant="secondary" className="text-xs">
-                            {customer.plan_override}
-                          </Badge>
-                        )}
-                        {customer.discount_redeemed_at && (
-                          <Badge variant="secondary" className="bg-green-500/10 text-green-600 text-xs">
-                            Discount
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        size="sm"
-                        variant={customer.is_admin ? "destructive" : "default"}
-                        onClick={() => toggleAdminStatus(customer.user_id, customer.is_admin)}
-                      >
-                        {customer.is_admin ? 'Revoke' : 'Grant Admin'}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
+                paginatedCustomers.map((customer) => {
+                  const status = getAccountStatus(customer);
+                  return (
+                    <TableRow key={customer.user_id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {customer.first_name || customer.last_name
+                            ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
+                            : 'Unnamed User'}
+                          {customer.is_admin && (
+                            <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
+                              <Shield className="h-3 w-3 mr-1" />
+                              Admin
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">{customer.email}</TableCell>
+                      <TableCell className="text-sm">{customer.company || '-'}</TableCell>
+                      <TableCell className="text-sm">
+                        {new Date(customer.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {customer.last_sign_in_at 
+                          ? new Date(customer.last_sign_in_at).toLocaleDateString()
+                          : 'Never'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={status.variant} className="text-xs">
+                          {status.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {customer.discount_redeemed_at 
+                          ? new Date(customer.discount_redeemed_at).toLocaleDateString()
+                          : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant={customer.is_admin ? "destructive" : "default"}
+                          onClick={() => toggleAdminStatus(customer.user_id, customer.is_admin)}
+                        >
+                          {customer.is_admin ? 'Revoke' : 'Grant Admin'}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
@@ -281,5 +351,6 @@ export const AdminCustomers = () => {
         )}
       </CardContent>
     </Card>
+    </div>
   );
 };
