@@ -931,8 +931,7 @@ const Dashboard = () => {
   }, [vendors.length, incomeItems.length, transactions.length]);
 
   // Get credit card due date events - show statement balance as expense on due date
-  const hasRealData = vendors.length > 0 || transactions.length > 0;
-  const creditCardEvents: CashFlowEvent[] = hasRealData && creditCards.length > 0
+  const creditCardEvents: CashFlowEvent[] = creditCards.length > 0
     ? creditCards
         .filter(card => card.payment_due_date && card.balance > 0)
         .map(card => {
@@ -953,7 +952,7 @@ const Dashboard = () => {
     : [];
 
   // Add forecasted next month payments for cards with forecast enabled
-  const forecastedCreditCardEvents: CashFlowEvent[] = hasRealData && creditCards.length > 0
+  const forecastedCreditCardEvents: CashFlowEvent[] = creditCards.length > 0
     ? creditCards
         .filter(card => card.forecast_next_month && card.payment_due_date)
         .map(card => {
