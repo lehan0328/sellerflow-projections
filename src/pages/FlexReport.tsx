@@ -155,6 +155,37 @@ const FlexReport = () => {
               <img src={aurenLogo} alt="Auren" className="h-16 md:h-20 drop-shadow-lg" />
             </div>
 
+            {/* Report Date & Time - Locked */}
+            <div className="mb-6 flex items-center justify-center gap-3">
+              <div className="flex items-center gap-3 bg-slate-100/80 backdrop-blur-md px-6 py-3 rounded-xl border-2 border-slate-300/70 shadow-lg">
+                <Calendar className="w-5 h-5 text-slate-600" />
+                <div className="text-center">
+                  <p className="text-sm font-bold text-slate-700">
+                    {new Date().toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </p>
+                  <p className="text-xs font-semibold text-slate-500">
+                    {new Date().toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      hour12: true
+                    })}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 pl-3 border-l-2 border-slate-300">
+                  <svg className="w-4 h-4 text-slate-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Locked</span>
+                </div>
+              </div>
+            </div>
+
             {/* Primary Metric - Available to Spend */}
             <div className="mb-10 text-center bg-gradient-to-br from-emerald-50/50 to-green-50/50 backdrop-blur-sm rounded-2xl p-8 border-2 border-emerald-300/70 shadow-2xl relative overflow-hidden">
               {/* Verification Badge Overlay */}
@@ -264,16 +295,8 @@ const FlexReport = () => {
 
             {/* Footer */}
             <div className="pt-8 border-t-2 border-gradient-to-r from-slate-200 via-slate-300 to-slate-200">
-              <div className="flex items-center justify-between text-sm mb-4">
-                <p className="text-slate-500 flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Generated {new Date().toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric'
-                })}
-                </p>
-                <div className="text-right">
+              <div className="flex items-center justify-center text-sm">
+                <div className="text-center">
                   <p className="text-slate-700 font-semibold text-base mb-1">
                     Powered by <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent font-black text-lg">Auren</span>
                   </p>
