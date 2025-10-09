@@ -210,7 +210,11 @@ const FlexReport = () => {
               <div className={`text-6xl md:text-7xl font-black bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-3 drop-shadow-sm transition-all duration-300 ${!visibility.safeSpending ? 'blur-lg' : ''}`}>
                 {formatCurrency(safeSpendingData?.safe_spending_limit || 0)}
               </div>
-              <p className="text-slate-600 text-base font-medium">Safe spending power for your business</p>
+              <p className="text-slate-600 text-base font-medium mb-3">Safe spending power for your business</p>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100/50 border border-emerald-300 rounded-lg">
+                <BadgeCheck className="w-4 h-4 text-emerald-700" />
+                <span className="text-sm font-bold text-emerald-800 uppercase tracking-wide">Verified by Live Bank Account</span>
+              </div>
               <button
                 onClick={() => toggleVisibility('safeSpending')}
                 className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors z-10"
