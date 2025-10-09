@@ -529,7 +529,7 @@ const Landing = () => {
                   onClick={() => navigate('/demo')}
                 >
                   <ExternalLink className="mr-2 h-5 w-5" />
-                  See Live Demo
+                  Try Live Demo
                 </Button>
               </div>
               
@@ -1312,14 +1312,31 @@ const Landing = () => {
                           <p className="text-xs text-muted-foreground mt-1">{plan.description}</p>
                         </div>
                         <div className="space-y-1.5">
-                          <div className="flex items-baseline justify-center gap-1">
-                            <span className="text-3xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
-                            <span className="text-muted-foreground text-xs">{isYearly ? plan.yearlyPeriod : plan.period}</span>
-                          </div>
-                          {isYearly && plan.savings && (
-                            <Badge variant="secondary" className="text-xs py-0.5 px-2">
-                              Save {plan.savings}/year
-                            </Badge>
+                          {/* Show annual price first */}
+                          {plan.name === "Starter" && (
+                            <>
+                              <div className="flex items-baseline justify-center gap-1">
+                                <span className="text-3xl font-bold">{plan.yearlyPrice}</span>
+                                <span className="text-muted-foreground text-xs">{plan.yearlyPeriod}</span>
+                              </div>
+                              <Badge variant="secondary" className="text-xs py-0.5 px-2">
+                                Save {plan.savings}/year
+                              </Badge>
+                              <p className="text-xs text-muted-foreground">or ${plan.price.replace('$', '')}/month</p>
+                            </>
+                          )}
+                          {plan.name !== "Starter" && (
+                            <>
+                              <div className="flex items-baseline justify-center gap-1">
+                                <span className="text-3xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
+                                <span className="text-muted-foreground text-xs">{isYearly ? plan.yearlyPeriod : plan.period}</span>
+                              </div>
+                              {isYearly && plan.savings && (
+                                <Badge variant="secondary" className="text-xs py-0.5 px-2">
+                                  Save {plan.savings}/year
+                                </Badge>
+                              )}
+                            </>
                           )}
                         </div>
                         <Button 

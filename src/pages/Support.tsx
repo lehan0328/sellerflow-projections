@@ -7,17 +7,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Send, MessageSquare, Clock, CheckCircle2, AlertCircle, Bot, User } from "lucide-react";
-import { useSupportTickets } from "@/hooks/useSupportTickets";
+import { Send, MessageSquare, Clock, CheckCircle2, AlertCircle, Bot, User, Home } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { PageLoadingWrapper } from "@/components/PageLoadingWrapper";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
 const Support = () => {
   const navigate = useNavigate();
-  const { tickets, isLoading, createTicket } = useSupportTickets();
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [showAIChat, setShowAIChat] = useState(true);
@@ -174,14 +174,23 @@ const Support = () => {
 
     setIsSubmitting(true);
     try {
-      await createTicket({
-        subject: formData.subject,
-        message: formData.message,
-        priority: formData.priority,
-        category: formData.category || undefined
-      });
+      const { data: { session } } = await supabase.auth.getSession();
       
-      toast.success("Support ticket created successfully");
+      // Create ticket without auth requirement
+      const { error } = await supabase
+        .from('support_tickets')
+        .insert({
+          user_id: session?.user?.id || null,
+          subject: formData.subject,
+          message: formData.message,
+          priority: formData.priority,
+          category: formData.category || null,
+          status: 'open'
+        });
+      
+      if (error) throw error;
+      
+      toast.success("Support ticket created successfully! We'll get back to you soon.");
       setFormData({
         subject: "",
         message: "",
@@ -189,12 +198,36 @@ const Support = () => {
         category: ""
       });
       setShowNewTicket(false);
+      
+      // Reload tickets if user is logged in
+      if (session?.user) {
+        loadTickets();
+      }
     } catch (error) {
       toast.error("Failed to create support ticket");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const loadTickets = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
+    const { data, error } = await supabase
+      .from('support_tickets')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false });
+    
+    if (!error && data) {
+      setTickets(data);
+    }
+  };
+
+  useEffect(() => {
+    loadTickets();
+  }, []);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -246,33 +279,32 @@ const Support = () => {
   };
 
   return (
-    <PageLoadingWrapper isLoading={isLoading}>
-      <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90 animate-fade-in">
-        <div className="container mx-auto p-6 space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/dashboard")}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">Support</h1>
-                <p className="text-muted-foreground">Get help with your account and features</p>
-              </div>
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90 animate-fade-in">
+      <div className="container mx-auto p-6 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/")}
+            >
+              <Home className="h-4 w-4 mr-2" />
+              Back to Home
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Support</h1>
+              <p className="text-muted-foreground">Get help with Auren features and your account</p>
             </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowAIChat(!showAIChat)}
-              >
-                <Bot className="h-4 w-4 mr-2" />
-                {showAIChat ? "Hide" : "Show"} AI Assistant
-              </Button>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowAIChat(!showAIChat)}
+            >
+              <Bot className="h-4 w-4 mr-2" />
+              {showAIChat ? "Hide" : "Show"} AI Assistant
+            </Button>
               <Button onClick={() => setShowNewTicket(!showNewTicket)}>
                 <Send className="h-4 w-4 mr-2" />
                 New Ticket
@@ -504,7 +536,7 @@ const Support = () => {
           </Card>
         </div>
       </div>
-    </PageLoadingWrapper>
+    </div>
   );
 };
 
