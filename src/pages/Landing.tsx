@@ -422,8 +422,8 @@ const Landing = () => {
               <Link to="/partners" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Partners
               </Link>
-              <Link to="/support" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
-                Support
+              <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+                Contact
               </Link>
               <a href="/docs" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Docs
