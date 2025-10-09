@@ -76,9 +76,11 @@ export const AdminCustomers = () => {
       // Calculate metrics
       const now = new Date();
       const trial = profiles?.filter(c => 
-        c.trial_end && new Date(c.trial_end) > now && !c.plan_override
+        c.trial_end && new Date(c.trial_end) > now
       ).length || 0;
-      const paid = profiles?.filter(c => c.plan_override).length || 0;
+      const paid = profiles?.filter(c => 
+        c.plan_override && !c.trial_end && ['starter', 'growing', 'professional'].includes(c.plan_override)
+      ).length || 0;
       const expired = (profiles?.length || 0) - trial - paid;
       const conversionRate = profiles?.length ? (paid / profiles.length) * 100 : 0;
 
@@ -159,8 +161,14 @@ export const AdminCustomers = () => {
 
   const getAccountStatus = (customer: Customer) => {
     const now = new Date();
-    if (customer.plan_override) return { label: 'Paid', variant: 'default' as const };
-    if (customer.trial_end && new Date(customer.trial_end) > now) return { label: 'Trial', variant: 'secondary' as const };
+    // Check trial status first (active trial period)
+    if (customer.trial_end && new Date(customer.trial_end) > now) {
+      return { label: 'Trial', variant: 'secondary' as const };
+    }
+    // Check for actual paid plans (not discounts or trial-related overrides)
+    if (customer.plan_override && ['starter', 'growing', 'professional'].includes(customer.plan_override)) {
+      return { label: 'Paid', variant: 'default' as const };
+    }
     return { label: 'Expired', variant: 'destructive' as const };
   };
 
