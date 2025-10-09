@@ -52,6 +52,7 @@ export const CashFlowInsights = ({
   const { creditCards, isLoading: cardsLoading } = useCreditCards();
   const [pendingOrdersByCard, setPendingOrdersByCard] = useState<Record<string, number>>({});
   const [showAllOpportunities, setShowAllOpportunities] = useState(false);
+  const [showAllCreditCards, setShowAllCreditCards] = useState(false);
   const [chatMode, setChatMode] = useState(false);
   const [chatQuestion, setChatQuestion] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -336,59 +337,15 @@ export const CashFlowInsights = ({
                     </p>}
                   
                   {allBuyingOpportunities && allBuyingOpportunities.length > 0 && (
-                    <div className="space-y-2">
-                      {/* Total Spending Limit in 180 Days */}
-                      <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-2 border-blue-200 dark:border-blue-800">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium text-muted-foreground">Total Available (Next 180 Days)</span>
-                          <TrendingUp className="h-4 w-4 text-blue-600" />
-                        </div>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-3xl font-bold text-blue-600">
-                            ${(() => {
-                              const today = new Date();
-                              const endDate = new Date(today);
-                              endDate.setDate(endDate.getDate() + 180);
-                              
-                              return allBuyingOpportunities
-                                .filter(opp => {
-                                  const [year, month, day] = opp.date.split('-').map(Number);
-                                  const oppDate = new Date(year, month - 1, day);
-                                  return oppDate >= today && oppDate <= endDate;
-                                })
-                                .reduce((sum, opp) => sum + opp.balance, 0)
-                                .toLocaleString();
-                            })()}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            across {(() => {
-                              const today = new Date();
-                              const endDate = new Date(today);
-                              endDate.setDate(endDate.getDate() + 180);
-                              
-                              return allBuyingOpportunities.filter(opp => {
-                                const [year, month, day] = opp.date.split('-').map(Number);
-                                const oppDate = new Date(year, month - 1, day);
-                                return oppDate >= today && oppDate <= endDate;
-                              }).length;
-                            })()} opportunities
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground mt-2">
-                          Total cumulative spending power over the next 6 months
-                        </p>
-                      </div>
-                      
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => setShowAllOpportunities(true)}
-                        className="w-full"
-                      >
-                        <TrendingDown className="h-4 w-4 mr-2" />
-                        See All {allBuyingOpportunities.length} {allBuyingOpportunities.length === 1 ? 'Opportunity' : 'Opportunities'}
-                      </Button>
-                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setShowAllOpportunities(true)}
+                      className="w-full"
+                    >
+                      <TrendingDown className="h-4 w-4 mr-2" />
+                      View All {allBuyingOpportunities.length} {allBuyingOpportunities.length === 1 ? 'Opportunity' : 'Opportunities'}
+                    </Button>
                   )}
                 </div>
               </div>
@@ -412,54 +369,35 @@ export const CashFlowInsights = ({
                   <p className="text-xs text-muted-foreground">No credit cards added yet</p>
                 </div>
               ) : (
-                <div className="space-y-1.5">
-                  {creditCards.map((card) => {
-                    const pendingOrders = pendingOrdersByCard[card.id] || 0;
-                    const availableSpend = card.available_credit;
-                    const isOverLimit = availableSpend < 0;
-                    
-                    return (
-                      <div key={card.id} className={`p-2 rounded-lg space-y-1.5 ${isOverLimit ? 'bg-red-50 dark:bg-red-950/20 border border-red-500' : 'bg-muted/50'}`}>
-                        <div className="flex justify-between items-center gap-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <p className="font-medium text-xs truncate">{card.account_name}</p>
-                              {isOverLimit && <AlertCircle className="h-3 w-3 text-red-600 flex-shrink-0" />}
-                            </div>
-                            <p className="text-[10px] text-muted-foreground truncate">{card.institution_name}</p>
-                          </div>
-                          <span className={`text-base font-bold flex-shrink-0 ${isOverLimit ? 'text-red-600' : 'text-green-600'}`}>
-                            ${availableSpend.toLocaleString()}
-                          </span>
-                        </div>
-                        
-                        {isOverLimit && (
-                          <div className="flex items-start gap-1.5 p-1.5 bg-red-100 dark:bg-red-900/30 rounded text-[10px]">
-                            <AlertCircle className="h-2.5 w-2.5 text-red-600 flex-shrink-0 mt-0.5" />
-                            <p className="text-red-700 dark:text-red-400">
-                              Over limit by ${Math.abs(availableSpend).toLocaleString()}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {(pendingOrders > 0 || card.payment_due_date) && (
-                          <div className="space-y-0.5 text-[10px] pt-1 border-t border-border">
-                            {pendingOrders > 0 && (
-                              <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">Pending</span>
-                                <span className="font-medium text-orange-600">-${pendingOrders.toLocaleString()}</span>
-                              </div>
-                            )}
-                            {card.payment_due_date && (
-                              <p className="text-muted-foreground">
-                                Due: {new Date(card.payment_due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                <div className="space-y-2">
+                  {/* Total Available Credit Summary */}
+                  <div className="p-4 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-200 dark:border-green-800">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium text-muted-foreground">Total Available Credit</span>
+                      <CreditCard className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-bold text-green-600">
+                        ${creditCards.reduce((sum, card) => sum + card.available_credit, 0).toLocaleString()}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        across {creditCards.length} {creditCards.length === 1 ? 'card' : 'cards'}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-2">
+                      Combined spending power from all your credit cards
+                    </p>
+                  </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowAllCreditCards(true)}
+                    className="w-full"
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    See All {creditCards.length} {creditCards.length === 1 ? 'Card' : 'Cards'}
+                  </Button>
                 </div>
               )}
             </div>
@@ -514,6 +452,91 @@ export const CashFlowInsights = ({
                         <span className="text-sm font-semibold text-green-600">{availableDate}</span>
                       </div>
                     )}
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* All Credit Cards Modal */}
+      <Dialog open={showAllCreditCards} onOpenChange={setShowAllCreditCards}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-green-600" />
+              All Credit Cards
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[500px] pr-4">
+            <div className="space-y-3">
+              <div className="p-4 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-200 dark:border-green-800 mb-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">Total Available</span>
+                  <span className="text-2xl font-bold text-green-600">
+                    ${creditCards.reduce((sum, card) => sum + card.available_credit, 0).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+              
+              {creditCards.map((card) => {
+                const pendingOrders = pendingOrdersByCard[card.id] || 0;
+                const availableSpend = card.available_credit;
+                const isOverLimit = availableSpend < 0;
+                
+                return (
+                  <div key={card.id} className={`p-4 rounded-lg space-y-3 ${isOverLimit ? 'bg-red-50 dark:bg-red-950/20 border-2 border-red-500' : 'bg-muted/50 border border-border'}`}>
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-semibold text-sm truncate">{card.account_name}</p>
+                          {isOverLimit && <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">{card.institution_name}</p>
+                      </div>
+                      <span className={`text-xl font-bold flex-shrink-0 ${isOverLimit ? 'text-red-600' : 'text-green-600'}`}>
+                        ${availableSpend.toLocaleString()}
+                      </span>
+                    </div>
+                    
+                    {isOverLimit && (
+                      <div className="flex items-start gap-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs">
+                        <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+                        <p className="text-red-700 dark:text-red-400">
+                          Over limit by ${Math.abs(availableSpend).toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+                    
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between items-center p-2 bg-background/50 rounded">
+                        <span className="text-muted-foreground">Credit Limit</span>
+                        <span className="font-medium">${card.credit_limit.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-background/50 rounded">
+                        <span className="text-muted-foreground">Current Balance</span>
+                        <span className="font-medium">${card.balance.toLocaleString()}</span>
+                      </div>
+                      {pendingOrders > 0 && (
+                        <div className="flex justify-between items-center p-2 bg-orange-50 dark:bg-orange-950/20 rounded">
+                          <span className="text-muted-foreground">Pending Orders</span>
+                          <span className="font-medium text-orange-600">-${pendingOrders.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {card.payment_due_date && (
+                        <div className="flex justify-between items-center p-2 bg-background/50 rounded">
+                          <span className="text-muted-foreground">Payment Due</span>
+                          <span className="font-medium">
+                            {new Date(card.payment_due_date).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
