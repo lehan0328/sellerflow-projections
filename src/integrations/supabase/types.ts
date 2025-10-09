@@ -842,6 +842,48 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_limits: {
+        Row: {
+          amazon_connections: number
+          bank_connections: number
+          created_at: string | null
+          has_ai_insights: boolean | null
+          has_ai_pdf_extractor: boolean | null
+          has_automated_notifications: boolean | null
+          has_scenario_planning: boolean | null
+          id: string
+          plan_name: string
+          team_members: number
+          updated_at: string | null
+        }
+        Insert: {
+          amazon_connections: number
+          bank_connections: number
+          created_at?: string | null
+          has_ai_insights?: boolean | null
+          has_ai_pdf_extractor?: boolean | null
+          has_automated_notifications?: boolean | null
+          has_scenario_planning?: boolean | null
+          id?: string
+          plan_name: string
+          team_members: number
+          updated_at?: string | null
+        }
+        Update: {
+          amazon_connections?: number
+          bank_connections?: number
+          created_at?: string | null
+          has_ai_insights?: boolean | null
+          has_ai_pdf_extractor?: boolean | null
+          has_automated_notifications?: boolean | null
+          has_scenario_planning?: boolean | null
+          id?: string
+          plan_name?: string
+          team_members?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_id: string | null
@@ -1456,6 +1498,19 @@ export type Database = {
       get_user_account_id: {
         Args: { _user_id: string }
         Returns: string
+      }
+      get_user_plan_limits: {
+        Args: { p_user_id: string }
+        Returns: {
+          amazon_connections: number
+          bank_connections: number
+          has_ai_insights: boolean
+          has_ai_pdf_extractor: boolean
+          has_automated_notifications: boolean
+          has_scenario_planning: boolean
+          plan_name: string
+          team_members: number
+        }[]
       }
       has_admin_role: {
         Args: { _user_id: string }
