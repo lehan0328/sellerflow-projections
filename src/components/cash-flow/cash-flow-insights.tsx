@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCreditCards } from "@/hooks/useCreditCards";
+import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
 interface CashFlowInsightsProps {
   currentBalance: number;
   dailyInflow: number;
@@ -50,8 +51,10 @@ export const CashFlowInsights = ({
     toast
   } = useToast();
   const { creditCards, isLoading: cardsLoading } = useCreditCards();
+  const { recurringExpenses } = useRecurringExpenses();
   const [pendingOrdersByCard, setPendingOrdersByCard] = useState<Record<string, number>>({});
   const [showAllOpportunities, setShowAllOpportunities] = useState(false);
+  const [showSafeSpendingOpportunity, setShowSafeSpendingOpportunity] = useState(false);
   const [chatMode, setChatMode] = useState(false);
   const [chatQuestion, setChatQuestion] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
@@ -246,16 +249,14 @@ export const CashFlowInsights = ({
                   <Sparkles className="h-4 w-4 text-primary" />
                   Safe Spending Power
                 </h4>
-                {allBuyingOpportunities.length > 0 && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setShowAllOpportunities(true)}
-                    className="text-xs"
-                  >
-                    See All ({allBuyingOpportunities.length})
-                  </Button>
-                )}
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setShowSafeSpendingOpportunity(true)}
+                  className="text-xs"
+                >
+                  View Opportunity
+                </Button>
               </div>
               <div className="space-y-3">
                 <div className={`p-4 rounded-lg border-2 ${safeSpendingLimit < 0 ? 'bg-red-50 dark:bg-red-950/20 border-red-500' : 'bg-primary/10 border-primary/20'}`}>
@@ -421,6 +422,118 @@ export const CashFlowInsights = ({
             </div>
           </>}
       </CardContent>
+
+      {/* Safe Spending Opportunity Modal */}
+      <Dialog open={showSafeSpendingOpportunity} onOpenChange={setShowSafeSpendingOpportunity}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Safe Spending Breakdown
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[500px] pr-4">
+            <div className="space-y-4">
+              <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium">Available to Spend</span>
+                  <span className="text-2xl font-bold text-primary">
+                    ${safeSpendingLimit.toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Safe amount you can spend now
+                </p>
+              </div>
+
+              {/* Credit Card Statement Balances */}
+              <div className="space-y-2">
+                <h5 className="text-sm font-semibold flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  Credit Card Statement Balances
+                </h5>
+                {creditCards.filter(card => card.statement_balance && card.statement_balance > 0).length === 0 ? (
+                  <p className="text-xs text-muted-foreground p-3 bg-muted/50 rounded">No statement balances due</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {creditCards
+                      .filter(card => card.statement_balance && card.statement_balance > 0)
+                      .map(card => (
+                        <div key={card.id} className="p-2 bg-red-50 dark:bg-red-950/20 rounded border border-red-200 dark:border-red-800">
+                          <div className="flex justify-between items-center mb-1">
+                            <p className="font-medium text-xs">{card.account_name}</p>
+                            <span className="text-sm font-bold text-red-600">
+                              -${card.statement_balance.toLocaleString()}
+                            </span>
+                          </div>
+                          {card.payment_due_date && (
+                            <p className="text-[10px] text-muted-foreground">
+                              Due: {new Date(card.payment_due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Recurring Expenses */}
+              <div className="space-y-2">
+                <h5 className="text-sm font-semibold flex items-center gap-2">
+                  <TrendingDown className="h-4 w-4" />
+                  Active Recurring Expenses
+                </h5>
+                {recurringExpenses.filter(exp => exp.is_active && exp.type === 'expense').length === 0 ? (
+                  <p className="text-xs text-muted-foreground p-3 bg-muted/50 rounded">No active recurring expenses</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {recurringExpenses
+                      .filter(exp => exp.is_active && exp.type === 'expense')
+                      .map(expense => (
+                        <div key={expense.id} className="p-2 bg-orange-50 dark:bg-orange-950/20 rounded border border-orange-200 dark:border-orange-800">
+                          <div className="flex justify-between items-center mb-1">
+                            <p className="font-medium text-xs">{expense.name}</p>
+                            <span className="text-sm font-bold text-orange-600">
+                              -${expense.amount.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <p className="text-[10px] text-muted-foreground capitalize">{expense.frequency}</p>
+                            {expense.category && (
+                              <p className="text-[10px] text-muted-foreground">{expense.category}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Summary */}
+              <div className="p-3 bg-muted rounded-lg space-y-2 text-sm border-t-2 border-primary">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Current Balance</span>
+                  <span className="font-semibold">${currentBalance.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Reserve Amount</span>
+                  <span className="font-semibold text-amber-600">-${reserveAmount.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Upcoming Expenses</span>
+                  <span className="font-semibold text-orange-600">-${upcomingExpenses.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-border">
+                  <span className="font-semibold">Safe to Spend</span>
+                  <span className={`text-lg font-bold ${safeSpendingLimit < 0 ? 'text-red-600' : 'text-primary'}`}>
+                    ${safeSpendingLimit.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       {/* All Buying Opportunities Modal */}
       <Dialog open={showAllOpportunities} onOpenChange={setShowAllOpportunities}>
