@@ -41,10 +41,19 @@ export const AdminSubscriptions = () => {
       if (profilesError) throw profilesError;
 
       // Count users currently in trial (trial_end is in the future)
-      const now = new Date().toISOString();
-      const trialUsers = profiles?.filter(p => 
-        p.trial_end && new Date(p.trial_end) > new Date(now)
-      ).length || 0;
+      const now = new Date();
+      const trialUsers = profiles?.filter(p => {
+        if (!p.trial_end) return false;
+        const trialEndDate = new Date(p.trial_end);
+        return trialEndDate > now;
+      }).length || 0;
+
+      console.log('Admin subscription stats:', {
+        totalProfiles: profiles?.length,
+        trialUsers,
+        now: now.toISOString(),
+        profilesWithTrialEnd: profiles?.filter(p => p.trial_end).length
+      });
 
       // This is a simplified summary - in production you'd call your Stripe API
       // through an edge function to get accurate subscription data
