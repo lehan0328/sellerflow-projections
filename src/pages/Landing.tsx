@@ -527,7 +527,7 @@ const Landing = () => {
                   </h1>
                   <div className="relative mt-2">
                     <div className="absolute inset-0 animate-spin-slow">
-                      <svg viewBox="0 0 100 100" className="w-24 h-24">
+                      <svg viewBox="0 0 100 100" className="w-32 h-32">
                         <defs>
                           <clipPath id="starburst">
                             <path d="M50,5 L55,35 L85,30 L65,50 L85,70 L55,65 L50,95 L45,65 L15,70 L35,50 L15,30 L45,35 Z" />
@@ -536,9 +536,9 @@ const Landing = () => {
                         <circle cx="50" cy="50" r="45" fill="hsl(var(--secondary))" clipPath="url(#starburst)" />
                       </svg>
                     </div>
-                    <div className="relative flex flex-col items-center justify-center w-24 h-24 text-center">
-                      <span className="text-sm font-bold whitespace-nowrap">Starting</span>
-                      <span className="text-lg font-bold whitespace-nowrap">$24/mo</span>
+                    <div className="relative flex flex-col items-center justify-center w-32 h-32 text-center">
+                      <span className="text-xs font-bold whitespace-nowrap">starting at only</span>
+                      <span className="text-xl font-bold whitespace-nowrap">$24/mo</span>
                     </div>
                   </div>
                 </div>
