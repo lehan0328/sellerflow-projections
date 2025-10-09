@@ -83,6 +83,24 @@ const FlexReport = () => {
   const handleDownload = async () => {
     if (!reportRef.current) return;
     try {
+      // Temporarily remove gradient text effects for html2canvas compatibility
+      const gradientTexts = reportRef.current.querySelectorAll('.bg-clip-text');
+      const originalClasses: string[] = [];
+      
+      gradientTexts.forEach((el, index) => {
+        originalClasses[index] = el.className;
+        // Replace gradient with solid color classes
+        if (el.textContent?.includes('Financial Power Report')) {
+          el.className = el.className.replace('bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent', 'text-blue-600');
+        } else if (el.textContent?.includes('Cash Flow Management')) {
+          el.className = el.className.replace('bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent', 'text-blue-600');
+        } else if (el.textContent?.includes('$')) {
+          el.className = el.className.replace('bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent', 'text-emerald-600');
+        } else if (el.textContent?.includes('Auren')) {
+          el.className = el.className.replace('bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent', 'text-blue-600');
+        }
+      });
+
       const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(reportRef.current, {
         backgroundColor: '#ffffff',
@@ -94,6 +112,12 @@ const FlexReport = () => {
         imageTimeout: 0,
         removeContainer: true
       });
+      
+      // Restore original gradient classes
+      gradientTexts.forEach((el, index) => {
+        el.className = originalClasses[index];
+      });
+
       const link = document.createElement('a');
       link.download = `auren-flex-report-${new Date().toISOString().split('T')[0]}.png`;
       link.href = canvas.toDataURL('image/png');
@@ -105,6 +129,24 @@ const FlexReport = () => {
   const handleShare = async () => {
     if (navigator.share && reportRef.current) {
       try {
+        // Temporarily remove gradient text effects for html2canvas compatibility
+        const gradientTexts = reportRef.current.querySelectorAll('.bg-clip-text');
+        const originalClasses: string[] = [];
+        
+        gradientTexts.forEach((el, index) => {
+          originalClasses[index] = el.className;
+          // Replace gradient with solid color classes
+          if (el.textContent?.includes('Financial Power Report')) {
+            el.className = el.className.replace('bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent', 'text-blue-600');
+          } else if (el.textContent?.includes('Cash Flow Management')) {
+            el.className = el.className.replace('bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent', 'text-blue-600');
+          } else if (el.textContent?.includes('$')) {
+            el.className = el.className.replace('bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent', 'text-emerald-600');
+          } else if (el.textContent?.includes('Auren')) {
+            el.className = el.className.replace('bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent', 'text-blue-600');
+          }
+        });
+
         const html2canvas = (await import('html2canvas')).default;
         const canvas = await html2canvas(reportRef.current, {
           backgroundColor: '#ffffff',
@@ -116,6 +158,12 @@ const FlexReport = () => {
           imageTimeout: 0,
           removeContainer: true
         });
+        
+        // Restore original gradient classes
+        gradientTexts.forEach((el, index) => {
+          el.className = originalClasses[index];
+        });
+
         canvas.toBlob(async blob => {
           if (blob) {
             const file = new File([blob], 'auren-flex-report.png', {
