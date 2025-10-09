@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Download, Share2, TrendingUp, DollarSign, CreditCard, ShoppingCart, Calendar, ArrowLeft, Eye, EyeOff, Lock } from "lucide-react";
+import { Download, Share2, TrendingUp, DollarSign, CreditCard, ShoppingCart, Calendar, ArrowLeft, Eye, EyeOff, Lock, BadgeCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -209,6 +209,7 @@ const FlexReport = () => {
                   <EyeOff className="w-5 h-5 text-slate-400" />
                 )}
               </button>
+              <BadgeCheck className="w-6 h-6 text-emerald-600 mx-auto mb-2" />
               <p className="text-sm text-slate-600 mb-3 uppercase tracking-widest font-semibold">Available to Spend</p>
               <div className={`text-6xl md:text-7xl font-black bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-3 drop-shadow-sm transition-all duration-300 ${!visibility.safeSpending ? 'blur-lg' : ''}`}>
                 {formatCurrency(safeSpendingData?.safe_spending_limit || 0)}
@@ -235,6 +236,7 @@ const FlexReport = () => {
                     <DollarSign className="w-5 h-5 text-white" />
                   </div>
                   <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Total Cash</p>
+                  <BadgeCheck className="w-5 h-5 text-blue-600 ml-auto" />
                 </div>
                 <p className={`text-4xl font-black text-blue-700 drop-shadow-sm transition-all duration-300 ${!visibility.totalCash ? 'blur-lg' : ''}`}>{formatCurrency(bankBalance)}</p>
               </div>
@@ -256,6 +258,7 @@ const FlexReport = () => {
                     <CreditCard className="w-5 h-5 text-white" />
                   </div>
                   <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Available Credit</p>
+                  <BadgeCheck className="w-5 h-5 text-purple-600 ml-auto" />
                 </div>
                 <p className={`text-4xl font-black text-purple-700 drop-shadow-sm transition-all duration-300 ${!visibility.availableCredit ? 'blur-lg' : ''}`}>{formatCurrency(totalAvailableCredit)}</p>
               </div>
@@ -277,6 +280,7 @@ const FlexReport = () => {
                     <TrendingUp className="w-5 h-5 text-white" />
                   </div>
                   <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Income (30d)</p>
+                  <BadgeCheck className="w-5 h-5 text-emerald-600 ml-auto" />
                 </div>
                 <p className={`text-4xl font-black text-emerald-700 drop-shadow-sm transition-all duration-300 ${!visibility.upcomingIncome ? 'blur-lg' : ''}`}>{formatCurrency(upcomingIncome)}</p>
               </div>
@@ -298,6 +302,7 @@ const FlexReport = () => {
                     <ShoppingCart className="w-5 h-5 text-white" />
                   </div>
                   <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Purchase Orders</p>
+                  <BadgeCheck className="w-5 h-5 text-orange-600 ml-auto" />
                 </div>
                 <p className={`text-4xl font-black text-orange-700 drop-shadow-sm transition-all duration-300 ${!visibility.purchaseOrders ? 'blur-lg' : ''}`}>{formatCurrency(upcomingPurchaseOrders)}</p>
               </div>
