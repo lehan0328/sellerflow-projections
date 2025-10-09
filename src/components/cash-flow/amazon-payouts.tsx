@@ -108,15 +108,27 @@ export function AmazonPayouts() {
               </span>
             </div>
             {amazonAccounts.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSyncAllAccounts}
-                disabled={isSyncing !== null}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-                Sync
-              </Button>
+              <>
+                <div className="text-xs text-muted-foreground">
+                  Last sync: {amazonAccounts[0]?.last_sync 
+                    ? new Date(amazonAccounts[0].last_sync).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit'
+                      })
+                    : 'Never'}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSyncAllAccounts}
+                  disabled={isSyncing !== null}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                  Sync
+                </Button>
+              </>
             )}
           </div>
         </div>
