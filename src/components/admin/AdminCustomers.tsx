@@ -24,6 +24,7 @@ interface Customer {
   plan_override?: string;
   discount_redeemed_at?: string;
   trial_end?: string;
+  churn_date?: string;
   account_status?: string;
   payment_failure_date?: string;
   email?: string;
@@ -55,7 +56,7 @@ export const AdminCustomers = () => {
       setIsLoading(true);
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('user_id, first_name, last_name, company, created_at, plan_override, discount_redeemed_at, trial_end, account_status, payment_failure_date')
+        .select('user_id, first_name, last_name, company, created_at, plan_override, discount_redeemed_at, trial_end, churn_date, account_status, payment_failure_date')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -129,6 +130,34 @@ export const AdminCustomers = () => {
       toast({
         title: "Error",
         description: "Failed to update account status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteAccount = async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to permanently delete ${userName}'s account? This will delete ALL data associated with this account and cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke('delete-user-account', {
+        body: { userId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Account deleted successfully",
+      });
+
+      await fetchCustomers();
+    } catch (error: any) {
+      console.error('Error deleting account:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete account",
         variant: "destructive",
       });
     }
@@ -261,14 +290,9 @@ export const AdminCustomers = () => {
                               Failed: {new Date(customer.payment_failure_date).toLocaleDateString()}
                             </span>
                           )}
-                          {status.label === 'Expired' && customer.trial_end && (
+                          {customer.churn_date && (
                             <span className="text-xs text-muted-foreground">
-                              Expired: {new Date(customer.trial_end).toLocaleDateString()}
-                            </span>
-                          )}
-                          {status.label === 'Trial' && customer.trial_end && (
-                            <span className="text-xs text-muted-foreground">
-                              Ends: {new Date(customer.trial_end).toLocaleDateString()}
+                              Churned: {new Date(customer.churn_date).toLocaleDateString()}
                             </span>
                           )}
                         </div>
@@ -283,13 +307,25 @@ export const AdminCustomers = () => {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant={isSuspended ? "default" : "destructive"}
-                          onClick={() => toggleAccountStatus(customer.user_id, customer.account_status || 'active')}
-                        >
-                          {isSuspended ? 'Activate' : 'Suspend'}
-                        </Button>
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            size="sm"
+                            variant={isSuspended ? "default" : "destructive"}
+                            onClick={() => toggleAccountStatus(customer.user_id, customer.account_status || 'active')}
+                          >
+                            {isSuspended ? 'Activate' : 'Suspend'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => deleteAccount(
+                              customer.user_id, 
+                              `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || customer.email || 'User'
+                            )}
+                          >
+                            Delete
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );

@@ -889,6 +889,7 @@ export type Database = {
           account_id: string | null
           account_status: string
           amazon_marketplaces: string[] | null
+          churn_date: string | null
           company: string | null
           created_at: string
           currency: string | null
@@ -912,6 +913,7 @@ export type Database = {
           account_id?: string | null
           account_status?: string
           amazon_marketplaces?: string[] | null
+          churn_date?: string | null
           company?: string | null
           created_at?: string
           currency?: string | null
@@ -935,6 +937,7 @@ export type Database = {
           account_id?: string | null
           account_status?: string
           amazon_marketplaces?: string[] | null
+          churn_date?: string | null
           company?: string | null
           created_at?: string
           currency?: string | null

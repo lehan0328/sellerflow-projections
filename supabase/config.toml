@@ -99,6 +99,9 @@ verify_jwt = true
 [functions.get-user-emails]
 verify_jwt = true
 
+[functions.delete-user-account]
+verify_jwt = true
+
 [functions.stripe-payment-webhook]
 verify_jwt = false
 
