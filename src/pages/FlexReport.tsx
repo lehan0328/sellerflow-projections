@@ -156,12 +156,38 @@ const FlexReport = () => {
             </div>
 
             {/* Primary Metric - Available to Spend */}
-            <div className="mb-10 text-center bg-gradient-to-br from-emerald-50/50 to-green-50/50 backdrop-blur-sm rounded-2xl p-8 border border-emerald-200/50 shadow-lg">
-              <p className="text-sm text-slate-600 mb-3 uppercase tracking-widest font-semibold">Available to Spend</p>
-              <div className="text-6xl md:text-7xl font-black bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-3 drop-shadow-sm">
-                {formatCurrency(safeSpendingData?.safe_spending_limit || 0)}
+            <div className="mb-10 text-center bg-gradient-to-br from-emerald-50/50 to-green-50/50 backdrop-blur-sm rounded-2xl p-8 border-2 border-emerald-300/70 shadow-2xl relative overflow-hidden">
+              {/* Verification Badge Overlay */}
+              <div className="absolute top-4 right-4 flex items-center gap-2 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full border-2 border-emerald-500/50 shadow-lg">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Live Verified</span>
               </div>
-              <p className="text-slate-600 text-base font-medium">Safe spending power for your business</p>
+              
+              <p className="text-sm text-slate-600 mb-3 uppercase tracking-widest font-semibold">Available to Spend</p>
+              
+              {/* Amount with Lock Icon */}
+              <div className="relative inline-block">
+                <div className="text-6xl md:text-7xl font-black bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-3 drop-shadow-sm">
+                  {formatCurrency(safeSpendingData?.safe_spending_limit || 0)}
+                </div>
+              </div>
+              
+              <p className="text-slate-600 text-base font-medium mb-4">Safe spending power for your business</p>
+              
+              {/* Verification Footer */}
+              <div className="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-emerald-200/50">
+                <div className="flex items-center gap-2 bg-emerald-100/50 px-4 py-2 rounded-lg border border-emerald-300/50">
+                  <svg className="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Verified by Live Bank Account</span>
+                </div>
+              </div>
+              
+              {/* Security Pattern Background */}
+              <div className="absolute inset-0 opacity-5 pointer-events-none">
+                <div className="absolute inset-0" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, currentColor 10px, currentColor 11px)', color: '#10b981'}}></div>
+              </div>
             </div>
 
             {/* Metrics Grid */}
