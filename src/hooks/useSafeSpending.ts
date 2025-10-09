@@ -184,6 +184,14 @@ export const useSafeSpending = () => {
                 console.log(`  ⏭️ SKIPPING pending transaction: ${tx.type} $${tx.amount} (${tx.status})`);
               }
             } else if (tx.type === 'purchase_order' || tx.type === 'expense' || tx.vendor_id) {
+              // Skip credit card purchases - they're tracked separately against credit card balances
+              if (tx.credit_card_id) {
+                if (isKeyDate) {
+                  console.log(`  💳 SKIPPING credit card purchase: ${tx.type} -$${tx.amount} (tracked in credit card)`);
+                }
+                return;
+              }
+              
               const amt = Number(tx.amount);
               if (isKeyDate) {
                 console.log(`  ❌ Transaction (outflow): ${tx.type} -$${amt}`);
