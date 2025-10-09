@@ -147,7 +147,7 @@ const FlexReport = () => {
             {/* Header with Branding */}
             <div className="flex items-center justify-between mb-10 pb-8 border-b-2 border-gradient-to-r from-blue-200 via-purple-200 to-blue-200">
               <div>
-                <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-3 tracking-tight">
+                <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-3 tracking-tight blur-sm select-none">
                   Financial Power Report
                 </h1>
                 <p className="text-slate-600 text-lg">Your business at a glance</p>
@@ -196,9 +196,9 @@ const FlexReport = () => {
               
               <p className="text-sm text-slate-600 mb-3 uppercase tracking-widest font-semibold">Available to Spend</p>
               
-              {/* Amount with Lock Icon */}
+              {/* Amount with Blur Effect for Privacy */}
               <div className="relative inline-block">
-                <div className="text-6xl md:text-7xl font-black bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-3 drop-shadow-sm">
+                <div className="text-6xl md:text-7xl font-black bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-3 drop-shadow-sm blur-md select-none">
                   {formatCurrency(safeSpendingData?.safe_spending_limit || 0)}
                 </div>
               </div>
