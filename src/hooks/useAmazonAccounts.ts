@@ -96,6 +96,13 @@ export const useAmazonAccounts = () => {
 
       toast.success("Amazon account added successfully!");
       await fetchAmazonAccounts();
+      
+      // Auto-sync the new account to populate initial data
+      if (data) {
+        toast.info("Syncing Amazon data...");
+        await syncAmazonAccount(data);
+      }
+      
       return true;
     } catch (error) {
       console.error("Error adding Amazon account:", error);
