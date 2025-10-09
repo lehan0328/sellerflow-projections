@@ -31,6 +31,7 @@ import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import { PaymentAccessControl } from "./components/PaymentAccessControl";
 import PaymentRequired from "./pages/PaymentRequired";
 import Support from "./pages/Support";
+import Contact from "./pages/Contact";
 import Onboarding from "./pages/Onboarding";
 import DocumentStorage from "./pages/DocumentStorage";
 import Blog from "./pages/Blog";
@@ -68,6 +69,7 @@ const App = () => (
             <Route path="/signup" element={<SignUp />} />
             <Route path="/payment-required" element={<PaymentRequired />} />
             <Route path="/demo" element={<DemoPage />} />
+            <Route path="/contact" element={<Contact />} />
           <Route path="/docs" element={<Docs />} />
           <Route path="/docs/getting-started" element={<DocsGettingStarted />} />
           <Route path="/docs/amazon-integration" element={<DocsAmazonIntegration />} />

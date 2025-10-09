@@ -9,6 +9,9 @@ verify_jwt = false
 [functions.send-password-reset]
 verify_jwt = false
 
+[functions.send-contact-email]
+verify_jwt = false
+
 [functions.cash-flow-advice]
 verify_jwt = false
 
@@ -43,7 +46,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.support-chat]
-verify_jwt = true
+verify_jwt = false
 
 [functions.send-feature-request]
 verify_jwt = true

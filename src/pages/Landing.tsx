@@ -1831,10 +1831,10 @@ const Landing = () => {
             <div className="space-y-4">
               <h4 className="font-semibold">Company</h4>
               <ul className="space-y-2 text-muted-foreground">
+                <li><Link to="/contact" className="hover:text-foreground transition-colors">Contact Us</Link></li>
                 <li><Link to="/support" className="hover:text-foreground transition-colors">Support</Link></li>
                 <li><Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
                 <li><a href="#" className="hover:text-foreground transition-colors">Terms of Service</a></li>
-                <li><a href="mailto:support@aurenapp.com" className="hover:text-foreground transition-colors">Contact Us</a></li>
               </ul>
             </div>
           </div>
