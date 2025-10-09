@@ -16,6 +16,7 @@ export interface VendorTransaction {
   remarks?: string;
   amountPaid?: number;
   remainingBalance?: number;
+  creditCardId?: string | null;
 }
 
 export const useVendorTransactions = () => {
@@ -68,7 +69,8 @@ export const useVendorTransactions = () => {
         description: tx.description || '',
         category: tx.vendors?.category || '',
         type: tx.type,
-        remarks: (tx as any).remarks || 'Ordered'
+        remarks: (tx as any).remarks || 'Ordered',
+        creditCardId: tx.credit_card_id || null
       })) || [];
 
       setTransactions(formattedTransactions);

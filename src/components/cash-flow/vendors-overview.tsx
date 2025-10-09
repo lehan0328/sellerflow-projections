@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink } from "lucide-react";
+import { Building2, Calendar, DollarSign, AlertTriangle, Edit, CreditCard, Search, ArrowUpDown, Filter, Trash2, Link2, ExternalLink, Banknote } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -423,6 +423,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                 <TableHead>Vendor</TableHead>
                 <TableHead>PO# / Ref#</TableHead>
                 <TableHead>Amount</TableHead>
+                <TableHead>Payment</TableHead>
                 <TableHead>Due Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Remarks</TableHead>
@@ -432,7 +433,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
             <TableBody>
               {filteredAndSortedTransactions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                     {selectedVendor ? `No purchase orders found for ${vendorSearchOptions.find(v => v.value === selectedVendor)?.label || selectedVendor}.` :
                      searchTerm ? 'No transactions found matching your search.' : 
                      'No vendor purchase orders.'}
@@ -445,6 +446,27 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                     <TableCell>{tx.description || 'N/A'}</TableCell>
                     <TableCell className="font-semibold">
                       ${(tx.amount || 0).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center space-x-1">
+                              {tx.creditCardId ? (
+                                <CreditCard className="h-4 w-4 text-primary" />
+                              ) : (
+                                <Banknote className="h-4 w-4 text-muted-foreground" />
+                              )}
+                              <span className="text-xs text-muted-foreground">
+                                {tx.creditCardId ? 'Credit' : 'Cash'}
+                              </span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{tx.creditCardId ? 'Paid with credit card' : 'Paid with cash'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </TableCell>
                     <TableCell>
                       {tx.dueDate
