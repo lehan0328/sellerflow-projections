@@ -75,7 +75,7 @@ Auren is a comprehensive AI-powered cash flow management solution specifically d
 
 10. **Team Collaboration**
     - Multi-user access (Growing: +2 users, Professional: +5 users, Enterprise: +7 users)
-    - Role-based permissions
+    - Role-based permissions (Owner, Admin, Staff)
     - Shared visibility across your team
 
 11. **Analytics & Reporting**
@@ -151,6 +151,430 @@ Available as monthly add-ons or yearly (10 months pricing):
 - Extra Bank/Credit Card Connection: $10/month
 - Extra Amazon Connection: $50/month
 - Extra User: $5/month
+
+**Technical Architecture & Functions:**
+
+**Backend Edge Functions (Supabase/Deno):**
+
+1. **sync-plaid-transactions**: Syncs bank transactions from Plaid API
+   - Runs on-demand or via scheduled cron
+   - Fetches new/updated transactions for all connected bank accounts
+   - Deduplicates transactions using plaid_transaction_id
+   - Handles pagination for large transaction sets
+
+2. **sync-plaid-accounts**: Syncs bank account balances from Plaid
+   - Updates current and available balances
+   - Refreshes account metadata (names, types)
+   - Handles account status changes (closed, locked)
+
+3. **create-plaid-link-token**: Generates Plaid Link tokens for bank connections
+   - Creates secure session for user to connect banks
+   - Handles OAuth flow initialization
+   - Returns link_token for frontend Plaid Link component
+
+4. **exchange-plaid-token**: Exchanges public token for access token
+   - Called after user completes Plaid Link
+   - Stores encrypted access token securely
+   - Creates bank_accounts records
+
+5. **sync-amazon-data**: Fetches Amazon seller data via SP-API
+   - Retrieves settlement reports
+   - Processes transaction data (orders, fees, refunds)
+   - Creates amazon_payouts and amazon_transactions records
+   - Handles multiple marketplaces per account
+
+6. **create-stripe-link-session**: Creates Stripe Financial Connections session
+   - Alternative to Plaid for bank connections
+   - Returns sessionId and clientSecret
+   - Used for Stripe-based bank verification
+
+7. **match-transactions**: Automatic transaction matching system
+   - Matches bank transactions to pending purchase orders
+   - Matches bank transactions to pending sales orders
+   - Uses amount and date proximity algorithms
+   - Creates transaction_matches notifications
+
+8. **calculate-safe-spending**: Calculates safe-to-spend amount
+   - Analyzes upcoming expenses vs. projected income
+   - Factors in bank balances and credit limits
+   - Returns recommendation with reasoning
+   - Updates user_settings with safe_spending_reserve
+
+9. **cash-flow-advice**: AI-powered cash flow advisor
+   - Analyzes user's cash position and forecast
+   - Provides personalized recommendations
+   - Uses Lovable AI (Gemini 2.5 Flash)
+   - Returns actionable insights
+
+10. **cash-flow-chat**: Conversational AI assistant for cash flow questions
+    - Streaming chat interface using Lovable AI
+    - Context-aware responses based on user data
+    - Helps with feature discovery and troubleshooting
+
+11. **generate-daily-insights**: Generates daily AI insights
+    - Scheduled function (runs daily)
+    - Creates cash_flow_insights records
+    - Analyzes trends, risks, opportunities
+    - Available on Growing/Professional plans
+
+12. **parse-purchase-order**: AI PDF extraction for invoices
+    - Accepts PDF/image uploads
+    - Extracts vendor, amount, date, line items
+    - Returns structured JSON data
+    - Uses OCR and Lovable AI for parsing
+
+13. **create-checkout**: Creates Stripe checkout sessions
+    - Handles subscription purchases
+    - Supports annual/monthly billing
+    - Applies discounts (referral, retention)
+    - Returns checkout URL
+
+14. **check-subscription**: Validates user's subscription status
+    - Checks Stripe subscription state
+    - Verifies plan limits (banks, Amazon, users)
+    - Handles trial status
+    - Returns current plan details
+
+15. **exchange-stripe-session**: Exchanges Stripe session for subscription info
+    - Called after successful checkout
+    - Links Stripe customer to user profile
+    - Updates subscription status in database
+
+16. **apply-referral-discount**: Applies referral program discounts
+    - Validates referral code
+    - Creates referral record
+    - Applies discount to subscription
+    - Tracks referrer rewards
+
+17. **apply-retention-discount**: Offers retention discounts to churning users
+    - Triggered when user attempts to cancel
+    - Offers percentage discount (15-25%)
+    - Requires admin approval
+    - Time-limited offers (30-90 days)
+
+18. **send-team-invitation**: Sends team member invitation emails
+    - Creates team_invitations record
+    - Generates secure invitation token
+    - Sends email via Resend API
+    - Handles expiration (7 days)
+
+19. **support-chat**: This AI support assistant
+    - Streaming chat using Lovable AI
+    - Comprehensive product knowledge
+    - Helps users with features and troubleshooting
+
+20. **request-password-reset**: Initiates password reset flow
+    - Creates password_reset_tokens record
+    - Sends reset email via Resend
+    - Token expires in 1 hour
+
+21. **send-password-reset**: Sends password reset email
+    - Called by request-password-reset
+    - Uses Resend API for email delivery
+    - Includes secure reset link
+
+22. **verify-reset-token**: Validates and uses password reset token
+    - Verifies token hasn't expired or been used
+    - Updates user password
+    - Marks token as used
+    - Returns success/error
+
+23. **convert-trial-addons**: Converts trial addon usage to paid
+    - Called when trial ends
+    - Adds addon items to Stripe subscription
+    - Updates subscription billing
+    - Handles bank/Amazon/user addons
+
+24. **add-subscription-items**: Adds items to existing subscription
+    - Manages addon purchases
+    - Pro-rates billing
+    - Updates Stripe subscription
+    - Reflects changes in plan_limits
+
+25. **get-user-emails**: Admin function to retrieve user email addresses
+    - Used for admin operations
+    - Requires admin role
+    - Returns email addresses for specified user IDs
+
+26. **customer-portal**: Creates Stripe customer portal session
+    - Allows users to manage subscriptions
+    - Update payment methods
+    - View invoices
+    - Cancel subscription
+
+27. **sync-stripe-transactions**: Syncs Stripe payment data
+    - Fetches charges, refunds, disputes
+    - Creates transaction records
+    - Updates subscription status
+    - Handles webhooks
+
+28. **convert-pdf-to-png**: Converts PDF to PNG images
+    - Helper function for document processing
+    - Used in purchase order workflows
+    - Returns image URLs for storage
+
+**Database Structure:**
+
+**Core Tables:**
+
+1. **profiles**: User profile and account information
+   - user_id (references auth.users)
+   - account_id (unique account identifier)
+   - first_name, last_name, email, company
+   - trial_start, trial_end
+   - plan_override (for custom plans)
+   - stripe_customer_id
+   - account_status (active, suspended_payment, churned)
+   - max_team_members
+   - currency, amazon_marketplaces
+
+2. **user_roles**: Role-based access control
+   - user_id, account_id
+   - role (owner, admin, staff)
+   - Used for team collaboration
+   - Owner has full control, admin can manage, staff is view-only
+
+3. **bank_accounts**: Connected bank account information
+   - institution_name, account_name, account_type
+   - balance, available_balance
+   - encrypted_access_token (Plaid access token)
+   - plaid_account_id, plaid_item_id
+   - last_sync timestamp
+   - is_active flag
+
+4. **credit_cards**: Credit card account information
+   - institution_name, account_name
+   - balance, credit_limit, available_credit
+   - minimum_payment, payment_due_date, statement_close_date
+   - encrypted_access_token (Plaid)
+   - annual_fee, interest_rate, cash_back
+   - priority (for payment optimization)
+
+5. **bank_transactions**: Individual bank transactions
+   - bank_account_id
+   - plaid_transaction_id (for deduplication)
+   - amount, date, name, merchant_name
+   - category (array of strings)
+   - pending status
+   - payment_channel (online, in store, etc.)
+
+6. **amazon_accounts**: Connected Amazon Seller accounts
+   - seller_id, marketplace_id, marketplace_name
+   - account_name
+   - encrypted_refresh_token, encrypted_access_token
+   - encrypted_client_id, encrypted_client_secret
+   - token_expires_at
+   - last_sync timestamp
+
+7. **amazon_payouts**: Amazon settlement/payout records
+   - amazon_account_id
+   - settlement_id
+   - payout_date, payout_type (bi-weekly, weekly)
+   - status (estimated, actual, pending)
+   - total_amount, fees_total, orders_total, refunds_total
+   - currency_code
+   - transaction_count
+
+8. **amazon_transactions**: Individual Amazon transaction details
+   - amazon_account_id
+   - transaction_id, settlement_id
+   - transaction_type (Order, Refund, FBA Fee, etc.)
+   - transaction_date
+   - amount, currency_code
+   - order_id, sku, marketplace_name
+   - fee_type, fee_description
+
+9. **vendors**: Vendor/supplier records
+   - name, category
+   - total_owed
+   - next_payment_date, next_payment_amount
+   - net_terms_days
+   - payment_type (total, partial, custom)
+   - payment_schedule (JSONB for custom schedules)
+   - status (upcoming, due, late, paid)
+   - source (management, purchase_order)
+
+10. **transactions**: Manual transactions (purchase orders, payments)
+    - type (purchase_order, vendor_payment, sales_order, income)
+    - amount, transaction_date, due_date
+    - vendor_id, customer_id, credit_card_id
+    - status (pending, paid, late, cancelled)
+    - description, remarks
+
+11. **customers**: Customer records for income tracking
+    - name
+    - payment_terms (immediate, net_terms)
+    - net_terms_days
+
+12. **income**: Income/sales order records
+    - amount, payment_date
+    - customer_id
+    - status (pending, received)
+    - is_recurring, recurring_frequency
+    - source (Manual Entry, Amazon, etc.)
+    - category
+
+13. **recurring_expenses**: Recurring expense templates
+    - name, amount, category
+    - frequency (weekly, monthly, quarterly, annually)
+    - start_date, end_date
+    - type (expense, income)
+    - is_active
+
+14. **scenarios**: Scenario planning data
+    - name, description
+    - scenario_data (JSONB with hypothetical transactions)
+    - Used for what-if analysis
+
+15. **cash_flow_insights**: AI-generated daily insights
+    - insight_date
+    - advice (AI-generated text)
+    - current_balance, daily_inflow, daily_outflow
+    - upcoming_expenses
+
+16. **user_settings**: User preferences
+    - safe_spending_reserve (calculated safe amount)
+    - safe_spending_percentage (default 20%)
+    - total_cash (for safe spending calculation)
+
+17. **deleted_transactions**: Soft-deleted transaction archive
+    - Stores metadata of deleted records
+    - Allows recovery if needed
+    - transaction_type, original_id, metadata
+
+18. **plan_limits**: Subscription plan limit definitions
+    - plan_name (starter, growing, professional, enterprise_tier_1/2/3)
+    - bank_connections, amazon_connections, team_members
+    - has_ai_insights, has_ai_pdf_extractor
+    - has_automated_notifications, has_scenario_planning
+
+19. **support_tickets**: Support ticket system
+    - subject, message, category
+    - status (open, in_progress, resolved, closed)
+    - priority (low, medium, high, urgent)
+    - assigned_to (admin user)
+    - resolution_notes, resolved_at
+
+20. **ticket_messages**: Support ticket conversation thread
+    - ticket_id, message
+    - is_internal (for admin notes)
+
+21. **referrals**: Referral tracking
+    - referrer_id, referred_user_id, referral_code
+    - status (trial, active, churned)
+    - converted_at
+
+22. **referral_codes**: User referral codes
+    - code (unique)
+    - Generated for each user
+
+23. **referral_rewards**: Referral program rewards
+    - referral_count, tier_level
+    - discount_percentage, cash_bonus
+    - discount_start_date, discount_end_date
+    - pending_cash_bonus, total_cash_earned
+
+24. **affiliates**: Affiliate partner records
+    - affiliate_code, commission_rate
+    - status (pending, approved, rejected)
+    - tier (starter, bronze, silver, gold)
+    - total_referrals, total_commission_earned
+
+25. **affiliate_referrals**: Affiliate referral tracking
+    - affiliate_id, referred_user_id
+    - commission_amount, subscription_amount
+    - commission_paid status
+
+26. **affiliate_payouts**: Affiliate payout records
+    - amount, payment_method, payment_email
+    - payment_status (pending, processing, paid)
+
+27. **team_invitations**: Pending team member invitations
+    - email, token (secure), expires_at
+    - account_id, invited_by
+    - role (admin, staff)
+    - accepted_at
+
+28. **password_reset_tokens**: Password reset token tracking
+    - token, expires_at, used
+    - Cleaned up by scheduled function
+
+29. **trial_addon_usage**: Trial addon usage tracking
+    - addon_type (bank_connection, amazon_connection, team_member)
+    - quantity
+    - Converted to paid addons at trial end
+
+**Data Security:**
+
+- **Encryption**: All sensitive credentials (Plaid tokens, Amazon API keys) encrypted using pgsodium
+- **Row-Level Security (RLS)**: Every table has RLS policies ensuring users only access their data
+- **Role-Based Access**: user_roles table with security definer functions prevent privilege escalation
+- **Secure Functions**: Database functions like encrypt_banking_credential/decrypt_banking_credential
+- **No Direct SQL**: Edge functions use Supabase client methods, never raw SQL
+- **Token Expiration**: Password reset, team invitations auto-expire
+- **Audit Trail**: deleted_transactions table tracks deletions
+
+**Data Synchronization:**
+
+1. **Bank Sync Flow**:
+   - User connects via Plaid Link → exchange-plaid-token stores access_token
+   - sync-plaid-accounts runs periodically (every 4-6 hours)
+   - sync-plaid-transactions fetches new transactions (24-48 hour bank delay)
+   - Transactions deduplicated by plaid_transaction_id
+
+2. **Amazon Sync Flow**:
+   - User authorizes via Amazon SP-API OAuth
+   - Tokens stored encrypted in amazon_accounts
+   - sync-amazon-data runs daily
+   - Fetches settlement reports for each marketplace
+   - Creates amazon_payouts (settlement summaries)
+   - Creates amazon_transactions (individual line items)
+
+3. **Transaction Matching**:
+   - match-transactions runs periodically
+   - Compares bank_transactions to pending transactions/income
+   - Matches based on amount (+/- $1) and date (+/- 3 days)
+   - Creates notifications for user review
+   - User can confirm/reject matches
+
+4. **Cash Flow Calculation**:
+   - Aggregates all data sources (banks, Amazon, manual entries)
+   - Projects 365 days forward using recurring patterns
+   - Applies Amazon payout predictions
+   - Factors in vendor payment schedules
+   - Updates safe spending calculations
+
+**Common Technical Issues & Solutions:**
+
+**Plaid Connection Errors:**
+- Error: "Institution not supported" → Check Plaid institution coverage
+- Error: "Invalid credentials" → User needs to re-authenticate
+- Error: "MFA required" → Plaid Link will prompt for MFA
+- Solution: Try different connection method or manual entry
+
+**Amazon API Errors:**
+- Error: "Access token expired" → Token refresh should happen automatically
+- Error: "Insufficient permissions" → User needs SP-API developer access
+- Error: "Rate limit exceeded" → Sync backs off automatically
+- Solution: Check SP-API credentials in Amazon Seller Central
+
+**Database Performance:**
+- Large transaction volumes: Indexes on user_id, date columns
+- Query optimization: Use date range filters
+- Pagination: Implement for transaction lists
+- Caching: Frontend caches dashboard data for 5 minutes
+
+**Stripe Webhook Issues:**
+- Webhook signature verification required
+- Events: invoice.payment_succeeded, invoice.payment_failed
+- Handles subscription updates, cancellations
+- Updates account_status automatically
+
+**Integration Limits:**
+- Plaid: 12,000+ institutions, but some small banks unsupported
+- Amazon SP-API: Rate limits (varies by endpoint)
+- Stripe: No practical limits for subscription management
+- Lovable AI: Rate limits and usage-based pricing
 
 **How to Get Started:**
 
@@ -254,15 +678,18 @@ Available as monthly add-ons or yearly (10 months pricing):
 **Data Security:**
 - Bank credentials never stored by Auren (handled by Plaid)
 - All sensitive data encrypted at rest (AES-256)
-- Amazon API keys encrypted
+- Amazon API keys encrypted using pgsodium
 - SOC 2 Type II compliant infrastructure
 - Regular security audits
+- Row-level security on all database tables
 
 **Team & Account Management:**
 - Owner can invite team members via email
-- Team members have view/edit permissions
+- Team members have role-based permissions (Admin, Staff)
 - Each user has their own login
 - Owner manages billing and subscriptions
+- Admin can manage settings and data
+- Staff has view-only access
 
 **Billing & Subscriptions:**
 - Credit card required after 7-day trial
@@ -292,6 +719,7 @@ Available as monthly add-ons or yearly (10 months pricing):
 Currently supports:
 - Amazon Seller Central (all marketplaces)
 - 12,000+ banks via Plaid
+- Stripe Financial Connections (alternative)
 - Manual CSV imports
 
 Coming soon:
@@ -318,8 +746,10 @@ Coming soon:
 - Amazon API connection failures after troubleshooting
 - Complex scenario planning needs
 - Custom enterprise requirements
+- Database-level issues requiring admin access
+- Edge function errors or timeouts
 
-Remember: Your goal is to help users succeed with Auren. Encourage them to use the AI assistant first, but don't hesitate to recommend submitting a ticket for complex issues that require human support or account-specific access.`;
+Remember: Your goal is to help users succeed with Auren. You have comprehensive technical knowledge about how the platform works. Use this to provide detailed, accurate answers. Encourage users to try self-service features first, but don't hesitate to recommend submitting a ticket for complex issues that require human support or direct database/account access.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
