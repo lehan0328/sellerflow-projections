@@ -110,19 +110,26 @@ serve(async (req) => {
 
     for (const [index, payoutDate] of payoutDates.entries()) {
       const isConfirmed = index === 0 // First payout is confirmed
-      const totalAmount = Math.random() * 3000 + 1000
+      const payoutDateStr = payoutDate.toISOString().split('T')[0]
+      
+      // Use date-based settlement ID so re-syncing doesn't create duplicates
+      const settlementId = `SETTLEMENT-${amazonAccountId.slice(0, 8)}-${payoutDateStr}`
+      
+      // Generate consistent amounts based on the date (for demo purposes)
+      const seed = new Date(payoutDateStr).getTime()
+      const totalAmount = 1000 + (seed % 3000)
       
       payoutsToAdd.push({
         user_id: user.id,
         amazon_account_id: amazonAccountId,
-        settlement_id: `SETTLEMENT-${Date.now()}-${index}`,
-        payout_date: payoutDate.toISOString().split('T')[0],
+        settlement_id: settlementId,
+        payout_date: payoutDateStr,
         total_amount: totalAmount,
         currency_code: 'USD',
         status: isConfirmed ? 'confirmed' : 'estimated',
         payout_type: 'bi-weekly',
         marketplace_name: amazonAccount.marketplace_name,
-        transaction_count: Math.floor(Math.random() * 50) + 20,
+        transaction_count: Math.floor((seed % 50)) + 20,
         fees_total: totalAmount * 0.15,
         orders_total: totalAmount * 1.2,
         refunds_total: totalAmount * 0.05,
