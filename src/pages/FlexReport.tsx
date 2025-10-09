@@ -52,6 +52,7 @@ const FlexReport = () => {
   // Calculate metrics
   const today = startOfDay(new Date());
   const next30Days = addDays(today, 30);
+  const next180Days = addDays(today, 180);
 
   // Total upcoming purchase orders (pending transactions)
   const upcomingPurchaseOrders = transactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending' && tx.dueDate && isWithinInterval(new Date(tx.dueDate), {
@@ -67,6 +68,21 @@ const FlexReport = () => {
     start: today,
     end: next30Days
   })).reduce((sum, income) => sum + Number(income.amount), 0);
+
+  // 180 day purchasing power calculation
+  const upcomingIncome180 = incomeItems.filter(income => income.status !== 'received' && income.paymentDate && isWithinInterval(new Date(income.paymentDate), {
+    start: today,
+    end: next180Days
+  })).reduce((sum, income) => sum + Number(income.amount), 0);
+
+  const upcomingObligations180 = transactions.filter(tx => 
+    tx.type === 'purchase_order' && 
+    tx.status === 'pending' && 
+    tx.dueDate && 
+    isWithinInterval(new Date(tx.dueDate), { start: today, end: next180Days })
+  ).reduce((sum, tx) => sum + Number(tx.amount), 0);
+
+  const max180DayPurchasingPower = bankBalance + upcomingIncome180 - upcomingObligations180 - upcomingVendorPayments;
 
   // Credit utilization
   const totalCreditLimit = creditCards.reduce((sum, card) => sum + Number(card.credit_limit || 0), 0);
@@ -277,7 +293,7 @@ const FlexReport = () => {
 
             {/* Metrics Grid */}
             <div className="grid grid-cols-2 gap-5 mb-8">
-              {/* Total Cash */}
+              {/* Max 180 Day Purchasing Power */}
               <div className="group bg-gradient-to-br from-blue-50 via-blue-100/80 to-blue-50 rounded-2xl p-6 border-2 border-blue-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border-2 border-blue-600 rounded-full">
                   <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
@@ -287,9 +303,9 @@ const FlexReport = () => {
                   <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <DollarSign className="w-5 h-5 text-white" />
                   </div>
-                  <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Total Cash</p>
+                  <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Max 180 Day Power</p>
                 </div>
-                <p className={`text-4xl font-black text-blue-700 drop-shadow-sm transition-all duration-300 ${!visibility.totalCash ? 'blur-lg' : ''}`}>{formatCurrency(bankBalance)}</p>
+                <p className={`text-4xl font-black text-blue-700 drop-shadow-sm transition-all duration-300 ${!visibility.totalCash ? 'blur-lg' : ''}`}>{formatCurrency(max180DayPurchasingPower)}</p>
                 <button
                   onClick={() => toggleVisibility('totalCash')}
                   className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-blue-100/50 transition-colors z-10"
