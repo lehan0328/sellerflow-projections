@@ -7,15 +7,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Send, MessageSquare, Clock, CheckCircle2, AlertCircle, Bot, User, Home } from "lucide-react";
+import { Send, MessageSquare, Clock, CheckCircle2, AlertCircle, Bot, User, Home, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuth } from "@/hooks/useAuth";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
 const Support = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [tickets, setTickets] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -305,11 +307,20 @@ const Support = () => {
               <Bot className="h-4 w-4 mr-2" />
               {showAIChat ? "Hide" : "Show"} AI Assistant
             </Button>
+            {user ? (
               <Button onClick={() => setShowNewTicket(!showNewTicket)}>
                 <Send className="h-4 w-4 mr-2" />
                 New Ticket
               </Button>
-            </div>
+            ) : (
+              <Button asChild>
+                <a href="mailto:support@aurenapp.com">
+                  <Mail className="h-4 w-4 mr-2" />
+                  Email Support
+                </a>
+              </Button>
+            )}
+          </div>
           </div>
 
           {/* AI Chat Assistant */}
@@ -382,8 +393,37 @@ const Support = () => {
             </Card>
           )}
 
-          {/* New Ticket Form */}
-          {showNewTicket && (
+          {/* New Ticket Form - Only for authenticated users */}
+          {!user && (
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle>Contact Support</CardTitle>
+                <CardDescription>
+                  Get help from our support team
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-muted-foreground">
+                  For support inquiries, please email us at:
+                </p>
+                <div className="flex items-center space-x-2 p-4 bg-muted rounded-lg">
+                  <Mail className="h-5 w-5 text-primary" />
+                  <a 
+                    href="mailto:support@aurenapp.com" 
+                    className="text-lg font-semibold text-primary hover:underline"
+                  >
+                    support@aurenapp.com
+                  </a>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  We typically respond within 24-48 hours. For faster support, try asking our AI assistant above first!
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* New Ticket Form - Only for authenticated users */}
+          {user && showNewTicket && (
             <Card className="shadow-card">
               <CardHeader>
                 <CardTitle>Create Support Ticket</CardTitle>
@@ -464,20 +504,21 @@ const Support = () => {
             </Card>
           )}
 
-          {/* Tickets List */}
-          <Card className="shadow-card">
-            <CardHeader>
-              <CardTitle>Your Support Tickets</CardTitle>
-              <CardDescription>
-                View and track your support requests
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {tickets.length === 0 ? (
-                <div className="text-center py-12">
-                  <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">No support tickets yet</h3>
-                  <p className="text-muted-foreground mb-4">
+          {/* Tickets List - Only for authenticated users */}
+          {user && (
+            <Card className="shadow-card">
+              <CardHeader>
+                <CardTitle>Your Support Tickets</CardTitle>
+                <CardDescription>
+                  View and track your support requests
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {tickets.length === 0 ? (
+                  <div className="text-center py-12">
+                    <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No support tickets yet</h3>
+                    <p className="text-muted-foreground mb-4">
                     Create your first support ticket to get help
                   </p>
                   <Button onClick={() => setShowNewTicket(true)}>
@@ -534,6 +575,7 @@ const Support = () => {
               )}
             </CardContent>
           </Card>
+          )}
         </div>
       </div>
   );
