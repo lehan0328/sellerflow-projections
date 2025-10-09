@@ -154,6 +154,7 @@ const Landing = () => {
     name: "Starter",
     price: "$29",
     yearlyPrice: "$24",
+    yearlyTotal: "$290",
     period: "/month",
     yearlyPeriod: "/month",
     description: "Up to $20k monthly revenue",
@@ -165,6 +166,7 @@ const Landing = () => {
     name: "Growing",
     price: "$59",
     yearlyPrice: "$49",
+    yearlyTotal: "$590",
     period: "/month",
     yearlyPeriod: "/month",
     description: "Up to $100k monthly revenue",
@@ -176,6 +178,7 @@ const Landing = () => {
     name: "Professional",
     price: "$89",
     yearlyPrice: "$74",
+    yearlyTotal: "$890",
     period: "/month",
     yearlyPeriod: "/month",
     description: "Up to $200k monthly revenue",
@@ -187,6 +190,7 @@ const Landing = () => {
     name: "Enterprise",
     price: "Custom",
     yearlyPrice: "Custom",
+    yearlyTotal: "Custom",
     period: "",
     yearlyPeriod: "",
     description: "$200k+ monthly revenue",
@@ -1332,7 +1336,7 @@ const Landing = () => {
                                 <span className="text-muted-foreground text-xs">{isYearly ? plan.yearlyPeriod : plan.period}</span>
                               </div>
                               {isYearly && <>
-                                <p className="text-xs text-muted-foreground">billed annually</p>
+                                <p className="text-xs text-muted-foreground">billed as {plan.yearlyTotal}/year</p>
                                 <Badge variant="secondary" className="text-xs py-0.5 px-2">
                                   Save {plan.savings}/year
                                 </Badge>
@@ -1344,7 +1348,7 @@ const Landing = () => {
                                 <span className="text-muted-foreground text-xs">{isYearly ? plan.yearlyPeriod : plan.period}</span>
                               </div>
                               {isYearly && plan.savings && <>
-                                <p className="text-xs text-muted-foreground">billed annually</p>
+                                <p className="text-xs text-muted-foreground">billed as {plan.yearlyTotal}/year</p>
                                 <Badge variant="secondary" className="text-xs py-0.5 px-2">
                                   Save {plan.savings}/year
                                 </Badge>
