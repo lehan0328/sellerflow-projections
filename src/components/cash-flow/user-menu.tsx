@@ -8,17 +8,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Settings, CreditCard, LogOut, MessageSquare, FolderOpen, History, Lightbulb } from "lucide-react";
+import { Settings, CreditCard, LogOut, MessageSquare, FolderOpen, History, Lightbulb, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useUserSettings } from "@/hooks/useUserSettings";
+import { useAdmin } from "@/hooks/useAdmin";
 
 export function UserMenu() {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
   const { resetAccount } = useUserSettings();
+  const { isAdmin } = useAdmin();
   
   // Fetch user profile
   const { data: profile } = useQuery({
@@ -85,6 +87,15 @@ export function UserMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 bg-background z-50" align="end" forceMount>
+        {isAdmin && (
+          <>
+            <DropdownMenuItem onClick={() => navigate('/admin')}>
+              <Shield className="mr-2 h-4 w-4" />
+              <span>Admin Dashboard</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem onClick={() => navigate('/settings')}>
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
