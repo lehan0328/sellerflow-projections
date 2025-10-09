@@ -172,7 +172,10 @@ const FlexReport = () => {
                 <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-3 tracking-tight">
                   Financial Power Report
                 </h1>
-                <p className="text-slate-600 text-lg">Your business at a glance</p>
+                <p className="text-slate-600 text-lg mb-2">Your business at a glance</p>
+                <p className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Cash Flow Management For Amazon Sellers
+                </p>
               </div>
               <div className="text-right">
                 <img src={aurenLogo} alt="Auren" className="h-16 md:h-20 drop-shadow-lg mb-2" />
@@ -199,16 +202,6 @@ const FlexReport = () => {
 
             {/* Primary Metric - Available to Spend */}
             <div className="mb-10 text-center bg-gradient-to-br from-emerald-50/50 to-green-50/50 backdrop-blur-sm rounded-2xl p-8 border border-emerald-200/50 shadow-lg relative">
-              <button
-                onClick={() => toggleVisibility('safeSpending')}
-                className="absolute top-4 left-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors z-10"
-              >
-                {visibility.safeSpending ? (
-                  <Eye className="w-5 h-5 text-blue-600" />
-                ) : (
-                  <EyeOff className="w-5 h-5 text-slate-400" />
-                )}
-              </button>
               <div className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 bg-emerald-50 border-2 border-emerald-600 rounded-full">
                 <div className="w-2 h-2 bg-emerald-600 rounded-full"></div>
                 <span className="text-xs font-black text-emerald-700 uppercase tracking-wider">Live Verified</span>
@@ -218,22 +211,22 @@ const FlexReport = () => {
                 {formatCurrency(safeSpendingData?.safe_spending_limit || 0)}
               </div>
               <p className="text-slate-600 text-base font-medium">Safe spending power for your business</p>
+              <button
+                onClick={() => toggleVisibility('safeSpending')}
+                className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors z-10"
+              >
+                {visibility.safeSpending ? (
+                  <Eye className="w-5 h-5 text-blue-600" />
+                ) : (
+                  <EyeOff className="w-5 h-5 text-slate-400" />
+                )}
+              </button>
             </div>
 
             {/* Metrics Grid */}
             <div className="grid grid-cols-2 gap-5 mb-8">
               {/* Total Cash */}
               <div className="group bg-gradient-to-br from-blue-50 via-blue-100/80 to-blue-50 rounded-2xl p-6 border-2 border-blue-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
-                <button
-                  onClick={() => toggleVisibility('totalCash')}
-                  className="absolute top-4 left-4 p-2 rounded-lg hover:bg-blue-100/50 transition-colors z-10"
-                >
-                  {visibility.totalCash ? (
-                    <Eye className="w-4 h-4 text-blue-600" />
-                  ) : (
-                    <EyeOff className="w-4 h-4 text-slate-400" />
-                  )}
-                </button>
                 <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border-2 border-blue-600 rounded-full">
                   <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
                   <span className="text-xs font-black text-blue-700 uppercase tracking-wider">Verified</span>
@@ -245,20 +238,20 @@ const FlexReport = () => {
                   <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Total Cash</p>
                 </div>
                 <p className={`text-4xl font-black text-blue-700 drop-shadow-sm transition-all duration-300 ${!visibility.totalCash ? 'blur-lg' : ''}`}>{formatCurrency(bankBalance)}</p>
-              </div>
-
-              {/* Available Credit */}
-              <div className="group bg-gradient-to-br from-purple-50 via-purple-100/80 to-purple-50 rounded-2xl p-6 border-2 border-purple-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <button
-                  onClick={() => toggleVisibility('availableCredit')}
-                  className="absolute top-4 left-4 p-2 rounded-lg hover:bg-purple-100/50 transition-colors z-10"
+                  onClick={() => toggleVisibility('totalCash')}
+                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-blue-100/50 transition-colors z-10"
                 >
-                  {visibility.availableCredit ? (
+                  {visibility.totalCash ? (
                     <Eye className="w-4 h-4 text-blue-600" />
                   ) : (
                     <EyeOff className="w-4 h-4 text-slate-400" />
                   )}
                 </button>
+              </div>
+
+              {/* Available Credit */}
+              <div className="group bg-gradient-to-br from-purple-50 via-purple-100/80 to-purple-50 rounded-2xl p-6 border-2 border-purple-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 border-2 border-purple-600 rounded-full">
                   <div className="w-1.5 h-1.5 bg-purple-600 rounded-full"></div>
                   <span className="text-xs font-black text-purple-700 uppercase tracking-wider">Verified</span>
@@ -270,20 +263,20 @@ const FlexReport = () => {
                   <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Available Credit</p>
                 </div>
                 <p className={`text-4xl font-black text-purple-700 drop-shadow-sm transition-all duration-300 ${!visibility.availableCredit ? 'blur-lg' : ''}`}>{formatCurrency(totalAvailableCredit)}</p>
-              </div>
-
-              {/* Upcoming Income */}
-              <div className="group bg-gradient-to-br from-emerald-50 via-emerald-100/80 to-emerald-50 rounded-2xl p-6 border-2 border-emerald-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <button
-                  onClick={() => toggleVisibility('upcomingIncome')}
-                  className="absolute top-4 left-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors z-10"
+                  onClick={() => toggleVisibility('availableCredit')}
+                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-purple-100/50 transition-colors z-10"
                 >
-                  {visibility.upcomingIncome ? (
+                  {visibility.availableCredit ? (
                     <Eye className="w-4 h-4 text-blue-600" />
                   ) : (
                     <EyeOff className="w-4 h-4 text-slate-400" />
                   )}
                 </button>
+              </div>
+
+              {/* Upcoming Income */}
+              <div className="group bg-gradient-to-br from-emerald-50 via-emerald-100/80 to-emerald-50 rounded-2xl p-6 border-2 border-emerald-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border-2 border-emerald-600 rounded-full">
                   <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full"></div>
                   <span className="text-xs font-black text-emerald-700 uppercase tracking-wider">Verified</span>
@@ -295,20 +288,20 @@ const FlexReport = () => {
                   <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Income (30d)</p>
                 </div>
                 <p className={`text-4xl font-black text-emerald-700 drop-shadow-sm transition-all duration-300 ${!visibility.upcomingIncome ? 'blur-lg' : ''}`}>{formatCurrency(upcomingIncome)}</p>
-              </div>
-
-              {/* Purchase Orders */}
-              <div className="group bg-gradient-to-br from-orange-50 via-orange-100/80 to-orange-50 rounded-2xl p-6 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <button
-                  onClick={() => toggleVisibility('purchaseOrders')}
-                  className="absolute top-4 left-4 p-2 rounded-lg hover:bg-orange-100/50 transition-colors z-10"
+                  onClick={() => toggleVisibility('upcomingIncome')}
+                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors z-10"
                 >
-                  {visibility.purchaseOrders ? (
+                  {visibility.upcomingIncome ? (
                     <Eye className="w-4 h-4 text-blue-600" />
                   ) : (
                     <EyeOff className="w-4 h-4 text-slate-400" />
                   )}
                 </button>
+              </div>
+
+              {/* Purchase Orders */}
+              <div className="group bg-gradient-to-br from-orange-50 via-orange-100/80 to-orange-50 rounded-2xl p-6 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 border-2 border-orange-600 rounded-full">
                   <div className="w-1.5 h-1.5 bg-orange-600 rounded-full"></div>
                   <span className="text-xs font-black text-orange-700 uppercase tracking-wider">Verified</span>
@@ -320,6 +313,16 @@ const FlexReport = () => {
                   <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Purchase Orders</p>
                 </div>
                 <p className={`text-4xl font-black text-orange-700 drop-shadow-sm transition-all duration-300 ${!visibility.purchaseOrders ? 'blur-lg' : ''}`}>{formatCurrency(upcomingPurchaseOrders)}</p>
+                <button
+                  onClick={() => toggleVisibility('purchaseOrders')}
+                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-orange-100/50 transition-colors z-10"
+                >
+                  {visibility.purchaseOrders ? (
+                    <Eye className="w-4 h-4 text-blue-600" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 text-slate-400" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -338,7 +341,6 @@ const FlexReport = () => {
                   <p className="text-slate-700 font-semibold text-base mb-1">
                     Powered by <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent font-black text-lg">Auren</span>
                   </p>
-                  <p className="text-xs text-slate-500 italic font-medium">Cash Flow Management For Amazon Sellers</p>
                   <p className="text-sm font-semibold text-blue-600 mt-1">www.aurenapp.com</p>
                 </div>
               </div>
