@@ -24,6 +24,7 @@ import DocsGettingStarted from "./pages/DocsGettingStarted";
 import DocsAmazonIntegration from "./pages/DocsAmazonIntegration";
 import DocsFAQ from "./pages/DocsFAQ";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import { Auth } from "./pages/Auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import Admin from "./pages/Admin";
@@ -75,6 +76,7 @@ const App = () => (
           <Route path="/docs/amazon-integration" element={<DocsAmazonIntegration />} />
           <Route path="/docs/faq" element={<DocsFAQ />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/predict-amazon-payouts" element={<PredictAmazonPayouts />} />
           <Route path="/blog/seller-funding-forecast" element={<SellerFundingForecast />} />
