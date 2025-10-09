@@ -46,6 +46,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
   const [customToDate, setCustomToDate] = useState<Date | undefined>();
   const [partialPaymentTx, setPartialPaymentTx] = useState<VendorTransaction | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState<string | null>(null);
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState<'all' | 'cash' | 'credit'>('all');
 
   // Force refresh when parent signals
   useEffect(() => {
@@ -100,6 +101,10 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
       
       if (!matchesStatus) return false;
 
+      // Payment method filter
+      if (paymentMethodFilter === 'cash' && tx.creditCardId) return false;
+      if (paymentMethodFilter === 'credit' && !tx.creditCardId) return false;
+
       // Date range filter
       if (dateRange !== "all" && dateRange !== "custom" && tx.dueDate) {
         const now = new Date();
@@ -137,7 +142,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
 
       return 0;
     });
-  }, [transactions, searchTerm, selectedVendor, statusFilter, sortBy, sortOrder, dateRange, customFromDate, customToDate]);
+  }, [transactions, searchTerm, selectedVendor, statusFilter, sortBy, sortOrder, dateRange, customFromDate, customToDate, paymentMethodFilter]);
 
   const handleVendorSearch = (value: string) => {
     // Check if the value matches one of our vendor options exactly
@@ -346,6 +351,20 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                 <SelectItem value="all">All</SelectItem>
                 <SelectItem value="overdue">Overdue</SelectItem>
                 <SelectItem value="paid">Paid</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <Select value={paymentMethodFilter} onValueChange={(value: any) => setPaymentMethodFilter(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="z-50 bg-popover text-popover-foreground border border-border shadow-lg">
+                <SelectItem value="all">All Payments</SelectItem>
+                <SelectItem value="cash">Cash Only</SelectItem>
+                <SelectItem value="credit">Credit Only</SelectItem>
               </SelectContent>
             </Select>
           </div>
