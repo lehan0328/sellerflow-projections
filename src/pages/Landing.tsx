@@ -505,12 +505,17 @@ const Landing = () => {
             {/* Left Content */}
             <div className="space-y-8 z-10">
               {/* Floating Badge */}
-              <div className="animate-fade-in">
+              <div className="animate-fade-in space-y-3">
                 <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm hover-scale">
                   <Sparkles className="h-4 w-4 animate-pulse" />
                   <span className="font-display">AI-Powered Forecasting</span>
                   <span className="ml-2 px-2 py-0.5 bg-primary/20 rounded-full text-xs">New</span>
                 </Badge>
+                <div>
+                  <Badge variant="secondary" className="text-sm">
+                    Starting at $24 per month
+                  </Badge>
+                </div>
               </div>
               
               <div className="animate-fade-in space-y-6" style={{
