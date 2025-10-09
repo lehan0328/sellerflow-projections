@@ -185,16 +185,21 @@ export const useUserSettings = () => {
       console.log('✅ Reset user_settings');
       setTotalCash(0);
       
+      // Clear localStorage flags to allow fresh setup
+      localStorage.removeItem('balance_start_0');
+      localStorage.removeItem('vendors_cleaned');
+      localStorage.removeItem('transactions_cleaned_v2');
+      
       toast({
         title: "Success",
         description: "All account data has been completely reset",
       });
 
-      console.log('✅ Account reset complete, reloading page...');
+      console.log('✅ Account reset complete, redirecting to onboarding...');
 
-      // Refresh the page to show clean state
+      // Redirect to onboarding to start fresh
       setTimeout(() => {
-        window.location.reload();
+        window.location.href = '/onboarding';
       }, 500);
     } catch (error) {
       console.error('Error resetting account:', error);
