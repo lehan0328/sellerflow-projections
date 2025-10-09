@@ -371,7 +371,7 @@ export const CashFlowInsights = ({
                 <div className="space-y-2">
                   {creditCards.map((card) => {
                     const pendingOrders = pendingOrdersByCard[card.id] || 0;
-                    const availableSpend = card.available_credit - pendingOrders;
+                    const availableSpend = card.available_credit;
                     const isOverLimit = availableSpend < 0;
                     
                     return (
