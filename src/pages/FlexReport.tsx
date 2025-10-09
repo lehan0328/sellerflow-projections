@@ -198,7 +198,7 @@ const FlexReport = () => {
                   <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <DollarSign className="w-5 h-5 text-white" />
                   </div>
-                  <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Purchasing Power</p>
+                  <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Max 180 Day Power</p>
                 </div>
                 <p className="text-4xl font-black text-blue-700 drop-shadow-sm">{formatCurrency(bankBalance)}</p>
               </div>
@@ -271,6 +271,7 @@ const FlexReport = () => {
                     Powered by <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent font-black text-lg">Auren</span>
                   </p>
                   <p className="text-xs text-slate-500 italic font-medium">Cash Flow Management For Amazon Sellers</p>
+                  <p className="text-xs text-blue-600 font-semibold mt-1">www.auren.app</p>
                 </div>
               </div>
             </div>
