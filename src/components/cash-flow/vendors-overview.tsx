@@ -423,7 +423,6 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                 <TableHead>Vendor</TableHead>
                 <TableHead>PO# / Ref#</TableHead>
                 <TableHead>Amount</TableHead>
-                <TableHead>Payment</TableHead>
                 <TableHead>Due Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Remarks</TableHead>
@@ -433,7 +432,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
             <TableBody>
               {filteredAndSortedTransactions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     {selectedVendor ? `No purchase orders found for ${vendorSearchOptions.find(v => v.value === selectedVendor)?.label || selectedVendor}.` :
                      searchTerm ? 'No transactions found matching your search.' : 
                      'No vendor purchase orders.'}
@@ -444,29 +443,28 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                   <TableRow key={tx.id}>
                     <TableCell className="font-medium">{tx.vendorName}</TableCell>
                     <TableCell>{tx.description || 'N/A'}</TableCell>
-                    <TableCell className="font-semibold">
-                      ${(tx.amount || 0).toLocaleString()}
-                    </TableCell>
                     <TableCell>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex items-center space-x-1">
-                              {tx.creditCardId ? (
-                                <CreditCard className="h-4 w-4 text-primary" />
-                              ) : (
-                                <Banknote className="h-4 w-4 text-muted-foreground" />
-                              )}
-                              <span className="text-xs text-muted-foreground">
-                                {tx.creditCardId ? 'Credit' : 'Cash'}
-                              </span>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{tx.creditCardId ? 'Paid with credit card' : 'Paid with cash'}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-semibold">
+                          ${(tx.amount || 0).toLocaleString()}
+                        </span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className="text-xs px-1.5 py-0.5">
+                                {tx.creditCardId ? (
+                                  <CreditCard className="h-3 w-3" />
+                                ) : (
+                                  <Banknote className="h-3 w-3" />
+                                )}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{tx.creditCardId ? 'Credit card purchase' : 'Cash purchase'}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {tx.dueDate
