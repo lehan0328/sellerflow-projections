@@ -89,7 +89,7 @@ export const useSafeSpending = () => {
       const futureDateStr = formatDate(futureDate);
 
       // Get ALL events that affect cash flow (matching calendar logic)
-      const [transactionsResult, incomeResult, recurringResult, vendorsResult, amazonResult] = await Promise.all([
+      const [transactionsResult, incomeResult, recurringResult, vendorsResult, amazonResult, creditCardsResult] = await Promise.all([
         supabase
           .from('transactions')
           .select('*')
@@ -116,7 +116,13 @@ export const useSafeSpending = () => {
           .select('*')
           .eq('user_id', session.user.id)
           .gte('payout_date', todayStr)
-          .lte('payout_date', futureDateStr)
+          .lte('payout_date', futureDateStr),
+        
+        supabase
+          .from('credit_cards')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('is_active', true)
       ]);
 
       console.log('📊 Fetched data:', {
@@ -124,7 +130,8 @@ export const useSafeSpending = () => {
         income: incomeResult.data?.length || 0,
         recurring: recurringResult.data?.length || 0,
         vendors: vendorsResult.data?.length || 0,
-        amazonPayouts: amazonResult.data?.length || 0
+        amazonPayouts: amazonResult.data?.length || 0,
+        creditCards: creditCardsResult.data?.length || 0
       });
 
       console.log('🔍 VENDOR DATA:', vendorsResult.data?.map(v => ({
@@ -285,6 +292,20 @@ export const useSafeSpending = () => {
                 }
                 dayChange -= amt;
               }
+            }
+          }
+        });
+
+        // Add credit card payments (statement balance due on payment_due_date)
+        creditCardsResult.data?.forEach((card) => {
+          if (card.payment_due_date && card.balance > 0) {
+            const dueDate = parseLocalDate(card.payment_due_date);
+            if (dueDate.getTime() === targetDate.getTime()) {
+              const amt = Number(card.balance);
+              if (isKeyDate) {
+                console.log(`  💳 Credit card payment: ${card.institution_name} - ${card.account_name} -$${amt}`);
+              }
+              dayChange -= amt;
             }
           }
         });
@@ -531,6 +552,10 @@ export const useSafeSpending = () => {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'deleted_transactions' }, () => {
         console.log('🔄 Transaction deleted - refetching safe spending');
+        fetchSafeSpending();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'credit_cards' }, () => {
+        console.log('🔄 Credit cards changed - refetching safe spending');
         fetchSafeSpending();
       })
       .subscribe();
