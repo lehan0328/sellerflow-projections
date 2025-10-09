@@ -201,6 +201,15 @@ export const AdminCustomers = () => {
     return { label: 'Expired', variant: 'destructive' as const };
   };
 
+  const formatPlanName = (planOverride: string | undefined) => {
+    if (!planOverride) return '-';
+    // Capitalize first letter of each word
+    return planOverride
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   return (
     <div className="space-y-4">
       {metrics && (
@@ -299,11 +308,11 @@ export const AdminCustomers = () => {
                       </TableCell>
                       <TableCell>
                         {customer.plan_override ? (
-                          <Badge variant="outline" className="text-xs">
-                            {customer.plan_override}
+                          <Badge variant="outline" className="text-xs capitalize">
+                            {formatPlanName(customer.plan_override)}
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground">-</span>
+                          <span className="text-muted-foreground">Free</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
