@@ -698,9 +698,9 @@ const Landing = () => {
                 animationDelay: '2s',
                 animationDuration: '7s'
               }}>
-                  <div className="text-xs text-muted-foreground font-medium mb-1">✨ Signature Feature</div>
-                  <div className="text-lg font-bold text-primary mb-1">Safe Spending Power</div>
-                  <div className="text-xs text-muted-foreground">Know exactly how much you can spend</div>
+                  <div className="text-xs text-success font-medium mb-1">🟢 Live Sync</div>
+                  <div className="text-lg font-bold text-foreground mb-1">Real-Time Updates</div>
+                  <div className="text-xs text-muted-foreground">Connected to 3 accounts</div>
                 </div>
               </div>
               
