@@ -626,7 +626,7 @@ const Landing = () => {
                     </div>
                     <div>
                       <div className="font-semibold text-sm">Calculated Buying Opportunities</div>
-                      <div className="text-xs text-muted-foreground">Smart inventory purchase recommendations</div>
+                      <div className="text-xs text-muted-foreground">Smart purchase planning recommendations based on expenses + payouts</div>
                     </div>
                   </div>
                 </div>
