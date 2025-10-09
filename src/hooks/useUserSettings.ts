@@ -120,55 +120,64 @@ export const useUserSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Delete all user data from all tables
-      await Promise.all([
-        // Financial accounts
-        supabase.from('bank_accounts').delete().eq('user_id', user.id),
-        supabase.from('bank_transactions').delete().eq('user_id', user.id),
-        supabase.from('credit_cards').delete().eq('user_id', user.id),
-        supabase.from('amazon_accounts').delete().eq('user_id', user.id),
-        supabase.from('amazon_payouts').delete().eq('user_id', user.id),
-        supabase.from('amazon_transactions').delete().eq('user_id', user.id),
-        
-        // Transactions and records
-        supabase.from('transactions').delete().eq('user_id', user.id),
-        supabase.from('income').delete().eq('user_id', user.id),
-        supabase.from('vendors').delete().eq('user_id', user.id),
-        supabase.from('customers').delete().eq('user_id', user.id),
-        supabase.from('recurring_expenses').delete().eq('user_id', user.id),
-        
-        // Planning and insights
-        supabase.from('scenarios').delete().eq('user_id', user.id),
-        supabase.from('cash_flow_events').delete().eq('user_id', user.id),
-        supabase.from('cash_flow_insights').delete().eq('user_id', user.id),
-        
-        // Deleted records
-        supabase.from('deleted_transactions').delete().eq('user_id', user.id),
-        
-        // Trial addons
-        supabase.from('trial_addon_usage').delete().eq('user_id', user.id),
-        
-        // Support and team
-        supabase.from('support_tickets').delete().eq('user_id', user.id),
-        supabase.from('user_roles').delete().eq('user_id', user.id),
-        
-        // Referrals
-        supabase.from('referrals').delete().eq('referrer_id', user.id),
-        supabase.from('referrals').delete().eq('referred_user_id', user.id),
-        supabase.from('referral_codes').delete().eq('user_id', user.id),
-        supabase.from('referral_rewards').delete().eq('user_id', user.id),
-        
-        // Delete user settings
-        supabase.from('user_settings').delete().eq('user_id', user.id),
-      ]);
+      console.log('🗑️ Starting account reset for user:', user.id);
+
+      // Delete all user data from all tables with individual error checking
+      const deleteOperations = [
+        { name: 'bank_accounts', promise: supabase.from('bank_accounts').delete().eq('user_id', user.id) },
+        { name: 'bank_transactions', promise: supabase.from('bank_transactions').delete().eq('user_id', user.id) },
+        { name: 'credit_cards', promise: supabase.from('credit_cards').delete().eq('user_id', user.id) },
+        { name: 'amazon_accounts', promise: supabase.from('amazon_accounts').delete().eq('user_id', user.id) },
+        { name: 'amazon_payouts', promise: supabase.from('amazon_payouts').delete().eq('user_id', user.id) },
+        { name: 'amazon_transactions', promise: supabase.from('amazon_transactions').delete().eq('user_id', user.id) },
+        { name: 'transactions', promise: supabase.from('transactions').delete().eq('user_id', user.id) },
+        { name: 'income', promise: supabase.from('income').delete().eq('user_id', user.id) },
+        { name: 'vendors', promise: supabase.from('vendors').delete().eq('user_id', user.id) },
+        { name: 'customers', promise: supabase.from('customers').delete().eq('user_id', user.id) },
+        { name: 'recurring_expenses', promise: supabase.from('recurring_expenses').delete().eq('user_id', user.id) },
+        { name: 'scenarios', promise: supabase.from('scenarios').delete().eq('user_id', user.id) },
+        { name: 'cash_flow_events', promise: supabase.from('cash_flow_events').delete().eq('user_id', user.id) },
+        { name: 'cash_flow_insights', promise: supabase.from('cash_flow_insights').delete().eq('user_id', user.id) },
+        { name: 'deleted_transactions', promise: supabase.from('deleted_transactions').delete().eq('user_id', user.id) },
+        { name: 'trial_addon_usage', promise: supabase.from('trial_addon_usage').delete().eq('user_id', user.id) },
+        { name: 'support_tickets', promise: supabase.from('support_tickets').delete().eq('user_id', user.id) },
+        { name: 'user_roles', promise: supabase.from('user_roles').delete().eq('user_id', user.id) },
+        { name: 'referrals_referrer', promise: supabase.from('referrals').delete().eq('referrer_id', user.id) },
+        { name: 'referrals_referred', promise: supabase.from('referrals').delete().eq('referred_user_id', user.id) },
+        { name: 'referral_codes', promise: supabase.from('referral_codes').delete().eq('user_id', user.id) },
+        { name: 'referral_rewards', promise: supabase.from('referral_rewards').delete().eq('user_id', user.id) },
+        { name: 'user_settings', promise: supabase.from('user_settings').delete().eq('user_id', user.id) },
+      ];
+
+      const results = await Promise.allSettled(deleteOperations.map(op => op.promise));
+      
+      // Log results
+      results.forEach((result, index) => {
+        const opName = deleteOperations[index].name;
+        if (result.status === 'fulfilled') {
+          const { error } = result.value;
+          if (error) {
+            console.error(`❌ Failed to delete ${opName}:`, error);
+          } else {
+            console.log(`✅ Deleted ${opName}`);
+          }
+        } else {
+          console.error(`❌ Delete operation failed for ${opName}:`, result.reason);
+        }
+      });
 
       // Create fresh default settings
-      await supabase.from('user_settings').insert({
+      const { error: insertError } = await supabase.from('user_settings').insert({
         user_id: user.id,
         total_cash: 0,
         safe_spending_percentage: 20,
         safe_spending_reserve: 0
       });
+
+      if (insertError) {
+        console.error('Failed to create default settings:', insertError);
+        throw insertError;
+      }
 
       setTotalCash(0);
       
@@ -177,8 +186,12 @@ export const useUserSettings = () => {
         description: "All account data has been completely reset",
       });
 
+      console.log('✅ Account reset complete, reloading page...');
+
       // Refresh the page to show clean state
-      window.location.reload();
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error) {
       console.error('Error resetting account:', error);
       toast({
