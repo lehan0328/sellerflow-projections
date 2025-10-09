@@ -63,19 +63,6 @@ export function DashboardHeader({ onRefresh, isRefreshing = false, lastRefreshTi
         <Button
           variant="outline"
           size="sm"
-          onClick={() => navigate('/flex-report')}
-          className="relative h-10 px-4 bg-gradient-to-r from-purple-500/20 to-blue-500/20 backdrop-blur-sm border-purple-500/50 hover:border-purple-500 hover:bg-purple-500/30 hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 group overflow-hidden"
-          title="Create Flex Report - Share your success"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="relative flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-purple-500 animate-pulse" />
-            <span className="font-semibold text-purple-600 dark:text-purple-400">Flex Report</span>
-          </div>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
           onClick={() => navigate('/referral-dashboard')}
           className="relative h-10 px-4 bg-blue-500/20 backdrop-blur-sm border-blue-500/50 hover:border-blue-500 hover:bg-blue-500/30 hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 group overflow-hidden"
           title="Referral Rewards - Earn up to $3,000"

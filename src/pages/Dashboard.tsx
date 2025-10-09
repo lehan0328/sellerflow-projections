@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { addDays, isToday, isBefore, startOfDay, format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
 import { OverviewStats } from "@/components/cash-flow/overview-stats";
@@ -48,6 +49,7 @@ interface CashFlowEvent {
 }
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showPdfConverter, setShowPdfConverter] = useState(false);
@@ -1205,6 +1207,7 @@ const Dashboard = () => {
         onAddIncome={() => setShowIncomeForm(true)}
         onAddRecurringIncome={() => setShowRecurringIncomeForm(true)}
         onConvertPdf={() => setShowPdfConverter(true)}
+        onOpenFlexReport={() => navigate('/flex-report')}
       />
 
       {showPurchaseOrderForm && (

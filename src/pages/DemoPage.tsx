@@ -204,6 +204,7 @@ const DemoPage = () => {
         onAddIncome={() => alert('Demo: Income entry not available in demo')}
         onAddRecurringIncome={() => alert('Demo: Recurring income setup not available in demo')}
         onConvertPdf={() => setShowPdfConverter(true)}
+        onOpenFlexReport={() => alert('Demo: Flex Report not available in demo mode')}
       />
 
       {showPurchaseOrderForm && (
