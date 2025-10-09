@@ -336,10 +336,19 @@ export const useSafeSpending = () => {
             const opportunityIndex = dailyBalances.findIndex(d => d.date === current.date);
             const opportunityAmount = current.balance; // This is already balance - reserve
             
+            console.log(`🛒 Opportunity at ${current.date}:`, {
+              opportunityAmount,
+              rawBalance: current.balance + reserve,
+              reserve,
+              searchingFor: `balance - reserve > ${opportunityAmount}`
+            });
+            
             // Find first date AFTER the low point where balance > opportunity available amount
             for (let k = opportunityIndex; k < dailyBalances.length; k++) {
               // Compare raw balance to opportunity + reserve (the minimum needed)
-              if (dailyBalances[k].balance - reserve > opportunityAmount) {
+              const availableBalance = dailyBalances[k].balance - reserve;
+              if (availableBalance > opportunityAmount) {
+                console.log(`  ✅ Found at ${dailyBalances[k].date}: balance=${dailyBalances[k].balance}, available=${availableBalance}`);
                 availableDate = dailyBalances[k].date;
                 break;
               }
