@@ -212,6 +212,62 @@ const Features = () => {
           </div>
         </section>
 
+        {/* Signature Features */}
+        <section className="py-20 px-4 bg-gradient-to-b from-background to-primary/5">
+          <div className="container mx-auto">
+            <div className="text-center mb-12">
+              <Badge className="mb-4 bg-gradient-primary">Signature Features</Badge>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Built for Amazon Sellers
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Our most powerful features designed to give you complete control over your cash flow
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {/* Cash Flow Calendar */}
+              <Card className="bg-gradient-to-br from-blue-500/10 via-background to-background border-blue-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                <CardHeader>
+                  <div className="mb-4 p-3 rounded-xl bg-blue-500/20 w-fit">
+                    <Calendar className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <CardTitle className="text-2xl">Cash Flow Calendar</CardTitle>
+                  <CardDescription className="text-base">
+                    Visualize your entire financial future on an interactive calendar. See exactly when money comes in and goes out, with 365-day forecasting.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+
+              {/* AI-Powered Insights */}
+              <Card className="bg-gradient-to-br from-purple-500/10 via-background to-background border-purple-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                <CardHeader>
+                  <div className="mb-4 p-3 rounded-xl bg-purple-500/20 w-fit">
+                    <Brain className="h-8 w-8 text-purple-600" />
+                  </div>
+                  <CardTitle className="text-2xl">AI-Powered Insights</CardTitle>
+                  <CardDescription className="text-base">
+                    Get daily AI-generated insights on your cash position, spending patterns, and optimization opportunities. Ask questions about your finances.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+
+              {/* Scenario Planning */}
+              <Card className="bg-gradient-to-br from-green-500/10 via-background to-background border-green-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                <CardHeader>
+                  <div className="mb-4 p-3 rounded-xl bg-green-500/20 w-fit">
+                    <Target className="h-8 w-8 text-green-600" />
+                  </div>
+                  <CardTitle className="text-2xl">Scenario Planning</CardTitle>
+                  <CardDescription className="text-base">
+                    Model what-if scenarios to understand how revenue changes, new expenses, or vendor terms affect your cash position before making decisions.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </div>
+          </div>
+        </section>
+
         {/* Category Filter */}
         <section className="py-8 px-4 border-b bg-card/30">
           <div className="container mx-auto">
