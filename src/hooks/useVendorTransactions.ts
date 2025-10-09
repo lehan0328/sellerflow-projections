@@ -137,6 +137,43 @@ export const useVendorTransactions = () => {
 
   const deleteTransaction = async (transactionId: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Get the transaction to check if it's a credit card purchase
+      const transactionToDelete = transactions.find(tx => tx.id === transactionId);
+      if (!transactionToDelete) throw new Error('Transaction not found');
+
+      // If it's a credit card transaction, revert the credit card balance
+      if (transactionToDelete.creditCardId) {
+        const { data: creditCard, error: fetchError } = await supabase
+          .from('credit_cards')
+          .select('balance, available_credit')
+          .eq('id', transactionToDelete.creditCardId)
+          .single();
+
+        if (fetchError) {
+          console.error('Error fetching credit card:', fetchError);
+        } else if (creditCard) {
+          // Reduce the balance and increase available credit
+          const newBalance = Number(creditCard.balance) - transactionToDelete.amount;
+          const newAvailableCredit = Number(creditCard.available_credit) + transactionToDelete.amount;
+
+          const { error: updateError } = await supabase
+            .from('credit_cards')
+            .update({
+              balance: newBalance,
+              available_credit: newAvailableCredit,
+            })
+            .eq('id', transactionToDelete.creditCardId);
+
+          if (updateError) {
+            console.error('Error updating credit card:', updateError);
+          }
+        }
+      }
+
+      // Delete the transaction
       const { error } = await supabase
         .from('transactions')
         .delete()
