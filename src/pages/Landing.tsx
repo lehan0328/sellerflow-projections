@@ -1596,9 +1596,7 @@ const Landing = () => {
                 <CardTitle>How accurate is the Amazon payout forecasting?</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground leading-relaxed">
-                  Auren uses real settlement data to forecast payouts with 95% accuracy. Our AI models continuously learn from your sales patterns to provide increasingly precise predictions.
-                </p>
+                <p className="text-muted-foreground leading-relaxed">Auren uses real settlement data to forecast payouts with 95% accuracy. We pull data directly from your seller account for the most precise and accurate forecast.</p>
               </CardContent>
             </Card>
           </div>
