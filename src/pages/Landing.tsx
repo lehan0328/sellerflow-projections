@@ -525,9 +525,22 @@ const Landing = () => {
                     <span className="block text-foreground pb-2">for Marketplace</span>
                     <span className="block text-foreground pb-2">Sellers</span>
                   </h1>
-                  <Badge variant="secondary" className="text-lg px-6 py-2 whitespace-nowrap mt-2">
-                    Starting at $24/mo
-                  </Badge>
+                  <div className="relative mt-2">
+                    <div className="absolute inset-0 animate-spin-slow">
+                      <svg viewBox="0 0 100 100" className="w-24 h-24">
+                        <defs>
+                          <clipPath id="starburst">
+                            <path d="M50,5 L55,35 L85,30 L65,50 L85,70 L55,65 L50,95 L45,65 L15,70 L35,50 L15,30 L45,35 Z" />
+                          </clipPath>
+                        </defs>
+                        <circle cx="50" cy="50" r="45" fill="hsl(var(--secondary))" clipPath="url(#starburst)" />
+                      </svg>
+                    </div>
+                    <div className="relative flex flex-col items-center justify-center w-24 h-24 text-center">
+                      <span className="text-sm font-bold whitespace-nowrap">Starting</span>
+                      <span className="text-lg font-bold whitespace-nowrap">$24/mo</span>
+                    </div>
+                  </div>
                 </div>
               </div>
               
