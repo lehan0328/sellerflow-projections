@@ -298,13 +298,14 @@ export const AdminCustomers = () => {
                 <TableHead>Joined</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
+                <TableHead>Churn Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedCustomers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     No customers found
                   </TableCell>
                 </TableRow>
@@ -338,11 +339,6 @@ export const AdminCustomers = () => {
                               Failed: {new Date(customer.payment_failure_date).toLocaleDateString()}
                             </span>
                           )}
-                          {customer.churn_date && (
-                            <span className="text-xs text-muted-foreground">
-                              Churned: {new Date(customer.churn_date).toLocaleDateString()}
-                            </span>
-                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -352,6 +348,19 @@ export const AdminCustomers = () => {
                           </Badge>
                         ) : (
                           <span className="text-muted-foreground">Free</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {customer.churn_date ? (
+                          <span className="text-sm">
+                            {new Date(customer.churn_date).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
