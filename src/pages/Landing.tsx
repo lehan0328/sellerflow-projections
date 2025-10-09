@@ -608,7 +608,7 @@ const Landing = () => {
                     </div>
                     <div>
                       <div className="font-semibold text-sm">Safe Spending Power</div>
-                      <div className="text-xs text-muted-foreground">Know exactly how much you can spend</div>
+                      <div className="text-xs text-muted-foreground">Know exactly how much you can spend for the next 180 days</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
