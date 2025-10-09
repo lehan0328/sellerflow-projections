@@ -85,7 +85,7 @@ export const useSafeSpending = () => {
       const todayStr = formatDate(today);
 
       const futureDate = new Date(today);
-      futureDate.setDate(futureDate.getDate() + 90); // Next 3 months
+      futureDate.setDate(futureDate.getDate() + 180); // Next 6 months
       const futureDateStr = formatDate(futureDate);
 
       // Get ALL events that affect cash flow (matching calendar logic)
@@ -153,8 +153,8 @@ export const useSafeSpending = () => {
       const dailyBalances: DailyBalance[] = [];
       let runningBalance = bankBalance;
 
-      // Process each day in the next 90 days (3 months)
-      for (let i = 0; i <= 90; i++) {
+      // Process each day in the next 180 days (6 months)
+      for (let i = 0; i <= 180; i++) {
         const targetDate = new Date(today);
         targetDate.setDate(targetDate.getDate() + i);
         targetDate.setHours(0, 0, 0, 0);
@@ -290,23 +290,9 @@ export const useSafeSpending = () => {
         }
       }
 
-      // Find the NEXT lowest balance from today (first significant dip)
-      // This is more relevant than the absolute minimum that might be months away
-      let minBalance = dailyBalances[0].balance;
-      let minDayIndex = 0;
-      
-      // Look for the first local minimum (a dip followed by recovery)
-      for (let i = 1; i < dailyBalances.length; i++) {
-        if (dailyBalances[i].balance < minBalance) {
-          minBalance = dailyBalances[i].balance;
-          minDayIndex = i;
-        }
-        // Stop at first local minimum if we've found a dip and are recovering
-        if (i > minDayIndex && dailyBalances[i].balance > minBalance) {
-          break;
-        }
-      }
-      
+      // Find the absolute minimum balance over the entire 180-day period
+      const minBalance = Math.min(...dailyBalances.map(d => d.balance));
+      const minDayIndex = dailyBalances.findIndex(d => d.balance === minBalance);
       const minDay = dailyBalances[minDayIndex];
       
       // Find ALL buying opportunities (all local minimums after the lowest balance date)
