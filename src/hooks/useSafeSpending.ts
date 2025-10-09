@@ -331,11 +331,16 @@ export const useSafeSpending = () => {
               }
             }
             
-            // Find earliest available date (when balance rises above this level)
+            // Find earliest available date (earliest date BEFORE this opportunity where you can spend)
+            // Use the same logic as safe spending: find first date where balance - opportunity >= opportunity balance
             let availableDate: string | undefined;
-            for (let j = i; j < dailyBalances.length; j++) {
-              if (dailyBalances[j].balance > current.balance) {
-                availableDate = dailyBalances[j].date;
+            const opportunityAmount = Math.max(0, current.balance - reserve);
+            
+            // Look backward from this opportunity to find when you can start spending
+            const opportunityIndex = dailyBalances.findIndex(d => d.date === current.date);
+            for (let k = 0; k <= opportunityIndex; k++) {
+              if (dailyBalances[k].balance - opportunityAmount >= current.balance) {
+                availableDate = dailyBalances[k].date;
                 break;
               }
             }
