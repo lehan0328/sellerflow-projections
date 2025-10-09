@@ -354,61 +354,61 @@ export const CashFlowInsights = ({
             {upcomingExpenses > 0}
 
             {/* Credit Card Spending Power */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <h4 className="text-sm font-semibold flex items-center gap-2">
                 <CreditCard className="h-4 w-4" />
                 Credit Card Spending Power
               </h4>
               {cardsLoading ? (
-                <div className="flex items-center justify-center p-4">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <div className="flex items-center justify-center p-3">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 </div>
               ) : creditCards.length === 0 ? (
-                <div className="p-4 bg-muted/50 rounded-lg text-center">
-                  <p className="text-sm text-muted-foreground">No credit cards added yet</p>
+                <div className="p-3 bg-muted/50 rounded-lg text-center">
+                  <p className="text-xs text-muted-foreground">No credit cards added yet</p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {creditCards.map((card) => {
                     const pendingOrders = pendingOrdersByCard[card.id] || 0;
                     const availableSpend = card.available_credit;
                     const isOverLimit = availableSpend < 0;
                     
                     return (
-                      <div key={card.id} className={`p-3 rounded-lg space-y-2 ${isOverLimit ? 'bg-red-50 dark:bg-red-950/20 border-2 border-red-500' : 'bg-muted/50'}`}>
-                        <div className="flex justify-between items-center">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-sm">{card.account_name}</p>
-                              {isOverLimit && <AlertCircle className="h-4 w-4 text-red-600" />}
+                      <div key={card.id} className={`p-2 rounded-lg space-y-1.5 ${isOverLimit ? 'bg-red-50 dark:bg-red-950/20 border border-red-500' : 'bg-muted/50'}`}>
+                        <div className="flex justify-between items-center gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-medium text-xs truncate">{card.account_name}</p>
+                              {isOverLimit && <AlertCircle className="h-3 w-3 text-red-600 flex-shrink-0" />}
                             </div>
-                            <p className="text-xs text-muted-foreground">{card.institution_name}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{card.institution_name}</p>
                           </div>
-                          <span className={`text-xl font-bold ${isOverLimit ? 'text-red-600' : 'text-green-600'}`}>
+                          <span className={`text-base font-bold flex-shrink-0 ${isOverLimit ? 'text-red-600' : 'text-green-600'}`}>
                             ${availableSpend.toLocaleString()}
                           </span>
                         </div>
                         
                         {isOverLimit && (
-                          <div className="flex items-start gap-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs">
-                            <AlertCircle className="h-3 w-3 text-red-600 flex-shrink-0 mt-0.5" />
+                          <div className="flex items-start gap-1.5 p-1.5 bg-red-100 dark:bg-red-900/30 rounded text-[10px]">
+                            <AlertCircle className="h-2.5 w-2.5 text-red-600 flex-shrink-0 mt-0.5" />
                             <p className="text-red-700 dark:text-red-400">
-                              Warning: Pending orders exceed available credit by ${Math.abs(availableSpend).toLocaleString()}
+                              Over limit by ${Math.abs(availableSpend).toLocaleString()}
                             </p>
                           </div>
                         )}
                         
                         {(pendingOrders > 0 || card.payment_due_date) && (
-                          <div className="space-y-1 text-xs pt-2 border-t border-border">
+                          <div className="space-y-0.5 text-[10px] pt-1 border-t border-border">
                             {pendingOrders > 0 && (
                               <div className="flex justify-between items-center">
-                                <span className="text-muted-foreground">Pending Orders</span>
+                                <span className="text-muted-foreground">Pending</span>
                                 <span className="font-medium text-orange-600">-${pendingOrders.toLocaleString()}</span>
                               </div>
                             )}
                             {card.payment_due_date && (
-                              <p className="text-muted-foreground italic">
-                                Payment due: {new Date(card.payment_due_date).toLocaleDateString()}
+                              <p className="text-muted-foreground">
+                                Due: {new Date(card.payment_due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                               </p>
                             )}
                           </div>
