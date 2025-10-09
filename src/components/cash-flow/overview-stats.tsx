@@ -241,10 +241,10 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
         <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <p className="text-sm text-slate-600">Credit Utilization</p>
-              <p className="text-2xl font-bold text-purple-700">{formatCurrency(totalCreditBalance)}</p>
+              <p className="text-sm text-slate-600">Available Credit</p>
+              <p className="text-2xl font-bold text-purple-700">{formatCurrency(totalAvailableCredit)}</p>
               <p className="text-sm text-slate-600">of {formatCurrency(totalCreditLimit)} limit</p>
-              <p className="text-xs text-purple-600">{formatCurrency(totalAvailableCredit)} available • {creditUtilization.toFixed(1)}% used</p>
+              <p className="text-xs text-purple-600">{formatCurrency(totalCreditBalance)} used • {creditUtilization.toFixed(1)}% utilization</p>
             </div>
             <CreditCard className="h-8 w-8 text-purple-500" />
           </div>
