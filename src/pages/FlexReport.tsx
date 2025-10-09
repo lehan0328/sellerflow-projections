@@ -201,7 +201,7 @@ const FlexReport = () => {
             <div className="mb-10 text-center bg-gradient-to-br from-emerald-50/50 to-green-50/50 backdrop-blur-sm rounded-2xl p-8 border border-emerald-200/50 shadow-lg relative">
               <button
                 onClick={() => toggleVisibility('safeSpending')}
-                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors"
+                className="absolute top-4 left-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors z-10"
               >
                 {visibility.safeSpending ? (
                   <Eye className="w-5 h-5 text-blue-600" />
@@ -209,7 +209,10 @@ const FlexReport = () => {
                   <EyeOff className="w-5 h-5 text-slate-400" />
                 )}
               </button>
-              <BadgeCheck className="w-6 h-6 text-emerald-600 mx-auto mb-2" />
+              <div className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 bg-emerald-50 border-2 border-emerald-600 rounded-full">
+                <div className="w-2 h-2 bg-emerald-600 rounded-full"></div>
+                <span className="text-xs font-black text-emerald-700 uppercase tracking-wider">Live Verified</span>
+              </div>
               <p className="text-sm text-slate-600 mb-3 uppercase tracking-widest font-semibold">Available to Spend</p>
               <div className={`text-6xl md:text-7xl font-black bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-3 drop-shadow-sm transition-all duration-300 ${!visibility.safeSpending ? 'blur-lg' : ''}`}>
                 {formatCurrency(safeSpendingData?.safe_spending_limit || 0)}
@@ -223,7 +226,7 @@ const FlexReport = () => {
               <div className="group bg-gradient-to-br from-blue-50 via-blue-100/80 to-blue-50 rounded-2xl p-6 border-2 border-blue-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <button
                   onClick={() => toggleVisibility('totalCash')}
-                  className="absolute top-4 right-4 p-2 rounded-lg hover:bg-blue-100/50 transition-colors"
+                  className="absolute top-4 left-4 p-2 rounded-lg hover:bg-blue-100/50 transition-colors z-10"
                 >
                   {visibility.totalCash ? (
                     <Eye className="w-4 h-4 text-blue-600" />
@@ -231,12 +234,15 @@ const FlexReport = () => {
                     <EyeOff className="w-4 h-4 text-slate-400" />
                   )}
                 </button>
+                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border-2 border-blue-600 rounded-full">
+                  <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+                  <span className="text-xs font-black text-blue-700 uppercase tracking-wider">Verified</span>
+                </div>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <DollarSign className="w-5 h-5 text-white" />
                   </div>
                   <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Total Cash</p>
-                  <BadgeCheck className="w-5 h-5 text-blue-600 ml-auto" />
                 </div>
                 <p className={`text-4xl font-black text-blue-700 drop-shadow-sm transition-all duration-300 ${!visibility.totalCash ? 'blur-lg' : ''}`}>{formatCurrency(bankBalance)}</p>
               </div>
@@ -245,7 +251,7 @@ const FlexReport = () => {
               <div className="group bg-gradient-to-br from-purple-50 via-purple-100/80 to-purple-50 rounded-2xl p-6 border-2 border-purple-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <button
                   onClick={() => toggleVisibility('availableCredit')}
-                  className="absolute top-4 right-4 p-2 rounded-lg hover:bg-purple-100/50 transition-colors"
+                  className="absolute top-4 left-4 p-2 rounded-lg hover:bg-purple-100/50 transition-colors z-10"
                 >
                   {visibility.availableCredit ? (
                     <Eye className="w-4 h-4 text-blue-600" />
@@ -253,12 +259,15 @@ const FlexReport = () => {
                     <EyeOff className="w-4 h-4 text-slate-400" />
                   )}
                 </button>
+                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 border-2 border-purple-600 rounded-full">
+                  <div className="w-1.5 h-1.5 bg-purple-600 rounded-full"></div>
+                  <span className="text-xs font-black text-purple-700 uppercase tracking-wider">Verified</span>
+                </div>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <CreditCard className="w-5 h-5 text-white" />
                   </div>
                   <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Available Credit</p>
-                  <BadgeCheck className="w-5 h-5 text-purple-600 ml-auto" />
                 </div>
                 <p className={`text-4xl font-black text-purple-700 drop-shadow-sm transition-all duration-300 ${!visibility.availableCredit ? 'blur-lg' : ''}`}>{formatCurrency(totalAvailableCredit)}</p>
               </div>
@@ -267,7 +276,7 @@ const FlexReport = () => {
               <div className="group bg-gradient-to-br from-emerald-50 via-emerald-100/80 to-emerald-50 rounded-2xl p-6 border-2 border-emerald-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <button
                   onClick={() => toggleVisibility('upcomingIncome')}
-                  className="absolute top-4 right-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors"
+                  className="absolute top-4 left-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors z-10"
                 >
                   {visibility.upcomingIncome ? (
                     <Eye className="w-4 h-4 text-blue-600" />
@@ -275,12 +284,15 @@ const FlexReport = () => {
                     <EyeOff className="w-4 h-4 text-slate-400" />
                   )}
                 </button>
+                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border-2 border-emerald-600 rounded-full">
+                  <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full"></div>
+                  <span className="text-xs font-black text-emerald-700 uppercase tracking-wider">Verified</span>
+                </div>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <TrendingUp className="w-5 h-5 text-white" />
                   </div>
                   <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Income (30d)</p>
-                  <BadgeCheck className="w-5 h-5 text-emerald-600 ml-auto" />
                 </div>
                 <p className={`text-4xl font-black text-emerald-700 drop-shadow-sm transition-all duration-300 ${!visibility.upcomingIncome ? 'blur-lg' : ''}`}>{formatCurrency(upcomingIncome)}</p>
               </div>
@@ -289,7 +301,7 @@ const FlexReport = () => {
               <div className="group bg-gradient-to-br from-orange-50 via-orange-100/80 to-orange-50 rounded-2xl p-6 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <button
                   onClick={() => toggleVisibility('purchaseOrders')}
-                  className="absolute top-4 right-4 p-2 rounded-lg hover:bg-orange-100/50 transition-colors"
+                  className="absolute top-4 left-4 p-2 rounded-lg hover:bg-orange-100/50 transition-colors z-10"
                 >
                   {visibility.purchaseOrders ? (
                     <Eye className="w-4 h-4 text-blue-600" />
@@ -297,12 +309,15 @@ const FlexReport = () => {
                     <EyeOff className="w-4 h-4 text-slate-400" />
                   )}
                 </button>
+                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 border-2 border-orange-600 rounded-full">
+                  <div className="w-1.5 h-1.5 bg-orange-600 rounded-full"></div>
+                  <span className="text-xs font-black text-orange-700 uppercase tracking-wider">Verified</span>
+                </div>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <ShoppingCart className="w-5 h-5 text-white" />
                   </div>
                   <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Purchase Orders</p>
-                  <BadgeCheck className="w-5 h-5 text-orange-600 ml-auto" />
                 </div>
                 <p className={`text-4xl font-black text-orange-700 drop-shadow-sm transition-all duration-300 ${!visibility.purchaseOrders ? 'blur-lg' : ''}`}>{formatCurrency(upcomingPurchaseOrders)}</p>
               </div>
