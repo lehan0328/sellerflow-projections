@@ -30,7 +30,7 @@ const Landing = () => {
     theme,
     setTheme
   } = useTheme();
-  const [isYearly, setIsYearly] = useState(false);
+  const [isYearly, setIsYearly] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showEnterpriseCustomizer, setShowEnterpriseCustomizer] = useState(false);
   const [showStickyCTA, setShowStickyCTA] = useState(false);
@@ -153,9 +153,9 @@ const Landing = () => {
   const pricingPlans = [{
     name: "Starter",
     price: "$29",
-    yearlyPrice: "$290",
+    yearlyPrice: "$24",
     period: "/month",
-    yearlyPeriod: "/year",
+    yearlyPeriod: "/month",
     description: "Up to $20k monthly revenue",
     popular: false,
     priceId: "price_1SEH8NB28kMY3UseBj2w9HgH",
@@ -164,9 +164,9 @@ const Landing = () => {
   }, {
     name: "Growing",
     price: "$59",
-    yearlyPrice: "$590",
+    yearlyPrice: "$49",
     period: "/month",
-    yearlyPeriod: "/year",
+    yearlyPeriod: "/month",
     description: "Up to $100k monthly revenue",
     popular: true,
     priceId: "price_1SEH8iB28kMY3Usem3k3vElT",
@@ -175,9 +175,9 @@ const Landing = () => {
   }, {
     name: "Professional",
     price: "$89",
-    yearlyPrice: "$890",
+    yearlyPrice: "$74",
     period: "/month",
-    yearlyPeriod: "/year",
+    yearlyPeriod: "/month",
     description: "Up to $200k monthly revenue",
     popular: false,
     priceId: "price_1SEHBHB28kMY3UsenQEY0qoT",
@@ -1331,18 +1331,24 @@ const Landing = () => {
                                 <span className="text-3xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
                                 <span className="text-muted-foreground text-xs">{isYearly ? plan.yearlyPeriod : plan.period}</span>
                               </div>
-                              {isYearly && <Badge variant="secondary" className="text-xs py-0.5 px-2">
-                                Save {plan.savings}/year
-                              </Badge>}
+                              {isYearly && <>
+                                <p className="text-xs text-muted-foreground">billed annually</p>
+                                <Badge variant="secondary" className="text-xs py-0.5 px-2">
+                                  Save {plan.savings}/year
+                                </Badge>
+                              </>}
                             </>}
                           {plan.name !== "Starter" && <>
                               <div className="flex items-baseline justify-center gap-1">
                                 <span className="text-3xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
                                 <span className="text-muted-foreground text-xs">{isYearly ? plan.yearlyPeriod : plan.period}</span>
                               </div>
-                              {isYearly && plan.savings && <Badge variant="secondary" className="text-xs py-0.5 px-2">
+                              {isYearly && plan.savings && <>
+                                <p className="text-xs text-muted-foreground">billed annually</p>
+                                <Badge variant="secondary" className="text-xs py-0.5 px-2">
                                   Save {plan.savings}/year
-                                </Badge>}
+                                </Badge>
+                              </>}
                             </>}
                         </div>
                         <Button className={`w-full text-sm py-2 h-auto ${plan.popular ? 'bg-gradient-primary' : ''}`} variant={plan.popular ? "default" : "outline"} onClick={() => handleStartTrial(isYearly ? plan.yearlyPriceId : plan.priceId)} disabled={isLoading}>
