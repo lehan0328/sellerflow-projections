@@ -1,7 +1,7 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Download, Share2, TrendingUp, DollarSign, CreditCard, ShoppingCart, Calendar, ArrowLeft } from "lucide-react";
+import { Download, Share2, TrendingUp, DollarSign, CreditCard, ShoppingCart, Calendar, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -14,6 +14,21 @@ import aurenLogo from "@/assets/auren-full-logo.png";
 const FlexReport = () => {
   const navigate = useNavigate();
   const reportRef = useRef<HTMLDivElement>(null);
+  
+  // Visibility toggles for each metric
+  const [visibility, setVisibility] = useState({
+    safeSpending: true,
+    totalCash: true,
+    availableCredit: true,
+    upcomingIncome: true,
+    purchaseOrders: true,
+    creditUtilization: true,
+    vendorPayments: true
+  });
+
+  const toggleVisibility = (key: keyof typeof visibility) => {
+    setVisibility(prev => ({ ...prev, [key]: !prev[key] }));
+  };
   const {
     totalBalance: bankBalance
   } = useBankAccounts();
@@ -163,77 +178,137 @@ const FlexReport = () => {
             </div>
 
             {/* Primary Metric - Available to Spend */}
-            <div className="mb-10 text-center bg-gradient-to-br from-emerald-50/50 to-green-50/50 backdrop-blur-sm rounded-2xl p-8 border border-emerald-200/50 shadow-lg">
-              <p className="text-sm text-slate-600 mb-3 uppercase tracking-widest font-semibold">Available to Spend</p>
+            {visibility.safeSpending && (
+              <div className="mb-10 text-center bg-gradient-to-br from-emerald-50/50 to-green-50/50 backdrop-blur-sm rounded-2xl p-8 border border-emerald-200/50 shadow-lg relative">
+                <button
+                  onClick={() => toggleVisibility('safeSpending')}
+                  className="absolute top-4 right-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors"
+                >
+                  {visibility.safeSpending ? (
+                    <Eye className="w-5 h-5 text-blue-600" />
+                  ) : (
+                    <EyeOff className="w-5 h-5 text-slate-400" />
+                  )}
+                </button>
+                <p className="text-sm text-slate-600 mb-3 uppercase tracking-widest font-semibold">Available to Spend</p>
               <div className="text-6xl md:text-7xl font-black bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-3 drop-shadow-sm">
                 {formatCurrency(safeSpendingData?.safe_spending_limit || 0)}
               </div>
               <p className="text-slate-600 text-base font-medium">Safe spending power for your business</p>
-            </div>
+              </div>
+            )}
 
             {/* Metrics Grid */}
             <div className="grid grid-cols-2 gap-5 mb-8">
               {/* Total Cash */}
-              <div className="group bg-gradient-to-br from-blue-50 via-blue-100/80 to-blue-50 rounded-2xl p-6 border-2 border-blue-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-4">
+              {visibility.totalCash && (
+                <div className="group bg-gradient-to-br from-blue-50 via-blue-100/80 to-blue-50 rounded-2xl p-6 border-2 border-blue-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+                  <button
+                    onClick={() => toggleVisibility('totalCash')}
+                    className="absolute top-4 right-4 p-2 rounded-lg hover:bg-blue-100/50 transition-colors"
+                  >
+                    <Eye className="w-4 h-4 text-blue-600" />
+                  </button>
+                  <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <DollarSign className="w-5 h-5 text-white" />
                   </div>
                   <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Total Cash</p>
                 </div>
                 <p className="text-4xl font-black text-blue-700 drop-shadow-sm">{formatCurrency(bankBalance)}</p>
-              </div>
+                </div>
+              )}
 
               {/* Available Credit */}
-              <div className="group bg-gradient-to-br from-purple-50 via-purple-100/80 to-purple-50 rounded-2xl p-6 border-2 border-purple-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-4">
+              {visibility.availableCredit && (
+                <div className="group bg-gradient-to-br from-purple-50 via-purple-100/80 to-purple-50 rounded-2xl p-6 border-2 border-purple-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+                  <button
+                    onClick={() => toggleVisibility('availableCredit')}
+                    className="absolute top-4 right-4 p-2 rounded-lg hover:bg-purple-100/50 transition-colors"
+                  >
+                    <Eye className="w-4 h-4 text-blue-600" />
+                  </button>
+                  <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <CreditCard className="w-5 h-5 text-white" />
                   </div>
                   <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Available Credit</p>
                 </div>
                 <p className="text-4xl font-black text-purple-700 drop-shadow-sm">{formatCurrency(totalAvailableCredit)}</p>
-              </div>
+                </div>
+              )}
 
               {/* Upcoming Income */}
-              <div className="group bg-gradient-to-br from-emerald-50 via-emerald-100/80 to-emerald-50 rounded-2xl p-6 border-2 border-emerald-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-4">
+              {visibility.upcomingIncome && (
+                <div className="group bg-gradient-to-br from-emerald-50 via-emerald-100/80 to-emerald-50 rounded-2xl p-6 border-2 border-emerald-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+                  <button
+                    onClick={() => toggleVisibility('upcomingIncome')}
+                    className="absolute top-4 right-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors"
+                  >
+                    <Eye className="w-4 h-4 text-blue-600" />
+                  </button>
+                  <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <TrendingUp className="w-5 h-5 text-white" />
                   </div>
                   <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Income (30d)</p>
                 </div>
                 <p className="text-4xl font-black text-emerald-700 drop-shadow-sm">{formatCurrency(upcomingIncome)}</p>
-              </div>
+                </div>
+              )}
 
               {/* Purchase Orders */}
-              <div className="group bg-gradient-to-br from-orange-50 via-orange-100/80 to-orange-50 rounded-2xl p-6 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
-                <div className="flex items-center gap-3 mb-4">
+              {visibility.purchaseOrders && (
+                <div className="group bg-gradient-to-br from-orange-50 via-orange-100/80 to-orange-50 rounded-2xl p-6 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+                  <button
+                    onClick={() => toggleVisibility('purchaseOrders')}
+                    className="absolute top-4 right-4 p-2 rounded-lg hover:bg-orange-100/50 transition-colors"
+                  >
+                    <Eye className="w-4 h-4 text-blue-600" />
+                  </button>
+                  <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <ShoppingCart className="w-5 h-5 text-white" />
                   </div>
                   <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Purchase Orders</p>
                 </div>
                 <p className="text-4xl font-black text-orange-700 drop-shadow-sm">{formatCurrency(upcomingPurchaseOrders)}</p>
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Additional Metrics Row */}
             <div className="grid grid-cols-2 gap-5 mb-10">
               {/* Credit Utilization */}
-              <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-5 border-2 border-slate-200/60 shadow-md backdrop-blur-sm">
+              {visibility.creditUtilization && (
+                <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-5 border-2 border-slate-200/60 shadow-md backdrop-blur-sm relative">
+                  <button
+                    onClick={() => toggleVisibility('creditUtilization')}
+                    className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-slate-200/50 transition-colors"
+                  >
+                    <Eye className="w-4 h-4 text-blue-600" />
+                  </button>
                 <p className="text-xs text-slate-600 mb-2 font-semibold uppercase tracking-wide">Credit Utilization</p>
                 <div className="flex items-baseline gap-2">
                   <p className="text-3xl font-black text-slate-700">{creditUtilization.toFixed(1)}%</p>
                   <p className="text-xs text-slate-500 font-medium">of {formatCurrency(totalCreditLimit)}</p>
                 </div>
-              </div>
+                </div>
+              )}
 
               {/* Vendor Payments */}
-              <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-5 border-2 border-slate-200/60 shadow-md backdrop-blur-sm">
+              {visibility.vendorPayments && (
+                <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-5 border-2 border-slate-200/60 shadow-md backdrop-blur-sm relative">
+                  <button
+                    onClick={() => toggleVisibility('vendorPayments')}
+                    className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-slate-200/50 transition-colors"
+                  >
+                    <Eye className="w-4 h-4 text-blue-600" />
+                  </button>
                 <p className="text-xs text-slate-600 mb-2 font-semibold uppercase tracking-wide">Scheduled Vendor Payments</p>
                 <p className="text-3xl font-black text-slate-700">{formatCurrency(upcomingVendorPayments)}</p>
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Footer */}
