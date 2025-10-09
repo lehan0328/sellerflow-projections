@@ -616,7 +616,7 @@ const Landing = () => {
                       <span className="text-lg">📊</span>
                     </div>
                     <div>
-                      <div className="font-semibold text-sm">13-Week Cash Flow Forecast</div>
+                      <div className="font-semibold text-sm">100% Accurate Data</div>
                       <div className="text-xs text-muted-foreground">See your financial future at a glance</div>
                     </div>
                   </div>
