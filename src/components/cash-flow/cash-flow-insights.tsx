@@ -416,7 +416,7 @@ export const CashFlowInsights = ({
           <ScrollArea className="max-h-[400px] pr-4">
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground mb-4">
-                These are the predicted low points in your cash balance over the next 3 months - ideal times for strategic spending or investments.
+                <span className="font-semibold text-amber-600">Important:</span> These opportunities assume <span className="font-semibold">$0 spending until each date</span>. The available amounts shown are what you'll have if you don't make any purchases before then. Plan your spending timeline accordingly to preserve these opportunities.
               </p>
               {allBuyingOpportunities.map((opp, index) => {
                 const [year, month, day] = opp.date.split('-').map(Number);
