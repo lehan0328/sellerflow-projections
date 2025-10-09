@@ -155,6 +155,15 @@ const FlexReport = () => {
           <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl -z-0" />
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-purple-500/10 to-blue-500/10 rounded-full blur-3xl -z-0" />
           
+          {/* Auren Watermark */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+            <img 
+              src={aurenLogo} 
+              alt="" 
+              className="w-[600px] opacity-[0.03] select-none rotate-[-15deg]"
+            />
+          </div>
+          
           <div className="relative z-10 p-8 md:p-12">
             {/* Header with Branding */}
             <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-200">
