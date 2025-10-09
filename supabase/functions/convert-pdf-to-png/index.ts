@@ -11,20 +11,33 @@ serve(async (req) => {
   }
 
   try {
-    const formData = await req.formData();
-    const pdfFile = formData.get("pdf") as File;
+    const { pdfBase64, fileName } = await req.json();
 
-    if (!pdfFile) {
-      throw new Error("No PDF file provided");
+    if (!pdfBase64) {
+      throw new Error("No PDF data provided");
     }
 
-    // For now, return a placeholder response
-    // In a production environment, you would use a PDF to PNG conversion library
-    // or service like pdf.js, Puppeteer, or an external API
+    console.log("[PDF-TO-PNG] Processing PDF:", fileName);
+
+    // Use pdf-lib to read the PDF
+    const { PDFDocument } = await import("https://cdn.skypack.dev/pdf-lib@1.17.1");
     
+    // Decode base64 to bytes
+    const pdfBytes = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
+    
+    // Load the PDF
+    const pdfDoc = await PDFDocument.load(pdfBytes);
+    const pages = pdfDoc.getPages();
+    
+    console.log("[PDF-TO-PNG] PDF has", pages.length, "pages");
+
+    // For now, return a message that conversion requires additional setup
+    // Real conversion would need a headless browser or external service
     return new Response(
       JSON.stringify({ 
-        error: "PDF conversion service not yet implemented. Please use an external tool to convert PDF to PNG first." 
+        error: "PDF to PNG conversion requires additional setup. Consider using an external tool like pdf2image or an online converter.",
+        pageCount: pages.length,
+        suggestion: "You can upload PNG images directly to the purchase order form."
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" }, 
@@ -32,8 +45,9 @@ serve(async (req) => {
       }
     );
   } catch (error) {
+    console.error("[PDF-TO-PNG] Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || "Failed to process PDF" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
     );
   }

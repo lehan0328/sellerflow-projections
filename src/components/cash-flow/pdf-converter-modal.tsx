@@ -61,7 +61,16 @@ export function PdfConverterModal({ open, onOpenChange }: PdfConverterModalProps
 
         if (error) {
           console.error("Conversion error:", error);
-          toast.error("Failed to convert PDF");
+          toast.error("PDF conversion not yet available. Please upload PNG images directly.");
+          return;
+        }
+
+        if (data?.error) {
+          console.log("Conversion info:", data);
+          toast.error(data.error, {
+            description: data.suggestion || "Please use an external converter or upload PNG images directly.",
+            duration: 6000
+          });
           return;
         }
 
