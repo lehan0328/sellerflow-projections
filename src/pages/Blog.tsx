@@ -1,12 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ArrowRight, Calendar, Clock } from "lucide-react";
-import aurenIcon from "@/assets/auren-icon-blue.png";
+import { PublicLayout } from "@/components/PublicLayout";
+import { Helmet } from "react-helmet";
+import { useEffect } from "react";
 
 const Blog = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const blogPosts = [
     {
@@ -84,29 +90,11 @@ const Blog = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div 
-              className="flex items-center gap-3 cursor-pointer hover-scale transition-all duration-300" 
-              onClick={() => navigate('/')}
-            >
-              <img src={aurenIcon} alt="Auren" className="h-12 w-12" />
-              <span className="text-2xl font-bold">Auren</span>
-            </div>
-            <div className="flex items-center space-x-6">
-              <Link to="/" className="text-muted-foreground hover:text-foreground transition-all duration-300">
-                Home
-              </Link>
-              <Button size="sm" onClick={() => navigate('/auth')}>
-                Sign In
-              </Button>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <PublicLayout>
+      <Helmet>
+        <title>Amazon Cashflow Management Blog | Auren</title>
+        <meta name="description" content="Expert guides, strategies, and insights to help you forecast Amazon payouts, manage expenses, and scale your marketplace business." />
+      </Helmet>
 
       {/* Hero Section */}
       <section className="py-20 bg-gradient-to-br from-primary/10 via-background to-accent/10">
@@ -192,7 +180,7 @@ const Blog = () => {
           </Button>
         </div>
       </section>
-    </div>
+    </PublicLayout>
   );
 };
 

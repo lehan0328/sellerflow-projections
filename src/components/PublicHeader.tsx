@@ -31,7 +31,7 @@ export const PublicHeader = () => {
             <Link to="/#testimonials" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
               Reviews
             </Link>
-            <Link to="/blog" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+            <Link to="/blog" onClick={() => window.scrollTo(0, 0)} className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
               Blog
             </Link>
             <Link to="/partners" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
