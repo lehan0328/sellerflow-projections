@@ -368,8 +368,11 @@ const Dashboard = () => {
         Math.abs(event.amount - income.amount) < 0.01)
     ));
     
-    // Refresh safe spending calculations
-    refetchSafeSpending();
+    // Refresh safe spending calculations with a delay to ensure DB changes propagate
+    setTimeout(() => {
+      console.log('🔄 Manually refreshing safe spending after income deletion');
+      refetchSafeSpending();
+    }, 500);
   };
 
   const handleEditIncome = (income: any) => {

@@ -509,12 +509,34 @@ export const useSafeSpending = () => {
 
     const channel = supabase
       .channel('safe-spending-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, fetchSafeSpending)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'income' }, fetchSafeSpending)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'recurring_expenses' }, fetchSafeSpending)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bank_accounts' }, fetchSafeSpending)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'vendors' }, fetchSafeSpending)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'amazon_payouts' }, fetchSafeSpending)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
+        console.log('🔄 Transactions changed - refetching safe spending');
+        fetchSafeSpending();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'income' }, () => {
+        console.log('🔄 Income changed - refetching safe spending');
+        fetchSafeSpending();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'recurring_expenses' }, () => {
+        console.log('🔄 Recurring expenses changed - refetching safe spending');
+        fetchSafeSpending();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bank_accounts' }, () => {
+        console.log('🔄 Bank accounts changed - refetching safe spending');
+        fetchSafeSpending();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vendors' }, () => {
+        console.log('🔄 Vendors changed - refetching safe spending');
+        fetchSafeSpending();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'amazon_payouts' }, () => {
+        console.log('🔄 Amazon payouts changed - refetching safe spending');
+        fetchSafeSpending();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'deleted_transactions' }, () => {
+        console.log('🔄 Transaction deleted - refetching safe spending');
+        fetchSafeSpending();
+      })
       .subscribe();
 
     return () => {
