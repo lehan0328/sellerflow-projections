@@ -290,12 +290,26 @@ export const useSafeSpending = () => {
         }
       }
 
-      // Find minimum balance
-      const minBalance = Math.min(...dailyBalances.map(d => d.balance));
-      const minDay = dailyBalances.find(d => d.balance === minBalance)!;
+      // Find the NEXT lowest balance from today (first significant dip)
+      // This is more relevant than the absolute minimum that might be months away
+      let minBalance = dailyBalances[0].balance;
+      let minDayIndex = 0;
+      
+      // Look for the first local minimum (a dip followed by recovery)
+      for (let i = 1; i < dailyBalances.length; i++) {
+        if (dailyBalances[i].balance < minBalance) {
+          minBalance = dailyBalances[i].balance;
+          minDayIndex = i;
+        }
+        // Stop at first local minimum if we've found a dip and are recovering
+        if (i > minDayIndex && dailyBalances[i].balance > minBalance) {
+          break;
+        }
+      }
+      
+      const minDay = dailyBalances[minDayIndex];
       
       // Find ALL buying opportunities (all local minimums after the lowest balance date)
-      const minDayIndex = dailyBalances.findIndex(d => d.date === minDay.date);
       const allBuyingOpportunities: Array<{ date: string; balance: number; available_date?: string }> = [];
       
       // Scan through all days after the global minimum to find local minimums
