@@ -216,7 +216,7 @@ const Features = () => {
         <section className="py-20 px-4 bg-gradient-to-b from-background to-primary/5">
           <div className="container mx-auto">
             <div className="text-center mb-12">
-              <Badge className="mb-4 bg-gradient-primary">Signature Features</Badge>
+              <Badge className="mb-4 bg-gradient-primary">✨ Signature Features</Badge>
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
                 Built for Amazon Sellers
               </h2>
@@ -226,11 +226,50 @@ const Features = () => {
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {/* Cash Flow Calendar */}
+              {/* Safe Spending Power */}
+              <Card className="bg-gradient-to-br from-green-500/10 via-background to-background border-green-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                <CardHeader>
+                  <div className="mb-4 p-3 rounded-xl bg-green-500/20 w-fit">
+                    <Wallet className="h-8 w-8 text-green-600" />
+                  </div>
+                  <CardTitle className="text-2xl">💰 Safe Spending Power</CardTitle>
+                  <CardDescription className="text-base">
+                    Know exactly how much you can spend for the next 180 days. Make confident purchasing decisions without risking cash shortfalls.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+
+              {/* 100% Accurate Data */}
               <Card className="bg-gradient-to-br from-blue-500/10 via-background to-background border-blue-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
                 <CardHeader>
                   <div className="mb-4 p-3 rounded-xl bg-blue-500/20 w-fit">
-                    <Calendar className="h-8 w-8 text-blue-600" />
+                    <BarChart3 className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <CardTitle className="text-2xl">📊 100% Accurate Data</CardTitle>
+                  <CardDescription className="text-base">
+                    Don't guess - safely connect direct with your bank and Amazon payout. Real-time sync ensures your forecasts are always precise.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+
+              {/* Calculated Buying Opportunities */}
+              <Card className="bg-gradient-to-br from-purple-500/10 via-background to-background border-purple-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                <CardHeader>
+                  <div className="mb-4 p-3 rounded-xl bg-purple-500/20 w-fit">
+                    <Target className="h-8 w-8 text-purple-600" />
+                  </div>
+                  <CardTitle className="text-2xl">🎯 Calculated Buying Opportunities</CardTitle>
+                  <CardDescription className="text-base">
+                    Smart purchase planning recommendations based on expenses + payouts. Never miss a growth opportunity or over-commit funds.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+
+              {/* Cash Flow Calendar */}
+              <Card className="bg-gradient-to-br from-orange-500/10 via-background to-background border-orange-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+                <CardHeader>
+                  <div className="mb-4 p-3 rounded-xl bg-orange-500/20 w-fit">
+                    <Calendar className="h-8 w-8 text-orange-600" />
                   </div>
                   <CardTitle className="text-2xl">Cash Flow Calendar</CardTitle>
                   <CardDescription className="text-base">
@@ -239,24 +278,11 @@ const Features = () => {
                 </CardHeader>
               </Card>
 
-              {/* AI-Powered Insights */}
-              <Card className="bg-gradient-to-br from-purple-500/10 via-background to-background border-purple-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
-                <CardHeader>
-                  <div className="mb-4 p-3 rounded-xl bg-purple-500/20 w-fit">
-                    <Brain className="h-8 w-8 text-purple-600" />
-                  </div>
-                  <CardTitle className="text-2xl">AI-Powered Insights</CardTitle>
-                  <CardDescription className="text-base">
-                    Get daily AI-generated insights on your cash position, spending patterns, and optimization opportunities. Ask questions about your finances.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-
               {/* Scenario Planning */}
-              <Card className="bg-gradient-to-br from-green-500/10 via-background to-background border-green-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              <Card className="bg-gradient-to-br from-teal-500/10 via-background to-background border-teal-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
                 <CardHeader>
-                  <div className="mb-4 p-3 rounded-xl bg-green-500/20 w-fit">
-                    <Target className="h-8 w-8 text-green-600" />
+                  <div className="mb-4 p-3 rounded-xl bg-teal-500/20 w-fit">
+                    <Target className="h-8 w-8 text-teal-600" />
                   </div>
                   <CardTitle className="text-2xl">Scenario Planning</CardTitle>
                   <CardDescription className="text-base">
