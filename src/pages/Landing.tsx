@@ -517,7 +517,7 @@ const Landing = () => {
               animationDelay: '200ms'
             }}>
                 <div className="flex items-start gap-4">
-                  <h1 className="text-5xl lg:text-6xl xl:text-7xl font-display font-bold leading-relaxed tracking-tight flex-1">
+                  <h1 className="text-4xl lg:text-5xl xl:text-6xl font-display font-bold leading-relaxed tracking-tight flex-1">
                     <span className="block text-foreground pb-2">Cashflow</span>
                     <span className="block bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%] pb-2">
                       Forecasting
