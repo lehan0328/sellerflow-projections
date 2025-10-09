@@ -196,6 +196,13 @@ export const CashFlowInsights = ({
             AI Insights
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.location.reload()}
+            >
+              Refresh
+            </Button>
             <Button variant={chatMode ? "default" : "ghost"} size="sm" onClick={() => setChatMode(!chatMode)}>
               <MessageCircle className="h-4 w-4 mr-1" />
               {chatMode ? "Back" : "Chat"}
