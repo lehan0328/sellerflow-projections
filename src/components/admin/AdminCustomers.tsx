@@ -42,6 +42,7 @@ export const AdminCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   const [metrics, setMetrics] = useState<ConversionMetrics | null>(null);
@@ -80,7 +81,7 @@ export const AdminCustomers = () => {
         c.trial_end && new Date(c.trial_end) > now
       ).length || 0;
       const paid = profiles?.filter(c => 
-        c.plan_override && !c.trial_end && ['starter', 'growing', 'professional'].includes(c.plan_override)
+        c.plan_override && !c.trial_end && ['starter', 'growing', 'professional'].includes(c.plan_override) && c.plan_override !== 'admin'
       ).length || 0;
       const expired = (profiles?.length || 0) - trial - paid;
       const conversionRate = profiles?.length ? (paid / profiles.length) * 100 : 0;
@@ -163,11 +164,17 @@ export const AdminCustomers = () => {
     }
   };
 
-  const filteredCustomers = customers.filter(customer =>
-    customer.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.company?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCustomers = customers.filter(customer => {
+    const matchesSearch = customer.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (statusFilter === "all") return matchesSearch;
+    
+    const status = getAccountStatus(customer);
+    return matchesSearch && status.label.toLowerCase() === statusFilter;
+  });
 
   const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -175,6 +182,11 @@ export const AdminCustomers = () => {
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
+  const handleFilterChange = (value: string) => {
+    setStatusFilter(value);
     setCurrentPage(1);
   };
 
@@ -190,14 +202,27 @@ export const AdminCustomers = () => {
 
   const getAccountStatus = (customer: Customer) => {
     const now = new Date();
+    
+    // Check for admin status
+    if (customer.plan_override === 'admin') {
+      return { label: 'Admin', variant: 'default' as const };
+    }
+    
     // Check trial status first (active trial period)
     if (customer.trial_end && new Date(customer.trial_end) > now) {
       return { label: 'Trial', variant: 'secondary' as const };
     }
+    
     // Check for actual paid plans (not discounts or trial-related overrides)
     if (customer.plan_override && ['starter', 'growing', 'professional'].includes(customer.plan_override)) {
       return { label: 'Paid', variant: 'default' as const };
     }
+    
+    // Check if suspended
+    if (customer.account_status === 'suspended_payment') {
+      return { label: 'Suspended', variant: 'destructive' as const };
+    }
+    
     return { label: 'Expired', variant: 'destructive' as const };
   };
 
@@ -235,16 +260,30 @@ export const AdminCustomers = () => {
       
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <CardTitle>Customers ({filteredCustomers.length})</CardTitle>
-            <div className="relative w-80">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name or company..."
-                value={searchTerm}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex gap-3">
+              <select
+                value={statusFilter}
+                onChange={(e) => handleFilterChange(e.target.value)}
+                className="h-10 px-3 rounded-md border border-input bg-background text-sm"
+              >
+                <option value="all">All Status</option>
+                <option value="trial">Trial</option>
+                <option value="paid">Paid</option>
+                <option value="admin">Admin</option>
+                <option value="suspended">Suspended</option>
+                <option value="expired">Expired</option>
+              </select>
+              <div className="relative w-80">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, company, or email..."
+                  value={searchTerm}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
