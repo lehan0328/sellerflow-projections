@@ -465,12 +465,8 @@ export const useSafeSpending = () => {
           : (willDropBelowLimit ? firstBelowLimitDay!.date : null),
         calculation: {
           available_balance: bankBalance,
-          lowest_projected_balance: willGoNegative 
-            ? firstNegativeDay!.balance 
-            : (willDropBelowLimit ? firstBelowLimitDay!.balance : minBalance),
-          lowest_balance_date: willGoNegative 
-            ? firstNegativeDay!.date 
-            : (willDropBelowLimit ? firstBelowLimitDay!.date : minDay.date),
+          lowest_projected_balance: minBalance,
+          lowest_balance_date: minDay.date,
           safe_spending_available_date: safeSpendingAvailableDate,
           next_buying_opportunity_balance: nextBuyingOpportunity?.balance,
           next_buying_opportunity_date: nextBuyingOpportunity?.date,
