@@ -22,7 +22,7 @@ export const PublicHeader = () => {
             </span>
           </Link>
           <div className="hidden md:flex items-center space-x-6">
-            <Link to="/features" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+            <Link to="/features" onClick={() => window.scrollTo(0, 0)} className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
               Features
             </Link>
             <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
