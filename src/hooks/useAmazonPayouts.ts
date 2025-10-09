@@ -48,7 +48,7 @@ export const useAmazonPayouts = () => {
           )
         `)
         .eq("user_id", user.id)
-        .order("payout_date", { ascending: false });
+        .order("payout_date", { ascending: true });
 
       if (error) {
         console.error("Error fetching Amazon payouts:", error);
