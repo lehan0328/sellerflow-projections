@@ -367,6 +367,9 @@ const Dashboard = () => {
         event.description === income.description && 
         Math.abs(event.amount - income.amount) < 0.01)
     ));
+    
+    // Refresh safe spending calculations
+    refetchSafeSpending();
   };
 
   const handleEditIncome = (income: any) => {
