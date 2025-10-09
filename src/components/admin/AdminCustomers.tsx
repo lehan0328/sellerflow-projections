@@ -261,6 +261,16 @@ export const AdminCustomers = () => {
                               Failed: {new Date(customer.payment_failure_date).toLocaleDateString()}
                             </span>
                           )}
+                          {status.label === 'Expired' && customer.trial_end && (
+                            <span className="text-xs text-muted-foreground">
+                              Expired: {new Date(customer.trial_end).toLocaleDateString()}
+                            </span>
+                          )}
+                          {status.label === 'Trial' && customer.trial_end && (
+                            <span className="text-xs text-muted-foreground">
+                              Ends: {new Date(customer.trial_end).toLocaleDateString()}
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
