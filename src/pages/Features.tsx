@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Helmet } from "react-helmet";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import aurenIcon from "@/assets/auren-icon-blue.png";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PublicLayout } from "@/components/PublicLayout";
 import {
   Calendar,
   TrendingUp,
@@ -168,7 +168,7 @@ const Features = () => {
     : features.filter(f => f.category === activeCategory);
 
   return (
-    <>
+    <PublicLayout>
       <Helmet>
         <title>Amazon Cash Flow Forecasting Features | AI Tools for Sellers | Auren</title>
         <meta
@@ -185,23 +185,6 @@ const Features = () => {
         <meta name="twitter:title" content="Features - Cash Flow Management Tools | Auren" />
         <meta name="twitter:description" content="Discover all the powerful features that help Amazon sellers forecast payouts and manage cash flow." />
       </Helmet>
-
-      <div className="min-h-screen bg-background">
-        {/* Header */}
-        <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-              <img src={aurenIcon} alt="Auren" className="h-8" />
-            </div>
-            <nav className="hidden md:flex items-center gap-6">
-              <Button variant="ghost" onClick={() => navigate("/")}>Home</Button>
-              <Button variant="ghost" onClick={() => navigate("/features")}>Features</Button>
-              <Button variant="ghost" onClick={() => navigate("/docs")}>Docs</Button>
-              <Button variant="ghost" onClick={() => navigate("/blog")}>Blog</Button>
-              <Button onClick={() => navigate("/auth")}>Get Started</Button>
-            </nav>
-          </div>
-        </header>
 
         {/* Hero Section */}
         <section className="py-20 px-4 bg-gradient-to-b from-primary/5 to-background">
@@ -308,19 +291,7 @@ const Features = () => {
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="border-t py-12 px-4">
-          <div className="container mx-auto text-center text-sm text-muted-foreground">
-            <p>© 2025 Auren. All rights reserved.</p>
-            <div className="flex gap-4 justify-center mt-4">
-              <Button variant="link" onClick={() => navigate("/privacy-policy")}>Privacy</Button>
-              <Button variant="link" onClick={() => navigate("/docs")}>Documentation</Button>
-              <Button variant="link" onClick={() => navigate("/support")}>Support</Button>
-            </div>
-          </div>
-        </footer>
-      </div>
-    </>
+    </PublicLayout>
   );
 };
 
