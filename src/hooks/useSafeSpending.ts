@@ -337,27 +337,29 @@ export const useSafeSpending = () => {
             const opportunityAmount = current.balance; // This is already balance - reserve
             const minBalanceNeeded = opportunityAmount + reserve; // Total balance needed to spend this amount
             
-            console.log(`🛒 Opportunity at ${current.date}:`, {
+            console.log(`🛒 Opportunity at ${current.date} (index ${opportunityIndex}):`, {
               opportunityAmount,
               minBalanceNeeded,
-              reserve,
-              opportunityIndex
+              reserve
             });
             
             // Count backwards from opportunity to find first date where balance < needed amount
             let firstViableIndex = 0; // Default to today
             for (let k = opportunityIndex; k >= 0; k--) {
+              console.log(`  Checking ${dailyBalances[k].date}: balance=${dailyBalances[k].balance} vs needed=${minBalanceNeeded}`);
               if (dailyBalances[k].balance < minBalanceNeeded) {
                 // Found where balance drops below threshold, so earliest viable is the next day forward
                 firstViableIndex = k + 1;
-                console.log(`  ❌ Balance drops below ${minBalanceNeeded} at ${dailyBalances[k].date} (${dailyBalances[k].balance})`);
+                console.log(`  ❌ Balance drops below ${minBalanceNeeded} at ${dailyBalances[k].date}, earliest viable index: ${firstViableIndex}`);
                 break;
               }
             }
             
-            if (firstViableIndex <= opportunityIndex) {
+            if (firstViableIndex < dailyBalances.length && firstViableIndex <= opportunityIndex) {
               availableDate = dailyBalances[firstViableIndex].date;
               console.log(`  ✅ Earliest purchase date: ${availableDate} (balance=${dailyBalances[firstViableIndex].balance})`);
+            } else {
+              console.log(`  ⚠️ No viable date found or index out of bounds: ${firstViableIndex}`);
             }
             
             // Only add if this is truly a buying opportunity (will rise or is terminal)
