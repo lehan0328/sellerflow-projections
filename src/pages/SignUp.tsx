@@ -87,10 +87,7 @@ export const SignUp = () => {
   }, [navigate, searchParams]);
 
   const validatePassword = (password: string) => {
-    const hasMinLength = password.length >= 7;
-    const hasLetter = /[a-zA-Z]/.test(password);
-    const hasNumber = /\d/.test(password);
-    return hasMinLength && hasLetter && hasNumber;
+    return password.length >= 6;
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -106,7 +103,7 @@ export const SignUp = () => {
     }
 
     if (!validatePassword(signUpData.password)) {
-      toast.error('Password must be at least 7 characters long and contain at least one letter and one number');
+      toast.error('Password must be at least 6 characters long');
       return;
     }
 
@@ -220,7 +217,7 @@ export const SignUp = () => {
                     value={signUpData.password}
                     onChange={(e) => setSignUpData(prev => ({ ...prev, password: e.target.value }))}
                     required
-                    minLength={7}
+                    minLength={6}
                     className="h-11 pr-10"
                   />
                   <button
@@ -232,7 +229,7 @@ export const SignUp = () => {
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Must be at least 7 characters with at least one letter and one number
+                  Must be at least 6 characters
                 </p>
               </div>
 
@@ -246,7 +243,7 @@ export const SignUp = () => {
                     value={signUpData.confirmPassword}
                     onChange={(e) => setSignUpData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     required
-                    minLength={7}
+                    minLength={6}
                     className="h-11 pr-10"
                   />
                   <button
