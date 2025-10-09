@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, TrendingDown } from "lucide-react";
+import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, ShoppingCart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -343,7 +343,7 @@ export const CashFlowInsights = ({
                       onClick={() => setShowAllOpportunities(true)}
                       className="w-full"
                     >
-                      <TrendingDown className="h-4 w-4 mr-2" />
+                      <ShoppingCart className="h-4 w-4 mr-2" />
                       View All {allBuyingOpportunities.length} {allBuyingOpportunities.length === 1 ? 'Opportunity' : 'Opportunities'}
                     </Button>
                   )}
@@ -409,7 +409,7 @@ export const CashFlowInsights = ({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <TrendingDown className="h-5 w-5 text-blue-600" />
+              <ShoppingCart className="h-5 w-5 text-blue-600" />
               All Buying Opportunities (Next 3 Months)
             </DialogTitle>
           </DialogHeader>
