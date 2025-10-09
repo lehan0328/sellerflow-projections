@@ -9,14 +9,14 @@ import { useToast } from "@/hooks/use-toast";
 
 interface Customer {
   user_id: string;
-  email: string;
   first_name?: string;
   last_name?: string;
   company?: string;
   created_at: string;
-  is_admin: boolean;
   plan_override?: string;
   discount_redeemed_at?: string;
+  email?: string; // Fetched separately from auth.users
+  is_admin?: boolean; // Fetched separately from user_roles
 }
 
 export const AdminCustomers = () => {
@@ -32,14 +32,34 @@ export const AdminCustomers = () => {
   const fetchCustomers = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      const { data: profiles, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      setCustomers(data || []);
+      // Get emails and admin status
+      const userIds = profiles?.map(p => p.user_id) || [];
+      const { data: emailData } = await supabase.functions.invoke('get-user-emails', {
+        body: { userIds }
+      });
+
+      const { data: adminRoles } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('user_id', userIds)
+        .eq('role', 'admin');
+
+      const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
+
+      const customersWithEmail = profiles?.map(profile => ({
+        ...profile,
+        email: emailData?.emails?.[profile.user_id] || 'Unknown',
+        is_admin: adminUserIds.has(profile.user_id)
+      })) || [];
+
+      setCustomers(customersWithEmail);
     } catch (error: any) {
       console.error('Error fetching customers:', error);
       toast({
@@ -54,12 +74,39 @@ export const AdminCustomers = () => {
 
   const toggleAdminStatus = async (userId: string, currentStatus: boolean) => {
     try {
-      const { error } = await supabase
+      // Get user's account_id from profiles
+      const { data: profile } = await supabase
         .from('profiles')
-        .update({ is_admin: !currentStatus })
-        .eq('user_id', userId);
+        .select('account_id')
+        .eq('user_id', userId)
+        .single();
 
-      if (error) throw error;
+      if (!profile?.account_id) {
+        throw new Error("User account not found");
+      }
+
+      if (currentStatus) {
+        // Revoke admin role
+        const { error } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', userId)
+          .eq('account_id', profile.account_id)
+          .eq('role', 'admin');
+
+        if (error) throw error;
+      } else {
+        // Grant admin role
+        const { error } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: userId,
+            account_id: profile.account_id,
+            role: 'admin'
+          });
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Success",

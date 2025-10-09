@@ -64,7 +64,7 @@ export default function AdminReferrals() {
       // Fetch user profiles
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("user_id, email");
+        .select("user_id, first_name, last_name");
 
       if (profilesError) throw profilesError;
 
@@ -82,10 +82,12 @@ export default function AdminReferrals() {
         const reward = rewards?.find((r) => r.user_id === code.user_id);
         const profile = profiles?.find((p) => p.user_id === code.user_id);
         const refCount = referralMap.get(code.user_id) || { total: 0, active: 0 };
+        
+        const fullName = `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim();
 
         return {
           user_id: code.user_id,
-          user_email: profile?.email || "Unknown",
+          user_email: fullName || code.user_id.slice(0, 8) + "...",
           referral_code: code.code,
           total_referrals: refCount.total,
           active_referrals: refCount.active,

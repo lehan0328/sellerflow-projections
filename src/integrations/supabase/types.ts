@@ -850,11 +850,9 @@ export type Database = {
           created_at: string
           currency: string | null
           discount_redeemed_at: string | null
-          email: string | null
           first_name: string | null
           id: string
           is_account_owner: boolean
-          is_admin: boolean
           last_name: string | null
           max_team_members: number
           monthly_revenue: string | null
@@ -872,11 +870,9 @@ export type Database = {
           created_at?: string
           currency?: string | null
           discount_redeemed_at?: string | null
-          email?: string | null
           first_name?: string | null
           id?: string
           is_account_owner?: boolean
-          is_admin?: boolean
           last_name?: string | null
           max_team_members?: number
           monthly_revenue?: string | null
@@ -894,11 +890,9 @@ export type Database = {
           created_at?: string
           currency?: string | null
           discount_redeemed_at?: string | null
-          email?: string | null
           first_name?: string | null
           id?: string
           is_account_owner?: boolean
-          is_admin?: boolean
           last_name?: string | null
           max_team_members?: number
           monthly_revenue?: string | null
@@ -1462,6 +1456,10 @@ export type Database = {
       get_user_account_id: {
         Args: { _user_id: string }
         Returns: string
+      }
+      has_admin_role: {
+        Args: { _user_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {

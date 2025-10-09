@@ -50,10 +50,10 @@ interface TeamMember {
   role: 'owner' | 'admin' | 'staff';
   created_at: string;
   profiles: {
-    email: string;
     first_name: string;
     last_name: string;
   };
+  email?: string; // Fetched separately
 }
 
 interface PendingInvite {
@@ -129,21 +129,26 @@ export function TeamManagement() {
 
       // Then get profiles for each user
       const userIds = roles.map(r => r.user_id);
-      const { data: profiles, error: profilesError } = await supabase
+      const { data: profiles, error: profilesError} = await supabase
         .from('profiles')
-        .select('user_id, email, first_name, last_name')
+        .select('user_id, first_name, last_name')
         .in('user_id', userIds);
       
       if (profilesError) throw profilesError;
 
+      // Get emails from auth.users via edge function
+      const { data: emailData } = await supabase.functions.invoke('get-user-emails', {
+        body: { userIds }
+      });
+
       // Combine the data
       return roles.map(role => ({
         ...role,
-        profiles: profiles.find(p => p.user_id === role.user_id) || {
-          email: '',
+        profiles: profiles?.find(p => p.user_id === role.user_id) || {
           first_name: '',
           last_name: ''
-        }
+        },
+        email: emailData?.emails?.[role.user_id] || 'Unknown'
       })) as TeamMember[];
     },
     enabled: !!profile?.account_id,
@@ -529,10 +534,10 @@ export function TeamManagement() {
                 <TableCell>
                   {member.profiles.first_name && member.profiles.last_name 
                     ? `${member.profiles.first_name} ${member.profiles.last_name}`
-                    : member.profiles.email
+                    : member.email
                   }
                 </TableCell>
-                <TableCell>{member.profiles.email}</TableCell>
+                <TableCell>{member.email}</TableCell>
                 <TableCell>
                   {isAdmin && member.role !== 'owner' ? (
                     <Select

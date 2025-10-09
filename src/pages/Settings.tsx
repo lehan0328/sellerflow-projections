@@ -192,7 +192,7 @@ const Settings = () => {
               <Input 
                 id="email" 
                 type="email" 
-                value={profile?.email || user?.email || ""} 
+                value={user?.email || ""} 
                 disabled
                 className="bg-muted"
               />
