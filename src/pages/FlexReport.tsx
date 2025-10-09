@@ -227,7 +227,13 @@ const FlexReport = () => {
               </div>
 
               {/* Upcoming Income */}
-              <div className="group bg-gradient-to-br from-emerald-50 via-emerald-100/80 to-emerald-50 rounded-2xl p-6 border-2 border-emerald-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+              <div className="group bg-gradient-to-br from-emerald-50 via-emerald-100/80 to-emerald-50 rounded-2xl p-6 border-2 border-emerald-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative overflow-hidden">
+                {/* Verification Badge */}
+                <div className="absolute top-2 right-2 flex items-center gap-1 bg-white/90 backdrop-blur-md px-2 py-1 rounded-full border border-emerald-500/50 shadow-md">
+                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                  <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Verified</span>
+                </div>
+                
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <TrendingUp className="w-5 h-5 text-white" />
@@ -238,7 +244,13 @@ const FlexReport = () => {
               </div>
 
               {/* Purchase Orders */}
-              <div className="group bg-gradient-to-br from-orange-50 via-orange-100/80 to-orange-50 rounded-2xl p-6 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+              <div className="group bg-gradient-to-br from-orange-50 via-orange-100/80 to-orange-50 rounded-2xl p-6 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative overflow-hidden">
+                {/* Verification Badge */}
+                <div className="absolute top-2 right-2 flex items-center gap-1 bg-white/90 backdrop-blur-md px-2 py-1 rounded-full border border-orange-500/50 shadow-md">
+                  <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></div>
+                  <span className="text-[10px] font-bold text-orange-700 uppercase tracking-wider">Verified</span>
+                </div>
+                
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <ShoppingCart className="w-5 h-5 text-white" />
@@ -249,23 +261,6 @@ const FlexReport = () => {
               </div>
             </div>
 
-            {/* Additional Metrics Row */}
-            <div className="grid grid-cols-2 gap-5 mb-10">
-              {/* Credit Utilization */}
-              <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-5 border-2 border-slate-200/60 shadow-md backdrop-blur-sm">
-                <p className="text-xs text-slate-600 mb-2 font-semibold uppercase tracking-wide">Credit Utilization</p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-3xl font-black text-slate-700">{creditUtilization.toFixed(1)}%</p>
-                  <p className="text-xs text-slate-500 font-medium">of {formatCurrency(totalCreditLimit)}</p>
-                </div>
-              </div>
-
-              {/* Vendor Payments */}
-              <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-5 border-2 border-slate-200/60 shadow-md backdrop-blur-sm">
-                <p className="text-xs text-slate-600 mb-2 font-semibold uppercase tracking-wide">Scheduled Vendor Payments</p>
-                <p className="text-3xl font-black text-slate-700">{formatCurrency(upcomingVendorPayments)}</p>
-              </div>
-            </div>
 
             {/* Footer */}
             <div className="pt-8 border-t-2 border-gradient-to-r from-slate-200 via-slate-300 to-slate-200">
@@ -283,7 +278,7 @@ const FlexReport = () => {
                     Powered by <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent font-black text-lg">Auren</span>
                   </p>
                   <p className="text-xs text-slate-500 italic font-medium">Cash Flow Management For Amazon Sellers</p>
-                  <p className="text-xs text-blue-600 font-semibold mt-1">www.auren.app</p>
+                  <p className="text-xs text-blue-600 font-semibold mt-1">www.aurenapp.com</p>
                 </div>
               </div>
             </div>
