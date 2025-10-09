@@ -467,13 +467,15 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Badge variant="outline" className="text-xs px-1.5 py-0.5">
-                                {tx.creditCardId ? (
-                                  <CreditCard className="h-3 w-3" />
-                                ) : (
-                                  <Banknote className="h-3 w-3" />
-                                )}
-                              </Badge>
+                              {tx.creditCardId ? (
+                                <Badge variant="outline" className="text-xs px-1.5 py-0.5 border-primary bg-primary/10">
+                                  <CreditCard className="h-3 w-3 text-primary" />
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-xs px-1.5 py-0.5 border-green-600 bg-green-600/10">
+                                  <Banknote className="h-3 w-3 text-green-600" />
+                                </Badge>
+                              )}
                             </TooltipTrigger>
                             <TooltipContent>
                               <p>{tx.creditCardId ? 'Credit card purchase' : 'Cash purchase'}</p>
