@@ -120,13 +120,15 @@ const FlexReport = () => {
       const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(reportRef.current, {
         backgroundColor: '#ffffff',
-        scale: 3,
+        scale: 2,
         logging: false,
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
         foreignObjectRendering: false,
         imageTimeout: 0,
-        removeContainer: true
+        removeContainer: true,
+        windowWidth: reportRef.current.scrollWidth,
+        windowHeight: reportRef.current.scrollHeight
       });
       
       // Restore original gradient classes
@@ -166,13 +168,15 @@ const FlexReport = () => {
         const html2canvas = (await import('html2canvas')).default;
         const canvas = await html2canvas(reportRef.current, {
           backgroundColor: '#ffffff',
-          scale: 3,
+          scale: 2,
           logging: false,
           useCORS: true,
-          allowTaint: true,
+          allowTaint: false,
           foreignObjectRendering: false,
           imageTimeout: 0,
-          removeContainer: true
+          removeContainer: true,
+          windowWidth: reportRef.current.scrollWidth,
+          windowHeight: reportRef.current.scrollHeight
         });
         
         // Restore original gradient classes
@@ -409,7 +413,7 @@ const FlexReport = () => {
                   <p className="text-slate-700 font-semibold text-base mb-1">
                     Powered by <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent font-black text-lg">Auren</span>
                   </p>
-                  <p className="text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Cash Flow Management Software For Amazon Sellers</p>
+                  <p className="text-sm font-bold text-slate-700">Cash Flow Management Software For Amazon Sellers</p>
                   <p className="text-sm font-semibold text-blue-600 mt-1">www.aurenapp.com</p>
                 </div>
               </div>
