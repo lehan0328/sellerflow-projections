@@ -1,19 +1,18 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Bot, User, Home, Mail, Send } from "lucide-react";
+import { Bot, User, Mail, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { PublicLayout } from "@/components/PublicLayout";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
 const Contact = () => {
-  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAIChat, setShowAIChat] = useState(true);
   
@@ -199,32 +198,23 @@ const Contact = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90 animate-fade-in">
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/")}
-            >
-              <Home className="h-4 w-4 mr-2" />
-              Back to Home
-            </Button>
+    <PublicLayout>
+      <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90 animate-fade-in">
+        <div className="container mx-auto p-6 space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Contact Support</h1>
               <p className="text-muted-foreground">Get help with Auren or ask us anything</p>
             </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowAIChat(!showAIChat)}
+            >
+              <Bot className="h-4 w-4 mr-2" />
+              {showAIChat ? "Hide" : "Show"} AI Assistant
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            onClick={() => setShowAIChat(!showAIChat)}
-          >
-            <Bot className="h-4 w-4 mr-2" />
-            {showAIChat ? "Hide" : "Show"} AI Assistant
-          </Button>
-        </div>
 
         {/* AI Chat Assistant */}
         {showAIChat && (
@@ -367,8 +357,9 @@ const Contact = () => {
             </form>
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </PublicLayout>
   );
 };
 
