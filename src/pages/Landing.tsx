@@ -1331,7 +1331,6 @@ const Landing = () => {
                         </div>
                         <div className="space-y-1.5">
                           {plan.name === "Starter" && <>
-                              {isYearly && <p className="text-xs text-muted-foreground text-center">Starting at</p>}
                               <div className="flex items-baseline justify-center gap-1">
                                 <span className="text-3xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
                                 <span className="text-muted-foreground text-xs">{isYearly ? plan.yearlyPeriod : plan.period}</span>
@@ -1344,7 +1343,6 @@ const Landing = () => {
                               </>}
                             </>}
                           {plan.name !== "Starter" && <>
-                              {isYearly && <p className="text-xs text-muted-foreground text-center">Starting at</p>}
                               <div className="flex items-baseline justify-center gap-1">
                                 <span className="text-3xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
                                 <span className="text-muted-foreground text-xs">{isYearly ? plan.yearlyPeriod : plan.period}</span>
