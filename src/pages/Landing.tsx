@@ -646,7 +646,7 @@ const Landing = () => {
                 </div>
 
                 {/* Floating stats */}
-                <div className="absolute -bottom-6 -left-6 p-4 rounded-2xl bg-card/80 backdrop-blur-xl border border-primary/20 shadow-lg animate-float" style={{ animationDelay: '1s' }}>
+                <div className="absolute -bottom-6 -right-6 p-4 rounded-2xl bg-card/80 backdrop-blur-xl border border-primary/20 shadow-lg animate-float" style={{ animationDelay: '1s' }}>
                   <div className="text-sm text-muted-foreground">Next Payout</div>
                   <div className="text-2xl font-bold text-success">$12,847</div>
                   <div className="text-xs text-muted-foreground">in 3 days</div>
