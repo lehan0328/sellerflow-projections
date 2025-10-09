@@ -336,15 +336,59 @@ export const CashFlowInsights = ({
                     </p>}
                   
                   {allBuyingOpportunities && allBuyingOpportunities.length > 0 && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setShowAllOpportunities(true)}
-                      className="w-full"
-                    >
-                      <TrendingDown className="h-4 w-4 mr-2" />
-                      View All {allBuyingOpportunities.length} {allBuyingOpportunities.length === 1 ? 'Opportunity' : 'Opportunities'}
-                    </Button>
+                    <div className="space-y-2">
+                      {/* Total Spending Limit in 180 Days */}
+                      <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-2 border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-medium text-muted-foreground">Total Available (Next 180 Days)</span>
+                          <TrendingUp className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-3xl font-bold text-blue-600">
+                            ${(() => {
+                              const today = new Date();
+                              const endDate = new Date(today);
+                              endDate.setDate(endDate.getDate() + 180);
+                              
+                              return allBuyingOpportunities
+                                .filter(opp => {
+                                  const [year, month, day] = opp.date.split('-').map(Number);
+                                  const oppDate = new Date(year, month - 1, day);
+                                  return oppDate >= today && oppDate <= endDate;
+                                })
+                                .reduce((sum, opp) => sum + opp.balance, 0)
+                                .toLocaleString();
+                            })()}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            across {(() => {
+                              const today = new Date();
+                              const endDate = new Date(today);
+                              endDate.setDate(endDate.getDate() + 180);
+                              
+                              return allBuyingOpportunities.filter(opp => {
+                                const [year, month, day] = opp.date.split('-').map(Number);
+                                const oppDate = new Date(year, month - 1, day);
+                                return oppDate >= today && oppDate <= endDate;
+                              }).length;
+                            })()} opportunities
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-2">
+                          Total cumulative spending power over the next 6 months
+                        </p>
+                      </div>
+                      
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setShowAllOpportunities(true)}
+                        className="w-full"
+                      >
+                        <TrendingDown className="h-4 w-4 mr-2" />
+                        See All {allBuyingOpportunities.length} {allBuyingOpportunities.length === 1 ? 'Opportunity' : 'Opportunities'}
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>
