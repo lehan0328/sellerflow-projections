@@ -174,7 +174,10 @@ const FlexReport = () => {
                 </h1>
                 <p className="text-slate-600 text-lg">Your business at a glance</p>
               </div>
-              <img src={aurenLogo} alt="Auren" className="h-16 md:h-20 drop-shadow-lg" />
+              <div className="text-right">
+                <img src={aurenLogo} alt="Auren" className="h-16 md:h-20 drop-shadow-lg mb-2" />
+                <p className="text-sm font-semibold text-blue-600">www.aurenapp.com</p>
+              </div>
             </div>
 
             {/* Verified Timestamp */}
@@ -316,6 +319,7 @@ const FlexReport = () => {
                     Powered by <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent font-black text-lg">Auren</span>
                   </p>
                   <p className="text-xs text-slate-500 italic font-medium">Cash Flow Management For Amazon Sellers</p>
+                  <p className="text-sm font-semibold text-blue-600 mt-1">www.aurenapp.com</p>
                 </div>
               </div>
             </div>
