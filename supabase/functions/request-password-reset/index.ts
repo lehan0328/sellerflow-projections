@@ -31,10 +31,9 @@ const handler = async (req: Request): Promise<Response> => {
     const user = users?.find(u => u.email === email);
 
     if (!user) {
-      // Don't reveal if email exists - return success anyway for security
-      console.log("Email not found, but returning success");
-      return new Response(JSON.stringify({ success: true }), {
-        status: 200,
+      console.log("Email not found");
+      return new Response(JSON.stringify({ error: "Account not found" }), {
+        status: 404,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }

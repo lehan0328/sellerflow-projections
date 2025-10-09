@@ -120,13 +120,17 @@ export const Auth = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('request-password-reset', {
+      const { data, error } = await supabase.functions.invoke('request-password-reset', {
         body: { email: resetEmail }
       });
 
       if (error) {
         console.error('Password reset error:', error);
-        toast.error('Failed to send reset email. Please try again.');
+        if (error.message.includes('Account not found')) {
+          toast.error('No account found with this email address.');
+        } else {
+          toast.error('Failed to send reset email. Please try again.');
+        }
       } else {
         toast.success('Password reset email sent! Check your inbox for instructions.');
         setShowResetForm(false);
