@@ -11,71 +11,69 @@ import { useIncome } from "@/hooks/useIncome";
 import { useTransactions } from "@/hooks/useTransactions";
 import { addDays, isWithinInterval, startOfDay } from "date-fns";
 import aurenLogo from "@/assets/auren-full-logo.png";
-
 const FlexReport = () => {
   const navigate = useNavigate();
   const reportRef = useRef<HTMLDivElement>(null);
-  
-  const { totalBalance: bankBalance } = useBankAccounts();
-  const { totalAvailableCredit, creditCards } = useCreditCards();
-  const { data: safeSpendingData } = useSafeSpending();
-  const { vendors } = useVendors();
-  const { incomeItems } = useIncome();
-  const { transactions } = useTransactions();
+  const {
+    totalBalance: bankBalance
+  } = useBankAccounts();
+  const {
+    totalAvailableCredit,
+    creditCards
+  } = useCreditCards();
+  const {
+    data: safeSpendingData
+  } = useSafeSpending();
+  const {
+    vendors
+  } = useVendors();
+  const {
+    incomeItems
+  } = useIncome();
+  const {
+    transactions
+  } = useTransactions();
 
   // Calculate metrics
   const today = startOfDay(new Date());
   const next30Days = addDays(today, 30);
-  
+
   // Total upcoming purchase orders (pending transactions)
-  const upcomingPurchaseOrders = transactions
-    .filter(tx => 
-      tx.type === 'purchase_order' && 
-      tx.status === 'pending' &&
-      tx.dueDate &&
-      isWithinInterval(new Date(tx.dueDate), { start: today, end: next30Days })
-    )
-    .reduce((sum, tx) => sum + Number(tx.amount), 0);
+  const upcomingPurchaseOrders = transactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending' && tx.dueDate && isWithinInterval(new Date(tx.dueDate), {
+    start: today,
+    end: next30Days
+  })).reduce((sum, tx) => sum + Number(tx.amount), 0);
 
   // Total vendor payments scheduled
-  const upcomingVendorPayments = vendors
-    .filter(v => v.status !== 'paid' && Number(v.totalOwed || 0) > 0)
-    .reduce((sum, v) => sum + Number(v.totalOwed || 0), 0);
+  const upcomingVendorPayments = vendors.filter(v => v.status !== 'paid' && Number(v.totalOwed || 0) > 0).reduce((sum, v) => sum + Number(v.totalOwed || 0), 0);
 
   // Upcoming income (next 30 days)
-  const upcomingIncome = incomeItems
-    .filter(income => 
-      income.status !== 'received' &&
-      income.paymentDate &&
-      isWithinInterval(new Date(income.paymentDate), { start: today, end: next30Days })
-    )
-    .reduce((sum, income) => sum + Number(income.amount), 0);
+  const upcomingIncome = incomeItems.filter(income => income.status !== 'received' && income.paymentDate && isWithinInterval(new Date(income.paymentDate), {
+    start: today,
+    end: next30Days
+  })).reduce((sum, income) => sum + Number(income.amount), 0);
 
   // Credit utilization
   const totalCreditLimit = creditCards.reduce((sum, card) => sum + Number(card.credit_limit || 0), 0);
   const totalCreditBalance = creditCards.reduce((sum, card) => sum + Number(card.balance || 0), 0);
-  const creditUtilization = totalCreditLimit > 0 ? (totalCreditBalance / totalCreditLimit) * 100 : 0;
-
+  const creditUtilization = totalCreditLimit > 0 ? totalCreditBalance / totalCreditLimit * 100 : 0;
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(amount);
   };
-
   const handleDownload = async () => {
     if (!reportRef.current) return;
-    
     try {
       const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(reportRef.current, {
         backgroundColor: '#ffffff',
         scale: 2,
-        logging: false,
+        logging: false
       });
-      
       const link = document.createElement('a');
       link.download = `auren-flex-report-${new Date().toISOString().split('T')[0]}.png`;
       link.href = canvas.toDataURL('image/png');
@@ -84,7 +82,6 @@ const FlexReport = () => {
       console.error('Error downloading report:', error);
     }
   };
-
   const handleShare = async () => {
     if (navigator.share && reportRef.current) {
       try {
@@ -92,16 +89,17 @@ const FlexReport = () => {
         const canvas = await html2canvas(reportRef.current, {
           backgroundColor: '#ffffff',
           scale: 2,
-          logging: false,
+          logging: false
         });
-        
-        canvas.toBlob(async (blob) => {
+        canvas.toBlob(async blob => {
           if (blob) {
-            const file = new File([blob], 'auren-flex-report.png', { type: 'image/png' });
+            const file = new File([blob], 'auren-flex-report.png', {
+              type: 'image/png'
+            });
             await navigator.share({
               title: 'My Financial Report - Powered by Auren',
               text: 'Check out my financial metrics!',
-              files: [file],
+              files: [file]
             });
           }
         });
@@ -113,33 +111,20 @@ const FlexReport = () => {
       handleDownload();
     }
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-4 md:p-8">
+  return <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         {/* Action Buttons */}
         <div className="flex items-center justify-between mb-6">
-          <Button
-            variant="outline"
-            onClick={() => navigate('/dashboard')}
-            className="gap-2"
-          >
+          <Button variant="outline" onClick={() => navigate('/dashboard')} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Button>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={handleDownload}
-              className="gap-2"
-            >
+            <Button variant="outline" onClick={handleDownload} className="gap-2">
               <Download className="w-4 h-4" />
               Download
             </Button>
-            <Button
-              onClick={handleShare}
-              className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
+            <Button onClick={handleShare} className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
               <Share2 className="w-4 h-4" />
               Share
             </Button>
@@ -147,10 +132,7 @@ const FlexReport = () => {
         </div>
 
         {/* Flex Report Card */}
-        <Card 
-          ref={reportRef}
-          className="relative overflow-hidden bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 shadow-2xl border-0 backdrop-blur-sm"
-        >
+        <Card ref={reportRef} className="relative overflow-hidden bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 shadow-2xl border-0 backdrop-blur-sm">
           {/* Background Gradient Decoration */}
           <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl -z-0" />
           <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-purple-400/20 to-blue-400/20 rounded-full blur-3xl -z-0" />
@@ -158,11 +140,7 @@ const FlexReport = () => {
           
           {/* Auren Watermark */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-            <img 
-              src={aurenLogo} 
-              alt="" 
-              className="w-[600px] opacity-[0.08] select-none rotate-[-15deg] scale-110"
-            />
+            <img src={aurenLogo} alt="" className="w-[600px] opacity-[0.08] select-none rotate-[-15deg] scale-110" />
           </div>
           
           <div className="relative z-10 p-8 md:p-12">
@@ -256,17 +234,17 @@ const FlexReport = () => {
               <div className="flex items-center justify-between text-sm mb-4">
                 <p className="text-slate-500 flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  Generated {new Date().toLocaleDateString('en-US', { 
-                    month: 'long', 
-                    day: 'numeric', 
-                    year: 'numeric' 
-                  })}
+                  Generated {new Date().toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
                 </p>
                 <div className="text-right">
                   <p className="text-slate-700 font-semibold text-base mb-1">
                     Powered by <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent font-black text-lg">Auren</span>
                   </p>
-                  <p className="text-xs text-slate-500 italic font-medium">Smarter Cash Flow Management</p>
+                  <p className="text-xs text-slate-500 italic font-medium">Cash Flow Management For Amazon Sellers</p>
                 </div>
               </div>
             </div>
@@ -280,8 +258,6 @@ const FlexReport = () => {
           </p>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default FlexReport;
