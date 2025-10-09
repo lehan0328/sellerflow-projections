@@ -584,6 +584,42 @@ const Landing = () => {
               className="relative animate-fade-in space-y-6"
               style={{ animationDelay: '400ms' }}
             >
+              {/* Signature Features Highlights */}
+              <div className="bg-card/50 backdrop-blur-sm border border-primary/10 rounded-2xl p-6 mb-6">
+                <div className="text-center mb-4">
+                  <span className="text-sm font-semibold text-primary">✨ Signature Features</span>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-lg">💰</span>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Safe Spending Power</div>
+                      <div className="text-xs text-muted-foreground">Know exactly how much you can spend</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-lg">📊</span>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">13-Week Cash Flow Forecast</div>
+                      <div className="text-xs text-muted-foreground">See your financial future at a glance</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-lg">🎯</span>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Buying Opportunities</div>
+                      <div className="text-xs text-muted-foreground">Smart inventory purchase recommendations</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Try Interactive Demo Button - Above Dashboard */}
               <div className="flex justify-center">
                 <Button 
