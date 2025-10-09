@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { generateRecurringDates } from "@/lib/recurringDates";
 
 interface SafeSpendingData {
   safe_spending_limit: number;
@@ -77,7 +78,8 @@ export const useSafeSpending = () => {
 
       const bankBalance = bankAccounts?.reduce((sum, acc) => sum + Number(acc.balance || 0), 0) || 0;
 
-      // Get ONLY income and vendors (no bank/credit/amazon transactions)
+      // Get ALL events (transactions, income, recurring, vendors, etc.)
+      // This should match what the calendar receives
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todayStr = formatDate(today);
@@ -86,22 +88,43 @@ export const useSafeSpending = () => {
       futureDate.setDate(futureDate.getDate() + 180); // Next 6 months
       const futureDateStr = formatDate(futureDate);
 
-      // ONLY count income table and vendors table
-      const [incomeResult, vendorsResult] = await Promise.all([
+      // Get ALL events that affect cash flow (matching calendar logic)
+      const [transactionsResult, incomeResult, recurringResult, vendorsResult, amazonResult] = await Promise.all([
+        supabase
+          .from('transactions')
+          .select('*')
+          .eq('user_id', session.user.id),
+        
         supabase
           .from('income')
           .select('*')
           .eq('user_id', session.user.id),
         
         supabase
-          .from('vendors')
+          .from('recurring_expenses')
           .select('*')
           .eq('user_id', session.user.id)
+          .eq('is_active', true),
+        
+        supabase
+          .from('vendors')
+          .select('*')
+          .eq('user_id', session.user.id),
+        
+        supabase
+          .from('amazon_payouts')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .gte('payout_date', todayStr)
+          .lte('payout_date', futureDateStr)
       ]);
 
-      console.log('📊 Fetched data (ONLY income & vendors):', {
+      console.log('📊 Fetched data:', {
+        transactions: transactionsResult.data?.length || 0,
         income: incomeResult.data?.length || 0,
-        vendors: vendorsResult.data?.length || 0
+        recurring: recurringResult.data?.length || 0,
+        vendors: vendorsResult.data?.length || 0,
+        amazonPayouts: amazonResult.data?.length || 0
       });
 
       console.log('🔍 VENDOR DATA:', vendorsResult.data?.map(v => ({
@@ -113,10 +136,17 @@ export const useSafeSpending = () => {
         status: v.status
       })));
 
-      console.log('💰 STARTING Safe Spending Calculation (Income & Vendors ONLY):', {
+      console.log('💰 STARTING Safe Spending Calculation:', {
         bankBalance,
         reserve,
-        startDate: todayStr
+        startDate: todayStr,
+        allTransactions: transactionsResult.data?.map(t => ({
+          type: t.type,
+          amount: t.amount,
+          transaction_date: t.transaction_date,
+          due_date: t.due_date,
+          status: t.status
+        }))
       });
 
       // Simple calculation: Track Total Projected Cash for each day, find minimum, subtract reserve
@@ -133,12 +163,44 @@ export const useSafeSpending = () => {
         let dayChange = 0;
 
         // Log key dates
-        const isKeyDate = i <= 3 || targetDateStr === '2025-10-20' || targetDateStr === '2025-10-10' || targetDateStr === '2025-10-17' || targetDateStr === '2025-10-21';
+        const isKeyDate = i <= 3 || targetDateStr === '2025-10-20' || targetDateStr === '2025-10-10' || targetDateStr === '2025-10-17';
         if (isKeyDate) {
           console.log(`\n📅 Processing ${targetDateStr} (day ${i})`);
         }
 
-        // ONLY count income from income table
+        // Add all inflows for this day (skip sales_orders without status=completed as they're pending)
+        transactionsResult.data?.forEach((tx) => {
+          const txDate = parseLocalDate(tx.due_date || tx.transaction_date);
+          if (txDate.getTime() === targetDate.getTime() && tx.status !== 'partially_paid') {
+            if (tx.type === 'sales_order' || tx.type === 'customer_payment') {
+              // Only count completed sales orders, not pending ones (they should be in income table)
+              if (tx.status === 'completed') {
+                const amt = Number(tx.amount);
+                if (isKeyDate) {
+                  console.log(`  ✅ Transaction (inflow): ${tx.type} +$${amt} (${tx.status})`);
+                }
+                dayChange += amt;
+              } else if (isKeyDate) {
+                console.log(`  ⏭️ SKIPPING pending transaction: ${tx.type} $${tx.amount} (${tx.status})`);
+              }
+            } else if (tx.type === 'purchase_order' || tx.type === 'expense' || tx.vendor_id) {
+              // Skip credit card purchases - they're tracked separately against credit card balances
+              if (tx.credit_card_id) {
+                if (isKeyDate) {
+                  console.log(`  💳 SKIPPING credit card purchase: ${tx.type} -$${tx.amount} (tracked in credit card)`);
+                }
+                return;
+              }
+              
+              const amt = Number(tx.amount);
+              if (isKeyDate) {
+                console.log(`  ❌ Transaction (outflow): ${tx.type} -$${amt}`);
+              }
+              dayChange -= amt;
+            }
+          }
+        });
+
         incomeResult.data?.forEach((income) => {
           if (income.status !== 'received') {
             const incomeDate = parseLocalDate(income.payment_date);
@@ -152,9 +214,57 @@ export const useSafeSpending = () => {
           }
         });
 
-        // ONLY count expenses from vendors table
+        amazonResult.data?.forEach((payout) => {
+          const payoutDate = parseLocalDate(payout.payout_date);
+          if (payoutDate.getTime() === targetDate.getTime()) {
+            dayChange += Number(payout.total_amount);
+          }
+        });
+
+        recurringResult.data?.forEach((recurring) => {
+          if (recurring.is_active) {
+            const occurrences = generateRecurringDates(
+              {
+                id: recurring.id,
+                transaction_name: recurring.name,
+                amount: recurring.amount,
+                frequency: recurring.frequency as any,
+                start_date: recurring.start_date,
+                end_date: recurring.end_date,
+                is_active: recurring.is_active,
+                type: recurring.type as any
+              },
+              targetDate,
+              targetDate
+            );
+            if (occurrences.length > 0) {
+              const amt = Number(recurring.amount);
+              if (isKeyDate) {
+                console.log(`  🔄 Recurring ${recurring.type}: ${recurring.name} ${recurring.type === 'income' ? '+' : '-'}$${amt}`);
+              }
+              dayChange += recurring.type === 'income' ? amt : -amt;
+            }
+          }
+        });
+
         vendorsResult.data?.forEach((vendor) => {
           if (vendor.status !== 'paid' && Number(vendor.total_owed || 0) > 0) {
+            // Check if there's already a transaction for this vendor on this date
+            const hasTransactionOnDate = transactionsResult.data?.some((tx) => {
+              const txDate = parseLocalDate(tx.due_date || tx.transaction_date);
+              return tx.vendor_id === vendor.id && 
+                     txDate.getTime() === targetDate.getTime() &&
+                     tx.status !== 'partially_paid';
+            });
+
+            // Skip vendor payment if there's already a transaction for it
+            if (hasTransactionOnDate) {
+              if (isKeyDate) {
+                console.log(`  ⏭️ SKIPPING vendor payment (already in transactions): ${vendor.name}`);
+              }
+              return;
+            }
+
             if (vendor.payment_schedule && Array.isArray(vendor.payment_schedule)) {
               vendor.payment_schedule.forEach((payment: any) => {
                 const paymentDate = parseLocalDate(payment.date);

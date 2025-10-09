@@ -29,7 +29,7 @@ serve(async (req) => {
     const next180Days = new Date();
     next180Days.setDate(today.getDate() + 180);
 
-    // Fetch income data (ONLY from income table)
+    // Fetch income data
     const { data: income } = await supabaseClient
       .from('income')
       .select('amount, payment_date, status')
@@ -37,13 +37,29 @@ serve(async (req) => {
       .gte('payment_date', today.toISOString())
       .lte('payment_date', next180Days.toISOString());
 
-    // Fetch vendor payments (ONLY from vendors table)
+    // Fetch expense data (transactions)
+    const { data: expenses } = await supabaseClient
+      .from('transactions')
+      .select('amount, transaction_date, status')
+      .eq('user_id', user.id)
+      .gte('transaction_date', today.toISOString())
+      .lte('transaction_date', next180Days.toISOString());
+
+    // Fetch vendor payments
     const { data: vendors } = await supabaseClient
       .from('vendors')
       .select('next_payment_amount, next_payment_date, status')
       .eq('user_id', user.id)
       .gte('next_payment_date', today.toISOString())
       .lte('next_payment_date', next180Days.toISOString());
+
+    // Fetch Amazon payouts
+    const { data: amazonPayouts } = await supabaseClient
+      .from('amazon_payouts')
+      .select('total_amount, payout_date, status')
+      .eq('user_id', user.id)
+      .gte('payout_date', today.toISOString())
+      .lte('payout_date', next180Days.toISOString());
 
     // Get current bank balance
     const { data: settings } = await supabaseClient
@@ -52,13 +68,15 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .single();
 
-    // Calculate totals (ONLY income table and vendors table)
+    // Calculate totals
     const totalIncome = (income || []).reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    const totalAmazonIncome = (amazonPayouts || []).reduce((sum, p) => sum + (Number(p.total_amount) || 0), 0);
+    const totalExpenses = (expenses || []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     const totalVendorPayments = (vendors || []).reduce((sum, v) => sum + (Number(v.next_payment_amount) || 0), 0);
     
     const currentBalance = Number(settings?.total_cash || 0);
-    const projectedIncome = totalIncome;
-    const projectedExpenses = totalVendorPayments;
+    const projectedIncome = totalIncome + totalAmazonIncome;
+    const projectedExpenses = totalExpenses + totalVendorPayments;
     const projectedBalance = currentBalance + projectedIncome - projectedExpenses;
 
     // Use AI to calculate safe spending limit
@@ -74,8 +92,8 @@ Projected Income (180 days): $${projectedIncome.toFixed(2)}
 Projected Expenses (180 days): $${projectedExpenses.toFixed(2)}
 Projected End Balance: $${projectedBalance.toFixed(2)}
 
-Number of income transactions: ${income?.length || 0}
-Number of expense transactions: ${vendors?.length || 0}
+Number of income transactions: ${(income?.length || 0) + (amazonPayouts?.length || 0)}
+Number of expense transactions: ${(expenses?.length || 0) + (vendors?.length || 0)}
 
 Based on this data, calculate a conservative "safe spending limit" - the maximum amount the user can safely spend per day without risking cash flow issues. Consider:
 1. Current cash reserves
