@@ -617,7 +617,7 @@ const Landing = () => {
                     </div>
                     <div>
                       <div className="font-semibold text-sm">100% Accurate Data</div>
-                      <div className="text-xs text-muted-foreground">See your financial future at a glance</div>
+                      <div className="text-xs text-muted-foreground">Don't guess, safely connect direct with your bank and amazon payout</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
