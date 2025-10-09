@@ -225,67 +225,67 @@ const Features = () => {
               </p>
             </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto justify-items-center">
               {/* Safe Spending Power */}
-              <Card className="bg-gradient-to-br from-green-500/10 via-background to-background border-green-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              <Card className="bg-gradient-to-br from-green-500/10 via-background to-background border-green-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 w-full max-w-md">
                 <CardHeader>
-                  <div className="mb-4 p-3 rounded-xl bg-green-500/20 w-fit">
+                  <div className="mb-4 p-3 rounded-xl bg-green-500/20 w-fit mx-auto">
                     <Wallet className="h-8 w-8 text-green-600" />
                   </div>
-                  <CardTitle className="text-2xl">💰 Safe Spending Power</CardTitle>
-                  <CardDescription className="text-base">
+                  <CardTitle className="text-2xl text-center">💰 Safe Spending Power</CardTitle>
+                  <CardDescription className="text-base text-center">
                     Know exactly how much you can spend for the next 180 days. Make confident purchasing decisions without risking cash shortfalls.
                   </CardDescription>
                 </CardHeader>
               </Card>
 
-              {/* 100% Accurate Data */}
-              <Card className="bg-gradient-to-br from-blue-500/10 via-background to-background border-blue-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              {/* AI PDF Purchase Order Extractor */}
+              <Card className="bg-gradient-to-br from-blue-500/10 via-background to-background border-blue-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 w-full max-w-md">
                 <CardHeader>
-                  <div className="mb-4 p-3 rounded-xl bg-blue-500/20 w-fit">
-                    <BarChart3 className="h-8 w-8 text-blue-600" />
+                  <div className="mb-4 p-3 rounded-xl bg-blue-500/20 w-fit mx-auto">
+                    <FileText className="h-8 w-8 text-blue-600" />
                   </div>
-                  <CardTitle className="text-2xl">📊 100% Accurate Data</CardTitle>
-                  <CardDescription className="text-base">
-                    Don't guess - safely connect direct with your bank and Amazon payout. Real-time sync ensures your forecasts are always precise.
+                  <CardTitle className="text-2xl text-center">📄 AI PDF Purchase Order Extractor</CardTitle>
+                  <CardDescription className="text-base text-center">
+                    Upload any purchase order document and let AI automatically extract and fill out all the details for you. Save time and reduce manual data entry errors.
                   </CardDescription>
                 </CardHeader>
               </Card>
 
               {/* Calculated Buying Opportunities */}
-              <Card className="bg-gradient-to-br from-purple-500/10 via-background to-background border-purple-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              <Card className="bg-gradient-to-br from-purple-500/10 via-background to-background border-purple-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 w-full max-w-md">
                 <CardHeader>
-                  <div className="mb-4 p-3 rounded-xl bg-purple-500/20 w-fit">
+                  <div className="mb-4 p-3 rounded-xl bg-purple-500/20 w-fit mx-auto">
                     <Target className="h-8 w-8 text-purple-600" />
                   </div>
-                  <CardTitle className="text-2xl">🎯 Calculated Buying Opportunities</CardTitle>
-                  <CardDescription className="text-base">
+                  <CardTitle className="text-2xl text-center">🎯 Calculated Buying Opportunities</CardTitle>
+                  <CardDescription className="text-base text-center">
                     Smart purchase planning recommendations based on expenses + payouts. Never miss a growth opportunity or over-commit funds.
                   </CardDescription>
                 </CardHeader>
               </Card>
 
               {/* Cash Flow Calendar */}
-              <Card className="bg-gradient-to-br from-orange-500/10 via-background to-background border-orange-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              <Card className="bg-gradient-to-br from-orange-500/10 via-background to-background border-orange-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 w-full max-w-md">
                 <CardHeader>
-                  <div className="mb-4 p-3 rounded-xl bg-orange-500/20 w-fit">
+                  <div className="mb-4 p-3 rounded-xl bg-orange-500/20 w-fit mx-auto">
                     <Calendar className="h-8 w-8 text-orange-600" />
                   </div>
-                  <CardTitle className="text-2xl">Cash Flow Calendar</CardTitle>
-                  <CardDescription className="text-base">
+                  <CardTitle className="text-2xl text-center">Cash Flow Calendar</CardTitle>
+                  <CardDescription className="text-base text-center">
                     Visualize your entire financial future on an interactive calendar. See exactly when money comes in and goes out, with 365-day forecasting.
                   </CardDescription>
                 </CardHeader>
               </Card>
 
               {/* Scenario Planning */}
-              <Card className="bg-gradient-to-br from-teal-500/10 via-background to-background border-teal-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              <Card className="bg-gradient-to-br from-teal-500/10 via-background to-background border-teal-500/20 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 w-full max-w-md md:col-span-2 md:max-w-md md:mx-auto">
                 <CardHeader>
-                  <div className="mb-4 p-3 rounded-xl bg-teal-500/20 w-fit">
+                  <div className="mb-4 p-3 rounded-xl bg-teal-500/20 w-fit mx-auto">
                     <Target className="h-8 w-8 text-teal-600" />
                   </div>
-                  <CardTitle className="text-2xl">Scenario Planning</CardTitle>
-                  <CardDescription className="text-base">
+                  <CardTitle className="text-2xl text-center">Scenario Planning</CardTitle>
+                  <CardDescription className="text-base text-center">
                     Model what-if scenarios to understand how revenue changes, new expenses, or vendor terms affect your cash position before making decisions.
                   </CardDescription>
                 </CardHeader>
