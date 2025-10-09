@@ -520,6 +520,9 @@ const Dashboard = () => {
     // Note: In a real Plaid integration, this would add funds to connected account
 
     // Add to database - check if it succeeds
+    // Handle temporary customer IDs - set to null if temp ID is detected
+    const customerId = incomeData.customerId?.startsWith?.('temp-') ? null : incomeData.customerId;
+    
     const newIncome = await addIncome({
       description: incomeData.description || 'Income',
       amount: amount,
@@ -530,7 +533,7 @@ const Dashboard = () => {
       isRecurring: false,
       recurringFrequency: incomeData.recurringFrequency,
       notes: incomeData.notes,
-      customerId: incomeData.customerId
+      customerId: customerId
     });
 
     // Only continue if income was added successfully
