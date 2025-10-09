@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Download, Share2, TrendingUp, DollarSign, CreditCard, ShoppingCart, Calendar, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Download, Share2, TrendingUp, DollarSign, CreditCard, ShoppingCart, Calendar, ArrowLeft, Eye, EyeOff, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -174,7 +174,24 @@ const FlexReport = () => {
                 </h1>
                 <p className="text-slate-600 text-lg">Your business at a glance</p>
               </div>
-              <img src={aurenLogo} alt="Auren" className="h-10 md:h-12 drop-shadow-lg" />
+              <img src={aurenLogo} alt="Auren" className="h-16 md:h-20 drop-shadow-lg" />
+            </div>
+
+            {/* Verified Timestamp */}
+            <div className="mb-6 flex items-center justify-center gap-3 text-slate-700 bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-slate-200/60 shadow-sm">
+              <div className="flex items-center gap-2 px-4 py-2 bg-emerald-100/50 rounded-lg border border-emerald-200/50">
+                <Calendar className="w-5 h-5 text-emerald-700" />
+                <span className="font-bold text-emerald-900">
+                  {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </span>
+                <span className="font-mono font-bold text-emerald-900">
+                  {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 px-3 py-2 bg-blue-100/50 rounded-lg border border-blue-200/50">
+                <Lock className="w-4 h-4 text-blue-700" />
+                <span className="text-sm font-bold text-blue-900">Locked</span>
+              </div>
             </div>
 
             {/* Primary Metric - Available to Spend */}
