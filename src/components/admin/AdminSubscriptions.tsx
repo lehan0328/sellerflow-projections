@@ -3,12 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, DollarSign, TrendingUp, Users } from "lucide-react";
+import { Search, DollarSign, TrendingUp, Users, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface SubscriptionSummary {
   totalCustomers: number;
   activeSubscriptions: number;
+  trialUsers: number;
   totalMRR: number;
   churnRate: number;
 }
@@ -17,6 +18,7 @@ export const AdminSubscriptions = () => {
   const [summary, setSummary] = useState<SubscriptionSummary>({
     totalCustomers: 0,
     activeSubscriptions: 0,
+    trialUsers: 0,
     totalMRR: 0,
     churnRate: 0
   });
@@ -38,11 +40,18 @@ export const AdminSubscriptions = () => {
 
       if (profilesError) throw profilesError;
 
+      // Count users currently in trial (trial_end is in the future)
+      const now = new Date().toISOString();
+      const trialUsers = profiles?.filter(p => 
+        p.trial_end && new Date(p.trial_end) > new Date(now)
+      ).length || 0;
+
       // This is a simplified summary - in production you'd call your Stripe API
       // through an edge function to get accurate subscription data
       setSummary({
         totalCustomers: profiles?.length || 0,
         activeSubscriptions: profiles?.filter(p => p.plan_override).length || 0,
+        trialUsers,
         totalMRR: 0, // Would be calculated from Stripe data
         churnRate: 0 // Would be calculated from historical data
       });
@@ -71,7 +80,7 @@ export const AdminSubscriptions = () => {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
@@ -89,6 +98,19 @@ export const AdminSubscriptions = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary.activeSubscriptions}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Trial Users</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{summary.trialUsers}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Active trials
+            </p>
           </CardContent>
         </Card>
 
