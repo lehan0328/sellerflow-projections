@@ -653,11 +653,10 @@ const Landing = () => {
                 </div>
 
                 <div className="absolute -top-6 -right-6 p-4 rounded-2xl bg-card/80 backdrop-blur-xl border border-accent/20 shadow-lg animate-float" style={{ animationDelay: '2s', animationDuration: '7s' }}>
-                  <div className="text-sm text-muted-foreground">Forecast Accuracy</div>
-                  <div className="text-2xl font-bold text-primary">95.8%</div>
-                  <div className="flex items-center gap-1 text-xs text-success">
-                    <TrendingUp className="h-3 w-3" />
-                    <span>+2.3% this month</span>
+                  <div className="text-sm text-muted-foreground">Safe Spending</div>
+                  <div className="text-2xl font-bold text-primary flex items-center gap-2">
+                    <span>🛡️</span>
+                    <span>No More Overdrafts</span>
                   </div>
                 </div>
               </div>
