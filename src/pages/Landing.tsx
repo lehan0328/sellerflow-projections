@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun, ExternalLink, Lock, AlertCircle, BookOpen } from "lucide-react";
+import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun, ExternalLink, Lock, AlertCircle, BookOpen, Calculator, BadgeCheck } from "lucide-react";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import aurenFullLogo from "@/assets/auren-full-logo.png";
 import avatar1 from "@/assets/avatar-1.jpg";
@@ -673,6 +673,313 @@ const Landing = () => {
                   <div className="text-lg font-bold text-primary">Responsive</div>
                   <div className="text-xs text-muted-foreground">Design</div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Safe Spending Power & Opportunities Section */}
+      <section className="py-20 bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:32px_32px]" />
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center space-y-4 mb-16">
+            <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-2">
+              <Sparkles className="h-4 w-4 animate-pulse" />
+              Signature Features
+            </Badge>
+            <h2 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+              Know Exactly How Much You Can Safely Spend
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Our AI-powered Safe Spending Power and Buying Opportunities features give you confidence in every purchasing decision
+            </p>
+          </div>
+
+          {/* Safe Spending Power Card */}
+          <div className="max-w-6xl mx-auto mb-16">
+            <Card className="shadow-2xl border-2 border-primary/20 hover:border-primary/40 transition-all duration-500 bg-gradient-to-br from-card via-card to-primary/5">
+              <CardHeader className="space-y-4 pb-8">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-3 flex-1">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-500/30">
+                        <Shield className="h-8 w-8 text-emerald-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-3xl font-bold">Safe Spending Power</CardTitle>
+                        <p className="text-muted-foreground">Your financial safety net, calculated in real-time</p>
+                      </div>
+                    </div>
+                  </div>
+                  <Badge className="bg-emerald-500/20 text-emerald-700 border-emerald-500/30 px-4 py-2 text-sm font-bold">
+                    LIVE VERIFIED
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                {/* Visual representation */}
+                <div className="p-8 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-green-500/10 border border-emerald-500/20">
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                      <h3 className="text-2xl font-bold text-emerald-700 flex items-center gap-2">
+                        <CheckCircle className="h-6 w-6" />
+                        What It Does
+                      </h3>
+                      <p className="text-muted-foreground leading-relaxed">
+                        Safe Spending Power analyzes your entire financial picture—bank accounts, upcoming income, scheduled expenses, and obligations—to calculate exactly how much you can spend <span className="font-bold text-foreground">without risking cash shortfalls</span>.
+                      </p>
+                      <div className="space-y-2">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm">Analyzes all connected bank accounts in real-time</p>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm">Factors in upcoming Amazon payouts and income</p>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm">Accounts for all pending expenses and obligations</p>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm">Includes customizable reserve buffer for peace of mind</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <h3 className="text-2xl font-bold text-emerald-700 flex items-center gap-2">
+                        <Zap className="h-6 w-6" />
+                        Why It Matters
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="p-4 rounded-xl bg-card/50 border border-border">
+                          <p className="font-semibold text-foreground mb-2">Never Overdraft Again</p>
+                          <p className="text-sm text-muted-foreground">Know your true available balance after all obligations are met</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-card/50 border border-border">
+                          <p className="font-semibold text-foreground mb-2">Make Confident Purchases</p>
+                          <p className="text-sm text-muted-foreground">Buy inventory without worrying about upcoming expenses</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-card/50 border border-border">
+                          <p className="font-semibold text-foreground mb-2">Avoid Late Fees</p>
+                          <p className="text-sm text-muted-foreground">Ensure you always have cash for bills and credit card payments</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Example Calculation */}
+                <div className="p-6 rounded-xl bg-card border border-border space-y-4">
+                  <h4 className="text-lg font-bold flex items-center gap-2">
+                    <Calculator className="h-5 w-5 text-primary" />
+                    Example Calculation
+                  </h4>
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Current Bank Balance</span>
+                        <span className="font-bold text-lg">$45,000</span>
+                      </div>
+                      <div className="flex justify-between items-center text-success">
+                        <span className="text-muted-foreground">+ Expected Income (7 days)</span>
+                        <span className="font-bold">$28,500</span>
+                      </div>
+                      <div className="flex justify-between items-center text-destructive">
+                        <span className="text-muted-foreground">- Scheduled Expenses</span>
+                        <span className="font-bold">$22,300</span>
+                      </div>
+                      <div className="flex justify-between items-center text-muted-foreground">
+                        <span>- Reserve Buffer (10%)</span>
+                        <span className="font-bold">$5,120</span>
+                      </div>
+                      <Separator />
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-bold text-emerald-700">Safe to Spend</span>
+                        <span className="text-3xl font-bold text-emerald-600">$46,080</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center p-4 rounded-xl bg-emerald-500/10 border-2 border-emerald-500/30">
+                      <div className="text-center space-y-2">
+                        <BadgeCheck className="h-16 w-16 text-emerald-600 mx-auto" />
+                        <p className="text-sm font-bold text-emerald-700">VERIFIED IN REAL-TIME</p>
+                        <p className="text-xs text-muted-foreground">Updated every time your<br />finances change</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Buying Opportunities Card */}
+          <div className="max-w-6xl mx-auto">
+            <Card className="shadow-2xl border-2 border-accent/20 hover:border-accent/40 transition-all duration-500 bg-gradient-to-br from-card via-card to-accent/5">
+              <CardHeader className="space-y-4 pb-8">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-3 flex-1">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-500/30">
+                        <TrendingUp className="h-8 w-8 text-blue-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-3xl font-bold">View Buying Opportunities</CardTitle>
+                        <p className="text-muted-foreground">AI-powered insights for optimal purchase timing</p>
+                      </div>
+                    </div>
+                  </div>
+                  <Badge className="bg-blue-500/20 text-blue-700 border-blue-500/30 px-4 py-2 text-sm font-bold">
+                    AI-POWERED
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                {/* Visual representation */}
+                <div className="p-8 rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border border-blue-500/20">
+                  <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                      <h3 className="text-2xl font-bold text-blue-700 flex items-center gap-2">
+                        <Sparkles className="h-6 w-6" />
+                        What It Shows
+                      </h3>
+                      <p className="text-muted-foreground leading-relaxed">
+                        Buying Opportunities identifies <span className="font-bold text-foreground">future dates when you'll have extra cash</span> available after all obligations are met. It shows you the perfect windows to make large inventory purchases or investments.
+                      </p>
+                      <div className="space-y-2">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm">Forecasts cash surpluses up to 365 days ahead</p>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm">Shows exact available amount on each opportunity date</p>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm">Accounts for seasonal patterns and recurring expenses</p>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-sm">Helps plan Q4 inventory builds and growth investments</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <h3 className="text-2xl font-bold text-blue-700 flex items-center gap-2">
+                        <ShoppingCart className="h-6 w-6" />
+                        How Sellers Use It
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="p-4 rounded-xl bg-card/50 border border-border">
+                          <p className="font-semibold text-foreground mb-2">Plan Inventory Purchases</p>
+                          <p className="text-sm text-muted-foreground">"I can buy $50k of inventory on Oct 15th without hurting cash flow"</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-card/50 border border-border">
+                          <p className="font-semibold text-foreground mb-2">Time Growth Investments</p>
+                          <p className="text-sm text-muted-foreground">"Perfect time to invest in new product line or marketing campaign"</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-card/50 border border-border">
+                          <p className="font-semibold text-foreground mb-2">Negotiate Better Deals</p>
+                          <p className="text-sm text-muted-foreground">"Knowing my cash windows helps me negotiate payment terms with suppliers"</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Example Opportunities Timeline */}
+                <div className="p-6 rounded-xl bg-card border border-border space-y-4">
+                  <h4 className="text-lg font-bold flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-primary" />
+                    Example: Your Next Buying Opportunities
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="p-4 rounded-lg bg-blue-500/10 border-l-4 border-blue-500 hover:bg-blue-500/20 transition-colors cursor-pointer">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-bold text-blue-700">October 15, 2025</span>
+                        <Badge className="bg-blue-500/20 text-blue-700">In 6 days</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Available to invest</span>
+                        <span className="text-2xl font-bold text-blue-600">$52,400</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">After your Amazon payout and before credit card payment</p>
+                    </div>
+                    
+                    <div className="p-4 rounded-lg bg-blue-500/10 border-l-4 border-blue-500 hover:bg-blue-500/20 transition-colors cursor-pointer">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-bold text-blue-700">October 28, 2025</span>
+                        <Badge className="bg-blue-500/20 text-blue-700">In 19 days</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Available to invest</span>
+                        <span className="text-2xl font-bold text-blue-600">$68,200</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">Peak opportunity - Multiple payouts align with low expenses</p>
+                    </div>
+                    
+                    <div className="p-4 rounded-lg bg-blue-500/10 border-l-4 border-blue-500 hover:bg-blue-500/20 transition-colors cursor-pointer">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-bold text-blue-700">November 12, 2025</span>
+                        <Badge className="bg-blue-500/20 text-blue-700">In 34 days</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Available to invest</span>
+                        <span className="text-2xl font-bold text-blue-600">$45,800</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">Good for Q4 inventory build-up before holiday rush</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-center gap-2 pt-4 text-sm text-muted-foreground">
+                    <Sparkles className="h-4 w-4 text-blue-500" />
+                    <span>Automatically updated as your finances change</span>
+                  </div>
+                </div>
+
+                {/* CTA within card */}
+                <div className="p-6 rounded-xl bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-blue-500/10 border border-blue-500/30 text-center space-y-4">
+                  <p className="text-lg font-semibold">Ready to see YOUR buying opportunities?</p>
+                  <Button 
+                    size="lg"
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                    onClick={() => handleStartTrial(pricingPlans[1].priceId)}
+                  >
+                    Start Free 7-Day Trial
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                  <p className="text-xs text-muted-foreground">No credit card required • See your opportunities in minutes</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Bottom CTA */}
+          <div className="text-center mt-16 space-y-6">
+            <div className="space-y-2">
+              <h3 className="text-2xl font-bold">These Features Work Together</h3>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Safe Spending Power tells you what you can spend today. Buying Opportunities shows you when you'll have extra cash in the future. Together, they give you complete control over your business finances.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                <span className="text-sm font-medium text-emerald-700">Real-time updates</span>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20">
+                <Sparkles className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-700">AI-powered forecasting</span>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+                <Shield className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-primary">Bank-grade security</span>
               </div>
             </div>
           </div>
