@@ -148,6 +148,16 @@ export const useUserSettings = () => {
         // Trial addons
         supabase.from('trial_addon_usage').delete().eq('user_id', user.id),
         
+        // Support and team
+        supabase.from('support_tickets').delete().eq('user_id', user.id),
+        supabase.from('user_roles').delete().eq('user_id', user.id),
+        
+        // Referrals
+        supabase.from('referrals').delete().eq('referrer_id', user.id),
+        supabase.from('referrals').delete().eq('referred_user_id', user.id),
+        supabase.from('referral_codes').delete().eq('user_id', user.id),
+        supabase.from('referral_rewards').delete().eq('user_id', user.id),
+        
         // Delete user settings
         supabase.from('user_settings').delete().eq('user_id', user.id),
       ]);
