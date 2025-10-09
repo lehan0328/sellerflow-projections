@@ -146,7 +146,6 @@ export const useUserSettings = () => {
         { name: 'referrals_referred', promise: supabase.from('referrals').delete().eq('referred_user_id', user.id) },
         { name: 'referral_codes', promise: supabase.from('referral_codes').delete().eq('user_id', user.id) },
         { name: 'referral_rewards', promise: supabase.from('referral_rewards').delete().eq('user_id', user.id) },
-        { name: 'user_settings', promise: supabase.from('user_settings').delete().eq('user_id', user.id) },
       ];
 
       const results = await Promise.allSettled(deleteOperations.map(op => op.promise));
@@ -166,19 +165,24 @@ export const useUserSettings = () => {
         }
       });
 
-      // Create fresh default settings
-      const { error: insertError } = await supabase.from('user_settings').insert({
-        user_id: user.id,
-        total_cash: 0,
-        safe_spending_percentage: 20,
-        safe_spending_reserve: 0
-      });
+      // Reset user_settings using UPSERT to avoid duplicate key errors
+      const { error: upsertError } = await supabase
+        .from('user_settings')
+        .upsert({
+          user_id: user.id,
+          total_cash: 0,
+          safe_spending_percentage: 20,
+          safe_spending_reserve: 0
+        }, {
+          onConflict: 'user_id'
+        });
 
-      if (insertError) {
-        console.error('Failed to create default settings:', insertError);
-        throw insertError;
+      if (upsertError) {
+        console.error('Failed to reset user settings:', upsertError);
+        throw upsertError;
       }
 
+      console.log('✅ Reset user_settings');
       setTotalCash(0);
       
       toast({
