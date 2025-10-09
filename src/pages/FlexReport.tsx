@@ -71,8 +71,13 @@ const FlexReport = () => {
       const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(reportRef.current, {
         backgroundColor: '#ffffff',
-        scale: 2,
-        logging: false
+        scale: 3,
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        foreignObjectRendering: false,
+        imageTimeout: 0,
+        removeContainer: true
       });
       const link = document.createElement('a');
       link.download = `auren-flex-report-${new Date().toISOString().split('T')[0]}.png`;
@@ -88,8 +93,13 @@ const FlexReport = () => {
         const html2canvas = (await import('html2canvas')).default;
         const canvas = await html2canvas(reportRef.current, {
           backgroundColor: '#ffffff',
-          scale: 2,
-          logging: false
+          scale: 3,
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          foreignObjectRendering: false,
+          imageTimeout: 0,
+          removeContainer: true
         });
         canvas.toBlob(async blob => {
           if (blob) {
