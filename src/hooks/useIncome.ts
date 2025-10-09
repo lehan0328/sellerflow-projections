@@ -241,6 +241,7 @@ export const useIncome = () => {
         console.error('Error saving deleted income:', saveError);
       }
 
+      // Delete from income table
       const { error } = await supabase
         .from('income')
         .delete()
@@ -251,6 +252,20 @@ export const useIncome = () => {
         console.error('Error deleting income:', error);
         toast.error('Failed to delete income');
         return false;
+      }
+
+      // Also delete any related sales_order transactions with matching amount and date
+      const { error: txDeleteError } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('type', 'sales_order')
+        .eq('amount', income.amount)
+        .eq('transaction_date', formatDateForDB(income.paymentDate));
+
+      if (txDeleteError) {
+        console.error('Error deleting related sales_order transactions:', txDeleteError);
+        // Don't fail the whole operation, just log
       }
 
       setIncomeItems(prev => prev.filter(item => item.id !== id));
