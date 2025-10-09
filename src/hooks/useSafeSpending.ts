@@ -331,27 +331,33 @@ export const useSafeSpending = () => {
               }
             }
             
-            // Find earliest available date - count forward from opportunity to find when balance rises above opportunity amount
+            // Find earliest available date - count BACKWARDS from opportunity to find when balance first drops below needed amount
             let availableDate: string | undefined;
             const opportunityIndex = dailyBalances.findIndex(d => d.date === current.date);
             const opportunityAmount = current.balance; // This is already balance - reserve
+            const minBalanceNeeded = opportunityAmount + reserve; // Total balance needed to spend this amount
             
             console.log(`🛒 Opportunity at ${current.date}:`, {
               opportunityAmount,
-              rawBalance: current.balance + reserve,
+              minBalanceNeeded,
               reserve,
-              searchingFor: `balance - reserve > ${opportunityAmount}`
+              opportunityIndex
             });
             
-            // Find first date AFTER the low point where balance > opportunity available amount
-            for (let k = opportunityIndex; k < dailyBalances.length; k++) {
-              // Compare raw balance to opportunity + reserve (the minimum needed)
-              const availableBalance = dailyBalances[k].balance - reserve;
-              if (availableBalance > opportunityAmount) {
-                console.log(`  ✅ Found at ${dailyBalances[k].date}: balance=${dailyBalances[k].balance}, available=${availableBalance}`);
-                availableDate = dailyBalances[k].date;
+            // Count backwards from opportunity to find first date where balance < needed amount
+            let firstViableIndex = 0; // Default to today
+            for (let k = opportunityIndex; k >= 0; k--) {
+              if (dailyBalances[k].balance < minBalanceNeeded) {
+                // Found where balance drops below threshold, so earliest viable is the next day forward
+                firstViableIndex = k + 1;
+                console.log(`  ❌ Balance drops below ${minBalanceNeeded} at ${dailyBalances[k].date} (${dailyBalances[k].balance})`);
                 break;
               }
+            }
+            
+            if (firstViableIndex <= opportunityIndex) {
+              availableDate = dailyBalances[firstViableIndex].date;
+              console.log(`  ✅ Earliest purchase date: ${availableDate} (balance=${dailyBalances[firstViableIndex].balance})`);
             }
             
             // Only add if this is truly a buying opportunity (will rise or is terminal)
