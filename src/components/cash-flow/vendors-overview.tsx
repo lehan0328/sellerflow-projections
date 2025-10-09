@@ -444,10 +444,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                     <TableCell className="font-medium">{tx.vendorName}</TableCell>
                     <TableCell>{tx.description || 'N/A'}</TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-semibold">
-                          ${(tx.amount || 0).toLocaleString()}
-                        </span>
+                      <div className="flex flex-col items-start space-y-1">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -464,6 +461,9 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
+                        <span className="font-semibold">
+                          ${(tx.amount || 0).toLocaleString()}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
