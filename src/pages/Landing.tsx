@@ -653,11 +653,9 @@ const Landing = () => {
                 </div>
 
                 <div className="absolute -top-6 -right-6 p-4 rounded-2xl bg-card/80 backdrop-blur-xl border border-accent/20 shadow-lg animate-float" style={{ animationDelay: '2s', animationDuration: '7s' }}>
-                  <div className="text-sm text-muted-foreground">Safe Spending</div>
-                  <div className="text-2xl font-bold text-primary flex items-center gap-2">
-                    <span>🛡️</span>
-                    <span>No More Overdrafts</span>
-                  </div>
+                  <div className="text-xs text-muted-foreground font-medium mb-1">✨ Signature Feature</div>
+                  <div className="text-lg font-bold text-primary mb-1">Safe Spending Power</div>
+                  <div className="text-xs text-muted-foreground">Know exactly how much you can spend</div>
                 </div>
               </div>
               
