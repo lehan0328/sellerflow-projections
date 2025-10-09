@@ -505,30 +505,30 @@ const Landing = () => {
             {/* Left Content */}
             <div className="space-y-8 z-10">
               {/* Floating Badge */}
-              <div className="animate-fade-in space-y-3">
+              <div className="animate-fade-in">
                 <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm hover-scale">
                   <Sparkles className="h-4 w-4 animate-pulse" />
                   <span className="font-display">AI-Powered Forecasting</span>
                   <span className="ml-2 px-2 py-0.5 bg-primary/20 rounded-full text-xs">New</span>
                 </Badge>
-                <div>
-                  <Badge variant="secondary" className="text-sm">
-                    Starting at $24 per month
-                  </Badge>
-                </div>
               </div>
               
               <div className="animate-fade-in space-y-6" style={{
               animationDelay: '200ms'
             }}>
-                <h1 className="text-5xl lg:text-6xl xl:text-7xl font-display font-bold leading-relaxed tracking-tight">
-                  <span className="block text-foreground pb-2">Cashflow</span>
-                  <span className="block bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%] pb-2">
-                    Forecasting
-                  </span>
-                  <span className="block text-foreground pb-2">for Marketplace</span>
-                  <span className="block text-foreground pb-2">Sellers</span>
-                </h1>
+                <div className="flex items-start gap-4">
+                  <h1 className="text-5xl lg:text-6xl xl:text-7xl font-display font-bold leading-relaxed tracking-tight flex-1">
+                    <span className="block text-foreground pb-2">Cashflow</span>
+                    <span className="block bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%] pb-2">
+                      Forecasting
+                    </span>
+                    <span className="block text-foreground pb-2">for Marketplace</span>
+                    <span className="block text-foreground pb-2">Sellers</span>
+                  </h1>
+                  <Badge variant="secondary" className="text-lg px-6 py-2 whitespace-nowrap mt-2">
+                    Starting at $24/mo
+                  </Badge>
+                </div>
               </div>
               
               <p className="text-xl text-muted-foreground max-w-xl animate-fade-in leading-relaxed" style={{
