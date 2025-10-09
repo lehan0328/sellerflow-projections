@@ -152,7 +152,7 @@ const FlexReport = () => {
                 </h1>
                 <p className="text-slate-600 text-lg">Your business at a glance</p>
               </div>
-              <img src={aurenLogo} alt="Auren" className="h-10 md:h-12 drop-shadow-lg" />
+              <img src={aurenLogo} alt="Auren" className="h-16 md:h-20 drop-shadow-lg" />
             </div>
 
             {/* Primary Metric - Available to Spend */}
