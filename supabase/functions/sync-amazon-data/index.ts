@@ -75,6 +75,7 @@ serve(async (req) => {
     for (let i = 0; i < 30; i++) {
       const transactionDate = new Date(now)
       transactionDate.setDate(now.getDate() - i)
+      const transactionDateStr = transactionDate.toISOString().split('T')[0]
       
       // Simulate various transaction types
       const transactionTypes = [
@@ -86,15 +87,18 @@ serve(async (req) => {
 
       const randomTransaction = transactionTypes[Math.floor(Math.random() * transactionTypes.length)]
       
+      // Use deterministic transaction ID based on account, date, and index
+      const transactionId = `AMZ-${amazonAccountId.slice(0, 8)}-${transactionDateStr}-${i}`
+      
       transactionsToAdd.push({
         user_id: user.id,
         amazon_account_id: amazonAccountId,
-        transaction_id: `AMZ-${Date.now()}-${i}`,
+        transaction_id: transactionId,
         transaction_type: randomTransaction.type,
         amount: randomTransaction.amount,
         currency_code: 'USD',
         transaction_date: transactionDate.toISOString(),
-        settlement_id: `S${Math.floor(Date.now() / 1000)}`,
+        settlement_id: `S${Math.floor(new Date(transactionDateStr).getTime() / 1000)}`,
         marketplace_name: amazonAccount.marketplace_name,
         description: randomTransaction.description
       })
