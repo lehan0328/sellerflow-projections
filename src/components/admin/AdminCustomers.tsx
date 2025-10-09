@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Shield, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Table,
@@ -23,18 +23,15 @@ interface Customer {
   created_at: string;
   plan_override?: string;
   discount_redeemed_at?: string;
-  email?: string;
-  is_admin?: boolean;
   trial_end?: string;
-  last_sign_in_at?: string;
 }
 
 interface ConversionMetrics {
-  totalUsers: number;
-  trialUsers: number;
-  paidUsers: number;
+  total: number;
+  trial: number;
+  paid: number;
+  expired: number;
   conversionRate: number;
-  discountUsers: number;
 }
 
 export const AdminCustomers = () => {
@@ -55,51 +52,28 @@ export const AdminCustomers = () => {
       setIsLoading(true);
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('user_id, first_name, last_name, company, created_at, plan_override, discount_redeemed_at, trial_end')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Get emails and admin status
-      const userIds = profiles?.map(p => p.user_id) || [];
-      const { data: emailData } = await supabase.functions.invoke('get-user-emails', {
-        body: { userIds }
-      });
-
-      const { data: adminRoles } = await supabase
-        .from('user_roles')
-        .select('user_id, role')
-        .in('user_id', userIds)
-        .eq('role', 'admin');
-
-      const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
-
-      const customersWithEmail = profiles?.map(profile => ({
-        ...profile,
-        email: emailData?.emails?.[profile.user_id] || 'Unknown',
-        is_admin: adminUserIds.has(profile.user_id),
-        last_sign_in_at: emailData?.lastSignIn?.[profile.user_id]
-      })) || [];
-
-      setCustomers(customersWithEmail);
+      setCustomers(profiles || []);
 
       // Calculate metrics
       const now = new Date();
-      const trialUsers = customersWithEmail.filter(c => 
+      const trial = profiles?.filter(c => 
         c.trial_end && new Date(c.trial_end) > now && !c.plan_override
-      ).length;
-      const paidUsers = customersWithEmail.filter(c => c.plan_override).length;
-      const discountUsers = customersWithEmail.filter(c => c.discount_redeemed_at).length;
-      const conversionRate = customersWithEmail.length > 0 
-        ? (paidUsers / customersWithEmail.length) * 100 
-        : 0;
+      ).length || 0;
+      const paid = profiles?.filter(c => c.plan_override).length || 0;
+      const expired = (profiles?.length || 0) - trial - paid;
+      const conversionRate = profiles?.length ? (paid / profiles.length) * 100 : 0;
 
       setMetrics({
-        totalUsers: customersWithEmail.length,
-        trialUsers,
-        paidUsers,
-        conversionRate,
-        discountUsers
+        total: profiles?.length || 0,
+        trial,
+        paid,
+        expired,
+        conversionRate
       });
     } catch (error: any) {
       console.error('Error fetching customers:', error);
@@ -113,60 +87,8 @@ export const AdminCustomers = () => {
     }
   };
 
-  const toggleAdminStatus = async (userId: string, currentStatus: boolean) => {
-    try {
-      // Get user's account_id from profiles
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('account_id')
-        .eq('user_id', userId)
-        .single();
-
-      if (!profile?.account_id) {
-        throw new Error("User account not found");
-      }
-
-      if (currentStatus) {
-        // Revoke admin role
-        const { error } = await supabase
-          .from('user_roles')
-          .delete()
-          .eq('user_id', userId)
-          .eq('account_id', profile.account_id)
-          .eq('role', 'admin');
-
-        if (error) throw error;
-      } else {
-        // Grant admin role
-        const { error } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: userId,
-            account_id: profile.account_id,
-            role: 'admin'
-          });
-
-        if (error) throw error;
-      }
-
-      toast({
-        title: "Success",
-        description: `Admin status ${!currentStatus ? 'granted' : 'revoked'}`,
-      });
-
-      await fetchCustomers();
-    } catch (error: any) {
-      console.error('Error updating admin status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update admin status",
-        variant: "destructive",
-      });
-    }
-  };
 
   const filteredCustomers = customers.filter(customer => 
-    customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.company?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -201,43 +123,34 @@ export const AdminCustomers = () => {
   return (
     <div className="space-y-4">
       {metrics && (
-        <div className="grid grid-cols-5 gap-4">
-          <Card className="p-4">
-            <div className="text-sm text-muted-foreground">Total Users</div>
-            <div className="text-2xl font-bold">{metrics.totalUsers}</div>
+        <div className="grid grid-cols-4 gap-4">
+          <Card className="p-3">
+            <div className="text-xs text-muted-foreground">Total</div>
+            <div className="text-xl font-bold">{metrics.total}</div>
           </Card>
-          <Card className="p-4">
-            <div className="text-sm text-muted-foreground">Trial Users</div>
-            <div className="text-2xl font-bold">{metrics.trialUsers}</div>
+          <Card className="p-3">
+            <div className="text-xs text-muted-foreground">Trial</div>
+            <div className="text-xl font-bold text-blue-600">{metrics.trial}</div>
           </Card>
-          <Card className="p-4">
-            <div className="text-sm text-muted-foreground">Paid Users</div>
-            <div className="text-2xl font-bold">{metrics.paidUsers}</div>
+          <Card className="p-3">
+            <div className="text-xs text-muted-foreground">Paid</div>
+            <div className="text-xl font-bold text-green-600">{metrics.paid}</div>
           </Card>
-          <Card className="p-4">
-            <div className="text-sm text-muted-foreground">Conversion Rate</div>
-            <div className="text-2xl font-bold">{metrics.conversionRate.toFixed(1)}%</div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-sm text-muted-foreground">Discount Users</div>
-            <div className="text-2xl font-bold">{metrics.discountUsers}</div>
+          <Card className="p-3">
+            <div className="text-xs text-muted-foreground">Conversion</div>
+            <div className="text-xl font-bold">{metrics.conversionRate.toFixed(1)}%</div>
           </Card>
         </div>
       )}
       
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Customer Management</span>
-            <span className="text-sm font-normal text-muted-foreground">
-              {filteredCustomers.length} customer{filteredCustomers.length !== 1 ? 's' : ''}
-            </span>
-          </CardTitle>
-          <div className="mt-4">
-            <div className="relative">
+          <div className="flex items-center justify-between">
+            <CardTitle>Customers ({filteredCustomers.length})</CardTitle>
+            <div className="relative w-80">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by email, name, or company..."
+                placeholder="Search by name or company..."
                 value={searchTerm}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10"
@@ -251,19 +164,16 @@ export const AdminCustomers = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
                 <TableHead>Company</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Last Used</TableHead>
+                <TableHead>Joined</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Discount</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>Plan</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedCustomers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                     No customers found
                   </TableCell>
                 </TableRow>
@@ -271,48 +181,33 @@ export const AdminCustomers = () => {
                 paginatedCustomers.map((customer) => {
                   const status = getAccountStatus(customer);
                   return (
-                    <TableRow key={customer.user_id}>
+                    <TableRow key={customer.user_id} className="text-sm">
                       <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          {customer.first_name || customer.last_name
-                            ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
-                            : 'Unnamed User'}
-                          {customer.is_admin && (
-                            <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">
-                              <Shield className="h-3 w-3 mr-1" />
-                              Admin
-                            </Badge>
-                          )}
-                        </div>
+                        {customer.first_name || customer.last_name
+                          ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
+                          : 'Unnamed'}
                       </TableCell>
-                      <TableCell className="text-sm">{customer.email}</TableCell>
-                      <TableCell className="text-sm">{customer.company || '-'}</TableCell>
-                      <TableCell className="text-sm">
-                        {new Date(customer.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {customer.last_sign_in_at 
-                          ? new Date(customer.last_sign_in_at).toLocaleDateString()
-                          : 'Never'}
+                      <TableCell>{customer.company || '-'}</TableCell>
+                      <TableCell>
+                        {new Date(customer.created_at).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
                       </TableCell>
                       <TableCell>
                         <Badge variant={status.variant} className="text-xs">
                           {status.label}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm">
-                        {customer.discount_redeemed_at 
-                          ? new Date(customer.discount_redeemed_at).toLocaleDateString()
-                          : '-'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant={customer.is_admin ? "destructive" : "default"}
-                          onClick={() => toggleAdminStatus(customer.user_id, customer.is_admin)}
-                        >
-                          {customer.is_admin ? 'Revoke' : 'Grant Admin'}
-                        </Button>
+                      <TableCell>
+                        {customer.plan_override ? (
+                          <Badge variant="outline" className="text-xs">
+                            {customer.plan_override}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
