@@ -1,0 +1,116 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+  apiVersion: "2025-08-27.basil",
+});
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const signature = req.headers.get("stripe-signature");
+    if (!signature) {
+      throw new Error("No Stripe signature found");
+    }
+
+    const body = await req.text();
+    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    
+    if (!webhookSecret) {
+      throw new Error("Stripe webhook secret not configured");
+    }
+
+    // Verify the webhook signature
+    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    
+    console.log("Received Stripe event:", event.type);
+
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    // Handle payment failed events
+    if (event.type === "invoice.payment_failed") {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerEmail = invoice.customer_email;
+
+      if (customerEmail) {
+        console.log("Payment failed for customer:", customerEmail);
+
+        // Find user by email and suspend account
+        const { data: user } = await supabaseAdmin.auth.admin.listUsers();
+        const targetUser = user?.users.find(u => u.email === customerEmail);
+
+        if (targetUser) {
+          const { error } = await supabaseAdmin
+            .from('profiles')
+            .update({
+              account_status: 'suspended_payment',
+              payment_failure_date: new Date().toISOString()
+            })
+            .eq('user_id', targetUser.id);
+
+          if (error) {
+            console.error("Error suspending account:", error);
+          } else {
+            console.log("Account suspended for user:", targetUser.id);
+          }
+        }
+      }
+    }
+
+    // Handle payment succeeded events (reactivate account)
+    if (event.type === "invoice.payment_succeeded") {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerEmail = invoice.customer_email;
+
+      if (customerEmail) {
+        console.log("Payment succeeded for customer:", customerEmail);
+
+        // Find user by email and activate account
+        const { data: user } = await supabaseAdmin.auth.admin.listUsers();
+        const targetUser = user?.users.find(u => u.email === customerEmail);
+
+        if (targetUser) {
+          const { error } = await supabaseAdmin
+            .from('profiles')
+            .update({
+              account_status: 'active',
+              payment_failure_date: null
+            })
+            .eq('user_id', targetUser.id);
+
+          if (error) {
+            console.error("Error activating account:", error);
+          } else {
+            console.log("Account activated for user:", targetUser.id);
+          }
+        }
+      }
+    }
+
+    return new Response(JSON.stringify({ received: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
+  } catch (error: any) {
+    console.error("Webhook error:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      }
+    );
+  }
+});

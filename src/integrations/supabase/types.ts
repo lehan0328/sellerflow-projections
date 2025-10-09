@@ -887,6 +887,7 @@ export type Database = {
       profiles: {
         Row: {
           account_id: string | null
+          account_status: string
           amazon_marketplaces: string[] | null
           company: string | null
           created_at: string
@@ -898,8 +899,10 @@ export type Database = {
           last_name: string | null
           max_team_members: number
           monthly_revenue: string | null
+          payment_failure_date: string | null
           plan_override: string | null
           plan_override_reason: string | null
+          stripe_customer_id: string | null
           trial_end: string | null
           trial_start: string | null
           updated_at: string
@@ -907,6 +910,7 @@ export type Database = {
         }
         Insert: {
           account_id?: string | null
+          account_status?: string
           amazon_marketplaces?: string[] | null
           company?: string | null
           created_at?: string
@@ -918,8 +922,10 @@ export type Database = {
           last_name?: string | null
           max_team_members?: number
           monthly_revenue?: string | null
+          payment_failure_date?: string | null
           plan_override?: string | null
           plan_override_reason?: string | null
+          stripe_customer_id?: string | null
           trial_end?: string | null
           trial_start?: string | null
           updated_at?: string
@@ -927,6 +933,7 @@ export type Database = {
         }
         Update: {
           account_id?: string | null
+          account_status?: string
           amazon_marketplaces?: string[] | null
           company?: string | null
           created_at?: string
@@ -938,8 +945,10 @@ export type Database = {
           last_name?: string | null
           max_team_members?: number
           monthly_revenue?: string | null
+          payment_failure_date?: string | null
           plan_override?: string | null
           plan_override_reason?: string | null
+          stripe_customer_id?: string | null
           trial_end?: string | null
           trial_start?: string | null
           updated_at?: string

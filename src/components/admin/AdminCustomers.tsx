@@ -24,6 +24,9 @@ interface Customer {
   plan_override?: string;
   discount_redeemed_at?: string;
   trial_end?: string;
+  account_status?: string;
+  payment_failure_date?: string;
+  email?: string;
 }
 
 interface ConversionMetrics {
@@ -52,12 +55,23 @@ export const AdminCustomers = () => {
       setIsLoading(true);
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('user_id, first_name, last_name, company, created_at, plan_override, discount_redeemed_at, trial_end')
+        .select('user_id, first_name, last_name, company, created_at, plan_override, discount_redeemed_at, trial_end, account_status, payment_failure_date')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      setCustomers(profiles || []);
+      // Get emails for all users
+      const userIds = profiles?.map(p => p.user_id) || [];
+      const { data: emailData } = await supabase.functions.invoke('get-user-emails', {
+        body: { userIds }
+      });
+
+      const customersWithEmail = profiles?.map(profile => ({
+        ...profile,
+        email: emailData?.emails?.[profile.user_id] || 'Unknown'
+      })) || [];
+
+      setCustomers(customersWithEmail);
 
       // Calculate metrics
       const now = new Date();
@@ -88,7 +102,37 @@ export const AdminCustomers = () => {
   };
 
 
-  const filteredCustomers = customers.filter(customer => 
+  const toggleAccountStatus = async (userId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'suspended_payment' ? 'active' : 'suspended_payment';
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          account_status: newStatus,
+          payment_failure_date: newStatus === 'suspended_payment' ? new Date().toISOString() : null
+        })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Account ${newStatus === 'active' ? 'activated' : 'suspended'}`,
+      });
+
+      await fetchCustomers();
+    } catch (error: any) {
+      console.error('Error updating account status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update account status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const filteredCustomers = customers.filter(customer =>
     customer.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.company?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -164,29 +208,33 @@ export const AdminCustomers = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Company</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedCustomers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No customers found
                   </TableCell>
                 </TableRow>
               ) : (
                 paginatedCustomers.map((customer) => {
                   const status = getAccountStatus(customer);
+                  const isSuspended = customer.account_status === 'suspended_payment';
                   return (
-                    <TableRow key={customer.user_id} className="text-sm">
+                    <TableRow key={customer.user_id} className={`text-sm ${isSuspended ? 'bg-destructive/5' : ''}`}>
                       <TableCell className="font-medium">
                         {customer.first_name || customer.last_name
                           ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
                           : 'Unnamed'}
                       </TableCell>
+                      <TableCell>{customer.email}</TableCell>
                       <TableCell>{customer.company || '-'}</TableCell>
                       <TableCell>
                         {new Date(customer.created_at).toLocaleDateString('en-US', { 
@@ -196,9 +244,16 @@ export const AdminCustomers = () => {
                         })}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={status.variant} className="text-xs">
-                          {status.label}
-                        </Badge>
+                        <div className="flex flex-col gap-1">
+                          <Badge variant={status.variant} className="text-xs w-fit">
+                            {status.label}
+                          </Badge>
+                          {isSuspended && customer.payment_failure_date && (
+                            <span className="text-xs text-muted-foreground">
+                              Failed: {new Date(customer.payment_failure_date).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {customer.plan_override ? (
@@ -208,6 +263,15 @@ export const AdminCustomers = () => {
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant={isSuspended ? "default" : "destructive"}
+                          onClick={() => toggleAccountStatus(customer.user_id, customer.account_status || 'active')}
+                        >
+                          {isSuspended ? 'Activate' : 'Suspend'}
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );

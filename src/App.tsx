@@ -28,6 +28,8 @@ import { Auth } from "./pages/Auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import Admin from "./pages/Admin";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+import { PaymentAccessControl } from "./components/PaymentAccessControl";
+import PaymentRequired from "./pages/PaymentRequired";
 import Support from "./pages/Support";
 import Onboarding from "./pages/Onboarding";
 import DocumentStorage from "./pages/DocumentStorage";
@@ -56,14 +58,16 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/features" element={<Features />} />
-          <Route path="/features/:slug" element={<FeatureDetail />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/demo" element={<DemoPage />} />
+        <PaymentAccessControl>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/features" element={<Features />} />
+            <Route path="/features/:slug" element={<FeatureDetail />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/payment-required" element={<PaymentRequired />} />
+            <Route path="/demo" element={<DemoPage />} />
           <Route path="/docs" element={<Docs />} />
           <Route path="/docs/getting-started" element={<DocsGettingStarted />} />
           <Route path="/docs/amazon-integration" element={<DocsAmazonIntegration />} />
@@ -167,6 +171,7 @@ const App = () => (
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </PaymentAccessControl>
       </TooltipProvider>
     </BrowserRouter>
   </QueryClientProvider>
