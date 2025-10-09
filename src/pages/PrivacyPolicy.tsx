@@ -300,9 +300,9 @@ export default function PrivacyPolicy() {
                 If you have questions about this Privacy Policy, want to exercise your data rights, or have concerns about how we handle your information, please contact us:
               </p>
               <div className="bg-muted p-4 rounded-lg space-y-2">
-                <p><strong>Email:</strong> privacy@cashflowmanager.com</p>
-                <p><strong>Data Protection Officer:</strong> dpo@cashflowmanager.com</p>
-                <p><strong>Mailing Address:</strong> [Your Business Address]</p>
+                <p><strong>Email:</strong> support@aurenapp.com</p>
+                <p><strong>Data Protection Officer:</strong> support@aurenapp.com</p>
+                <p><strong>Mailing Address:</strong> 430 Nepperhan Ave, Yonkers, NY 10701</p>
               </div>
               <p className="text-sm text-muted-foreground mt-4">
                 We aim to respond to all privacy-related inquiries within 48 hours.
