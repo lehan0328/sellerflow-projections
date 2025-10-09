@@ -244,7 +244,8 @@ export const useIncome = () => {
       const { error } = await supabase
         .from('income')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id);
 
       if (error) {
         console.error('Error deleting income:', error);
