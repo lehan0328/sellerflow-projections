@@ -45,6 +45,7 @@ import Partners from "./pages/Partners";
 import ReferralDashboard from "./pages/ReferralDashboard";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
 import Pricing from "./pages/Pricing";
+import FlexReport from "./pages/FlexReport";
 
 const queryClient = new QueryClient();
 
@@ -153,6 +154,11 @@ const App = () => (
             <Route path="/document-storage" element={
               <ProtectedRoute>
                 <DocumentStorage />
+              </ProtectedRoute>
+            } />
+            <Route path="/flex-report" element={
+              <ProtectedRoute>
+                <FlexReport />
               </ProtectedRoute>
             } />
           <Route path="/oauth-redirect" element={<OAuthRedirect />} />

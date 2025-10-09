@@ -1,4 +1,4 @@
-import { TrendingUp, Calculator, Gift } from "lucide-react";
+import { TrendingUp, Calculator, Gift, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "./user-menu";
 import aurenIcon from "@/assets/auren-icon-blue.png";
@@ -60,6 +60,19 @@ export function DashboardHeader({ onRefresh, isRefreshing = false, lastRefreshTi
 
       {/* Navigation and User Menu - Top Right */}
       <div className="absolute top-6 right-6 z-40 flex items-center space-x-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate('/flex-report')}
+          className="relative h-10 px-4 bg-gradient-to-r from-purple-500/20 to-blue-500/20 backdrop-blur-sm border-purple-500/50 hover:border-purple-500 hover:bg-purple-500/30 hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 group overflow-hidden"
+          title="Create Flex Report - Share your success"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="relative flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-purple-500 animate-pulse" />
+            <span className="font-semibold text-purple-600 dark:text-purple-400">Flex Report</span>
+          </div>
+        </Button>
         <Button
           variant="outline"
           size="sm"
