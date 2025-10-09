@@ -149,121 +149,125 @@ const FlexReport = () => {
         {/* Flex Report Card */}
         <Card 
           ref={reportRef}
-          className="relative overflow-hidden bg-white shadow-2xl border-0"
+          className="relative overflow-hidden bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 shadow-2xl border-0 backdrop-blur-sm"
         >
           {/* Background Gradient Decoration */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl -z-0" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-purple-500/10 to-blue-500/10 rounded-full blur-3xl -z-0" />
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl -z-0" />
+          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-purple-400/20 to-blue-400/20 rounded-full blur-3xl -z-0" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-br from-emerald-400/10 to-blue-400/10 rounded-full blur-3xl -z-0" />
           
           {/* Auren Watermark */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
             <img 
               src={aurenLogo} 
               alt="" 
-              className="w-[600px] opacity-[0.03] select-none rotate-[-15deg]"
+              className="w-[600px] opacity-[0.08] select-none rotate-[-15deg] scale-110"
             />
           </div>
           
           <div className="relative z-10 p-8 md:p-12">
             {/* Header with Branding */}
-            <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-200">
+            <div className="flex items-center justify-between mb-10 pb-8 border-b-2 border-gradient-to-r from-blue-200 via-purple-200 to-blue-200">
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-3 tracking-tight">
                   Financial Power Report
                 </h1>
-                <p className="text-slate-600">Your business at a glance</p>
+                <p className="text-slate-600 text-lg">Your business at a glance</p>
               </div>
-              <img src={aurenLogo} alt="Auren" className="h-8 md:h-10" />
+              <img src={aurenLogo} alt="Auren" className="h-10 md:h-12 drop-shadow-lg" />
             </div>
 
             {/* Primary Metric - Available to Spend */}
-            <div className="mb-8 text-center">
-              <p className="text-sm text-slate-600 mb-2 uppercase tracking-wide">Available to Spend</p>
-              <div className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
+            <div className="mb-10 text-center bg-gradient-to-br from-emerald-50/50 to-green-50/50 backdrop-blur-sm rounded-2xl p-8 border border-emerald-200/50 shadow-lg">
+              <p className="text-sm text-slate-600 mb-3 uppercase tracking-widest font-semibold">Available to Spend</p>
+              <div className="text-6xl md:text-7xl font-black bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-3 drop-shadow-sm">
                 {formatCurrency(safeSpendingData?.safe_spending_limit || 0)}
               </div>
-              <p className="text-slate-500 text-sm">Safe spending power for your business</p>
+              <p className="text-slate-600 text-base font-medium">Safe spending power for your business</p>
             </div>
 
             {/* Metrics Grid */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-2 gap-5 mb-8">
               {/* Total Cash */}
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-blue-500 rounded-lg">
+              <div className="group bg-gradient-to-br from-blue-50 via-blue-100/80 to-blue-50 rounded-2xl p-6 border-2 border-blue-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <DollarSign className="w-5 h-5 text-white" />
                   </div>
-                  <p className="text-sm font-medium text-slate-700">Total Cash</p>
+                  <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Total Cash</p>
                 </div>
-                <p className="text-3xl font-bold text-blue-700">{formatCurrency(bankBalance)}</p>
+                <p className="text-4xl font-black text-blue-700 drop-shadow-sm">{formatCurrency(bankBalance)}</p>
               </div>
 
               {/* Available Credit */}
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-purple-500 rounded-lg">
+              <div className="group bg-gradient-to-br from-purple-50 via-purple-100/80 to-purple-50 rounded-2xl p-6 border-2 border-purple-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <CreditCard className="w-5 h-5 text-white" />
                   </div>
-                  <p className="text-sm font-medium text-slate-700">Available Credit</p>
+                  <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Available Credit</p>
                 </div>
-                <p className="text-3xl font-bold text-purple-700">{formatCurrency(totalAvailableCredit)}</p>
+                <p className="text-4xl font-black text-purple-700 drop-shadow-sm">{formatCurrency(totalAvailableCredit)}</p>
               </div>
 
               {/* Upcoming Income */}
-              <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-6 border border-emerald-200">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-emerald-500 rounded-lg">
+              <div className="group bg-gradient-to-br from-emerald-50 via-emerald-100/80 to-emerald-50 rounded-2xl p-6 border-2 border-emerald-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <TrendingUp className="w-5 h-5 text-white" />
                   </div>
-                  <p className="text-sm font-medium text-slate-700">Income (30d)</p>
+                  <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Income (30d)</p>
                 </div>
-                <p className="text-3xl font-bold text-emerald-700">{formatCurrency(upcomingIncome)}</p>
+                <p className="text-4xl font-black text-emerald-700 drop-shadow-sm">{formatCurrency(upcomingIncome)}</p>
               </div>
 
               {/* Purchase Orders */}
-              <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-6 border border-orange-200">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 bg-orange-500 rounded-lg">
+              <div className="group bg-gradient-to-br from-orange-50 via-orange-100/80 to-orange-50 rounded-2xl p-6 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <ShoppingCart className="w-5 h-5 text-white" />
                   </div>
-                  <p className="text-sm font-medium text-slate-700">Purchase Orders</p>
+                  <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Purchase Orders</p>
                 </div>
-                <p className="text-3xl font-bold text-orange-700">{formatCurrency(upcomingPurchaseOrders)}</p>
+                <p className="text-4xl font-black text-orange-700 drop-shadow-sm">{formatCurrency(upcomingPurchaseOrders)}</p>
               </div>
             </div>
 
             {/* Additional Metrics Row */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-2 gap-5 mb-10">
               {/* Credit Utilization */}
-              <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                <p className="text-xs text-slate-600 mb-1">Credit Utilization</p>
+              <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-5 border-2 border-slate-200/60 shadow-md backdrop-blur-sm">
+                <p className="text-xs text-slate-600 mb-2 font-semibold uppercase tracking-wide">Credit Utilization</p>
                 <div className="flex items-baseline gap-2">
-                  <p className="text-2xl font-bold text-slate-700">{creditUtilization.toFixed(1)}%</p>
-                  <p className="text-xs text-slate-500">of {formatCurrency(totalCreditLimit)}</p>
+                  <p className="text-3xl font-black text-slate-700">{creditUtilization.toFixed(1)}%</p>
+                  <p className="text-xs text-slate-500 font-medium">of {formatCurrency(totalCreditLimit)}</p>
                 </div>
               </div>
 
               {/* Vendor Payments */}
-              <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                <p className="text-xs text-slate-600 mb-1">Scheduled Vendor Payments</p>
-                <p className="text-2xl font-bold text-slate-700">{formatCurrency(upcomingVendorPayments)}</p>
+              <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl p-5 border-2 border-slate-200/60 shadow-md backdrop-blur-sm">
+                <p className="text-xs text-slate-600 mb-2 font-semibold uppercase tracking-wide">Scheduled Vendor Payments</p>
+                <p className="text-3xl font-black text-slate-700">{formatCurrency(upcomingVendorPayments)}</p>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="pt-6 border-t border-slate-200">
-              <div className="flex items-center justify-between text-sm">
-                <p className="text-slate-500">
-                  <Calendar className="w-4 h-4 inline mr-1" />
+            <div className="pt-8 border-t-2 border-gradient-to-r from-slate-200 via-slate-300 to-slate-200">
+              <div className="flex items-center justify-between text-sm mb-4">
+                <p className="text-slate-500 flex items-center gap-2">
+                  <Calendar className="w-4 h-4" />
                   Generated {new Date().toLocaleDateString('en-US', { 
                     month: 'long', 
                     day: 'numeric', 
                     year: 'numeric' 
                   })}
                 </p>
-                <p className="text-slate-600 font-medium">
-                  Powered by <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-bold">Auren</span>
-                </p>
+                <div className="text-right">
+                  <p className="text-slate-700 font-semibold text-base mb-1">
+                    Powered by <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent font-black text-lg">Auren</span>
+                  </p>
+                  <p className="text-xs text-slate-500 italic font-medium">Smarter Cash Flow Management</p>
+                </div>
               </div>
             </div>
           </div>
