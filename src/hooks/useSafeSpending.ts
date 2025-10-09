@@ -334,10 +334,12 @@ export const useSafeSpending = () => {
             // Find earliest available date - count BACKWARDS from opportunity to find when balance first drops below needed amount
             let availableDate: string | undefined;
             const opportunityIndex = dailyBalances.findIndex(d => d.date === current.date);
-            const opportunityAmount = current.balance; // This is already balance - reserve
-            const minBalanceNeeded = opportunityAmount + reserve; // Total balance needed to spend this amount
+            const rawBalanceAtOpportunity = current.balance; // Raw balance at this date
+            const opportunityAmount = Math.max(0, rawBalanceAtOpportunity - reserve); // What we can actually spend
+            const minBalanceNeeded = opportunityAmount + reserve; // Total balance needed = opportunity + reserve back
             
             console.log(`🛒 Opportunity at ${current.date} (index ${opportunityIndex}):`, {
+              rawBalanceAtOpportunity,
               opportunityAmount,
               minBalanceNeeded,
               reserve
@@ -345,7 +347,7 @@ export const useSafeSpending = () => {
             
             // Count backwards from opportunity to find first date where balance < needed amount
             let firstViableIndex = 0; // Default to today
-            for (let k = opportunityIndex; k >= 0; k--) {
+            for (let k = opportunityIndex - 1; k >= 0; k--) {
               console.log(`  Checking ${dailyBalances[k].date}: balance=${dailyBalances[k].balance} vs needed=${minBalanceNeeded}`);
               if (dailyBalances[k].balance < minBalanceNeeded) {
                 // Found where balance drops below threshold, so earliest viable is the next day forward
