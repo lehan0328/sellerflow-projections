@@ -46,6 +46,7 @@ import ReferralDashboard from "./pages/ReferralDashboard";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
 import Pricing from "./pages/Pricing";
 import FlexReport from "./pages/FlexReport";
+import AmazonOAuthCallback from "./pages/AmazonOAuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -161,6 +162,7 @@ const App = () => (
                 <FlexReport />
               </ProtectedRoute>
             } />
+          <Route path="/amazon-oauth-callback" element={<AmazonOAuthCallback />} />
           <Route path="/oauth-redirect" element={<OAuthRedirect />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
