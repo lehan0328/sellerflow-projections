@@ -12,7 +12,6 @@ import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { IncomeOverview } from "@/components/cash-flow/income-overview";
 import { IncomeForm } from "@/components/cash-flow/income-form";
-import { PdfConverterModal } from "@/components/cash-flow/pdf-converter-modal";
 import { useDemoVendors, useDemoTransactions, useDemoUserSettings } from "@/hooks/useDemoData";
 import { BankTransaction } from "@/components/cash-flow/bank-transaction-log";
 
@@ -32,7 +31,6 @@ const DemoPage = () => {
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
-  const [showPdfConverter, setShowPdfConverter] = useState(false);
   
   // Use demo data hooks
   const { vendors } = useDemoVendors();
@@ -203,7 +201,6 @@ const DemoPage = () => {
         onAddPurchaseOrder={() => alert('Demo: Purchase order creation not available in demo')}
         onAddIncome={() => alert('Demo: Income entry not available in demo')}
         onAddRecurringIncome={() => alert('Demo: Recurring income setup not available in demo')}
-        onConvertPdf={() => setShowPdfConverter(true)}
         onOpenFlexReport={() => alert('Demo: Flex Report not available in demo mode')}
       />
 
@@ -228,11 +225,6 @@ const DemoPage = () => {
         }}
         onSubmitIncome={() => alert('Demo: Form submission not available in demo')}
         customers={[]}
-      />
-      
-      <PdfConverterModal
-        open={showPdfConverter}
-        onOpenChange={setShowPdfConverter}
       />
     </div>
   );

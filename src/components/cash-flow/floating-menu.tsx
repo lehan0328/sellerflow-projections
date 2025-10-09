@@ -1,16 +1,15 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, ShoppingCart, DollarSign, FileImage, Sparkles } from "lucide-react";
+import { Plus, ShoppingCart, DollarSign, Sparkles } from "lucide-react";
 
 interface FloatingMenuProps {
   onAddPurchaseOrder: () => void;
   onAddIncome: () => void;
   onAddRecurringIncome: () => void;
-  onConvertPdf: () => void;
   onOpenFlexReport: () => void;
 }
 
-export function FloatingMenu({ onAddPurchaseOrder, onAddIncome, onAddRecurringIncome, onConvertPdf, onOpenFlexReport }: FloatingMenuProps) {
+export function FloatingMenu({ onAddPurchaseOrder, onAddIncome, onAddRecurringIncome, onOpenFlexReport }: FloatingMenuProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const toggleMenu = () => {
@@ -71,20 +70,7 @@ export function FloatingMenu({ onAddPurchaseOrder, onAddIncome, onAddRecurringIn
               <span className="ml-2 hidden lg:inline">Add Recurring</span>
             </Button>
 
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="rounded-full" 
-              onClick={(e) => {
-                e.stopPropagation();
-                onConvertPdf();
-              }}
-            >
-              <FileImage className="h-4 w-4" />
-              <span className="ml-2 hidden lg:inline">PDF to PNG</span>
-            </Button>
-
-            <Button 
+            <Button
               variant="ghost" 
               size="sm" 
               className="rounded-full" 
