@@ -1408,7 +1408,7 @@ const Landing = () => {
               <div className="grid md:grid-cols-2 gap-0">
                 <div className="p-8 bg-primary/5">
                   <h3 className="text-2xl font-bold mb-4">
-                    How a $80k/mo seller cut cash crunches by 70%
+                    How a $200k/mo seller cut cash crunches by 70%
                   </h3>
                   <p className="text-muted-foreground mb-6">
                     Multi-marketplace seller struggled with timing inventory orders around Amazon's bi-weekly payouts. 
