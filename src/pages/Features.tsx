@@ -197,7 +197,7 @@ const Features = () => {
               From AI-powered insights to Amazon integration, Auren provides the complete toolkit for marketplace sellers to forecast, plan, and optimize their finances.
             </p>
             <div className="flex gap-4 justify-center">
-              <Button size="lg" onClick={() => navigate("/auth")}>
+              <Button size="lg" onClick={() => navigate("/signup")}>
                 Start Free Trial
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -277,7 +277,7 @@ const Features = () => {
               Join hundreds of Amazon sellers who use Auren to forecast payouts, plan expenses, and grow with confidence.
             </p>
             <div className="flex gap-4 justify-center flex-wrap">
-              <Button size="lg" onClick={() => navigate("/auth")}>
+              <Button size="lg" onClick={() => navigate("/signup")}>
                 Start Free Trial
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
