@@ -1078,10 +1078,10 @@ const Dashboard = () => {
     id: `amazon-payout-${payout.id}`,
     type: 'inflow' as const,
     amount: payout.total_amount,
-    description: payout.status === 'forecasted' 
+    description: (payout.status as string) === 'forecasted' 
       ? `Amazon Payout (Forecasted) - ${payout.marketplace_name}`
       : `Amazon Payout - ${payout.marketplace_name} (${payout.status})`,
-    source: payout.status === 'forecasted' ? 'Amazon-Forecasted' : 'Amazon',
+    source: (payout.status as string) === 'forecasted' ? 'Amazon-Forecasted' : 'Amazon',
     date: new Date(payout.payout_date)
   }));
 
