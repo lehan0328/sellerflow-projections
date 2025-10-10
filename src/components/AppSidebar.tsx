@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Badge } from "@/components/ui/badge";
 
 interface AppSidebarProps {
   activeSection: string;
@@ -33,12 +34,14 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
   const isCollapsed = state === "collapsed";
 
   return (
-    <Sidebar className={isCollapsed ? "w-14" : "w-60"} collapsible="icon">
-      <SidebarContent>
+    <Sidebar className={isCollapsed ? "w-14" : "w-64"} collapsible="icon">
+      <SidebarContent className="px-2">
         <SidebarGroup>
-          <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-3 py-2">
+            Dashboard
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               {sections.map((section) => {
                 const Icon = section.icon;
                 const isActive = activeSection === section.id;
@@ -46,10 +49,28 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
                   <SidebarMenuItem key={section.id}>
                     <SidebarMenuButton
                       onClick={() => onSectionChange(section.id)}
-                      className={isActive ? "bg-secondary text-secondary-foreground font-medium" : ""}
+                      className={`
+                        relative rounded-lg transition-all duration-200 
+                        ${isActive 
+                          ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" 
+                          : "hover:bg-accent/50 hover:translate-x-1"
+                        }
+                      `}
                     >
-                      <Icon className="h-4 w-4" />
-                      {!isCollapsed && <span>{section.title}</span>}
+                      <Icon className={`h-4 w-4 ${isActive ? "animate-pulse" : ""}`} />
+                      {!isCollapsed && (
+                        <span className="flex items-center justify-between w-full">
+                          <span>{section.title}</span>
+                          {section.id === "referrals" && (
+                            <Badge 
+                              variant="secondary" 
+                              className="ml-auto text-[10px] bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30 font-bold px-1.5 py-0"
+                            >
+                              Earn $3k
+                            </Badge>
+                          )}
+                        </span>
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
