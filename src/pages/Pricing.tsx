@@ -105,10 +105,10 @@ export default function Pricing() {
   const pricingPlans = [
     {
       name: "Starter",
-      price: "$24",
-      yearlyPrice: "$290",
+      price: "$29",
+      yearlyPrice: "$24",
       period: "/month",
-      yearlyPeriod: "/year",
+      yearlyPeriod: "/month",
       description: "Up to $20k monthly revenue",
       popular: false,
       priceId: "price_1SEH8NB28kMY3UseBj2w9HgH",
@@ -117,10 +117,10 @@ export default function Pricing() {
     },
     {
       name: "Growing",
-      price: "$49",
-      yearlyPrice: "$590",
+      price: "$59",
+      yearlyPrice: "$49",
       period: "/month",
-      yearlyPeriod: "/year",
+      yearlyPeriod: "/month",
       description: "Up to $100k monthly revenue",
       popular: true,
       priceId: "price_1SEH8iB28kMY3Usem3k3vElT",
@@ -129,10 +129,10 @@ export default function Pricing() {
     },
     {
       name: "Professional",
-      price: "$74",
-      yearlyPrice: "$890",
+      price: "$89",
+      yearlyPrice: "$74",
       period: "/month",
-      yearlyPeriod: "/year",
+      yearlyPeriod: "/month",
       description: "Up to $200k monthly revenue",
       popular: false,
       priceId: "price_1SEHBHB28kMY3UsenQEY0qoT",
@@ -301,7 +301,7 @@ export default function Pricing() {
                       </div>
                       <div className="space-y-1.5">
                         <div className="flex items-baseline justify-center gap-1">
-                          <span className="text-3xl font-bold">{plan.price}</span>
+                          <span className="text-3xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
                           <span className="text-muted-foreground text-xs">/month</span>
                         </div>
                         {isYearly && plan.savings && (
