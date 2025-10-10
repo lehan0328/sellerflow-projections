@@ -100,7 +100,7 @@ export function DashboardHeader({ onRefresh, isRefreshing = false, lastRefreshTi
       </div>
 
       {/* Centered Dashboard Title */}
-      <div className="flex justify-center items-center pt-12 pb-6">
+      <div className="flex justify-center items-center pt-8 pb-6">
         <div className="text-center">
           <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
             {getUserDisplayName()}'s Dashboard
