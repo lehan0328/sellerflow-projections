@@ -109,17 +109,33 @@ serve(async (req) => {
       a.month.localeCompare(b.month)
     );
     
-    // Calculate average payout for baseline
-    const avgPayoutAmount = amazonPayouts
-      .filter(p => p.status !== 'forecasted')
-      .reduce((sum, p) => sum + Number(p.total_amount), 0) / Math.max(1, amazonPayouts.filter(p => p.status !== 'forecasted').length);
+    // Calculate weighted average payout for baseline (prioritize recent payouts)
+    // Recent payouts are more indicative of current business performance
+    const nonForecastedPayouts = amazonPayouts.filter(p => p.status !== 'forecasted');
+    
+    // Use weighted average: recent payouts get higher weight
+    let weightedSum = 0;
+    let totalWeight = 0;
+    nonForecastedPayouts.forEach((payout, index) => {
+      // Most recent payout gets weight of payoutCount, oldest gets weight of 1
+      const weight = nonForecastedPayouts.length - index;
+      weightedSum += Number(payout.total_amount) * weight;
+      totalWeight += weight;
+    });
+    
+    const avgPayoutAmount = totalWeight > 0 ? weightedSum / totalWeight : 0;
+    
+    // Also calculate simple average for comparison
+    const simpleAvg = nonForecastedPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0) / Math.max(1, nonForecastedPayouts.length);
     
     console.log('[FORECAST] Historical Analysis:', { 
       totalPayouts: amazonPayouts.length,
       monthlyDataPoints: historicalData.length,
-      averagePayoutAmount: avgPayoutAmount,
+      weightedAveragePayoutAmount: avgPayoutAmount,
+      simpleAveragePayoutAmount: simpleAvg,
       historicalMonthly: historicalData,
-      dateRange: `${amazonPayouts[amazonPayouts.length - 1]?.payout_date} to ${amazonPayouts[0]?.payout_date}`
+      dateRange: `${amazonPayouts[amazonPayouts.length - 1]?.payout_date} to ${amazonPayouts[0]?.payout_date}`,
+      note: 'Payout amounts are NET (after all Amazon fees deducted)'
     });
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -154,38 +170,55 @@ Provide forecasts with:
 
     const analysisPrompt = `Analyze the following Amazon Seller payout data and generate accurate forecasts for the next 3 months.
 
-HISTORICAL PAYOUT DATA (Most Recent ${Math.min(20, amazonPayouts.length)} entries):
-${JSON.stringify(amazonPayouts.slice(0, 20), null, 2)}
+CRITICAL CONTEXT: The payout amounts shown below are NET amounts - Amazon has already deducted ALL fees (referral fees, FBA fees, storage fees, advertising costs, etc.). These are the actual deposit amounts that hit the seller's bank account. DO NOT try to estimate or deduct fees - they're already accounted for.
 
-AGGREGATED MONTHLY DATA (Last 6 Months):
+HISTORICAL PAYOUT DATA (Most Recent ${Math.min(20, amazonPayouts.length)} entries - NET amounts after fees):
+${JSON.stringify(amazonPayouts.slice(0, 20).map(p => ({
+  payout_date: p.payout_date,
+  total_amount: p.total_amount,
+  status: p.status,
+  payout_type: p.payout_type,
+  orders_total: p.orders_total,
+  fees_total: p.fees_total,
+  refunds_total: p.refunds_total,
+  net_deposit: p.total_amount
+})), null, 2)}
+
+AGGREGATED MONTHLY DATA (Last 6 Months - NET payout totals):
 ${JSON.stringify(historicalData, null, 2)}
 
 TOTAL HISTORICAL PAYOUTS: ${amazonPayouts.length}
 DATE RANGE: ${amazonPayouts[amazonPayouts.length - 1]?.payout_date} to ${amazonPayouts[0]?.payout_date}
+WEIGHTED AVERAGE PAYOUT (recent payouts weighted higher): $${avgPayoutAmount.toFixed(2)}
 
 ANALYSIS REQUIREMENTS:
 
-1. TREND ANALYSIS:
-   - Calculate the overall growth trajectory
-   - Identify any acceleration or deceleration patterns
-   - Detect seasonal patterns and cycles
+1. TREND ANALYSIS (Based on NET payout amounts):
+   - Calculate the overall growth trajectory of actual deposits
+   - Identify any acceleration or deceleration patterns in recent payouts
+   - Detect seasonal patterns and cycles in NET payout amounts
    - Assess momentum and velocity of change
+   - IMPORTANT: Give MORE weight to recent payouts (last 3 months) as they reflect current business performance
 
-2. STATISTICAL MODELING:
-   - Apply appropriate time series forecasting methods
+2. STATISTICAL MODELING (Use NET payout amounts as baseline):
+   - Apply appropriate time series forecasting methods to ACTUAL payout data
    - Calculate confidence intervals (80% and 95%)
-   - Identify any anomalies or outliers
+   - Identify any anomalies or outliers in payout history
    - Assess data quality and forecasting reliability
+   - Base predictions primarily on historical PAYOUT amounts, not gross sales
 
 3. BUSINESS CONTEXT:
    - Consider typical Amazon payout cycles (bi-weekly)
-   - Account for marketplace dynamics
-   - Factor in observed sales trends
-   - Consider economic and seasonal factors
+   - Remember: All fees are ALREADY DEDUCTED from the payout amounts
+   - Factor in observed trends in NET deposits
+   - Consider economic and seasonal factors affecting NET payouts
+   - Recent payout trends should carry more weight than older data
 
-4. FORECAST GENERATION:
+4. FORECAST GENERATION (Predict NET payout amounts):
    Generate predictions for the next 6 bi-weekly payout periods (3 months) with:
-   - Predicted payout amount
+   - Predicted NET payout amount (what will actually hit the bank account)
+   - Base predictions primarily on historical PAYOUT amounts
+   - Recent payouts (last 3 months) should have 2x weight compared to older data
    - Confidence interval (upper and lower bounds)
    - Confidence level (0-1 scale)
    - Estimated payout date (use bi-weekly frequency from last payout date)
