@@ -68,7 +68,10 @@ const Dashboard = () => {
   const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
   const { toast } = useToast();
   const [vendorTxRefresh, setVendorTxRefresh] = useState(0);
-  const [includeForecastPayouts, setIncludeForecastPayouts] = useState(false);
+  const [includeForecastPayouts, setIncludeForecastPayouts] = useState(() => {
+    const saved = localStorage.getItem('includeForecastPayouts');
+    return saved !== null ? JSON.parse(saved) : false;
+  });
   const [matchReviewDialog, setMatchReviewDialog] = useState<{
     open: boolean;
     match: TransactionMatch | null;
@@ -211,6 +214,11 @@ const Dashboard = () => {
     };
     cleanupOrphanedTransactions();
   }, [refetchSafeSpending]);
+
+  // Save forecast payouts toggle to localStorage
+  useEffect(() => {
+    localStorage.setItem('includeForecastPayouts', JSON.stringify(includeForecastPayouts));
+  }, [includeForecastPayouts]);
 
   const { customers, addCustomer, deleteAllCustomers } = useCustomers();
   
@@ -1167,6 +1175,11 @@ const Dashboard = () => {
     })
     .reduce((sum, event) => sum + event.amount, 0);
 
+  const handleToggleForecastPayouts = (value: boolean) => {
+    setIncludeForecastPayouts(value);
+    refetchSafeSpending();
+  };
+
   const renderSection = () => {
     switch (activeSection) {
       case "overview":
@@ -1221,7 +1234,7 @@ const Dashboard = () => {
                   allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
                   onUpdateReserveAmount={updateReserveAmount}
                   includeForecastPayouts={includeForecastPayouts}
-                  onToggleForecastPayouts={setIncludeForecastPayouts}
+                  onToggleForecastPayouts={handleToggleForecastPayouts}
                   transactionMatchButton={
                     <TransactionMatchButton 
                       matches={matches}
