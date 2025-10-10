@@ -55,6 +55,7 @@ export const PurchaseOrderForm = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isProcessingDocument, setIsProcessingDocument] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     poName: "",
     vendor: "",
@@ -200,7 +201,7 @@ export const PurchaseOrderForm = ({
       [field]: value
     } : p));
   };
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.poName || !formData.vendor || !formData.amount) {
       toast.error('Please fill in all required fields');
@@ -220,14 +221,59 @@ export const PurchaseOrderForm = ({
         return;
       }
     }
+    
     const calculatedDueDate = calculateDueDate();
     const orderData = {
       ...formData,
       dueDate: calculatedDueDate,
       paymentSchedule: formData.paymentType === "preorder" ? paymentSchedule : undefined
     };
+    
     console.log("Submitting purchase order:", orderData);
     onSubmitOrder(orderData);
+    
+    // Save uploaded document to storage if exists
+    if (uploadedFile) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        // Create a safe filename using PO name
+        const fileExtension = uploadedFile.name.split('.').pop();
+        const safeFileName = `${formData.poName.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.${fileExtension}`;
+        const filePath = `${user.id}/${safeFileName}`;
+
+        // Upload to storage
+        const { error: uploadError } = await supabase.storage
+          .from('purchase-orders')
+          .upload(filePath, uploadedFile);
+
+        if (uploadError) throw uploadError;
+
+        // Save metadata
+        const { error: metadataError } = await supabase
+          .from('documents_metadata')
+          .insert({
+            user_id: user.id,
+            file_name: safeFileName,
+            file_path: filePath,
+            display_name: formData.poName,
+            description: formData.description,
+            notes: formData.notes,
+            vendor_id: formData.vendorId || null,
+            amount: parseFloat(formData.amount),
+            document_date: formData.poDate.toISOString().split('T')[0]
+          });
+
+        if (metadataError) throw metadataError;
+
+        console.log('Document saved to storage:', safeFileName);
+      } catch (error) {
+        console.error('Error saving document:', error);
+        toast.error('Failed to save document to storage');
+      }
+    }
+    
     toast.success(`Purchase Order "${formData.poName}" created successfully!`);
     onOpenChange(false);
   };
@@ -309,6 +355,10 @@ export const PurchaseOrderForm = ({
       toast.error('File size must be less than 10MB');
       return;
     }
+    
+    // Store the file for later upload when PO is finalized
+    setUploadedFile(file);
+    
     setIsProcessingDocument(true);
     setUploadedFileName(file.name);
     try {
@@ -377,10 +427,6 @@ export const PurchaseOrderForm = ({
       toast.error(error.message || 'Failed to process document. Please try again.');
     } finally {
       setIsProcessingDocument(false);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     }
   };
   return <>

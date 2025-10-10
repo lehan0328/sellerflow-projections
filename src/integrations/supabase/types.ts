@@ -761,8 +761,10 @@ export type Database = {
       }
       documents_metadata: {
         Row: {
+          amount: number | null
           created_at: string
           customer_id: string | null
+          description: string | null
           display_name: string | null
           document_date: string | null
           file_name: string
@@ -774,8 +776,10 @@ export type Database = {
           vendor_id: string | null
         }
         Insert: {
+          amount?: number | null
           created_at?: string
           customer_id?: string | null
+          description?: string | null
           display_name?: string | null
           document_date?: string | null
           file_name: string
@@ -787,8 +791,10 @@ export type Database = {
           vendor_id?: string | null
         }
         Update: {
+          amount?: number | null
           created_at?: string
           customer_id?: string | null
+          description?: string | null
           display_name?: string | null
           document_date?: string | null
           file_name?: string

@@ -45,6 +45,8 @@ interface StoredDocument {
   notes?: string;
   document_date?: string;
   display_name?: string;
+  amount?: number;
+  description?: string;
 }
 
 export default function DocumentStorage() {
@@ -96,7 +98,9 @@ export default function DocumentStorage() {
           vendor_name: meta?.vendor?.name,
           notes: meta?.notes,
           document_date: meta?.document_date || file.created_at,
-          display_name: meta?.display_name || file.name
+          display_name: meta?.display_name || file.name,
+          amount: meta?.amount,
+          description: meta?.description
         } as StoredDocument;
       });
     },
@@ -270,7 +274,14 @@ export default function DocumentStorage() {
   };
 
   const filteredDocuments = documents?.filter(doc => {
-    const nameMatch = doc.name.toLowerCase().includes(searchQuery.toLowerCase());
+    // Search in file name, display name, notes, and description
+    const searchLower = searchQuery.toLowerCase();
+    const nameMatch = doc.name.toLowerCase().includes(searchLower);
+    const displayNameMatch = doc.display_name?.toLowerCase().includes(searchLower);
+    const notesMatch = doc.notes?.toLowerCase().includes(searchLower);
+    const descriptionMatch = (doc.metadata?.description || '').toLowerCase().includes(searchLower);
+    
+    const matchesSearch = nameMatch || displayNameMatch || notesMatch || descriptionMatch;
     
     // Month filter
     let monthMatch = true;
@@ -286,7 +297,7 @@ export default function DocumentStorage() {
       vendorMatch = doc.vendor_id === selectedVendor;
     }
     
-    return nameMatch && monthMatch && vendorMatch;
+    return matchesSearch && monthMatch && vendorMatch;
   }) || [];
 
   // Get unique months from documents for filter dropdown
@@ -474,7 +485,7 @@ export default function DocumentStorage() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     type="text"
-                    placeholder="Search documents..."
+                    placeholder="Search by name, vendor, description..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-9"
@@ -504,6 +515,7 @@ export default function DocumentStorage() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Vendor</TableHead>
+                    <TableHead>Amount</TableHead>
                     <TableHead>Document Date</TableHead>
                     <TableHead>Size</TableHead>
                     <TableHead>Uploaded</TableHead>
@@ -527,6 +539,9 @@ export default function DocumentStorage() {
                       </TableCell>
                       <TableCell className="text-sm">
                         {doc.vendor_name || <span className="text-muted-foreground">-</span>}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium">
+                        {doc.amount ? `$${doc.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : <span className="text-muted-foreground">-</span>}
                       </TableCell>
                       <TableCell className="text-sm">
                         {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
