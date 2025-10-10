@@ -33,7 +33,7 @@ export const LiveDashboardShowcase = () => {
         <div className="relative p-4">
           <div className="aspect-video bg-background rounded-lg overflow-hidden border-2 border-primary/20">
             <iframe 
-              src="/dashboard" 
+              src="/demo" 
               className="w-full h-full"
               title="Live Dashboard Demo"
               sandbox="allow-same-origin allow-scripts"
