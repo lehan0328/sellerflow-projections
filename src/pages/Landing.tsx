@@ -549,9 +549,9 @@ const Landing = () => {
                   <span>✓ No credit card required</span>
                   <span>✓ Cancel anytime</span>
                 </div>
-                <Button size="lg" variant="outline" className="text-base px-8 py-7 text-lg font-semibold border-2 hover-scale transition-all duration-300 hover:border-primary/50 hover:bg-primary/5" onClick={() => navigate('/features')}>
-                  <BookOpen className="mr-2 h-5 w-5" />
-                  View Features
+                <Button size="lg" variant="outline" className="text-base px-8 py-7 text-lg font-semibold border-2 hover-scale transition-all duration-300 hover:border-primary/50 hover:bg-primary/5" onClick={() => navigate('/demo')}>
+                  <ExternalLink className="mr-2 h-5 w-5" />
+                  Try Live Demo
                 </Button>
               </div>
               
@@ -637,12 +637,12 @@ const Landing = () => {
                 </div>
               </div>
 
-              {/* Start Trial Button - Above Dashboard */}
+              {/* Try Interactive Demo Button - Above Dashboard */}
               <div className="flex justify-center">
-                <Button size="default" onClick={() => handleStartTrial(pricingPlans[1].priceId)} className="bg-gradient-primary px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 relative overflow-hidden group">
+                <Button size="default" onClick={() => navigate('/demo')} className="bg-gradient-primary px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 relative overflow-hidden group">
                   <span className="relative z-10 flex items-center gap-2">
-                    <ArrowRight className="h-4 w-4" />
-                    Start Your Free Trial
+                    <ExternalLink className="h-4 w-4" />
+                    Try Interactive Demo
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                 </Button>
@@ -671,32 +671,18 @@ const Landing = () => {
                     </div>
                   </div>
                   
-                  {/* Dashboard preview mockup */}
-                  <div className="relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5" style={{
+                  {/* Dashboard screenshot/iframe */}
+                  <div className="relative overflow-hidden flex items-center justify-center bg-background/50" style={{
                   aspectRatio: '16/10'
                 }}>
-                    <div className="w-full h-full flex items-center justify-center p-8">
-                      <div className="text-center space-y-4">
-                        <div className="flex items-center justify-center gap-3 mb-6">
-                          <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                            <TrendingUp className="h-6 w-6 text-primary" />
-                          </div>
-                          <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                            <ShoppingCart className="h-6 w-6 text-accent" />
-                          </div>
-                          <div className="h-12 w-12 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                            <Calendar className="h-6 w-6 text-purple-500" />
-                          </div>
-                        </div>
-                        <h3 className="text-2xl font-bold">Your Financial Dashboard</h3>
-                        <p className="text-muted-foreground max-w-md mx-auto">
-                          Track cash flow, forecast Amazon payouts, and manage expenses all in one beautiful interface
-                        </p>
-                        <Button size="lg" onClick={() => handleStartTrial(pricingPlans[1].priceId)} className="bg-gradient-primary">
-                          Start Free Trial
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </div>
+                    <div className="w-full h-full flex items-center justify-center">
+                      <iframe src="/demo" className="w-full h-full border-0 cursor-pointer" style={{
+                      transform: 'scale(0.35)',
+                      transformOrigin: 'center center',
+                      width: '285.71%',
+                      height: '285.71%',
+                      minWidth: '1920px'
+                    }} title="Demo Dashboard Preview" onClick={() => navigate('/demo')} />
                     </div>
                     
                     {/* Fade gradient */}
@@ -1776,6 +1762,7 @@ const Landing = () => {
               <ul className="space-y-2 text-muted-foreground">
                 <li><Link to="/features" className="hover:text-foreground transition-colors">Features</Link></li>
                 <li><Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
+                <li><Link to="/demo" className="hover:text-foreground transition-colors">Live Demo</Link></li>
                 <li><Link to="/features" className="hover:text-foreground transition-colors">All Features</Link></li>
               </ul>
             </div>
