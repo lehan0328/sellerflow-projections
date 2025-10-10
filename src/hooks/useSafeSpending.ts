@@ -471,7 +471,21 @@ export const useSafeSpending = () => {
         }
       }
       
-      console.log(`\n✅ Found ${allBuyingOpportunities.length} total buying opportunities`);
+      console.log(`\n✅ Found ${allBuyingOpportunities.length} total buying opportunities (before validation)`);
+      
+      // Sort opportunities by date
+      allBuyingOpportunities.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      
+      // Ensure later opportunities never have lower available balance than earlier ones
+      // This prevents situations where opportunity 3 shows less $ than opportunity 2
+      for (let i = 1; i < allBuyingOpportunities.length; i++) {
+        if (allBuyingOpportunities[i].balance < allBuyingOpportunities[i - 1].balance) {
+          console.log(`🔧 Adjusting opportunity ${i + 1} from $${allBuyingOpportunities[i].balance.toFixed(2)} to $${allBuyingOpportunities[i - 1].balance.toFixed(2)} (matching previous opportunity)`);
+          allBuyingOpportunities[i].balance = allBuyingOpportunities[i - 1].balance;
+        }
+      }
+      
+      console.log(`\n✅ Validated ${allBuyingOpportunities.length} total buying opportunities`);
       
       const nextBuyingOpportunity = allBuyingOpportunities.length > 0 ? allBuyingOpportunities[0] : null;
       
