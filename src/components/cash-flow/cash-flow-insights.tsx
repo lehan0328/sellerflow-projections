@@ -2,13 +2,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, ShoppingCart, Info } from "lucide-react";
+import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, ShoppingCart, Info, Brain } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCreditCards } from "@/hooks/useCreditCards";
+import { useNavigate } from "react-router-dom";
 interface CashFlowInsightsProps {
   currentBalance: number;
   dailyInflow: number;
@@ -52,6 +53,7 @@ export const CashFlowInsights = ({
   const {
     toast
   } = useToast();
+  const navigate = useNavigate();
   const { creditCards, isLoading: cardsLoading } = useCreditCards();
   const [pendingOrdersByCard, setPendingOrdersByCard] = useState<Record<string, number>>({});
   const [showAllOpportunities, setShowAllOpportunities] = useState(false);
@@ -61,6 +63,7 @@ export const CashFlowInsights = ({
   const [chatLoading, setChatLoading] = useState(false);
   const [isEditingReserve, setIsEditingReserve] = useState(false);
   const [editReserveValue, setEditReserveValue] = useState(reserveAmount.toString());
+  const [showForecastDialog, setShowForecastDialog] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<Array<{
     role: 'user' | 'assistant';
     content: string;
@@ -200,6 +203,15 @@ export const CashFlowInsights = ({
             AI Insights
           </div>
           <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowForecastDialog(true)}
+              className="text-xs"
+            >
+              <Brain className="h-4 w-4 mr-1" />
+              Activate AI Forecasting
+            </Button>
             <Button variant={chatMode ? "default" : "ghost"} size="sm" onClick={() => setChatMode(!chatMode)}>
               <MessageCircle className="h-4 w-4 mr-1" />
               {chatMode ? "Back" : "Chat"}
@@ -567,6 +579,59 @@ export const CashFlowInsights = ({
               })}
             </div>
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Forecasting Dialog */}
+      <Dialog open={showForecastDialog} onOpenChange={setShowForecastDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5 text-primary" />
+              AI-Powered Amazon Payout Forecasting
+            </DialogTitle>
+            <DialogDescription className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <p className="text-sm text-foreground">
+                  Our advanced AI forecasting system uses sophisticated mathematical models to predict your future Amazon payouts with high accuracy.
+                </p>
+                
+                <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+                  <h4 className="font-semibold text-sm">What it analyzes:</h4>
+                  <ul className="text-sm space-y-1 list-disc list-inside text-muted-foreground">
+                    <li>Historical payout patterns and trends</li>
+                    <li>Seasonal variations and market cycles</li>
+                    <li>Recent sales velocity and momentum</li>
+                    <li>Time series regression modeling</li>
+                    <li>Statistical confidence intervals</li>
+                  </ul>
+                </div>
+
+                <p className="text-sm text-muted-foreground">
+                  This powerful tool helps you plan future cash flow with greater confidence, enabling better inventory purchasing decisions and financial planning.
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex gap-2 mt-4">
+            <Button 
+              className="flex-1" 
+              onClick={() => {
+                setShowForecastDialog(false);
+                navigate('/ai-forecast');
+              }}
+            >
+              <Brain className="h-4 w-4 mr-2" />
+              Go to AI Forecast
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowForecastDialog(false)}
+            >
+              Close
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </Card>;

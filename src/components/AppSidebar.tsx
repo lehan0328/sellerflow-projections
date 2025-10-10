@@ -30,7 +30,6 @@ const sections = [
   { id: "financials", title: "Financials", icon: Wallet },
   { id: "recurring", title: "Recurring Expenses", icon: Repeat },
   { id: "amazon", title: "Amazon Payouts", icon: ShoppingCart },
-  { id: "ai-forecast", title: "AI Forecast", icon: Brain, isRoute: true, url: "/ai-forecast" },
   { id: "scenario-planning", title: "Scenario Planning", icon: Calculator },
   { id: "analytics", title: "Analytics", icon: BarChart3 },
   { id: "document-storage", title: "Document Storage", icon: FolderOpen },
