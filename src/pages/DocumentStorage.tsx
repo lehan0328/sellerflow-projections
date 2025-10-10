@@ -15,7 +15,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useCustomers } from "@/hooks/useCustomers";
 import { useVendors } from "@/hooks/useVendors";
 import {
   Table,
@@ -41,9 +40,7 @@ interface StoredDocument {
   id: string;
   created_at: string;
   metadata: Record<string, any>;
-  customer_id?: string;
   vendor_id?: string;
-  customer_name?: string;
   vendor_name?: string;
   notes?: string;
 }
@@ -55,14 +52,12 @@ export default function DocumentStorage() {
   const [uploading, setUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
-  const [selectedCustomer, setSelectedCustomer] = useState<string>("all");
   const [selectedVendor, setSelectedVendor] = useState<string>("all");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [editingDoc, setEditingDoc] = useState<StoredDocument | null>(null);
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
 
-  const { customers, addCustomer } = useCustomers();
   const { vendors } = useVendors();
 
   // Fetch documents with metadata
@@ -84,7 +79,6 @@ export default function DocumentStorage() {
         .from('documents_metadata')
         .select(`
           *,
-          customer:customers(name),
           vendor:vendors(name)
         `)
         .eq('user_id', user.id);
@@ -96,9 +90,7 @@ export default function DocumentStorage() {
         const meta = metadata?.find(m => m.file_name === file.name);
         return {
           ...file,
-          customer_id: meta?.customer_id,
           vendor_id: meta?.vendor_id,
-          customer_name: meta?.customer?.name,
           vendor_name: meta?.vendor?.name,
           notes: meta?.notes
         } as StoredDocument;
@@ -161,9 +153,8 @@ export default function DocumentStorage() {
 
   // Update metadata mutation
   const updateMetadataMutation = useMutation({
-    mutationFn: async ({ fileName, customerId, vendorId, notes }: { 
+    mutationFn: async ({ fileName, vendorId, notes }: { 
       fileName: string; 
-      customerId?: string;
       vendorId?: string;
       notes?: string;
     }) => {
@@ -175,7 +166,6 @@ export default function DocumentStorage() {
           user_id: user.id,
           file_name: fileName,
           file_path: `${user.id}/${fileName}`,
-          customer_id: customerId || null,
           vendor_id: vendorId || null,
           notes: notes || null
         }, {
@@ -194,24 +184,6 @@ export default function DocumentStorage() {
     },
   });
 
-  // Create new customer mutation
-  const createCustomerMutation = useMutation({
-    mutationFn: async (name: string) => {
-      const newCustomer = await addCustomer({
-        name,
-        paymentTerms: 'immediate'
-      });
-      return newCustomer;
-    },
-    onSuccess: () => {
-      toast.success('Customer created successfully');
-      setShowNewCustomerDialog(false);
-      setNewCustomerName("");
-    },
-    onError: (error: Error) => {
-      toast.error(`Failed to create customer: ${error.message}`);
-    },
-  });
 
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadVendorId, setUploadVendorId] = useState<string>("");
@@ -312,19 +284,13 @@ export default function DocumentStorage() {
       monthMatch = docMonth === selectedMonth;
     }
     
-    // Customer filter
-    let customerMatch = true;
-    if (selectedCustomer !== "all") {
-      customerMatch = doc.customer_id === selectedCustomer;
-    }
-    
     // Vendor filter
     let vendorMatch = true;
     if (selectedVendor !== "all") {
       vendorMatch = doc.vendor_id === selectedVendor;
     }
     
-    return nameMatch && monthMatch && customerMatch && vendorMatch;
+    return nameMatch && monthMatch && vendorMatch;
   }) || [];
 
   // Get unique months from documents for filter dropdown
@@ -401,20 +367,6 @@ export default function DocumentStorage() {
                 {availableMonths.map((month) => (
                   <SelectItem key={month} value={month}>
                     {formatMonthLabel(month)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select value={selectedCustomer} onValueChange={setSelectedCustomer}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="All customers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All customers</SelectItem>
-                {customers?.map((customer) => (
-                  <SelectItem key={customer.id} value={customer.id}>
-                    {customer.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -552,7 +504,6 @@ export default function DocumentStorage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
-                    <TableHead>Customer</TableHead>
                     <TableHead>Vendor</TableHead>
                     <TableHead>Size</TableHead>
                     <TableHead>Uploaded</TableHead>
@@ -567,9 +518,6 @@ export default function DocumentStorage() {
                           <FileText className="h-4 w-4 text-muted-foreground" />
                           <span>{doc.name}</span>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {doc.customer_name || <span className="text-muted-foreground">-</span>}
                       </TableCell>
                       <TableCell className="text-sm">
                         {doc.vendor_name || <span className="text-muted-foreground">-</span>}
@@ -649,44 +597,10 @@ export default function DocumentStorage() {
           <DialogHeader>
             <DialogTitle>Edit Document Details</DialogTitle>
             <DialogDescription>
-              Link this document to a customer or vendor
+              Link this document to a vendor
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Customer</Label>
-              <div className="flex gap-2">
-                <Select 
-                  value={editingDoc?.customer_id || "none"} 
-                  onValueChange={(value) => {
-                    if (editingDoc) {
-                      setEditingDoc({...editingDoc, customer_id: value === "none" ? undefined : value});
-                    }
-                  }}
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Select customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No customer</SelectItem>
-                    {customers?.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setShowNewCustomerDialog(true)}
-                  title="Add new customer"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
             <div className="space-y-2">
               <Label>Vendor</Label>
               <Select 
@@ -733,7 +647,6 @@ export default function DocumentStorage() {
                 if (editingDoc) {
                   updateMetadataMutation.mutate({
                     fileName: editingDoc.name,
-                    customerId: editingDoc.customer_id,
                     vendorId: editingDoc.vendor_id,
                     notes: editingDoc.notes
                   });
@@ -741,44 +654,6 @@ export default function DocumentStorage() {
               }}
             >
               Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-
-      {/* New Customer Dialog */}
-      <Dialog open={showNewCustomerDialog} onOpenChange={setShowNewCustomerDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Add New Customer</DialogTitle>
-            <DialogDescription>
-              Create a new customer to link to your documents
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="customer-name">Customer Name</Label>
-              <Input
-                id="customer-name"
-                placeholder="Enter customer name"
-                value={newCustomerName}
-                onChange={(e) => setNewCustomerName(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setShowNewCustomerDialog(false);
-              setNewCustomerName("");
-            }}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={() => createCustomerMutation.mutate(newCustomerName)}
-              disabled={!newCustomerName.trim()}
-            >
-              Create Customer
             </Button>
           </DialogFooter>
         </DialogContent>
