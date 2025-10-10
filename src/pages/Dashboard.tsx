@@ -31,6 +31,7 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
+import { useBankTransactions } from "@/hooks/useBankTransactions";
 import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
 import { useSafeSpending } from "@/hooks/useSafeSpending";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
@@ -81,6 +82,7 @@ const Dashboard = () => {
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, cleanupOrphanedVendors, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction, refetch: refetchTransactions } = useTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
+  const { transactions: bankTransactionsData, isLoading: isBankTransactionsLoading } = useBankTransactions();
   const { creditCards } = useCreditCards();
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
   const { data: safeSpendingData, updateReserveAmount, refetch: refetchSafeSpending } = useSafeSpending();
@@ -89,87 +91,29 @@ const Dashboard = () => {
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
   const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance } = useUserSettings();
 
-  // Example bank transactions for matching - with realistic data
-  const exampleBankTransactions: BankTransaction[] = [
-    {
-      id: 'bank-tx-1',
-      accountId: 'demo-checking-001',
-      accountName: 'Business Checking',
-      institutionName: 'Chase Bank',
-      date: new Date(),
-      description: 'ACH DEBIT AMAZON.COM',
-      merchantName: 'Amazon',
-      amount: -2450.00,
-      type: 'debit',
-      category: 'Business',
-      status: 'posted'
-    },
-    {
-      id: 'bank-tx-2',
-      accountId: 'demo-checking-001',
-      accountName: 'Business Checking',
-      institutionName: 'Chase Bank',
-      date: addDays(new Date(), -1),
-      description: 'WALMART SUPERCENTER #1234',
-      merchantName: 'Walmart',
-      amount: -850.50,
-      type: 'debit',
-      category: 'Business',
-      status: 'posted'
-    },
-    {
-      id: 'bank-tx-3',
-      accountId: 'demo-checking-001',
-      accountName: 'Business Checking',
-      institutionName: 'Chase Bank',
-      date: addDays(new Date(), -2),
-      description: 'OFFICE DEPOT #5678',
-      merchantName: 'Office Depot',
-      amount: -320.75,
-      type: 'debit',
-      category: 'Business',
-      status: 'posted'
-    },
-    {
-      id: 'bank-tx-4',
-      accountId: 'demo-checking-001',
-      accountName: 'Business Checking',
-      institutionName: 'Chase Bank',
-      date: new Date(),
-      description: 'ACH CREDIT CUSTOMER PAYMENT',
-      merchantName: 'Customer Payment',
-      amount: 5000.00,
-      type: 'credit',
-      category: 'Income',
-      status: 'posted'
-    },
-    {
-      id: 'bank-tx-5',
-      accountId: 'demo-checking-001',
-      accountName: 'Business Checking',
-      institutionName: 'Chase Bank',
-      date: addDays(new Date(), -3),
-      description: 'STAPLES STORES #9012',
-      merchantName: 'Staples',
-      amount: -175.25,
-      type: 'debit',
-      category: 'Business',
-      status: 'posted'
-    },
-    {
-      id: 'bank-tx-6',
-      accountId: 'demo-checking-001',
-      accountName: 'Business Checking',
-      institutionName: 'Chase Bank',
-      date: addDays(new Date(), -1),
-      description: 'WIRE TRANSFER CLIENT ABC',
-      merchantName: 'Client Payment',
-      amount: 3500.00,
-      type: 'credit',
-      category: 'Income',
-      status: 'posted'
-    }
-  ];
+  // Map real bank transactions to BankTransaction format
+  const bankTransactions: BankTransaction[] = useMemo(() => {
+    if (!bankTransactionsData) return [];
+    
+    return bankTransactionsData.map(tx => {
+      const account = accounts?.find(acc => acc.id === tx.bankAccountId);
+      
+      return {
+        id: tx.id,
+        accountId: tx.bankAccountId,
+        accountName: account?.account_name || 'Unknown Account',
+        institutionName: account?.institution_name || 'Unknown Bank',
+        date: tx.date,
+        description: tx.name,
+        merchantName: tx.merchantName,
+        amount: tx.amount,
+        type: tx.amount >= 0 ? 'credit' : 'debit',
+        category: tx.category?.[0] || 'Uncategorized',
+        status: tx.pending ? 'pending' : 'posted',
+        matchScore: 0
+      } as BankTransaction;
+    });
+  }, [bankTransactionsData, accounts]);
   
   // Ensure starting balance is 0 for a fresh start (so 9/29 shows only the $60k inflow)
   React.useEffect(() => {
@@ -259,7 +203,6 @@ const Dashboard = () => {
   const { incomeItems, addIncome, updateIncome, deleteIncome, refetch: refetchIncome } = useIncome();
 
   // Transaction matching for bank transactions
-  const bankTransactions = exampleBankTransactions;
   const { matches, getMatchesForIncome } = useTransactionMatching(bankTransactions, vendors, incomeItems);
   
   // Calculate unmatched transactions that need attention
@@ -1317,7 +1260,7 @@ const Dashboard = () => {
       case "transactions":
         return (
           <TransactionsView
-            bankTransactions={exampleBankTransactions}
+            bankTransactions={bankTransactions}
             onVendorUpdate={() => {
               refetchVendors();
               refetchTransactions();
