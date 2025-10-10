@@ -279,7 +279,7 @@ export default function DocumentStorage() {
     const nameMatch = doc.name.toLowerCase().includes(searchLower);
     const displayNameMatch = doc.display_name?.toLowerCase().includes(searchLower);
     const notesMatch = doc.notes?.toLowerCase().includes(searchLower);
-    const descriptionMatch = (doc.metadata?.description || '').toLowerCase().includes(searchLower);
+    const descriptionMatch = (doc.description || '').toLowerCase().includes(searchLower);
     
     const matchesSearch = nameMatch || displayNameMatch || notesMatch || descriptionMatch;
     
