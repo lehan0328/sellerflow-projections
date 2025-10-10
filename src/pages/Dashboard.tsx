@@ -68,6 +68,7 @@ const Dashboard = () => {
   const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
   const { toast } = useToast();
   const [vendorTxRefresh, setVendorTxRefresh] = useState(0);
+  const [includeForecastPayouts, setIncludeForecastPayouts] = useState(true);
   const [matchReviewDialog, setMatchReviewDialog] = useState<{
     open: boolean;
     match: TransactionMatch | null;
@@ -1073,17 +1074,19 @@ const Dashboard = () => {
     return events;
   }, [recurringExpenses]);
 
-  // Convert Amazon payouts to calendar events (including forecasted)
-  const amazonPayoutEvents: CashFlowEvent[] = amazonPayouts.map(payout => ({
-    id: `amazon-payout-${payout.id}`,
-    type: 'inflow' as const,
-    amount: payout.total_amount,
-    description: (payout.status as string) === 'forecasted' 
-      ? `Amazon Payout (Forecasted) - ${payout.marketplace_name}`
-      : `Amazon Payout - ${payout.marketplace_name} (${payout.status})`,
-    source: (payout.status as string) === 'forecasted' ? 'Amazon-Forecasted' : 'Amazon',
-    date: new Date(payout.payout_date)
-  }));
+  // Convert Amazon payouts to calendar events (filter forecasted based on toggle)
+  const amazonPayoutEvents: CashFlowEvent[] = amazonPayouts
+    .filter(payout => includeForecastPayouts || (payout.status as string) !== 'forecasted')
+    .map(payout => ({
+      id: `amazon-payout-${payout.id}`,
+      type: 'inflow' as const,
+      amount: payout.total_amount,
+      description: (payout.status as string) === 'forecasted' 
+        ? `Amazon Payout (Forecasted) - ${payout.marketplace_name}`
+        : `Amazon Payout - ${payout.marketplace_name} (${payout.status})`,
+      source: (payout.status as string) === 'forecasted' ? 'Amazon-Forecasted' : 'Amazon',
+      date: new Date(payout.payout_date)
+    }));
 
   // Combine all events for calendar - only include real user data
   const allCalendarEvents = [...calendarEvents, ...vendorPaymentEvents, ...vendorEvents, ...incomeEvents, ...creditCardEvents, ...forecastedCreditCardEvents, ...recurringEvents, ...amazonPayoutEvents];
@@ -1217,6 +1220,8 @@ const Dashboard = () => {
                   nextBuyingOpportunityAvailableDate={safeSpendingData?.calculation?.next_buying_opportunity_available_date}
                   allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
                   onUpdateReserveAmount={updateReserveAmount}
+                  includeForecastPayouts={includeForecastPayouts}
+                  onToggleForecastPayouts={setIncludeForecastPayouts}
                   transactionMatchButton={
                     <TransactionMatchButton 
                       matches={matches}

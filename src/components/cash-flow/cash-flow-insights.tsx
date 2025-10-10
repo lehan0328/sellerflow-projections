@@ -12,6 +12,8 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 import { useNavigate } from "react-router-dom";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
+import { useAuth } from "@/hooks/useAuth";
 interface CashFlowInsightsProps {
   currentBalance: number;
   dailyInflow: number;
@@ -31,6 +33,8 @@ interface CashFlowInsightsProps {
   allBuyingOpportunities?: Array<{ date: string; balance: number; available_date?: string }>;
   onUpdateReserveAmount?: (amount: number) => Promise<void>;
   transactionMatchButton?: React.ReactNode;
+  includeForecastPayouts?: boolean;
+  onToggleForecastPayouts?: (value: boolean) => void;
 }
 export const CashFlowInsights = ({
   currentBalance,
@@ -50,13 +54,17 @@ export const CashFlowInsights = ({
   nextBuyingOpportunityAvailableDate,
   allBuyingOpportunities = [],
   onUpdateReserveAmount,
-  transactionMatchButton
+  transactionMatchButton,
+  includeForecastPayouts: includeForecastPayoutsProp = true,
+  onToggleForecastPayouts
 }: CashFlowInsightsProps) => {
   const {
     toast
   } = useToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { creditCards, isLoading: cardsLoading } = useCreditCards();
+  const { amazonPayouts, refetch: refetchPayouts } = useAmazonPayouts();
   const [pendingOrdersByCard, setPendingOrdersByCard] = useState<Record<string, number>>({});
   const [showAllOpportunities, setShowAllOpportunities] = useState(false);
   const [showAllCreditCards, setShowAllCreditCards] = useState(false);
@@ -65,7 +73,8 @@ export const CashFlowInsights = ({
   const [chatLoading, setChatLoading] = useState(false);
   const [isEditingReserve, setIsEditingReserve] = useState(false);
   const [editReserveValue, setEditReserveValue] = useState(reserveAmount.toString());
-  const [includeForecastPayouts, setIncludeForecastPayouts] = useState(true);
+  const [includeForecastPayouts, setIncludeForecastPayouts] = useState(includeForecastPayoutsProp);
+  const [isForecastGenerating, setIsForecastGenerating] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<Array<{
     role: 'user' | 'assistant';
     content: string;
@@ -81,6 +90,50 @@ export const CashFlowInsights = ({
   useEffect(() => {
     setEditReserveValue(reserveAmount.toString());
   }, [reserveAmount]);
+
+  // Sync local state with prop
+  useEffect(() => {
+    setIncludeForecastPayouts(includeForecastPayoutsProp);
+  }, [includeForecastPayoutsProp]);
+
+  // Handle toggle change and notify parent
+  const handleToggleForecast = (checked: boolean) => {
+    setIncludeForecastPayouts(checked);
+    onToggleForecastPayouts?.(checked);
+  };
+
+  // Generate forecasts when toggle is enabled and no forecasts exist
+  useEffect(() => {
+    const generateForecasts = async () => {
+      if (!includeForecastPayouts || !user) return;
+      
+      const forecastedPayouts = amazonPayouts.filter(p => p.status === 'forecasted');
+      const confirmedPayouts = amazonPayouts.filter(p => p.status !== 'forecasted');
+      
+      // Only generate if we have confirmed payouts but no forecasts
+      if (confirmedPayouts.length >= 3 && forecastedPayouts.length === 0 && !isForecastGenerating) {
+        setIsForecastGenerating(true);
+        try {
+          const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts', {
+            body: { userId: user.id }
+          });
+          
+          if (error) {
+            console.error('Forecast generation error:', error);
+          } else if (data?.success) {
+            console.log('✅ Amazon payouts forecasted successfully');
+            await refetchPayouts();
+          }
+        } catch (err) {
+          console.error('Failed to generate forecasts:', err);
+        } finally {
+          setIsForecastGenerating(false);
+        }
+      }
+    };
+
+    generateForecasts();
+  }, [includeForecastPayouts, user, amazonPayouts.length]);
   const handleSaveReserve = async () => {
     const newAmount = parseFloat(editReserveValue);
     if (isNaN(newAmount) || newAmount < 0) {
@@ -208,14 +261,29 @@ export const CashFlowInsights = ({
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <Switch
-                id="forecast-payouts"
-                checked={includeForecastPayouts}
-                onCheckedChange={setIncludeForecastPayouts}
-              />
-              <Label htmlFor="forecast-payouts" className="text-xs cursor-pointer">
-                Forecast Payouts
-              </Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id="forecast-payouts"
+                        checked={includeForecastPayouts}
+                        onCheckedChange={handleToggleForecast}
+                        disabled={isForecastGenerating}
+                      />
+                      <Label htmlFor="forecast-payouts" className="text-xs cursor-pointer flex items-center gap-1">
+                        Forecast Payouts
+                        {isForecastGenerating && <Loader2 className="h-3 w-3 animate-spin" />}
+                      </Label>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs text-xs">
+                      AI analyzes your last 3 months of Amazon payouts using advanced mathematics to project future payouts for the next 3 months based on your payout frequency settings
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
             <Button variant={chatMode ? "default" : "ghost"} size="sm" onClick={() => setChatMode(!chatMode)}>
               <MessageCircle className="h-4 w-4 mr-1" />
