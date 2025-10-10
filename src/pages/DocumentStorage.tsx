@@ -721,33 +721,16 @@ export default function DocumentStorage() {
 
               <div className="space-y-2">
                 <Label>Document Date *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !uploadDocumentDate && "text-muted-foreground"
-                      )}
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {uploadDocumentDate ? (
-                        format(uploadDocumentDate, "MMMM do, yyyy")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={uploadDocumentDate}
-                      onSelect={setUploadDocumentDate}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Input
+                  type="date"
+                  value={uploadDocumentDate ? format(uploadDocumentDate, "yyyy-MM-dd") : ""}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setUploadDocumentDate(new Date(e.target.value));
+                    }
+                  }}
+                  className="w-full"
+                />
               </div>
             </div>
 
