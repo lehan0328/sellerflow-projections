@@ -43,6 +43,8 @@ interface StoredDocument {
   vendor_id?: string;
   vendor_name?: string;
   notes?: string;
+  document_date?: string;
+  display_name?: string;
 }
 
 export default function DocumentStorage() {
@@ -92,7 +94,9 @@ export default function DocumentStorage() {
           ...file,
           vendor_id: meta?.vendor_id,
           vendor_name: meta?.vendor?.name,
-          notes: meta?.notes
+          notes: meta?.notes,
+          document_date: meta?.document_date,
+          display_name: meta?.display_name || file.name
         } as StoredDocument;
       });
     },
@@ -153,10 +157,12 @@ export default function DocumentStorage() {
 
   // Update metadata mutation
   const updateMetadataMutation = useMutation({
-    mutationFn: async ({ fileName, vendorId, notes }: { 
+    mutationFn: async ({ fileName, vendorId, notes, documentDate, displayName }: { 
       fileName: string; 
       vendorId?: string;
       notes?: string;
+      documentDate?: string;
+      displayName?: string;
     }) => {
       if (!user?.id) throw new Error('Not authenticated');
 
@@ -167,7 +173,9 @@ export default function DocumentStorage() {
           file_name: fileName,
           file_path: `${user.id}/${fileName}`,
           vendor_id: vendorId || null,
-          notes: notes || null
+          notes: notes || null,
+          document_date: documentDate || null,
+          display_name: displayName || null
         }, {
           onConflict: 'user_id,file_path'
         });
@@ -227,7 +235,7 @@ export default function DocumentStorage() {
       await updateMetadataMutation.mutateAsync({
         fileName,
         vendorId: uploadVendorId,
-        notes: `Document date: ${uploadDocumentDate.toLocaleDateString()}`
+        documentDate: uploadDocumentDate.toISOString().split('T')[0]
       });
       
       // Reset form
@@ -264,13 +272,17 @@ export default function DocumentStorage() {
   const handleView = async (fileName: string) => {
     if (!user?.id) return;
 
-    const { data } = supabase.storage
+    const { data, error } = await supabase.storage
       .from('purchase-orders')
-      .getPublicUrl(`${user.id}/${fileName}`);
+      .download(`${user.id}/${fileName}`);
 
-    if (data.publicUrl) {
-      window.open(data.publicUrl, '_blank');
+    if (error) {
+      toast.error('Failed to load document');
+      return;
     }
+
+    const url = URL.createObjectURL(data);
+    window.open(url, '_blank');
   };
 
   const filteredDocuments = documents?.filter(doc => {
@@ -505,6 +517,7 @@ export default function DocumentStorage() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Vendor</TableHead>
+                    <TableHead>Document Date</TableHead>
                     <TableHead>Size</TableHead>
                     <TableHead>Uploaded</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -516,11 +529,14 @@ export default function DocumentStorage() {
                       <TableCell className="font-medium">
                         <div className="flex items-center space-x-2">
                           <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span>{doc.name}</span>
+                          <span>{doc.display_name || doc.name}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-sm">
                         {doc.vendor_name || <span className="text-muted-foreground">-</span>}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
                       </TableCell>
                       <TableCell>{formatFileSize(doc.metadata?.size || doc.metadata?.eTag?.length || 0)}</TableCell>
                       <TableCell>{formatDate(doc.created_at)}</TableCell>
@@ -597,10 +613,23 @@ export default function DocumentStorage() {
           <DialogHeader>
             <DialogTitle>Edit Document Details</DialogTitle>
             <DialogDescription>
-              Link this document to a vendor
+              Update document name, vendor, and other details
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Display Name</Label>
+              <Input
+                placeholder="Document name"
+                value={editingDoc?.display_name || editingDoc?.name || ""}
+                onChange={(e) => {
+                  if (editingDoc) {
+                    setEditingDoc({...editingDoc, display_name: e.target.value});
+                  }
+                }}
+              />
+            </div>
+
             <div className="space-y-2">
               <Label>Vendor</Label>
               <Select 
@@ -626,6 +655,19 @@ export default function DocumentStorage() {
             </div>
 
             <div className="space-y-2">
+              <Label>Document Date</Label>
+              <Input
+                type="date"
+                value={editingDoc?.document_date || ""}
+                onChange={(e) => {
+                  if (editingDoc) {
+                    setEditingDoc({...editingDoc, document_date: e.target.value});
+                  }
+                }}
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label>Notes</Label>
               <Input
                 placeholder="Add notes about this document..."
@@ -648,7 +690,9 @@ export default function DocumentStorage() {
                   updateMetadataMutation.mutate({
                     fileName: editingDoc.name,
                     vendorId: editingDoc.vendor_id,
-                    notes: editingDoc.notes
+                    notes: editingDoc.notes,
+                    documentDate: editingDoc.document_date,
+                    displayName: editingDoc.display_name
                   });
                 }
               }}
