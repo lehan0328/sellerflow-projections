@@ -10,9 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useScenarios, type ScenarioData } from "@/hooks/useScenarios";
 import { useVendors } from "@/hooks/useVendors";
 import { useIncome } from "@/hooks/useIncome";
-import { useBankTransactions } from "@/hooks/useBankTransactions";
+import { useTransactions } from "@/hooks/useTransactions";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
+import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
+import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
+import { generateRecurringDates } from "@/lib/recurringDates";
+import { addDays, startOfDay } from "date-fns";
 import { ArrowLeft, Plus, Save, Trash2, TrendingUp, TrendingDown, Calculator } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -44,9 +48,11 @@ export default function ScenarioPlanner() {
   const { scenarios, createScenario, updateScenario, deleteScenario, isLoading } = useScenarios();
   const { vendors } = useVendors();
   const { incomeItems } = useIncome();
-  const { transactions } = useBankTransactions();
+  const { transactions } = useTransactions();
   const { creditCards } = useCreditCards();
   const { accounts: bankAccounts } = useBankAccounts();
+  const { recurringExpenses } = useRecurringExpenses();
+  const { amazonPayouts } = useAmazonPayouts();
 
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
   const [scenarioName, setScenarioName] = useState("");
@@ -62,120 +68,171 @@ export default function ScenarioPlanner() {
   // Fixed 3-month projection
   const projectionMonths = 3;
 
-  // Calculate baseline metrics based on actual cash and historical data
-  const baselineMetrics = useMemo(() => {
+  // Calculate baseline metrics based on actual cash and build complete event list
+  const allEventsData = useMemo(() => {
     // Get current total cash from all bank accounts
     const currentCash = bankAccounts.reduce((sum, account) => {
       return sum + (account.available_balance || account.balance || 0);
     }, 0);
-    
-    // Get received income from the last 6 months
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    
-    const recentIncome = incomeItems.filter(i => {
-      if (i.status !== 'received') return false;
-      const paymentDate = new Date(i.paymentDate);
-      return paymentDate >= sixMonthsAgo;
-    });
-    
-    const totalRevenue = recentIncome.reduce((sum, i) => sum + i.amount, 0);
-    
-    // Calculate actual monthly average from historical data
-    const monthlyRevenue = recentIncome.length > 0 ? totalRevenue / 6 : 0;
-    
-    // For expenses, use the total owed divided by 6 as an estimate
-    const totalExpenses = vendors.reduce((sum, v) => sum + (v.totalOwed || 0), 0);
-    const monthlyExpenses = totalExpenses > 0 ? totalExpenses / 6 : 0;
-    
-    return {
-      currentCash,
-      totalRevenue,
-      totalExpenses,
-      monthlyRevenue,
-      monthlyExpenses,
-      netProfit: totalRevenue - totalExpenses,
-    };
-  }, [incomeItems, vendors, bankAccounts]);
 
-  // Calculate scenario projections with daily granularity for 3-month projection
+    // Build complete event list matching dashboard logic
+    const events: Array<{ date: Date; amount: number; type: 'inflow' | 'outflow' }> = [];
+
+    // Add vendor transactions (purchase orders)
+    transactions
+      .filter(tx => tx.type === 'purchase_order' && tx.vendorId && tx.status !== 'completed')
+      .forEach(tx => {
+        events.push({
+          date: tx.dueDate || tx.transactionDate,
+          amount: -tx.amount,
+          type: 'outflow'
+        });
+      });
+
+    // Add income items (exclude received)
+    incomeItems
+      .filter(income => income.status !== 'received')
+      .forEach(income => {
+        events.push({
+          date: income.paymentDate,
+          amount: income.amount,
+          type: 'inflow'
+        });
+      });
+
+    // Add credit card payments
+    creditCards
+      .filter(card => card.payment_due_date && card.balance > 0)
+      .forEach(card => {
+        const paymentAmount = card.pay_minimum 
+          ? card.minimum_payment 
+          : (card.statement_balance || card.balance);
+        events.push({
+          date: new Date(card.payment_due_date!),
+          amount: -paymentAmount,
+          type: 'outflow'
+        });
+      });
+
+    // Add forecasted credit card payments
+    creditCards
+      .filter(card => card.forecast_next_month && card.payment_due_date)
+      .forEach(card => {
+        const projectedAmount = card.credit_limit - card.available_credit - (card.statement_balance || card.balance);
+        if (projectedAmount > 0) {
+          const nextDueDate = new Date(card.payment_due_date!);
+          nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+          events.push({
+            date: nextDueDate,
+            amount: -projectedAmount,
+            type: 'outflow'
+          });
+        }
+      });
+
+    // Add recurring expenses/income
+    const rangeStart = startOfDay(new Date());
+    const rangeEnd = addDays(rangeStart, 365);
+    recurringExpenses.forEach(recurring => {
+      const dates = generateRecurringDates(recurring, rangeStart, rangeEnd);
+      dates.forEach(date => {
+        events.push({
+          date: date,
+          amount: recurring.type === 'income' ? Number(recurring.amount) : -Number(recurring.amount),
+          type: recurring.type === 'income' ? 'inflow' : 'outflow'
+        });
+      });
+    });
+
+    // Add Amazon payouts
+    amazonPayouts.forEach(payout => {
+      events.push({
+        date: new Date(payout.payout_date),
+        amount: payout.total_amount,
+        type: 'inflow'
+      });
+    });
+
+    return { allEvents: events, baselineCash: currentCash };
+  }, [bankAccounts, transactions, incomeItems, creditCards, recurringExpenses, amazonPayouts]);
+
+  const allEvents = allEventsData.allEvents;
+  const baselineCash = allEventsData.baselineCash;
+
+  // Calculate scenario projections using actual events
   const scenarioProjection = useMemo(() => {
     const periods = [];
-    const { currentCash, monthlyRevenue: baseMonthlyRevenue, monthlyExpenses: baseMonthlyExpenses } = baselineMetrics;
-    
-    // Always use 3 months, show monthly data points
     const months = 3;
     
-    // Convert to daily rates for smooth projection
-    const baseDailyRevenue = baseMonthlyRevenue / 30;
-    const baseDailyExpenses = baseMonthlyExpenses / 30;
-
     // Start with current cash balance
-    let baselineCash = currentCash;
-    let scenarioCash = currentCash;
-
-    // Handle case where there's no baseline data
-    if (baseMonthlyRevenue === 0 && baseMonthlyExpenses === 0) {
-      for (let i = 0; i <= months; i++) {
-        const date = new Date();
-        date.setMonth(date.getMonth() + i);
-        
-        periods.push({
-          month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-          baselineCash: currentCash,
-          scenarioCash: currentCash,
-        });
-      }
-      return periods;
-    }
+    let runningBaselineCash = baselineCash;
+    let runningScenarioCash = baselineCash;
 
     // Add current balance as starting point
     periods.push({
       month: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-      baselineCash: currentCash,
-      scenarioCash: currentCash,
+      baselineCash: runningBaselineCash,
+      scenarioCash: runningScenarioCash,
     });
 
-    // Project forward month by month
-    for (let i = 1; i <= months; i++) {
-      const daysInPeriod = 30; // Approximate 30 days per month
+    // Project forward month by month using actual events
+    for (let monthOffset = 1; monthOffset <= months; monthOffset++) {
+      const periodStart = new Date();
+      periodStart.setMonth(periodStart.getMonth() + monthOffset - 1);
+      periodStart.setDate(1);
+      periodStart.setHours(0, 0, 0, 0);
       
-      // Calculate adjustments
-      let adjustedDailyRevenue = baseDailyRevenue;
-      let adjustedDailyExpenses = baseDailyExpenses;
+      const periodEnd = new Date();
+      periodEnd.setMonth(periodEnd.getMonth() + monthOffset);
+      periodEnd.setDate(0);
+      periodEnd.setHours(23, 59, 59, 999);
+
+      // Get events in this period
+      const periodEvents = allEvents.filter(event => {
+        const eventDate = new Date(event.date);
+        return eventDate >= periodStart && eventDate <= periodEnd;
+      });
+
+      // Calculate baseline changes
+      const baselineInflows = periodEvents
+        .filter(e => e.type === 'inflow')
+        .reduce((sum, e) => sum + e.amount, 0);
+      const baselineOutflows = periodEvents
+        .filter(e => e.type === 'outflow')
+        .reduce((sum, e) => sum + Math.abs(e.amount), 0);
+
+      // Calculate scenario changes with adjustments
+      let scenarioInflows = baselineInflows;
+      let scenarioOutflows = baselineOutflows;
 
       if (revenueAdjustmentType === 'percentage') {
-        adjustedDailyRevenue = baseDailyRevenue * (1 + revenueAdjustment / 100);
+        scenarioInflows = baselineInflows * (1 + revenueAdjustment / 100);
       } else {
-        adjustedDailyRevenue = baseDailyRevenue + (revenueAdjustment / 30);
+        scenarioInflows = baselineInflows + revenueAdjustment;
       }
 
       if (expenseAdjustmentType === 'percentage') {
-        adjustedDailyExpenses = baseDailyExpenses * (1 + expenseAdjustment / 100);
+        scenarioOutflows = baselineOutflows * (1 + expenseAdjustment / 100);
       } else {
-        adjustedDailyExpenses = baseDailyExpenses + (expenseAdjustment / 30);
+        scenarioOutflows = baselineOutflows + expenseAdjustment;
       }
 
-      // Calculate month's net change
-      const baselineMonthlyNet = (baseDailyRevenue - baseDailyExpenses) * daysInPeriod;
-      const scenarioMonthlyNet = (adjustedDailyRevenue - adjustedDailyExpenses) * daysInPeriod;
-
       // Update cumulative balances
-      baselineCash += baselineMonthlyNet;
-      scenarioCash += scenarioMonthlyNet;
+      runningBaselineCash += (baselineInflows - baselineOutflows);
+      runningScenarioCash += (scenarioInflows - scenarioOutflows);
 
       const date = new Date();
-      date.setMonth(date.getMonth() + i);
+      date.setMonth(date.getMonth() + monthOffset);
       
       periods.push({
         month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        baselineCash: baselineCash,
-        scenarioCash: scenarioCash,
+        baselineCash: runningBaselineCash,
+        scenarioCash: runningScenarioCash,
       });
     }
 
     return periods;
-  }, [baselineMetrics, revenueAdjustment, revenueAdjustmentType, expenseAdjustment, expenseAdjustmentType]);
+  }, [allEvents, baselineCash, revenueAdjustment, revenueAdjustmentType, expenseAdjustment, expenseAdjustmentType]);
 
   // Calculate cumulative impact
   const cumulativeImpact = useMemo(() => {
@@ -555,7 +612,7 @@ export default function ScenarioPlanner() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 border rounded-lg">
                   <p className="text-sm text-muted-foreground mb-1">Starting Balance</p>
-                  <p className="text-2xl font-bold">${baselineMetrics.currentCash.toLocaleString()}</p>
+                  <p className="text-2xl font-bold">${baselineCash.toLocaleString()}</p>
                 </div>
                 <div className="p-4 border rounded-lg">
                   <p className="text-sm text-muted-foreground mb-1">Scenario Impact (3mo)</p>
@@ -572,6 +629,32 @@ export default function ScenarioPlanner() {
                   <p className="text-2xl font-bold text-primary">${cumulativeImpact.scenarioTotal.toLocaleString()}</p>
                 </div>
               </div>
+              
+              <div className="pt-4 border-t">
+                <p className="text-sm text-muted-foreground mb-2">Projection includes:</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <span>Pending Income ({incomeItems.filter(i => i.status !== 'received').length})</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-red-500" />
+                    <span>Purchase Orders ({transactions.filter(t => t.type === 'purchase_order' && t.status !== 'completed').length})</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span>Amazon Payouts ({amazonPayouts.length})</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-purple-500" />
+                    <span>Recurring Items ({recurringExpenses.length})</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-orange-500" />
+                    <span>Credit Card Payments ({creditCards.filter(c => c.payment_due_date).length})</span>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -579,36 +662,69 @@ export default function ScenarioPlanner() {
         <TabsContent value="expenses" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Monthly Assumptions</CardTitle>
-              <CardDescription>Base metrics used for projections</CardDescription>
+              <CardTitle>Data Sources</CardTitle>
+              <CardDescription>Active financial data included in projection</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 border rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">Baseline Monthly Revenue</p>
-                  <p className="text-xl font-semibold text-green-600">${baselineMetrics.monthlyRevenue.toLocaleString()}</p>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center p-3 border rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-green-500" />
+                    <span className="font-medium">Pending Income</span>
+                  </div>
+                  <span className="text-muted-foreground">{incomeItems.filter(i => i.status !== 'received').length} items</span>
                 </div>
-                <div className="p-4 border rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">Scenario Monthly Revenue</p>
-                  <p className="text-xl font-semibold text-green-600">
-                    ${(revenueAdjustmentType === 'percentage' 
-                      ? baselineMetrics.monthlyRevenue * (1 + revenueAdjustment / 100)
-                      : baselineMetrics.monthlyRevenue + revenueAdjustment
-                    ).toLocaleString()}
-                  </p>
+                <div className="flex justify-between items-center p-3 border rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <span className="font-medium">Purchase Orders</span>
+                  </div>
+                  <span className="text-muted-foreground">{transactions.filter(t => t.type === 'purchase_order' && t.status !== 'completed').length} items</span>
                 </div>
-                <div className="p-4 border rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">Baseline Monthly Expenses</p>
-                  <p className="text-xl font-semibold text-red-600">${baselineMetrics.monthlyExpenses.toLocaleString()}</p>
+                <div className="flex justify-between items-center p-3 border rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-blue-500" />
+                    <span className="font-medium">Amazon Payouts</span>
+                  </div>
+                  <span className="text-muted-foreground">{amazonPayouts.length} payouts</span>
                 </div>
-                <div className="p-4 border rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">Scenario Monthly Expenses</p>
-                  <p className="text-xl font-semibold text-red-600">
-                    ${(expenseAdjustmentType === 'percentage'
-                      ? baselineMetrics.monthlyExpenses * (1 + expenseAdjustment / 100)
-                      : baselineMetrics.monthlyExpenses + expenseAdjustment
-                    ).toLocaleString()}
-                  </p>
+                <div className="flex justify-between items-center p-3 border rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-purple-500" />
+                    <span className="font-medium">Recurring Transactions</span>
+                  </div>
+                  <span className="text-muted-foreground">{recurringExpenses.length} items</span>
+                </div>
+                <div className="flex justify-between items-center p-3 border rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-orange-500" />
+                    <span className="font-medium">Credit Card Payments</span>
+                  </div>
+                  <span className="text-muted-foreground">{creditCards.filter(c => c.payment_due_date).length} payments</span>
+                </div>
+              </div>
+              
+              <div className="pt-4 border-t">
+                <p className="text-sm font-medium mb-2">Adjustment Settings:</p>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Revenue Adjustment:</span>
+                    <span className="font-medium">
+                      {revenueAdjustmentType === 'percentage' 
+                        ? `${revenueAdjustment > 0 ? '+' : ''}${revenueAdjustment}%`
+                        : `${revenueAdjustment > 0 ? '+' : ''}$${Math.abs(revenueAdjustment).toLocaleString()}`
+                      }
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Expense Adjustment:</span>
+                    <span className="font-medium">
+                      {expenseAdjustmentType === 'percentage'
+                        ? `${expenseAdjustment > 0 ? '+' : ''}${expenseAdjustment}%`
+                        : `${expenseAdjustment > 0 ? '+' : ''}$${Math.abs(expenseAdjustment).toLocaleString()}`
+                      }
+                    </span>
+                  </div>
                 </div>
               </div>
             </CardContent>
