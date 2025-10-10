@@ -400,16 +400,8 @@ const FlexReport = () => {
 
             {/* Footer */}
             <div className="pt-8 border-t-2 border-gradient-to-r from-slate-200 via-slate-300 to-slate-200">
-              <div className="flex items-center justify-between text-sm mb-4">
-                <p className="text-slate-500 flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Generated {new Date().toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric'
-                })}
-                </p>
-                <div className="text-right">
+              <div className="flex items-center justify-center text-sm mb-4">
+                <div className="text-center">
                   <p className="text-slate-700 font-semibold text-base mb-1">
                     Powered by <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent font-black text-lg">Auren</span>
                   </p>
