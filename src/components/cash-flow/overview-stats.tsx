@@ -35,9 +35,18 @@ const timeRangeOptions = [
   { value: "90days", label: "90 Days", days: 90 },
 ];
 
+const amazonTimeRangeOptions = [
+  { value: "today", label: "Today" },
+  { value: "yesterday", label: "Yesterday" },
+  { value: "mtd", label: "Month to Date" },
+  { value: "last30", label: "Last 30 Days" },
+  { value: "lastmonth", label: "Last Month" },
+];
+
 export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance, pendingIncomeToday }: OverviewStatsProps) {
   const [incomingTimeRange, setIncomingTimeRange] = useState("7days");
   const [upcomingTimeRange, setUpcomingTimeRange] = useState("7days");
+  const [amazonTimeRange, setAmazonTimeRange] = useState("mtd");
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   
@@ -199,6 +208,59 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const formatDateKey = (k: string) => new Date(`${k}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const isBreach = Boolean(displayNegative || displayBelow);
 
+  // Calculate Amazon revenue based on selected time range
+  const getAmazonDateRange = () => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    switch (amazonTimeRange) {
+      case "today":
+        return {
+          start: today,
+          end: new Date(today.getTime() + 24 * 60 * 60 * 1000)
+        };
+      case "yesterday":
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        return {
+          start: yesterday,
+          end: today
+        };
+      case "mtd":
+        return {
+          start: new Date(now.getFullYear(), now.getMonth(), 1),
+          end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+        };
+      case "last30":
+        const last30Start = new Date(today);
+        last30Start.setDate(last30Start.getDate() - 30);
+        return {
+          start: last30Start,
+          end: new Date(today.getTime() + 24 * 60 * 60 * 1000)
+        };
+      case "lastmonth":
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 1);
+        return {
+          start: lastMonth,
+          end: lastMonthEnd
+        };
+      default:
+        return {
+          start: new Date(now.getFullYear(), now.getMonth(), 1),
+          end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+        };
+    }
+  };
+
+  const amazonDateRange = getAmazonDateRange();
+  const filteredAmazonRevenue = amazonPayouts
+    .filter(payout => {
+      const payoutDate = new Date(payout.payout_date);
+      return payoutDate >= amazonDateRange.start && payoutDate < amazonDateRange.end;
+    })
+    .reduce((sum, payout) => sum + (payout.orders_total || 0), 0);
+
   return (<>
       <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
@@ -312,10 +374,27 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
         <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <p className="text-sm text-slate-600">Amazon Revenue</p>
-              <p className="text-2xl font-bold text-orange-700">{formatCurrency(monthlyOrdersTotal)}</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-slate-600">Amazon Revenue</p>
+                <Select value={amazonTimeRange} onValueChange={setAmazonTimeRange}>
+                  <SelectTrigger className="w-32 h-6 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {amazonTimeRangeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="text-2xl font-bold text-orange-700">{formatCurrency(filteredAmazonRevenue)}</p>
               <p className="text-sm text-slate-600">
-                This month's orders total
+                Orders total
+              </p>
+              <p className="text-xs text-orange-600">
+                {amazonTimeRangeOptions.find(opt => opt.value === amazonTimeRange)?.label}
               </p>
             </div>
             <ShoppingCart className="h-8 w-8 text-orange-500" />
