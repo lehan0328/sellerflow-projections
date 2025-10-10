@@ -299,6 +299,16 @@ export const CashFlowInsights = ({
           }
         }
 
+        // Sort opportunities by date
+        opportunities.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        
+        // Ensure later opportunities never have lower available credit than earlier ones
+        for (let i = 1; i < opportunities.length; i++) {
+          if (opportunities[i].availableCredit < opportunities[i - 1].availableCredit) {
+            opportunities[i].availableCredit = opportunities[i - 1].availableCredit;
+          }
+        }
+
         opportunitiesMap[card.id] = opportunities;
       }
 
