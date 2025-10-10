@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart } from "lucide-react";
+import { Home, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
@@ -26,6 +26,7 @@ interface AppSidebarProps {
 const sections = [
   { id: "overview", title: "Overview", icon: Home },
   { id: "transactions", title: "Transactions", icon: TrendingUp },
+  { id: "bank-transactions", title: "Bank Transactions", icon: Building2 },
   { id: "financials", title: "Financials", icon: Wallet },
   { id: "recurring", title: "Recurring Expenses", icon: Repeat },
   { id: "amazon", title: "Amazon Payouts", icon: ShoppingCart },
