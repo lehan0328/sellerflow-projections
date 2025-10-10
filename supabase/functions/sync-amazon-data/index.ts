@@ -64,7 +64,7 @@ serve(async (req) => {
 
     // For now, simulate Amazon API data since setting up SP-API requires extensive configuration
     // In production, you would decrypt credentials and call Amazon SP-API here
-    console.log(`Syncing Amazon account: ${amazonAccount.account_name}`)
+    console.log(`Syncing Amazon account: ${amazonAccount.account_name} (${amazonAccount.payout_frequency} payouts)`)
 
     // Simulate transaction data based on the current date
     const now = new Date()
@@ -104,12 +104,24 @@ serve(async (req) => {
       })
     }
 
-    // Generate bi-weekly payouts (current and next upcoming only)
+    // Generate payouts based on frequency
     const payoutDates = []
-    for (let i = 0; i < 2; i++) {
-      const payoutDate = new Date(now)
-      payoutDate.setDate(now.getDate() + (i * 14))
-      payoutDates.push(payoutDate)
+    const payoutFrequency = amazonAccount.payout_frequency || 'bi-weekly'
+    
+    if (payoutFrequency === 'daily') {
+      // Generate next 14 daily payouts
+      for (let i = 0; i < 14; i++) {
+        const payoutDate = new Date(now)
+        payoutDate.setDate(now.getDate() + i)
+        payoutDates.push(payoutDate)
+      }
+    } else {
+      // Generate bi-weekly payouts (current and next upcoming only)
+      for (let i = 0; i < 2; i++) {
+        const payoutDate = new Date(now)
+        payoutDate.setDate(now.getDate() + (i * 14))
+        payoutDates.push(payoutDate)
+      }
     }
 
     for (const [index, payoutDate] of payoutDates.entries()) {

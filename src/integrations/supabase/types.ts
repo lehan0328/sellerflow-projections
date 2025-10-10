@@ -184,6 +184,7 @@ export type Database = {
           last_sync: string | null
           marketplace_id: string
           marketplace_name: string
+          payout_frequency: string
           seller_id: string
           token_expires_at: string | null
           updated_at: string
@@ -201,6 +202,7 @@ export type Database = {
           last_sync?: string | null
           marketplace_id: string
           marketplace_name: string
+          payout_frequency?: string
           seller_id: string
           token_expires_at?: string | null
           updated_at?: string
@@ -218,6 +220,7 @@ export type Database = {
           last_sync?: string | null
           marketplace_id?: string
           marketplace_name?: string
+          payout_frequency?: string
           seller_id?: string
           token_expires_at?: string | null
           updated_at?: string

@@ -11,6 +11,7 @@ export interface AmazonAccount {
   account_name: string;
   last_sync: string;
   is_active: boolean;
+  payout_frequency: 'daily' | 'bi-weekly';
   created_at: string;
   updated_at: string;
 }
@@ -20,6 +21,7 @@ export interface AmazonAccountCredentials {
   marketplace_id: string;
   marketplace_name: string;
   account_name: string;
+  payout_frequency?: 'daily' | 'bi-weekly';
   refresh_token?: string;
   access_token?: string;
   client_id?: string;
@@ -48,6 +50,7 @@ export const useAmazonAccounts = () => {
           account_name,
           last_sync,
           is_active,
+          payout_frequency,
           created_at,
           updated_at
         `)
@@ -61,7 +64,10 @@ export const useAmazonAccounts = () => {
         return;
       }
 
-      setAmazonAccounts(data || []);
+      setAmazonAccounts((data || []).map(account => ({
+        ...account,
+        payout_frequency: account.payout_frequency as 'daily' | 'bi-weekly'
+      })));
     } catch (error) {
       console.error("Error fetching Amazon accounts:", error);
       toast.error("Failed to load Amazon accounts");
@@ -77,19 +83,26 @@ export const useAmazonAccounts = () => {
     }
 
     try {
-      const { data, error } = await supabase.rpc("insert_secure_amazon_account", {
-        p_seller_id: credentials.seller_id,
-        p_marketplace_id: credentials.marketplace_id,
-        p_marketplace_name: credentials.marketplace_name,
-        p_account_name: credentials.account_name,
-        p_refresh_token: credentials.refresh_token,
-        p_access_token: credentials.access_token,
-        p_client_id: credentials.client_id,
-        p_client_secret: credentials.client_secret
-      });
+      // First insert the account record directly
+      const { data: accountData, error: insertError } = await supabase
+        .from("amazon_accounts")
+        .insert({
+          user_id: user.id,
+          seller_id: credentials.seller_id,
+          marketplace_id: credentials.marketplace_id,
+          marketplace_name: credentials.marketplace_name,
+          account_name: credentials.account_name,
+          payout_frequency: credentials.payout_frequency || 'bi-weekly',
+          encrypted_refresh_token: credentials.refresh_token || null,
+          encrypted_access_token: credentials.access_token || null,
+          encrypted_client_id: credentials.client_id || null,
+          encrypted_client_secret: credentials.client_secret || null
+        })
+        .select('id')
+        .single();
 
-      if (error) {
-        console.error("Error adding Amazon account:", error);
+      if (insertError) {
+        console.error("Error adding Amazon account:", insertError);
         toast.error("Failed to add Amazon account");
         return false;
       }
@@ -98,9 +111,9 @@ export const useAmazonAccounts = () => {
       await fetchAmazonAccounts();
       
       // Auto-sync the new account to populate initial data
-      if (data) {
+      if (accountData?.id) {
         toast.info("Syncing Amazon data...");
-        await syncAmazonAccount(data);
+        await syncAmazonAccount(accountData.id);
       }
       
       return true;

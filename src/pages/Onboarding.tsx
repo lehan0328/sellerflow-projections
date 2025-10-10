@@ -49,6 +49,7 @@ export default function Onboarding() {
     refresh_token: '',
     client_id: '',
     client_secret: '',
+    payout_frequency: 'bi-weekly' as 'daily' | 'bi-weekly',
   });
 
   // Check for enterprise parameter and show modal
@@ -208,6 +209,29 @@ export default function Onboarding() {
                       <span>FBA fees and storage costs</span>
                     </div>
                   </div>
+                </div>
+                
+                <div className="max-w-md mx-auto pt-4">
+                  <Label htmlFor="payout-frequency" className="text-left block mb-2">
+                    Payout Schedule
+                  </Label>
+                  <Select 
+                    value={amazonFormData.payout_frequency} 
+                    onValueChange={(value: 'daily' | 'bi-weekly') => 
+                      setAmazonFormData({...amazonFormData, payout_frequency: value})
+                    }
+                  >
+                    <SelectTrigger id="payout-frequency" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bi-weekly">Bi-Weekly (Every 14 days)</SelectItem>
+                      <SelectItem value="daily">Daily</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    This helps us forecast your payouts accurately. You can change this later in settings.
+                  </p>
                 </div>
               </div>
 

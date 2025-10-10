@@ -20,6 +20,7 @@ interface AmazonAccountFormData {
   refresh_token: string;
   client_id: string;
   client_secret: string;
+  payout_frequency: 'daily' | 'bi-weekly';
 }
 
 const marketplaces = [
@@ -51,6 +52,7 @@ export function AmazonManagement() {
     refresh_token: '',
     client_id: '',
     client_secret: '',
+    payout_frequency: 'bi-weekly',
   });
 
   const formatCurrency = (amount: number) => {
@@ -69,6 +71,7 @@ export function AmazonManagement() {
       refresh_token: '',
       client_id: '',
       client_secret: '',
+      payout_frequency: 'bi-weekly',
     });
   };
 
@@ -210,6 +213,27 @@ export function AmazonManagement() {
                     </Select>
                   </div>
 
+                  <div>
+                    <Label htmlFor="payout_frequency">Payout Schedule *</Label>
+                    <Select 
+                      value={formData.payout_frequency} 
+                      onValueChange={(value: 'daily' | 'bi-weekly') => 
+                        setFormData({...formData, payout_frequency: value})
+                      }
+                    >
+                      <SelectTrigger id="payout_frequency">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="bi-weekly">Bi-Weekly (Every 14 days)</SelectItem>
+                        <SelectItem value="daily">Daily</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Select how often Amazon pays out to your account
+                    </p>
+                  </div>
+
                   <div className="space-y-4">
                     <h4 className="text-sm font-medium">SP-API Credentials</h4>
                     <div className="grid grid-cols-2 gap-4">
@@ -319,6 +343,9 @@ export function AmazonManagement() {
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Seller ID: {account.seller_id}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Payout Schedule: {account.payout_frequency === 'daily' ? 'Daily' : 'Bi-Weekly (Every 14 days)'}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Last sync: {new Date(account.last_sync).toLocaleString()}
