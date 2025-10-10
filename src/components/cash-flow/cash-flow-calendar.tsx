@@ -411,11 +411,12 @@ export const CashFlowCalendar = ({
     const accountStartDate = new Date('2025-09-29');
     accountStartDate.setHours(0, 0, 0, 0);
     
-    // Calculate date range based on selected time range
+    // Calculate date range based on selected time range (starting from today)
     const monthsToShow = parseInt(chartTimeRange);
-    const chartStartDate = subMonths(new Date(), monthsToShow - 1);
-    const chartStart = startOfMonth(chartStartDate);
-    const chartEnd = endOfMonth(new Date());
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const chartStart = today; // Start from today
+    const chartEnd = endOfMonth(addMonths(today, monthsToShow)); // End at the end of month X months from now
     
     const days = eachDayOfInterval({ start: chartStart, end: chartEnd });
     let runningTotal = totalAvailableCash;
