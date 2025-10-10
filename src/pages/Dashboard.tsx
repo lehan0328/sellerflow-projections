@@ -18,6 +18,8 @@ import { RecurringExpensesOverview } from "@/components/cash-flow/recurring-expe
 import { ReferralDashboardContent } from "@/components/ReferralDashboardContent";
 import { TransactionsView } from "@/components/TransactionsView";
 import { useIncome } from "@/hooks/useIncome";
+import ScenarioPlanner from "@/pages/ScenarioPlanner";
+import Analytics from "@/pages/Analytics";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useToast } from "@/hooks/use-toast";
@@ -1207,6 +1209,12 @@ const Dashboard = () => {
       
       case "amazon":
         return <AmazonPayouts />;
+      
+      case "scenario-planning":
+        return <ScenarioPlanner />;
+      
+      case "analytics":
+        return <Analytics />;
       
       case "referrals":
         return <ReferralDashboardContent />;
