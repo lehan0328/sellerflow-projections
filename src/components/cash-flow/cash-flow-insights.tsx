@@ -64,6 +64,8 @@ export const CashFlowInsights = ({
   const [isEditingReserve, setIsEditingReserve] = useState(false);
   const [editReserveValue, setEditReserveValue] = useState(reserveAmount.toString());
   const [showForecastDialog, setShowForecastDialog] = useState(false);
+  const [forecastLoading, setForecastLoading] = useState(false);
+  const [forecastActivated, setForecastActivated] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<Array<{
     role: 'user' | 'assistant';
     content: string;
@@ -195,6 +197,47 @@ export const CashFlowInsights = ({
       setChatLoading(false);
     }
   };
+
+  const handleActivateForecast = async () => {
+    setForecastLoading(true);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase.functions.invoke("forecast-amazon-payouts", {
+        body: { userId: user.id }
+      });
+
+      if (error) throw error;
+
+      // Show success animation
+      setForecastActivated(true);
+      
+      toast({
+        title: "AI Forecast Activated! ✨",
+        description: "Your Amazon payout forecast has been generated successfully.",
+      });
+
+      // Navigate to forecast page after a brief delay to show the effect
+      setTimeout(() => {
+        setShowForecastDialog(false);
+        setForecastActivated(false);
+        navigate('/ai-forecast');
+      }, 1500);
+      
+    } catch (error: any) {
+      console.error("Forecast error:", error);
+      toast({
+        title: "Forecast Failed",
+        description: error.message || "Unable to generate forecast. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setForecastLoading(false);
+    }
+  };
+
   return <Card className="shadow-card h-full flex flex-col">
       <CardHeader>
         <CardTitle className="text-lg flex items-center justify-between">
@@ -616,20 +659,37 @@ export const CashFlowInsights = ({
           
           <div className="flex gap-2 mt-4">
             <Button 
-              className="flex-1" 
-              onClick={() => {
-                setShowForecastDialog(false);
-                navigate('/ai-forecast');
-              }}
+              className={`flex-1 relative overflow-hidden bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 hover:from-purple-700 hover:via-blue-700 hover:to-cyan-700 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300 ${
+                forecastActivated ? 'animate-pulse scale-105' : ''
+              } ${forecastLoading ? 'cursor-wait' : ''}`}
+              onClick={handleActivateForecast}
+              disabled={forecastLoading || forecastActivated}
             >
-              <Brain className="h-4 w-4 mr-2" />
-              Go to AI Forecast
+              {forecastActivated ? (
+                <>
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 animate-pulse" />
+                  <Check className="h-5 w-5 mr-2 relative z-10 animate-bounce" />
+                  <span className="relative z-10">Activated!</span>
+                </>
+              ) : forecastLoading ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  <span>Activating AI...</span>
+                </>
+              ) : (
+                <>
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse" />
+                  <Brain className="h-5 w-5 mr-2 relative z-10 animate-pulse" />
+                  <span className="relative z-10">Activate AI Forecast</span>
+                </>
+              )}
             </Button>
             <Button 
               variant="outline" 
               onClick={() => setShowForecastDialog(false)}
+              disabled={forecastLoading}
             >
-              Close
+              Cancel
             </Button>
           </div>
         </DialogContent>
