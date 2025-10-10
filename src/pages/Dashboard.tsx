@@ -1262,7 +1262,11 @@ const Dashboard = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
-        <AppSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+        <AppSidebar 
+          activeSection={activeSection} 
+          onSectionChange={setActiveSection}
+          onFlexReportClick={() => navigate('/flex-report')}
+        />
         
         <div className="flex-1 overflow-auto relative">
           {/* Subtle gradient orbs */}

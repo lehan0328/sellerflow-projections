@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar } from "lucide-react";
+import { Home, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -18,6 +18,7 @@ import aurenIcon from "@/assets/auren-icon-blue.png";
 interface AppSidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
+  onFlexReportClick?: () => void;
 }
 
 const sections = [
@@ -32,9 +33,10 @@ const sections = [
   { id: "support", title: "Support", icon: MessageSquare },
   { id: "referrals", title: "Referrals", icon: Users },
   { id: "book-call", title: "Book a Demo", icon: Calendar, isExternal: true, url: "https://app.usemotion.com/meet/andy-chu/AurenDemo" },
+  { id: "flex-report", title: "Flex Report", icon: FileBarChart, isExternal: true, isFlexReport: true },
 ];
 
-export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) {
+export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }: AppSidebarProps) {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
@@ -67,12 +69,15 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
                 const isActive = activeSection === section.id;
                 const isExternal = 'isExternal' in section && section.isExternal;
                 const isBookCall = section.id === "book-call";
+                const isFlexReport = 'isFlexReport' in section && section.isFlexReport;
                 
                 return (
                   <SidebarMenuItem key={section.id}>
                     <SidebarMenuButton
                       onClick={() => {
-                        if (isExternal && 'url' in section) {
+                        if (isFlexReport && onFlexReportClick) {
+                          onFlexReportClick();
+                        } else if (isExternal && 'url' in section) {
                           window.open(section.url, '_blank', 'noopener,noreferrer');
                         } else {
                           onSectionChange(section.id);
@@ -83,15 +88,17 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
                         ${isCollapsed ? "justify-center h-12 w-12" : ""}
                         ${isBookCall 
                           ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg hover:shadow-xl hover:from-green-700 hover:to-emerald-700 font-bold justify-center"
-                          : isActive 
-                            ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" 
-                            : "hover:bg-accent/50 hover:translate-x-1"
+                          : isFlexReport
+                            ? "bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-lg hover:shadow-xl hover:from-purple-700 hover:to-violet-700 font-bold justify-center"
+                            : isActive 
+                              ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" 
+                              : "hover:bg-accent/50 hover:translate-x-1"
                         }
                       `}
                     >
-                      <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive || isBookCall ? "animate-pulse" : ""} ${isCollapsed || isBookCall ? "mx-auto" : ""}`} />
+                      <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive || isBookCall || isFlexReport ? "animate-pulse" : ""} ${isCollapsed || isBookCall || isFlexReport ? "mx-auto" : ""}`} />
                       {!isCollapsed && (
-                        <span className={`flex items-center ${isBookCall ? "justify-center w-full" : "justify-between w-full pr-1"}`}>
+                        <span className={`flex items-center ${isBookCall || isFlexReport ? "justify-center w-full" : "justify-between w-full pr-1"}`}>
                           <span>{section.title}</span>
                           {section.id === "referrals" && (
                             <Badge 
