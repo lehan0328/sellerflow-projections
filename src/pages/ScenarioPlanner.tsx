@@ -484,7 +484,7 @@ export default function ScenarioPlanner() {
               </div>
 
               <div>
-                <Label htmlFor="credit-target">Target Credit Utilization: {creditUtilizationTarget}%</Label>
+                <Label htmlFor="credit-target">Target Cash Reserve: {creditUtilizationTarget}%</Label>
                 <Slider
                   id="credit-target"
                   value={[creditUtilizationTarget]}
