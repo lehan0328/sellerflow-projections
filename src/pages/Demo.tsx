@@ -15,7 +15,6 @@ import Analytics from "@/pages/Analytics";
 import DocumentStorage from "@/pages/DocumentStorage";
 import Support from "@/pages/Support";
 import { ReferralDashboardContent } from "@/components/ReferralDashboardContent";
-import { FloatingMenu } from "@/components/cash-flow/floating-menu";
 import { addDays } from "date-fns";
 
 // Mock data for demo
@@ -184,7 +183,7 @@ const Demo = () => {
           <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
             <div className="flex items-center min-h-[120px] px-6">
               <SidebarTrigger className="mr-4 self-start mt-6" />
-              <DashboardHeader />
+              <DashboardHeader isDemo={true} />
             </div>
           </div>
           
@@ -192,11 +191,7 @@ const Demo = () => {
             {renderSection()}
           </div>
 
-          <FloatingMenu
-            onAddPurchaseOrder={() => {}}
-            onAddIncome={() => {}}
-            onAddRecurringIncome={() => {}}
-          />
+          {/* FloatingMenu removed from demo - no adding transactions */}
         </div>
       </div>
     </SidebarProvider>
