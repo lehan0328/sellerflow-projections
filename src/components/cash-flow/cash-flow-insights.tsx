@@ -451,19 +451,12 @@ export const CashFlowInsights = ({
                       ${safeSpendingLimit.toLocaleString()}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground mb-2">
                     This is what you can safely spend without risking shortfalls
                   </p>
-                  {safeSpendingLimit < 0 && (
-                    <div className="flex items-start gap-2 mt-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs">
-                      <AlertCircle className="h-3 w-3 text-red-600 flex-shrink-0 mt-0.5" />
-                      <p className="text-red-700 dark:text-red-400">
-                        Warning: Your upcoming expenses exceed available funds. Consider reducing spending or increasing reserves.
-                      </p>
-                    </div>
-                  )}
-                  {safeSpendingAvailableDate && (
-                    <div className="flex items-center justify-between mt-2 p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
+                  
+                  {safeSpendingAvailableDate && safeSpendingLimit > 0 && (
+                    <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
                       <span className="text-xs text-muted-foreground">Earliest Purchase Date:</span>
                       <span className="text-sm font-semibold text-green-600">
                         {(() => {
@@ -471,10 +464,20 @@ export const CashFlowInsights = ({
                           const date = new Date(year, month - 1, day);
                           return date.toLocaleDateString('en-US', {
                             month: 'short',
-                            day: 'numeric'
+                            day: 'numeric',
+                            year: 'numeric'
                           });
                         })()}
                       </span>
+                    </div>
+                  )}
+                  
+                  {safeSpendingLimit < 0 && (
+                    <div className="flex items-start gap-2 mt-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs">
+                      <AlertCircle className="h-3 w-3 text-red-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-red-700 dark:text-red-400">
+                        Warning: Your upcoming expenses exceed available funds. Consider reducing spending or increasing reserves.
+                      </p>
                     </div>
                   )}
                 </div>

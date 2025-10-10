@@ -178,6 +178,16 @@ export const useSafeSpending = () => {
         // Add all inflows for this day (skip sales_orders without status=completed as they're pending)
         transactionsResult.data?.forEach((tx) => {
           const txDate = parseLocalDate(tx.due_date || tx.transaction_date);
+          
+          // Skip overdue transactions (past due date but not completed)
+          const isOverdue = txDate.getTime() < today.getTime() && tx.status !== 'completed' && tx.status !== 'paid';
+          if (isOverdue) {
+            if (isKeyDate) {
+              console.log(`  ⏭️ SKIPPING overdue transaction: ${tx.type} $${tx.amount} (due: ${formatDate(txDate)}, status: ${tx.status})`);
+            }
+            return;
+          }
+          
           if (txDate.getTime() === targetDate.getTime() && tx.status !== 'partially_paid') {
             if (tx.type === 'sales_order' || tx.type === 'customer_payment') {
               // Only count completed sales orders, not pending ones (they should be in income table)
