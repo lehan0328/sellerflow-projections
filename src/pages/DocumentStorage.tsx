@@ -89,13 +89,13 @@ export default function DocumentStorage() {
 
       // Merge storage files with metadata
       return files.map(file => {
-        const meta = metadata?.find(m => m.file_name === file.name);
+        const meta = metadata?.find(m => m.file_name === file.name) as any;
         return {
           ...file,
           vendor_id: meta?.vendor_id,
           vendor_name: meta?.vendor?.name,
           notes: meta?.notes,
-          document_date: meta?.document_date,
+          document_date: meta?.document_date || file.created_at,
           display_name: meta?.display_name || file.name
         } as StoredDocument;
       });
