@@ -1,4 +1,4 @@
-import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw, CheckCircle } from "lucide-react";
+import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw, CheckCircle, ShoppingCart } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useSafeSpending } from "@/hooks/useSafeSpending";
+import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 
 interface OverviewStatsProps {
   totalCash?: number;
@@ -43,6 +44,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
   const { data: safeSpendingData, isLoading: isLoadingSafeSpending, updateReserveAmount, refetch: refetchSafeSpending } = useSafeSpending();
+  const { amazonPayouts, totalUpcoming: amazonTotalUpcoming } = useAmazonPayouts();
   const [reserveInput, setReserveInput] = useState<string>("");
   
   // Force fresh calculation on mount
@@ -198,7 +200,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const isBreach = Boolean(displayNegative || displayBelow);
 
   return (<>
-      <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
@@ -305,6 +307,18 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               </p>
             </div>
             <Calendar className="h-8 w-8 text-amber-500" />
+          </div>
+        </div>
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm text-slate-600">Amazon Revenue</p>
+              <p className="text-2xl font-bold text-orange-700">{formatCurrency(amazonTotalUpcoming)}</p>
+              <p className="text-sm text-slate-600">
+                {amazonPayouts.length > 0 ? `${amazonPayouts.length} upcoming payouts` : "No upcoming payouts"}
+              </p>
+            </div>
+            <ShoppingCart className="h-8 w-8 text-orange-500" />
           </div>
         </div>
       </div>
