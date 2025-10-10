@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2 } from "lucide-react";
+import { Home, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
@@ -30,6 +30,7 @@ const sections = [
   { id: "financials", title: "Financials", icon: Wallet },
   { id: "recurring", title: "Recurring Expenses", icon: Repeat },
   { id: "amazon", title: "Amazon Payouts", icon: ShoppingCart },
+  { id: "ai-forecast", title: "AI Forecast", icon: Brain, isRoute: true, url: "/ai-forecast" },
   { id: "scenario-planning", title: "Scenario Planning", icon: Calculator },
   { id: "analytics", title: "Analytics", icon: BarChart3 },
   { id: "document-storage", title: "Document Storage", icon: FolderOpen },
@@ -71,6 +72,7 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }
                 const Icon = section.icon;
                 const isActive = activeSection === section.id;
                 const isExternal = 'isExternal' in section && section.isExternal;
+                const isRoute = 'isRoute' in section && section.isRoute;
                 const isBookCall = section.id === "book-call";
                 const isFlexReport = 'isFlexReport' in section && section.isFlexReport;
                 
@@ -84,6 +86,8 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }
                         onClick={() => {
                           if (isFlexReport && onFlexReportClick) {
                             onFlexReportClick();
+                          } else if (isRoute && 'url' in section) {
+                            window.location.href = section.url;
                           } else if (isExternal && 'url' in section) {
                             window.open(section.url, '_blank', 'noopener,noreferrer');
                           } else {

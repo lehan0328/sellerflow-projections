@@ -13,6 +13,7 @@ import TransactionLog from "./pages/TransactionLog";
 import BankTransactions from "./pages/BankTransactions";
 import Analytics from "./pages/Analytics";
 import ScenarioPlanner from "./pages/ScenarioPlanner";
+import AmazonForecast from "./pages/AmazonForecast";
 import ScheduleDemo from "./pages/ScheduleDemo";
 import OAuthRedirect from "./pages/OAuthRedirect";
 import NotFound from "./pages/NotFound";
@@ -146,6 +147,11 @@ const App = () => (
             <Route path="/scenario-planner" element={
               <ProtectedRoute>
                 <ScenarioPlanner />
+              </ProtectedRoute>
+            } />
+            <Route path="/ai-forecast" element={
+              <ProtectedRoute>
+                <AmazonForecast />
               </ProtectedRoute>
             } />
             <Route path="/schedule-demo" element={
