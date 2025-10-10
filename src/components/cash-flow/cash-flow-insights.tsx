@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useNavigate } from "react-router-dom";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 interface CashFlowInsightsProps {
   currentBalance: number;
   dailyInflow: number;
@@ -63,6 +65,7 @@ export const CashFlowInsights = ({
   const [chatLoading, setChatLoading] = useState(false);
   const [isEditingReserve, setIsEditingReserve] = useState(false);
   const [editReserveValue, setEditReserveValue] = useState(reserveAmount.toString());
+  const [includeForecastPayouts, setIncludeForecastPayouts] = useState(true);
   const [conversationHistory, setConversationHistory] = useState<Array<{
     role: 'user' | 'assistant';
     content: string;
@@ -203,7 +206,17 @@ export const CashFlowInsights = ({
             <Sparkles className="h-5 w-5 text-primary" />
             AI Insights
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="forecast-payouts"
+                checked={includeForecastPayouts}
+                onCheckedChange={setIncludeForecastPayouts}
+              />
+              <Label htmlFor="forecast-payouts" className="text-xs cursor-pointer">
+                Forecast Payouts
+              </Label>
+            </div>
             <Button variant={chatMode ? "default" : "ghost"} size="sm" onClick={() => setChatMode(!chatMode)}>
               <MessageCircle className="h-4 w-4 mr-1" />
               {chatMode ? "Back" : "Chat"}
