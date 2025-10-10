@@ -345,6 +345,7 @@ export const CashFlowCalendar = ({
   };
 
   const getEventIcon = (event: CashFlowEvent) => {
+    if (event.source === 'Amazon-Forecasted') return <ShoppingBag className="h-3 w-3 text-purple-600" />;
     if (event.source === 'Amazon') return <ShoppingBag className="h-3 w-3" />;
     if (event.type === 'credit-payment') return <CreditCard className="h-3 w-3" />;
     if (event.type === 'purchase-order' || event.vendor) return <Building2 className="h-3 w-3" />;
