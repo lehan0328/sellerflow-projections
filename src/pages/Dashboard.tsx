@@ -20,6 +20,8 @@ import { TransactionsView } from "@/components/TransactionsView";
 import { useIncome } from "@/hooks/useIncome";
 import ScenarioPlanner from "@/pages/ScenarioPlanner";
 import Analytics from "@/pages/Analytics";
+import DocumentStorage from "@/pages/DocumentStorage";
+import Support from "@/pages/Support";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useToast } from "@/hooks/use-toast";
@@ -1215,6 +1217,12 @@ const Dashboard = () => {
       
       case "analytics":
         return <Analytics />;
+      
+      case "document-storage":
+        return <DocumentStorage />;
+      
+      case "support":
+        return <Support />;
       
       case "referrals":
         return <ReferralDashboardContent />;
