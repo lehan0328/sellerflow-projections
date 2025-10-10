@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, ShoppingCart, Info } from "lucide-react";
+import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, ShoppingCart, Info, History } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAuth } from "@/hooks/useAuth";
+import { AmazonTransactionHistory } from "./amazon-transaction-history";
 interface CashFlowInsightsProps {
   currentBalance: number;
   dailyInflow: number;
@@ -75,6 +77,8 @@ export const CashFlowInsights = ({
   const [editReserveValue, setEditReserveValue] = useState(reserveAmount.toString());
   const [includeForecastPayouts, setIncludeForecastPayouts] = useState(includeForecastPayoutsProp);
   const [isForecastGenerating, setIsForecastGenerating] = useState(false);
+  const [showTransactionHistory, setShowTransactionHistory] = useState(false);
+  const [showForecastConfirm, setShowForecastConfirm] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<Array<{
     role: 'user' | 'assistant';
     content: string;
@@ -96,7 +100,18 @@ export const CashFlowInsights = ({
     setIncludeForecastPayouts(includeForecastPayoutsProp);
   }, [includeForecastPayoutsProp]);
 
-  // Handle toggle change and notify parent
+  // Handle toggle change with confirmation
+  const handleToggleRequest = (checked: boolean) => {
+    if (checked && !includeForecastPayouts) {
+      // Show confirmation when enabling
+      setShowForecastConfirm(true);
+    } else {
+      // Directly disable without confirmation
+      handleToggleForecast(false);
+    }
+  };
+
+  // Actually toggle the forecast
   const handleToggleForecast = async (checked: boolean) => {
     setIncludeForecastPayouts(checked);
     onToggleForecastPayouts?.(checked);
@@ -311,17 +326,28 @@ export const CashFlowInsights = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        id="forecast-payouts"
-                        checked={includeForecastPayouts}
-                        onCheckedChange={handleToggleForecast}
-                        disabled={isForecastGenerating}
-                      />
-                      <Label htmlFor="forecast-payouts" className="text-xs cursor-pointer flex items-center gap-1">
-                        Forecast Payouts
-                        {isForecastGenerating && <Loader2 className="h-3 w-3 animate-spin" />}
-                      </Label>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id="forecast-payouts"
+                          checked={includeForecastPayouts}
+                          onCheckedChange={handleToggleRequest}
+                          disabled={isForecastGenerating}
+                        />
+                        <Label htmlFor="forecast-payouts" className="text-xs cursor-pointer flex items-center gap-1">
+                          ⭐ Forecast Payouts (AI)
+                          {isForecastGenerating && <Loader2 className="h-3 w-3 animate-spin" />}
+                        </Label>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowTransactionHistory(true)}
+                        className="h-7 text-xs"
+                      >
+                        <History className="h-3 w-3 mr-1" />
+                        View History
+                      </Button>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -616,6 +642,40 @@ export const CashFlowInsights = ({
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      {/* Amazon Transaction History Modal */}
+      <AmazonTransactionHistory 
+        open={showTransactionHistory}
+        onOpenChange={setShowTransactionHistory}
+      />
+
+      {/* Forecast Confirmation Dialog */}
+      <AlertDialog open={showForecastConfirm} onOpenChange={setShowForecastConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              ⭐ Enable AI Payout Forecasting?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                This will analyze your historical Amazon transaction data to predict future payouts and include them in your cash flow projections.
+              </p>
+              <p className="text-sm font-medium">
+                The AI will generate forecasts for the next 90 days based on your payout patterns.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              handleToggleForecast(true);
+              setShowForecastConfirm(false);
+            }}>
+              Generate Forecasts
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* All Credit Cards Modal */}
       <Dialog open={showAllCreditCards} onOpenChange={setShowAllCreditCards}>

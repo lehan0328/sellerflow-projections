@@ -1,0 +1,67 @@
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "./useAuth";
+
+export interface AmazonTransaction {
+  id: string;
+  user_id: string;
+  amazon_account_id: string;
+  transaction_id: string;
+  transaction_type: string;
+  transaction_date: string;
+  amount: number;
+  currency_code: string;
+  settlement_id: string | null;
+  order_id: string | null;
+  sku: string | null;
+  marketplace_name: string | null;
+  description: string | null;
+  fee_description: string | null;
+  fee_type: string | null;
+  raw_data: any;
+  created_at: string;
+  updated_at: string;
+}
+
+export const useAmazonTransactions = () => {
+  const { user } = useAuth();
+  const [amazonTransactions, setAmazonTransactions] = useState<AmazonTransaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchAmazonTransactions = async () => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("amazon_transactions")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("transaction_date", { ascending: false })
+        .limit(100);
+
+      if (error) {
+        console.error("Error fetching Amazon transactions:", error);
+        return;
+      }
+
+      setAmazonTransactions(data || []);
+    } catch (error) {
+      console.error("Error fetching Amazon transactions:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAmazonTransactions();
+  }, [user]);
+
+  return {
+    amazonTransactions,
+    isLoading,
+    refetch: fetchAmazonTransactions
+  };
+};
