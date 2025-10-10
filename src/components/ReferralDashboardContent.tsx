@@ -20,7 +20,11 @@ const REWARD_TIERS = [
   { referrals: 100, discount: 0, bonus: 3000, duration: 6, special: "Free for 6 months" },
 ];
 
-export function ReferralDashboardContent() {
+interface ReferralDashboardContentProps {
+  isDemo?: boolean;
+}
+
+export function ReferralDashboardContent({ isDemo = false }: ReferralDashboardContentProps) {
   const { loading, referralCode, referrals, rewards, copyReferralLink, createReferralCode } = useReferrals();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -210,7 +214,7 @@ export function ReferralDashboardContent() {
             <>
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1 p-6 bg-gradient-to-r from-primary/20 to-accent/20 backdrop-blur rounded-lg border-2 border-primary/40 flex items-center justify-center">
-                  <span className="font-mono text-4xl font-bold tracking-wider text-primary">
+                  <span className={`font-mono text-4xl font-bold tracking-wider text-primary ${isDemo ? 'blur-sm' : ''}`}>
                     {referralCode}
                   </span>
                 </div>

@@ -161,7 +161,7 @@ const Demo = () => {
         return <Support />;
       
       case "referrals":
-        return <ReferralDashboardContent />;
+        return <ReferralDashboardContent isDemo={true} />;
       
       default:
         return null;
