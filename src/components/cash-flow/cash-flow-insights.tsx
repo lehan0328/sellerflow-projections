@@ -126,9 +126,22 @@ export const CashFlowInsights = ({
       const forecastedPayouts = amazonPayouts.filter(p => p.status === 'forecasted');
       const confirmedPayouts = amazonPayouts.filter(p => p.status !== 'forecasted');
       
-      // Only generate if we have confirmed payouts but no forecasts
-      if (confirmedPayouts.length >= 3 && forecastedPayouts.length === 0 && !isForecastGenerating) {
+      console.log('🔍 Forecast check:', { 
+        includeForecastPayouts,
+        confirmedCount: confirmedPayouts.length, 
+        forecastCount: forecastedPayouts.length,
+        isGenerating: isForecastGenerating 
+      });
+      
+      // Only generate if we have at least 1 payout but no forecasts (demo mode - reduced threshold)
+      if (confirmedPayouts.length >= 1 && forecastedPayouts.length === 0 && !isForecastGenerating) {
+        console.log('🚀 Starting forecast generation...');
         setIsForecastGenerating(true);
+        toast({
+          title: "Generating forecast",
+          description: "Analyzing your Amazon payouts..."
+        });
+        
         try {
           const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts', {
             body: { userId: user.id }
@@ -136,15 +149,33 @@ export const CashFlowInsights = ({
           
           if (error) {
             console.error('Forecast generation error:', error);
+            toast({
+              title: "Forecast failed",
+              description: error.message || "Unable to generate forecast",
+              variant: "destructive"
+            });
           } else if (data?.success) {
-            console.log('✅ Amazon payouts forecasted - safe spending will auto-recalculate');
+            console.log('✅ Amazon payouts forecasted successfully');
+            toast({
+              title: "Forecast complete!",
+              description: `Generated ${data.forecast?.predictions?.length || 0} future payouts`
+            });
             await refetchPayouts();
           }
         } catch (err) {
           console.error('Failed to generate forecasts:', err);
+          toast({
+            title: "Forecast error",
+            description: "Please try again",
+            variant: "destructive"
+          });
         } finally {
           setIsForecastGenerating(false);
         }
+      } else if (forecastedPayouts.length > 0) {
+        console.log('📊 Forecasts already exist, showing them');
+      } else if (confirmedPayouts.length < 1) {
+        console.log('⚠️ Not enough payouts to generate forecast');
       }
     };
 
