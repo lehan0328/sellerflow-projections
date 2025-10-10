@@ -584,8 +584,8 @@ export const PurchaseOrderForm = ({
                 </div>
               </RadioGroup>
 
-              {/* Payment Due Date Display */}
-              {(() => {
+              {/* Payment Due Date Display - for non net-terms payment types */}
+              {formData.paymentType !== "net-terms" && (() => {
               const calculatedDueDate = calculateDueDate();
               if (calculatedDueDate) {
                 return <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
@@ -634,6 +634,22 @@ export const PurchaseOrderForm = ({
                 ...prev,
                 customDays: e.target.value
               }))} />}
+                  
+                  {/* Payment Due Date Display for Net Terms */}
+                  {(() => {
+                    const calculatedDueDate = calculateDueDate();
+                    if (calculatedDueDate) {
+                      return <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Payment Due Date:</span>
+                          <span className="text-sm font-semibold text-accent-foreground">
+                            {format(calculatedDueDate, "PPP")}
+                          </span>
+                        </div>
+                      </div>;
+                    }
+                    return null;
+                  })()}
                 </div>}
 
               {/* Delivery Date for Due Upon Delivery */}
