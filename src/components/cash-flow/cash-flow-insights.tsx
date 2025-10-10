@@ -285,8 +285,11 @@ export const CashFlowInsights = ({
           tx.type === 'purchase_order'
         );
 
-        if (cardTransactions.length === 0) {
-          // No pending orders, so current available credit is the only opportunity
+        // Check if card has a statement balance payment due
+        const hasStatementPayment = card.statement_balance && card.statement_balance > 0 && card.payment_due_date;
+
+        if (cardTransactions.length === 0 && !hasStatementPayment) {
+          // No pending orders or payments, so current available credit is the only opportunity
           opportunitiesMap[card.id] = [{
             date: today.toISOString().split('T')[0],
             availableCredit: card.available_credit
@@ -317,6 +320,16 @@ export const CashFlowInsights = ({
               dayChange += Number(tx.amount); // Credit freed up
             }
           });
+
+          // Check if statement balance payment happens on this date (frees up credit)
+          if (card.payment_due_date && card.statement_balance) {
+            const paymentDueDate = new Date(card.payment_due_date);
+            paymentDueDate.setHours(0, 0, 0, 0);
+
+            if (paymentDueDate >= today && paymentDueDate.toISOString().split('T')[0] === dateStr) {
+              dayChange += Number(card.statement_balance); // Credit freed up by statement payment
+            }
+          }
 
           runningCredit += dayChange;
           dailyCredit.push({ date: dateStr, credit: runningCredit });
@@ -821,11 +834,15 @@ export const CashFlowInsights = ({
                 </div>
               </div>
               
-              {creditCards.map((card) => {
+              {[...creditCards].sort((a, b) => (a.priority || 3) - (b.priority || 3)).map((card) => {
                 const pendingOrders = pendingOrdersByCard[card.id] || 0;
                 const currentAvailableSpend = card.available_credit - pendingOrders;
                 const opportunities = cardOpportunities[card.id] || [];
                 const isOverLimit = currentAvailableSpend < 0;
+                
+                // Priority mapping: 1 = High, 2 = Medium, 3 = Low
+                const priorityLabel = card.priority === 1 ? 'High' : card.priority === 2 ? 'Medium' : 'Low';
+                const priorityColor = card.priority === 1 ? 'text-green-600' : card.priority === 2 ? 'text-blue-600' : 'text-gray-600';
                 
                 return (
                   <div key={card.id} className={`p-4 rounded-lg space-y-3 ${isOverLimit ? 'bg-red-50 dark:bg-red-950/20 border-2 border-red-500' : 'bg-muted/50 border border-border'}`}>
@@ -833,6 +850,9 @@ export const CashFlowInsights = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <p className="font-semibold text-sm truncate">{card.account_name}</p>
+                          <span className={`text-xs font-medium ${priorityColor}`}>
+                            {priorityLabel} Priority
+                          </span>
                           {isOverLimit && <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />}
                         </div>
                         <p className="text-xs text-muted-foreground truncate">{card.institution_name}</p>
