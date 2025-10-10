@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Video } from "lucide-react";
@@ -7,7 +8,14 @@ export default function ScheduleDemo() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex flex-col items-center p-6">
+    <>
+      <Helmet>
+        <title>Schedule Demo - Amazon Cash Flow Management Software | Auren</title>
+        <meta name="description" content="Book a free demo of Auren's amazon cashflow software. See how our marketplace cash flow management tools can help your business." />
+        <meta name="keywords" content="amazon cashflow software demo, marketplace cash flow management demo, cashflow forecasting demo" />
+        <link rel="canonical" href="https://aurenapp.com/schedule-demo" />
+      </Helmet>
+      <div className="min-h-screen flex flex-col items-center p-6">
       <div className="w-full max-w-5xl space-y-6">
         <Button
           variant="ghost"
@@ -71,6 +79,7 @@ export default function ScheduleDemo() {
           </CardContent>
         </Card>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Helmet } from "react-helmet";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -199,6 +200,12 @@ const Contact = () => {
 
   return (
     <PublicLayout>
+      <Helmet>
+        <title>Contact Amazon Cashflow Software Support | Auren</title>
+        <meta name="description" content="Get help with Auren amazon cashflow management software. Contact our support team for questions about marketplace cash flow management features and pricing." />
+        <meta name="keywords" content="amazon cashflow software support, marketplace cash flow management help, cashflow management customer service" />
+        <link rel="canonical" href="https://aurenapp.com/contact" />
+      </Helmet>
       <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90 animate-fade-in">
         <div className="container mx-auto p-6 space-y-6">
           {/* Header */}

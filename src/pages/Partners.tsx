@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Gift, DollarSign, Users, TrendingUp, Sun, Moon, Lock } from "lucide-react";
@@ -10,7 +11,14 @@ export default function Partners() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <Helmet>
+        <title>Partner Program - Amazon Cashflow Software Referrals | Auren</title>
+        <meta name="description" content="Join the Auren partner program and earn commissions referring amazon cashflow management software. Help marketplace sellers with cash flow management tools." />
+        <meta name="keywords" content="amazon cashflow software affiliate, marketplace cash flow management partner, cashflow software referral program" />
+        <link rel="canonical" href="https://aurenapp.com/partners" />
+      </Helmet>
+      <div className="min-h-screen bg-background">
       {/* Navigation */}
       <nav className="border-b bg-background/60 backdrop-blur-xl sticky top-0 z-50 animate-fade-in">
         <div className="container mx-auto px-6 py-4">
@@ -515,5 +523,6 @@ export default function Partners() {
         </div>
       </footer>
     </div>
+    </>
   );
 }

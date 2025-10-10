@@ -47,56 +47,56 @@
   <!-- Blog Posts -->
   <url>
     <loc>https://aurenapp.com/blog/forecast-amazon-payouts</loc>
-    <lastmod>2025-10-08</lastmod>
+    <lastmod>2025-10-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://aurenapp.com/blog/manage-cashflow</loc>
-    <lastmod>2025-10-08</lastmod>
+    <lastmod>2025-10-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://aurenapp.com/blog/best-cashflow-tools</loc>
-    <lastmod>2025-10-08</lastmod>
+    <lastmod>2025-10-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://aurenapp.com/blog/financing-growth</loc>
-    <lastmod>2025-10-08</lastmod>
+    <lastmod>2025-10-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://aurenapp.com/blog/inventory-turnover-cashflow</loc>
-    <lastmod>2025-10-08</lastmod>
+    <lastmod>2025-10-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://aurenapp.com/blog/predict-amazon-payouts</loc>
-    <lastmod>2025-10-08</lastmod>
+    <lastmod>2025-10-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://aurenapp.com/blog/scaling-to-seven-figures</loc>
-    <lastmod>2025-10-08</lastmod>
+    <lastmod>2025-10-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://aurenapp.com/blog/seller-funding-forecast</loc>
-    <lastmod>2025-10-08</lastmod>
+    <lastmod>2025-10-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -104,44 +104,73 @@
   <!-- Documentation -->
   <url>
     <loc>https://aurenapp.com/docs</loc>
-    <lastmod>2025-10-08</lastmod>
+    <lastmod>2025-10-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
     <loc>https://aurenapp.com/docs/getting-started</loc>
-    <lastmod>2025-10-08</lastmod>
+    <lastmod>2025-10-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
     <loc>https://aurenapp.com/docs/faq</loc>
-    <lastmod>2025-10-08</lastmod>
+    <lastmod>2025-10-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
     <loc>https://aurenapp.com/docs/amazon-integration</loc>
-    <lastmod>2025-10-08</lastmod>
+    <lastmod>2025-10-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
+  </url>
+
+  <!-- Additional Pages -->
+  <url>
+    <loc>https://aurenapp.com/contact</loc>
+    <lastmod>2025-10-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://aurenapp.com/partners</loc>
+    <lastmod>2025-10-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <url>
+    <loc>https://aurenapp.com/schedule-demo</loc>
+    <lastmod>2025-10-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
 
   <!-- Support -->
   <url>
     <loc>https://aurenapp.com/support</loc>
-    <lastmod>2025-10-08</lastmod>
+    <lastmod>2025-10-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
 
-  <!-- Privacy Policy -->
+  <!-- Legal Pages -->
+  <url>
+    <loc>https://aurenapp.com/terms</loc>
+    <lastmod>2025-10-10</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
   <url>
     <loc>https://aurenapp.com/privacy</loc>
-    <lastmod>2025-10-08</lastmod>
+    <lastmod>2025-10-10</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
