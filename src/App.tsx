@@ -88,6 +88,11 @@ const App = () => (
           <Route path="/blog/financing-growth" element={<FinancingGrowth />} />
           <Route path="/blog/tag/:tag" element={<BlogTag />} />
           <Route path="/partners" element={<Partners />} />
+          <Route path="/admin" element={
+            <ProtectedAdminRoute>
+              <Admin />
+            </ProtectedAdminRoute>
+          } />
           <Route path="/referral-dashboard" element={
             <ProtectedRoute>
               <ReferralDashboard />
