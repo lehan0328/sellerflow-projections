@@ -38,7 +38,7 @@ import { generateRecurringDates } from "@/lib/recurringDates";
 import { BankTransaction } from "@/components/cash-flow/bank-transaction-log";
 import { useTransactionMatching } from "@/hooks/useTransactionMatching";
 import { TransactionMatchNotification } from "@/components/cash-flow/transaction-match-notification";
-import { TransactionMatchingPanel } from "@/components/cash-flow/transaction-matching-panel";
+import { TransactionMatchButton } from "@/components/cash-flow/transaction-match-button";
 import { MatchReviewDialog } from "@/components/cash-flow/match-review-dialog";
 import { TransactionMatch } from "@/hooks/useTransactionMatching";
 
@@ -1177,13 +1177,49 @@ const Dashboard = () => {
             {/* Transaction Match Notification */}
             <TransactionMatchNotification unmatchedCount={unmatchedTransactionsCount} />
             
-            {/* Transaction Matching Panel */}
-            <TransactionMatchingPanel 
-              matches={matches}
-              onAcceptMatch={(match) => {
-                setMatchReviewDialog({ open: true, match });
-              }}
-            />
+            {/* Transaction Match Button */}
+            <div className="flex justify-end mb-4">
+              <TransactionMatchButton 
+                matches={matches}
+                onMatchAll={async () => {
+                  // Match all transactions instantly
+                  for (const match of matches) {
+                    if (match.type === 'income' && match.matchedIncome) {
+                      await updateIncome(match.matchedIncome.id, { status: 'received' });
+                      await addTransaction({
+                        type: 'customer_payment',
+                        amount: match.matchedIncome.amount,
+                        description: `Auto-matched: ${match.matchedIncome.source} - ${match.matchedIncome.description}`,
+                        customerId: match.matchedIncome.customerId,
+                        transactionDate: new Date(),
+                        status: 'completed'
+                      });
+                    } else if (match.type === 'vendor' && match.matchedVendor) {
+                      await updateVendor(match.matchedVendor.id, {
+                        totalOwed: Math.max(0, match.matchedVendor.totalOwed - Math.abs(match.bankTransaction.amount))
+                      });
+                      await addTransaction({
+                        type: 'vendor_payment',
+                        amount: Math.abs(match.bankTransaction.amount),
+                        description: `Auto-matched: Payment to ${match.matchedVendor.name}`,
+                        vendorId: match.matchedVendor.id,
+                        transactionDate: new Date(),
+                        status: 'completed'
+                      });
+                    }
+                  }
+                  
+                  toast({
+                    title: 'All matches completed',
+                    description: `${matches.length} transactions have been automatically matched.`,
+                  });
+                  
+                  refetchIncome();
+                  refetchVendors();
+                }}
+                onReviewMatches={() => navigate("/bank-transactions")}
+              />
+            </div>
             
             {/* Row 1: Cash Flow Calendar and AI Insights (Side by Side) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[700px]">
