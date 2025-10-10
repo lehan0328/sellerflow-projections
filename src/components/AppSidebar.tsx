@@ -39,19 +39,19 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
   return (
     <Sidebar className={isCollapsed ? "w-16" : "w-64"} collapsible="icon">
       <SidebarHeader className="border-b border-border/50 py-4">
-        <div className="flex items-center justify-center gap-2 px-2">
-          <img 
-            src={aurenIcon} 
-            alt="Auren" 
-            className={`object-contain ${isCollapsed ? "h-10 w-10" : "h-8 w-8"}`}
-            style={{ imageRendering: 'crisp-edges' }}
-          />
-          {!isCollapsed && (
+        {!isCollapsed && (
+          <div className="flex items-center justify-center gap-2 px-2">
+            <img 
+              src={aurenIcon} 
+              alt="Auren" 
+              className="h-8 w-8 object-contain"
+              style={{ imageRendering: 'crisp-edges' }}
+            />
             <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               Auren
             </span>
-          )}
-        </div>
+          </div>
+        )}
       </SidebarHeader>
       <SidebarContent className={isCollapsed ? "px-0" : "px-1"}>
         <SidebarGroup>
