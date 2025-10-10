@@ -31,13 +31,13 @@ export const TransactionMatchButton = ({
       <DropdownMenuTrigger asChild>
         <Button 
           variant={matchCount > 0 ? "default" : "outline"}
-          size="lg"
+          size="sm"
           className={matchCount > 0 
-            ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all relative"
-            : "hover:bg-accent transition-all"
+            ? "w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all relative"
+            : "w-full hover:bg-accent transition-all"
           }
         >
-          <Link2 className={`h-5 w-5 mr-2 ${matchCount > 0 ? 'animate-pulse' : ''}`} />
+          <Link2 className={`h-4 w-4 mr-2 ${matchCount > 0 ? 'animate-pulse' : ''}`} />
           <span className="font-semibold">Match Transactions</span>
           {matchCount > 0 && (
             <Badge 
