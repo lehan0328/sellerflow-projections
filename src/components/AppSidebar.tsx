@@ -35,13 +35,13 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
 
   return (
     <Sidebar className={isCollapsed ? "w-14" : "w-64"} collapsible="icon">
-      <SidebarContent className="px-2">
+      <SidebarContent className="px-1">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-3 py-2">
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-2">
             Dashboard
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-1 px-1">
               {sections.map((section) => {
                 const Icon = section.icon;
                 const isActive = activeSection === section.id;
@@ -59,7 +59,7 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
                     >
                       <Icon className={`h-4 w-4 ${isActive ? "animate-pulse" : ""}`} />
                       {!isCollapsed && (
-                        <span className="flex items-center justify-between w-full">
+                        <span className="flex items-center justify-between w-full pr-1">
                           <span>{section.title}</span>
                           {section.id === "referrals" && (
                             <Badge 
