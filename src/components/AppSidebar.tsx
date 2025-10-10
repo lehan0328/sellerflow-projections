@@ -23,8 +23,7 @@ interface AppSidebarProps {
 const sections = [
   { id: "overview", title: "Overview", icon: Home },
   { id: "transactions", title: "Transactions", icon: TrendingUp },
-  { id: "bank-accounts", title: "Bank Accounts", icon: Wallet },
-  { id: "credit-cards", title: "Credit Cards", icon: CreditCard },
+  { id: "financials", title: "Financials", icon: Wallet },
   { id: "recurring", title: "Recurring Expenses", icon: Repeat },
   { id: "amazon", title: "Amazon Payouts", icon: ShoppingCart },
   { id: "scenario-planning", title: "Scenario Planning", icon: Calculator },

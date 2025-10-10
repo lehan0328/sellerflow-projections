@@ -57,6 +57,7 @@ interface CashFlowEvent {
 const Dashboard = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("overview");
+  const [financialsView, setFinancialsView] = useState<"bank-accounts" | "credit-cards">("bank-accounts");
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
@@ -1200,11 +1201,37 @@ const Dashboard = () => {
           />
         );
       
-      case "bank-accounts":
-        return <BankAccounts />;
-      
-      case "credit-cards":
-        return <CreditCards />;
+      case "financials":
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Financials</h2>
+              <div className="flex items-center gap-2 bg-muted rounded-lg p-1">
+                <button
+                  onClick={() => setFinancialsView("bank-accounts")}
+                  className={`px-4 py-2 rounded-md transition-all ${
+                    financialsView === "bank-accounts"
+                      ? "bg-background shadow-sm font-medium"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Bank Accounts
+                </button>
+                <button
+                  onClick={() => setFinancialsView("credit-cards")}
+                  className={`px-4 py-2 rounded-md transition-all ${
+                    financialsView === "credit-cards"
+                      ? "bg-background shadow-sm font-medium"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Credit Cards
+                </button>
+              </div>
+            </div>
+            {financialsView === "bank-accounts" ? <BankAccounts /> : <CreditCards />}
+          </div>
+        );
       
       case "recurring":
         return <RecurringExpensesOverview />;
