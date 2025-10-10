@@ -281,8 +281,13 @@ export default function DocumentStorage() {
       return;
     }
 
-    const url = URL.createObjectURL(data);
+    // Create blob with correct MIME type for PDFs
+    const blob = new Blob([data], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
+    
+    // Clean up the URL after a delay to ensure it opens first
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const filteredDocuments = documents?.filter(doc => {
