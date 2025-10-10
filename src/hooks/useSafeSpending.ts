@@ -473,7 +473,24 @@ export const useSafeSpending = () => {
       
       console.log(`\n✅ Found ${allBuyingOpportunities.length} total buying opportunities`);
       
-      const nextBuyingOpportunity = allBuyingOpportunities.length > 0 ? allBuyingOpportunities[0] : null;
+      // Filter out opportunities where a later opportunity has lower projected cash
+      // If opportunity 3 has less $ than opportunity 2, remove opportunity 2
+      const filteredOpportunities = allBuyingOpportunities.filter((opp, index) => {
+        // Check if any later opportunity has a lower balance
+        const hasLowerLaterOpportunity = allBuyingOpportunities
+          .slice(index + 1)
+          .some(laterOpp => laterOpp.balance < opp.balance);
+        
+        if (hasLowerLaterOpportunity) {
+          console.log(`🚫 Skipping opportunity #${index + 1} at ${opp.date} ($${opp.balance.toFixed(2)}) - later opportunity has lower balance`);
+          return false;
+        }
+        return true;
+      });
+      
+      console.log(`\n✅ After filtering: ${filteredOpportunities.length} valid buying opportunities`);
+      
+      const nextBuyingOpportunity = filteredOpportunities.length > 0 ? filteredOpportunities[0] : null;
       
       // Find earliest date when you can make purchases for safe spending
       // This is the first date from today UP TO the lowest point where you have enough buffer
@@ -492,9 +509,9 @@ export const useSafeSpending = () => {
       
       console.log('🎯 ALL BALANCES:', dailyBalances.slice(0, 20).map(d => `${d.date}: $${d.balance.toFixed(2)}`).join('\n'));
       
-      if (allBuyingOpportunities.length > 0) {
-        console.log('🛒 ALL BUYING OPPORTUNITIES:', allBuyingOpportunities.map(o => 
-          `${o.date}: $${o.balance.toFixed(2)} (available: ${o.available_date || 'N/A'})`
+      if (filteredOpportunities.length > 0) {
+        console.log('🛒 VALID BUYING OPPORTUNITIES:', filteredOpportunities.map((o, i) => 
+          `#${i + 1} ${o.date}: $${o.balance.toFixed(2)} (available: ${o.available_date || 'N/A'})`
         ).join(', '));
       }
       
@@ -548,7 +565,7 @@ export const useSafeSpending = () => {
           next_buying_opportunity_balance: nextBuyingOpportunity?.balance,
           next_buying_opportunity_date: nextBuyingOpportunity?.date,
           next_buying_opportunity_available_date: nextBuyingOpportunity?.available_date,
-          all_buying_opportunities: allBuyingOpportunities
+          all_buying_opportunities: filteredOpportunities
         }
       });
     } catch (err) {
