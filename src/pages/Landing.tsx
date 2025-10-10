@@ -1337,7 +1337,7 @@ const Landing = () => {
                           </div>
                           {isYearly && plan.savings && (
                             <p className="text-xs text-muted-foreground">
-                              Billed annually
+                              Billed annually at {plan.yearlyPrice === "$24" ? "$290" : plan.yearlyPrice === "$49" ? "$590" : plan.yearlyPrice === "$74" ? "$890" : ""}/yr
                             </p>
                           )}
                           {isYearly && plan.savings && <Badge variant="secondary" className="text-xs py-0.5 px-2">
