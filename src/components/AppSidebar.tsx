@@ -34,14 +34,14 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
   const isCollapsed = state === "collapsed";
 
   return (
-    <Sidebar className={isCollapsed ? "w-14" : "w-64"} collapsible="icon">
-      <SidebarContent className="px-1">
+    <Sidebar className={isCollapsed ? "w-16" : "w-64"} collapsible="icon">
+      <SidebarContent className={isCollapsed ? "px-0" : "px-1"}>
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-2">
             Dashboard
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1 px-1">
+            <SidebarMenu className={`space-y-1 ${isCollapsed ? "px-0" : "px-1"}`}>
               {sections.map((section) => {
                 const Icon = section.icon;
                 const isActive = activeSection === section.id;
@@ -50,14 +50,15 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
                     <SidebarMenuButton
                       onClick={() => onSectionChange(section.id)}
                       className={`
-                        relative rounded-lg transition-all duration-200 
+                        relative rounded-lg transition-all duration-200
+                        ${isCollapsed ? "justify-center" : ""}
                         ${isActive 
                           ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" 
                           : "hover:bg-accent/50 hover:translate-x-1"
                         }
                       `}
                     >
-                      <Icon className={`h-4 w-4 ${isActive ? "animate-pulse" : ""}`} />
+                      <Icon className={`h-4 w-4 ${isActive ? "animate-pulse" : ""} ${isCollapsed ? "mx-auto" : ""}`} />
                       {!isCollapsed && (
                         <span className="flex items-center justify-between w-full pr-1">
                           <span>{section.title}</span>
