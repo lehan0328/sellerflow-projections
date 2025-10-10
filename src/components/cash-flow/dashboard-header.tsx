@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { useSidebar } from "@/components/ui/sidebar";
 
 interface DashboardHeaderProps {
   onRefresh?: () => void;
@@ -17,6 +18,8 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ onRefresh, isRefreshing = false, lastRefreshTime }: DashboardHeaderProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { state } = useSidebar();
+  const isSidebarCollapsed = state === "collapsed";
   
   // Fetch user profile for display name
   const { data: profile } = useQuery({
@@ -51,12 +54,17 @@ export function DashboardHeader({ onRefresh, isRefreshing = false, lastRefreshTi
 
   return (
     <div className="relative w-full">
-      {/* Logo - Top Left */}
-      <div className="absolute top-6 left-6 z-40">
-        <div className="flex items-center">
-          <img src={aurenIcon} alt="Auren" className="h-14 w-auto" />
+      {/* Logo - Top Left - Only show when sidebar is collapsed */}
+      {isSidebarCollapsed && (
+        <div className="absolute top-6 left-6 z-40">
+          <div className="flex flex-col items-center">
+            <img src={aurenIcon} alt="Auren" className="h-14 w-auto mb-1" />
+            <span className="text-sm font-bold bg-gradient-primary bg-clip-text text-transparent">
+              Auren
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Navigation and User Menu - Top Right */}
       <div className="absolute top-6 right-6 z-40 flex items-center space-x-3">
