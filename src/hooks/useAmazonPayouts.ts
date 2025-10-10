@@ -10,7 +10,7 @@ export interface AmazonPayout {
   payout_date: string;
   total_amount: number;
   currency_code: string;
-  status: "confirmed" | "estimated" | "processing";
+  status: "confirmed" | "estimated" | "processing" | "forecasted";
   payout_type: "bi-weekly" | "reserve-release" | "adjustment";
   marketplace_name: string;
   transaction_count: number;
@@ -58,7 +58,7 @@ export const useAmazonPayouts = () => {
 
       setAmazonPayouts((data || []).map(payout => ({
         ...payout,
-        status: payout.status as "confirmed" | "estimated" | "processing",
+        status: payout.status as "confirmed" | "estimated" | "processing" | "forecasted",
         payout_type: payout.payout_type as "bi-weekly" | "reserve-release" | "adjustment"
       })));
     } catch (error) {
