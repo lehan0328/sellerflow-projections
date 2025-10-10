@@ -58,16 +58,9 @@ export default function ScenarioPlanner() {
   const [expenseAdjustment, setExpenseAdjustment] = useState(0);
   const [expenseAdjustmentType, setExpenseAdjustmentType] = useState<'percentage' | 'absolute'>('percentage');
   const [creditUtilizationTarget, setCreditUtilizationTarget] = useState(30);
-  const [projectionPeriod, setProjectionPeriod] = useState<string>('3m'); // '1w', '2w', '3w', '1m', '2m', etc.
   
-  // Helper to convert projection period to weeks for calculations
-  const getProjectionWeeks = (period: string): number => {
-    if (period.endsWith('w')) return parseInt(period);
-    if (period.endsWith('m')) return parseInt(period) * 4;
-    return 4; // default to 1 month
-  };
-  
-  const projectionMonths = getProjectionWeeks(projectionPeriod) / 4;
+  // Fixed 3-month projection
+  const projectionMonths = 3;
 
   // Calculate baseline metrics based on actual cash and historical data
   const baselineMetrics = useMemo(() => {
@@ -105,105 +98,104 @@ export default function ScenarioPlanner() {
     };
   }, [incomeItems, vendors, bankAccounts]);
 
-  // Calculate scenario projections
+  // Calculate scenario projections with daily granularity for 3-month projection
   const scenarioProjection = useMemo(() => {
     const periods = [];
     const { currentCash, monthlyRevenue: baseMonthlyRevenue, monthlyExpenses: baseMonthlyExpenses } = baselineMetrics;
-    const weeks = getProjectionWeeks(projectionPeriod);
-    const isWeekly = weeks < 4;
+    
+    // Always use 3 months, show monthly data points
+    const months = 3;
+    
+    // Convert to daily rates for smooth projection
+    const baseDailyRevenue = baseMonthlyRevenue / 30;
+    const baseDailyExpenses = baseMonthlyExpenses / 30;
 
-    // Convert monthly baseline to weekly if needed
-    const basePeriodRevenue = isWeekly ? baseMonthlyRevenue / 4 : baseMonthlyRevenue;
-    const basePeriodExpenses = isWeekly ? baseMonthlyExpenses / 4 : baseMonthlyExpenses;
-
-    // Start with current cash and track cumulative cash flow
-    let baselineCumulativeCash = currentCash;
-    let scenarioCumulativeCash = currentCash;
+    // Start with current cash balance
+    let baselineCash = currentCash;
+    let scenarioCash = currentCash;
 
     // Handle case where there's no baseline data
     if (baseMonthlyRevenue === 0 && baseMonthlyExpenses === 0) {
-      const numPeriods = isWeekly ? weeks : Math.ceil(weeks / 4);
-      for (let i = 0; i < numPeriods; i++) {
+      for (let i = 0; i <= months; i++) {
         const date = new Date();
-        if (isWeekly) {
-          date.setDate(date.getDate() + (i * 7));
-        } else {
-          date.setMonth(date.getMonth() + i);
-        }
+        date.setMonth(date.getMonth() + i);
         
         periods.push({
-          month: isWeekly 
-            ? `Week ${i + 1}` 
-            : date.toLocaleDateString('en-US', { month: 'short' }),
-          baselineRevenue: 0,
-          baselineExpenses: 0,
-          baselineNet: currentCash,
-          scenarioRevenue: 0,
-          scenarioExpenses: 0,
-          scenarioNet: currentCash,
+          month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          baselineCash: currentCash,
+          scenarioCash: currentCash,
         });
       }
       return periods;
     }
 
-    const numPeriods = isWeekly ? weeks : Math.ceil(weeks / 4);
-    for (let i = 0; i < numPeriods; i++) {
-      let adjustedRevenue = basePeriodRevenue;
-      let adjustedExpenses = basePeriodExpenses;
+    // Add current balance as starting point
+    periods.push({
+      month: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      baselineCash: currentCash,
+      scenarioCash: currentCash,
+    });
+
+    // Project forward month by month
+    for (let i = 1; i <= months; i++) {
+      const daysInPeriod = 30; // Approximate 30 days per month
+      
+      // Calculate adjustments
+      let adjustedDailyRevenue = baseDailyRevenue;
+      let adjustedDailyExpenses = baseDailyExpenses;
 
       if (revenueAdjustmentType === 'percentage') {
-        adjustedRevenue = basePeriodRevenue * (1 + revenueAdjustment / 100);
+        adjustedDailyRevenue = baseDailyRevenue * (1 + revenueAdjustment / 100);
       } else {
-        // For absolute adjustments, scale to period
-        const periodAdjustment = isWeekly ? revenueAdjustment / 4 : revenueAdjustment;
-        adjustedRevenue = basePeriodRevenue + periodAdjustment;
+        adjustedDailyRevenue = baseDailyRevenue + (revenueAdjustment / 30);
       }
 
       if (expenseAdjustmentType === 'percentage') {
-        adjustedExpenses = basePeriodExpenses * (1 + expenseAdjustment / 100);
+        adjustedDailyExpenses = baseDailyExpenses * (1 + expenseAdjustment / 100);
       } else {
-        // For absolute adjustments, scale to period
-        const periodAdjustment = isWeekly ? expenseAdjustment / 4 : expenseAdjustment;
-        adjustedExpenses = basePeriodExpenses + periodAdjustment;
+        adjustedDailyExpenses = baseDailyExpenses + (expenseAdjustment / 30);
       }
 
-      // Calculate cumulative cash position
-      baselineCumulativeCash += basePeriodRevenue - basePeriodExpenses;
-      scenarioCumulativeCash += adjustedRevenue - adjustedExpenses;
+      // Calculate month's net change
+      const baselineMonthlyNet = (baseDailyRevenue - baseDailyExpenses) * daysInPeriod;
+      const scenarioMonthlyNet = (adjustedDailyRevenue - adjustedDailyExpenses) * daysInPeriod;
+
+      // Update cumulative balances
+      baselineCash += baselineMonthlyNet;
+      scenarioCash += scenarioMonthlyNet;
 
       const date = new Date();
-      if (isWeekly) {
-        date.setDate(date.getDate() + (i * 7));
-      } else {
-        date.setMonth(date.getMonth() + i);
-      }
+      date.setMonth(date.getMonth() + i);
       
       periods.push({
-        month: isWeekly 
-          ? `Week ${i + 1}` 
-          : date.toLocaleDateString('en-US', { month: 'short' }),
-        baselineRevenue: basePeriodRevenue,
-        baselineExpenses: basePeriodExpenses,
-        baselineNet: baselineCumulativeCash,
-        scenarioRevenue: adjustedRevenue,
-        scenarioExpenses: adjustedExpenses,
-        scenarioNet: scenarioCumulativeCash,
+        month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        baselineCash: baselineCash,
+        scenarioCash: scenarioCash,
       });
     }
 
     return periods;
-  }, [baselineMetrics, revenueAdjustment, revenueAdjustmentType, expenseAdjustment, expenseAdjustmentType, projectionPeriod]);
+  }, [baselineMetrics, revenueAdjustment, revenueAdjustmentType, expenseAdjustment, expenseAdjustmentType]);
 
   // Calculate cumulative impact
   const cumulativeImpact = useMemo(() => {
-    const baselineTotal = scenarioProjection.reduce((sum, m) => sum + m.baselineNet, 0);
-    const scenarioTotal = scenarioProjection.reduce((sum, m) => sum + m.scenarioNet, 0);
-    const difference = scenarioTotal - baselineTotal;
-    const percentChange = baselineTotal !== 0 ? (difference / baselineTotal) * 100 : 0;
+    if (scenarioProjection.length === 0) {
+      return { baselineTotal: 0, scenarioTotal: 0, difference: 0, percentChange: 0 };
+    }
+    
+    const baselineEnd = scenarioProjection[scenarioProjection.length - 1].baselineCash;
+    const scenarioEnd = scenarioProjection[scenarioProjection.length - 1].scenarioCash;
+    const baselineStart = scenarioProjection[0].baselineCash;
+    const scenarioStart = scenarioProjection[0].scenarioCash;
+    
+    const baselineGrowth = baselineEnd - baselineStart;
+    const scenarioGrowth = scenarioEnd - scenarioStart;
+    const difference = scenarioEnd - baselineEnd;
+    const percentChange = baselineEnd !== 0 ? (difference / baselineEnd) * 100 : 0;
 
     return {
-      baselineTotal,
-      scenarioTotal,
+      baselineTotal: baselineEnd,
+      scenarioTotal: scenarioEnd,
       difference,
       percentChange,
     };
@@ -216,7 +208,7 @@ export default function ScenarioPlanner() {
       expenseAdjustment,
       expenseAdjustmentType,
       creditUtilizationTarget,
-      projectionMonths: getProjectionWeeks(projectionPeriod) / 4, // Store as months equivalent
+      projectionMonths: 3, // Always 3 months
     };
 
     if (selectedScenarioId) {
@@ -247,14 +239,6 @@ export default function ScenarioPlanner() {
     setExpenseAdjustment(scenario.scenario_data.expenseAdjustment);
     setExpenseAdjustmentType(scenario.scenario_data.expenseAdjustmentType);
     setCreditUtilizationTarget(scenario.scenario_data.creditUtilizationTarget || 30);
-    // Convert months back to period format
-    const months = scenario.scenario_data.projectionMonths;
-    if (months === 0.25) setProjectionPeriod('1w');
-    else if (months === 0.5) setProjectionPeriod('2w');
-    else if (months === 0.75) setProjectionPeriod('3w');
-    else if (months === 1) setProjectionPeriod('1m');
-    else if (months === 2) setProjectionPeriod('2m');
-    else setProjectionPeriod(`${Math.round(months)}m`);
   };
 
   const handleNewScenario = () => {
@@ -266,7 +250,6 @@ export default function ScenarioPlanner() {
     setExpenseAdjustment(0);
     setExpenseAdjustmentType('percentage');
     setCreditUtilizationTarget(30);
-    setProjectionPeriod('3m');
   };
 
   return (
@@ -383,25 +366,6 @@ export default function ScenarioPlanner() {
                   placeholder="Describe this scenario..."
                   rows={2}
                 />
-              </div>
-
-              <div>
-                <Label htmlFor="projection-period">Projection Period</Label>
-                <Select value={projectionPeriod} onValueChange={setProjectionPeriod}>
-                  <SelectTrigger id="projection-period">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="z-50 bg-background">
-                    <SelectItem value="1w">1 Week</SelectItem>
-                    <SelectItem value="2w">2 Weeks</SelectItem>
-                    <SelectItem value="3w">3 Weeks</SelectItem>
-                    <SelectItem value="1m">1 Month</SelectItem>
-                    <SelectItem value="2m">2 Months</SelectItem>
-                    <SelectItem value="3m">3 Months</SelectItem>
-                    <SelectItem value="6m">6 Months</SelectItem>
-                    <SelectItem value="12m">12 Months</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
 
               <div className="space-y-2">
@@ -543,19 +507,38 @@ export default function ScenarioPlanner() {
         <TabsContent value="comparison" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Net Cash Flow Comparison</CardTitle>
-              <CardDescription>Monthly net income: baseline vs your scenario</CardDescription>
+              <CardTitle>Cash Balance Projection</CardTitle>
+              <CardDescription>3-month projected cash balance: baseline vs your scenario</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
                 <LineChart data={scenarioProjection}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
+                  <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                  <Tooltip 
+                    formatter={(value) => `$${Number(value).toLocaleString()}`}
+                    labelFormatter={(label) => `Month: ${label}`}
+                  />
                   <Legend />
-                  <Line type="monotone" dataKey="baselineNet" stroke="#8b5cf6" strokeWidth={2} name="Baseline Net" />
-                  <Line type="monotone" dataKey="scenarioNet" stroke="#06b6d4" strokeWidth={2} name="Scenario Net" />
+                  <Line 
+                    type="monotone" 
+                    dataKey="baselineCash" 
+                    stroke="#8b5cf6" 
+                    strokeWidth={2} 
+                    name="Baseline Balance"
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="scenarioCash" 
+                    stroke="#06b6d4" 
+                    strokeWidth={2} 
+                    name="Scenario Balance"
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -565,21 +548,30 @@ export default function ScenarioPlanner() {
         <TabsContent value="revenue" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Revenue Projection</CardTitle>
-              <CardDescription>Projected monthly revenue</CardDescription>
+              <CardTitle>Impact Analysis</CardTitle>
+              <CardDescription>How your scenario affects cash position</CardDescription>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={scenarioProjection}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
-                  <Legend />
-                  <Line type="monotone" dataKey="baselineRevenue" stroke="#8b5cf6" strokeWidth={2} name="Baseline" />
-                  <Line type="monotone" dataKey="scenarioRevenue" stroke="#10b981" strokeWidth={2} name="Scenario" />
-                </LineChart>
-              </ResponsiveContainer>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Starting Balance</p>
+                  <p className="text-2xl font-bold">${baselineMetrics.currentCash.toLocaleString()}</p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Scenario Impact (3mo)</p>
+                  <p className={`text-2xl font-bold ${cumulativeImpact.difference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {cumulativeImpact.difference >= 0 ? '+' : ''}${cumulativeImpact.difference.toLocaleString()}
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Baseline End Balance</p>
+                  <p className="text-2xl font-bold">${cumulativeImpact.baselineTotal.toLocaleString()}</p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Scenario End Balance</p>
+                  <p className="text-2xl font-bold text-primary">${cumulativeImpact.scenarioTotal.toLocaleString()}</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -587,21 +579,38 @@ export default function ScenarioPlanner() {
         <TabsContent value="expenses" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Expense Projection</CardTitle>
-              <CardDescription>Projected monthly expenses</CardDescription>
+              <CardTitle>Monthly Assumptions</CardTitle>
+              <CardDescription>Base metrics used for projections</CardDescription>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={scenarioProjection}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
-                  <Legend />
-                  <Line type="monotone" dataKey="baselineExpenses" stroke="#8b5cf6" strokeWidth={2} name="Baseline" />
-                  <Line type="monotone" dataKey="scenarioExpenses" stroke="#ef4444" strokeWidth={2} name="Scenario" />
-                </LineChart>
-              </ResponsiveContainer>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Baseline Monthly Revenue</p>
+                  <p className="text-xl font-semibold text-green-600">${baselineMetrics.monthlyRevenue.toLocaleString()}</p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Scenario Monthly Revenue</p>
+                  <p className="text-xl font-semibold text-green-600">
+                    ${(revenueAdjustmentType === 'percentage' 
+                      ? baselineMetrics.monthlyRevenue * (1 + revenueAdjustment / 100)
+                      : baselineMetrics.monthlyRevenue + revenueAdjustment
+                    ).toLocaleString()}
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Baseline Monthly Expenses</p>
+                  <p className="text-xl font-semibold text-red-600">${baselineMetrics.monthlyExpenses.toLocaleString()}</p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-1">Scenario Monthly Expenses</p>
+                  <p className="text-xl font-semibold text-red-600">
+                    ${(expenseAdjustmentType === 'percentage'
+                      ? baselineMetrics.monthlyExpenses * (1 + expenseAdjustment / 100)
+                      : baselineMetrics.monthlyExpenses + expenseAdjustment
+                    ).toLocaleString()}
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
