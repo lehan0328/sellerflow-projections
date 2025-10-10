@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAuth } from "@/hooks/useAuth";
 import { AmazonTransactionHistory } from "./amazon-transaction-history";
+import aurenLogo from "@/assets/auren-icon-blue.png";
 interface CashFlowInsightsProps {
   currentBalance: number;
   dailyInflow: number;
@@ -326,33 +327,38 @@ export const CashFlowInsights = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950/20 dark:via-blue-950/20 dark:to-indigo-950/20 border-2 border-purple-200 dark:border-purple-800">
                       <div className="flex items-center gap-2">
                         <Switch
                           id="forecast-payouts"
                           checked={includeForecastPayouts}
                           onCheckedChange={handleToggleRequest}
                           disabled={isForecastGenerating}
+                          className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-purple-500 data-[state=checked]:to-blue-500"
                         />
-                        <Label htmlFor="forecast-payouts" className="text-xs cursor-pointer flex items-center gap-1">
-                          ⭐ Forecast Payouts (AI)
-                          {isForecastGenerating && <Loader2 className="h-3 w-3 animate-spin" />}
+                        <Label htmlFor="forecast-payouts" className="text-xs cursor-pointer flex items-center gap-1.5 font-semibold">
+                          <img src={aurenLogo} alt="AI" className="h-4 w-4" />
+                          Forecast Payouts (AI)
+                          {isForecastGenerating && <Loader2 className="h-3 w-3 animate-spin text-purple-600" />}
                         </Label>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => setShowTransactionHistory(true)}
-                        className="h-7 text-xs"
+                        className="h-7 text-xs hover:bg-white/50 dark:hover:bg-black/20"
                       >
                         <History className="h-3 w-3 mr-1" />
                         View History
                       </Button>
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs text-xs">
-                      AI analyzes your last 3 months of Amazon payouts using advanced mathematics to project future payouts for the next 3 months based on your payout frequency settings
+                  <TooltipContent className="max-w-sm">
+                    <p className="text-xs mb-2">
+                      <strong>AI Payout Forecasting:</strong> Analyzes your Amazon transaction history to predict future payouts.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      When enabled, forecasted payouts are included in your cash flow projections, safe spending calculations, and buying opportunities.
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -654,13 +660,25 @@ export const CashFlowInsights = ({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              ⭐ Enable AI Payout Forecasting?
+              <img src={aurenLogo} alt="AI" className="h-5 w-5" />
+              Enable AI Payout Forecasting?
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
+            <AlertDialogDescription className="space-y-3">
               <p>
                 This will analyze your historical Amazon transaction data to predict future payouts and include them in your cash flow projections.
               </p>
-              <p className="text-sm font-medium">
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                  What gets updated:
+                </p>
+                <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
+                  <li>Safe Spending Power calculation</li>
+                  <li>All Buying Opportunities</li>
+                  <li>Cash flow calendar projections</li>
+                  <li>Earliest purchase dates</li>
+                </ul>
+              </div>
+              <p className="text-xs text-muted-foreground">
                 The AI will generate forecasts for the next 90 days based on your payout patterns.
               </p>
             </AlertDialogDescription>
@@ -670,7 +688,7 @@ export const CashFlowInsights = ({
             <AlertDialogAction onClick={() => {
               handleToggleForecast(true);
               setShowForecastConfirm(false);
-            }}>
+            }} className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600">
               Generate Forecasts
             </AlertDialogAction>
           </AlertDialogFooter>
