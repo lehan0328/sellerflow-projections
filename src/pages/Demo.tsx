@@ -49,7 +49,7 @@ const Demo = () => {
   const [activeSection, setActiveSection] = useState("overview");
 
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={true}>
       <div className="flex min-h-screen w-full bg-background">
         <AppSidebar 
           activeSection={activeSection} 
