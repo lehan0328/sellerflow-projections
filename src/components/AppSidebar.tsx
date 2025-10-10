@@ -31,7 +31,7 @@ const sections = [
   { id: "document-storage", title: "Document Storage", icon: FolderOpen },
   { id: "support", title: "Support", icon: MessageSquare },
   { id: "referrals", title: "Referrals", icon: Users },
-  { id: "book-call", title: "Book a Call", icon: Calendar, isExternal: true, url: "https://app.usemotion.com/meet/andy-chu/AurenDemo" },
+  { id: "book-call", title: "Book a Demo", icon: Calendar, isExternal: true, url: "https://app.usemotion.com/meet/andy-chu/AurenDemo" },
 ];
 
 export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) {
