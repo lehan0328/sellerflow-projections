@@ -44,7 +44,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
   const { data: safeSpendingData, isLoading: isLoadingSafeSpending, updateReserveAmount, refetch: refetchSafeSpending } = useSafeSpending();
-  const { amazonPayouts, totalUpcoming: amazonTotalUpcoming } = useAmazonPayouts();
+  const { amazonPayouts, monthlyOrdersTotal } = useAmazonPayouts();
   const [reserveInput, setReserveInput] = useState<string>("");
   
   // Force fresh calculation on mount
@@ -313,9 +313,9 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <p className="text-sm text-slate-600">Amazon Revenue</p>
-              <p className="text-2xl font-bold text-orange-700">{formatCurrency(amazonTotalUpcoming)}</p>
+              <p className="text-2xl font-bold text-orange-700">{formatCurrency(monthlyOrdersTotal)}</p>
               <p className="text-sm text-slate-600">
-                {amazonPayouts.length > 0 ? `${amazonPayouts.length} upcoming payouts` : "No upcoming payouts"}
+                This month's orders total
               </p>
             </div>
             <ShoppingCart className="h-8 w-8 text-orange-500" />

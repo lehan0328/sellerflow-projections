@@ -111,12 +111,26 @@ export const useAmazonPayouts = () => {
     .filter(payout => payout.status === 'estimated')
     .reduce((sum, payout) => sum + payout.total_amount, 0);
 
+  // Calculate orders total for current month
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  
+  const monthlyOrdersTotal = amazonPayouts
+    .filter(payout => {
+      const payoutDate = new Date(payout.payout_date);
+      return payoutDate.getMonth() === currentMonth && 
+             payoutDate.getFullYear() === currentYear;
+    })
+    .reduce((sum, payout) => sum + (payout.orders_total || 0), 0);
+
   return {
     amazonPayouts,
     isLoading,
     totalUpcoming,
     totalConfirmed,
     totalEstimated,
+    monthlyOrdersTotal,
     refetch: fetchAmazonPayouts
   };
 };
