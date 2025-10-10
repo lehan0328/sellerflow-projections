@@ -17,6 +17,7 @@ import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAuth } from "@/hooks/useAuth";
 import { AmazonTransactionHistory } from "./amazon-transaction-history";
 import aurenLogo from "@/assets/auren-icon-blue.png";
+import { useTransactions } from "@/hooks/useTransactions";
 interface CashFlowInsightsProps {
   currentBalance: number;
   dailyInflow: number;
@@ -68,7 +69,9 @@ export const CashFlowInsights = ({
   const { user } = useAuth();
   const { creditCards, isLoading: cardsLoading } = useCreditCards();
   const { amazonPayouts, refetch: refetchPayouts } = useAmazonPayouts();
+  const { transactions } = useTransactions();
   const [pendingOrdersByCard, setPendingOrdersByCard] = useState<Record<string, number>>({});
+  const [cardOpportunities, setCardOpportunities] = useState<Record<string, Array<{ date: string; availableCredit: number }>>>({});
   const [showAllOpportunities, setShowAllOpportunities] = useState(false);
   const [showAllCreditCards, setShowAllCreditCards] = useState(false);
   const [chatMode, setChatMode] = useState(false);
@@ -263,6 +266,106 @@ export const CashFlowInsights = ({
 
     fetchPendingOrders();
   }, [creditCards]);
+  
+  // Calculate buying opportunities for each credit card
+  useEffect(() => {
+    const calculateCardOpportunities = async () => {
+      if (!creditCards || creditCards.length === 0 || !transactions) return;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const opportunitiesMap: Record<string, Array<{ date: string; availableCredit: number }>> = {};
+
+      for (const card of creditCards) {
+        // Get all pending transactions for this card
+        const cardTransactions = transactions.filter(tx => 
+          tx.creditCardId === card.id && 
+          tx.status === 'pending' &&
+          tx.type === 'purchase_order'
+        );
+
+        if (cardTransactions.length === 0) {
+          // No pending orders, so current available credit is the only opportunity
+          opportunitiesMap[card.id] = [{
+            date: today.toISOString().split('T')[0],
+            availableCredit: card.available_credit
+          }];
+          continue;
+        }
+
+        // Build a timeline of available credit over next 180 days
+        const dailyCredit: Array<{ date: string; credit: number }> = [];
+        let runningCredit = card.available_credit;
+
+        for (let i = 0; i <= 180; i++) {
+          const targetDate = new Date(today);
+          targetDate.setDate(targetDate.getDate() + i);
+          const dateStr = targetDate.toISOString().split('T')[0];
+
+          let dayChange = 0;
+
+          // Check if any pending orders are due on this date (they free up credit when paid)
+          cardTransactions.forEach(tx => {
+            const dueDate = tx.dueDate ? new Date(tx.dueDate) : new Date(tx.transactionDate);
+            dueDate.setHours(0, 0, 0, 0);
+
+            // Skip past transactions
+            if (dueDate < today) return;
+
+            if (dueDate.toISOString().split('T')[0] === dateStr) {
+              dayChange += Number(tx.amount); // Credit freed up
+            }
+          });
+
+          runningCredit += dayChange;
+          dailyCredit.push({ date: dateStr, credit: runningCredit });
+        }
+
+        // Find opportunities (local minimums where credit increases next day)
+        const opportunities: Array<{ date: string; availableCredit: number }> = [];
+        
+        for (let i = 0; i < dailyCredit.length - 1; i++) {
+          const current = dailyCredit[i];
+          const next = dailyCredit[i + 1];
+
+          // If credit increases from today to tomorrow, today is an opportunity
+          if (next.credit > current.credit && current.credit > 0) {
+            opportunities.push({
+              date: current.date,
+              availableCredit: current.credit
+            });
+          }
+        }
+
+        // Add the last day if it has available credit and no more pending orders
+        const lastDay = dailyCredit[dailyCredit.length - 1];
+        if (lastDay.credit > 0 && opportunities.length > 0) {
+          const lastOpportunity = opportunities[opportunities.length - 1];
+          if (lastDay.date !== lastOpportunity.date && lastDay.credit >= lastOpportunity.availableCredit) {
+            opportunities.push({
+              date: lastDay.date,
+              availableCredit: lastDay.credit
+            });
+          }
+        }
+
+        // If no opportunities found but there is available credit, add current
+        if (opportunities.length === 0 && card.available_credit > 0) {
+          opportunities.push({
+            date: today.toISOString().split('T')[0],
+            availableCredit: card.available_credit
+          });
+        }
+
+        opportunitiesMap[card.id] = opportunities;
+      }
+
+      setCardOpportunities(opportunitiesMap);
+    };
+
+    calculateCardOpportunities();
+  }, [creditCards, transactions]);
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatQuestion.trim()) return;
@@ -720,8 +823,9 @@ export const CashFlowInsights = ({
               
               {creditCards.map((card) => {
                 const pendingOrders = pendingOrdersByCard[card.id] || 0;
-                const availableSpend = card.available_credit;
-                const isOverLimit = availableSpend < 0;
+                const currentAvailableSpend = card.available_credit - pendingOrders;
+                const opportunities = cardOpportunities[card.id] || [];
+                const isOverLimit = currentAvailableSpend < 0;
                 
                 return (
                   <div key={card.id} className={`p-4 rounded-lg space-y-3 ${isOverLimit ? 'bg-red-50 dark:bg-red-950/20 border-2 border-red-500' : 'bg-muted/50 border border-border'}`}>
@@ -734,7 +838,7 @@ export const CashFlowInsights = ({
                         <p className="text-xs text-muted-foreground truncate">{card.institution_name}</p>
                       </div>
                       <span className={`text-xl font-bold flex-shrink-0 ${isOverLimit ? 'text-red-600' : 'text-green-600'}`}>
-                        ${availableSpend.toLocaleString()}
+                        ${card.available_credit.toLocaleString()}
                       </span>
                     </div>
                     
@@ -742,8 +846,53 @@ export const CashFlowInsights = ({
                       <div className="flex items-start gap-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs">
                         <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
                         <p className="text-red-700 dark:text-red-400">
-                          Over limit by ${Math.abs(availableSpend).toLocaleString()}
+                          Over limit by ${Math.abs(currentAvailableSpend).toLocaleString()}
                         </p>
+                      </div>
+                    )}
+                    
+                    {/* Available to Spend Section */}
+                    <div className={`p-3 rounded-lg border-2 ${currentAvailableSpend < 0 ? 'bg-red-50 dark:bg-red-950/20 border-red-500' : 'bg-green-50 dark:bg-green-950/20 border-green-500'}`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-muted-foreground">Available to Spend</span>
+                        <span className={`text-lg font-bold ${currentAvailableSpend < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                          ${Math.max(0, currentAvailableSpend).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        After pending orders: ${pendingOrders.toLocaleString()}
+                      </p>
+                    </div>
+                    
+                    {/* Buying Opportunities */}
+                    {opportunities.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-semibold flex items-center gap-1">
+                            <ShoppingCart className="h-3 w-3" />
+                            Buying Opportunities
+                          </h4>
+                          <span className="text-xs text-muted-foreground">
+                            {opportunities.length} found
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          {opportunities.slice(0, 2).map((opp, idx) => (
+                            <div key={idx} className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-xs border border-blue-200 dark:border-blue-800">
+                              <span className="text-muted-foreground">
+                                {new Date(opp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </span>
+                              <span className="font-semibold text-blue-600">
+                                ${opp.availableCredit.toLocaleString()}
+                              </span>
+                            </div>
+                          ))}
+                          {opportunities.length > 2 && (
+                            <p className="text-xs text-center text-muted-foreground py-1">
+                              +{opportunities.length - 2} more opportunities
+                            </p>
+                          )}
+                        </div>
                       </div>
                     )}
                     
