@@ -68,7 +68,7 @@ const Dashboard = () => {
   const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
   const { toast } = useToast();
   const [vendorTxRefresh, setVendorTxRefresh] = useState(0);
-  const [includeForecastPayouts, setIncludeForecastPayouts] = useState(true);
+  const [includeForecastPayouts, setIncludeForecastPayouts] = useState(false);
   const [matchReviewDialog, setMatchReviewDialog] = useState<{
     open: boolean;
     match: TransactionMatch | null;

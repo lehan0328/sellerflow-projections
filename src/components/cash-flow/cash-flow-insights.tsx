@@ -58,7 +58,7 @@ export const CashFlowInsights = ({
   allBuyingOpportunities = [],
   onUpdateReserveAmount,
   transactionMatchButton,
-  includeForecastPayouts: includeForecastPayoutsProp = true,
+  includeForecastPayouts: includeForecastPayoutsProp = false,
   onToggleForecastPayouts
 }: CashFlowInsightsProps) => {
   const {
