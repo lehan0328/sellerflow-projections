@@ -17,7 +17,6 @@ import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAuth } from "@/hooks/useAuth";
 import { AmazonTransactionHistory } from "./amazon-transaction-history";
 import aurenLogo from "@/assets/auren-icon-blue.png";
-import { useTransactions } from "@/hooks/useTransactions";
 interface CashFlowInsightsProps {
   currentBalance: number;
   dailyInflow: number;
@@ -69,7 +68,6 @@ export const CashFlowInsights = ({
   const { user } = useAuth();
   const { creditCards, isLoading: cardsLoading } = useCreditCards();
   const { amazonPayouts, refetch: refetchPayouts } = useAmazonPayouts();
-  const { transactions } = useTransactions();
   const [pendingOrdersByCard, setPendingOrdersByCard] = useState<Record<string, number>>({});
   const [cardOpportunities, setCardOpportunities] = useState<Record<string, Array<{ date: string; availableCredit: number }>>>({});
   const [showAllOpportunities, setShowAllOpportunities] = useState(false);
@@ -269,8 +267,8 @@ export const CashFlowInsights = ({
   
   // Calculate buying opportunities for each credit card
   useEffect(() => {
-    const calculateCardOpportunities = async () => {
-      if (!creditCards || creditCards.length === 0 || !transactions) return;
+    const calculateCardOpportunities = () => {
+      if (!creditCards || creditCards.length === 0) return;
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -278,97 +276,27 @@ export const CashFlowInsights = ({
       const opportunitiesMap: Record<string, Array<{ date: string; availableCredit: number }>> = {};
 
       for (const card of creditCards) {
-        // Get all pending transactions for this card
-        const cardTransactions = transactions.filter(tx => 
-          tx.creditCardId === card.id && 
-          tx.status === 'pending' &&
-          tx.type === 'purchase_order'
-        );
-
-        // Check if card has a statement balance payment due
-        const hasStatementPayment = card.statement_balance && card.statement_balance > 0 && card.payment_due_date;
-
-        if (cardTransactions.length === 0 && !hasStatementPayment) {
-          // No pending orders or payments, so current available credit is the only opportunity
-          opportunitiesMap[card.id] = [{
-            date: today.toISOString().split('T')[0],
-            availableCredit: card.available_credit
-          }];
-          continue;
-        }
-
-        // Build a timeline of available credit over next 180 days
-        const dailyCredit: Array<{ date: string; credit: number }> = [];
-        let runningCredit = card.available_credit;
-
-        for (let i = 0; i <= 180; i++) {
-          const targetDate = new Date(today);
-          targetDate.setDate(targetDate.getDate() + i);
-          const dateStr = targetDate.toISOString().split('T')[0];
-
-          let dayChange = 0;
-
-          // Check if any pending orders are due on this date (they free up credit when paid)
-          cardTransactions.forEach(tx => {
-            const dueDate = tx.dueDate ? new Date(tx.dueDate) : new Date(tx.transactionDate);
-            dueDate.setHours(0, 0, 0, 0);
-
-            // Skip past transactions
-            if (dueDate < today) return;
-
-            if (dueDate.toISOString().split('T')[0] === dateStr) {
-              dayChange += Number(tx.amount); // Credit freed up
-            }
-          });
-
-          // Check if statement balance payment happens on this date (frees up credit)
-          if (card.payment_due_date && card.statement_balance) {
-            const paymentDueDate = new Date(card.payment_due_date);
-            paymentDueDate.setHours(0, 0, 0, 0);
-
-            if (paymentDueDate >= today && paymentDueDate.toISOString().split('T')[0] === dateStr) {
-              dayChange += Number(card.statement_balance); // Credit freed up by statement payment
-            }
-          }
-
-          runningCredit += dayChange;
-          dailyCredit.push({ date: dateStr, credit: runningCredit });
-        }
-
-        // Find opportunities (local minimums where credit increases next day)
         const opportunities: Array<{ date: string; availableCredit: number }> = [];
         
-        for (let i = 0; i < dailyCredit.length - 1; i++) {
-          const current = dailyCredit[i];
-          const next = dailyCredit[i + 1];
+        // Current available credit is always the first opportunity
+        opportunities.push({
+          date: today.toISOString().split('T')[0],
+          availableCredit: card.available_credit
+        });
 
-          // If credit increases from today to tomorrow, today is an opportunity
-          if (next.credit > current.credit && current.credit > 0) {
+        // If card has statement balance and due date, that's a buying opportunity
+        if (card.statement_balance && card.statement_balance > 0 && card.payment_due_date) {
+          const paymentDueDate = new Date(card.payment_due_date);
+          paymentDueDate.setHours(0, 0, 0, 0);
+
+          // Only include if due date is in the future
+          if (paymentDueDate > today) {
+            const newAvailableCredit = card.available_credit + Number(card.statement_balance);
             opportunities.push({
-              date: current.date,
-              availableCredit: current.credit
+              date: paymentDueDate.toISOString().split('T')[0],
+              availableCredit: newAvailableCredit
             });
           }
-        }
-
-        // Add the last day if it has available credit and no more pending orders
-        const lastDay = dailyCredit[dailyCredit.length - 1];
-        if (lastDay.credit > 0 && opportunities.length > 0) {
-          const lastOpportunity = opportunities[opportunities.length - 1];
-          if (lastDay.date !== lastOpportunity.date && lastDay.credit >= lastOpportunity.availableCredit) {
-            opportunities.push({
-              date: lastDay.date,
-              availableCredit: lastDay.credit
-            });
-          }
-        }
-
-        // If no opportunities found but there is available credit, add current
-        if (opportunities.length === 0 && card.available_credit > 0) {
-          opportunities.push({
-            date: today.toISOString().split('T')[0],
-            availableCredit: card.available_credit
-          });
         }
 
         opportunitiesMap[card.id] = opportunities;
@@ -378,7 +306,7 @@ export const CashFlowInsights = ({
     };
 
     calculateCardOpportunities();
-  }, [creditCards, transactions]);
+  }, [creditCards]);
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatQuestion.trim()) return;
