@@ -9,6 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import { CalendarIcon, Plus, Trash2, Search, Upload, Loader2, FileText } from "lucide-react";
 import { format, addDays, parse } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
@@ -84,6 +85,10 @@ export const PurchaseOrderForm = ({
   const [vendorSearchTerm, setVendorSearchTerm] = useState("");
   const [showVendorForm, setShowVendorForm] = useState(false);
   const [extractedVendorName, setExtractedVendorName] = useState<string>("");
+  const [saveToStorage, setSaveToStorage] = useState(() => {
+    const saved = localStorage.getItem('po-save-to-storage');
+    return saved !== null ? saved === 'true' : true;
+  });
 
   // Date picker states
   const [isPODatePickerOpen, setIsPODatePickerOpen] = useState(false);
@@ -232,8 +237,8 @@ export const PurchaseOrderForm = ({
     console.log("Submitting purchase order:", orderData);
     onSubmitOrder(orderData);
     
-    // Save uploaded document to storage if exists
-    if (uploadedFile) {
+    // Save uploaded document to storage if exists and toggle is on
+    if (uploadedFile && saveToStorage) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
@@ -449,6 +454,21 @@ export const PurchaseOrderForm = ({
               {/* AI Document Upload */}
               <Card className="border-2 border-dashed border-primary/20 bg-primary/5">
                 <CardContent className="pt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor="save-toggle" className="text-sm font-medium cursor-pointer">
+                        Save to Document Storage
+                      </Label>
+                    </div>
+                    <Switch
+                      id="save-toggle"
+                      checked={saveToStorage}
+                      onCheckedChange={(checked) => {
+                        setSaveToStorage(checked);
+                        localStorage.setItem('po-save-to-storage', String(checked));
+                      }}
+                    />
+                  </div>
                   <div className="text-center space-y-3">
                     <div className="flex justify-center">
                       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
