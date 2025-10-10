@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, Building2, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet } from "lucide-react";
+import { Home, Building2, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet, Users } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -25,6 +25,7 @@ const sections = [
   { id: "credit-cards", title: "Credit Cards", icon: CreditCard },
   { id: "recurring", title: "Recurring Expenses", icon: Repeat },
   { id: "amazon", title: "Amazon Payouts", icon: ShoppingCart },
+  { id: "referrals", title: "Referrals", icon: Users },
 ];
 
 export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) {

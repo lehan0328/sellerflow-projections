@@ -17,6 +17,7 @@ import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-m
 import { IncomeOverview } from "@/components/cash-flow/income-overview";
 import { IncomeForm } from "@/components/cash-flow/income-form";
 import { RecurringExpensesOverview } from "@/components/cash-flow/recurring-expenses-overview";
+import { ReferralDashboardContent } from "@/components/ReferralDashboardContent";
 import { useIncome } from "@/hooks/useIncome";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useCustomers } from "@/hooks/useCustomers";
@@ -1215,6 +1216,9 @@ const Dashboard = () => {
       
       case "amazon":
         return <AmazonPayouts />;
+      
+      case "referrals":
+        return <ReferralDashboardContent />;
       
       default:
         return null;
