@@ -752,26 +752,10 @@ export const CashFlowInsights = ({
                         <span className="text-muted-foreground">Credit Limit</span>
                         <span className="font-medium">${card.credit_limit.toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between items-center p-2 bg-background/50 rounded">
-                        <span className="text-muted-foreground">Current Balance</span>
-                        <span className="font-medium">${card.balance.toLocaleString()}</span>
-                      </div>
                       {pendingOrders > 0 && (
                         <div className="flex justify-between items-center p-2 bg-orange-50 dark:bg-orange-950/20 rounded">
                           <span className="text-muted-foreground">Pending Orders</span>
                           <span className="font-medium text-orange-600">-${pendingOrders.toLocaleString()}</span>
-                        </div>
-                      )}
-                      {card.payment_due_date && (
-                        <div className="flex justify-between items-center p-2 bg-background/50 rounded">
-                          <span className="text-muted-foreground">Payment Due</span>
-                          <span className="font-medium">
-                            {new Date(card.payment_due_date).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric',
-                              year: 'numeric'
-                            })}
-                          </span>
                         </div>
                       )}
                     </div>
