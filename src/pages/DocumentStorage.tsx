@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, FileText, Download, Trash2, Eye, Search, Calendar as CalendarIcon, Plus } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Download, Trash2, Search, Calendar as CalendarIcon, Plus } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -269,27 +269,6 @@ export default function DocumentStorage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleView = async (fileName: string) => {
-    if (!user?.id) return;
-
-    const { data, error } = await supabase.storage
-      .from('purchase-orders')
-      .download(`${user.id}/${fileName}`);
-
-    if (error) {
-      toast.error('Failed to load document');
-      return;
-    }
-
-    // Create blob with correct MIME type for PDFs
-    const blob = new Blob([data], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-    
-    // Clean up the URL after a delay to ensure it opens first
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-
   const filteredDocuments = documents?.filter(doc => {
     const nameMatch = doc.name.toLowerCase().includes(searchQuery.toLowerCase());
     
@@ -554,14 +533,6 @@ export default function DocumentStorage() {
                             title="Edit document details"
                           >
                             <FileText className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleView(doc.name)}
-                            title="View document"
-                          >
-                            <Eye className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
