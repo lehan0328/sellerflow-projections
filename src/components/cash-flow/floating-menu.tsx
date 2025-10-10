@@ -1,15 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, ShoppingCart, DollarSign, Sparkles } from "lucide-react";
+import { Plus, ShoppingCart, DollarSign } from "lucide-react";
 
 interface FloatingMenuProps {
   onAddPurchaseOrder: () => void;
   onAddIncome: () => void;
   onAddRecurringIncome: () => void;
-  onOpenFlexReport: () => void;
 }
 
-export function FloatingMenu({ onAddPurchaseOrder, onAddIncome, onAddRecurringIncome, onOpenFlexReport }: FloatingMenuProps) {
+export function FloatingMenu({ onAddPurchaseOrder, onAddIncome, onAddRecurringIncome }: FloatingMenuProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const toggleMenu = () => {
@@ -68,19 +67,6 @@ export function FloatingMenu({ onAddPurchaseOrder, onAddIncome, onAddRecurringIn
             >
               <Plus className="h-4 w-4" />
               <span className="ml-2 hidden lg:inline">Add Recurring</span>
-            </Button>
-
-            <Button
-              variant="ghost" 
-              size="sm" 
-              className="rounded-full" 
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenFlexReport();
-              }}
-            >
-              <Sparkles className="h-4 w-4 text-purple-500" />
-              <span className="ml-2 hidden lg:inline">Flex Report</span>
             </Button>
           </div>
         </div>

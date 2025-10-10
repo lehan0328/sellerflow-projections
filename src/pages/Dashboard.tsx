@@ -1288,7 +1288,6 @@ const Dashboard = () => {
             onAddPurchaseOrder={handleOpenPurchaseOrderForm}
             onAddIncome={() => setShowIncomeForm(true)}
             onAddRecurringIncome={() => setShowRecurringIncomeForm(true)}
-            onOpenFlexReport={() => navigate('/flex-report')}
           />
 
           {showPurchaseOrderForm && (
