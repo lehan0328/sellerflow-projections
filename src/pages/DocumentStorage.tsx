@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, FileText, Download, Trash2, Eye, Search } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Download, Trash2, Eye, Search, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -40,6 +41,7 @@ export default function DocumentStorage() {
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   // Fetch documents
@@ -158,9 +160,38 @@ export default function DocumentStorage() {
     }
   };
 
-  const filteredDocuments = documents?.filter(doc =>
-    doc.name.toLowerCase().includes(searchQuery.toLowerCase())
-  ) || [];
+  const filteredDocuments = documents?.filter(doc => {
+    const nameMatch = doc.name.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (selectedMonth === "all") {
+      return nameMatch;
+    }
+    
+    const docDate = new Date(doc.created_at);
+    const docMonth = `${docDate.getFullYear()}-${String(docDate.getMonth() + 1).padStart(2, '0')}`;
+    
+    return nameMatch && docMonth === selectedMonth;
+  }) || [];
+
+  // Get unique months from documents for filter dropdown
+  const availableMonths = useMemo(() => {
+    if (!documents) return [];
+    
+    const months = new Set<string>();
+    documents.forEach(doc => {
+      const date = new Date(doc.created_at);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      months.add(monthKey);
+    });
+    
+    return Array.from(months).sort().reverse();
+  }, [documents]);
+
+  const formatMonthLabel = (monthKey: string) => {
+    const [year, month] = monthKey.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+  };
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -206,6 +237,20 @@ export default function DocumentStorage() {
           </div>
 
           <div className="flex items-center space-x-3">
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-48">
+                <Calendar className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="All months" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All months</SelectItem>
+                {availableMonths.map((month) => (
+                  <SelectItem key={month} value={month}>
+                    {formatMonthLabel(month)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
