@@ -351,48 +351,6 @@ export default function DocumentStorage() {
               </p>
             </div>
           </div>
-
-          <div className="flex items-center space-x-3 flex-wrap gap-2">
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-              <SelectTrigger className="w-48">
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="All months" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All months</SelectItem>
-                {availableMonths.map((month) => (
-                  <SelectItem key={month} value={month}>
-                    {formatMonthLabel(month)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select value={selectedVendor} onValueChange={setSelectedVendor}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="All vendors" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All vendors</SelectItem>
-                {vendors?.map((vendor) => (
-                  <SelectItem key={vendor.id} value={vendor.id}>
-                    {vendor.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search documents..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-64 pl-9"
-              />
-            </div>
-          </div>
         </div>
 
 
@@ -478,7 +436,52 @@ export default function DocumentStorage() {
         {/* Documents Card */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Your Documents</CardTitle>
+            <div className="flex flex-col space-y-4">
+              <CardTitle className="text-lg">Your Documents</CardTitle>
+              
+              {/* Filters */}
+              <div className="flex items-center space-x-3 flex-wrap gap-2">
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger className="w-48">
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="All months" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All months</SelectItem>
+                    {availableMonths.map((month) => (
+                      <SelectItem key={month} value={month}>
+                        {formatMonthLabel(month)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Select value={selectedVendor} onValueChange={setSelectedVendor}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="All vendors" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All vendors</SelectItem>
+                    {vendors?.map((vendor) => (
+                      <SelectItem key={vendor.id} value={vendor.id}>
+                        {vendor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search documents..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9"
+                  />
+                </div>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
