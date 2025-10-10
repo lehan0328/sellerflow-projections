@@ -30,15 +30,14 @@ export const LiveDashboardShowcase = () => {
 
       <Card className="relative overflow-hidden shadow-2xl border-0 bg-gradient-to-br from-primary/5 to-accent/5">
         {/* Dashboard Preview */}
-        <div className="relative p-8">
-          <div className="aspect-video bg-gradient-to-br from-background to-muted rounded-lg flex items-center justify-center">
-            <div className="text-center space-y-4">
-              <Monitor className="h-16 w-16 mx-auto text-primary" />
-              <h4 className="text-xl font-semibold">Real-time Cash Flow Management</h4>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                Track your Amazon business finances with real-time updates, forecasting, and intelligent insights
-              </p>
-            </div>
+        <div className="relative p-4">
+          <div className="aspect-video bg-background rounded-lg overflow-hidden border-2 border-primary/20">
+            <iframe 
+              src="/dashboard" 
+              className="w-full h-full"
+              title="Live Dashboard Demo"
+              sandbox="allow-same-origin allow-scripts"
+            />
           </div>
         </div>
 
