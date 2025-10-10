@@ -9,6 +9,7 @@ interface IncomeItem {
   paymentDate: Date;
   source: string;
   status: 'received' | 'pending' | 'overdue';
+  customerId?: string;
 }
 
 export interface TransactionMatch {

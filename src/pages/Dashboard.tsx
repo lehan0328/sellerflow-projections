@@ -38,6 +38,9 @@ import { generateRecurringDates } from "@/lib/recurringDates";
 import { BankTransaction } from "@/components/cash-flow/bank-transaction-log";
 import { useTransactionMatching } from "@/hooks/useTransactionMatching";
 import { TransactionMatchNotification } from "@/components/cash-flow/transaction-match-notification";
+import { TransactionMatchingPanel } from "@/components/cash-flow/transaction-matching-panel";
+import { MatchReviewDialog } from "@/components/cash-flow/match-review-dialog";
+import { TransactionMatch } from "@/hooks/useTransactionMatching";
 
 // ========== Type Definitions ==========
 
@@ -65,6 +68,10 @@ const Dashboard = () => {
   const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
   const { toast } = useToast();
   const [vendorTxRefresh, setVendorTxRefresh] = useState(0);
+  const [matchReviewDialog, setMatchReviewDialog] = useState<{
+    open: boolean;
+    match: TransactionMatch | null;
+  }>({ open: false, match: null });
   
   // Use database hooks
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, cleanupOrphanedVendors, refetch: refetchVendors } = useVendors();
@@ -1131,6 +1138,14 @@ const Dashboard = () => {
             {/* Transaction Match Notification */}
             <TransactionMatchNotification unmatchedCount={unmatchedTransactionsCount} />
             
+            {/* Transaction Matching Panel */}
+            <TransactionMatchingPanel 
+              matches={matches}
+              onAcceptMatch={(match) => {
+                setMatchReviewDialog({ open: true, match });
+              }}
+            />
+            
             {/* Row 1: Cash Flow Calendar and AI Insights (Side by Side) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[700px]">
               <div className="lg:col-span-2 h-full">
@@ -1349,6 +1364,65 @@ const Dashboard = () => {
               onDelete={handleDeleteVendorOrder}
             />
           )}
+
+          {/* Match Review Dialog */}
+          <MatchReviewDialog
+            open={matchReviewDialog.open}
+            onOpenChange={(open) => setMatchReviewDialog({ open, match: null })}
+            match={matchReviewDialog.match}
+            onAccept={async () => {
+              if (!matchReviewDialog.match) return;
+              
+              const match = matchReviewDialog.match;
+              
+              if (match.type === 'income' && match.matchedIncome) {
+                // Mark income as received
+                await updateIncome(match.matchedIncome.id, { status: 'received' });
+                
+                // Create completed transaction
+                await addTransaction({
+                  type: 'customer_payment',
+                  amount: match.matchedIncome.amount,
+                  description: `Matched: ${match.matchedIncome.source} - ${match.matchedIncome.description}`,
+                  customerId: match.matchedIncome.customerId,
+                  transactionDate: new Date(),
+                  status: 'completed'
+                });
+                
+                toast({
+                  title: 'Match accepted',
+                  description: 'Income has been matched with bank transaction.',
+                });
+              } else if (match.type === 'vendor' && match.matchedVendor) {
+                // Update vendor to reduce amount owed
+                await updateVendor(match.matchedVendor.id, {
+                  totalOwed: Math.max(0, match.matchedVendor.totalOwed - Math.abs(match.bankTransaction.amount))
+                });
+                
+                // Create completed transaction
+                await addTransaction({
+                  type: 'vendor_payment',
+                  amount: Math.abs(match.bankTransaction.amount),
+                  description: `Matched: Payment to ${match.matchedVendor.name}`,
+                  vendorId: match.matchedVendor.id,
+                  transactionDate: new Date(),
+                  status: 'completed'
+                });
+                
+                toast({
+                  title: 'Match accepted',
+                  description: 'Vendor payment has been matched with bank transaction.',
+                });
+              }
+              
+              setMatchReviewDialog({ open: false, match: null });
+              refetchIncome();
+              refetchVendors();
+            }}
+            onReject={() => {
+              setMatchReviewDialog({ open: false, match: null });
+            }}
+          />
         </div>
       </div>
     </SidebarProvider>

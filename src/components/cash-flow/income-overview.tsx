@@ -317,15 +317,33 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
                       {income.paymentDate.toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusColor(income.status)} className="text-xs">
-                        {getStatusIcon(income.status)}
-                        <span className="ml-1 capitalize">{income.status}</span>
-                      </Badge>
-                      {income.isRecurring && (
-                        <Badge variant="secondary" className="text-xs ml-1">
-                          Recurring
-                        </Badge>
-                      )}
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-1">
+                          <Badge variant={getStatusColor(income.status)} className="text-xs">
+                            {getStatusIcon(income.status)}
+                            <span className="ml-1 capitalize">{income.status}</span>
+                          </Badge>
+                          {income.isRecurring && (
+                            <Badge variant="secondary" className="text-xs">
+                              Recurring
+                            </Badge>
+                          )}
+                        </div>
+                        {getMatchesForIncome(income.id).length > 0 && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+                                  <Link2 className="h-3 w-3" />
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{getMatchesForIncome(income.id).length} potential bank transaction match(es)</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end space-x-2">

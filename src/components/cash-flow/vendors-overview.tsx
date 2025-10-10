@@ -34,6 +34,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
   const navigate = useNavigate();
   const { transactions, markAsPaid, markAsPartiallyPaid, updateRemarks, deleteTransaction, refetch } = useVendorTransactions();
   const { vendors } = useVendors();
+  const { getMatchesForVendor } = useTransactionMatching(bankTransactions, vendors, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVendor, setSelectedVendor] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | 'paid'>('all');
@@ -493,10 +494,26 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                         : 'N/A'}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusColor(tx)} className="text-xs">
-                        {getStatusIcon(tx)}
-                        <span className="ml-1">{getStatusText(tx)}</span>
-                      </Badge>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={getStatusColor(tx)} className="text-xs">
+                          {getStatusIcon(tx)}
+                          <span className="ml-1">{getStatusText(tx)}</span>
+                        </Badge>
+                        {getMatchesForVendor(tx.vendorId).length > 0 && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+                                  <Link2 className="h-3 w-3" />
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{getMatchesForVendor(tx.vendorId).length} potential bank transaction match(es)</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Select
