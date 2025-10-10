@@ -82,7 +82,7 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
                         relative rounded-lg transition-all duration-200
                         ${isCollapsed ? "justify-center h-12 w-12" : ""}
                         ${isBookCall 
-                          ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg hover:shadow-xl font-bold justify-center"
+                          ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg hover:shadow-xl hover:from-green-700 hover:to-emerald-700 font-bold justify-center"
                           : isActive 
                             ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" 
                             : "hover:bg-accent/50 hover:translate-x-1"
