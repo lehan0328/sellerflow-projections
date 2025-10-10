@@ -62,14 +62,14 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
                       onClick={() => onSectionChange(section.id)}
                       className={`
                         relative rounded-lg transition-all duration-200
-                        ${isCollapsed ? "justify-center" : ""}
+                        ${isCollapsed ? "justify-center h-12 w-12" : ""}
                         ${isActive 
                           ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" 
                           : "hover:bg-accent/50 hover:translate-x-1"
                         }
                       `}
                     >
-                      <Icon className={`h-4 w-4 ${isActive ? "animate-pulse" : ""} ${isCollapsed ? "mx-auto" : ""}`} />
+                      <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive ? "animate-pulse" : ""} ${isCollapsed ? "mx-auto" : ""}`} />
                       {!isCollapsed && (
                         <span className="flex items-center justify-between w-full pr-1">
                           <span>{section.title}</span>
