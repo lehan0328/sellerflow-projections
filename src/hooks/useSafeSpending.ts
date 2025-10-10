@@ -471,21 +471,36 @@ export const useSafeSpending = () => {
         }
       }
       
-      console.log(`\n✅ Found ${allBuyingOpportunities.length} total buying opportunities (before validation)`);
+      console.log(`\n✅ Found ${allBuyingOpportunities.length} total buying opportunities (before filtering)`);
       
       // Sort opportunities by date
       allBuyingOpportunities.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       
-      // Ensure later opportunities never have lower available balance than earlier ones
-      // This prevents situations where opportunity 3 shows less $ than opportunity 2
-      for (let i = 1; i < allBuyingOpportunities.length; i++) {
-        if (allBuyingOpportunities[i].balance < allBuyingOpportunities[i - 1].balance) {
-          console.log(`🔧 Adjusting opportunity ${i + 1} from $${allBuyingOpportunities[i].balance.toFixed(2)} to $${allBuyingOpportunities[i - 1].balance.toFixed(2)} (matching previous opportunity)`);
-          allBuyingOpportunities[i].balance = allBuyingOpportunities[i - 1].balance;
+      // Filter out opportunities that have a higher opportunity later
+      // Keep only opportunities where no future opportunity has more available balance
+      const filteredOpportunities: typeof allBuyingOpportunities = [];
+      
+      for (let i = 0; i < allBuyingOpportunities.length; i++) {
+        const currentOpp = allBuyingOpportunities[i];
+        
+        // Check if any later opportunity has a higher balance
+        const hasHigherLaterOpportunity = allBuyingOpportunities
+          .slice(i + 1)
+          .some(laterOpp => laterOpp.balance > currentOpp.balance);
+        
+        if (!hasHigherLaterOpportunity) {
+          console.log(`✅ Keeping opportunity at ${currentOpp.date} with $${currentOpp.balance.toFixed(2)} (no higher opportunity later)`);
+          filteredOpportunities.push(currentOpp);
+        } else {
+          console.log(`⏭️ Skipping opportunity at ${currentOpp.date} with $${currentOpp.balance.toFixed(2)} (higher opportunity exists later)`);
         }
       }
       
-      console.log(`\n✅ Validated ${allBuyingOpportunities.length} total buying opportunities`);
+      // Replace the original array with filtered opportunities
+      allBuyingOpportunities.length = 0;
+      allBuyingOpportunities.push(...filteredOpportunities);
+      
+      console.log(`\n✅ Final ${allBuyingOpportunities.length} buying opportunities after filtering`);
       
       const nextBuyingOpportunity = allBuyingOpportunities.length > 0 ? allBuyingOpportunities[0] : null;
       
