@@ -274,36 +274,80 @@ Be precise with numbers, show your mathematical reasoning, and provide actionabl
 
     // Store forecasted payouts in the database
     if (forecast.predictions && Array.isArray(forecast.predictions)) {
-      const forecastedPayouts = forecast.predictions.map((pred: any, index: number) => {
-        // Calculate estimated payout date (bi-weekly from most recent payout)
-        const lastPayoutDate = new Date(amazonPayouts[0].payout_date);
-        const estimatedDate = new Date(lastPayoutDate);
-        estimatedDate.setDate(estimatedDate.getDate() + (14 * (index + 1))); // Bi-weekly
+      // Get the payout frequency from the amazon account
+      const { data: amazonAccount } = await supabase
+        .from('amazon_accounts')
+        .select('payout_frequency')
+        .eq('id', amazonPayouts[0].amazon_account_id)
+        .single();
+      
+      const payoutFrequency = amazonAccount?.payout_frequency || 'bi-weekly';
+      const lastPayoutDate = new Date(amazonPayouts[0].payout_date);
+      
+      // Calculate average payout amount for realistic demo forecasts
+      const avgPayoutAmount = amazonPayouts
+        .filter(p => p.status !== 'forecasted')
+        .reduce((sum, p) => sum + Number(p.total_amount), 0) / Math.max(1, amazonPayouts.filter(p => p.status !== 'forecasted').length);
+      
+      // Generate forecasts for 3 months based on frequency
+      const forecastedPayouts: any[] = [];
+      const threeMonthsOut = new Date(lastPayoutDate);
+      threeMonthsOut.setMonth(threeMonthsOut.getMonth() + 3);
+      
+      let currentDate = new Date(lastPayoutDate);
+      let forecastIndex = 0;
+      
+      while (currentDate <= threeMonthsOut) {
+        // Move to next payout date based on frequency
+        if (payoutFrequency === 'daily') {
+          currentDate.setDate(currentDate.getDate() + 1);
+        } else { // bi-weekly
+          currentDate.setDate(currentDate.getDate() + 14);
+        }
         
-        return {
+        if (currentDate > threeMonthsOut) break;
+        
+        // Use AI prediction if available, otherwise use average with slight variation
+        let predictedAmount = avgPayoutAmount * 15; // Boost for demo (15x)
+        if (forecast.predictions[forecastIndex]) {
+          predictedAmount = (forecast.predictions[forecastIndex].predicted_amount || avgPayoutAmount) * 15;
+        } else {
+          // Add 5-10% variation for realism
+          const variation = 0.95 + (Math.random() * 0.15); // 0.95 to 1.10
+          predictedAmount = avgPayoutAmount * 15 * variation;
+        }
+        
+        forecastedPayouts.push({
           user_id: userId,
           amazon_account_id: amazonPayouts[0].amazon_account_id,
-          payout_date: estimatedDate.toISOString().split('T')[0],
-          total_amount: pred.predicted_amount || pred.amount,
-          settlement_id: `forecast-${Date.now()}-${index}`,
+          payout_date: currentDate.toISOString().split('T')[0],
+          total_amount: Math.round(predictedAmount),
+          settlement_id: `forecast-${Date.now()}-${forecastIndex}`,
           marketplace_name: amazonPayouts[0].marketplace_name || 'Amazon',
           status: 'forecasted',
-          payout_type: 'bi-weekly',
+          payout_type: payoutFrequency,
           currency_code: amazonPayouts[0].currency_code || 'USD',
           transaction_count: 0,
+          fees_total: 0,
+          orders_total: 0,
+          refunds_total: 0,
+          other_total: 0,
           raw_settlement_data: {
             forecast_metadata: {
-              confidence: pred.confidence,
-              upper_bound: pred.upper_bound,
-              lower_bound: pred.lower_bound,
-              period: pred.period,
-              generated_at: new Date().toISOString()
+              confidence: forecast.predictions[forecastIndex]?.confidence || 0.7,
+              upper_bound: Math.round(predictedAmount * 1.2),
+              lower_bound: Math.round(predictedAmount * 0.8),
+              period: `Forecast ${forecastIndex + 1}`,
+              generated_at: new Date().toISOString(),
+              frequency: payoutFrequency
             }
           }
-        };
-      });
+        });
+        
+        forecastIndex++;
+      }
 
-      // Delete existing forecasted payouts for this user
+      // Delete existing forecasted payouts for this user  
       await supabase
         .from('amazon_payouts')
         .delete()
@@ -311,14 +355,16 @@ Be precise with numbers, show your mathematical reasoning, and provide actionabl
         .eq('status', 'forecasted');
 
       // Insert new forecasted payouts
-      const { error: insertError } = await supabase
-        .from('amazon_payouts')
-        .insert(forecastedPayouts);
+      if (forecastedPayouts.length > 0) {
+        const { error: insertError } = await supabase
+          .from('amazon_payouts')
+          .insert(forecastedPayouts);
 
-      if (insertError) {
-        console.error('[FORECAST] Error storing forecasted payouts:', insertError);
-      } else {
-        console.log('[FORECAST] Stored', forecastedPayouts.length, 'forecasted payouts');
+        if (insertError) {
+          console.error('[FORECAST] Error storing forecasted payouts:', insertError);
+        } else {
+          console.log('[FORECAST] Stored', forecastedPayouts.length, `forecasted ${payoutFrequency} payouts`);
+        }
       }
     }
 

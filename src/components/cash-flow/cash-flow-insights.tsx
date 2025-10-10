@@ -97,9 +97,25 @@ export const CashFlowInsights = ({
   }, [includeForecastPayoutsProp]);
 
   // Handle toggle change and notify parent
-  const handleToggleForecast = (checked: boolean) => {
+  const handleToggleForecast = async (checked: boolean) => {
     setIncludeForecastPayouts(checked);
     onToggleForecastPayouts?.(checked);
+    
+    // If turning off, delete all forecasted payouts
+    if (!checked && user) {
+      try {
+        await supabase
+          .from('amazon_payouts')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('status', 'forecasted');
+        
+        await refetchPayouts();
+        console.log('🗑️ Deleted forecasted payouts - safe spending will auto-recalculate');
+      } catch (err) {
+        console.error('Failed to delete forecasted payouts:', err);
+      }
+    }
   };
 
   // Generate forecasts when toggle is enabled and no forecasts exist
@@ -121,7 +137,7 @@ export const CashFlowInsights = ({
           if (error) {
             console.error('Forecast generation error:', error);
           } else if (data?.success) {
-            console.log('✅ Amazon payouts forecasted successfully');
+            console.log('✅ Amazon payouts forecasted - safe spending will auto-recalculate');
             await refetchPayouts();
           }
         } catch (err) {
