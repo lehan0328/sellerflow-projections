@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, ShoppingCart, Info, Brain } from "lucide-react";
+import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, ShoppingCart, Info } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -63,9 +63,6 @@ export const CashFlowInsights = ({
   const [chatLoading, setChatLoading] = useState(false);
   const [isEditingReserve, setIsEditingReserve] = useState(false);
   const [editReserveValue, setEditReserveValue] = useState(reserveAmount.toString());
-  const [showForecastDialog, setShowForecastDialog] = useState(false);
-  const [forecastLoading, setForecastLoading] = useState(false);
-  const [forecastActivated, setForecastActivated] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<Array<{
     role: 'user' | 'assistant';
     content: string;
@@ -198,61 +195,6 @@ export const CashFlowInsights = ({
     }
   };
 
-  const handleActivateForecast = async () => {
-    setForecastLoading(true);
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data, error } = await supabase.functions.invoke("forecast-amazon-payouts", {
-        body: { userId: user.id }
-      });
-
-      if (error) throw error;
-
-      if (data?.requiresData) {
-        toast({
-          title: "No Amazon Data Found",
-          description: "Please connect your Amazon account and sync data before generating forecasts.",
-          variant: "destructive"
-        });
-        setForecastLoading(false);
-        setShowForecastDialog(false);
-        return;
-      }
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      // Clear loading state before animation
-      setForecastLoading(false);
-      setForecastActivated(true);
-      
-      toast({
-        title: "AI Forecast Activated! ✨",
-        description: `Generated ${data.forecast?.predictions?.length || 0} forecasted payouts for the next 3 months.`,
-      });
-
-      // Wait for animation then navigate
-      setTimeout(() => {
-        setShowForecastDialog(false);
-        setForecastActivated(false);
-        navigate('/ai-forecast');
-      }, 1500);
-      
-    } catch (error: any) {
-      console.error("Forecast error:", error);
-      toast({
-        title: "Forecast Failed",
-        description: error.message || "Unable to generate forecast. Please try again.",
-        variant: "destructive"
-      });
-      setForecastLoading(false);
-      setForecastActivated(false);
-    }
-  };
 
   return <Card className="shadow-card h-full flex flex-col">
       <CardHeader>
@@ -262,16 +204,6 @@ export const CashFlowInsights = ({
             AI Insights
           </div>
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowForecastDialog(true)}
-              className="text-xs relative overflow-hidden bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 text-white border-0 hover:from-purple-700 hover:via-blue-700 hover:to-cyan-700 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold hover:scale-105"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 opacity-0 hover:opacity-30 transition-opacity duration-500" />
-              <Brain className="h-4 w-4 mr-1 relative z-10 animate-pulse" />
-              <span className="relative z-10">Activate AI Forecasting</span>
-            </Button>
             <Button variant={chatMode ? "default" : "ghost"} size="sm" onClick={() => setChatMode(!chatMode)}>
               <MessageCircle className="h-4 w-4 mr-1" />
               {chatMode ? "Back" : "Chat"}
@@ -639,76 +571,6 @@ export const CashFlowInsights = ({
               })}
             </div>
           </ScrollArea>
-        </DialogContent>
-      </Dialog>
-
-      {/* AI Forecasting Dialog */}
-      <Dialog open={showForecastDialog} onOpenChange={setShowForecastDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5 text-primary" />
-              AI-Powered Amazon Payout Forecasting
-            </DialogTitle>
-            <DialogDescription className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <p className="text-sm text-foreground">
-                  Our advanced AI forecasting system uses sophisticated mathematical models to predict your future Amazon payouts with high accuracy.
-                </p>
-                
-                <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-                  <h4 className="font-semibold text-sm">What it analyzes:</h4>
-                  <ul className="text-sm space-y-1 list-disc list-inside text-muted-foreground">
-                    <li>Historical payout patterns and trends</li>
-                    <li>Seasonal variations and market cycles</li>
-                    <li>Recent sales velocity and momentum</li>
-                    <li>Time series regression modeling</li>
-                    <li>Statistical confidence intervals</li>
-                  </ul>
-                </div>
-
-                <p className="text-sm text-muted-foreground">
-                  This powerful tool helps you plan future cash flow with greater confidence, enabling better inventory purchasing decisions and financial planning.
-                </p>
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex gap-2 mt-4">
-            <Button 
-              className={`flex-1 relative overflow-hidden bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 hover:from-purple-700 hover:via-blue-700 hover:to-cyan-700 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300 ${
-                forecastActivated ? 'animate-pulse scale-105' : ''
-              } ${forecastLoading ? 'cursor-wait' : ''}`}
-              onClick={handleActivateForecast}
-              disabled={forecastLoading || forecastActivated}
-            >
-              {forecastActivated ? (
-                <>
-                  <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 animate-pulse" />
-                  <Check className="h-5 w-5 mr-2 relative z-10 animate-bounce" />
-                  <span className="relative z-10">Activated!</span>
-                </>
-              ) : forecastLoading ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  <span>Activating AI...</span>
-                </>
-              ) : (
-                <>
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-pulse" />
-                  <Brain className="h-5 w-5 mr-2 relative z-10 animate-pulse" />
-                  <span className="relative z-10">Activate AI Forecast</span>
-                </>
-              )}
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowForecastDialog(false)}
-              disabled={forecastLoading}
-            >
-              Cancel
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
     </Card>;
