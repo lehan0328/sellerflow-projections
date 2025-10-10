@@ -1,6 +1,10 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, FileText, Download, Trash2, Eye, Search, Calendar, Plus } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Download, Trash2, Eye, Search, Calendar as CalendarIcon, Plus } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -211,28 +215,36 @@ export default function DocumentStorage() {
 
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadVendorId, setUploadVendorId] = useState<string>("");
+  const [uploadDocumentDate, setUploadDocumentDate] = useState<Date | undefined>(new Date());
   const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showAddVendorFromUpload, setShowAddVendorFromUpload] = useState(false);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (20MB max)
-    if (file.size > 20 * 1024 * 1024) {
-      toast.error('File size must be less than 20MB');
+    // Validate file size (50MB max as per reference)
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error('File size must be less than 50MB');
       return;
     }
 
-    // Show vendor selection dialog
     setUploadFile(file);
-    setUploadVendorId("");
-    setShowUploadDialog(true);
-    event.target.value = '';
   };
 
   const confirmUpload = async () => {
-    if (!uploadFile || !uploadVendorId) {
+    if (!uploadFile) {
+      toast.error('Please select a file');
+      return;
+    }
+    
+    if (!uploadVendorId) {
       toast.error('Please select a vendor');
+      return;
+    }
+    
+    if (!uploadDocumentDate) {
+      toast.error('Please select a document date');
       return;
     }
 
@@ -240,15 +252,18 @@ export default function DocumentStorage() {
     try {
       const fileName = await uploadMutation.mutateAsync(uploadFile);
       
-      // Add metadata with vendor
+      // Add metadata with vendor and date
       await updateMetadataMutation.mutateAsync({
         fileName,
-        vendorId: uploadVendorId
+        vendorId: uploadVendorId,
+        notes: `Document date: ${uploadDocumentDate.toLocaleDateString()}`
       });
       
+      // Reset form
       setShowUploadDialog(false);
       setUploadFile(null);
       setUploadVendorId("");
+      setUploadDocumentDate(new Date());
     } finally {
       setUploading(false);
     }
@@ -380,7 +395,7 @@ export default function DocumentStorage() {
           <div className="flex items-center space-x-3 flex-wrap gap-2">
             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
               <SelectTrigger className="w-48">
-                <Calendar className="h-4 w-4 mr-2" />
+                <CalendarIcon className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="All months" />
               </SelectTrigger>
               <SelectContent>
@@ -431,24 +446,13 @@ export default function DocumentStorage() {
                 className="w-64 pl-9"
               />
             </div>
-            <label htmlFor="file-upload">
-              <Button
-                disabled={uploading}
-                asChild
-              >
-                <span className="cursor-pointer">
-                  <Upload className="h-4 w-4 mr-2" />
-                  {uploading ? 'Uploading...' : 'Upload Document'}
-                </span>
-              </Button>
-              <input
-                id="file-upload"
-                type="file"
-                className="hidden"
-                onChange={handleFileUpload}
-                disabled={uploading}
-              />
-            </label>
+            <Button
+              onClick={() => setShowUploadDialog(true)}
+              disabled={uploading}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Document
+            </Button>
           </div>
         </div>
 
@@ -671,41 +675,107 @@ export default function DocumentStorage() {
         </DialogContent>
       </Dialog>
 
-      {/* Upload Vendor Selection Dialog */}
-      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+      {/* Upload Document Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={(open) => {
+        setShowUploadDialog(open);
+        if (!open) {
+          setUploadFile(null);
+          setUploadVendorId("");
+          setUploadDocumentDate(new Date());
+        }
+      }}>
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Select Vendor for Document</DialogTitle>
+            <DialogTitle>Upload Document</DialogTitle>
             <DialogDescription>
-              Choose which vendor this document belongs to
+              Upload PDF files (Max 50MB) with vendor information
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Vendor *</Label>
-              <Select value={uploadVendorId} onValueChange={setUploadVendorId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select vendor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {vendors?.map((vendor) => (
-                    <SelectItem key={vendor.id} value={vendor.id}>
-                      {vendor.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-6 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Vendor *</Label>
+                <div className="flex gap-2">
+                  <Select value={uploadVendorId} onValueChange={setUploadVendorId}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select a vendor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vendors?.map((vendor) => (
+                        <SelectItem key={vendor.id} value={vendor.id}>
+                          {vendor.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowAddVendorFromUpload(true)}
+                    title="Add new vendor"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Document Date *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !uploadDocumentDate && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {uploadDocumentDate ? (
+                        format(uploadDocumentDate, "MMMM do, yyyy")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={uploadDocumentDate}
+                      onSelect={setUploadDocumentDate}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground">
-              File: {uploadFile?.name}
-            </p>
+
+            <div className="space-y-2">
+              <Label>PDF File *</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileSelect}
+                  className="cursor-pointer"
+                />
+              </div>
+              {uploadFile && (
+                <p className="text-sm text-muted-foreground">
+                  Selected: {uploadFile.name} ({formatFileSize(uploadFile.size)})
+                </p>
+              )}
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={confirmUpload} disabled={!uploadVendorId || uploading}>
-              {uploading ? 'Uploading...' : 'Upload'}
+            <Button 
+              className="w-full" 
+              onClick={confirmUpload} 
+              disabled={!uploadFile || !uploadVendorId || !uploadDocumentDate || uploading}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {uploading ? 'Uploading...' : 'Upload Document'}
             </Button>
           </DialogFooter>
         </DialogContent>
