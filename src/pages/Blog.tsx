@@ -90,7 +90,7 @@ const Blog = () => {
   ];
 
   return (
-    <PublicLayout>
+    <PublicLayout activePage="blog">
       <Helmet>
         <title>Amazon Cashflow Management Blog | Auren</title>
         <meta name="description" content="Expert guides, strategies, and insights to help you forecast Amazon payouts, manage expenses, and scale your marketplace business." />

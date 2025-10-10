@@ -4,7 +4,11 @@ import { useNavigate, Link } from "react-router-dom";
 import { useTheme } from "next-themes";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 
-export const PublicHeader = () => {
+interface PublicHeaderProps {
+  activePage?: string;
+}
+
+export const PublicHeader = ({ activePage }: PublicHeaderProps) => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
 
@@ -22,25 +26,25 @@ export const PublicHeader = () => {
             </span>
           </Link>
           <div className="hidden md:flex items-center space-x-6">
-            <Link to="/features" onClick={() => window.scrollTo(0, 0)} className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+            <Link to="/features" onClick={() => window.scrollTo(0, 0)} className={`${activePage === 'features' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'} transition-all duration-300 story-link font-medium`}>
               Features
             </Link>
-            <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+            <Link to="/pricing" className={`${activePage === 'pricing' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'} transition-all duration-300 story-link font-medium`}>
               Pricing
             </Link>
-            <Link to="/#testimonials" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+            <Link to="/#testimonials" className={`${activePage === 'reviews' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'} transition-all duration-300 story-link font-medium`}>
               Reviews
             </Link>
-            <Link to="/blog" onClick={() => window.scrollTo(0, 0)} className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+            <Link to="/blog" onClick={() => window.scrollTo(0, 0)} className={`${activePage === 'blog' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'} transition-all duration-300 story-link font-medium`}>
               Blog
             </Link>
-            <Link to="/partners" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+            <Link to="/partners" className={`${activePage === 'partners' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'} transition-all duration-300 story-link font-medium`}>
               Partners
             </Link>
-            <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+            <Link to="/contact" className={`${activePage === 'contact' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'} transition-all duration-300 story-link font-medium`}>
               Contact
             </Link>
-            <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+            <Link to="/docs" className={`${activePage === 'docs' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'} transition-all duration-300 story-link font-medium`}>
               Docs
             </Link>
             <Button

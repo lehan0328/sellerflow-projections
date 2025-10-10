@@ -4,12 +4,13 @@ import { PublicFooter } from "./PublicFooter";
 
 interface PublicLayoutProps {
   children: ReactNode;
+  activePage?: string;
 }
 
-export const PublicLayout = ({ children }: PublicLayoutProps) => {
+export const PublicLayout = ({ children, activePage }: PublicLayoutProps) => {
   return (
     <div className="min-h-screen flex flex-col">
-      <PublicHeader />
+      <PublicHeader activePage={activePage} />
       <main className="flex-1">
         {children}
       </main>
