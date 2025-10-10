@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, Building2, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet, Users } from "lucide-react";
+import { Home, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet, Users } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,8 +22,7 @@ interface AppSidebarProps {
 
 const sections = [
   { id: "overview", title: "Overview", icon: Home },
-  { id: "vendors", title: "Vendors", icon: Building2 },
-  { id: "income", title: "Income", icon: TrendingUp },
+  { id: "transactions", title: "Transactions", icon: TrendingUp },
   { id: "bank-accounts", title: "Bank Accounts", icon: Wallet },
   { id: "credit-cards", title: "Credit Cards", icon: CreditCard },
   { id: "recurring", title: "Recurring Expenses", icon: Repeat },

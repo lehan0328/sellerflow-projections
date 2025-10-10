@@ -8,16 +8,15 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { OverviewStats } from "@/components/cash-flow/overview-stats";
 import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
 import { CashFlowInsights } from "@/components/cash-flow/cash-flow-insights";
-import { VendorsOverview } from "@/components/cash-flow/vendors-overview";
 import { BankAccounts } from "@/components/cash-flow/bank-accounts";
 import { CreditCards, getCreditCardDueDates } from "@/components/cash-flow/credit-cards";
 import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
 import { PurchaseOrderForm } from "@/components/cash-flow/purchase-order-form";
 import { VendorOrderEditModal } from "@/components/cash-flow/vendor-order-edit-modal";
-import { IncomeOverview } from "@/components/cash-flow/income-overview";
 import { IncomeForm } from "@/components/cash-flow/income-form";
 import { RecurringExpensesOverview } from "@/components/cash-flow/recurring-expenses-overview";
 import { ReferralDashboardContent } from "@/components/ReferralDashboardContent";
+import { TransactionsView } from "@/components/TransactionsView";
 import { useIncome } from "@/hooks/useIncome";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useCustomers } from "@/hooks/useCustomers";
@@ -1170,9 +1169,9 @@ const Dashboard = () => {
           </>
         );
       
-      case "vendors":
+      case "transactions":
         return (
-          <VendorsOverview 
+          <TransactionsView
             bankTransactions={exampleBankTransactions}
             onVendorUpdate={() => {
               refetchVendors();
@@ -1180,19 +1179,11 @@ const Dashboard = () => {
               setVendorTxRefresh((v) => v + 1);
             }}
             refreshKey={vendorTxRefresh}
-          />
-        );
-      
-      case "income":
-        return (
-          <IncomeOverview
             incomeItems={incomeItems}
-            bankTransactions={exampleBankTransactions}
             onCollectToday={handleCollectIncome}
             onEditIncome={handleEditIncome}
             onDeleteIncome={handleDeleteIncome}
             onMatchTransaction={async (income) => {
-              // Create a completed transaction record when matching
               await addTransaction({
                 type: 'customer_payment',
                 amount: income.amount,
