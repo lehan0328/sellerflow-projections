@@ -314,23 +314,31 @@ const Landing = () => {
   }];
   return <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Amazon Cash Flow Forecasting Tool | Auren - Predict Payouts & Plan Growth</title>
-        <meta name="description" content="Forecast Amazon payouts with 95% accuracy. AI-powered cash flow management for FBA & marketplace sellers. 7-day free trial, no credit card required." />
-        <meta name="keywords" content="amazon cash flow forecasting, amazon payout prediction, FBA financial tools, seller cashflow management, amazon seller finance software, marketplace cashflow planner" />
-        <link rel="canonical" href="https://aurenapp.com" />
+        <title>Cash Flow Forecasting for Amazon Sellers | Auren - AI-Powered Financial Tool</title>
+        <meta name="description" content="Predict Amazon payouts, forecast expenses, and prevent cashflow gaps. Auren helps marketplace sellers stay profitable with automated forecasting, real-time insights, and smart spend tracking. 7-day free trial, no credit card required." />
+        <meta name="keywords" content="amazon cash flow forecasting, amazon payout prediction, amazon seller finance software, FBA cashflow tool, cash flow management for sellers, amazon payout schedule, marketplace seller cashflow planner, ecommerce financial forecasting" />
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+        <link rel="canonical" href="https://aurenapp.com/" />
         
         {/* Open Graph */}
-        <meta property="og:title" content="Amazon Cash Flow Forecasting | Auren - Predict Payouts & Manage Finances" />
-        <meta property="og:description" content="AI-powered cash flow forecasting for Amazon sellers. Predict payouts, track expenses, and prevent cash shortfalls. Start free trial today." />
+        <meta property="og:title" content="Cash Flow Forecasting for Amazon Sellers | Auren - AI-Powered Financial Tool" />
+        <meta property="og:description" content="Predict Amazon payouts, forecast expenses, and prevent cashflow gaps. Auren helps marketplace sellers stay profitable with automated forecasting, real-time insights, and smart spend tracking. 7-day free trial, no credit card required." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://aurenapp.com" />
-        <meta property="og:image" content="https://aurenapp.com/assets/og-image.png" />
+        <meta property="og:url" content="https://aurenapp.com/" />
+        <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/wirOXtfMBcgv1kxBiHssLX3xlPT2/social-images/social-1759711482676-Screenshot 2025-10-05 at 8.42.56 PM.png" />
+        <meta property="og:site_name" content="Auren" />
+        <meta property="og:locale" content="en_US" />
         
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Amazon Cash Flow Forecasting | Auren" />
-        <meta name="twitter:description" content="AI-powered cash flow forecasting for Amazon sellers. Predict payouts with 95% accuracy." />
-        <meta name="twitter:image" content="https://aurenapp.com/assets/og-image.png" />
+        <meta name="twitter:title" content="Cash Flow Forecasting for Amazon Sellers | Auren - AI-Powered Financial Tool" />
+        <meta name="twitter:description" content="Predict Amazon payouts, forecast expenses, and prevent cashflow gaps. Auren helps marketplace sellers stay profitable with automated forecasting, real-time insights, and smart spend tracking. 7-day free trial, no credit card required." />
+        <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/wirOXtfMBcgv1kxBiHssLX3xlPT2/social-images/social-1759711482676-Screenshot 2025-10-05 at 8.42.56 PM.png" />
+        
+        {/* Additional SEO */}
+        <meta name="author" content="Auren" />
+        <meta name="language" content="English" />
+        <meta name="revisit-after" content="7 days" />
         
         {/* Organization Schema */}
         <script type="application/ld+json">{`
@@ -349,7 +357,7 @@ const Landing = () => {
             },
             "sameAs": [
               "https://twitter.com/aurenapp",
-              "https://linkedin.com/company/aurenapp"
+              "https://www.linkedin.com/company/aurenapp"
             ]
           }
         `}</script>
@@ -360,54 +368,35 @@ const Landing = () => {
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
             "name": "Auren",
-            "applicationCategory": "FinanceApplication",
             "operatingSystem": "Web",
-            "description": "AI-powered cash flow forecasting and financial management software for Amazon FBA and marketplace sellers",
+            "applicationCategory": "BusinessApplication",
+            "description": "Auren helps Amazon and marketplace sellers forecast payouts, manage cashflow, and plan expenses confidently. Predict revenue and prevent cash crunches with accurate forecasting.",
             "url": "https://aurenapp.com",
             "offers": {
               "@type": "Offer",
-              "price": "29",
+              "price": "0",
               "priceCurrency": "USD"
             },
             "aggregateRating": {
               "@type": "AggregateRating",
               "ratingValue": "4.9",
-              "ratingCount": "500"
+              "ratingCount": "128"
             }
           }
         `}</script>
         
-        {/* BreadcrumbList Schema */}
+        {/* WebSite Schema */}
         <script type="application/ld+json">{`
           {
             "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            "itemListElement": [
-              {
-                "@type": "ListItem",
-                "position": 1,
-                "name": "Home",
-                "item": "https://aurenapp.com"
-              },
-              {
-                "@type": "ListItem",
-                "position": 2,
-                "name": "Features",
-                "item": "https://aurenapp.com/features"
-              },
-              {
-                "@type": "ListItem",
-                "position": 3,
-                "name": "Pricing",
-                "item": "https://aurenapp.com#pricing"
-              },
-              {
-                "@type": "ListItem",
-                "position": 4,
-                "name": "Blog",
-                "item": "https://aurenapp.com/blog"
-              }
-            ]
+            "@type": "WebSite",
+            "name": "Auren",
+            "url": "https://aurenapp.com",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://aurenapp.com/search?q={search_term_string}",
+              "query-input": "required name=search_term_string"
+            }
           }
         `}</script>
       </Helmet>
