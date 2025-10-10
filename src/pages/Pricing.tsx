@@ -16,7 +16,7 @@ import { useTheme } from "next-themes";
 export default function Pricing() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
-  const [isYearly, setIsYearly] = useState(false);
+  const [isYearly, setIsYearly] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showEnterpriseCustomizer, setShowEnterpriseCustomizer] = useState(false);
   const [enterpriseTier, setEnterpriseTier] = useState<"tier1" | "tier2" | "tier3">("tier1");
