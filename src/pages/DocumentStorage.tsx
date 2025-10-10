@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, FileText, Download, Trash2, Search, Calendar as CalendarIcon, Plus } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Download, Trash2, Search, Calendar as CalendarIcon, Plus, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -62,6 +62,7 @@ export default function DocumentStorage() {
   const [editingDoc, setEditingDoc] = useState<StoredDocument | null>(null);
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
+  const [replacingDocument, setReplacingDocument] = useState<string | null>(null);
 
   const { vendors } = useVendors();
 
@@ -250,6 +251,63 @@ export default function DocumentStorage() {
       setUploadDocumentDate(new Date());
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleReplaceDocument = async (doc: StoredDocument, file: File) => {
+    try {
+      setReplacingDocument(doc.id);
+      if (!user?.id) throw new Error('User not authenticated');
+
+      // Get the document metadata by file_name
+      const { data: metadataList, error: metaError } = await supabase
+        .from('documents_metadata')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('file_name', doc.name)
+        .maybeSingle();
+
+      if (metaError) throw metaError;
+
+      // Delete old file from storage
+      const { error: deleteError } = await supabase.storage
+        .from('purchase-orders')
+        .remove([`${user.id}/${doc.name}`]);
+
+      if (deleteError) console.error('Error deleting old file:', deleteError);
+
+      // Upload new file with new timestamped name
+      const fileExtension = file.name.split('.').pop();
+      const safeFileName = `${Date.now()}_${file.name}`;
+      const filePath = `${user.id}/${safeFileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('purchase-orders')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Update metadata with new file path and name, keeping all other data
+      if (metadataList) {
+        const { error: updateError } = await supabase
+          .from('documents_metadata')
+          .update({
+            file_path: filePath,
+            file_name: safeFileName,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', metadataList.id);
+
+        if (updateError) throw updateError;
+      }
+
+      toast.success('Document replaced successfully');
+      queryClient.invalidateQueries({ queryKey: ['documents', user?.id] });
+    } catch (error) {
+      console.error('Error replacing document:', error);
+      toast.error('Failed to replace document');
+    } finally {
+      setReplacingDocument(null);
     }
   };
 
@@ -560,6 +618,36 @@ export default function DocumentStorage() {
                       <TableCell>{formatDate(doc.created_at)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
+                          {doc.document_type === 'purchase_order' && (
+                            <>
+                              <input
+                                type="file"
+                                id={`replace-${doc.id}`}
+                                className="hidden"
+                                accept="image/*,.pdf"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    handleReplaceDocument(doc, file);
+                                    e.target.value = ''; // Reset input
+                                  }
+                                }}
+                              />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => document.getElementById(`replace-${doc.id}`)?.click()}
+                                disabled={replacingDocument === doc.id}
+                                title="Replace document file"
+                              >
+                                {replacingDocument === doc.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Upload className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
