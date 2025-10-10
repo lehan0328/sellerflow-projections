@@ -767,6 +767,7 @@ export type Database = {
           description: string | null
           display_name: string | null
           document_date: string | null
+          document_type: string | null
           file_name: string
           file_path: string
           id: string
@@ -782,6 +783,7 @@ export type Database = {
           description?: string | null
           display_name?: string | null
           document_date?: string | null
+          document_type?: string | null
           file_name: string
           file_path: string
           id?: string
@@ -797,6 +799,7 @@ export type Database = {
           description?: string | null
           display_name?: string | null
           document_date?: string | null
+          document_type?: string | null
           file_name?: string
           file_path?: string
           id?: string

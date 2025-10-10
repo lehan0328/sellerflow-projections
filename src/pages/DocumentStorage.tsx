@@ -47,6 +47,7 @@ interface StoredDocument {
   display_name?: string;
   amount?: number;
   description?: string;
+  document_type?: string;
 }
 
 export default function DocumentStorage() {
@@ -100,7 +101,8 @@ export default function DocumentStorage() {
           document_date: meta?.document_date || file.created_at,
           display_name: meta?.display_name || file.name,
           amount: meta?.amount,
-          description: meta?.description
+          description: meta?.description,
+          document_type: meta?.document_type
         } as StoredDocument;
       });
     },
@@ -514,6 +516,7 @@ export default function DocumentStorage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead>Vendor</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Document Date</TableHead>
@@ -536,6 +539,13 @@ export default function DocumentStorage() {
                             {doc.display_name || doc.name}
                           </span>
                         </div>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {doc.document_type ? (
+                          <span className="capitalize">{doc.document_type.replace('_', ' ')}</span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm">
                         {doc.vendor_name || <span className="text-muted-foreground">-</span>}

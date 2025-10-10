@@ -262,7 +262,8 @@ export const PurchaseOrderForm = ({
             notes: formData.notes,
             vendor_id: formData.vendorId || null,
             amount: parseFloat(formData.amount),
-            document_date: formData.poDate.toISOString().split('T')[0]
+            document_date: formData.poDate.toISOString().split('T')[0],
+            document_type: 'purchase_order'
           });
 
         if (metadataError) throw metadataError;
