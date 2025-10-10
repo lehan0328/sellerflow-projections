@@ -1177,49 +1177,6 @@ const Dashboard = () => {
             {/* Transaction Match Notification */}
             <TransactionMatchNotification unmatchedCount={unmatchedTransactionsCount} />
             
-            {/* Transaction Match Button */}
-            <div className="flex justify-end mb-4">
-              <TransactionMatchButton 
-                matches={matches}
-                onMatchAll={async () => {
-                  // Match all transactions instantly
-                  for (const match of matches) {
-                    if (match.type === 'income' && match.matchedIncome) {
-                      await updateIncome(match.matchedIncome.id, { status: 'received' });
-                      await addTransaction({
-                        type: 'customer_payment',
-                        amount: match.matchedIncome.amount,
-                        description: `Auto-matched: ${match.matchedIncome.source} - ${match.matchedIncome.description}`,
-                        customerId: match.matchedIncome.customerId,
-                        transactionDate: new Date(),
-                        status: 'completed'
-                      });
-                    } else if (match.type === 'vendor' && match.matchedVendor) {
-                      await updateVendor(match.matchedVendor.id, {
-                        totalOwed: Math.max(0, match.matchedVendor.totalOwed - Math.abs(match.bankTransaction.amount))
-                      });
-                      await addTransaction({
-                        type: 'vendor_payment',
-                        amount: Math.abs(match.bankTransaction.amount),
-                        description: `Auto-matched: Payment to ${match.matchedVendor.name}`,
-                        vendorId: match.matchedVendor.id,
-                        transactionDate: new Date(),
-                        status: 'completed'
-                      });
-                    }
-                  }
-                  
-                  toast({
-                    title: 'All matches completed',
-                    description: `${matches.length} transactions have been automatically matched.`,
-                  });
-                  
-                  refetchIncome();
-                  refetchVendors();
-                }}
-                onReviewMatches={() => navigate("/bank-transactions")}
-              />
-            </div>
             
             {/* Row 1: Cash Flow Calendar and AI Insights (Side by Side) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[700px]">
@@ -1240,25 +1197,74 @@ const Dashboard = () => {
                 />
               </div>
               <div className="lg:col-span-1 h-full">
-                <CashFlowInsights
-                  currentBalance={displayCash}
-                  dailyInflow={todayInflow}
-                  dailyOutflow={todayOutflow}
-                  upcomingExpenses={upcomingExpenses}
-                  events={allCalendarEvents}
-                  vendors={vendors}
-                  income={incomeItems}
-                  safeSpendingLimit={safeSpendingData?.safe_spending_limit || 0}
-                  reserveAmount={safeSpendingData?.reserve_amount || 0}
-                  projectedLowestBalance={safeSpendingData?.calculation?.lowest_projected_balance || 0}
-                  lowestBalanceDate={safeSpendingData?.calculation?.lowest_balance_date || ""}
-                  safeSpendingAvailableDate={safeSpendingData?.calculation?.safe_spending_available_date}
-                  nextBuyingOpportunityBalance={safeSpendingData?.calculation?.next_buying_opportunity_balance}
-                  nextBuyingOpportunityDate={safeSpendingData?.calculation?.next_buying_opportunity_date}
-                  nextBuyingOpportunityAvailableDate={safeSpendingData?.calculation?.next_buying_opportunity_available_date}
-                  allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
-                  onUpdateReserveAmount={updateReserveAmount}
-                />
+                <div className="h-full flex flex-col gap-4">
+                  {/* Transaction Match Button */}
+                  <div className="flex justify-end">
+                    <TransactionMatchButton 
+                      matches={matches}
+                      onMatchAll={async () => {
+                        // Match all transactions instantly
+                        for (const match of matches) {
+                          if (match.type === 'income' && match.matchedIncome) {
+                            await updateIncome(match.matchedIncome.id, { status: 'received' });
+                            await addTransaction({
+                              type: 'customer_payment',
+                              amount: match.matchedIncome.amount,
+                              description: `Auto-matched: ${match.matchedIncome.source} - ${match.matchedIncome.description}`,
+                              customerId: match.matchedIncome.customerId,
+                              transactionDate: new Date(),
+                              status: 'completed'
+                            });
+                          } else if (match.type === 'vendor' && match.matchedVendor) {
+                            await updateVendor(match.matchedVendor.id, {
+                              totalOwed: Math.max(0, match.matchedVendor.totalOwed - Math.abs(match.bankTransaction.amount))
+                            });
+                            await addTransaction({
+                              type: 'vendor_payment',
+                              amount: Math.abs(match.bankTransaction.amount),
+                              description: `Auto-matched: Payment to ${match.matchedVendor.name}`,
+                              vendorId: match.matchedVendor.id,
+                              transactionDate: new Date(),
+                              status: 'completed'
+                            });
+                          }
+                        }
+                        
+                        toast({
+                          title: 'All matches completed',
+                          description: `${matches.length} transactions have been automatically matched.`,
+                        });
+                        
+                        refetchIncome();
+                        refetchVendors();
+                      }}
+                      onReviewMatches={() => navigate("/bank-transactions")}
+                    />
+                  </div>
+                  
+                  {/* AI Insights */}
+                  <div className="flex-1">
+                    <CashFlowInsights
+                      currentBalance={displayCash}
+                      dailyInflow={todayInflow}
+                      dailyOutflow={todayOutflow}
+                      upcomingExpenses={upcomingExpenses}
+                      events={allCalendarEvents}
+                      vendors={vendors}
+                      income={incomeItems}
+                      safeSpendingLimit={safeSpendingData?.safe_spending_limit || 0}
+                      reserveAmount={safeSpendingData?.reserve_amount || 0}
+                      projectedLowestBalance={safeSpendingData?.calculation?.lowest_projected_balance || 0}
+                      lowestBalanceDate={safeSpendingData?.calculation?.lowest_balance_date || ""}
+                      safeSpendingAvailableDate={safeSpendingData?.calculation?.safe_spending_available_date}
+                      nextBuyingOpportunityBalance={safeSpendingData?.calculation?.next_buying_opportunity_balance}
+                      nextBuyingOpportunityDate={safeSpendingData?.calculation?.next_buying_opportunity_date}
+                      nextBuyingOpportunityAvailableDate={safeSpendingData?.calculation?.next_buying_opportunity_available_date}
+                      allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
+                      onUpdateReserveAmount={updateReserveAmount}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </>
