@@ -10,8 +10,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
+  SidebarHeader,
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
+import aurenIcon from "@/assets/auren-icon-blue.png";
 
 interface AppSidebarProps {
   activeSection: string;
@@ -35,9 +37,19 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
 
   return (
     <Sidebar className={isCollapsed ? "w-16" : "w-64"} collapsible="icon">
+      <SidebarHeader className="border-b border-border/50 py-4">
+        <div className="flex items-center justify-center gap-2 px-2">
+          <img src={aurenIcon} alt="Auren" className="h-8 w-8" />
+          {!isCollapsed && (
+            <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              Auren
+            </span>
+          )}
+        </div>
+      </SidebarHeader>
       <SidebarContent className={isCollapsed ? "px-0" : "px-1"}>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-2">
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-2 mt-2">
             Dashboard
           </SidebarGroupLabel>
           <SidebarGroupContent>
