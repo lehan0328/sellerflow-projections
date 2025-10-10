@@ -1,104 +1,89 @@
-import { Card } from "@/components/ui/card";
+import React, { useState } from "react";
+import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { StatCard } from "@/components/ui/stat-card";
-import { DollarSign, TrendingUp, Calendar, CreditCard } from "lucide-react";
+import { OverviewStats } from "@/components/cash-flow/overview-stats";
+import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
+import { CashFlowInsights } from "@/components/cash-flow/cash-flow-insights";
+import { addDays } from "date-fns";
+
+// Mock data for demo
+const mockEvents = [
+  {
+    id: '1',
+    type: 'inflow' as const,
+    amount: 5000,
+    description: 'Amazon Payout',
+    date: new Date(),
+    affectsBalance: true
+  },
+  {
+    id: '2',
+    type: 'outflow' as const,
+    amount: 1250,
+    description: 'Inventory Purchase',
+    vendor: 'ABC Supplies',
+    date: addDays(new Date(), 2),
+    affectsBalance: true
+  },
+  {
+    id: '3',
+    type: 'inflow' as const,
+    amount: 3500,
+    description: 'Amazon Payout',
+    date: addDays(new Date(), 7),
+    affectsBalance: true
+  },
+  {
+    id: '4',
+    type: 'credit-payment' as const,
+    amount: 2450,
+    description: 'Credit Card Payment',
+    creditCard: 'Business Card',
+    date: addDays(new Date(), 5),
+    affectsBalance: true
+  }
+];
 
 const Demo = () => {
+  const [activeSection, setActiveSection] = useState("overview");
+
   return (
     <SidebarProvider defaultOpen={false}>
       <div className="flex min-h-screen w-full bg-background">
-        <AppSidebar activeSection="overview" onSectionChange={() => {}} />
+        <AppSidebar 
+          activeSection={activeSection} 
+          onSectionChange={setActiveSection}
+        />
         <div className="flex-1 overflow-auto">
-          <div className="container mx-auto p-6 space-y-6">
-            {/* Header */}
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold mb-2">Dashboard Demo</h1>
-              <p className="text-muted-foreground">
-                Interactive preview of your financial command center
-              </p>
-            </div>
+          <div className="relative pb-6">
+            <DashboardHeader />
+            
+            <div className="container mx-auto px-4 sm:px-6 mt-20 space-y-6">
+              <OverviewStats
+                totalCash={45230}
+                events={mockEvents}
+                onUpdateCashBalance={() => {}}
+                pendingIncomeToday={{amount: 0, count: 0}}
+              />
 
-            {/* Stats Grid */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <StatCard
-                title="Current Cash Balance"
-                value="$45,230"
-                icon={<DollarSign className="h-6 w-6 text-primary" />}
-                trend="up"
-                trendValue="+12.5%"
-                subtitle="Total liquid assets"
+              <CashFlowCalendar
+                events={mockEvents}
+                totalCash={45230}
+                bankAccountBalance={45230}
               />
-              <StatCard
-                title="Available Credit"
-                value="$18,500"
-                icon={<CreditCard className="h-6 w-6 text-primary" />}
-                trend="up"
-                trendValue="+5.2%"
-                subtitle="Across all cards"
-              />
-              <StatCard
-                title="Upcoming Income"
-                value="$12,400"
-                icon={<TrendingUp className="h-6 w-6 text-primary" />}
-                trend="up"
-                trendValue="+8.3%"
-                subtitle="Next 30 days"
-              />
-              <StatCard
-                title="Due This Week"
-                value="$3,250"
-                icon={<Calendar className="h-6 w-6 text-primary" />}
-                subtitle="Bills & payments"
+
+              <CashFlowInsights
+                currentBalance={45230}
+                dailyInflow={5000}
+                dailyOutflow={1250}
+                upcomingExpenses={2450}
+                events={mockEvents}
+                safeSpendingLimit={30000}
+                reserveAmount={15000}
+                projectedLowestBalance={38000}
               />
             </div>
-
-            {/* Calendar Preview */}
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Cash Flow Calendar</h2>
-              <div className="aspect-video bg-gradient-to-br from-primary/5 to-accent/5 rounded-lg flex items-center justify-center">
-                <div className="text-center space-y-2">
-                  <Calendar className="h-12 w-12 mx-auto text-primary" />
-                  <p className="text-muted-foreground">
-                    Visual timeline of income and expenses
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            {/* Insights */}
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Financial Insights</h2>
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 rounded-full bg-success mt-2" />
-                  <div>
-                    <p className="font-medium">Strong Cash Position</p>
-                    <p className="text-sm text-muted-foreground">
-                      Your current balance exceeds safe spending threshold by 15%
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 rounded-full bg-warning mt-2" />
-                  <div>
-                    <p className="font-medium">Upcoming Payment</p>
-                    <p className="text-sm text-muted-foreground">
-                      Credit card payment of $2,450 due in 5 days
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <div className="w-2 h-2 rounded-full bg-primary mt-2" />
-                  <div>
-                    <p className="font-medium">Revenue Growth</p>
-                    <p className="text-sm text-muted-foreground">
-                      Amazon payouts up 23% compared to last month
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </Card>
           </div>
         </div>
       </div>
