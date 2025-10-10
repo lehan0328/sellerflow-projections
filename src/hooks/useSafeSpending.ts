@@ -179,11 +179,10 @@ export const useSafeSpending = () => {
         transactionsResult.data?.forEach((tx) => {
           const txDate = parseLocalDate(tx.due_date || tx.transaction_date);
           
-          // Skip overdue transactions (past due date but not completed)
-          const isOverdue = txDate.getTime() < today.getTime() && tx.status !== 'completed' && tx.status !== 'paid';
-          if (isOverdue) {
+          // Skip ALL past transactions (anything before today)
+          if (txDate.getTime() < today.getTime()) {
             if (isKeyDate) {
-              console.log(`  ⏭️ SKIPPING overdue transaction: ${tx.type} $${tx.amount} (due: ${formatDate(txDate)}, status: ${tx.status})`);
+              console.log(`  ⏭️ SKIPPING past transaction: ${tx.type} $${tx.amount} (date: ${formatDate(txDate)}, status: ${tx.status})`);
             }
             return;
           }
@@ -219,8 +218,17 @@ export const useSafeSpending = () => {
         });
 
         incomeResult.data?.forEach((income) => {
+          const incomeDate = parseLocalDate(income.payment_date);
+          
+          // Skip ALL past income (anything before today)
+          if (incomeDate.getTime() < today.getTime()) {
+            if (isKeyDate) {
+              console.log(`  ⏭️ SKIPPING past income: ${income.description} $${income.amount} (date: ${formatDate(incomeDate)})`);
+            }
+            return;
+          }
+          
           if (income.status !== 'received') {
-            const incomeDate = parseLocalDate(income.payment_date);
             if (incomeDate.getTime() === targetDate.getTime()) {
               const amt = Number(income.amount);
               if (isKeyDate) {
@@ -233,13 +241,34 @@ export const useSafeSpending = () => {
 
         amazonResult.data?.forEach((payout) => {
           const payoutDate = parseLocalDate(payout.payout_date);
+          
+          // Skip ALL past Amazon payouts (anything before today)
+          if (payoutDate.getTime() < today.getTime()) {
+            if (isKeyDate) {
+              console.log(`  ⏭️ SKIPPING past Amazon payout: $${payout.total_amount} (date: ${formatDate(payoutDate)})`);
+            }
+            return;
+          }
+          
           if (payoutDate.getTime() === targetDate.getTime()) {
-            dayChange += Number(payout.total_amount);
+            const amt = Number(payout.total_amount);
+            if (isKeyDate) {
+              console.log(`  🛒 Amazon payout: +$${amt}`);
+            }
+            dayChange += amt;
           }
         });
 
         recurringResult.data?.forEach((recurring) => {
           if (recurring.is_active) {
+            // Skip if target date is before today
+            if (targetDate.getTime() < today.getTime()) {
+              if (isKeyDate) {
+                console.log(`  ⏭️ SKIPPING past recurring: ${recurring.name} (target date is in past)`);
+              }
+              return;
+            }
+            
             const occurrences = generateRecurringDates(
               {
                 id: recurring.id,
@@ -285,6 +314,15 @@ export const useSafeSpending = () => {
             if (vendor.payment_schedule && Array.isArray(vendor.payment_schedule)) {
               vendor.payment_schedule.forEach((payment: any) => {
                 const paymentDate = parseLocalDate(payment.date);
+                
+                // Skip ALL past vendor payments
+                if (paymentDate.getTime() < today.getTime()) {
+                  if (isKeyDate) {
+                    console.log(`  ⏭️ SKIPPING past vendor payment: ${vendor.name} $${payment.amount} (date: ${formatDate(paymentDate)})`);
+                  }
+                  return;
+                }
+                
                 if (paymentDate.getTime() === targetDate.getTime()) {
                   const amt = Number(payment.amount || 0);
                   if (isKeyDate) {
@@ -295,6 +333,15 @@ export const useSafeSpending = () => {
               });
             } else if (vendor.next_payment_date) {
               const vendorDate = parseLocalDate(vendor.next_payment_date);
+              
+              // Skip ALL past vendor payments
+              if (vendorDate.getTime() < today.getTime()) {
+                if (isKeyDate) {
+                  console.log(`  ⏭️ SKIPPING past vendor payment: ${vendor.name} (date: ${formatDate(vendorDate)})`);
+                }
+                return;
+              }
+              
               if (vendorDate.getTime() === targetDate.getTime()) {
                 const amt = Number(vendor.next_payment_amount || 0);
                 if (isKeyDate) {
