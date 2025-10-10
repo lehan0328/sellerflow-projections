@@ -12,51 +12,32 @@ export const LiveDashboardShowcase = () => {
       <div className="text-center mb-8">
         <Badge variant="secondary" className="inline-flex items-center space-x-2 mb-4">
           <Monitor className="h-4 w-4" />
-          <span>Live Dashboard Preview</span>
+          <span>Dashboard Features</span>
         </Badge>
         <h3 className="text-2xl font-bold mb-2">Experience Your Financial Command Center</h3>
         <p className="text-muted-foreground mb-4">
-          See the actual dashboard interface that thousands of Amazon sellers use daily
+          The dashboard interface that thousands of Amazon sellers use daily
         </p>
         <Button 
           variant="outline" 
-          onClick={() => navigate('/demo')}
+          onClick={() => navigate('/signup')}
           className="inline-flex items-center space-x-2"
         >
           <ExternalLink className="h-4 w-4" />
-          <span>Try Interactive Demo</span>
+          <span>Get Started</span>
         </Button>
       </div>
 
       <Card className="relative overflow-hidden shadow-2xl border-0 bg-gradient-to-br from-primary/5 to-accent/5">
-        {/* Dashboard Preview Frame */}
-        <div className="relative">
-          <div className="aspect-video bg-background border-8 border-muted rounded-lg overflow-hidden">
-            {/* Browser Chrome */}
-            <div className="flex items-center justify-between bg-muted px-4 py-2 border-b">
-              <div className="flex items-center space-x-2">
-                <div className="flex space-x-1">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                </div>
-                <div className="text-xs text-muted-foreground ml-4">
-                  cashflowpro.com/dashboard
-                </div>
-              </div>
-            </div>
-
-            {/* Dashboard Content Preview */}
-            <div className="h-full bg-background flex items-center justify-center">
-              <iframe
-                src="/demo"
-                className="w-full h-full border-0 scale-75 origin-center"
-                style={{ 
-                  width: '133.33%', 
-                  height: '133.33%'
-                }}
-                title="Demo Dashboard Preview"
-              />
+        {/* Dashboard Preview */}
+        <div className="relative p-8">
+          <div className="aspect-video bg-gradient-to-br from-background to-muted rounded-lg flex items-center justify-center">
+            <div className="text-center space-y-4">
+              <Monitor className="h-16 w-16 mx-auto text-primary" />
+              <h4 className="text-xl font-semibold">Real-time Cash Flow Management</h4>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                Track your Amazon business finances with real-time updates, forecasting, and intelligent insights
+              </p>
             </div>
           </div>
         </div>
@@ -67,14 +48,14 @@ export const LiveDashboardShowcase = () => {
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-success rounded-full animate-pulse" />
-                  <span className="text-sm font-medium">Live Preview</span>
+                  <span className="text-sm font-medium">Live Dashboard</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Real dashboard interface
+                  Real-time interface
                 </div>
               </div>
               <div className="text-sm text-muted-foreground">
-                Interactive Demo
+                Available Now
               </div>
             </div>
           </div>
