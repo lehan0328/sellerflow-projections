@@ -3,6 +3,8 @@ import { addDays, isToday, isBefore, startOfDay, format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import { OverviewStats } from "@/components/cash-flow/overview-stats";
 import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
 import { CashFlowInsights } from "@/components/cash-flow/cash-flow-insights";
@@ -50,6 +52,7 @@ interface CashFlowEvent {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState("overview");
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
@@ -1108,66 +1111,66 @@ const Dashboard = () => {
     })
     .reduce((sum, event) => sum + event.amount, 0);
 
-  return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Subtle gradient orbs */}
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tl from-accent/5 to-transparent rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }} />
-      <DashboardHeader />
-      
-      <div className="p-6 space-y-6">
-        <OverviewStats 
-          totalCash={displayCash} 
-          events={allCalendarEvents}
-          onUpdateCashBalance={handleUpdateCashBalance}
-          pendingIncomeToday={pendingIncomeToday}
-        />
-        
-        {/* Transaction Match Notification */}
-        <TransactionMatchNotification unmatchedCount={unmatchedTransactionsCount} />
-        
-        {/* Row 1: Cash Flow Calendar and AI Insights (Side by Side) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[700px]">
-          <div className="lg:col-span-2 h-full">
-            <CashFlowCalendar 
-              events={allCalendarEvents} 
-              totalCash={displayCash}
-              onEditTransaction={handleEditTransaction}
-              onUpdateTransactionDate={handleUpdateTransactionDate}
-              todayInflow={todayInflow}
-              todayOutflow={todayOutflow}
-              upcomingExpenses={upcomingExpenses}
-              incomeItems={incomeItems}
-              bankAccountBalance={bankAccountBalance}
-              vendors={vendors}
-              onVendorClick={handleEditVendorOrder}
-              onIncomeClick={handleEditIncome}
-            />
-          </div>
-          <div className="lg:col-span-1 h-full">
-            <CashFlowInsights
-              currentBalance={displayCash}
-              dailyInflow={todayInflow}
-              dailyOutflow={todayOutflow}
-              upcomingExpenses={upcomingExpenses}
+  const renderSection = () => {
+    switch (activeSection) {
+      case "overview":
+        return (
+          <>
+            <OverviewStats 
+              totalCash={displayCash} 
               events={allCalendarEvents}
-              vendors={vendors}
-              income={incomeItems}
-              safeSpendingLimit={safeSpendingData?.safe_spending_limit || 0}
-              reserveAmount={safeSpendingData?.reserve_amount || 0}
-              projectedLowestBalance={safeSpendingData?.calculation?.lowest_projected_balance || 0}
-              lowestBalanceDate={safeSpendingData?.calculation?.lowest_balance_date || ""}
-              safeSpendingAvailableDate={safeSpendingData?.calculation?.safe_spending_available_date}
-              nextBuyingOpportunityBalance={safeSpendingData?.calculation?.next_buying_opportunity_balance}
-              nextBuyingOpportunityDate={safeSpendingData?.calculation?.next_buying_opportunity_date}
-              nextBuyingOpportunityAvailableDate={safeSpendingData?.calculation?.next_buying_opportunity_available_date}
-              allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
-              onUpdateReserveAmount={updateReserveAmount}
+              onUpdateCashBalance={handleUpdateCashBalance}
+              pendingIncomeToday={pendingIncomeToday}
             />
-          </div>
-        </div>
-
-        {/* Row 2: Vendors Overview and Income Overview (Side by Side) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* Transaction Match Notification */}
+            <TransactionMatchNotification unmatchedCount={unmatchedTransactionsCount} />
+            
+            {/* Row 1: Cash Flow Calendar and AI Insights (Side by Side) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[700px]">
+              <div className="lg:col-span-2 h-full">
+                <CashFlowCalendar 
+                  events={allCalendarEvents} 
+                  totalCash={displayCash}
+                  onEditTransaction={handleEditTransaction}
+                  onUpdateTransactionDate={handleUpdateTransactionDate}
+                  todayInflow={todayInflow}
+                  todayOutflow={todayOutflow}
+                  upcomingExpenses={upcomingExpenses}
+                  incomeItems={incomeItems}
+                  bankAccountBalance={bankAccountBalance}
+                  vendors={vendors}
+                  onVendorClick={handleEditVendorOrder}
+                  onIncomeClick={handleEditIncome}
+                />
+              </div>
+              <div className="lg:col-span-1 h-full">
+                <CashFlowInsights
+                  currentBalance={displayCash}
+                  dailyInflow={todayInflow}
+                  dailyOutflow={todayOutflow}
+                  upcomingExpenses={upcomingExpenses}
+                  events={allCalendarEvents}
+                  vendors={vendors}
+                  income={incomeItems}
+                  safeSpendingLimit={safeSpendingData?.safe_spending_limit || 0}
+                  reserveAmount={safeSpendingData?.reserve_amount || 0}
+                  projectedLowestBalance={safeSpendingData?.calculation?.lowest_projected_balance || 0}
+                  lowestBalanceDate={safeSpendingData?.calculation?.lowest_balance_date || ""}
+                  safeSpendingAvailableDate={safeSpendingData?.calculation?.safe_spending_available_date}
+                  nextBuyingOpportunityBalance={safeSpendingData?.calculation?.next_buying_opportunity_balance}
+                  nextBuyingOpportunityDate={safeSpendingData?.calculation?.next_buying_opportunity_date}
+                  nextBuyingOpportunityAvailableDate={safeSpendingData?.calculation?.next_buying_opportunity_available_date}
+                  allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
+                  onUpdateReserveAmount={updateReserveAmount}
+                />
+              </div>
+            </div>
+          </>
+        );
+      
+      case "vendors":
+        return (
           <VendorsOverview 
             bankTransactions={exampleBankTransactions}
             onVendorUpdate={() => {
@@ -1177,8 +1180,10 @@ const Dashboard = () => {
             }}
             refreshKey={vendorTxRefresh}
           />
-
-          {/* Customer Invoices */}
+        );
+      
+      case "income":
+        return (
           <IncomeOverview
             incomeItems={incomeItems}
             bankTransactions={exampleBankTransactions}
@@ -1197,88 +1202,115 @@ const Dashboard = () => {
               });
             }}
           />
+        );
+      
+      case "bank-accounts":
+        return <BankAccounts />;
+      
+      case "credit-cards":
+        return <CreditCards />;
+      
+      case "recurring":
+        return <RecurringExpensesOverview />;
+      
+      case "amazon":
+        return <AmazonPayouts />;
+      
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <AppSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+        
+        <div className="flex-1 overflow-auto relative">
+          {/* Subtle gradient orbs */}
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tl from-accent/5 to-transparent rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }} />
+          
+          {/* Header with sidebar trigger */}
+          <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+            <div className="flex items-center h-16 px-6">
+              <SidebarTrigger className="mr-4" />
+              <DashboardHeader />
+            </div>
+          </div>
+          
+          <div className="p-6 space-y-6">
+            {renderSection()}
+          </div>
+
+          <FloatingMenu
+            onAddPurchaseOrder={handleOpenPurchaseOrderForm}
+            onAddIncome={() => setShowIncomeForm(true)}
+            onAddRecurringIncome={() => setShowRecurringIncomeForm(true)}
+            onOpenFlexReport={() => navigate('/flex-report')}
+          />
+
+          {showPurchaseOrderForm && (
+            <PurchaseOrderForm
+              vendors={formVendors}
+              open={showPurchaseOrderForm}
+              onOpenChange={setShowPurchaseOrderForm}
+              onSubmitOrder={handlePurchaseOrderSubmit}
+              onDeleteAllVendors={deleteAllVendors}
+              onAddVendor={addVendor}
+            />
+          )}
+
+
+          {showIncomeForm && (
+            <IncomeForm
+              open={showIncomeForm}
+              onOpenChange={setShowIncomeForm}
+              onSubmitIncome={handleIncomeSubmit}
+              onSubmitExpense={handleExpenseSubmit}
+              customers={customers}
+              onAddCustomer={addCustomer}
+              onDeleteAllCustomers={deleteAllCustomers}
+            />
+          )}
+
+          {showRecurringIncomeForm && (
+            <IncomeForm
+              open={showRecurringIncomeForm}
+              onOpenChange={setShowRecurringIncomeForm}
+              onSubmitIncome={handleIncomeSubmit}
+              onSubmitExpense={handleExpenseSubmit}
+              isRecurring={true}
+              customers={customers}
+              onAddCustomer={addCustomer}
+              onDeleteAllCustomers={deleteAllCustomers}
+            />
+          )}
+
+          {showEditIncomeForm && (
+            <IncomeForm
+              open={showEditIncomeForm}
+              onOpenChange={setShowEditIncomeForm}
+              onSubmitIncome={handleUpdateIncome}
+              onSubmitExpense={handleExpenseSubmit}
+              editingIncome={editingIncome}
+              customers={customers}
+              onAddCustomer={addCustomer}
+              onDeleteAllCustomers={deleteAllCustomers}
+            />
+          )}
+
+          {editingVendor && (
+            <VendorOrderEditModal
+              vendor={editingVendor as any}
+              open={!!editingVendor}
+              onOpenChange={(open) => !open && setEditingVendor(null)}
+              onSave={handleSaveVendorOrder}
+              onDelete={handleDeleteVendorOrder}
+            />
+          )}
         </div>
-
-        {/* Row 3: Bank Accounts and Credit Cards (Side by Side) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <BankAccounts />
-          <CreditCards />
-        </div>
-
-        {/* Row 4: Recurring Expenses (Full Width) */}
-        <RecurringExpensesOverview />
-
-        {/* Row 5: Amazon Payouts (Full Width) */}
-        <AmazonPayouts />
       </div>
-
-      <FloatingMenu
-        onAddPurchaseOrder={handleOpenPurchaseOrderForm}
-        onAddIncome={() => setShowIncomeForm(true)}
-        onAddRecurringIncome={() => setShowRecurringIncomeForm(true)}
-        onOpenFlexReport={() => navigate('/flex-report')}
-      />
-
-      {showPurchaseOrderForm && (
-        <PurchaseOrderForm
-          vendors={formVendors}
-          open={showPurchaseOrderForm}
-          onOpenChange={setShowPurchaseOrderForm}
-          onSubmitOrder={handlePurchaseOrderSubmit}
-          onDeleteAllVendors={deleteAllVendors}
-          onAddVendor={addVendor}
-        />
-      )}
-
-
-      {showIncomeForm && (
-        <IncomeForm
-          open={showIncomeForm}
-          onOpenChange={setShowIncomeForm}
-          onSubmitIncome={handleIncomeSubmit}
-          onSubmitExpense={handleExpenseSubmit}
-          customers={customers}
-          onAddCustomer={addCustomer}
-          onDeleteAllCustomers={deleteAllCustomers}
-        />
-      )}
-
-      {showRecurringIncomeForm && (
-        <IncomeForm
-          open={showRecurringIncomeForm}
-          onOpenChange={setShowRecurringIncomeForm}
-          onSubmitIncome={handleIncomeSubmit}
-          onSubmitExpense={handleExpenseSubmit}
-          isRecurring={true}
-          customers={customers}
-          onAddCustomer={addCustomer}
-          onDeleteAllCustomers={deleteAllCustomers}
-        />
-      )}
-
-      {showEditIncomeForm && (
-        <IncomeForm
-          open={showEditIncomeForm}
-          onOpenChange={setShowEditIncomeForm}
-          onSubmitIncome={handleUpdateIncome}
-          onSubmitExpense={handleExpenseSubmit}
-          editingIncome={editingIncome}
-          customers={customers}
-          onAddCustomer={addCustomer}
-          onDeleteAllCustomers={deleteAllCustomers}
-        />
-      )}
-
-      {editingVendor && (
-        <VendorOrderEditModal
-          vendor={editingVendor as any}
-          open={!!editingVendor}
-          onOpenChange={(open) => !open && setEditingVendor(null)}
-          onSave={handleSaveVendorOrder}
-          onDelete={handleDeleteVendorOrder}
-        />
-      )}
-    </div>
+    </SidebarProvider>
   );
 };
 
