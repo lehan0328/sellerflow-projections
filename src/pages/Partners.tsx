@@ -25,17 +25,23 @@ export default function Partners() {
               </span>
             </div>
             <div className="hidden md:flex items-center space-x-6">
-              <Link to="/features" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+              <Link to="/features" onClick={() => window.scrollTo(0, 0)} className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Features
               </Link>
-              <Link to="/#pricing" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
-                Plans
+              <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+                Pricing
               </Link>
-              <Link to="/blog" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+              <Link to="/#testimonials" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+                Reviews
+              </Link>
+              <Link to="/blog" onClick={() => window.scrollTo(0, 0)} className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Blog
               </Link>
-              <Link to="/partners" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+              <Link to="/partners" className="text-foreground font-semibold transition-all duration-300">
                 Partners
+              </Link>
+              <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+                Contact
               </Link>
               <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Docs
@@ -60,8 +66,8 @@ export default function Partners() {
               </Button>
               <Button 
                 size="sm" 
-                className="bg-gradient-primary hover-scale transition-all duration-200 hover:shadow-lg hover:shadow-primary/50" 
-                onClick={() => navigate('/#pricing')}
+                className="bg-gradient-primary hover-scale transition-all duration-200"
+                onClick={() => navigate('/signup')}
               >
                 Start Free Trial
               </Button>
