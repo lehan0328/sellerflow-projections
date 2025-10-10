@@ -40,7 +40,7 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
     <Sidebar className={isCollapsed ? "w-16" : "w-64"} collapsible="icon">
       <SidebarHeader className="border-b border-border/50 py-4">
         <div className="flex items-center justify-center gap-2 px-2">
-          <img src={aurenIcon} alt="Auren" className="h-8 w-8" />
+          <img src={aurenIcon} alt="Auren" className={isCollapsed ? "h-12 w-12" : "h-8 w-8"} />
           {!isCollapsed && (
             <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               Auren
