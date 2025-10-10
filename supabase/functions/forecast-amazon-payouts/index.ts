@@ -56,7 +56,13 @@ serve(async (req) => {
 
     console.log('[FORECAST] Data fetched', { 
       payoutCount: amazonPayouts?.length || 0,
-      transactionCount: amazonTransactions?.length || 0
+      transactionCount: amazonTransactions?.length || 0,
+      payoutsData: amazonPayouts.map(p => ({
+        date: p.payout_date,
+        amount: p.total_amount,
+        status: p.status,
+        type: p.payout_type
+      }))
     });
 
     if (!amazonPayouts || amazonPayouts.length === 0) {
@@ -94,7 +100,7 @@ serve(async (req) => {
       monthlyData[monthKey].payout_count += 1;
     });
 
-    // Calculate averages
+      // Calculate averages
     Object.keys(monthlyData).forEach(month => {
       monthlyData[month].avg_amount = monthlyData[month].total_amount / monthlyData[month].payout_count;
     });
@@ -103,9 +109,17 @@ serve(async (req) => {
       a.month.localeCompare(b.month)
     );
     
-    console.log('[FORECAST] Starting forecast generation', { 
-      payoutCount: amazonPayouts.length,
-      monthlyDataPoints: historicalData.length 
+    // Calculate average payout for baseline
+    const avgPayoutAmount = amazonPayouts
+      .filter(p => p.status !== 'forecasted')
+      .reduce((sum, p) => sum + Number(p.total_amount), 0) / Math.max(1, amazonPayouts.filter(p => p.status !== 'forecasted').length);
+    
+    console.log('[FORECAST] Historical Analysis:', { 
+      totalPayouts: amazonPayouts.length,
+      monthlyDataPoints: historicalData.length,
+      averagePayoutAmount: avgPayoutAmount,
+      historicalMonthly: historicalData,
+      dateRange: `${amazonPayouts[amazonPayouts.length - 1]?.payout_date} to ${amazonPayouts[0]?.payout_date}`
     });
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -284,10 +298,8 @@ Be precise with numbers, show your mathematical reasoning, and provide actionabl
       const payoutFrequency = amazonAccount?.payout_frequency || 'bi-weekly';
       const lastPayoutDate = new Date(amazonPayouts[0].payout_date);
       
-      // Calculate average payout amount for realistic demo forecasts
-      const avgPayoutAmount = amazonPayouts
-        .filter(p => p.status !== 'forecasted')
-        .reduce((sum, p) => sum + Number(p.total_amount), 0) / Math.max(1, amazonPayouts.filter(p => p.status !== 'forecasted').length);
+      // Calculate average payout amount for baseline (already calculated above, using same logic)
+      const baselineAmount = avgPayoutAmount;
       
       // Generate forecasts for 3 months based on frequency
       const forecastedPayouts: any[] = [];
@@ -307,17 +319,24 @@ Be precise with numbers, show your mathematical reasoning, and provide actionabl
         
         if (currentDate > threeMonthsOut) break;
         
-        // Use AI prediction if available, otherwise use average with slight variation
-        let predictedAmount = avgPayoutAmount * 100; // Boost for demo (100x for impressive visualization)
-        if (forecast.predictions[forecastIndex]) {
-          predictedAmount = (forecast.predictions[forecastIndex].predicted_amount || avgPayoutAmount) * 100;
+        // Use AI prediction if available, otherwise use baseline with variation
+        let predictedAmount = baselineAmount * 100; // Boost for demo (100x for impressive visualization)
+        let calculationMethod = 'baseline_with_demo_multiplier';
+        
+        if (forecast.predictions && forecast.predictions[forecastIndex]) {
+          const aiPrediction = forecast.predictions[forecastIndex].predicted_amount || baselineAmount;
+          predictedAmount = aiPrediction * 100;
+          calculationMethod = 'ai_prediction_with_demo_multiplier';
+          console.log(`[FORECAST] Period ${forecastIndex + 1} using AI prediction: ${aiPrediction} * 100 = ${predictedAmount}`);
         } else {
           // Add 5-10% variation for realism
           const variation = 0.95 + (Math.random() * 0.15); // 0.95 to 1.10
-          predictedAmount = avgPayoutAmount * 100 * variation;
+          predictedAmount = baselineAmount * 100 * variation;
+          calculationMethod = 'baseline_with_variation_and_demo_multiplier';
+          console.log(`[FORECAST] Period ${forecastIndex + 1} using baseline: ${baselineAmount} * 100 * ${variation.toFixed(2)} = ${predictedAmount}`);
         }
         
-        forecastedPayouts.push({
+        const forecastPayout = {
           user_id: userId,
           amazon_account_id: amazonPayouts[0].amazon_account_id,
           payout_date: currentDate.toISOString().split('T')[0],
@@ -334,14 +353,25 @@ Be precise with numbers, show your mathematical reasoning, and provide actionabl
           other_total: 0,
           raw_settlement_data: {
             forecast_metadata: {
-              confidence: forecast.predictions[forecastIndex]?.confidence || 0.7,
+              confidence: forecast.predictions?.[forecastIndex]?.confidence || 0.7,
               upper_bound: Math.round(predictedAmount * 1.2),
               lower_bound: Math.round(predictedAmount * 0.8),
               period: `Forecast ${forecastIndex + 1}`,
               generated_at: new Date().toISOString(),
-              frequency: payoutFrequency
+              frequency: payoutFrequency,
+              calculation_method: calculationMethod,
+              baseline_amount: baselineAmount,
+              demo_multiplier: 100
             }
           }
+        };
+        
+        forecastedPayouts.push(forecastPayout);
+        
+        console.log(`[FORECAST] Generated forecast ${forecastIndex + 1}:`, {
+          date: forecastPayout.payout_date,
+          amount: forecastPayout.total_amount,
+          method: calculationMethod
         });
         
         forecastIndex++;
@@ -356,6 +386,10 @@ Be precise with numbers, show your mathematical reasoning, and provide actionabl
 
       // Insert new forecasted payouts
       if (forecastedPayouts.length > 0) {
+        console.log(`[FORECAST] Inserting ${forecastedPayouts.length} forecasted payouts:`, 
+          forecastedPayouts.map(p => ({ date: p.payout_date, amount: p.total_amount }))
+        );
+        
         const { error: insertError } = await supabase
           .from('amazon_payouts')
           .insert(forecastedPayouts);
@@ -363,7 +397,14 @@ Be precise with numbers, show your mathematical reasoning, and provide actionabl
         if (insertError) {
           console.error('[FORECAST] Error storing forecasted payouts:', insertError);
         } else {
-          console.log('[FORECAST] Stored', forecastedPayouts.length, `forecasted ${payoutFrequency} payouts`);
+          console.log(`[FORECAST] ✅ Successfully stored ${forecastedPayouts.length} forecasted ${payoutFrequency} payouts`);
+          console.log('[FORECAST] Summary:', {
+            frequency: payoutFrequency,
+            baselineAmount: baselineAmount,
+            demoMultiplier: 100,
+            totalForecasts: forecastedPayouts.length,
+            dateRange: `${forecastedPayouts[0]?.payout_date} to ${forecastedPayouts[forecastedPayouts.length - 1]?.payout_date}`
+          });
         }
       }
     }
