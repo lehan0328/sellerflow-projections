@@ -66,6 +66,7 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
                 const Icon = section.icon;
                 const isActive = activeSection === section.id;
                 const isExternal = 'isExternal' in section && section.isExternal;
+                const isBookCall = section.id === "book-call";
                 
                 return (
                   <SidebarMenuItem key={section.id}>
@@ -80,15 +81,17 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
                       className={`
                         relative rounded-lg transition-all duration-200
                         ${isCollapsed ? "justify-center h-12 w-12" : ""}
-                        ${isActive 
-                          ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" 
-                          : "hover:bg-accent/50 hover:translate-x-1"
+                        ${isBookCall 
+                          ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-lg hover:shadow-xl font-bold justify-center"
+                          : isActive 
+                            ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" 
+                            : "hover:bg-accent/50 hover:translate-x-1"
                         }
                       `}
                     >
-                      <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive ? "animate-pulse" : ""} ${isCollapsed ? "mx-auto" : ""}`} />
+                      <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive || isBookCall ? "animate-pulse" : ""} ${isCollapsed || isBookCall ? "mx-auto" : ""}`} />
                       {!isCollapsed && (
-                        <span className="flex items-center justify-between w-full pr-1">
+                        <span className={`flex items-center ${isBookCall ? "justify-center w-full" : "justify-between w-full pr-1"}`}>
                           <span>{section.title}</span>
                           {section.id === "referrals" && (
                             <Badge 
