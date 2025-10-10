@@ -58,7 +58,7 @@ export default function ScenarioPlanner() {
   const [expenseAdjustment, setExpenseAdjustment] = useState(0);
   const [expenseAdjustmentType, setExpenseAdjustmentType] = useState<'percentage' | 'absolute'>('percentage');
   const [creditUtilizationTarget, setCreditUtilizationTarget] = useState(30);
-  const [projectionPeriod, setProjectionPeriod] = useState<string>('1m'); // '1w', '2w', '3w', '1m', '2m', etc.
+  const [projectionPeriod, setProjectionPeriod] = useState<string>('3m'); // '1w', '2w', '3w', '1m', '2m', etc.
   
   // Helper to convert projection period to weeks for calculations
   const getProjectionWeeks = (period: string): number => {
@@ -266,7 +266,7 @@ export default function ScenarioPlanner() {
     setExpenseAdjustment(0);
     setExpenseAdjustmentType('percentage');
     setCreditUtilizationTarget(30);
-    setProjectionPeriod('1m');
+    setProjectionPeriod('3m');
   };
 
   return (
@@ -548,15 +548,15 @@ export default function ScenarioPlanner() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={scenarioProjection}>
+                <LineChart data={scenarioProjection}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
                   <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
                   <Legend />
-                  <Bar dataKey="baselineNet" fill="#8b5cf6" name="Baseline Net" />
-                  <Bar dataKey="scenarioNet" fill="#06b6d4" name="Scenario Net" />
-                </BarChart>
+                  <Line type="monotone" dataKey="baselineNet" stroke="#8b5cf6" strokeWidth={2} name="Baseline Net" />
+                  <Line type="monotone" dataKey="scenarioNet" stroke="#06b6d4" strokeWidth={2} name="Scenario Net" />
+                </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
