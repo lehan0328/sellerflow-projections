@@ -334,52 +334,34 @@ export const useSafeSpending = () => {
       const minDayIndex = dailyBalances.findIndex(d => d.balance === minBalance);
       const minDay = dailyBalances[minDayIndex];
       
-      // Find ALL buying opportunities (all local minimums across the entire period)
+      console.log('\n🔍 SCANNING FOR BUYING OPPORTUNITIES...');
+      console.log('📊 First 30 days of balances:');
+      dailyBalances.slice(0, 30).forEach((day, idx) => {
+        console.log(`  ${day.date}: $${day.balance.toFixed(2)}`);
+      });
+      
+      // Find ALL buying opportunities using a simple approach:
+      // An opportunity occurs when balance INCREASES from one day to the next
+      // The opportunity is the amount you can spend on the LOW day (before the increase)
       const allBuyingOpportunities: Array<{ date: string; balance: number; available_date?: string }> = [];
       
-      console.log('\n🔍 SCANNING FOR ALL BUYING OPPORTUNITIES...');
-      
-      // Scan through ALL days to find local minimums (valleys)
-      // A local minimum is where balance stops decreasing and starts increasing
-      for (let i = 1; i < dailyBalances.length - 1; i++) {
-        const prev = dailyBalances[i - 1];
-        const current = dailyBalances[i];
-        const next = dailyBalances[i + 1];
+      for (let i = 0; i < dailyBalances.length - 1; i++) {
+        const currentDay = dailyBalances[i];
+        const nextDay = dailyBalances[i + 1];
         
-        // Check if this is a valley (local minimum):
-        // - Current balance <= previous balance (was decreasing or flat)
-        // - Next balance > current balance (starts increasing)
-        const isValley = current.balance <= prev.balance && next.balance > current.balance;
-        
-        // Also check for plateau valleys (balance stays flat for a while then rises)
-        let isPlateauValley = false;
-        if (current.balance <= prev.balance && next.balance === current.balance) {
-          // Find where the plateau ends
-          let plateauEnd = i + 1;
-          while (plateauEnd < dailyBalances.length - 1 && dailyBalances[plateauEnd].balance === current.balance) {
-            plateauEnd++;
-          }
-          // Check if balance rises after plateau
-          if (plateauEnd < dailyBalances.length && dailyBalances[plateauEnd].balance > current.balance) {
-            isPlateauValley = true;
-          }
-        }
-        
-        if (isValley || isPlateauValley) {
-          const rawBalanceAtOpportunity = current.balance;
-          const opportunityAmount = Math.max(0, rawBalanceAtOpportunity - reserve);
+        // Check if balance increases from today to tomorrow
+        // This means today is a low point (valley bottom)
+        if (nextDay.balance > currentDay.balance) {
+          const lowPointBalance = currentDay.balance;
+          const opportunityAmount = Math.max(0, lowPointBalance - reserve);
           
-          // Only add if there's actually money to spend (balance > reserve)
+          // Only add if there's actually money to spend
           if (opportunityAmount > 0) {
-            // Find earliest available date by scanning backwards
-            // We need enough balance to cover: the purchase amount + reserve
-            const minBalanceNeeded = rawBalanceAtOpportunity; // At opportunity date, we have this balance
-            
+            // Find earliest date when this purchase could be made
+            // Work backwards to find when we first had enough balance
             let earliestAvailableIndex = 0;
             for (let k = i - 1; k >= 0; k--) {
-              // If balance at day k is less than what we have at opportunity, 
-              // then we couldn't have made this purchase earlier
-              if (dailyBalances[k].balance < minBalanceNeeded) {
+              if (dailyBalances[k].balance < lowPointBalance) {
                 earliestAvailableIndex = k + 1;
                 break;
               }
@@ -387,34 +369,31 @@ export const useSafeSpending = () => {
             
             const availableDate = dailyBalances[earliestAvailableIndex].date;
             
-            console.log(`🛒 Found opportunity #${allBuyingOpportunities.length + 1}:`, {
-              date: current.date,
-              rawBalance: rawBalanceAtOpportunity.toFixed(2),
+            console.log(`🛒 Opportunity #${allBuyingOpportunities.length + 1} at ${currentDay.date}:`, {
+              lowPointBalance: lowPointBalance.toFixed(2),
               reserve: reserve.toFixed(2),
               opportunityAmount: opportunityAmount.toFixed(2),
               availableDate,
-              type: isPlateauValley ? 'plateau-valley' : 'valley'
+              nextDayBalance: nextDay.balance.toFixed(2)
             });
             
             allBuyingOpportunities.push({
-              date: current.date,
-              balance: opportunityAmount, // The actual spendable amount
+              date: currentDay.date,
+              balance: opportunityAmount,
               available_date: availableDate
             });
           }
         }
       }
       
-      // Also check the last day if it's a terminal rise or plateau
-      if (dailyBalances.length > 1) {
+      // Check the last day - if it's at a high or equal to previous day, it's an opportunity
+      if (dailyBalances.length > 0) {
         const lastDay = dailyBalances[dailyBalances.length - 1];
-        const secondLastDay = dailyBalances[dailyBalances.length - 2];
+        const secondLastDay = dailyBalances.length > 1 ? dailyBalances[dailyBalances.length - 2] : null;
         
-        // If last day has higher or equal balance compared to second last, it's a potential opportunity
-        if (lastDay.balance >= secondLastDay.balance && lastDay.balance > reserve) {
+        // If last day is at high or equal level and wasn't already captured
+        if (secondLastDay && lastDay.balance >= secondLastDay.balance) {
           const opportunityAmount = Math.max(0, lastDay.balance - reserve);
-          
-          // Check if this is a new opportunity (not already captured)
           const alreadyCaptured = allBuyingOpportunities.some(opp => opp.date === lastDay.date);
           
           if (!alreadyCaptured && opportunityAmount > 0) {
@@ -429,9 +408,8 @@ export const useSafeSpending = () => {
             
             const availableDate = dailyBalances[earliestAvailableIndex].date;
             
-            console.log(`🛒 Found terminal opportunity:`, {
-              date: lastDay.date,
-              rawBalance: lastDay.balance.toFixed(2),
+            console.log(`🛒 Terminal opportunity at ${lastDay.date}:`, {
+              balance: lastDay.balance.toFixed(2),
               reserve: reserve.toFixed(2),
               opportunityAmount: opportunityAmount.toFixed(2),
               availableDate
@@ -446,8 +424,7 @@ export const useSafeSpending = () => {
         }
       }
       
-      // Sort opportunities by date
-      allBuyingOpportunities.sort((a, b) => a.date.localeCompare(b.date));
+      console.log(`\n✅ Found ${allBuyingOpportunities.length} total buying opportunities`);
       
       const nextBuyingOpportunity = allBuyingOpportunities.length > 0 ? allBuyingOpportunities[0] : null;
       
