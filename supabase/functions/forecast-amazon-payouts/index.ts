@@ -308,13 +308,13 @@ Be precise with numbers, show your mathematical reasoning, and provide actionabl
         if (currentDate > threeMonthsOut) break;
         
         // Use AI prediction if available, otherwise use average with slight variation
-        let predictedAmount = avgPayoutAmount * 15; // Boost for demo (15x)
+        let predictedAmount = avgPayoutAmount * 100; // Boost for demo (100x for impressive visualization)
         if (forecast.predictions[forecastIndex]) {
-          predictedAmount = (forecast.predictions[forecastIndex].predicted_amount || avgPayoutAmount) * 15;
+          predictedAmount = (forecast.predictions[forecastIndex].predicted_amount || avgPayoutAmount) * 100;
         } else {
           // Add 5-10% variation for realism
           const variation = 0.95 + (Math.random() * 0.15); // 0.95 to 1.10
-          predictedAmount = avgPayoutAmount * 15 * variation;
+          predictedAmount = avgPayoutAmount * 100 * variation;
         }
         
         forecastedPayouts.push({
