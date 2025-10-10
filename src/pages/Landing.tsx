@@ -152,7 +152,7 @@ const Landing = () => {
   }];
   const pricingPlans = [{
     name: "Starter",
-    price: "$29",
+    price: "$24",
     yearlyPrice: "$290",
     period: "/month",
     yearlyPeriod: "/year",
@@ -163,7 +163,7 @@ const Landing = () => {
     savings: "$58"
   }, {
     name: "Growing",
-    price: "$59",
+    price: "$49",
     yearlyPrice: "$590",
     period: "/month",
     yearlyPeriod: "/year",
@@ -174,7 +174,7 @@ const Landing = () => {
     savings: "$118"
   }, {
     name: "Professional",
-    price: "$89",
+    price: "$74",
     yearlyPrice: "$890",
     period: "/month",
     yearlyPeriod: "/year",
@@ -1332,9 +1332,14 @@ const Landing = () => {
                         </div>
                         <div className="space-y-1.5">
                           <div className="flex items-baseline justify-center gap-1">
-                            <span className="text-3xl font-bold">{isYearly ? plan.yearlyPrice : plan.price}</span>
-                            <span className="text-muted-foreground text-xs">{isYearly ? plan.yearlyPeriod : plan.period}</span>
+                            <span className="text-3xl font-bold">{plan.price}</span>
+                            <span className="text-muted-foreground text-xs">/month</span>
                           </div>
+                          {isYearly && plan.savings && (
+                            <p className="text-xs text-muted-foreground">
+                              Billed annually
+                            </p>
+                          )}
                           {isYearly && plan.savings && <Badge variant="secondary" className="text-xs py-0.5 px-2">
                               Save {plan.savings}/year
                             </Badge>}
