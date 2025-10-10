@@ -513,7 +513,13 @@ export default function DocumentStorage() {
                       <TableCell className="font-medium">
                         <div className="flex items-center space-x-2">
                           <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span>{doc.display_name || doc.name}</span>
+                          <span 
+                            className="cursor-pointer hover:text-primary transition-colors"
+                            onClick={() => setEditingDoc(doc)}
+                            title="Click to edit document name"
+                          >
+                            {doc.display_name || doc.name}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell className="text-sm">
