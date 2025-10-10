@@ -12,12 +12,100 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, historicalPayouts, historicalData } = await req.json();
+    const { userId } = await req.json();
+    
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    console.log('[FORECAST] Fetching Amazon data for user:', userId);
+
+    // Fetch Amazon payouts from last 6 months
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    
+    const { data: amazonPayouts, error: payoutsError } = await supabase
+      .from('amazon_payouts')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('payout_date', sixMonthsAgo.toISOString().split('T')[0])
+      .order('payout_date', { ascending: false });
+
+    if (payoutsError) {
+      console.error('[FORECAST] Error fetching payouts:', payoutsError);
+      throw new Error('Failed to fetch Amazon payout data');
+    }
+
+    // Fetch Amazon transactions for detailed analysis
+    const { data: amazonTransactions, error: transactionsError } = await supabase
+      .from('amazon_transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('transaction_date', sixMonthsAgo.toISOString())
+      .order('transaction_date', { ascending: false })
+      .limit(1000);
+
+    if (transactionsError) {
+      console.error('[FORECAST] Error fetching transactions:', transactionsError);
+    }
+
+    console.log('[FORECAST] Data fetched', { 
+      payoutCount: amazonPayouts?.length || 0,
+      transactionCount: amazonTransactions?.length || 0
+    });
+
+    if (!amazonPayouts || amazonPayouts.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'No Amazon payout data found. Please connect your Amazon account and sync data first.',
+          requiresData: true
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Aggregate monthly data for better trend analysis
+    const monthlyData: any = {};
+    amazonPayouts.forEach((payout: any) => {
+      const monthKey = payout.payout_date.substring(0, 7); // YYYY-MM
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = {
+          month: monthKey,
+          total_amount: 0,
+          payout_count: 0,
+          avg_amount: 0,
+          orders_total: 0,
+          fees_total: 0,
+          refunds_total: 0
+        };
+      }
+      monthlyData[monthKey].total_amount += Number(payout.total_amount || 0);
+      monthlyData[monthKey].orders_total += Number(payout.orders_total || 0);
+      monthlyData[monthKey].fees_total += Number(payout.fees_total || 0);
+      monthlyData[monthKey].refunds_total += Number(payout.refunds_total || 0);
+      monthlyData[monthKey].payout_count += 1;
+    });
+
+    // Calculate averages
+    Object.keys(monthlyData).forEach(month => {
+      monthlyData[month].avg_amount = monthlyData[month].total_amount / monthlyData[month].payout_count;
+    });
+
+    const historicalData = Object.values(monthlyData).sort((a: any, b: any) => 
+      a.month.localeCompare(b.month)
+    );
     
     console.log('[FORECAST] Starting forecast generation', { 
-      userId, 
-      payoutCount: historicalPayouts?.length,
-      dataPoints: historicalData?.length 
+      payoutCount: amazonPayouts.length,
+      monthlyDataPoints: historicalData.length 
     });
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -50,13 +138,16 @@ Provide forecasts with:
 - Risk factors and assumptions
 - Actionable insights for business planning`;
 
-    const analysisPrompt = `Analyze the following Amazon Seller payout data and generate accurate forecasts for the next 3-6 months.
+    const analysisPrompt = `Analyze the following Amazon Seller payout data and generate accurate forecasts for the next 3 months.
 
-HISTORICAL PAYOUT DATA (Most Recent):
-${JSON.stringify(historicalPayouts.slice(0, 20), null, 2)}
+HISTORICAL PAYOUT DATA (Most Recent ${Math.min(20, amazonPayouts.length)} entries):
+${JSON.stringify(amazonPayouts.slice(0, 20), null, 2)}
 
 AGGREGATED MONTHLY DATA (Last 6 Months):
 ${JSON.stringify(historicalData, null, 2)}
+
+TOTAL HISTORICAL PAYOUTS: ${amazonPayouts.length}
+DATE RANGE: ${amazonPayouts[amazonPayouts.length - 1]?.payout_date} to ${amazonPayouts[0]?.payout_date}
 
 ANALYSIS REQUIREMENTS:
 
@@ -79,11 +170,12 @@ ANALYSIS REQUIREMENTS:
    - Consider economic and seasonal factors
 
 4. FORECAST GENERATION:
-   Generate predictions for the next 6 payout periods with:
+   Generate predictions for the next 6 bi-weekly payout periods (3 months) with:
    - Predicted payout amount
    - Confidence interval (upper and lower bounds)
    - Confidence level (0-1 scale)
-   - Period identifier (e.g., "Week 1", "Week 2")
+   - Estimated payout date (use bi-weekly frequency from last payout date)
+   - Period identifier (e.g., "Period 1", "Period 2")
 
 5. RISK ASSESSMENT:
    - Key assumptions made in the forecast
@@ -180,10 +272,65 @@ Be precise with numbers, show your mathematical reasoning, and provide actionabl
 
     console.log('[FORECAST] Forecast generated successfully');
 
+    // Store forecasted payouts in the database
+    if (forecast.predictions && Array.isArray(forecast.predictions)) {
+      const forecastedPayouts = forecast.predictions.map((pred: any, index: number) => {
+        // Calculate estimated payout date (bi-weekly from most recent payout)
+        const lastPayoutDate = new Date(amazonPayouts[0].payout_date);
+        const estimatedDate = new Date(lastPayoutDate);
+        estimatedDate.setDate(estimatedDate.getDate() + (14 * (index + 1))); // Bi-weekly
+        
+        return {
+          user_id: userId,
+          amazon_account_id: amazonPayouts[0].amazon_account_id,
+          payout_date: estimatedDate.toISOString().split('T')[0],
+          total_amount: pred.predicted_amount || pred.amount,
+          settlement_id: `forecast-${Date.now()}-${index}`,
+          marketplace_name: amazonPayouts[0].marketplace_name || 'Amazon',
+          status: 'forecasted',
+          payout_type: 'bi-weekly',
+          currency_code: amazonPayouts[0].currency_code || 'USD',
+          transaction_count: 0,
+          raw_settlement_data: {
+            forecast_metadata: {
+              confidence: pred.confidence,
+              upper_bound: pred.upper_bound,
+              lower_bound: pred.lower_bound,
+              period: pred.period,
+              generated_at: new Date().toISOString()
+            }
+          }
+        };
+      });
+
+      // Delete existing forecasted payouts for this user
+      await supabase
+        .from('amazon_payouts')
+        .delete()
+        .eq('user_id', userId)
+        .eq('status', 'forecasted');
+
+      // Insert new forecasted payouts
+      const { error: insertError } = await supabase
+        .from('amazon_payouts')
+        .insert(forecastedPayouts);
+
+      if (insertError) {
+        console.error('[FORECAST] Error storing forecasted payouts:', insertError);
+      } else {
+        console.log('[FORECAST] Stored', forecastedPayouts.length, 'forecasted payouts');
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true,
-        forecast: forecast
+        forecast: forecast,
+        dataUsed: {
+          payoutCount: amazonPayouts.length,
+          monthlyDataPoints: historicalData.length,
+          dateRange: `${amazonPayouts[amazonPayouts.length - 1]?.payout_date} to ${amazonPayouts[0]?.payout_date}`
+        }
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

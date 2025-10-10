@@ -1073,13 +1073,15 @@ const Dashboard = () => {
     return events;
   }, [recurringExpenses]);
 
-  // Convert Amazon payouts to calendar events
+  // Convert Amazon payouts to calendar events (including forecasted)
   const amazonPayoutEvents: CashFlowEvent[] = amazonPayouts.map(payout => ({
     id: `amazon-payout-${payout.id}`,
     type: 'inflow' as const,
     amount: payout.total_amount,
-    description: `Amazon Payout - ${payout.marketplace_name} (${payout.status})`,
-    source: 'Amazon',
+    description: payout.status === 'forecasted' 
+      ? `Amazon Payout (Forecasted) - ${payout.marketplace_name}`
+      : `Amazon Payout - ${payout.marketplace_name} (${payout.status})`,
+    source: payout.status === 'forecasted' ? 'Amazon-Forecasted' : 'Amazon',
     date: new Date(payout.payout_date)
   }));
 

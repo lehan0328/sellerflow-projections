@@ -211,15 +211,30 @@ export const CashFlowInsights = ({
 
       if (error) throw error;
 
+      if (data?.requiresData) {
+        toast({
+          title: "No Amazon Data Found",
+          description: "Please connect your Amazon account and sync data before generating forecasts.",
+          variant: "destructive"
+        });
+        setShowForecastDialog(false);
+        setForecastLoading(false);
+        return;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
       // Show success animation
       setForecastActivated(true);
       
       toast({
         title: "AI Forecast Activated! ✨",
-        description: "Your Amazon payout forecast has been generated successfully.",
+        description: `Generated ${data.forecast?.predictions?.length || 0} forecasted payouts for the next 3 months.`,
       });
 
-      // Navigate to forecast page after a brief delay to show the effect
+      // Wait for animation then navigate
       setTimeout(() => {
         setShowForecastDialog(false);
         setForecastActivated(false);
@@ -233,6 +248,7 @@ export const CashFlowInsights = ({
         description: error.message || "Unable to generate forecast. Please try again.",
         variant: "destructive"
       });
+      setForecastActivated(false);
     } finally {
       setForecastLoading(false);
     }

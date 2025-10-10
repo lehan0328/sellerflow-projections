@@ -352,6 +352,10 @@ export const CashFlowCalendar = ({
   };
 
   const getEventColor = (event: CashFlowEvent) => {
+    // Forecasted Amazon payouts get special purple/dashed styling
+    if (event.source === 'Amazon-Forecasted' && event.type === 'inflow') {
+      return 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-700/30 border-dashed';
+    }
     // Amazon payouts get special orange color
     if (event.source === 'Amazon' && event.type === 'inflow') {
       return 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-700/30';
@@ -440,6 +444,7 @@ export const CashFlowCalendar = ({
       
       // Check if this day has an Amazon payout
       const hasAmazonPayout = dayEvents.some(e => e.source === 'Amazon' && e.type === 'inflow');
+      const hasAmazonForecast = dayEvents.some(e => e.source === 'Amazon-Forecasted' && e.type === 'inflow');
       
       return {
         date: format(day, 'MMM dd'),
@@ -450,6 +455,7 @@ export const CashFlowCalendar = ({
         outflow: dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0),
         transactions: dayEvents,
         hasAmazonPayout,
+        hasAmazonForecast,
       };
     });
   };
@@ -845,6 +851,7 @@ export const CashFlowCalendar = ({
                             const data = payload[0].payload;
                             const hasTransactions = data.transactions && data.transactions.length > 0;
                             const hasAmazonPayout = data.hasAmazonPayout;
+                            const hasAmazonForecast = data.hasAmazonForecast;
                             return (
                               <div className="space-y-1">
                                 <p className="font-semibold">{label}</p>
@@ -852,6 +859,12 @@ export const CashFlowCalendar = ({
                                   <p className="text-orange-600 font-medium flex items-center gap-1">
                                     <ShoppingBag className="h-3 w-3" />
                                     Amazon Payout
+                                  </p>
+                                )}
+                                {hasAmazonForecast && (
+                                  <p className="text-purple-600 font-medium flex items-center gap-1">
+                                    <ShoppingBag className="h-3 w-3" />
+                                    Amazon Payout (Forecasted)
                                   </p>
                                 )}
                                 <div className="text-sm space-y-1">
@@ -885,7 +898,17 @@ export const CashFlowCalendar = ({
                         strokeWidth={2}
                         dot={(props: any) => {
                           const { cx, cy, payload } = props;
+                          if (payload.hasAmazonForecast) {
+                            // Forecasted payout - purple/dashed
+                            return (
+                              <g>
+                                <circle cx={cx} cy={cy} r={6} fill="#a855f7" stroke="#9333ea" strokeWidth={2} strokeDasharray="3,3" />
+                                <circle cx={cx} cy={cy} r={3} fill="#fff" />
+                              </g>
+                            );
+                          }
                           if (payload.hasAmazonPayout) {
+                            // Confirmed payout - orange
                             return (
                               <g>
                                 <circle cx={cx} cy={cy} r={6} fill="#f97316" stroke="#ea580c" strokeWidth={2} />
