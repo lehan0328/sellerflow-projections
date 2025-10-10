@@ -217,8 +217,8 @@ export const CashFlowInsights = ({
           description: "Please connect your Amazon account and sync data before generating forecasts.",
           variant: "destructive"
         });
-        setShowForecastDialog(false);
         setForecastLoading(false);
+        setShowForecastDialog(false);
         return;
       }
 
@@ -226,7 +226,8 @@ export const CashFlowInsights = ({
         throw new Error(data.error);
       }
 
-      // Show success animation
+      // Clear loading state before animation
+      setForecastLoading(false);
       setForecastActivated(true);
       
       toast({
@@ -248,9 +249,8 @@ export const CashFlowInsights = ({
         description: error.message || "Unable to generate forecast. Please try again.",
         variant: "destructive"
       });
-      setForecastActivated(false);
-    } finally {
       setForecastLoading(false);
+      setForecastActivated(false);
     }
   };
 
