@@ -359,6 +359,7 @@ const Dashboard = () => {
 
   const handlePurchaseOrderSubmit = async (orderData: any) => {
     console.info("Purchase order received in Dashboard:", orderData);
+    console.info("🔍 Debug PO - dueDate:", orderData.dueDate, "paymentType:", orderData.paymentType);
     
     const amount = typeof orderData.amount === 'string' ? 
       parseFloat(orderData.amount) : orderData.amount;
@@ -366,6 +367,13 @@ const Dashboard = () => {
     const dueDate = orderData.dueDate || new Date();
     const today = startOfDay(new Date());
     const dueDateStartOfDay = startOfDay(dueDate);
+    
+    console.info("🔍 Debug PO - calculated status:", {
+      dueDate: dueDate.toISOString(),
+      today: today.toISOString(), 
+      dueDateStartOfDay: dueDateStartOfDay.toISOString(),
+      willBePending: dueDateStartOfDay > today
+    });
     
     // Check if vendor already exists (selected from dropdown)
     let vendorId = orderData.vendorId;
@@ -429,16 +437,20 @@ const Dashboard = () => {
     }
 
     // Create transaction for this PO (individual record)
-    await addTransaction({
-      type: 'purchase_order',
+    const transactionData = {
+      type: 'purchase_order' as const,
       amount: amount,
       description: orderData.poName || `PO - ${orderData.vendor}`,
       vendorId: vendorId,
       transactionDate: orderData.poDate || new Date(),
       dueDate: dueDate,
-      status: dueDateStartOfDay <= today ? 'completed' : 'pending',
+      status: (dueDateStartOfDay <= today ? 'completed' : 'pending') as 'completed' | 'pending',
       creditCardId: orderData.paymentMethod === 'credit-card' ? orderData.selectedCreditCard : null
-    });
+    };
+    
+    console.info("🔍 Creating transaction:", transactionData);
+    const newTransaction = await addTransaction(transactionData);
+    console.info("🔍 Transaction created:", newTransaction);
 
     console.info("Transaction created, refreshing data");
     await Promise.all([refetchVendors(), refetchTransactions()]);
@@ -920,9 +932,14 @@ const Dashboard = () => {
   // Convert vendor transactions to calendar events (only show POs with vendors assigned)
   const vendorEvents: CashFlowEvent[] = transactions
     .filter(tx => {
+      // Only show purchase orders with vendor IDs
+      if (tx.type !== 'purchase_order' || !tx.vendorId) {
+        return false;
+      }
       // Exclude completed transactions
-      if (tx.type !== 'purchase_order' || !tx.vendorId) return false;
-      if (tx.status === 'completed') return false;
+      if (tx.status === 'completed') {
+        return false;
+      }
       // Exclude .1 transactions (paid portion of partial payments)
       if (tx.description?.endsWith('.1')) return false;
       // Exclude partially_paid parent transactions (they're replaced by .2 transactions)
@@ -933,15 +950,29 @@ const Dashboard = () => {
     })
     .map(tx => {
       const vendor = vendors.find(v => v.id === tx.vendorId);
+      // Use dueDate if available (for net terms), otherwise use transactionDate
+      const eventDate = tx.dueDate || tx.transactionDate;
+      
+      console.log('🔍 Creating vendor event:', {
+        txId: tx.id,
+        description: tx.description,
+        dueDate: tx.dueDate,
+        transactionDate: tx.transactionDate,
+        eventDate: eventDate,
+        status: tx.status
+      });
+      
       return {
         id: `vendor-tx-${tx.id}`,
         type: 'outflow' as const,
         amount: tx.amount,
         description: tx.description || `${vendor?.name || 'Vendor'} - Payment Due`,
         vendor: vendor?.name,
-        date: tx.dueDate || tx.transactionDate
+        date: eventDate
       };
     });
+  
+  console.log('🔍 Total vendor events for calendar:', vendorEvents.length, vendorEvents);
 
   // Convert income items to calendar events (exclude received income)
   const incomeEvents: CashFlowEvent[] = incomeItems
