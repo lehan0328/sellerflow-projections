@@ -455,10 +455,10 @@ export const CashFlowInsights = ({
                     This is what you can safely spend without risking shortfalls
                   </p>
                   
-                  {safeSpendingAvailableDate && safeSpendingLimit > 0 && (
-                    <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
-                      <span className="text-xs text-muted-foreground">Earliest Purchase Date:</span>
-                      <span className="text-sm font-semibold text-green-600">
+                  {safeSpendingAvailableDate && (
+                    <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800 mt-2">
+                      <span className="text-xs font-medium text-muted-foreground">Earliest Purchase Date:</span>
+                      <span className="text-sm font-bold text-blue-600">
                         {(() => {
                           const [year, month, day] = safeSpendingAvailableDate.split('-').map(Number);
                           const date = new Date(year, month - 1, day);
