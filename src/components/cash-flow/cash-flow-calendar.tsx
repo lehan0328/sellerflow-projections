@@ -603,6 +603,7 @@ export const CashFlowCalendar = ({
                 const overdueVendors = getOverdueVendorsForToday(day);
                 const netAmount = getNetAmountForFutureDate(day);
                 const hasEvents = dayEvents.length > 0;
+                const hasAmazonPayout = dayEvents.some(e => e.source === 'Amazon');
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const dayToCheck = new Date(day);
@@ -616,19 +617,21 @@ export const CashFlowCalendar = ({
                        "p-1 border rounded-md relative flex flex-col text-xs transition-all",
                        cellHeightClass,
                        {
+                         // Amazon payout days - special orange/amber highlight
+                         "bg-orange-50 border-orange-300 dark:bg-orange-950/30 dark:border-orange-700": hasAmazonPayout && !isPast && !isToday(day) && isSameMonth(day, currentDate),
                          // Past days - grayed out
                          "opacity-50 text-muted-foreground bg-muted/30": isPast && isSameMonth(day, currentDate),
                          // Today - highlighted with primary color and border
                          "ring-2 ring-primary bg-primary/10 border-primary/50 font-semibold": isToday(day),
                          // Low cash warning
-                         "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800": totalCash < 0,
+                         "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800": totalCash < 0 && !hasAmazonPayout,
                          // Outside month
                          "opacity-30 bg-background": !isSameMonth(day, currentDate),
                          // Normal days
-                         "bg-background hover:bg-muted/30": !isPast && !isToday(day) && isSameMonth(day, currentDate) && totalCash >= 0,
+                         "bg-background hover:bg-muted/30": !isPast && !isToday(day) && isSameMonth(day, currentDate) && totalCash >= 0 && !hasAmazonPayout,
                          // Days with events
-                         "border-primary/30": hasEvents,
-                         "border-border": !hasEvents,
+                         "border-primary/30": hasEvents && !hasAmazonPayout,
+                         "border-border": !hasEvents && !hasAmazonPayout,
                          // Drag and drop styling
                          "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/20": draggedTransaction && !isPast
                        }
