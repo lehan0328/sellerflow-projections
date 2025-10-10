@@ -59,7 +59,7 @@ export function DashboardHeader({ onRefresh, isRefreshing = false, lastRefreshTi
         <div className="absolute top-6 left-6 z-40">
           <div className="flex flex-col items-center">
             <img src={aurenIcon} alt="Auren" className="h-14 w-auto mb-1" />
-            <span className="text-sm font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <span className="text-lg font-bold bg-gradient-primary bg-clip-text text-transparent">
               Auren
             </span>
           </div>
