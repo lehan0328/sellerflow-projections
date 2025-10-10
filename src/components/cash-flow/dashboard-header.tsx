@@ -1,4 +1,4 @@
-import { TrendingUp, Calculator, Gift, Sparkles } from "lucide-react";
+import { Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "./user-menu";
 import aurenIcon from "@/assets/auren-icon-blue.png";
@@ -75,26 +75,6 @@ export function DashboardHeader({ onRefresh, isRefreshing = false, lastRefreshTi
               • Earn $3K
             </span>
           </div>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/scenario-planner')}
-          className="h-10 px-4 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-accent hover:text-accent-foreground"
-          title="Scenario Planning"
-        >
-          <Calculator className="h-4 w-4 mr-2" />
-          Scenarios
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate('/analytics')}
-          className="h-10 px-4 bg-background/80 backdrop-blur-sm border-border/50 hover:bg-accent hover:text-accent-foreground"
-          title="View Analytics"
-        >
-          <TrendingUp className="h-4 w-4 mr-2" />
-          Analytics
         </Button>
         <UserMenu />
       </div>
