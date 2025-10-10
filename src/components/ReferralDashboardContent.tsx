@@ -210,11 +210,11 @@ export function ReferralDashboardContent({ isDemo = false }: ReferralDashboardCo
           </CardDescription>
         </CardHeader>
         <CardContent className="relative space-y-4">
-          {referralCode ? (
+          {referralCode && !isDemo ? (
             <>
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="flex-1 p-6 bg-gradient-to-r from-primary/20 to-accent/20 backdrop-blur rounded-lg border-2 border-primary/40 flex items-center justify-center">
-                  <span className={`font-mono text-4xl font-bold tracking-wider text-primary ${isDemo ? 'blur-sm' : ''}`}>
+                  <span className="font-mono text-4xl font-bold tracking-wider text-primary">
                     {referralCode}
                   </span>
                 </div>
