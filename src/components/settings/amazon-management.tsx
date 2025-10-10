@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { ShoppingCart, Plus, Trash2, RefreshCw, ExternalLink, Settings, DollarSign } from "lucide-react";
@@ -215,22 +216,32 @@ export function AmazonManagement() {
 
                   <div>
                     <Label htmlFor="payout_frequency">Payout Schedule *</Label>
-                    <Select 
-                      value={formData.payout_frequency} 
-                      onValueChange={(value: 'daily' | 'bi-weekly') => 
-                        setFormData({...formData, payout_frequency: value})
-                      }
-                    >
-                      <SelectTrigger id="payout_frequency">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="bi-weekly">Bi-Weekly (Every 14 days)</SelectItem>
-                        <SelectItem value="daily">Daily</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50 mt-2">
+                      <div className="flex items-center gap-4 flex-1">
+                        <span className={`text-sm font-medium transition-colors ${
+                          formData.payout_frequency === 'bi-weekly' ? 'text-primary' : 'text-muted-foreground'
+                        }`}>
+                          Bi-Weekly (Every 14 days)
+                        </span>
+                        <Switch
+                          id="payout_frequency"
+                          checked={formData.payout_frequency === 'daily'}
+                          onCheckedChange={(checked) => 
+                            setFormData({
+                              ...formData, 
+                              payout_frequency: checked ? 'daily' : 'bi-weekly'
+                            })
+                          }
+                        />
+                        <span className={`text-sm font-medium transition-colors ${
+                          formData.payout_frequency === 'daily' ? 'text-primary' : 'text-muted-foreground'
+                        }`}>
+                          Daily
+                        </span>
+                      </div>
+                    </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Select how often Amazon pays out to your account
+                      Toggle to select how often Amazon pays out to your account
                     </p>
                   </div>
 
