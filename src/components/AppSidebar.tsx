@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare } from "lucide-react";
+import { Home, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -31,6 +31,7 @@ const sections = [
   { id: "document-storage", title: "Document Storage", icon: FolderOpen },
   { id: "support", title: "Support", icon: MessageSquare },
   { id: "referrals", title: "Referrals", icon: Users },
+  { id: "book-call", title: "Book a Call", icon: Calendar, isExternal: true, url: "https://app.usemotion.com/meet/andy-chu/AurenDemo" },
 ];
 
 export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) {
@@ -64,10 +65,18 @@ export function AppSidebar({ activeSection, onSectionChange }: AppSidebarProps) 
               {sections.map((section) => {
                 const Icon = section.icon;
                 const isActive = activeSection === section.id;
+                const isExternal = 'isExternal' in section && section.isExternal;
+                
                 return (
                   <SidebarMenuItem key={section.id}>
                     <SidebarMenuButton
-                      onClick={() => onSectionChange(section.id)}
+                      onClick={() => {
+                        if (isExternal && 'url' in section) {
+                          window.open(section.url, '_blank', 'noopener,noreferrer');
+                        } else {
+                          onSectionChange(section.id);
+                        }
+                      }}
                       className={`
                         relative rounded-lg transition-all duration-200
                         ${isCollapsed ? "justify-center h-12 w-12" : ""}
