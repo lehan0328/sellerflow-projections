@@ -250,10 +250,11 @@ export const CashFlowInsights = ({
               variant="outline" 
               size="sm" 
               onClick={() => setShowForecastDialog(true)}
-              className="text-xs"
+              className="text-xs relative overflow-hidden bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 text-white border-0 hover:from-purple-700 hover:via-blue-700 hover:to-cyan-700 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold hover:scale-105"
             >
-              <Brain className="h-4 w-4 mr-1" />
-              Activate AI Forecasting
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-400 via-blue-400 to-cyan-400 opacity-0 hover:opacity-30 transition-opacity duration-500" />
+              <Brain className="h-4 w-4 mr-1 relative z-10 animate-pulse" />
+              <span className="relative z-10">Activate AI Forecasting</span>
             </Button>
             <Button variant={chatMode ? "default" : "ghost"} size="sm" onClick={() => setChatMode(!chatMode)}>
               <MessageCircle className="h-4 w-4 mr-1" />
