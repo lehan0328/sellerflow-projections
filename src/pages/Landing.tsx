@@ -314,41 +314,49 @@ const Landing = () => {
   }];
   return <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Cash Flow Forecasting for Amazon Sellers | Auren - AI-Powered Financial Tool</title>
-        <meta name="description" content="Predict Amazon payouts, forecast expenses, and prevent cashflow gaps. Auren helps marketplace sellers stay profitable with automated forecasting, real-time insights, and smart spend tracking. 7-day free trial, no credit card required." />
-        <meta name="keywords" content="amazon cash flow forecasting, amazon payout prediction, amazon seller finance software, FBA cashflow tool, cash flow management for sellers, amazon payout schedule, marketplace seller cashflow planner, ecommerce financial forecasting" />
+        <title>Amazon Cash Flow Management Software | Auren - Marketplace Cashflow Forecasting Tool</title>
+        <meta name="description" content="Amazon cashflow management software for marketplace sellers. Forecast Amazon payouts, track expenses, and prevent cashflow gaps. AI-powered marketplace cash flow management. Start free trial." />
+        <meta name="keywords" content="amazon cashflow software, amazon cash flow software, amazon cashflow management, amazon cash flow management, amazon cashflow management software, amazon cash flow management software, marketplace cashflow software, marketplace cash flow software, marketplace cashflow management, marketplace cash flow management, marketplace cashflow management software, marketplace cash flow management software, FBA cashflow tool, amazon seller finance software" />
         <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
         <link rel="canonical" href="https://aurenapp.com/" />
         
         {/* Open Graph */}
-        <meta property="og:title" content="Cash Flow Forecasting for Amazon Sellers | Auren - AI-Powered Financial Tool" />
-        <meta property="og:description" content="Predict Amazon payouts, forecast expenses, and prevent cashflow gaps. Auren helps marketplace sellers stay profitable with automated forecasting, real-time insights, and smart spend tracking. 7-day free trial, no credit card required." />
+        <meta property="og:title" content="Amazon Cash Flow Management Software | Auren - Marketplace Cashflow Tool" />
+        <meta property="og:description" content="Amazon cashflow management software for marketplace sellers. Forecast payouts, track expenses, prevent cashflow gaps. AI-powered marketplace cash flow management." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://aurenapp.com/" />
-        <meta property="og:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/wirOXtfMBcgv1kxBiHssLX3xlPT2/social-images/social-1759711482676-Screenshot 2025-10-05 at 8.42.56 PM.png" />
+        <meta property="og:image" content="https://aurenapp.com/auren-full-logo.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
         <meta property="og:site_name" content="Auren" />
         <meta property="og:locale" content="en_US" />
         
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Cash Flow Forecasting for Amazon Sellers | Auren - AI-Powered Financial Tool" />
-        <meta name="twitter:description" content="Predict Amazon payouts, forecast expenses, and prevent cashflow gaps. Auren helps marketplace sellers stay profitable with automated forecasting, real-time insights, and smart spend tracking. 7-day free trial, no credit card required." />
-        <meta name="twitter:image" content="https://storage.googleapis.com/gpt-engineer-file-uploads/wirOXtfMBcgv1kxBiHssLX3xlPT2/social-images/social-1759711482676-Screenshot 2025-10-05 at 8.42.56 PM.png" />
+        <meta name="twitter:title" content="Amazon Cash Flow Management Software | Auren" />
+        <meta name="twitter:description" content="Amazon cashflow management software for marketplace sellers. Forecast payouts and prevent cashflow gaps." />
+        <meta name="twitter:image" content="https://aurenapp.com/auren-full-logo.png" />
         
         {/* Additional SEO */}
         <meta name="author" content="Auren" />
         <meta name="language" content="English" />
         <meta name="revisit-after" content="7 days" />
         
-        {/* Organization Schema */}
+        {/* Organization Schema with Logo */}
         <script type="application/ld+json">{`
           {
             "@context": "https://schema.org",
             "@type": "Organization",
             "name": "Auren",
+            "alternateName": "Auren App",
             "url": "https://aurenapp.com",
-            "logo": "https://aurenapp.com/assets/auren-full-logo.png",
-            "description": "Cash flow forecasting software for Amazon and marketplace sellers",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://aurenapp.com/auren-full-logo.png",
+              "width": 600,
+              "height": 200
+            },
+            "description": "Amazon cashflow management software and marketplace cash flow management tool for sellers",
             "contactPoint": {
               "@type": "ContactPoint",
               "email": "support@aurenapp.com",
@@ -368,20 +376,24 @@ const Landing = () => {
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
             "name": "Auren",
+            "alternateName": "Auren Amazon Cashflow Management Software",
             "operatingSystem": "Web",
             "applicationCategory": "BusinessApplication",
-            "description": "Auren helps Amazon and marketplace sellers forecast payouts, manage cashflow, and plan expenses confidently. Predict revenue and prevent cash crunches with accurate forecasting.",
+            "description": "Amazon cashflow management software for marketplace sellers. Forecast Amazon payouts, manage marketplace cash flow, and prevent cashflow gaps with AI-powered forecasting.",
             "url": "https://aurenapp.com",
+            "image": "https://aurenapp.com/auren-full-logo.png",
             "offers": {
               "@type": "Offer",
-              "price": "0",
-              "priceCurrency": "USD"
+              "price": "24",
+              "priceCurrency": "USD",
+              "priceValidUntil": "2026-12-31"
             },
             "aggregateRating": {
               "@type": "AggregateRating",
               "ratingValue": "4.9",
               "ratingCount": "128"
-            }
+            },
+            "featureList": "Amazon cashflow forecasting, Marketplace cash flow management, Payout prediction, Expense tracking, Credit optimization, Multi-marketplace support"
           }
         `}</script>
         
@@ -390,8 +402,10 @@ const Landing = () => {
           {
             "@context": "https://schema.org",
             "@type": "WebSite",
-            "name": "Auren",
+            "name": "Auren - Amazon Cash Flow Management Software",
+            "alternateName": "Auren Marketplace Cashflow Software",
             "url": "https://aurenapp.com",
+            "description": "Amazon cashflow management software and marketplace cash flow management tool",
             "potentialAction": {
               "@type": "SearchAction",
               "target": "https://aurenapp.com/search?q={search_term_string}",
@@ -507,9 +521,9 @@ const Landing = () => {
             }}>
                 <div className="flex items-start gap-4">
                   <h1 className="text-4xl lg:text-5xl xl:text-6xl font-display font-bold leading-relaxed tracking-tight flex-1">
-                    <span className="block text-foreground pb-2">Cashflow</span>
+                    <span className="block text-foreground pb-2">Amazon Cash Flow</span>
                     <span className="block bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%] pb-2">
-                      Forecasting
+                      Management Software
                     </span>
                     <span className="block text-foreground pb-2">for Marketplace</span>
                     <span className="block text-foreground pb-2">Sellers</span>
@@ -523,7 +537,7 @@ const Landing = () => {
               <p className="text-xl text-muted-foreground max-w-xl animate-fade-in leading-relaxed" style={{
               animationDelay: '400ms'
             }}>
-                Forecast Amazon payouts and expenses—all in one place. See your upcoming disbursements, loans, ads, and purchase orders perfectly aligned, so you can plan inventory and cash flow with confidence.
+                The #1 Amazon cashflow management software. Forecast Amazon payouts and expenses with AI-powered marketplace cash flow management. Track disbursements, loans, ads, and purchase orders—all in one cashflow forecasting tool.
               </p>
               
               <div className="flex flex-col sm:flex-row items-start gap-4 animate-fade-in" style={{
