@@ -70,9 +70,9 @@ export default function ScenarioPlanner() {
 
   // Calculate baseline metrics based on actual cash and build complete event list
   const allEventsData = useMemo(() => {
-    // Get current total cash from all bank accounts
+    // Get current total cash from all bank accounts (match dashboard logic)
     const currentCash = bankAccounts.reduce((sum, account) => {
-      return sum + (account.available_balance || account.balance || 0);
+      return sum + (account.balance || 0);
     }, 0);
 
     // Build complete event list matching dashboard logic
