@@ -27,6 +27,7 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
 import { useSafeSpending } from "@/hooks/useSafeSpending";
+import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { BankTransaction } from "@/components/cash-flow/bank-transaction-log";
 import { useTransactionMatching } from "@/hooks/useTransactionMatching";
@@ -64,6 +65,7 @@ const Dashboard = () => {
   const { creditCards } = useCreditCards();
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
   const { data: safeSpendingData, updateReserveAmount, refetch: refetchSafeSpending } = useSafeSpending();
+  const { amazonPayouts } = useAmazonPayouts();
   
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
   const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance } = useUserSettings();
@@ -1017,8 +1019,18 @@ const Dashboard = () => {
     return events;
   }, [recurringExpenses]);
 
+  // Convert Amazon payouts to calendar events
+  const amazonPayoutEvents: CashFlowEvent[] = amazonPayouts.map(payout => ({
+    id: `amazon-payout-${payout.id}`,
+    type: 'inflow' as const,
+    amount: payout.total_amount,
+    description: `Amazon Payout - ${payout.marketplace_name} (${payout.status})`,
+    source: 'Amazon',
+    date: new Date(payout.payout_date)
+  }));
+
   // Combine all events for calendar - only include real user data
-  const allCalendarEvents = [...calendarEvents, ...vendorPaymentEvents, ...vendorEvents, ...incomeEvents, ...creditCardEvents, ...forecastedCreditCardEvents, ...recurringEvents];
+  const allCalendarEvents = [...calendarEvents, ...vendorPaymentEvents, ...vendorEvents, ...incomeEvents, ...creditCardEvents, ...forecastedCreditCardEvents, ...recurringEvents, ...amazonPayoutEvents];
 
   // Trigger safe spending recalculation when any financial data changes
   useEffect(() => {
