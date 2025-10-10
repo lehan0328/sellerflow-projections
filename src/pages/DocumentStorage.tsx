@@ -209,6 +209,10 @@ export default function DocumentStorage() {
     },
   });
 
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadVendorId, setUploadVendorId] = useState<string>("");
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -219,12 +223,34 @@ export default function DocumentStorage() {
       return;
     }
 
+    // Show vendor selection dialog
+    setUploadFile(file);
+    setUploadVendorId("");
+    setShowUploadDialog(true);
+    event.target.value = '';
+  };
+
+  const confirmUpload = async () => {
+    if (!uploadFile || !uploadVendorId) {
+      toast.error('Please select a vendor');
+      return;
+    }
+
     setUploading(true);
     try {
-      await uploadMutation.mutateAsync(file);
+      const fileName = await uploadMutation.mutateAsync(uploadFile);
+      
+      // Add metadata with vendor
+      await updateMetadataMutation.mutateAsync({
+        fileName,
+        vendorId: uploadVendorId
+      });
+      
+      setShowUploadDialog(false);
+      setUploadFile(null);
+      setUploadVendorId("");
     } finally {
       setUploading(false);
-      event.target.value = '';
     }
   };
 
@@ -640,6 +666,46 @@ export default function DocumentStorage() {
               }}
             >
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload Vendor Selection Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Select Vendor for Document</DialogTitle>
+            <DialogDescription>
+              Choose which vendor this document belongs to
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Vendor *</Label>
+              <Select value={uploadVendorId} onValueChange={setUploadVendorId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select vendor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vendors?.map((vendor) => (
+                    <SelectItem key={vendor.id} value={vendor.id}>
+                      {vendor.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              File: {uploadFile?.name}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmUpload} disabled={!uploadVendorId || uploading}>
+              {uploading ? 'Uploading...' : 'Upload'}
             </Button>
           </DialogFooter>
         </DialogContent>
