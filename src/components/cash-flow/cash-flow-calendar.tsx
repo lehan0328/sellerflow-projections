@@ -80,9 +80,9 @@ export const CashFlowCalendar = ({
 }: CashFlowCalendarProps) => {
   const { totalAvailableCredit } = useCreditCards();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewType, setViewType] = useState<'calendar' | 'chart'>('calendar');
+  const [viewType, setViewType] = useState<'calendar' | 'chart'>('chart');
   const [chartTimeRange, setChartTimeRange] = useState<'1' | '3' | '6' | '12'>('3');
-  const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
+  const [chartType, setChartType] = useState<'bar' | 'line'>('line');
   const [selectedTransaction, setSelectedTransaction] = useState<CashFlowEvent | null>(null);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedDayTransactions, setSelectedDayTransactions] = useState<CashFlowEvent[]>([]);
@@ -345,7 +345,7 @@ export const CashFlowCalendar = ({
   };
 
   const getEventIcon = (event: CashFlowEvent) => {
-    if (event.source === 'amazon') return <ShoppingBag className="h-3 w-3" />;
+    if (event.source === 'Amazon') return <ShoppingBag className="h-3 w-3" />;
     if (event.type === 'credit-payment') return <CreditCard className="h-3 w-3" />;
     if (event.type === 'purchase-order' || event.vendor) return <Building2 className="h-3 w-3" />;
     return <Wallet className="h-3 w-3" />;
@@ -353,7 +353,7 @@ export const CashFlowCalendar = ({
 
   const getEventColor = (event: CashFlowEvent) => {
     // Amazon payouts get special orange color
-    if (event.source === 'amazon' && event.type === 'inflow') {
+    if (event.source === 'Amazon' && event.type === 'inflow') {
       return 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-700/30';
     }
     if (event.type === 'inflow') {
@@ -438,6 +438,9 @@ export const CashFlowCalendar = ({
         runningTotal += dailyChange;
       }
       
+      // Check if this day has an Amazon payout
+      const hasAmazonPayout = dayEvents.some(e => e.source === 'Amazon' && e.type === 'inflow');
+      
       return {
         date: format(day, 'MMM dd'),
         fullDate: day,
@@ -446,6 +449,7 @@ export const CashFlowCalendar = ({
         inflow: dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0),
         outflow: dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0),
         transactions: dayEvents,
+        hasAmazonPayout,
       };
     });
   };
@@ -840,9 +844,16 @@ export const CashFlowCalendar = ({
                           if (payload && payload[0]) {
                             const data = payload[0].payload;
                             const hasTransactions = data.transactions && data.transactions.length > 0;
+                            const hasAmazonPayout = data.hasAmazonPayout;
                             return (
                               <div className="space-y-1">
                                 <p className="font-semibold">{label}</p>
+                                {hasAmazonPayout && (
+                                  <p className="text-orange-600 font-medium flex items-center gap-1">
+                                    <ShoppingBag className="h-3 w-3" />
+                                    Amazon Payout
+                                  </p>
+                                )}
                                 <div className="text-sm space-y-1">
                                   {data.dailyChange !== 0 && (
                                     <p className={data.dailyChange > 0 ? 'text-green-600' : 'text-red-600'}>
@@ -872,7 +883,18 @@ export const CashFlowCalendar = ({
                         dataKey="cashFlow" 
                         stroke="hsl(var(--primary))" 
                         strokeWidth={2}
-                        dot={{ r: 4, cursor: 'pointer' }}
+                        dot={(props: any) => {
+                          const { cx, cy, payload } = props;
+                          if (payload.hasAmazonPayout) {
+                            return (
+                              <g>
+                                <circle cx={cx} cy={cy} r={6} fill="#f97316" stroke="#ea580c" strokeWidth={2} />
+                                <circle cx={cx} cy={cy} r={3} fill="#fff" />
+                              </g>
+                            );
+                          }
+                          return <circle cx={cx} cy={cy} r={4} fill="hsl(var(--primary))" cursor="pointer" />;
+                        }}
                         activeDot={{ r: 6, cursor: 'pointer' }}
                       />
                     </LineChart>
