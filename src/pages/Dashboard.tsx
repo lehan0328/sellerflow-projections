@@ -1197,9 +1197,25 @@ const Dashboard = () => {
                 />
               </div>
               <div className="lg:col-span-1 h-full">
-                <div className="h-full flex flex-col gap-4">
-                  {/* Transaction Match Button */}
-                  <div className="flex justify-end">
+                <CashFlowInsights
+                  currentBalance={displayCash}
+                  dailyInflow={todayInflow}
+                  dailyOutflow={todayOutflow}
+                  upcomingExpenses={upcomingExpenses}
+                  events={allCalendarEvents}
+                  vendors={vendors}
+                  income={incomeItems}
+                  safeSpendingLimit={safeSpendingData?.safe_spending_limit || 0}
+                  reserveAmount={safeSpendingData?.reserve_amount || 0}
+                  projectedLowestBalance={safeSpendingData?.calculation?.lowest_projected_balance || 0}
+                  lowestBalanceDate={safeSpendingData?.calculation?.lowest_balance_date || ""}
+                  safeSpendingAvailableDate={safeSpendingData?.calculation?.safe_spending_available_date}
+                  nextBuyingOpportunityBalance={safeSpendingData?.calculation?.next_buying_opportunity_balance}
+                  nextBuyingOpportunityDate={safeSpendingData?.calculation?.next_buying_opportunity_date}
+                  nextBuyingOpportunityAvailableDate={safeSpendingData?.calculation?.next_buying_opportunity_available_date}
+                  allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
+                  onUpdateReserveAmount={updateReserveAmount}
+                  transactionMatchButton={
                     <TransactionMatchButton 
                       matches={matches}
                       onMatchAll={async () => {
@@ -1240,31 +1256,8 @@ const Dashboard = () => {
                       }}
                       onReviewMatches={() => navigate("/bank-transactions")}
                     />
-                  </div>
-                  
-                  {/* AI Insights */}
-                  <div className="flex-1">
-                    <CashFlowInsights
-                      currentBalance={displayCash}
-                      dailyInflow={todayInflow}
-                      dailyOutflow={todayOutflow}
-                      upcomingExpenses={upcomingExpenses}
-                      events={allCalendarEvents}
-                      vendors={vendors}
-                      income={incomeItems}
-                      safeSpendingLimit={safeSpendingData?.safe_spending_limit || 0}
-                      reserveAmount={safeSpendingData?.reserve_amount || 0}
-                      projectedLowestBalance={safeSpendingData?.calculation?.lowest_projected_balance || 0}
-                      lowestBalanceDate={safeSpendingData?.calculation?.lowest_balance_date || ""}
-                      safeSpendingAvailableDate={safeSpendingData?.calculation?.safe_spending_available_date}
-                      nextBuyingOpportunityBalance={safeSpendingData?.calculation?.next_buying_opportunity_balance}
-                      nextBuyingOpportunityDate={safeSpendingData?.calculation?.next_buying_opportunity_date}
-                      nextBuyingOpportunityAvailableDate={safeSpendingData?.calculation?.next_buying_opportunity_available_date}
-                      allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
-                      onUpdateReserveAmount={updateReserveAmount}
-                    />
-                  </div>
-                </div>
+                  }
+                />
               </div>
             </div>
           </>
