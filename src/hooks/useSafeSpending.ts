@@ -471,36 +471,7 @@ export const useSafeSpending = () => {
         }
       }
       
-      console.log(`\n✅ Found ${allBuyingOpportunities.length} total buying opportunities (before filtering)`);
-      
-      // Sort opportunities by date
-      allBuyingOpportunities.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      
-      // Filter out opportunities that have a higher opportunity later
-      // Keep only opportunities where no future opportunity has more available balance
-      const filteredOpportunities: typeof allBuyingOpportunities = [];
-      
-      for (let i = 0; i < allBuyingOpportunities.length; i++) {
-        const currentOpp = allBuyingOpportunities[i];
-        
-        // Check if any later opportunity has a higher balance
-        const hasHigherLaterOpportunity = allBuyingOpportunities
-          .slice(i + 1)
-          .some(laterOpp => laterOpp.balance > currentOpp.balance);
-        
-        if (!hasHigherLaterOpportunity) {
-          console.log(`✅ Keeping opportunity at ${currentOpp.date} with $${currentOpp.balance.toFixed(2)} (no higher opportunity later)`);
-          filteredOpportunities.push(currentOpp);
-        } else {
-          console.log(`⏭️ Skipping opportunity at ${currentOpp.date} with $${currentOpp.balance.toFixed(2)} (higher opportunity exists later)`);
-        }
-      }
-      
-      // Replace the original array with filtered opportunities
-      allBuyingOpportunities.length = 0;
-      allBuyingOpportunities.push(...filteredOpportunities);
-      
-      console.log(`\n✅ Final ${allBuyingOpportunities.length} buying opportunities after filtering`);
+      console.log(`\n✅ Found ${allBuyingOpportunities.length} total buying opportunities`);
       
       const nextBuyingOpportunity = allBuyingOpportunities.length > 0 ? allBuyingOpportunities[0] : null;
       
