@@ -182,26 +182,35 @@ export default function Pricing() {
       <nav className="border-b bg-background/60 backdrop-blur-xl sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-3">
-              <img src={aurenIcon} alt="Auren" className="h-12 w-12" />
+            <Link to="/" className="flex items-center gap-3 animate-scale-in">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-glow-pulse" />
+                <img src={aurenIcon} alt="Auren - Amazon Cash Flow Forecasting Software" className="relative h-12 w-12 hover-scale transition-all duration-300" />
+              </div>
               <span className="text-2xl font-display font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
                 Auren
               </span>
             </Link>
             <div className="hidden md:flex items-center space-x-6">
-              <Link to="/features" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+              <Link to="/features" onClick={() => window.scrollTo(0, 0)} className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Features
               </Link>
-              <Link to="/pricing" className="text-foreground font-semibold">
+              <Link to="/pricing" className="text-foreground font-semibold transition-all duration-300">
                 Pricing
               </Link>
-              <Link to="/blog" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+              <Link to="/#testimonials" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+                Reviews
+              </Link>
+              <Link to="/blog" onClick={() => window.scrollTo(0, 0)} className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Blog
               </Link>
-              <Link to="/partners" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+              <Link to="/partners" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Partners
               </Link>
-              <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
+              <Link to="/contact" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
+                Contact
+              </Link>
+              <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Docs
               </Link>
               <Button
@@ -217,17 +226,18 @@ export default function Pricing() {
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="border-primary/20 hover:border-primary/40" 
+                className="hover-scale transition-all duration-200 border-primary/20 hover:border-primary/40" 
                 onClick={() => navigate('/auth')}
               >
                 Sign In
               </Button>
-              <Link to="/">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back
-                </Button>
-              </Link>
+              <Button 
+                size="sm" 
+                className="bg-gradient-primary hover-scale transition-all duration-200"
+                onClick={() => navigate('/signup')}
+              >
+                Start Free Trial
+              </Button>
             </div>
           </div>
         </div>
