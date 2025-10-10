@@ -92,8 +92,9 @@ const Blog = () => {
   return (
     <PublicLayout activePage="blog">
       <Helmet>
-        <title>Amazon Cashflow Management Blog | Auren</title>
-        <meta name="description" content="Expert guides, strategies, and insights to help you forecast Amazon payouts, manage expenses, and scale your marketplace business." />
+        <title>Amazon Cashflow Management Tips | Auren Blog</title>
+        <meta name="description" content="Expert tips for Amazon cash flow management and e-commerce cashflow forecasting. Learn strategies to optimize marketplace finances." />
+        <link rel="canonical" content="https://aurenapp.com/blog" />
       </Helmet>
 
       {/* Hero Section */}

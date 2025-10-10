@@ -173,8 +173,9 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Pricing - Amazon Cash Flow Forecasting | Auren</title>
-        <meta name="description" content="Simple, transparent pricing for Amazon sellers. Plans starting at $29/month. 7-day free trial, no credit card required. Save up to 20% with yearly billing." />
+        <title>Marketplace Cashflow Software Pricing | Auren - Amazon Plans</title>
+        <meta name="description" content="Simple pricing for powerful Amazon and marketplace cashflow management. Start forecasting your profits today. Plans from $24/month." />
+        <meta name="keywords" content="amazon cashflow software pricing, marketplace cash flow management plans, amazon seller subscription" />
         <link rel="canonical" href="https://aurenapp.com/pricing" />
       </Helmet>
 

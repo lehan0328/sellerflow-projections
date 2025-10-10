@@ -174,20 +174,20 @@ const Features = () => {
   return (
     <PublicLayout>
       <Helmet>
-        <title>Amazon Cash Flow Forecasting Features | AI Tools for Sellers | Auren</title>
+        <title>Amazon Cashflow Management Software Features | Auren</title>
         <meta
           name="description"
-          content="AI-powered forecasting, 365-day projections, scenario planning & automated alerts. Comprehensive cash flow tools for Amazon FBA sellers. View all features."
+          content="Discover Auren's marketplace cash flow software — forecast revenue, manage payouts, and optimize your working capital. Complete Amazon cashflow management tools."
         />
-        <meta name="keywords" content="amazon cashflow forecasting features, payout prediction tools, FBA financial planning, cash flow calendar, scenario planning for sellers, AI forecasting" />
+        <meta name="keywords" content="amazon cashflow management software, marketplace cash flow software, amazon payout forecasting, cashflow automation, amazon seller tools" />
         <link rel="canonical" href="https://aurenapp.com/features" />
-        <meta property="og:title" content="Amazon Cash Flow Forecasting Features | Auren" />
-        <meta property="og:description" content="AI-powered cash flow forecasting, Amazon integration, scenario planning, and advanced analytics for marketplace sellers." />
+        <meta property="og:title" content="Amazon Cashflow Management Software Features | Auren" />
+        <meta property="og:description" content="Discover Auren's marketplace cash flow software — forecast revenue, manage payouts, and optimize your working capital." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://aurenapp.com/features" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Features - Cash Flow Management Tools | Auren" />
-        <meta name="twitter:description" content="Discover all the powerful features that help Amazon sellers forecast payouts and manage cash flow." />
+        <meta name="twitter:title" content="Amazon Cashflow Management Software Features | Auren" />
+        <meta name="twitter:description" content="Discover all the powerful Amazon cashflow management features to forecast payouts and optimize marketplace finances." />
       </Helmet>
 
         {/* Hero Section */}
