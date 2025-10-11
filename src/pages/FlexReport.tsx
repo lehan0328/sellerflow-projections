@@ -264,53 +264,53 @@ const FlexReport = () => {
           
           <div className="relative z-10 p-2 md:p-4">
             {/* Header with Branding */}
-            <div className="flex items-center justify-between mb-10 pb-8 border-b-2 border-gradient-to-r from-blue-200 via-purple-200 to-blue-200">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-gradient-to-r from-blue-200 via-purple-200 to-blue-200">
               <div>
-                <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-3 tracking-tight">
+                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-2 tracking-tight">
                   Financial Power Report
                 </h1>
-                <p className="text-slate-600 text-lg mb-2">Your business at a glance</p>
-                <p className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <p className="text-slate-600 text-sm mb-1">Your business at a glance</p>
+                <p className="text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Cash Flow Management Software For Amazon Sellers
                 </p>
               </div>
               <div className="text-right">
-                <img src={aurenLogo} alt="Auren" className="h-16 md:h-20 drop-shadow-lg mb-2" />
-                <p className="text-sm font-semibold text-blue-600">www.aurenapp.com</p>
+                <img src={aurenLogo} alt="Auren" className="h-12 md:h-14 drop-shadow-lg mb-2" />
+                <p className="text-xs font-semibold text-blue-600">www.aurenapp.com</p>
               </div>
             </div>
 
             {/* Verified Timestamp */}
-            <div className="mb-6 flex items-center justify-center gap-3 text-slate-700 bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-slate-200/60 shadow-sm">
-              <div className="flex items-center gap-2 px-4 py-2 bg-emerald-100/50 rounded-lg border border-emerald-200/50">
-                <Calendar className="w-5 h-5 text-emerald-700" />
-                <span className="font-bold text-emerald-900">
+            <div className="mb-4 flex items-center justify-center gap-2 text-slate-700 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-slate-200/60 shadow-sm">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100/50 rounded-lg border border-emerald-200/50">
+                <Calendar className="w-4 h-4 text-emerald-700" />
+                <span className="text-xs font-bold text-emerald-900">
                   {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </span>
-                <span className="font-mono font-bold text-emerald-900">
+                <span className="font-mono text-xs font-bold text-emerald-900">
                   {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </span>
               </div>
-              <div className="flex items-center gap-1.5 px-3 py-2 bg-blue-100/50 rounded-lg border border-blue-200/50">
-                <Lock className="w-4 h-4 text-blue-700" />
-                <span className="text-sm font-bold text-blue-900">Locked</span>
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-100/50 rounded-lg border border-blue-200/50">
+                <Lock className="w-3 h-3 text-blue-700" />
+                <span className="text-xs font-bold text-blue-900">Locked</span>
               </div>
             </div>
 
             {/* Primary Metric - Available to Spend */}
-            <div className="mb-10 text-center bg-gradient-to-br from-emerald-50/50 to-green-50/50 backdrop-blur-sm rounded-2xl p-8 border border-emerald-200/50 shadow-lg relative">
-              <div className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 bg-emerald-50 border-2 border-emerald-600 rounded-full">
-                <div className="w-2 h-2 bg-emerald-600 rounded-full"></div>
-                <span className="text-xs font-black text-emerald-700 uppercase tracking-wider">Live Verified</span>
+            <div className="mb-6 text-center bg-gradient-to-br from-emerald-50/50 to-green-50/50 backdrop-blur-sm rounded-2xl p-5 border border-emerald-200/50 shadow-lg relative">
+              <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border-2 border-emerald-600 rounded-full">
+                <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full"></div>
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Live Verified</span>
               </div>
-              <p className="text-sm text-slate-600 mb-4 uppercase tracking-widest font-semibold">Available to Spend</p>
-              <div className={`text-6xl md:text-7xl font-black bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-5 drop-shadow-sm transition-all duration-300 leading-tight ${!visibility.safeSpending ? 'blur-lg' : ''}`}>
+              <p className="text-xs text-slate-600 mb-2 uppercase tracking-widest font-semibold">Available to Spend</p>
+              <div className={`text-4xl md:text-5xl font-black bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-3 drop-shadow-sm transition-all duration-300 leading-tight ${!visibility.safeSpending ? 'blur-lg' : ''}`}>
                 {formatCurrency(safeSpendingData?.safe_spending_limit || 0)}
               </div>
-              <p className="text-slate-600 text-base font-medium mb-4">Safe spending power for your business</p>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100/50 border border-emerald-300 rounded-lg">
-                <BadgeCheck className="w-4 h-4 text-emerald-700" />
-                <span className="text-sm font-bold text-emerald-800 uppercase tracking-wide">Verified by Live Bank Account</span>
+              <p className="text-slate-600 text-xs font-medium mb-3">Safe spending power for your business</p>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100/50 border border-emerald-300 rounded-lg">
+                <BadgeCheck className="w-3 h-3 text-emerald-700" />
+                <span className="text-xs font-bold text-emerald-800 uppercase tracking-wide">Verified by Live Bank Account</span>
               </div>
               <button
                 onClick={() => toggleVisibility('safeSpending')}
@@ -325,20 +325,20 @@ const FlexReport = () => {
             </div>
 
             {/* Metrics Grid */}
-            <div className="grid grid-cols-2 gap-5 mb-8">
+            <div className="grid grid-cols-2 gap-3 mb-5">
               {/* Max 180 Day Purchasing Power */}
-              <div className="group bg-gradient-to-br from-blue-50 via-blue-100/80 to-blue-50 rounded-2xl p-6 border-2 border-blue-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
-                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border-2 border-blue-600 rounded-full">
-                  <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
-                  <span className="text-xs font-black text-blue-700 uppercase tracking-wider">Verified</span>
+              <div className="group bg-gradient-to-br from-blue-50 via-blue-100/80 to-blue-50 rounded-2xl p-4 border-2 border-blue-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-blue-50 border-2 border-blue-600 rounded-full">
+                  <div className="w-1 h-1 bg-blue-600 rounded-full"></div>
+                  <span className="text-[10px] font-black text-blue-700 uppercase tracking-wider">Verified</span>
                 </div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
-                    <DollarSign className="w-5 h-5 text-white" />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <DollarSign className="w-4 h-4 text-white" />
                   </div>
-                  <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Max 180 Day Power</p>
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Max 180 Day Power</p>
                 </div>
-                <p className={`text-4xl font-black text-blue-700 drop-shadow-sm transition-all duration-300 ${!visibility.totalCash ? 'blur-lg' : ''}`}>{formatCurrency(max180DayPurchasingPower)}</p>
+                <p className={`text-2xl font-black text-blue-700 drop-shadow-sm transition-all duration-300 ${!visibility.totalCash ? 'blur-lg' : ''}`}>{formatCurrency(max180DayPurchasingPower)}</p>
                 <button
                   onClick={() => toggleVisibility('totalCash')}
                   className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-blue-100/50 transition-colors z-10"
@@ -352,18 +352,18 @@ const FlexReport = () => {
               </div>
 
               {/* Available Credit */}
-              <div className="group bg-gradient-to-br from-purple-50 via-purple-100/80 to-purple-50 rounded-2xl p-6 border-2 border-purple-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
-                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 border-2 border-purple-600 rounded-full">
-                  <div className="w-1.5 h-1.5 bg-purple-600 rounded-full"></div>
-                  <span className="text-xs font-black text-purple-700 uppercase tracking-wider">Verified</span>
+              <div className="group bg-gradient-to-br from-purple-50 via-purple-100/80 to-purple-50 rounded-2xl p-4 border-2 border-purple-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-purple-50 border-2 border-purple-600 rounded-full">
+                  <div className="w-1 h-1 bg-purple-600 rounded-full"></div>
+                  <span className="text-[10px] font-black text-purple-700 uppercase tracking-wider">Verified</span>
                 </div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
-                    <CreditCard className="w-5 h-5 text-white" />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <CreditCard className="w-4 h-4 text-white" />
                   </div>
-                  <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Available Credit</p>
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Available Credit</p>
                 </div>
-                <p className={`text-4xl font-black text-purple-700 drop-shadow-sm transition-all duration-300 ${!visibility.availableCredit ? 'blur-lg' : ''}`}>{formatCurrency(totalAvailableCredit)}</p>
+                <p className={`text-2xl font-black text-purple-700 drop-shadow-sm transition-all duration-300 ${!visibility.availableCredit ? 'blur-lg' : ''}`}>{formatCurrency(totalAvailableCredit)}</p>
                 <button
                   onClick={() => toggleVisibility('availableCredit')}
                   className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-purple-100/50 transition-colors z-10"
@@ -377,18 +377,18 @@ const FlexReport = () => {
               </div>
 
               {/* Upcoming Income */}
-              <div className="group bg-gradient-to-br from-emerald-50 via-emerald-100/80 to-emerald-50 rounded-2xl p-6 border-2 border-emerald-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
-                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border-2 border-emerald-600 rounded-full">
-                  <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full"></div>
-                  <span className="text-xs font-black text-emerald-700 uppercase tracking-wider">Verified</span>
+              <div className="group bg-gradient-to-br from-emerald-50 via-emerald-100/80 to-emerald-50 rounded-2xl p-4 border-2 border-emerald-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-emerald-50 border-2 border-emerald-600 rounded-full">
+                  <div className="w-1 h-1 bg-emerald-600 rounded-full"></div>
+                  <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">Verified</span>
                 </div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
-                    <TrendingUp className="w-5 h-5 text-white" />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-2 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <TrendingUp className="w-4 h-4 text-white" />
                   </div>
-                  <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Income (30d)</p>
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Income (30d)</p>
                 </div>
-                <p className={`text-4xl font-black text-emerald-700 drop-shadow-sm transition-all duration-300 ${!visibility.upcomingIncome ? 'blur-lg' : ''}`}>{formatCurrency(upcomingIncome)}</p>
+                <p className={`text-2xl font-black text-emerald-700 drop-shadow-sm transition-all duration-300 ${!visibility.upcomingIncome ? 'blur-lg' : ''}`}>{formatCurrency(upcomingIncome)}</p>
                 <button
                   onClick={() => toggleVisibility('upcomingIncome')}
                   className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors z-10"
@@ -402,18 +402,18 @@ const FlexReport = () => {
               </div>
 
               {/* Purchase Orders */}
-              <div className="group bg-gradient-to-br from-orange-50 via-orange-100/80 to-orange-50 rounded-2xl p-6 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
-                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 border-2 border-orange-600 rounded-full">
-                  <div className="w-1.5 h-1.5 bg-orange-600 rounded-full"></div>
-                  <span className="text-xs font-black text-orange-700 uppercase tracking-wider">Verified</span>
+              <div className="group bg-gradient-to-br from-orange-50 via-orange-100/80 to-orange-50 rounded-2xl p-4 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-orange-50 border-2 border-orange-600 rounded-full">
+                  <div className="w-1 h-1 bg-orange-600 rounded-full"></div>
+                  <span className="text-[10px] font-black text-orange-700 uppercase tracking-wider">Verified</span>
                 </div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
-                    <ShoppingCart className="w-5 h-5 text-white" />
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-2 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <ShoppingCart className="w-4 h-4 text-white" />
                   </div>
-                  <p className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Purchase Orders</p>
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Purchase Orders</p>
                 </div>
-                <p className={`text-4xl font-black text-orange-700 drop-shadow-sm transition-all duration-300 ${!visibility.purchaseOrders ? 'blur-lg' : ''}`}>{formatCurrency(upcomingPurchaseOrders)}</p>
+                <p className={`text-2xl font-black text-orange-700 drop-shadow-sm transition-all duration-300 ${!visibility.purchaseOrders ? 'blur-lg' : ''}`}>{formatCurrency(upcomingPurchaseOrders)}</p>
                 <button
                   onClick={() => toggleVisibility('purchaseOrders')}
                   className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-orange-100/50 transition-colors z-10"
@@ -428,14 +428,14 @@ const FlexReport = () => {
             </div>
 
             {/* Footer */}
-            <div className="pt-8 border-t-2 border-gradient-to-r from-slate-200 via-slate-300 to-slate-200">
-              <div className="flex items-center justify-center text-sm mb-4">
+            <div className="pt-4 border-t-2 border-gradient-to-r from-slate-200 via-slate-300 to-slate-200">
+              <div className="flex items-center justify-center text-xs mb-3">
                 <div className="text-center">
-                  <p className="text-slate-700 font-semibold text-base mb-1">
-                    Powered by <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent font-black text-lg">Auren</span>
+                  <p className="text-slate-700 font-semibold text-sm mb-1">
+                    Powered by <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent font-black text-base">Auren</span>
                   </p>
-                  <p className="text-sm font-bold text-slate-700">Cash Flow Management Software For Amazon Sellers</p>
-                  <p className="text-sm font-semibold text-blue-600 mt-1">www.aurenapp.com</p>
+                  <p className="text-xs font-bold text-slate-700">Cash Flow Management Software For Amazon Sellers</p>
+                  <p className="text-xs font-semibold text-blue-600 mt-1">www.aurenapp.com</p>
                 </div>
               </div>
             </div>
