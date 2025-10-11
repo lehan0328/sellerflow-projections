@@ -91,65 +91,87 @@ export default function ScenarioPlanner() {
     );
   }, [amazonPayouts]);
 
-  // Calculate average payouts based on last 2 months
+  // Calculate trend-based payouts from last 2 months
   const historicalAveragePayouts = useMemo(() => {
     const now = new Date();
     const twoMonthsAgo = new Date(now);
     twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
 
-    // Get confirmed payouts from last 2 months
-    const recentPayouts = amazonPayouts.filter(p => 
-      p.status === 'confirmed' && 
-      new Date(p.payout_date) >= twoMonthsAgo &&
-      new Date(p.payout_date) <= now
-    );
+    // Get confirmed payouts from last 2 months, sorted by date
+    const recentPayouts = amazonPayouts
+      .filter(p => 
+        p.status === 'confirmed' && 
+        new Date(p.payout_date) >= twoMonthsAgo &&
+        new Date(p.payout_date) <= now
+      )
+      .sort((a, b) => new Date(a.payout_date).getTime() - new Date(b.payout_date).getTime());
 
     if (recentPayouts.length === 0) return [];
 
-    // Calculate average payout amount from last 2 months
-    const totalAmount = recentPayouts.reduce((sum, p) => sum + p.total_amount, 0);
-    const avgAmount = totalAmount / recentPayouts.length;
-
-    // Calculate average days between payouts for more accurate projection
-    const sortedPayouts = [...recentPayouts].sort((a, b) => 
-      new Date(a.payout_date).getTime() - new Date(b.payout_date).getTime()
-    );
-    
-    let avgDaysBetween = 14; // Default to bi-weekly
-    if (sortedPayouts.length >= 2) {
-      let totalDays = 0;
-      for (let i = 1; i < sortedPayouts.length; i++) {
-        const diff = new Date(sortedPayouts[i].payout_date).getTime() - 
-                     new Date(sortedPayouts[i-1].payout_date).getTime();
-        totalDays += diff / (1000 * 60 * 60 * 24);
+    // Calculate growth/decline trend
+    let growthRate = 0;
+    if (recentPayouts.length >= 2) {
+      // Calculate percentage change between consecutive payouts
+      const growthRates = [];
+      for (let i = 1; i < recentPayouts.length; i++) {
+        const previousAmount = recentPayouts[i - 1].total_amount;
+        const currentAmount = recentPayouts[i].total_amount;
+        if (previousAmount > 0) {
+          const change = ((currentAmount - previousAmount) / previousAmount) * 100;
+          growthRates.push(change);
+        }
       }
-      avgDaysBetween = Math.round(totalDays / (sortedPayouts.length - 1));
+      // Average growth rate across all periods
+      if (growthRates.length > 0) {
+        growthRate = growthRates.reduce((sum, rate) => sum + rate, 0) / growthRates.length;
+      }
     }
 
-    // Project next 3 months with average amounts and frequency
+    // Calculate average payout frequency
+    let avgDaysBetween = 14; // Default bi-weekly
+    if (recentPayouts.length >= 2) {
+      let totalDays = 0;
+      for (let i = 1; i < recentPayouts.length; i++) {
+        const diff = new Date(recentPayouts[i].payout_date).getTime() - 
+                     new Date(recentPayouts[i-1].payout_date).getTime();
+        totalDays += diff / (1000 * 60 * 60 * 24);
+      }
+      avgDaysBetween = Math.round(totalDays / (recentPayouts.length - 1));
+    }
+
+    // Start from most recent payout amount
+    const lastPayoutAmount = recentPayouts[recentPayouts.length - 1].total_amount;
+
+    // Project next 3 months applying growth trend
     const projectedPayouts = [];
     const threeMonthsFromNow = new Date(now);
     threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
     
-    let currentDate = new Date(now);
-    let index = 0;
+    let projectionIndex = 0;
+    let currentProjectedAmount = lastPayoutAmount;
     
-    while (currentDate <= threeMonthsFromNow) {
-      currentDate = new Date(now);
-      currentDate.setDate(currentDate.getDate() + (index * avgDaysBetween));
+    while (projectionIndex < 20) { // Safety limit
+      const projectedDate = new Date(now);
+      projectedDate.setDate(projectedDate.getDate() + ((projectionIndex + 1) * avgDaysBetween));
       
-      if (currentDate <= threeMonthsFromNow && currentDate > now) {
-        projectedPayouts.push({
-          id: `avg_${index}`,
-          payout_date: currentDate.toISOString(),
-          total_amount: avgAmount,
-          marketplace_name: '2-Month Avg Projection',
-          status: 'projected'
-        });
+      if (projectedDate > threeMonthsFromNow) break;
+      if (projectedDate <= now) {
+        projectionIndex++;
+        continue;
       }
       
-      index++;
-      if (index > 20) break; // Safety limit
+      // Apply growth rate to projection
+      currentProjectedAmount = currentProjectedAmount * (1 + growthRate / 100);
+      
+      projectedPayouts.push({
+        id: `avg_${projectionIndex}`,
+        payout_date: projectedDate.toISOString(),
+        total_amount: Math.round(currentProjectedAmount * 100) / 100, // Round to 2 decimals
+        marketplace_name: `Trend-Based (${growthRate >= 0 ? '+' : ''}${growthRate.toFixed(1)}% growth)`,
+        status: 'projected'
+      });
+      
+      projectionIndex++;
     }
 
     return projectedPayouts;
