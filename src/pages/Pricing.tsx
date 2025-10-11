@@ -470,7 +470,7 @@ export default function Pricing() {
 
       {/* Enterprise Customizer Modal */}
       <Dialog open={showEnterpriseCustomizer} onOpenChange={setShowEnterpriseCustomizer}>
-        <DialogContent className="sm:max-w-[600px] bg-gradient-to-br from-background via-background to-primary/5 border-primary/20">
+        <DialogContent className="sm:max-w-[480px] max-h-[90vh] overflow-y-auto bg-gradient-to-br from-background via-background to-primary/5 border-primary/20">
           <DialogHeader className="space-y-3">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-gradient-primary flex items-center justify-center">
