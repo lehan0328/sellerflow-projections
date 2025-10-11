@@ -418,14 +418,40 @@ export default function ScenarioPlanner() {
   }, [scenarioProjection]);
 
   const handleSaveScenario = () => {
+    // Serialize current state into scenario data
+    const adjustmentsToSave: Record<string, any> = {};
+    
+    // Convert state adjustments to the format expected by the database
+    Object.entries(dataSourceAdjustments).forEach(([key, adj]) => {
+      if (adj.enabled) {
+        adjustmentsToSave[key] = {
+          enabled: adj.enabled,
+          adjustmentType: adj.type,
+          adjustmentValue: typeof adj.value === 'number' ? adj.value : 0
+        };
+      }
+    });
+    
     const scenarioData: ScenarioData = {
       projectionMonths: 3,
-      dataSourceAdjustments: {}, // Will be populated from state
-      globalRevenueAdjustment: useIndividualAdjustments ? undefined : (typeof globalAdjustments.income?.value === 'number' ? globalAdjustments.income.value : undefined),
-      globalRevenueAdjustmentType: useIndividualAdjustments ? undefined : globalAdjustments.income?.type,
-      globalExpenseAdjustment: useIndividualAdjustments ? undefined : (typeof globalAdjustments.purchaseOrders?.value === 'number' ? globalAdjustments.purchaseOrders.value : undefined),
-      globalExpenseAdjustmentType: useIndividualAdjustments ? undefined : globalAdjustments.purchaseOrders?.type,
+      dataSourceAdjustments: useIndividualAdjustments ? adjustmentsToSave : undefined,
     };
+
+    // Save global adjustments
+    if (!useIndividualAdjustments) {
+      Object.entries(globalAdjustments).forEach(([key, adj]) => {
+        if (adj.enabled) {
+          if (!scenarioData.dataSourceAdjustments) {
+            scenarioData.dataSourceAdjustments = {};
+          }
+          scenarioData.dataSourceAdjustments[key] = {
+            enabled: adj.enabled,
+            adjustmentType: adj.type,
+            adjustmentValue: typeof adj.value === 'number' ? adj.value : 0
+          };
+        }
+      });
+    }
 
     if (selectedScenarioId) {
       updateScenario({
@@ -450,14 +476,45 @@ export default function ScenarioPlanner() {
     setSelectedScenarioId(scenarioId);
     setScenarioName(scenario.name);
     setScenarioDescription(scenario.description || "");
-    setDataSourceAdjustments({});
-    setGlobalAdjustments({
-      income: { enabled: false, type: 'percentage', value: 0 },
-      amazonPayouts: { enabled: false, type: 'percentage', value: 0 },
-      purchaseOrders: { enabled: false, type: 'percentage', value: 0 },
-      recurringExpenses: { enabled: false, type: 'percentage', value: 0 },
-      creditCards: { enabled: false, type: 'percentage', value: 0 },
+    
+    // Load saved adjustments from scenario data
+    const savedAdjustments = scenario.scenario_data?.dataSourceAdjustments || {};
+    
+    // Initialize global adjustments from saved data
+    const newGlobalAdjustments: Record<string, { enabled: boolean; type: 'percentage' | 'absolute'; value: number | '' }> = {
+      income: { enabled: false, type: 'percentage', value: '' },
+      amazonPayouts: { enabled: false, type: 'percentage', value: '' },
+      purchaseOrders: { enabled: false, type: 'percentage', value: '' },
+      recurringExpenses: { enabled: false, type: 'percentage', value: '' },
+      creditCards: { enabled: false, type: 'percentage', value: '' },
+    };
+    
+    // Load global adjustments if they exist
+    Object.entries(savedAdjustments).forEach(([key, adj]: [string, any]) => {
+      if (['income', 'amazonPayouts', 'purchaseOrders', 'recurringExpenses', 'creditCards'].includes(key)) {
+        newGlobalAdjustments[key] = {
+          enabled: adj.enabled ?? false,
+          type: adj.adjustmentType || 'percentage',
+          value: adj.adjustmentValue ?? ''
+        };
+      }
     });
+    
+    setGlobalAdjustments(newGlobalAdjustments);
+    
+    // Load individual adjustments
+    const newDataSourceAdjustments: Record<string, { enabled: boolean; type: 'percentage' | 'absolute'; value: number | '' }> = {};
+    Object.entries(savedAdjustments).forEach(([key, adj]: [string, any]) => {
+      if (!['income', 'amazonPayouts', 'purchaseOrders', 'recurringExpenses', 'creditCards'].includes(key)) {
+        newDataSourceAdjustments[key] = {
+          enabled: adj.enabled ?? false,
+          type: adj.adjustmentType || 'percentage',
+          value: adj.adjustmentValue ?? ''
+        };
+      }
+    });
+    
+    setDataSourceAdjustments(newDataSourceAdjustments);
   };
 
   const handleNewScenario = () => {
