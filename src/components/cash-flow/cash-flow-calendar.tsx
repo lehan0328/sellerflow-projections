@@ -425,15 +425,17 @@ export const CashFlowCalendar = ({
     
     const days = eachDayOfInterval({ start: chartStart, end: chartEnd });
     let runningTotal = totalAvailableCash;
+    let cumulativeInflow = 0;
+    let cumulativeOutflow = 0;
     
     return days.map(day => {
       const dayEvents = events.filter(event => 
         format(event.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
       );
       
-      const dailyChange = dayEvents.reduce((total, event) => {
-        return total + (event.type === 'inflow' ? event.amount : -event.amount);
-      }, 0);
+      const dailyInflow = dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
+      const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0);
+      const dailyChange = dailyInflow - dailyOutflow;
       
       // Update running total from account start date onwards
       const dayToCheck = new Date(day);
@@ -441,20 +443,62 @@ export const CashFlowCalendar = ({
       
       if (dayToCheck >= accountStartDate) {
         runningTotal += dailyChange;
+        cumulativeInflow += dailyInflow;
+        cumulativeOutflow += dailyOutflow;
       }
       
       // Check if this day has an Amazon payout
       const hasAmazonPayout = dayEvents.some(e => e.source === 'Amazon' && e.type === 'inflow');
       const hasAmazonForecast = dayEvents.some(e => e.source === 'Amazon-Forecasted' && e.type === 'inflow');
       
+      // Group events by type for detailed breakdown
+      const inflowEvents = dayEvents.filter(e => e.type === 'inflow');
+      const purchaseOrderEvents = dayEvents.filter(e => e.type === 'purchase-order');
+      const creditPaymentEvents = dayEvents.filter(e => e.type === 'credit-payment');
+      const outflowEvents = dayEvents.filter(e => e.type === 'outflow');
+      
+      // Calculate pending/overdue for this specific date
+      const dayPendingIncome = incomeItems
+        .filter(income => {
+          if (income.status === 'received') return false;
+          const incomeDate = startOfDay(new Date(income.paymentDate));
+          return incomeDate <= dayToCheck && incomeDate >= today;
+        })
+        .reduce((sum, income) => sum + income.amount, 0);
+      
+      const dayOverdueIncome = incomeItems
+        .filter(income => {
+          if (income.status === 'received') return false;
+          const incomeDate = startOfDay(new Date(income.paymentDate));
+          return incomeDate < today;
+        })
+        .reduce((sum, income) => sum + income.amount, 0);
+
+      const dayOverdueVendors = vendors
+        .filter(vendor => {
+          if (vendor.status === 'paid' || vendor.totalOwed <= 0) return false;
+          const paymentDate = startOfDay(new Date(vendor.nextPaymentDate));
+          return paymentDate < today;
+        })
+        .reduce((sum, vendor) => sum + vendor.nextPaymentAmount, 0);
+      
       return {
         date: format(day, 'MMM dd'),
         fullDate: day,
         cashFlow: runningTotal,
         dailyChange,
-        inflow: dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0),
-        outflow: dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0),
+        inflow: dailyInflow,
+        outflow: dailyOutflow,
+        cumulativeInflow,
+        cumulativeOutflow,
         transactions: dayEvents,
+        inflowEvents,
+        purchaseOrderEvents,
+        creditPaymentEvents,
+        outflowEvents,
+        pendingIncome: dayPendingIncome,
+        overdueIncome: dayOverdueIncome,
+        overdueVendors: dayOverdueVendors,
         hasAmazonPayout,
         hasAmazonForecast,
       };
@@ -796,26 +840,77 @@ export const CashFlowCalendar = ({
                             const data = payload[0].payload;
                             const hasTransactions = data.transactions && data.transactions.length > 0;
                             return (
-                              <div className="space-y-1">
-                                <p className="font-semibold">{label}</p>
-                                <div className="text-sm space-y-1">
+                              <div className="space-y-2 min-w-[280px]">
+                                <p className="font-semibold text-base border-b pb-2">{label}</p>
+                                
+                                {/* Balance Section */}
+                                <div className="space-y-1">
+                                  <p className="font-bold text-base">
+                                    Projected Balance: <span className="text-primary">${data.cashFlow.toLocaleString()}</span>
+                                  </p>
                                   {data.dailyChange !== 0 && (
-                                    <p className={data.dailyChange > 0 ? 'text-green-600' : 'text-red-600'}>
-                                      Daily Change: ${data.dailyChange > 0 ? '+' : ''}${data.dailyChange.toLocaleString()}
-                                    </p>
-                                  )}
-                                  {data.inflow > 0 && (
-                                    <p className="text-green-600">Inflow: +${data.inflow.toLocaleString()}</p>
-                                  )}
-                                  {data.outflow > 0 && (
-                                    <p className="text-red-600">Outflow: -${data.outflow.toLocaleString()}</p>
-                                  )}
-                                  {hasTransactions && (
-                                    <p className="text-blue-600 font-medium">
-                                      💡 Click to view transaction details
+                                    <p className={`font-medium ${data.dailyChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      Daily Net: {data.dailyChange > 0 ? '+' : ''}${Math.abs(data.dailyChange).toLocaleString()}
                                     </p>
                                   )}
                                 </div>
+
+                                {/* Daily Transactions */}
+                                {hasTransactions && (
+                                  <div className="space-y-1.5 border-t pt-2">
+                                    <p className="font-semibold text-xs uppercase text-muted-foreground">Daily Activity</p>
+                                    {data.inflow > 0 && (
+                                      <div>
+                                        <p className="text-green-600 font-medium">↑ Inflows: +${data.inflow.toLocaleString()}</p>
+                                        {data.inflowEvents?.map((evt: CashFlowEvent, idx: number) => (
+                                          <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {data.outflow > 0 && (
+                                      <div>
+                                        <p className="text-red-600 font-medium">↓ Outflows: -${data.outflow.toLocaleString()}</p>
+                                        {data.purchaseOrderEvents?.map((evt: CashFlowEvent, idx: number) => (
+                                          <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
+                                        ))}
+                                        {data.creditPaymentEvents?.map((evt: CashFlowEvent, idx: number) => (
+                                          <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
+                                        ))}
+                                        {data.outflowEvents?.map((evt: CashFlowEvent, idx: number) => (
+                                          <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Cumulative Totals */}
+                                {(data.cumulativeInflow > 0 || data.cumulativeOutflow > 0) && (
+                                  <div className="space-y-1 border-t pt-2">
+                                    <p className="font-semibold text-xs uppercase text-muted-foreground">Period Totals</p>
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                      <div>
+                                        <p className="text-muted-foreground">Total Inflows:</p>
+                                        <p className="font-semibold text-green-600">${data.cumulativeInflow.toLocaleString()}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-muted-foreground">Total Outflows:</p>
+                                        <p className="font-semibold text-red-600">${data.cumulativeOutflow.toLocaleString()}</p>
+                                      </div>
+                                    </div>
+                                    <p className="text-xs font-medium pt-1">
+                                      Net: <span className={data.cumulativeInflow - data.cumulativeOutflow > 0 ? 'text-green-600' : 'text-red-600'}>
+                                        {data.cumulativeInflow - data.cumulativeOutflow > 0 ? '+' : ''}${(data.cumulativeInflow - data.cumulativeOutflow).toLocaleString()}
+                                      </span>
+                                    </p>
+                                  </div>
+                                )}
+
+                                {hasTransactions && (
+                                  <p className="text-primary text-xs font-medium pt-1 border-t">
+                                    💡 Click to view full transaction details
+                                  </p>
+                                )}
                               </div>
                             );
                           }
@@ -854,8 +949,10 @@ export const CashFlowCalendar = ({
                             const hasAmazonPayout = data.hasAmazonPayout;
                             const hasAmazonForecast = data.hasAmazonForecast;
                             return (
-                              <div className="space-y-1">
-                                <p className="font-semibold">{label}</p>
+                              <div className="space-y-2 min-w-[300px]">
+                                <p className="font-semibold text-base border-b pb-2">{label}</p>
+                                
+                                {/* Amazon Payout Indicators */}
                                 {hasAmazonPayout && (
                                   <p className="text-orange-600 font-medium flex items-center gap-1">
                                     <ShoppingBag className="h-3 w-3" />
@@ -868,24 +965,99 @@ export const CashFlowCalendar = ({
                                     Amazon Payout (Forecasted)
                                   </p>
                                 )}
-                                <div className="text-sm space-y-1">
+                                
+                                {/* Balance Section */}
+                                <div className="space-y-1">
+                                  <p className="font-bold text-base">
+                                    Projected Balance: <span className="text-primary">${data.cashFlow.toLocaleString()}</span>
+                                  </p>
                                   {data.dailyChange !== 0 && (
-                                    <p className={data.dailyChange > 0 ? 'text-green-600' : 'text-red-600'}>
-                                      Daily Change: ${data.dailyChange > 0 ? '+' : ''}${data.dailyChange.toLocaleString()}
-                                    </p>
-                                  )}
-                                  {data.inflow > 0 && (
-                                    <p className="text-green-600">Inflow: +${data.inflow.toLocaleString()}</p>
-                                  )}
-                                  {data.outflow > 0 && (
-                                    <p className="text-red-600">Outflow: -${data.outflow.toLocaleString()}</p>
-                                  )}
-                                  {hasTransactions && (
-                                    <p className="text-blue-600 font-medium">
-                                      💡 Click to view transaction details
+                                    <p className={`font-medium ${data.dailyChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                      Daily Net: {data.dailyChange > 0 ? '+' : ''}${Math.abs(data.dailyChange).toLocaleString()}
                                     </p>
                                   )}
                                 </div>
+
+                                {/* Daily Transactions */}
+                                {hasTransactions && (
+                                  <div className="space-y-1.5 border-t pt-2">
+                                    <p className="font-semibold text-xs uppercase text-muted-foreground">Daily Activity</p>
+                                    {data.inflow > 0 && (
+                                      <div>
+                                        <p className="text-green-600 font-medium">↑ Inflows: +${data.inflow.toLocaleString()}</p>
+                                        {data.inflowEvents?.map((evt: CashFlowEvent, idx: number) => (
+                                          <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {data.outflow > 0 && (
+                                      <div>
+                                        <p className="text-red-600 font-medium">↓ Outflows: -${data.outflow.toLocaleString()}</p>
+                                        {data.purchaseOrderEvents?.map((evt: CashFlowEvent, idx: number) => (
+                                          <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
+                                        ))}
+                                        {data.creditPaymentEvents?.map((evt: CashFlowEvent, idx: number) => (
+                                          <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
+                                        ))}
+                                        {data.outflowEvents?.map((evt: CashFlowEvent, idx: number) => (
+                                          <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Pending/Overdue Items */}
+                                {(data.pendingIncome > 0 || data.overdueIncome > 0 || data.overdueVendors > 0) && (
+                                  <div className="space-y-1 border-t pt-2">
+                                    <p className="font-semibold text-xs uppercase text-muted-foreground">Outstanding Items</p>
+                                    {data.overdueIncome > 0 && (
+                                      <p className="text-xs text-red-600 flex items-center gap-1">
+                                        <AlertTriangle className="h-3 w-3" />
+                                        Overdue Income: ${data.overdueIncome.toLocaleString()}
+                                      </p>
+                                    )}
+                                    {data.overdueVendors > 0 && (
+                                      <p className="text-xs text-red-600 flex items-center gap-1">
+                                        <AlertTriangle className="h-3 w-3" />
+                                        Overdue Vendors: ${data.overdueVendors.toLocaleString()}
+                                      </p>
+                                    )}
+                                    {data.pendingIncome > 0 && (
+                                      <p className="text-xs text-yellow-600">
+                                        Pending Income: ${data.pendingIncome.toLocaleString()}
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Cumulative Totals */}
+                                {(data.cumulativeInflow > 0 || data.cumulativeOutflow > 0) && (
+                                  <div className="space-y-1 border-t pt-2">
+                                    <p className="font-semibold text-xs uppercase text-muted-foreground">Period Totals</p>
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                      <div>
+                                        <p className="text-muted-foreground">Total Inflows:</p>
+                                        <p className="font-semibold text-green-600">${data.cumulativeInflow.toLocaleString()}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-muted-foreground">Total Outflows:</p>
+                                        <p className="font-semibold text-red-600">${data.cumulativeOutflow.toLocaleString()}</p>
+                                      </div>
+                                    </div>
+                                    <p className="text-xs font-medium pt-1">
+                                      Net: <span className={data.cumulativeInflow - data.cumulativeOutflow > 0 ? 'text-green-600' : 'text-red-600'}>
+                                        {data.cumulativeInflow - data.cumulativeOutflow > 0 ? '+' : ''}${(data.cumulativeInflow - data.cumulativeOutflow).toLocaleString()}
+                                      </span>
+                                    </p>
+                                  </div>
+                                )}
+
+                                {hasTransactions && (
+                                  <p className="text-primary text-xs font-medium pt-1 border-t">
+                                    💡 Click to view full transaction details
+                                  </p>
+                                )}
                               </div>
                             );
                           }

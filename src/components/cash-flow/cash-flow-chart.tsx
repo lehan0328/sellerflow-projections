@@ -87,27 +87,43 @@ export const CashFlowChart = ({
   const generateChartData = () => {
     const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
     let runningTotal = totalAvailableCash;
+    let cumulativeInflow = 0;
+    let cumulativeOutflow = 0;
     
     return days.map(day => {
       const dayEvents = events.filter(event => 
         format(event.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
       );
       
-      const dailyChange = dayEvents.reduce((total, event) => {
-        return total + (event.type === 'inflow' ? event.amount : -event.amount);
-      }, 0);
+      const dailyInflow = dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
+      const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0);
+      const dailyChange = dailyInflow - dailyOutflow;
       
+      cumulativeInflow += dailyInflow;
+      cumulativeOutflow += dailyOutflow;
       runningTotal += dailyChange;
+      
+      // Group events by type for detailed breakdown
+      const inflowEvents = dayEvents.filter(e => e.type === 'inflow');
+      const purchaseOrderEvents = dayEvents.filter(e => e.type === 'purchase-order');
+      const creditPaymentEvents = dayEvents.filter(e => e.type === 'credit-payment');
+      const outflowEvents = dayEvents.filter(e => e.type === 'outflow');
       
       return {
         date: format(day, 'MMM dd, yyyy'),
         fullDate: day,
         cashFlow: runningTotal,
         dailyChange,
-        inflow: dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0),
-        outflow: dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0),
+        inflow: dailyInflow,
+        outflow: dailyOutflow,
+        cumulativeInflow,
+        cumulativeOutflow,
         eventCount: dayEvents.length,
-        events: dayEvents
+        events: dayEvents,
+        inflowEvents,
+        purchaseOrderEvents,
+        creditPaymentEvents,
+        outflowEvents
       };
     });
   };
@@ -224,28 +240,68 @@ export const CashFlowChart = ({
                       if (payload && payload[0]) {
                         const data = payload[0].payload;
                         return (
-                          <div className="space-y-2">
-                            <p className="font-semibold text-base">{label}</p>
-                            <div className="text-sm space-y-1.5 border-t pt-2">
-                              <p className="font-semibold">
-                                Balance: ${data.cashFlow.toLocaleString()}
+                          <div className="space-y-2 min-w-[280px]">
+                            <p className="font-semibold text-base border-b pb-2">{label}</p>
+                            
+                            {/* Balance Section */}
+                            <div className="space-y-1">
+                              <p className="font-bold text-base">
+                                Projected Balance: <span className="text-primary">${data.cashFlow.toLocaleString()}</span>
                               </p>
                               {data.dailyChange !== 0 && (
                                 <p className={`font-medium ${data.dailyChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                  Net Change: {data.dailyChange > 0 ? '+' : ''}${data.dailyChange.toLocaleString()}
+                                  Daily Net: {data.dailyChange > 0 ? '+' : ''}${Math.abs(data.dailyChange).toLocaleString()}
                                 </p>
                               )}
-                              {data.inflow > 0 && (
-                                <p className="text-green-600">↑ Inflow: +${data.inflow.toLocaleString()}</p>
-                              )}
-                              {data.outflow > 0 && (
-                                <p className="text-red-600">↓ Outflow: -${data.outflow.toLocaleString()}</p>
-                              )}
-                              {data.eventCount > 0 && (
-                                <p className="text-muted-foreground text-xs mt-2 pt-2 border-t">
-                                  {data.eventCount} transaction{data.eventCount > 1 ? 's' : ''} on this date
-                                </p>
-                              )}
+                            </div>
+
+                            {/* Daily Transactions */}
+                            {data.eventCount > 0 && (
+                              <div className="space-y-1.5 border-t pt-2">
+                                <p className="font-semibold text-xs uppercase text-muted-foreground">Daily Activity</p>
+                                {data.inflow > 0 && (
+                                  <div>
+                                    <p className="text-green-600 font-medium">↑ Inflows: +${data.inflow.toLocaleString()}</p>
+                                    {data.inflowEvents?.map((evt: CashFlowEvent, idx: number) => (
+                                      <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
+                                    ))}
+                                  </div>
+                                )}
+                                {data.outflow > 0 && (
+                                  <div>
+                                    <p className="text-red-600 font-medium">↓ Outflows: -${data.outflow.toLocaleString()}</p>
+                                    {data.purchaseOrderEvents?.map((evt: CashFlowEvent, idx: number) => (
+                                      <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
+                                    ))}
+                                    {data.creditPaymentEvents?.map((evt: CashFlowEvent, idx: number) => (
+                                      <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
+                                    ))}
+                                    {data.outflowEvents?.map((evt: CashFlowEvent, idx: number) => (
+                                      <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Cumulative Totals */}
+                            <div className="space-y-1 border-t pt-2">
+                              <p className="font-semibold text-xs uppercase text-muted-foreground">Period Totals</p>
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div>
+                                  <p className="text-muted-foreground">Total Inflows:</p>
+                                  <p className="font-semibold text-green-600">${data.cumulativeInflow.toLocaleString()}</p>
+                                </div>
+                                <div>
+                                  <p className="text-muted-foreground">Total Outflows:</p>
+                                  <p className="font-semibold text-red-600">${data.cumulativeOutflow.toLocaleString()}</p>
+                                </div>
+                              </div>
+                              <p className="text-xs font-medium pt-1">
+                                Net: <span className={data.cumulativeInflow - data.cumulativeOutflow > 0 ? 'text-green-600' : 'text-red-600'}>
+                                  {data.cumulativeInflow - data.cumulativeOutflow > 0 ? '+' : ''}${(data.cumulativeInflow - data.cumulativeOutflow).toLocaleString()}
+                                </span>
+                              </p>
                             </div>
                           </div>
                         );
