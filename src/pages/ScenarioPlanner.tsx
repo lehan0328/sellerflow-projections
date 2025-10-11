@@ -16,6 +16,8 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { addDays, startOfDay, format } from "date-fns";
 import { ArrowLeft, Plus, Save, Trash2, TrendingUp, TrendingDown, Calculator } from "lucide-react";
@@ -46,6 +48,7 @@ import {
 
 export default function ScenarioPlanner() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { scenarios, createScenario, updateScenario, deleteScenario, isLoading } = useScenarios();
   const { vendors } = useVendors();
   const { incomeItems } = useIncome();
@@ -670,7 +673,7 @@ export default function ScenarioPlanner() {
                       </div>
                     )}
 
-                    {/* Amazon Payouts */}
+                     {/* Amazon Payouts */}
                     {displayedPayouts.length > 0 && (
                       <div className="border rounded-lg p-3 space-y-2">
                         <div className="flex items-center justify-between gap-2">
@@ -686,25 +689,50 @@ export default function ScenarioPlanner() {
                             }))}
                           />
                         </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          <Label htmlFor="forecast-mode" className="text-xs">Forecast Method:</Label>
-                          <div className="flex gap-2">
-                            <Button
-                              variant={amazonForecastMode === 'ai' ? 'default' : 'outline'}
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => setAmazonForecastMode('ai')}
-                            >
-                              AI Forecast
-                            </Button>
-                            <Button
-                              variant={amazonForecastMode === 'average' ? 'default' : 'outline'}
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => setAmazonForecastMode('average')}
-                            >
-                              Last 2 Months Avg
-                            </Button>
+                        <div className="flex items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="forecast-mode" className="text-xs">Forecast Method:</Label>
+                            <div className="flex gap-2">
+                              <Button
+                                variant={amazonForecastMode === 'ai' ? 'default' : 'outline'}
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={async () => {
+                                  setAmazonForecastMode('ai');
+                                  toast({ title: "Generating AI Forecast", description: "Analyzing your Amazon data..." });
+                                  try {
+                                    const { data: { user } } = await supabase.auth.getUser();
+                                    if (!user) throw new Error('Not authenticated');
+                                    
+                                    const { error } = await supabase.functions.invoke('forecast-amazon-payouts', {
+                                      body: { userId: user.id }
+                                    });
+                                    
+                                    if (error) throw error;
+                                    
+                                    toast({ title: "Forecast Complete", description: "AI forecast generated successfully" });
+                                    setTimeout(() => window.location.reload(), 1000);
+                                  } catch (err: any) {
+                                    console.error('Forecast error:', err);
+                                    toast({ 
+                                      title: "Forecast Failed", 
+                                      description: err.message || "Unable to generate forecast",
+                                      variant: "destructive"
+                                    });
+                                  }
+                                }}
+                              >
+                                AI Forecast
+                              </Button>
+                              <Button
+                                variant={amazonForecastMode === 'average' ? 'default' : 'outline'}
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() => setAmazonForecastMode('average')}
+                              >
+                                Last 2 Months Avg
+                              </Button>
+                            </div>
                           </div>
                         </div>
                         <div className="text-xs text-muted-foreground">

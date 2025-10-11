@@ -48,21 +48,67 @@ serve(async (req) => {
       .eq('user_id', userId)
       .gte('transaction_date', sixMonthsAgo.toISOString())
       .order('transaction_date', { ascending: false })
-      .limit(1000);
+      .limit(2000);
 
     if (transactionsError) {
       console.error('[FORECAST] Error fetching transactions:', transactionsError);
     }
 
+    // Aggregate transaction data by type for analysis
+    const transactionsByType = {
+      orders: amazonTransactions?.filter(t => t.transaction_type === 'Order' || t.transaction_type === 'Sale') || [],
+      fees: amazonTransactions?.filter(t => t.transaction_type?.includes('Fee')) || [],
+      refunds: amazonTransactions?.filter(t => t.transaction_type === 'Refund') || [],
+      returns: amazonTransactions?.filter(t => t.transaction_type === 'Return') || [],
+    };
+
+    // Calculate monthly transaction aggregates with recent data weighted 2x
+    const monthlyTransactions: any = {};
+    amazonTransactions?.forEach((txn: any) => {
+      const monthKey = txn.transaction_date.substring(0, 7);
+      if (!monthlyTransactions[monthKey]) {
+        monthlyTransactions[monthKey] = {
+          month: monthKey,
+          orders_amount: 0,
+          fees_amount: 0,
+          refunds_amount: 0,
+          returns_amount: 0,
+          net_amount: 0,
+          transaction_count: 0
+        };
+      }
+      const amount = Number(txn.amount || 0);
+      monthlyTransactions[monthKey].transaction_count += 1;
+      
+      if (txn.transaction_type === 'Order' || txn.transaction_type === 'Sale') {
+        monthlyTransactions[monthKey].orders_amount += amount;
+      } else if (txn.transaction_type?.includes('Fee')) {
+        monthlyTransactions[monthKey].fees_amount += Math.abs(amount);
+      } else if (txn.transaction_type === 'Refund') {
+        monthlyTransactions[monthKey].refunds_amount += Math.abs(amount);
+      } else if (txn.transaction_type === 'Return') {
+        monthlyTransactions[monthKey].returns_amount += Math.abs(amount);
+      }
+      monthlyTransactions[monthKey].net_amount += amount;
+    });
+
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const recentTransactions = amazonTransactions?.filter(t => 
+      new Date(t.transaction_date) >= threeMonthsAgo
+    ) || [];
+
     console.log('[FORECAST] Data fetched', { 
       payoutCount: amazonPayouts?.length || 0,
       transactionCount: amazonTransactions?.length || 0,
-      payoutsData: amazonPayouts.map(p => ({
-        date: p.payout_date,
-        amount: p.total_amount,
-        status: p.status,
-        type: p.payout_type
-      }))
+      recentTransactionCount: recentTransactions.length,
+      transactionBreakdown: {
+        orders: transactionsByType.orders.length,
+        fees: transactionsByType.fees.length,
+        refunds: transactionsByType.refunds.length,
+        returns: transactionsByType.returns.length
+      },
+      monthlyTransactions: Object.keys(monthlyTransactions).length
     });
 
     if (!amazonPayouts || amazonPayouts.length === 0) {
@@ -168,61 +214,93 @@ Provide forecasts with:
 - Risk factors and assumptions
 - Actionable insights for business planning`;
 
-    const analysisPrompt = `Analyze the following Amazon Seller payout data and generate accurate forecasts for the next 3 months.
+    const analysisPrompt = `Analyze the following Amazon Seller data comprehensively and generate accurate payout forecasts for the next 3 months.
 
-CRITICAL CONTEXT: The payout amounts shown below are NET amounts - Amazon has already deducted ALL fees (referral fees, FBA fees, storage fees, advertising costs, etc.). These are the actual deposit amounts that hit the seller's bank account. DO NOT try to estimate or deduct fees - they're already accounted for.
+CRITICAL CONTEXT: The payout amounts shown are NET amounts - Amazon has already deducted ALL fees. These are actual deposit amounts.
 
-HISTORICAL PAYOUT DATA (Most Recent ${Math.min(20, amazonPayouts.length)} entries - NET amounts after fees):
+HISTORICAL PAYOUT DATA (Most Recent ${Math.min(20, amazonPayouts.length)} entries):
 ${JSON.stringify(amazonPayouts.slice(0, 20).map(p => ({
   payout_date: p.payout_date,
   total_amount: p.total_amount,
-  status: p.status,
-  payout_type: p.payout_type,
   orders_total: p.orders_total,
   fees_total: p.fees_total,
   refunds_total: p.refunds_total,
-  net_deposit: p.total_amount
 })), null, 2)}
 
-AGGREGATED MONTHLY DATA (Last 6 Months - NET payout totals):
+DETAILED TRANSACTION ANALYSIS (Last 6 Months):
+Total Transactions: ${amazonTransactions?.length || 0}
+Recent Transactions (Last 3 Months - WEIGHTED 2X): ${recentTransactions.length}
+
+Transaction Breakdown:
+- Orders/Sales: ${transactionsByType.orders.length} transactions
+  Recent 3mo: ${transactionsByType.orders.filter(t => new Date(t.transaction_date) >= threeMonthsAgo).length}
+  Total Amount: $${transactionsByType.orders.reduce((s, t) => s + Number(t.amount), 0).toFixed(2)}
+  
+- Fees: ${transactionsByType.fees.length} transactions  
+  Recent 3mo: ${transactionsByType.fees.filter(t => new Date(t.transaction_date) >= threeMonthsAgo).length}
+  Total Amount: $${transactionsByType.fees.reduce((s, t) => s + Math.abs(Number(t.amount)), 0).toFixed(2)}
+  
+- Refunds: ${transactionsByType.refunds.length} transactions
+  Recent 3mo: ${transactionsByType.refunds.filter(t => new Date(t.transaction_date) >= threeMonthsAgo).length}
+  Total Amount: $${transactionsByType.refunds.reduce((s, t) => s + Math.abs(Number(t.amount)), 0).toFixed(2)}
+  
+- Returns: ${transactionsByType.returns.length} transactions
+  Recent 3mo: ${transactionsByType.returns.filter(t => new Date(t.transaction_date) >= threeMonthsAgo).length}
+  Total Amount: $${transactionsByType.returns.reduce((s, t) => s + Math.abs(Number(t.amount)), 0).toFixed(2)}
+
+MONTHLY AGGREGATED TRANSACTION DATA:
+${JSON.stringify(Object.values(monthlyTransactions).sort((a: any, b: any) => b.month.localeCompare(a.month)), null, 2)}
+
+AGGREGATED MONTHLY PAYOUT DATA (Last 6 Months):
 ${JSON.stringify(historicalData, null, 2)}
 
-TOTAL HISTORICAL PAYOUTS: ${amazonPayouts.length}
-DATE RANGE: ${amazonPayouts[amazonPayouts.length - 1]?.payout_date} to ${amazonPayouts[0]?.payout_date}
-WEIGHTED AVERAGE PAYOUT (recent payouts weighted higher): $${avgPayoutAmount.toFixed(2)}
+BASELINE METRICS:
+Total Historical Payouts: ${amazonPayouts.length}
+Date Range: ${amazonPayouts[amazonPayouts.length - 1]?.payout_date} to ${amazonPayouts[0]?.payout_date}
+Weighted Average Payout (recent weighted 2x): $${avgPayoutAmount.toFixed(2)}
 
 ANALYSIS REQUIREMENTS:
 
-1. TREND ANALYSIS (Based on NET payout amounts):
-   - Calculate the overall growth trajectory of actual deposits
-   - Identify any acceleration or deceleration patterns in recent payouts
-   - Detect seasonal patterns and cycles in NET payout amounts
-   - Assess momentum and velocity of change
-   - IMPORTANT: Give MORE weight to recent payouts (last 3 months) as they reflect current business performance
+1. COMPREHENSIVE TRANSACTION ANALYSIS:
+   - Analyze ALL transaction types: Orders, Fees, Refunds, Returns
+   - Calculate growth/decline trends for EACH transaction type
+   - Identify correlations between transaction patterns and payout amounts
+   - Weight recent 3-month transactions 2X MORE than older data
+   - Assess velocity of orders, fee structures, and refund rates
 
-2. STATISTICAL MODELING (Use NET payout amounts as baseline):
-   - Apply appropriate time series forecasting methods to ACTUAL payout data
-   - Calculate confidence intervals (80% and 95%)
-   - Identify any anomalies or outliers in payout history
-   - Assess data quality and forecasting reliability
-   - Base predictions primarily on historical PAYOUT amounts, not gross sales
+2. TREND ANALYSIS (Multi-dimensional):
+   - Overall payout growth trajectory based on NET amounts
+   - Order volume and value trends (weighted toward recent)
+   - Fee structure changes and patterns
+   - Refund and return rate trends
+   - Seasonal patterns across all metrics
+   - Recent momentum (last 3 months DOUBLE WEIGHTED)
 
-3. BUSINESS CONTEXT:
-   - Consider typical Amazon payout cycles (bi-weekly)
-   - Remember: All fees are ALREADY DEDUCTED from the payout amounts
-   - Factor in observed trends in NET deposits
-   - Consider economic and seasonal factors affecting NET payouts
-   - Recent payout trends should carry more weight than older data
+3. STATISTICAL MODELING:
+   - Apply time series forecasting considering ALL transaction types
+   - Weight recent data (last 3 months) 2X in calculations
+   - Use transaction-level data to validate payout predictions
+   - Calculate confidence intervals based on data volatility
+   - Consider fee rate changes and their impact
+   - Factor in refund/return trends
 
-4. FORECAST GENERATION (Predict NET payout amounts):
-   Generate predictions for the next 6 bi-weekly payout periods (3 months) with:
-   - Predicted NET payout amount (what will actually hit the bank account)
-   - Base predictions primarily on historical PAYOUT amounts
-   - Recent payouts (last 3 months) should have 2x weight compared to older data
-   - Confidence interval (upper and lower bounds)
+4. BUSINESS CONTEXT:
+   - Amazon payout cycles (bi-weekly typical)
+   - All fees ALREADY DEDUCTED in payout amounts
+   - Recent business performance (3mo) is 2X more predictive
+   - Economic and seasonal factors
+   - Order velocity trends inform future payouts
+
+5. FORECAST GENERATION (Next 3 Months):
+   Generate predictions for next 6 bi-weekly periods with:
+   - Predicted NET payout (actual bank deposit amount)
+   - Based on: payouts (primary) + transaction trends (validation)
+   - Recent 3-month data weighted 2X
+   - Transaction type analysis (orders up/down, fees, refunds)
+   - Confidence interval (upper/lower bounds)
    - Confidence level (0-1 scale)
-   - Estimated payout date (use bi-weekly frequency from last payout date)
-   - Period identifier (e.g., "Period 1", "Period 2")
+   - Estimated payout dates
+   - Period identifier
 
 5. RISK ASSESSMENT:
    - Key assumptions made in the forecast
