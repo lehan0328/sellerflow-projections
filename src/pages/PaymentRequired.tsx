@@ -44,10 +44,15 @@ export default function PaymentRequired() {
   const handleUpdatePayment = async () => {
     setIsLoading(true);
     try {
-      // Create Stripe customer portal session
+      // Try customer portal first (for existing customers)
       const { data, error } = await supabase.functions.invoke('customer-portal');
       
-      if (error) throw error;
+      if (error) {
+        // If no Stripe customer exists, redirect to upgrade page to start subscription
+        console.log('No customer portal available, redirecting to upgrade page');
+        navigate('/upgrade');
+        return;
+      }
       
       if (data?.url) {
         window.open(data.url, '_blank');
@@ -58,11 +63,8 @@ export default function PaymentRequired() {
       }
     } catch (error: any) {
       console.error('Error opening payment portal:', error);
-      toast({
-        title: "Error",
-        description: "Failed to open payment portal. Please contact support.",
-        variant: "destructive",
-      });
+      // Redirect to upgrade page as fallback
+      navigate('/upgrade');
     } finally {
       setIsLoading(false);
     }
