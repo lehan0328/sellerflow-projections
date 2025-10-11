@@ -60,32 +60,39 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      // Fetch actual Amazon revenue (placeholder for now)
-      // TODO: Replace with actual Amazon revenue when integration is set up
-      const placeholderRevenue = 300000; // $300k placeholder
-      setCurrentRevenue(placeholderRevenue);
+      // Fetch actual Amazon revenue from last 30 days (before fees)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const { data: amazonTransactions } = await supabase
+        .from('amazon_transactions')
+        .select('amount, transaction_type, transaction_date')
+        .eq('user_id', user.id)
+        .gte('transaction_date', thirtyDaysAgo.toISOString())
+        .in('transaction_type', ['Order', 'Refund', 'Service Fee', 'Transfer']);
+
+      // Calculate revenue (orders) before fees
+      let calculatedRevenue = 0;
+      if (amazonTransactions && amazonTransactions.length > 0) {
+        calculatedRevenue = amazonTransactions
+          .filter(t => t.transaction_type === 'Order' || t.transaction_type === 'Transfer')
+          .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+        
+        // Subtract refunds
+        const refunds = amazonTransactions
+          .filter(t => t.transaction_type === 'Refund')
+          .reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+        
+        calculatedRevenue = Math.max(0, calculatedRevenue - refunds);
+      }
+      
+      setCurrentRevenue(calculatedRevenue);
 
       let recommendedPlanData = null;
       let higherPlans: any[] = [];
 
-      // Use placeholder revenue if no profile revenue is set
-      const revenueToUse = profile?.monthly_revenue ? profile.monthly_revenue : `${placeholderRevenue}`;
-      
-      if (profile?.monthly_revenue) {
-        setUserRevenue(profile.monthly_revenue);
-      }
-        
-      // Parse revenue amount to determine plan
-      const revenueStr = revenueToUse.toString().toLowerCase().replace(/[^0-9kmi]/g, '');
-      let revenueNum = 0;
-      
-      if (revenueStr.includes('k')) {
-        revenueNum = parseFloat(revenueStr) * 1000;
-      } else if (revenueStr.includes('m')) {
-        revenueNum = parseFloat(revenueStr) * 1000000;
-      } else {
-        revenueNum = parseFloat(revenueStr);
-      }
+      // Use calculated Amazon revenue to determine plan
+      const revenueNum = calculatedRevenue;
 
       // Determine appropriate plan based on revenue and get higher plans
       if (revenueNum <= 20000) {
@@ -297,10 +304,11 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
 
           {/* Current Revenue Display */}
           <div className="mb-4 p-3 rounded-lg bg-muted/50 border">
-            <div className="text-xs text-muted-foreground mb-1">Your Current Monthly Revenue</div>
+            <div className="text-xs text-muted-foreground mb-1">Your Amazon Revenue (Last 30 Days)</div>
             <div className="text-xl font-bold">
-              ${currentRevenue.toLocaleString()}
+              ${currentRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
+            <div className="text-xs text-muted-foreground mt-1">Before Amazon fees</div>
           </div>
 
           {/* Display only recommended plan and one upsell plan */}
