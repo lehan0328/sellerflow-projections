@@ -15,6 +15,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
   const [recommendedPlan, setRecommendedPlan] = useState<any>(null);
   const [availablePlans, setAvailablePlans] = useState<any[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [isYearly, setIsYearly] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -161,8 +162,10 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
 
     return {
       name: plan.name,
-      price: plan.price,
-      priceId: plan.price_id,
+      price: isYearly ? plan.yearlyPrice : plan.price,
+      monthlyPrice: plan.price,
+      yearlyPrice: plan.yearlyPrice,
+      priceId: isYearly ? plan.yearly_price_id : plan.price_id,
       isRecommended,
       features
     };
@@ -186,6 +189,33 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
         </DialogHeader>
 
         <div className="py-4">
+          {/* Billing Period Toggle */}
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex rounded-lg border p-1 bg-muted/50">
+              <button
+                onClick={() => setIsYearly(false)}
+                className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+                  !isYearly 
+                    ? 'bg-background shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setIsYearly(true)}
+                className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${
+                  isYearly 
+                    ? 'bg-background shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Yearly
+                <span className="ml-2 text-xs text-primary font-semibold">Save 17%</span>
+              </button>
+            </div>
+          </div>
+
           {/* Current Revenue Display */}
           <div className="mb-4 p-3 rounded-lg bg-muted/50 border">
             <div className="text-xs text-muted-foreground mb-1">Your Current Monthly Revenue</div>
@@ -213,8 +243,18 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                     )}
                   </div>
                   <div className="mb-3">
-                    <div className="text-2xl font-bold">${plan.price}</div>
-                    <div className="text-xs text-muted-foreground">/month</div>
+                    {isYearly ? (
+                      <>
+                        <div className="text-2xl font-bold">${(plan.price / 12).toFixed(0)}</div>
+                        <div className="text-xs text-muted-foreground">/month</div>
+                        <div className="text-xs text-muted-foreground mt-1">${plan.price} billed annually</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-2xl font-bold">${plan.price}</div>
+                        <div className="text-xs text-muted-foreground">/month</div>
+                      </>
+                    )}
                   </div>
 
                   <Button 
