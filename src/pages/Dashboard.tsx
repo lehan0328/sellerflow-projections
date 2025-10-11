@@ -1158,22 +1158,23 @@ const Dashboard = () => {
     switch (activeSection) {
       case "overview":
         return (
-          <>
-            <OverviewStats 
-              totalCash={displayCash} 
-              events={allCalendarEvents}
-              onUpdateCashBalance={handleUpdateCashBalance}
-              pendingIncomeToday={pendingIncomeToday}
-            />
+          <div className="flex flex-col h-[calc(100vh-8rem)] overflow-hidden">
+            <div className="flex-shrink-0">
+              <OverviewStats 
+                totalCash={displayCash} 
+                events={allCalendarEvents}
+                onUpdateCashBalance={handleUpdateCashBalance}
+                pendingIncomeToday={pendingIncomeToday}
+              />
+              
+              {/* Transaction Match Notification */}
+              <TransactionMatchNotification unmatchedCount={unmatchedTransactionsCount} />
+            </div>
             
-            {/* Transaction Match Notification */}
-            <TransactionMatchNotification unmatchedCount={unmatchedTransactionsCount} />
-            
-            
-            {/* Row 1: Cash Flow Calendar and AI Insights (Side by Side) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:h-[700px]">
-              <div className="lg:col-span-2 h-full">
-                <CashFlowCalendar 
+            {/* Calendar and Insights - Fill remaining space */}
+            <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4 min-h-0">
+              <div className="lg:col-span-2 h-full min-h-0">
+                <CashFlowCalendar
                   events={allCalendarEvents} 
                   totalCash={displayCash}
                   onEditTransaction={handleEditTransaction}
@@ -1188,7 +1189,7 @@ const Dashboard = () => {
                   onIncomeClick={handleEditIncome}
                 />
               </div>
-              <div className="lg:col-span-1 h-full">
+              <div className="lg:col-span-1 h-full min-h-0">
                 <CashFlowInsights
                   currentBalance={displayCash}
                   dailyInflow={todayInflow}
@@ -1248,13 +1249,13 @@ const Dashboard = () => {
                         refetchIncome();
                         refetchVendors();
                       }}
-                      onReviewMatches={() => navigate("/bank-transactions")}
+                       onReviewMatches={() => navigate("/bank-transactions")}
                     />
                   }
                 />
               </div>
             </div>
-          </>
+          </div>
         );
       
       case "transactions":
