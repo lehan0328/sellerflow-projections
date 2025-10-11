@@ -228,7 +228,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                     variant={plan.isRecommended ? 'default' : 'outline'}
                     size="lg"
                   >
-                    Start Trial
+                    Subscribe Now
                   </Button>
                 </div>
 
