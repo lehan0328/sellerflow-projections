@@ -71,7 +71,7 @@ export default function PaymentRequired() {
   };
 
   const handleContactSupport = () => {
-    window.location.href = 'mailto:support@yourapp.com';
+    navigate('/support');
   };
 
   return (
