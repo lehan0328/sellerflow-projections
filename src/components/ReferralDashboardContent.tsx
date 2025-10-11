@@ -9,6 +9,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
 const REWARD_TIERS = [
   { referrals: 1, discount: 15, bonus: 0, duration: 3 },
@@ -31,6 +33,7 @@ export function ReferralDashboardContent({ isDemo = false }: ReferralDashboardCo
   const [customCode, setCustomCode] = useState('');
   const [codeError, setCodeError] = useState('');
   const [creating, setCreating] = useState(false);
+  const [showRewards, setShowRewards] = useState(false);
 
   const handleCreateCode = async () => {
     if (!customCode.trim()) {
@@ -140,6 +143,100 @@ export function ReferralDashboardContent({ isDemo = false }: ReferralDashboardCo
           </CardContent>
         </Card>
       )}
+
+      {/* View Rewards Button */}
+      <div className="flex justify-center">
+        <Dialog open={showRewards} onOpenChange={setShowRewards}>
+          <DialogTrigger asChild>
+            <Button className="bg-gradient-primary hover-scale" size="lg">
+              <Gift className="h-5 w-5 mr-2" />
+              View Reward Tiers
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl flex items-center gap-2">
+                <Sparkles className="h-6 w-6 text-primary" />
+                Referral Reward Tiers
+              </DialogTitle>
+              <DialogDescription>
+                Earn amazing rewards by referring friends to Auren. The more referrals, the better the rewards!
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              {REWARD_TIERS.map((tier, index) => {
+                const isUnlocked = activeReferrals >= tier.referrals;
+                return (
+                  <Card 
+                    key={index} 
+                    className={`relative overflow-hidden transition-all ${
+                      isUnlocked 
+                        ? 'border-primary/50 bg-gradient-to-r from-primary/10 to-accent/10' 
+                        : 'border-border/50 opacity-60'
+                    }`}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className={`p-2 rounded-lg ${
+                              isUnlocked ? 'bg-primary/20' : 'bg-muted'
+                            }`}>
+                              <Target className={`h-5 w-5 ${
+                                isUnlocked ? 'text-primary' : 'text-muted-foreground'
+                              }`} />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-semibold">
+                                {tier.referrals} Active Referral{tier.referrals > 1 ? 's' : ''}
+                              </h3>
+                              {isUnlocked && (
+                                <Badge variant="default" className="bg-primary">
+                                  Unlocked!
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="space-y-2 ml-14">
+                            {tier.special ? (
+                              <p className="text-lg font-semibold text-primary">
+                                🎉 {tier.special}
+                              </p>
+                            ) : (
+                              <>
+                                {tier.discount > 0 && (
+                                  <p className="text-sm">
+                                    💰 <span className="font-semibold">{tier.discount}% discount</span> for {tier.duration} months
+                                  </p>
+                                )}
+                                {tier.bonus > 0 && (
+                                  <p className="text-sm">
+                                    💵 <span className="font-semibold">${tier.bonus} cash bonus</span>
+                                  </p>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        {isUnlocked && (
+                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/20">
+                            <Sparkles className="h-6 w-6 text-primary" />
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+            <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+              <p className="text-sm text-muted-foreground text-center">
+                💡 <strong>Tip:</strong> Share your referral code with Amazon sellers you know. They get 10% off, and you earn rewards!
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
