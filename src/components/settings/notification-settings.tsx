@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Clock, DollarSign, Calendar, TrendingUp, Mail } from "lucide-react";
+import { Bell, Clock, DollarSign, Calendar, TrendingUp, Mail, BellOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -167,6 +167,22 @@ export const NotificationSettings = () => {
           Configure scheduled notifications to stay on top of your finances
         </p>
       </div>
+
+      <Card className="bg-muted/50 border-muted">
+        <CardContent className="pt-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-background rounded-lg">
+              <BellOff className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium">All notifications are disabled by default</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Enable the notifications you want below. Each can be customized with specific schedules and settings.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4">
         {notificationTypes.map(nt => {
