@@ -331,6 +331,7 @@ export const AdminCustomers = () => {
                 <TableHead>Joined</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
+                <TableHead>Discount</TableHead>
                 <TableHead>Amazon Revenue (30d)</TableHead>
                 <TableHead>Churn Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -339,7 +340,7 @@ export const AdminCustomers = () => {
             <TableBody>
               {paginatedCustomers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                     No customers found
                   </TableCell>
                 </TableRow>
@@ -376,12 +377,25 @@ export const AdminCustomers = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {customer.plan_override ? (
+                        {customer.plan_override && ['starter', 'growing', 'professional', 'admin'].includes(customer.plan_override) ? (
                           <Badge variant="outline" className="text-xs capitalize">
                             {formatPlanName(customer.plan_override)}
                           </Badge>
                         ) : (
                           <span className="text-muted-foreground">No Plan</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {customer.plan_override === 'referred_user_discount' ? (
+                          <Badge variant="secondary" className="text-xs">
+                            Referred User (10% off)
+                          </Badge>
+                        ) : customer.discount_redeemed_at ? (
+                          <Badge variant="secondary" className="text-xs">
+                            Discount Applied
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell>
