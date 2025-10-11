@@ -73,6 +73,11 @@ export default function AmazonForecast() {
 
   const generateForecast = async () => {
     setIsGenerating(true);
+    toast({
+      title: "Generating AI Forecast",
+      description: "Analyzing your Amazon data...",
+      duration: 10000
+    });
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -90,8 +95,9 @@ export default function AmazonForecast() {
       if (data?.forecast) {
         setForecast(data.forecast);
         toast({
-          title: "Forecast generated",
-          description: "AI has analyzed your data and generated predictions"
+          title: "AI Forecast Complete! 🎉",
+          description: "Your Amazon payout forecast has been generated. Please refresh the page to see the updated projections.",
+          duration: 8000
         });
       }
     } catch (error: any) {

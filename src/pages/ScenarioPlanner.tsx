@@ -691,6 +691,14 @@ export default function ScenarioPlanner() {
                           <div className="flex items-center gap-2">
                             <Label htmlFor="forecast-mode" className="text-xs">Forecast Method:</Label>
                             <div className="flex gap-2">
+                              <Button
+                                variant={amazonForecastMode === 'average' ? 'default' : 'outline'}
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() => setAmazonForecastMode('average')}
+                              >
+                                Last 2 Months Avg
+                              </Button>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button
@@ -712,7 +720,7 @@ export default function ScenarioPlanner() {
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                                     <AlertDialogAction onClick={async () => {
                                       setAmazonForecastMode('ai');
-                                      toast({ title: "Generating AI Forecast", description: "Analyzing your Amazon data..." });
+                                      toast({ title: "Generating AI Forecast", description: "Analyzing your Amazon data...", duration: 10000 });
                                       try {
                                         const { data: { user } } = await supabase.auth.getUser();
                                         if (!user) throw new Error('Not authenticated');
@@ -723,8 +731,11 @@ export default function ScenarioPlanner() {
                                         
                                         if (error) throw error;
                                         
-                                        toast({ title: "Forecast Complete", description: "AI forecast generated successfully" });
-                                        setTimeout(() => window.location.reload(), 1000);
+                                        toast({ 
+                                          title: "AI Forecast Complete! 🎉", 
+                                          description: "Your Amazon payout forecast has been generated. Please refresh the page to see the updated projections.",
+                                          duration: 8000
+                                        });
                                       } catch (err: any) {
                                         console.error('Forecast error:', err);
                                         toast({ 
@@ -737,14 +748,6 @@ export default function ScenarioPlanner() {
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
                               </AlertDialog>
-                              <Button
-                                variant={amazonForecastMode === 'average' ? 'default' : 'outline'}
-                                size="sm"
-                                className="h-7 text-xs"
-                                onClick={() => setAmazonForecastMode('average')}
-                              >
-                                Last 2 Months Avg
-                              </Button>
                             </div>
                           </div>
                         </div>
