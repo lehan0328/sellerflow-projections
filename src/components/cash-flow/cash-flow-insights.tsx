@@ -465,41 +465,43 @@ export const CashFlowInsights = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950/20 dark:via-blue-950/20 dark:to-indigo-950/20 border-2 border-purple-200 dark:border-purple-800">
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          id="forecast-payouts"
-                          checked={includeForecastPayouts}
-                          onCheckedChange={handleToggleRequest}
-                          disabled={isForecastGenerating}
-                          className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-purple-500 data-[state=checked]:to-blue-500"
-                        />
-                        <Label htmlFor="forecast-payouts" className="text-xs cursor-pointer flex items-center gap-1.5 font-semibold">
-                          <img src={aurenLogo} alt="AI" className="h-4 w-4" />
-                          Forecast Payouts (AI)
-                          {isForecastGenerating && <Loader2 className="h-3 w-3 animate-spin text-purple-600" />}
-                        </Label>
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950/20 dark:via-blue-950/20 dark:to-indigo-950/20 border-2 border-purple-200 dark:border-purple-800">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            id="forecast-payouts"
+                            checked={includeForecastPayouts}
+                            onCheckedChange={handleToggleRequest}
+                            disabled={isForecastGenerating}
+                            className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-purple-500 data-[state=checked]:to-blue-500"
+                          />
+                          <Label htmlFor="forecast-payouts" className="text-xs cursor-pointer flex items-center gap-1.5 font-semibold">
+                            <img src={aurenLogo} alt="AI" className="h-4 w-4" />
+                            Forecast Payouts (AI)
+                            {isForecastGenerating && <Loader2 className="h-3 w-3 animate-spin text-purple-600" />}
+                          </Label>
+                        </div>
+                        {includeForecastPayouts && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={handleRefreshForecast}
+                                  disabled={isRefreshing || isForecastGenerating}
+                                  className="h-7 w-7 hover:bg-white/50 dark:hover:bg-black/20"
+                                >
+                                  <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs">Refresh forecast</p>
+                                <p className="text-xs text-muted-foreground">Can only be refreshed once every 24 hours</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </div>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={handleRefreshForecast}
-                              disabled={!includeForecastPayouts || isRefreshing || isForecastGenerating}
-                              className="h-7 w-7 hover:bg-white/50 dark:hover:bg-black/20"
-                            >
-                              <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="text-xs">Refresh forecast</p>
-                            <p className="text-xs text-muted-foreground">Can only be refreshed once every 24 hours</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-sm">
                     <p className="text-xs mb-2">
