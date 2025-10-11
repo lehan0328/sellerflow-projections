@@ -358,13 +358,16 @@ export default function ScenarioPlanner() {
           else if (event.sourceType === 'recurring') globalKey = 'recurringExpenses';
           else if (event.sourceType === 'credit_card') globalKey = 'creditCards';
           
-          if (globalKey && globalAdjustments[globalKey] && globalAdjustments[globalKey].enabled) {
+          // Apply adjustment if value is set, regardless of enabled state
+          if (globalKey && globalAdjustments[globalKey]) {
             const adjustment = globalAdjustments[globalKey];
             const adjValue = typeof adjustment.value === 'number' ? adjustment.value : 0;
-            if (adjustment.type === 'percentage') {
-              adjustedAmount = eventAmount * (1 + adjValue / 100);
-            } else {
-              adjustedAmount = eventAmount + adjValue;
+            if (adjValue !== 0) {
+              if (adjustment.type === 'percentage') {
+                adjustedAmount = eventAmount * (1 + adjValue / 100);
+              } else {
+                adjustedAmount = eventAmount + adjValue;
+              }
             }
           }
         }
@@ -699,13 +702,16 @@ export default function ScenarioPlanner() {
                             <div className="w-2 h-2 rounded-full bg-green-500" />
                             All Income Items ({incomeItems.filter(i => i.status !== 'received').length})
                           </div>
-                          <Switch
-                            checked={globalAdjustments.income?.enabled ?? false}
-                            onCheckedChange={(checked) => setGlobalAdjustments(prev => ({
-                              ...prev,
-                              income: { ...prev.income, enabled: checked }
-                            }))}
-                          />
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Show Details</span>
+                            <Switch
+                              checked={globalAdjustments.income?.enabled ?? false}
+                              onCheckedChange={(checked) => setGlobalAdjustments(prev => ({
+                                ...prev,
+                                income: { ...prev.income, enabled: checked }
+                              }))}
+                            />
+                          </div>
                         </div>
                         <div className="flex gap-2">
                           <Select 
@@ -805,13 +811,16 @@ export default function ScenarioPlanner() {
                             <div className="w-2 h-2 rounded-full bg-blue-500" />
                             Amazon Forecasted Payouts (Next 3 Months)
                           </div>
-                          <Switch
-                            checked={globalAdjustments.amazonPayouts?.enabled ?? false}
-                            onCheckedChange={(checked) => setGlobalAdjustments(prev => ({
-                              ...prev,
-                              amazonPayouts: { ...prev.amazonPayouts, enabled: checked }
-                            }))}
-                          />
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Show Details</span>
+                            <Switch
+                              checked={globalAdjustments.amazonPayouts?.enabled ?? false}
+                              onCheckedChange={(checked) => setGlobalAdjustments(prev => ({
+                                ...prev,
+                                amazonPayouts: { ...prev.amazonPayouts, enabled: checked }
+                              }))}
+                            />
+                          </div>
                         </div>
                         <div className="flex items-center justify-between gap-2 text-xs">
                           <div className="flex items-center gap-2">
@@ -979,13 +988,16 @@ export default function ScenarioPlanner() {
                             <div className="w-2 h-2 rounded-full bg-red-500" />
                             All Purchase Orders ({transactions.filter(t => t.type === 'purchase_order' && t.status !== 'completed').length})
                           </div>
-                          <Switch
-                            checked={globalAdjustments.purchaseOrders?.enabled ?? false}
-                            onCheckedChange={(checked) => setGlobalAdjustments(prev => ({
-                              ...prev,
-                              purchaseOrders: { ...prev.purchaseOrders, enabled: checked }
-                            }))}
-                          />
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Show Details</span>
+                            <Switch
+                              checked={globalAdjustments.purchaseOrders?.enabled ?? false}
+                              onCheckedChange={(checked) => setGlobalAdjustments(prev => ({
+                                ...prev,
+                                purchaseOrders: { ...prev.purchaseOrders, enabled: checked }
+                              }))}
+                            />
+                          </div>
                         </div>
                         <div className="flex gap-2">
                           <Select 
@@ -1085,13 +1097,16 @@ export default function ScenarioPlanner() {
                             <div className="w-2 h-2 rounded-full bg-purple-500" />
                             All Recurring Items ({recurringExpenses.length})
                           </div>
-                          <Switch
-                            checked={globalAdjustments.recurringExpenses?.enabled ?? false}
-                            onCheckedChange={(checked) => setGlobalAdjustments(prev => ({
-                              ...prev,
-                              recurringExpenses: { ...prev.recurringExpenses, enabled: checked }
-                            }))}
-                          />
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Show Details</span>
+                            <Switch
+                              checked={globalAdjustments.recurringExpenses?.enabled ?? false}
+                              onCheckedChange={(checked) => setGlobalAdjustments(prev => ({
+                                ...prev,
+                                recurringExpenses: { ...prev.recurringExpenses, enabled: checked }
+                              }))}
+                            />
+                          </div>
                         </div>
                         <div className="flex gap-2">
                           <Select 
@@ -1191,13 +1206,16 @@ export default function ScenarioPlanner() {
                             <div className="w-2 h-2 rounded-full bg-orange-500" />
                             All Credit Card Payments ({creditCards.filter(c => c.payment_due_date).length})
                           </div>
-                          <Switch
-                            checked={globalAdjustments.creditCards?.enabled ?? false}
-                            onCheckedChange={(checked) => setGlobalAdjustments(prev => ({
-                              ...prev,
-                              creditCards: { ...prev.creditCards, enabled: checked }
-                            }))}
-                          />
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Show Details</span>
+                            <Switch
+                              checked={globalAdjustments.creditCards?.enabled ?? false}
+                              onCheckedChange={(checked) => setGlobalAdjustments(prev => ({
+                                ...prev,
+                                creditCards: { ...prev.creditCards, enabled: checked }
+                              }))}
+                            />
+                          </div>
                         </div>
                         <div className="flex gap-2">
                           <Select 
