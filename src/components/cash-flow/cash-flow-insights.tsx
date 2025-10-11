@@ -470,7 +470,7 @@ export const CashFlowInsights = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950/20 dark:via-blue-950/20 dark:to-indigo-950/20 border-2 border-purple-200 dark:border-purple-800">
+                      <div className="flex items-center justify-between p-2 rounded-lg bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950/20 dark:via-blue-950/20 dark:to-indigo-950/20 border border-purple-200 dark:border-purple-800">
                         <div className="flex items-center gap-2">
                           <Switch
                             id="forecast-payouts"
