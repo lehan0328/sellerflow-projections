@@ -5,6 +5,9 @@ import { DemoUserMenu } from "./demo-user-menu";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { useSidebar } from "@/components/ui/sidebar";
 
 interface DashboardHeaderProps {
@@ -19,6 +22,40 @@ export function DashboardHeader({ onRefresh, isRefreshing = false, lastRefreshTi
   const navigate = useNavigate();
   const { state } = useSidebar();
   const isSidebarCollapsed = state === "collapsed";
+  
+  // Fetch user profile for display name
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+  
+  // Get user display name for dashboard title
+  const getUserDisplayName = () => {
+    if (isDemo) {
+      return 'Demo';
+    }
+    if (profile?.first_name) {
+      return profile.first_name;
+    }
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'Your';
+  };
 
   return (
     <div className="relative w-full">
@@ -58,9 +95,12 @@ export function DashboardHeader({ onRefresh, isRefreshing = false, lastRefreshTi
       </div>
 
       {/* Centered Dashboard Title */}
-      <div className="flex justify-center items-center pt-4 pb-2">
+      <div className="flex justify-center items-center pt-8 pb-6">
         <div className="text-center">
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            {isDemo ? 'Demo Dashboard' : `${getUserDisplayName()}'s Dashboard`}
+          </h1>
+          <p className="text-muted-foreground mt-2">
             Real-time insights and financial management
           </p>
         </div>
