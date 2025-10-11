@@ -248,6 +248,12 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                         <div className="text-2xl font-bold">${(plan.price / 12).toFixed(0)}</div>
                         <div className="text-xs text-muted-foreground">/month</div>
                         <div className="text-xs text-muted-foreground mt-1">${plan.price} billed annually</div>
+                        <div className="text-xs text-muted-foreground line-through mt-1">
+                          ${plan.monthlyPrice * 12} if billed monthly
+                        </div>
+                        <div className="text-xs font-semibold text-primary mt-1">
+                          Save ${(plan.monthlyPrice * 12) - plan.price}/year
+                        </div>
                       </>
                     ) : (
                       <>
