@@ -91,33 +91,65 @@ export default function ScenarioPlanner() {
     );
   }, [amazonPayouts]);
 
-  // Calculate average historical payouts for projection
+  // Calculate average payouts based on last 2 months
   const historicalAveragePayouts = useMemo(() => {
-    const completedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
-    if (completedPayouts.length === 0) return [];
-
-    // Calculate average payout amount
-    const totalAmount = completedPayouts.reduce((sum, p) => sum + p.total_amount, 0);
-    const avgAmount = totalAmount / completedPayouts.length;
-
-    // Project next 3 months with average amounts
-    const projectedPayouts = [];
     const now = new Date();
+    const twoMonthsAgo = new Date(now);
+    twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+
+    // Get confirmed payouts from last 2 months
+    const recentPayouts = amazonPayouts.filter(p => 
+      p.status === 'confirmed' && 
+      new Date(p.payout_date) >= twoMonthsAgo &&
+      new Date(p.payout_date) <= now
+    );
+
+    if (recentPayouts.length === 0) return [];
+
+    // Calculate average payout amount from last 2 months
+    const totalAmount = recentPayouts.reduce((sum, p) => sum + p.total_amount, 0);
+    const avgAmount = totalAmount / recentPayouts.length;
+
+    // Calculate average days between payouts for more accurate projection
+    const sortedPayouts = [...recentPayouts].sort((a, b) => 
+      new Date(a.payout_date).getTime() - new Date(b.payout_date).getTime()
+    );
     
-    // Assume bi-weekly payouts (every 14 days)
-    for (let i = 0; i < 6; i++) { // 6 payouts over 3 months
-      const payoutDate = new Date(now);
-      payoutDate.setDate(payoutDate.getDate() + (i * 14));
+    let avgDaysBetween = 14; // Default to bi-weekly
+    if (sortedPayouts.length >= 2) {
+      let totalDays = 0;
+      for (let i = 1; i < sortedPayouts.length; i++) {
+        const diff = new Date(sortedPayouts[i].payout_date).getTime() - 
+                     new Date(sortedPayouts[i-1].payout_date).getTime();
+        totalDays += diff / (1000 * 60 * 60 * 24);
+      }
+      avgDaysBetween = Math.round(totalDays / (sortedPayouts.length - 1));
+    }
+
+    // Project next 3 months with average amounts and frequency
+    const projectedPayouts = [];
+    const threeMonthsFromNow = new Date(now);
+    threeMonthsFromNow.setMonth(threeMonthsFromNow.getMonth() + 3);
+    
+    let currentDate = new Date(now);
+    let index = 0;
+    
+    while (currentDate <= threeMonthsFromNow) {
+      currentDate = new Date(now);
+      currentDate.setDate(currentDate.getDate() + (index * avgDaysBetween));
       
-      if (payoutDate.getMonth() - now.getMonth() + (payoutDate.getFullYear() - now.getFullYear()) * 12 <= 3) {
+      if (currentDate <= threeMonthsFromNow && currentDate > now) {
         projectedPayouts.push({
-          id: `avg_${i}`,
-          payout_date: payoutDate.toISOString(),
+          id: `avg_${index}`,
+          payout_date: currentDate.toISOString(),
           total_amount: avgAmount,
-          marketplace_name: 'Average Projection',
+          marketplace_name: '2-Month Avg Projection',
           status: 'projected'
         });
       }
+      
+      index++;
+      if (index > 20) break; // Safety limit
     }
 
     return projectedPayouts;
@@ -640,7 +672,7 @@ export default function ScenarioPlanner() {
                               className="h-7 text-xs"
                               onClick={() => setAmazonForecastMode('average')}
                             >
-                              Historical Average
+                              Last 2 Months Avg
                             </Button>
                           </div>
                         </div>
@@ -889,7 +921,7 @@ export default function ScenarioPlanner() {
                     <div className="border rounded-lg p-3 space-y-2">
                       <div className="flex items-center gap-2 font-medium text-sm">
                         <div className="w-2 h-2 rounded-full bg-blue-500" />
-                        Amazon Payouts ({amazonForecastMode === 'ai' ? 'AI Forecast' : 'Historical Avg'}) ({displayedPayouts.length})
+                        Amazon Payouts ({amazonForecastMode === 'ai' ? 'AI Forecast' : '2-Month Avg'}) ({displayedPayouts.length})
                       </div>
                       {displayedPayouts.slice(0, 5).map(payout => (
                         <div key={payout.id} className="pl-4 space-y-1">
