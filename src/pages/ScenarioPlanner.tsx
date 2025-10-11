@@ -456,6 +456,7 @@ export default function ScenarioPlanner() {
     const scenarioData: ScenarioData = {
       projectionMonths: 3,
       dataSourceAdjustments: adjustmentsToSave,
+      amazonForecastMode: amazonForecastMode,
     };
 
     console.log('Saving scenario:', {
@@ -490,6 +491,9 @@ export default function ScenarioPlanner() {
     setSelectedScenarioId(scenarioId);
     setScenarioName(scenario.name);
     setScenarioDescription(scenario.description || "");
+    
+    // Load Amazon forecast mode (default to 'average' if not saved)
+    setAmazonForecastMode(scenario.scenario_data?.amazonForecastMode || 'average');
     
     // Load saved adjustments from scenario data
     const savedAdjustments = scenario.scenario_data?.dataSourceAdjustments || {};
@@ -556,7 +560,7 @@ export default function ScenarioPlanner() {
     setScenarioDescription("");
     setDataSourceAdjustments({});
     setUseIndividualAdjustments(false);
-    setAmazonForecastMode('ai');
+    setAmazonForecastMode('average');
     setGlobalAdjustments({
       income: { enabled: false, type: 'percentage', value: '' },
       amazonPayouts: { enabled: false, type: 'percentage', value: '' },

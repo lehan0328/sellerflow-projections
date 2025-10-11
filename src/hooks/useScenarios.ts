@@ -12,6 +12,9 @@ export interface ScenarioData {
   // Projection settings
   projectionMonths: number;
   
+  // Amazon forecast mode
+  amazonForecastMode?: 'ai' | 'average';
+  
   // Data source specific adjustments
   dataSourceAdjustments?: {
     // Income sources
