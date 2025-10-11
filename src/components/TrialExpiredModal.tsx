@@ -174,6 +174,33 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "Scenario planning", included: true },
       { text: "Advanced analytics", included: true },
       { text: "Priority support", included: true },
+    ],
+    enterprise_tier1: [
+      { text: "$200k - $500k monthly revenue", included: true },
+      { text: "5 bank/credit card connections", included: true },
+      { text: "2 Amazon connections", included: true },
+      { text: "7 additional users", included: true },
+      { text: "All Professional features", included: true },
+      { text: "1:1 hands-on setup", included: true },
+      { text: "Dedicated account manager", included: true },
+    ],
+    enterprise_tier2: [
+      { text: "$500k - $1M monthly revenue", included: true },
+      { text: "5 bank/credit card connections", included: true },
+      { text: "2 Amazon connections", included: true },
+      { text: "7 additional users", included: true },
+      { text: "All Professional features", included: true },
+      { text: "1:1 hands-on setup", included: true },
+      { text: "Dedicated account manager", included: true },
+    ],
+    enterprise_tier3: [
+      { text: "$1M+ monthly revenue", included: true },
+      { text: "5 bank/credit card connections", included: true },
+      { text: "2 Amazon connections", included: true },
+      { text: "7 additional users", included: true },
+      { text: "All Professional features", included: true },
+      { text: "1:1 hands-on setup", included: true },
+      { text: "Dedicated account manager", included: true },
     ]
   };
 
@@ -181,6 +208,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
   const plansToDisplay = availablePlans.slice(0, 2).map((planData, index) => {
     const plan = planData.plan;
     const isRecommended = index === 0;
+    const isEnterprise = planData.type === 'enterprise';
     let features: Array<{ text: string; included: boolean }> = [];
 
     // Match features based on plan name
@@ -190,14 +218,25 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       features = planFeatures.growing;
     } else if (plan.name === "Professional") {
       features = planFeatures.professional;
+    } else if (plan.name === "Enterprise - Tier 1") {
+      features = planFeatures.enterprise_tier1;
+    } else if (plan.name === "Enterprise - Tier 2") {
+      features = planFeatures.enterprise_tier2;
+    } else if (plan.name === "Enterprise - Tier 3") {
+      features = planFeatures.enterprise_tier3;
     }
+
+    // Handle both naming conventions (priceId vs price_id)
+    const priceId = isEnterprise 
+      ? (isYearly ? plan.yearlyPriceId : plan.priceId)
+      : (isYearly ? plan.yearly_price_id : plan.price_id);
 
     return {
       name: plan.name,
-      price: isYearly ? plan.yearlyPrice : plan.price,
+      price: isYearly ? (plan.yearlyPrice || plan.yearlyPrice) : plan.price,
       monthlyPrice: plan.price,
-      yearlyPrice: plan.yearlyPrice,
-      priceId: isYearly ? plan.yearly_price_id : plan.price_id,
+      yearlyPrice: plan.yearlyPrice || plan.yearlyPrice,
+      priceId: priceId,
       isRecommended,
       features
     };
