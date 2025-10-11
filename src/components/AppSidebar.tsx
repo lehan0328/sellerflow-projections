@@ -26,14 +26,14 @@ interface AppSidebarProps {
 
 const sections = [
   { id: "overview", title: "Overview", icon: Home },
+  { id: "analytics", title: "Analytics", icon: BarChart3 },
+  { id: "scenario-planning", title: "Scenario Planning", icon: Calculator },
   { id: "notifications", title: "Automated Notifications", icon: Clock, showBadge: true },
   { id: "transactions", title: "Transactions", icon: TrendingUp },
   { id: "bank-transactions", title: "Bank Transactions", icon: Building2 },
   { id: "financials", title: "Financials", icon: Wallet },
   { id: "recurring", title: "Recurring Expenses", icon: Repeat },
   { id: "amazon", title: "Amazon Payouts", icon: ShoppingCart },
-  { id: "scenario-planning", title: "Scenario Planning", icon: Calculator },
-  { id: "analytics", title: "Analytics", icon: BarChart3 },
   { id: "document-storage", title: "Document Storage", icon: FolderOpen },
   { id: "support", title: "Support", icon: MessageSquare },
   { id: "referrals", title: "Referrals", icon: Users },
@@ -78,8 +78,8 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }
                 const isBookCall = section.id === "book-call";
                 const isFlexReport = 'isFlexReport' in section && section.isFlexReport;
                 
-                // Show separator after Analytics (before Document Storage)
-                const showSeparator = section.id === "analytics";
+                // Show separator after Amazon Payouts (before Document Storage)
+                const showSeparator = section.id === "amazon";
                 
                 return (
                   <React.Fragment key={section.id}>
