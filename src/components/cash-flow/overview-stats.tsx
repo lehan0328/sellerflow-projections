@@ -44,11 +44,30 @@ const amazonTimeRangeOptions = [
 ];
 
 export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance, pendingIncomeToday }: OverviewStatsProps) {
-  const [incomingTimeRange, setIncomingTimeRange] = useState("7days");
-  const [upcomingTimeRange, setUpcomingTimeRange] = useState("7days");
-  const [amazonTimeRange, setAmazonTimeRange] = useState("mtd");
+  const [incomingTimeRange, setIncomingTimeRange] = useState(() => {
+    return localStorage.getItem('incomingTimeRange') || "7days";
+  });
+  const [upcomingTimeRange, setUpcomingTimeRange] = useState(() => {
+    return localStorage.getItem('upcomingTimeRange') || "7days";
+  });
+  const [amazonTimeRange, setAmazonTimeRange] = useState(() => {
+    return localStorage.getItem('amazonTimeRange') || "mtd";
+  });
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  
+  // Save selections to localStorage
+  useEffect(() => {
+    localStorage.setItem('incomingTimeRange', incomingTimeRange);
+  }, [incomingTimeRange]);
+  
+  useEffect(() => {
+    localStorage.setItem('upcomingTimeRange', upcomingTimeRange);
+  }, [upcomingTimeRange]);
+  
+  useEffect(() => {
+    localStorage.setItem('amazonTimeRange', amazonTimeRange);
+  }, [amazonTimeRange]);
   
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
