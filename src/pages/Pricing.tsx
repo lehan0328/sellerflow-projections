@@ -505,9 +505,13 @@ export default function Pricing() {
             <span className={`text-sm font-medium transition-colors ${isYearly ? 'text-primary' : 'text-muted-foreground'}`}>
               Yearly
             </span>
-            {isYearly && (
+            {isYearly ? (
               <Badge variant="default" className="ml-2 bg-gradient-primary animate-pulse">
                 Save 17%
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="ml-2 border-primary/30 text-primary">
+                Save 17% yearly
               </Badge>
             )}
           </div>
