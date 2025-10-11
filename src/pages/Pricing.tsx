@@ -549,7 +549,7 @@ export default function Pricing() {
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
                     <p className="text-lg font-bold text-primary">{enterpriseTiers[enterpriseTier].connections}</p>
-                    <p className="text-[10px] text-muted-foreground">Bank Accounts</p>
+                    <p className="text-[10px] text-muted-foreground">Financial Connections</p>
                   </div>
                   <div>
                     <p className="text-lg font-bold text-primary">{enterpriseTiers[enterpriseTier].amazon}</p>
