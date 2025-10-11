@@ -470,17 +470,17 @@ export default function Pricing() {
 
       {/* Enterprise Customizer Modal */}
       <Dialog open={showEnterpriseCustomizer} onOpenChange={setShowEnterpriseCustomizer}>
-        <DialogContent className="sm:max-w-[480px] max-h-[90vh] overflow-y-auto bg-gradient-to-br from-background via-background to-primary/5 border-primary/20">
-          <DialogHeader className="space-y-3">
+        <DialogContent className="sm:max-w-[480px] bg-gradient-to-br from-background via-background to-primary/5 border-primary/20">
+          <DialogHeader className="space-y-2">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <Shield className="h-5 w-5 text-white" />
+              <div className="h-9 w-9 rounded-lg bg-gradient-primary flex items-center justify-center">
+                <Shield className="h-4 w-4 text-white" />
               </div>
               <div>
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                <DialogTitle className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                   Enterprise Plan Builder
                 </DialogTitle>
-                <DialogDescription className="text-sm">
+                <DialogDescription className="text-xs">
                   Configure your custom enterprise solution
                 </DialogDescription>
               </div>
@@ -488,43 +488,43 @@ export default function Pricing() {
           </DialogHeader>
 
           {/* Billing Frequency Toggle */}
-          <div className="flex items-center justify-center gap-3 py-4 px-4 rounded-lg bg-muted/50 border border-primary/10">
-            <span className={`text-sm font-medium transition-colors ${!isYearly ? 'text-primary' : 'text-muted-foreground'}`}>
+          <div className="flex items-center justify-center gap-3 py-3 px-4 rounded-lg bg-muted/50 border border-primary/10">
+            <span className={`text-xs font-medium transition-colors ${!isYearly ? 'text-primary' : 'text-muted-foreground'}`}>
               Monthly
             </span>
             <button
               onClick={() => setIsYearly(!isYearly)}
-              className="relative w-16 h-8 bg-primary/20 rounded-full transition-all hover:bg-primary/30 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              className="relative w-14 h-7 bg-primary/20 rounded-full transition-all hover:bg-primary/30 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
             >
               <span
-                className={`absolute top-1 left-1 w-6 h-6 bg-gradient-primary rounded-full shadow-lg transition-transform duration-300 ${
-                  isYearly ? 'translate-x-8' : ''
+                className={`absolute top-1 left-1 w-5 h-5 bg-gradient-primary rounded-full shadow-lg transition-transform duration-300 ${
+                  isYearly ? 'translate-x-7' : ''
                 }`}
               />
             </button>
-            <span className={`text-sm font-medium transition-colors ${isYearly ? 'text-primary' : 'text-muted-foreground'}`}>
+            <span className={`text-xs font-medium transition-colors ${isYearly ? 'text-primary' : 'text-muted-foreground'}`}>
               Yearly
             </span>
             {isYearly ? (
-              <Badge variant="default" className="ml-2 bg-gradient-primary animate-pulse">
+              <Badge variant="default" className="ml-2 bg-gradient-primary animate-pulse text-xs">
                 Save 17%
               </Badge>
             ) : (
-              <Badge variant="outline" className="ml-2 border-primary/30 text-primary">
+              <Badge variant="outline" className="ml-2 border-primary/30 text-primary text-xs">
                 Save 17% yearly
               </Badge>
             )}
           </div>
 
-          <div className="grid gap-5 py-4">
+          <div className="grid gap-3 py-2">
             {/* Revenue Tier */}
-            <div className="space-y-2 p-4 rounded-lg border border-primary/10 bg-card/50 hover:border-primary/30 transition-colors">
-              <label htmlFor="tier" className="text-sm font-semibold flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+            <div className="space-y-1.5 p-3 rounded-lg border border-primary/10 bg-card/50 hover:border-primary/30 transition-colors">
+              <label htmlFor="tier" className="text-xs font-semibold flex items-center gap-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                 Revenue Tier
               </label>
               <Select value={enterpriseTier} onValueChange={(value) => setEnterpriseTier(value as "tier1" | "tier2" | "tier3")}>
-                <SelectTrigger className="w-full bg-background/50 border-primary/20 h-11">
+                <SelectTrigger className="w-full bg-background/50 border-primary/20 h-9">
                   <SelectValue placeholder="Select a tier" />
                 </SelectTrigger>
                 <SelectContent className="bg-background border-primary/20 z-50">
@@ -538,25 +538,25 @@ export default function Pricing() {
             <Separator className="bg-primary/10" />
 
             {/* Add-ons Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-3">
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-2">
                 <div className="h-1 w-1 rounded-full bg-primary" />
-                <span className="text-sm font-semibold text-muted-foreground">Add-ons</span>
+                <span className="text-xs font-semibold text-muted-foreground">Add-ons</span>
               </div>
 
               {/* Bank Connections */}
-              <div className="space-y-2 p-4 rounded-lg border border-primary/10 bg-card/50 hover:border-primary/30 transition-colors">
+              <div className="space-y-1.5 p-3 rounded-lg border border-primary/10 bg-card/50 hover:border-primary/30 transition-colors">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="bankConnections" className="text-sm font-medium">
-                    Additional Bank Connections
+                  <label htmlFor="bankConnections" className="text-xs font-medium">
+                    Bank Connections
                   </label>
-                  <Badge variant="outline" className="text-xs">
-                    +${addonPricing.bankConnection}/{isYearly ? 'yr' : 'mo'} each
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                    +${addonPricing.bankConnection}/{isYearly ? 'yr' : 'mo'}
                   </Badge>
                 </div>
                 <Select value={enterpriseAddons.bankConnections.toString()} onValueChange={(value) => setEnterpriseAddons({ ...enterpriseAddons, bankConnections: parseInt(value) })}>
-                  <SelectTrigger className="w-full bg-background/50 border-primary/20 h-11">
-                    <SelectValue placeholder="Select number" />
+                  <SelectTrigger className="w-full bg-background/50 border-primary/20 h-9">
+                    <SelectValue placeholder="0" />
                   </SelectTrigger>
                   <SelectContent className="bg-background border-primary/20 z-50">
                     {[...Array(11)].map((_, i) => (
@@ -567,18 +567,18 @@ export default function Pricing() {
               </div>
 
               {/* Amazon Connections */}
-              <div className="space-y-2 p-4 rounded-lg border border-primary/10 bg-card/50 hover:border-primary/30 transition-colors">
+              <div className="space-y-1.5 p-3 rounded-lg border border-primary/10 bg-card/50 hover:border-primary/30 transition-colors">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="amazonConnections" className="text-sm font-medium">
-                    Additional Amazon Connections
+                  <label htmlFor="amazonConnections" className="text-xs font-medium">
+                    Amazon Connections
                   </label>
-                  <Badge variant="outline" className="text-xs">
-                    +${addonPricing.amazonConnection}/{isYearly ? 'yr' : 'mo'} each
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                    +${addonPricing.amazonConnection}/{isYearly ? 'yr' : 'mo'}
                   </Badge>
                 </div>
                 <Select value={enterpriseAddons.amazonConnections.toString()} onValueChange={(value) => setEnterpriseAddons({ ...enterpriseAddons, amazonConnections: parseInt(value) })}>
-                  <SelectTrigger className="w-full bg-background/50 border-primary/20 h-11">
-                    <SelectValue placeholder="Select number" />
+                  <SelectTrigger className="w-full bg-background/50 border-primary/20 h-9">
+                    <SelectValue placeholder="0" />
                   </SelectTrigger>
                   <SelectContent className="bg-background border-primary/20 z-50">
                     {[...Array(11)].map((_, i) => (
@@ -589,18 +589,18 @@ export default function Pricing() {
               </div>
 
               {/* Users */}
-              <div className="space-y-2 p-4 rounded-lg border border-primary/10 bg-card/50 hover:border-primary/30 transition-colors">
+              <div className="space-y-1.5 p-3 rounded-lg border border-primary/10 bg-card/50 hover:border-primary/30 transition-colors">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="users" className="text-sm font-medium">
+                  <label htmlFor="users" className="text-xs font-medium">
                     Additional Users
                   </label>
-                  <Badge variant="outline" className="text-xs">
-                    +${addonPricing.user}/{isYearly ? 'yr' : 'mo'} each
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                    +${addonPricing.user}/{isYearly ? 'yr' : 'mo'}
                   </Badge>
                 </div>
                 <Select value={enterpriseAddons.users.toString()} onValueChange={(value) => setEnterpriseAddons({ ...enterpriseAddons, users: parseInt(value) })}>
-                  <SelectTrigger className="w-full bg-background/50 border-primary/20 h-11">
-                    <SelectValue placeholder="Select number" />
+                  <SelectTrigger className="w-full bg-background/50 border-primary/20 h-9">
+                    <SelectValue placeholder="0" />
                   </SelectTrigger>
                   <SelectContent className="bg-background border-primary/20 z-50">
                     {[...Array(11)].map((_, i) => (
@@ -613,30 +613,30 @@ export default function Pricing() {
           </div>
 
           {/* Total Price Display */}
-          <div className="p-4 rounded-lg bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border border-primary/20">
+          <div className="p-3 rounded-lg bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border border-primary/20">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Price</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {enterpriseTiers[enterpriseTier].revenue} tier + add-ons
+                <p className="text-xs text-muted-foreground">Total Price</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {enterpriseTiers[enterpriseTier].revenue} tier
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                <p className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                   ${calculateEnterprisePrice().toLocaleString()}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   /{isYearly ? 'year' : 'month'}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 pt-1">
             <Button 
               variant="outline" 
               onClick={() => setShowEnterpriseCustomizer(false)}
-              className="flex-1 border-primary/20 hover:bg-primary/5"
+              className="flex-1 border-primary/20 hover:bg-primary/5 h-9"
             >
               Cancel
             </Button>
@@ -645,7 +645,7 @@ export default function Pricing() {
                 setShowEnterpriseCustomizer(false);
                 navigate("/signup");
               }}
-              className="flex-1 bg-gradient-primary hover:opacity-90 transition-opacity shadow-lg"
+              className="flex-1 bg-gradient-primary hover:opacity-90 transition-opacity shadow-lg h-9"
             >
               Start Free Trial
             </Button>
