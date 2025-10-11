@@ -24,7 +24,7 @@ interface AppSidebarProps {
   onFlexReportClick?: () => void;
 }
 
-const sections = [
+const dashboardSections = [
   { id: "overview", title: "Overview", icon: Home },
   { id: "analytics", title: "Analytics", icon: BarChart3 },
   { id: "scenario-planning", title: "Scenario Planning", icon: Calculator },
@@ -34,6 +34,9 @@ const sections = [
   { id: "financials", title: "Financials", icon: Wallet },
   { id: "recurring", title: "Recurring Expenses", icon: Repeat },
   { id: "amazon", title: "Amazon Payouts", icon: ShoppingCart },
+];
+
+const resourceSections = [
   { id: "document-storage", title: "Document Storage", icon: FolderOpen },
   { id: "support", title: "Support", icon: MessageSquare },
   { id: "referrals", title: "Referrals", icon: Users },
@@ -64,54 +67,35 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }
         )}
       </SidebarHeader>
       <SidebarContent className={isCollapsed ? "px-0" : "px-1"}>
+        {/* Dashboard Section */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-2 mt-2">
             Dashboard
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className={`space-y-1 ${isCollapsed ? "px-0" : "px-1"}`}>
-              {sections.map((section, index) => {
+              {dashboardSections.map((section) => {
                 const Icon = section.icon;
                 const isActive = activeSection === section.id;
-                const isExternal = 'isExternal' in section && section.isExternal;
-                const isRoute = 'isRoute' in section && section.isRoute;
-                const isBookCall = section.id === "book-call";
-                const isFlexReport = 'isFlexReport' in section && section.isFlexReport;
-                
-                // Show separator after Automated Notifications (before Transactions) and after Amazon Payouts (before Document Storage)
-                const showSeparator = section.id === "notifications" || section.id === "amazon";
+                const showSeparator = section.id === "notifications";
                 
                 return (
                   <React.Fragment key={section.id}>
                     <SidebarMenuItem>
                       <SidebarMenuButton
-                        onClick={() => {
-                          if (isFlexReport && onFlexReportClick) {
-                            onFlexReportClick();
-                          } else if (isRoute && 'url' in section) {
-                            window.location.href = section.url;
-                          } else if (isExternal && 'url' in section) {
-                            window.open(section.url, '_blank', 'noopener,noreferrer');
-                          } else {
-                            onSectionChange(section.id);
-                          }
-                        }}
+                        onClick={() => onSectionChange(section.id)}
                         className={`
                           relative rounded-lg transition-all duration-200
                           ${isCollapsed ? "justify-center h-12 w-12" : ""}
-                          ${isBookCall 
-                            ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg hover:shadow-xl hover:from-green-700 hover:to-emerald-700 font-bold justify-center"
-                            : isFlexReport
-                              ? "bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-lg hover:shadow-xl hover:from-purple-700 hover:to-violet-700 font-bold justify-center"
-                              : isActive 
-                                ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" 
-                                : "hover:bg-accent/50 hover:translate-x-1"
+                          ${isActive 
+                            ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" 
+                            : "hover:bg-accent/50 hover:translate-x-1"
                           }
                         `}
                       >
-                        <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive || isBookCall || isFlexReport ? "animate-pulse" : ""} ${isCollapsed || isBookCall || isFlexReport ? "mx-auto" : ""}`} />
+                        <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive ? "animate-pulse" : ""} ${isCollapsed ? "mx-auto" : ""}`} />
                         {!isCollapsed && (
-                          <span className={`flex items-center ${isBookCall || isFlexReport ? "justify-center w-full" : "justify-between w-full pr-1"}`}>
+                          <span className="flex items-center justify-between w-full pr-1">
                             <span>{section.title}</span>
                             {'showBadge' in section && section.showBadge && unreadCount > 0 && (
                               <Badge 
@@ -119,14 +103,6 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }
                                 className="ml-auto text-[10px] font-bold px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center"
                               >
                                 {unreadCount}
-                              </Badge>
-                            )}
-                            {section.id === "referrals" && (
-                              <Badge 
-                                variant="secondary" 
-                                className="ml-auto text-[10px] bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30 font-bold px-1.5 py-0"
-                              >
-                                Earn $3k
                               </Badge>
                             )}
                           </span>
@@ -142,6 +118,70 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }
                       <Separator className="my-2" />
                     )}
                   </React.Fragment>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Resources Section */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-2 mt-2">
+            Resources
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className={`space-y-1 ${isCollapsed ? "px-0" : "px-1"}`}>
+              {resourceSections.map((section) => {
+                const Icon = section.icon;
+                const isActive = activeSection === section.id;
+                const isExternal = 'isExternal' in section && section.isExternal;
+                const isRoute = 'isRoute' in section && section.isRoute;
+                const isBookCall = section.id === "book-call";
+                const isFlexReport = 'isFlexReport' in section && section.isFlexReport;
+                
+                return (
+                  <SidebarMenuItem key={section.id}>
+                    <SidebarMenuButton
+                      onClick={() => {
+                        if (isFlexReport && onFlexReportClick) {
+                          onFlexReportClick();
+                        } else if (isRoute && 'url' in section) {
+                          window.location.href = section.url;
+                        } else if (isExternal && 'url' in section) {
+                          window.open(section.url, '_blank', 'noopener,noreferrer');
+                        } else {
+                          onSectionChange(section.id);
+                        }
+                      }}
+                      className={`
+                        relative rounded-lg transition-all duration-200
+                        ${isCollapsed ? "justify-center h-12 w-12" : ""}
+                        ${isBookCall 
+                          ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg hover:shadow-xl hover:from-green-700 hover:to-emerald-700 font-bold justify-center"
+                          : isFlexReport
+                            ? "bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-lg hover:shadow-xl hover:from-purple-700 hover:to-violet-700 font-bold justify-center"
+                            : isActive 
+                              ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" 
+                              : "hover:bg-accent/50 hover:translate-x-1"
+                        }
+                      `}
+                    >
+                      <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive || isBookCall || isFlexReport ? "animate-pulse" : ""} ${isCollapsed || isBookCall || isFlexReport ? "mx-auto" : ""}`} />
+                      {!isCollapsed && (
+                        <span className={`flex items-center ${isBookCall || isFlexReport ? "justify-center w-full" : "justify-between w-full pr-1"}`}>
+                          <span>{section.title}</span>
+                          {section.id === "referrals" && (
+                            <Badge 
+                              variant="secondary" 
+                              className="ml-auto text-[10px] bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30 font-bold px-1.5 py-0"
+                            >
+                              Earn $3k
+                            </Badge>
+                          )}
+                        </span>
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 );
               })}
             </SidebarMenu>
