@@ -172,12 +172,31 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "Advanced analytics", included: true },
       { text: "Priority support", included: true },
     ],
-    enterprise: [
-      { text: "5 bank/credit card connections (+ add more)", included: true },
+    enterprise_tier1: [
+      { text: "$200k - $500k monthly revenue", included: true },
+      { text: "5 bank/credit card connections", included: true },
       { text: "2 Amazon connections", included: true },
       { text: "7 additional users", included: true },
       { text: "All Professional features", included: true },
-      { text: "1:1 hands-on setup with team member", included: true },
+      { text: "1:1 hands-on setup", included: true },
+      { text: "Dedicated account manager", included: true },
+    ],
+    enterprise_tier2: [
+      { text: "$500k - $1M monthly revenue", included: true },
+      { text: "5 bank/credit card connections", included: true },
+      { text: "2 Amazon connections", included: true },
+      { text: "7 additional users", included: true },
+      { text: "All Professional features", included: true },
+      { text: "1:1 hands-on setup", included: true },
+      { text: "Dedicated account manager", included: true },
+    ],
+    enterprise_tier3: [
+      { text: "$1M+ monthly revenue", included: true },
+      { text: "5 bank/credit card connections", included: true },
+      { text: "2 Amazon connections", included: true },
+      { text: "7 additional users", included: true },
+      { text: "All Professional features", included: true },
+      { text: "1:1 hands-on setup", included: true },
       { text: "Dedicated account manager", included: true },
     ]
   };
@@ -196,9 +215,12 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       features = planFeatures.growing;
     } else if (plan.name === "Professional") {
       features = planFeatures.professional;
-    } else if (plan.name.includes("Enterprise")) {
-      // All enterprise tiers use the same features
-      features = planFeatures.enterprise;
+    } else if (plan.name === "Enterprise - Tier 1") {
+      features = planFeatures.enterprise_tier1;
+    } else if (plan.name === "Enterprise - Tier 2") {
+      features = planFeatures.enterprise_tier2;
+    } else if (plan.name === "Enterprise - Tier 3") {
+      features = planFeatures.enterprise_tier3;
     }
 
     // Handle both naming conventions (priceId vs price_id)
@@ -213,7 +235,6 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       yearlyPrice: plan.yearlyPrice || plan.yearlyPrice,
       priceId: priceId,
       isRecommended,
-      isEnterprise,
       features
     };
   });
@@ -295,18 +316,11 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
               >
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-lg font-bold">
-                      {plan.isEnterprise ? "Enterprise" : plan.name}
-                    </h3>
+                    <h3 className="text-lg font-bold">{plan.name}</h3>
                     {plan.isRecommended && (
                       <Badge variant="default" className="text-xs">Recommended</Badge>
                     )}
                   </div>
-                  {plan.isEnterprise && (
-                    <div className="text-xs text-muted-foreground mb-2">
-                      For ${currentRevenue.toLocaleString()}/mo revenue
-                    </div>
-                  )}
                   <div className="mb-3">
                     {isYearly ? (
                       <>
