@@ -338,7 +338,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm text-slate-600">Incoming $</p>
                 <Select value={incomingTimeRange} onValueChange={setIncomingTimeRange}>
-                  <SelectTrigger className="w-32 h-6 text-xs">
+                  <SelectTrigger className="w-32 h-6 text-xs bg-white dark:bg-slate-800">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -367,7 +367,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm text-slate-600">Upcoming Payments</p>
                 <Select value={upcomingTimeRange} onValueChange={setUpcomingTimeRange}>
-                  <SelectTrigger className="w-32 h-6 text-xs">
+                  <SelectTrigger className="w-32 h-6 text-xs bg-white dark:bg-slate-800">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -396,7 +396,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm text-slate-600">Amazon Revenue</p>
                 <Select value={amazonTimeRange} onValueChange={setAmazonTimeRange}>
-                  <SelectTrigger className="w-32 h-6 text-xs">
+                  <SelectTrigger className="w-32 h-6 text-xs bg-white dark:bg-slate-800">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
