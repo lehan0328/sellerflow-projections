@@ -29,6 +29,9 @@ interface Customer {
   payment_failure_date?: string;
   email?: string;
   amazon_revenue?: number;
+  renewal_date?: string;
+  last_paid_date?: string;
+  stripe_customer_id?: string;
 }
 
 interface ConversionMetrics {
@@ -58,7 +61,7 @@ export const AdminCustomers = () => {
       setIsLoading(true);
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('user_id, first_name, last_name, company, created_at, plan_override, discount_redeemed_at, trial_end, churn_date, account_status, payment_failure_date')
+        .select('user_id, first_name, last_name, company, created_at, plan_override, discount_redeemed_at, trial_end, churn_date, account_status, payment_failure_date, stripe_customer_id')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -98,10 +101,31 @@ export const AdminCustomers = () => {
             revenue = Math.max(0, revenue - refunds);
           }
 
+          // Fetch Stripe subscription data if customer has stripe_customer_id
+          let renewalDate = null;
+          let lastPaidDate = null;
+          
+          if (profile.stripe_customer_id) {
+            try {
+              const { data: stripeData } = await supabase.functions.invoke('get-customer-subscription-details', {
+                body: { customerId: profile.stripe_customer_id }
+              });
+              
+              if (stripeData) {
+                renewalDate = stripeData.renewal_date;
+                lastPaidDate = stripeData.last_paid_date;
+              }
+            } catch (error) {
+              console.error('Error fetching Stripe data for customer:', profile.user_id, error);
+            }
+          }
+
           return {
             ...profile,
             email: emailData?.emails?.[profile.user_id] || 'Unknown',
-            amazon_revenue: revenue
+            amazon_revenue: revenue,
+            renewal_date: renewalDate,
+            last_paid_date: lastPaidDate
           };
         })
       );
@@ -333,6 +357,8 @@ export const AdminCustomers = () => {
                 <TableHead>Plan</TableHead>
                 <TableHead>Discount</TableHead>
                 <TableHead>Amazon Revenue (30d)</TableHead>
+                <TableHead>Renewal Date</TableHead>
+                <TableHead>Last Paid</TableHead>
                 <TableHead>Churn Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -340,7 +366,7 @@ export const AdminCustomers = () => {
             <TableBody>
               {paginatedCustomers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                     No customers found
                   </TableCell>
                 </TableRow>
@@ -398,6 +424,32 @@ export const AdminCustomers = () => {
                         <span className="text-sm font-medium">
                           ${(customer.amazon_revenue || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        {customer.renewal_date ? (
+                          <span className="text-sm">
+                            {new Date(customer.renewal_date).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {customer.last_paid_date ? (
+                          <span className="text-sm">
+                            {new Date(customer.last_paid_date).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         {customer.churn_date ? (
