@@ -58,7 +58,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
         .from('profiles')
         .select('monthly_revenue')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       // Fetch actual Amazon revenue (placeholder for now)
       // TODO: Replace with actual Amazon revenue when integration is set up
@@ -68,60 +68,57 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       let recommendedPlanData = null;
       let higherPlans: any[] = [];
 
+      // Use placeholder revenue if no profile revenue is set
+      const revenueToUse = profile?.monthly_revenue ? profile.monthly_revenue : `${placeholderRevenue}`;
+      
       if (profile?.monthly_revenue) {
         setUserRevenue(profile.monthly_revenue);
+      }
         
-        // Parse revenue amount to determine plan
-        const revenueStr = profile.monthly_revenue.toLowerCase().replace(/[^0-9kmi]/g, '');
-        let revenueNum = 0;
-        
-        if (revenueStr.includes('k')) {
-          revenueNum = parseFloat(revenueStr) * 1000;
-        } else if (revenueStr.includes('m')) {
-          revenueNum = parseFloat(revenueStr) * 1000000;
-        } else {
-          revenueNum = parseFloat(revenueStr);
-        }
-
-        // Determine appropriate plan based on revenue and get higher plans
-        if (revenueNum <= 20000) {
-          recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.starter };
-          higherPlans = [
-            { type: 'standard', plan: PRICING_PLANS.growing },
-          ];
-        } else if (revenueNum <= 100000) {
-          recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.growing };
-          higherPlans = [
-            { type: 'standard', plan: PRICING_PLANS.professional },
-          ];
-        } else if (revenueNum <= 200000) {
-          recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.professional };
-          higherPlans = []; // No upgrade for Professional
-        } else if (revenueNum <= 500000) {
-          recommendedPlanData = { type: 'enterprise', plan: ENTERPRISE_TIERS.tier1 };
-          higherPlans = [
-            { type: 'enterprise', plan: ENTERPRISE_TIERS.tier2 },
-          ];
-        } else if (revenueNum <= 1000000) {
-          recommendedPlanData = { type: 'enterprise', plan: ENTERPRISE_TIERS.tier2 };
-          higherPlans = [
-            { type: 'enterprise', plan: ENTERPRISE_TIERS.tier3 },
-          ];
-        } else {
-          recommendedPlanData = { type: 'enterprise', plan: ENTERPRISE_TIERS.tier3 };
-          higherPlans = [];
-        }
+      // Parse revenue amount to determine plan
+      const revenueStr = revenueToUse.toString().toLowerCase().replace(/[^0-9kmi]/g, '');
+      let revenueNum = 0;
+      
+      if (revenueStr.includes('k')) {
+        revenueNum = parseFloat(revenueStr) * 1000;
+      } else if (revenueStr.includes('m')) {
+        revenueNum = parseFloat(revenueStr) * 1000000;
       } else {
-        // Default to Growing plan if no revenue info
+        revenueNum = parseFloat(revenueStr);
+      }
+
+      // Determine appropriate plan based on revenue and get higher plans
+      if (revenueNum <= 20000) {
+        recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.starter };
+        higherPlans = [
+          { type: 'standard', plan: PRICING_PLANS.growing },
+        ];
+      } else if (revenueNum <= 100000) {
         recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.growing };
         higherPlans = [
           { type: 'standard', plan: PRICING_PLANS.professional },
         ];
+      } else if (revenueNum <= 200000) {
+        recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.professional };
+        higherPlans = []; // No upgrade for Professional
+      } else if (revenueNum <= 500000) {
+        recommendedPlanData = { type: 'enterprise', plan: ENTERPRISE_TIERS.tier1 };
+        higherPlans = [
+          { type: 'enterprise', plan: ENTERPRISE_TIERS.tier2 },
+        ];
+      } else if (revenueNum <= 1000000) {
+        recommendedPlanData = { type: 'enterprise', plan: ENTERPRISE_TIERS.tier2 };
+        higherPlans = [
+          { type: 'enterprise', plan: ENTERPRISE_TIERS.tier3 },
+        ];
+      } else {
+        recommendedPlanData = { type: 'enterprise', plan: ENTERPRISE_TIERS.tier3 };
+        higherPlans = [];
       }
 
       setRecommendedPlan(recommendedPlanData);
       setAvailablePlans([recommendedPlanData, ...higherPlans]);
-      setSelectedPlanId(recommendedPlanData.plan.priceId);
+      setSelectedPlanId(recommendedPlanData.plan.priceId || recommendedPlanData.plan.price_id);
     };
 
     fetchUserProfile();
