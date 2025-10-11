@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import { useScenarios, type ScenarioData } from "@/hooks/useScenarios";
 import { useVendors } from "@/hooks/useVendors";
 import { useIncome } from "@/hooks/useIncome";
@@ -62,7 +63,7 @@ export default function ScenarioPlanner() {
   const [useIndividualAdjustments, setUseIndividualAdjustments] = useState(false);
   
   // Data source adjustments (individual)
-  const [dataSourceAdjustments, setDataSourceAdjustments] = useState<Record<string, { type: 'percentage' | 'absolute'; value: number }>>({});
+  const [dataSourceAdjustments, setDataSourceAdjustments] = useState<Record<string, { enabled: boolean; type: 'percentage' | 'absolute'; value: number }>>({});
   
   // Global adjustments by data source type
   const [globalAdjustments, setGlobalAdjustments] = useState<Record<string, { type: 'percentage' | 'absolute'; value: number }>>({
@@ -234,7 +235,7 @@ export default function ScenarioPlanner() {
           // Check if this specific source has an adjustment
           const adjustment = dataSourceAdjustments[event.sourceId];
           
-          if (adjustment) {
+          if (adjustment && adjustment.enabled) {
             if (adjustment.type === 'percentage') {
               adjustedAmount = eventAmount * (1 + adjustment.value / 100);
             } else {
@@ -705,34 +706,49 @@ export default function ScenarioPlanner() {
                       </div>
                       {incomeItems.filter(i => i.status !== 'received').slice(0, 5).map(income => (
                         <div key={income.id} className="pl-4 space-y-1">
-                          <div className="text-xs text-muted-foreground">{income.description} - ${income.amount.toLocaleString()}</div>
-                          <div className="flex gap-2">
-                            <Select 
-                              value={dataSourceAdjustments[`income_${income.id}`]?.type || 'percentage'}
-                              onValueChange={(v: any) => setDataSourceAdjustments(prev => ({
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="text-xs text-muted-foreground flex-1">{income.description} - ${income.amount.toLocaleString()}</div>
+                            <Switch
+                              checked={dataSourceAdjustments[`income_${income.id}`]?.enabled ?? false}
+                              onCheckedChange={(checked) => setDataSourceAdjustments(prev => ({
                                 ...prev,
-                                [`income_${income.id}`]: { ...prev[`income_${income.id}`], type: v, value: prev[`income_${income.id}`]?.value || 0 }
+                                [`income_${income.id}`]: { 
+                                  enabled: checked, 
+                                  type: prev[`income_${income.id}`]?.type || 'percentage', 
+                                  value: prev[`income_${income.id}`]?.value || 0 
+                                }
                               }))}
-                            >
-                              <SelectTrigger className="w-[100px] h-8 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="z-50 bg-background">
-                                <SelectItem value="percentage">%</SelectItem>
-                                <SelectItem value="absolute">$</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Input
-                              type="number"
-                              className="h-8 text-xs"
-                              value={dataSourceAdjustments[`income_${income.id}`]?.value || 0}
-                              onChange={(e) => setDataSourceAdjustments(prev => ({
-                                ...prev,
-                                [`income_${income.id}`]: { type: prev[`income_${income.id}`]?.type || 'percentage', value: Number(e.target.value) }
-                              }))}
-                              placeholder="0"
                             />
                           </div>
+                          {dataSourceAdjustments[`income_${income.id}`]?.enabled && (
+                            <div className="flex gap-2">
+                              <Select 
+                                value={dataSourceAdjustments[`income_${income.id}`]?.type || 'percentage'}
+                                onValueChange={(v: any) => setDataSourceAdjustments(prev => ({
+                                  ...prev,
+                                  [`income_${income.id}`]: { enabled: prev[`income_${income.id}`]?.enabled ?? true, type: v, value: prev[`income_${income.id}`]?.value || 0 }
+                                }))}
+                              >
+                                <SelectTrigger className="w-[100px] h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="z-50 bg-background">
+                                  <SelectItem value="percentage">%</SelectItem>
+                                  <SelectItem value="absolute">$</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                type="number"
+                                className="h-8 text-xs"
+                                value={dataSourceAdjustments[`income_${income.id}`]?.value || 0}
+                                onChange={(e) => setDataSourceAdjustments(prev => ({
+                                  ...prev,
+                                  [`income_${income.id}`]: { enabled: prev[`income_${income.id}`]?.enabled ?? true, type: prev[`income_${income.id}`]?.type || 'percentage', value: Number(e.target.value) }
+                                }))}
+                                placeholder="0"
+                              />
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -753,7 +769,7 @@ export default function ScenarioPlanner() {
                               value={dataSourceAdjustments[`amazon_${payout.id}`]?.type || 'percentage'}
                               onValueChange={(v: any) => setDataSourceAdjustments(prev => ({
                                 ...prev,
-                                [`amazon_${payout.id}`]: { ...prev[`amazon_${payout.id}`], type: v, value: prev[`amazon_${payout.id}`]?.value || 0 }
+                                [`amazon_${payout.id}`]: { enabled: prev[`amazon_${payout.id}`]?.enabled ?? true, type: v, value: prev[`amazon_${payout.id}`]?.value || 0 }
                               }))}
                             >
                               <SelectTrigger className="w-[100px] h-8 text-xs">
@@ -770,7 +786,7 @@ export default function ScenarioPlanner() {
                               value={dataSourceAdjustments[`amazon_${payout.id}`]?.value || 0}
                               onChange={(e) => setDataSourceAdjustments(prev => ({
                                 ...prev,
-                                [`amazon_${payout.id}`]: { type: prev[`amazon_${payout.id}`]?.type || 'percentage', value: Number(e.target.value) }
+                                [`amazon_${payout.id}`]: { enabled: prev[`amazon_${payout.id}`]?.enabled ?? true, type: prev[`amazon_${payout.id}`]?.type || 'percentage', value: Number(e.target.value) }
                               }))}
                               placeholder="0"
                             />
@@ -795,7 +811,7 @@ export default function ScenarioPlanner() {
                               value={dataSourceAdjustments[`po_${tx.id}`]?.type || 'percentage'}
                               onValueChange={(v: any) => setDataSourceAdjustments(prev => ({
                                 ...prev,
-                                [`po_${tx.id}`]: { ...prev[`po_${tx.id}`], type: v, value: prev[`po_${tx.id}`]?.value || 0 }
+                                [`po_${tx.id}`]: { enabled: prev[`po_${tx.id}`]?.enabled ?? true, type: v, value: prev[`po_${tx.id}`]?.value || 0 }
                               }))}
                             >
                               <SelectTrigger className="w-[100px] h-8 text-xs">
@@ -812,7 +828,7 @@ export default function ScenarioPlanner() {
                               value={dataSourceAdjustments[`po_${tx.id}`]?.value || 0}
                               onChange={(e) => setDataSourceAdjustments(prev => ({
                                 ...prev,
-                                [`po_${tx.id}`]: { type: prev[`po_${tx.id}`]?.type || 'percentage', value: Number(e.target.value) }
+                                [`po_${tx.id}`]: { enabled: prev[`po_${tx.id}`]?.enabled ?? true, type: prev[`po_${tx.id}`]?.type || 'percentage', value: Number(e.target.value) }
                               }))}
                               placeholder="0"
                             />
@@ -837,7 +853,7 @@ export default function ScenarioPlanner() {
                               value={dataSourceAdjustments[`recurring_${recurring.id}`]?.type || 'percentage'}
                               onValueChange={(v: any) => setDataSourceAdjustments(prev => ({
                                 ...prev,
-                                [`recurring_${recurring.id}`]: { ...prev[`recurring_${recurring.id}`], type: v, value: prev[`recurring_${recurring.id}`]?.value || 0 }
+                                [`recurring_${recurring.id}`]: { enabled: prev[`recurring_${recurring.id}`]?.enabled ?? true, type: v, value: prev[`recurring_${recurring.id}`]?.value || 0 }
                               }))}
                             >
                               <SelectTrigger className="w-[100px] h-8 text-xs">
@@ -854,7 +870,7 @@ export default function ScenarioPlanner() {
                               value={dataSourceAdjustments[`recurring_${recurring.id}`]?.value || 0}
                               onChange={(e) => setDataSourceAdjustments(prev => ({
                                 ...prev,
-                                [`recurring_${recurring.id}`]: { type: prev[`recurring_${recurring.id}`]?.type || 'percentage', value: Number(e.target.value) }
+                                [`recurring_${recurring.id}`]: { enabled: prev[`recurring_${recurring.id}`]?.enabled ?? true, type: prev[`recurring_${recurring.id}`]?.type || 'percentage', value: Number(e.target.value) }
                               }))}
                               placeholder="0"
                             />
@@ -879,7 +895,7 @@ export default function ScenarioPlanner() {
                               value={dataSourceAdjustments[`cc_${card.id}`]?.type || 'percentage'}
                               onValueChange={(v: any) => setDataSourceAdjustments(prev => ({
                                 ...prev,
-                                [`cc_${card.id}`]: { ...prev[`cc_${card.id}`], type: v, value: prev[`cc_${card.id}`]?.value || 0 }
+                                [`cc_${card.id}`]: { enabled: prev[`cc_${card.id}`]?.enabled ?? true, type: v, value: prev[`cc_${card.id}`]?.value || 0 }
                               }))}
                             >
                               <SelectTrigger className="w-[100px] h-8 text-xs">
@@ -896,7 +912,7 @@ export default function ScenarioPlanner() {
                               value={dataSourceAdjustments[`cc_${card.id}`]?.value || 0}
                               onChange={(e) => setDataSourceAdjustments(prev => ({
                                 ...prev,
-                                [`cc_${card.id}`]: { type: prev[`cc_${card.id}`]?.type || 'percentage', value: Number(e.target.value) }
+                                [`cc_${card.id}`]: { enabled: prev[`cc_${card.id}`]?.enabled ?? true, type: prev[`cc_${card.id}`]?.type || 'percentage', value: Number(e.target.value) }
                               }))}
                               placeholder="0"
                             />
