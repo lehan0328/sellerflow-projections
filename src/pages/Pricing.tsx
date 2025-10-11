@@ -541,7 +541,30 @@ export default function Pricing() {
             <div className="space-y-2.5">
               <div className="flex items-center gap-2">
                 <div className="h-1 w-1 rounded-full bg-primary" />
-                <span className="text-xs font-semibold text-muted-foreground">Add-ons</span>
+                <span className="text-xs font-semibold text-muted-foreground">Included in Base Plan</span>
+              </div>
+
+              {/* Included Items */}
+              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <p className="text-lg font-bold text-primary">{enterpriseTiers[enterpriseTier].connections}</p>
+                    <p className="text-[10px] text-muted-foreground">Bank Accounts</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-primary">{enterpriseTiers[enterpriseTier].amazon}</p>
+                    <p className="text-[10px] text-muted-foreground">Amazon Stores</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-primary">{enterpriseTiers[enterpriseTier].users}</p>
+                    <p className="text-[10px] text-muted-foreground">Team Users</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <div className="h-1 w-1 rounded-full bg-primary" />
+                <span className="text-xs font-semibold text-muted-foreground">Additional Add-ons</span>
               </div>
 
               {/* Bank Connections */}
