@@ -645,12 +645,25 @@ export default function Pricing() {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                  ${calculateEnterprisePrice().toLocaleString()}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  /{isYearly ? 'year' : 'month'}
-                </p>
+                {isYearly ? (
+                  <>
+                    <p className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                      ${Math.round(calculateEnterprisePrice() / 12).toLocaleString()}/mo
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      ${calculateEnterprisePrice().toLocaleString()} billed annually
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                      ${calculateEnterprisePrice().toLocaleString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      per month
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </div>
