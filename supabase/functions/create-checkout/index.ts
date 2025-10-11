@@ -61,6 +61,17 @@ serve(async (req) => {
       customerId = customers.data[0].id;
       logStep("Existing customer found", { customerId });
       
+      // Save stripe_customer_id to profile if not already saved
+      const { error: updateError } = await supabaseClient
+        .from('profiles')
+        .update({ stripe_customer_id: customerId })
+        .eq('user_id', user.id)
+        .is('stripe_customer_id', null);
+      
+      if (!updateError) {
+        logStep("Stripe customer ID saved to profile");
+      }
+      
       // Check ALL subscriptions to find current active one
       const allSubscriptions = await stripe.subscriptions.list({
         customer: customerId,

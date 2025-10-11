@@ -89,6 +89,17 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
+    // Save stripe_customer_id to profile if not already saved
+    const { error: updateError } = await supabaseClient
+      .from('profiles')
+      .update({ stripe_customer_id: customerId })
+      .eq('user_id', user.id)
+      .is('stripe_customer_id', null);
+    
+    if (!updateError) {
+      logStep("Stripe customer ID saved to profile");
+    }
+
     // Fetch customer with discount info
     const customer = await stripe.customers.retrieve(customerId, {
       expand: ['discount.coupon']

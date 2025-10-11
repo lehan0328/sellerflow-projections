@@ -119,3 +119,6 @@ verify_jwt = true
 
 [functions.get-customer-subscription-details]
 verify_jwt = true
+
+[functions.backfill-stripe-customer-ids]
+verify_jwt = true

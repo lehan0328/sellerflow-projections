@@ -50,6 +50,7 @@ export const AdminCustomers = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   const [metrics, setMetrics] = useState<ConversionMetrics | null>(null);
+  const [isBackfilling, setIsBackfilling] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -221,6 +222,35 @@ export const AdminCustomers = () => {
     }
   };
 
+  const backfillStripeCustomerIds = async () => {
+    if (!confirm("This will sync Stripe customer IDs for all customers. This may take a while. Continue?")) {
+      return;
+    }
+
+    try {
+      setIsBackfilling(true);
+      const { data, error } = await supabase.functions.invoke('backfill-stripe-customer-ids');
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Backfill complete: ${data.updated} updated, ${data.skipped} skipped, ${data.errors} errors`,
+      });
+
+      await fetchCustomers();
+    } catch (error: any) {
+      console.error('Error backfilling:', error);
+      toast({
+        title: "Error",
+        description: "Failed to backfill Stripe customer IDs",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBackfilling(false);
+    }
+  };
+
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch = customer.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -320,6 +350,14 @@ export const AdminCustomers = () => {
           <div className="flex items-center justify-between gap-4">
             <CardTitle>Customers ({filteredCustomers.length})</CardTitle>
             <div className="flex gap-3">
+              <Button
+                onClick={backfillStripeCustomerIds}
+                disabled={isBackfilling}
+                variant="outline"
+                size="sm"
+              >
+                {isBackfilling ? 'Syncing...' : 'Sync Stripe IDs'}
+              </Button>
               <select
                 value={statusFilter}
                 onChange={(e) => handleFilterChange(e.target.value)}
