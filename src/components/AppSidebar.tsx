@@ -78,8 +78,8 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }
                 const isBookCall = section.id === "book-call";
                 const isFlexReport = 'isFlexReport' in section && section.isFlexReport;
                 
-                // Show separator after Automated Notifications (before Transactions)
-                const showSeparator = section.id === "notifications";
+                // Show separator after Automated Notifications (before Transactions) and after Amazon Payouts (before Document Storage)
+                const showSeparator = section.id === "notifications" || section.id === "amazon";
                 
                 return (
                   <React.Fragment key={section.id}>
