@@ -585,14 +585,6 @@ export default function ScenarioPlanner() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/dashboard')}
-            className="mb-2"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
           <h1 className="text-3xl font-bold">Scenario Planner</h1>
           <p className="text-muted-foreground">Model "what-if" scenarios and forecast financial outcomes</p>
         </div>
