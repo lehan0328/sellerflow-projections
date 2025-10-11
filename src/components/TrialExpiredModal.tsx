@@ -62,7 +62,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
 
       // Fetch actual Amazon revenue (placeholder for now)
       // TODO: Replace with actual Amazon revenue when integration is set up
-      const placeholderRevenue = 45000; // $45k placeholder
+      const placeholderRevenue = 300000; // $300k placeholder
       setCurrentRevenue(placeholderRevenue);
 
       let recommendedPlanData = null;
