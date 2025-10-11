@@ -1470,6 +1470,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          last_forecast_refresh: string | null
           safe_spending_percentage: number | null
           safe_spending_reserve: number | null
           total_cash: number | null
@@ -1479,6 +1480,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          last_forecast_refresh?: string | null
           safe_spending_percentage?: number | null
           safe_spending_reserve?: number | null
           total_cash?: number | null
@@ -1488,6 +1490,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          last_forecast_refresh?: string | null
           safe_spending_percentage?: number | null
           safe_spending_reserve?: number | null
           total_cash?: number | null
