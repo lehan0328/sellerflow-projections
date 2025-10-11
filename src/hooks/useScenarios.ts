@@ -2,40 +2,42 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+export interface DataSourceAdjustment {
+  enabled: boolean;
+  adjustmentType: 'percentage' | 'absolute';
+  adjustmentValue: number;
+}
+
 export interface ScenarioData {
-  // Revenue adjustments
-  revenueAdjustment: number; // percentage change
-  revenueAdjustmentType: 'percentage' | 'absolute';
-  
-  // Expense adjustments
-  expenseAdjustment: number; // percentage change
-  expenseAdjustmentType: 'percentage' | 'absolute';
-  
-  // Vendor-specific changes
-  vendorChanges?: Record<string, {
-    paymentTermsChange?: number;
-    amountChange?: number;
-  }>;
-  
-  // Credit utilization target
-  creditUtilizationTarget?: number;
-  
   // Projection settings
   projectionMonths: number;
   
-  // Additional income
-  additionalIncome?: {
-    amount: number;
-    source: string;
-    startMonth: number;
-  }[];
+  // Data source specific adjustments
+  dataSourceAdjustments?: {
+    // Income sources
+    income?: Record<string, DataSourceAdjustment>;
+    
+    // Amazon payouts
+    amazonPayouts?: Record<string, DataSourceAdjustment>;
+    
+    // Recurring income
+    recurringIncome?: Record<string, DataSourceAdjustment>;
+    
+    // Purchase orders
+    purchaseOrders?: Record<string, DataSourceAdjustment>;
+    
+    // Recurring expenses
+    recurringExpenses?: Record<string, DataSourceAdjustment>;
+    
+    // Credit card payments
+    creditCards?: Record<string, DataSourceAdjustment>;
+  };
   
-  // Additional expenses
-  additionalExpenses?: {
-    amount: number;
-    name: string;
-    startMonth: number;
-  }[];
+  // Global fallback adjustments (if no specific source is configured)
+  globalRevenueAdjustment?: number;
+  globalRevenueAdjustmentType?: 'percentage' | 'absolute';
+  globalExpenseAdjustment?: number;
+  globalExpenseAdjustmentType?: 'percentage' | 'absolute';
 }
 
 export interface Scenario {

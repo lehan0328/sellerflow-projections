@@ -58,12 +58,8 @@ export default function ScenarioPlanner() {
   const [scenarioName, setScenarioName] = useState("");
   const [scenarioDescription, setScenarioDescription] = useState("");
   
-  // Scenario variables
-  const [revenueAdjustment, setRevenueAdjustment] = useState(0);
-  const [revenueAdjustmentType, setRevenueAdjustmentType] = useState<'percentage' | 'absolute'>('percentage');
-  const [expenseAdjustment, setExpenseAdjustment] = useState(0);
-  const [expenseAdjustmentType, setExpenseAdjustmentType] = useState<'percentage' | 'absolute'>('percentage');
-  const [creditUtilizationTarget, setCreditUtilizationTarget] = useState(30);
+  // Data source adjustments
+  const [dataSourceAdjustments, setDataSourceAdjustments] = useState<Record<string, { type: 'percentage' | 'absolute'; value: number }>>({});
   
   // Fixed 3-month projection
   const projectionMonths = 3;
@@ -75,8 +71,8 @@ export default function ScenarioPlanner() {
       return sum + (account.balance || 0);
     }, 0);
 
-    // Build complete event list matching dashboard logic
-    const events: Array<{ date: Date; amount: number; type: 'inflow' | 'outflow' }> = [];
+    // Build complete event list matching dashboard logic with IDs for tracking
+    const events: Array<{ date: Date; amount: number; type: 'inflow' | 'outflow'; sourceId: string; sourceType: string }> = [];
 
     // Add vendor transactions (purchase orders)
     transactions
@@ -85,7 +81,9 @@ export default function ScenarioPlanner() {
         events.push({
           date: tx.dueDate || tx.transactionDate,
           amount: -tx.amount,
-          type: 'outflow'
+          type: 'outflow',
+          sourceId: `po_${tx.id}`,
+          sourceType: 'purchase_order'
         });
       });
 
@@ -96,7 +94,9 @@ export default function ScenarioPlanner() {
         events.push({
           date: income.paymentDate,
           amount: income.amount,
-          type: 'inflow'
+          type: 'inflow',
+          sourceId: `income_${income.id}`,
+          sourceType: 'income'
         });
       });
 
@@ -110,7 +110,9 @@ export default function ScenarioPlanner() {
         events.push({
           date: new Date(card.payment_due_date!),
           amount: -paymentAmount,
-          type: 'outflow'
+          type: 'outflow',
+          sourceId: `cc_${card.id}`,
+          sourceType: 'credit_card'
         });
       });
 
@@ -125,7 +127,9 @@ export default function ScenarioPlanner() {
           events.push({
             date: nextDueDate,
             amount: -projectedAmount,
-            type: 'outflow'
+            type: 'outflow',
+            sourceId: `cc_${card.id}_forecast`,
+            sourceType: 'credit_card'
           });
         }
       });
@@ -139,7 +143,9 @@ export default function ScenarioPlanner() {
         events.push({
           date: date,
           amount: recurring.type === 'income' ? Number(recurring.amount) : -Number(recurring.amount),
-          type: recurring.type === 'income' ? 'inflow' : 'outflow'
+          type: recurring.type === 'income' ? 'inflow' : 'outflow',
+          sourceId: `recurring_${recurring.id}`,
+          sourceType: 'recurring'
         });
       });
     });
@@ -149,7 +155,9 @@ export default function ScenarioPlanner() {
       events.push({
         date: new Date(payout.payout_date),
         amount: payout.total_amount,
-        type: 'inflow'
+        type: 'inflow',
+        sourceId: `amazon_${payout.id}`,
+        sourceType: 'amazon_payout'
       });
     });
 
@@ -201,21 +209,32 @@ export default function ScenarioPlanner() {
         .filter(e => e.type === 'outflow')
         .reduce((sum, e) => sum + Math.abs(e.amount), 0);
 
-      // Calculate scenario changes with adjustments
-      let scenarioInflows = baselineInflows;
-      let scenarioOutflows = baselineOutflows;
+      // Calculate scenario changes with data source specific adjustments
+      let scenarioInflows = 0;
+      let scenarioOutflows = 0;
 
-      if (revenueAdjustmentType === 'percentage') {
-        scenarioInflows = baselineInflows * (1 + revenueAdjustment / 100);
-      } else {
-        scenarioInflows = baselineInflows + revenueAdjustment;
-      }
-
-      if (expenseAdjustmentType === 'percentage') {
-        scenarioOutflows = baselineOutflows * (1 + expenseAdjustment / 100);
-      } else {
-        scenarioOutflows = baselineOutflows + expenseAdjustment;
-      }
+      // Apply adjustments per data source
+      periodEvents.forEach(event => {
+        const eventAmount = Math.abs(event.amount);
+        let adjustedAmount = eventAmount;
+        
+        // Check if this specific source has an adjustment
+        const adjustment = dataSourceAdjustments[event.sourceId];
+        
+        if (adjustment) {
+          if (adjustment.type === 'percentage') {
+            adjustedAmount = eventAmount * (1 + adjustment.value / 100);
+          } else {
+            adjustedAmount = eventAmount + adjustment.value;
+          }
+        }
+        
+        if (event.type === 'inflow') {
+          scenarioInflows += adjustedAmount;
+        } else {
+          scenarioOutflows += adjustedAmount;
+        }
+      });
 
       // Update cumulative balances
       runningBaselineCash += (baselineInflows - baselineOutflows);
@@ -232,7 +251,7 @@ export default function ScenarioPlanner() {
     }
 
     return periods;
-  }, [allEvents, baselineCash, revenueAdjustment, revenueAdjustmentType, expenseAdjustment, expenseAdjustmentType]);
+  }, [allEvents, baselineCash, dataSourceAdjustments]);
 
   // Calculate cumulative impact
   const cumulativeImpact = useMemo(() => {
@@ -260,12 +279,8 @@ export default function ScenarioPlanner() {
 
   const handleSaveScenario = () => {
     const scenarioData: ScenarioData = {
-      revenueAdjustment,
-      revenueAdjustmentType,
-      expenseAdjustment,
-      expenseAdjustmentType,
-      creditUtilizationTarget,
-      projectionMonths: 3, // Always 3 months
+      projectionMonths: 3,
+      dataSourceAdjustments: {}, // Will be populated from dataSourceAdjustments state
     };
 
     if (selectedScenarioId) {
@@ -291,22 +306,14 @@ export default function ScenarioPlanner() {
     setSelectedScenarioId(scenarioId);
     setScenarioName(scenario.name);
     setScenarioDescription(scenario.description || "");
-    setRevenueAdjustment(scenario.scenario_data.revenueAdjustment);
-    setRevenueAdjustmentType(scenario.scenario_data.revenueAdjustmentType);
-    setExpenseAdjustment(scenario.scenario_data.expenseAdjustment);
-    setExpenseAdjustmentType(scenario.scenario_data.expenseAdjustmentType);
-    setCreditUtilizationTarget(scenario.scenario_data.creditUtilizationTarget || 30);
+    setDataSourceAdjustments({});
   };
 
   const handleNewScenario = () => {
     setSelectedScenarioId(null);
     setScenarioName("");
     setScenarioDescription("");
-    setRevenueAdjustment(0);
-    setRevenueAdjustmentType('percentage');
-    setExpenseAdjustment(0);
-    setExpenseAdjustmentType('percentage');
-    setCreditUtilizationTarget(30);
+    setDataSourceAdjustments({});
   };
 
   return (
@@ -425,75 +432,221 @@ export default function ScenarioPlanner() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>Revenue Adjustment</Label>
-                <div className="flex gap-2">
-                  <Select value={revenueAdjustmentType} onValueChange={(v: any) => setRevenueAdjustmentType(v)}>
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="z-50 bg-background">
-                      <SelectItem value="percentage">Percentage</SelectItem>
-                      <SelectItem value="absolute">Dollar Amount</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <div className="flex-1">
-                    <Input
-                      type="number"
-                      value={revenueAdjustment}
-                      onChange={(e) => setRevenueAdjustment(Number(e.target.value))}
-                      placeholder={revenueAdjustmentType === 'percentage' ? '%' : '$'}
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {revenueAdjustmentType === 'percentage' 
-                    ? `${revenueAdjustment > 0 ? '+' : ''}${revenueAdjustment}% monthly revenue change`
-                    : `${revenueAdjustment > 0 ? '+' : ''}$${Math.abs(revenueAdjustment).toLocaleString()} monthly revenue change`
-                  }
-                </p>
-              </div>
+              <div className="space-y-3">
+                <Label className="text-base">Data Source Adjustments</Label>
+                <p className="text-sm text-muted-foreground">Adjust specific data sources individually</p>
+                
+                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                  {/* Income Items */}
+                  {incomeItems.filter(i => i.status !== 'received').length > 0 && (
+                    <div className="border rounded-lg p-3 space-y-2">
+                      <div className="flex items-center gap-2 font-medium text-sm">
+                        <div className="w-2 h-2 rounded-full bg-green-500" />
+                        Income Items ({incomeItems.filter(i => i.status !== 'received').length})
+                      </div>
+                      {incomeItems.filter(i => i.status !== 'received').slice(0, 5).map(income => (
+                        <div key={income.id} className="pl-4 space-y-1">
+                          <div className="text-xs text-muted-foreground">{income.description} - ${income.amount.toLocaleString()}</div>
+                          <div className="flex gap-2">
+                            <Select 
+                              value={dataSourceAdjustments[`income_${income.id}`]?.type || 'percentage'}
+                              onValueChange={(v: any) => setDataSourceAdjustments(prev => ({
+                                ...prev,
+                                [`income_${income.id}`]: { ...prev[`income_${income.id}`], type: v, value: prev[`income_${income.id}`]?.value || 0 }
+                              }))}
+                            >
+                              <SelectTrigger className="w-[100px] h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="z-50 bg-background">
+                                <SelectItem value="percentage">%</SelectItem>
+                                <SelectItem value="absolute">$</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              type="number"
+                              className="h-8 text-xs"
+                              value={dataSourceAdjustments[`income_${income.id}`]?.value || 0}
+                              onChange={(e) => setDataSourceAdjustments(prev => ({
+                                ...prev,
+                                [`income_${income.id}`]: { type: prev[`income_${income.id}`]?.type || 'percentage', value: Number(e.target.value) }
+                              }))}
+                              placeholder="0"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-              <div className="space-y-2">
-                <Label>Expense Adjustment</Label>
-                <div className="flex gap-2">
-                  <Select value={expenseAdjustmentType} onValueChange={(v: any) => setExpenseAdjustmentType(v)}>
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="z-50 bg-background">
-                      <SelectItem value="percentage">Percentage</SelectItem>
-                      <SelectItem value="absolute">Dollar Amount</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <div className="flex-1">
-                    <Input
-                      type="number"
-                      value={expenseAdjustment}
-                      onChange={(e) => setExpenseAdjustment(Number(e.target.value))}
-                      placeholder={expenseAdjustmentType === 'percentage' ? '%' : '$'}
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {expenseAdjustmentType === 'percentage' 
-                    ? `${expenseAdjustment > 0 ? '+' : ''}${expenseAdjustment}% monthly expense change`
-                    : `${expenseAdjustment > 0 ? '+' : ''}$${Math.abs(expenseAdjustment).toLocaleString()} monthly expense change`
-                  }
-                </p>
-              </div>
+                  {/* Amazon Payouts */}
+                  {amazonPayouts.length > 0 && (
+                    <div className="border rounded-lg p-3 space-y-2">
+                      <div className="flex items-center gap-2 font-medium text-sm">
+                        <div className="w-2 h-2 rounded-full bg-blue-500" />
+                        Amazon Payouts ({amazonPayouts.length})
+                      </div>
+                      {amazonPayouts.slice(0, 5).map(payout => (
+                        <div key={payout.id} className="pl-4 space-y-1">
+                          <div className="text-xs text-muted-foreground">{payout.marketplace_name} - ${payout.total_amount.toLocaleString()}</div>
+                          <div className="flex gap-2">
+                            <Select 
+                              value={dataSourceAdjustments[`amazon_${payout.id}`]?.type || 'percentage'}
+                              onValueChange={(v: any) => setDataSourceAdjustments(prev => ({
+                                ...prev,
+                                [`amazon_${payout.id}`]: { ...prev[`amazon_${payout.id}`], type: v, value: prev[`amazon_${payout.id}`]?.value || 0 }
+                              }))}
+                            >
+                              <SelectTrigger className="w-[100px] h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="z-50 bg-background">
+                                <SelectItem value="percentage">%</SelectItem>
+                                <SelectItem value="absolute">$</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              type="number"
+                              className="h-8 text-xs"
+                              value={dataSourceAdjustments[`amazon_${payout.id}`]?.value || 0}
+                              onChange={(e) => setDataSourceAdjustments(prev => ({
+                                ...prev,
+                                [`amazon_${payout.id}`]: { type: prev[`amazon_${payout.id}`]?.type || 'percentage', value: Number(e.target.value) }
+                              }))}
+                              placeholder="0"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-              <div>
-                <Label htmlFor="credit-target">Target Cash Reserve: {creditUtilizationTarget}%</Label>
-                <Slider
-                  id="credit-target"
-                  value={[creditUtilizationTarget]}
-                  onValueChange={(value) => setCreditUtilizationTarget(value[0])}
-                  min={0}
-                  max={100}
-                  step={5}
-                  className="mt-2"
-                />
+                  {/* Purchase Orders */}
+                  {transactions.filter(t => t.type === 'purchase_order' && t.status !== 'completed').length > 0 && (
+                    <div className="border rounded-lg p-3 space-y-2">
+                      <div className="flex items-center gap-2 font-medium text-sm">
+                        <div className="w-2 h-2 rounded-full bg-red-500" />
+                        Purchase Orders ({transactions.filter(t => t.type === 'purchase_order' && t.status !== 'completed').length})
+                      </div>
+                      {transactions.filter(t => t.type === 'purchase_order' && t.status !== 'completed').slice(0, 5).map(tx => (
+                        <div key={tx.id} className="pl-4 space-y-1">
+                          <div className="text-xs text-muted-foreground">{tx.description || 'Purchase Order'} - ${tx.amount.toLocaleString()}</div>
+                          <div className="flex gap-2">
+                            <Select 
+                              value={dataSourceAdjustments[`po_${tx.id}`]?.type || 'percentage'}
+                              onValueChange={(v: any) => setDataSourceAdjustments(prev => ({
+                                ...prev,
+                                [`po_${tx.id}`]: { ...prev[`po_${tx.id}`], type: v, value: prev[`po_${tx.id}`]?.value || 0 }
+                              }))}
+                            >
+                              <SelectTrigger className="w-[100px] h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="z-50 bg-background">
+                                <SelectItem value="percentage">%</SelectItem>
+                                <SelectItem value="absolute">$</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              type="number"
+                              className="h-8 text-xs"
+                              value={dataSourceAdjustments[`po_${tx.id}`]?.value || 0}
+                              onChange={(e) => setDataSourceAdjustments(prev => ({
+                                ...prev,
+                                [`po_${tx.id}`]: { type: prev[`po_${tx.id}`]?.type || 'percentage', value: Number(e.target.value) }
+                              }))}
+                              placeholder="0"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Recurring Expenses */}
+                  {recurringExpenses.length > 0 && (
+                    <div className="border rounded-lg p-3 space-y-2">
+                      <div className="flex items-center gap-2 font-medium text-sm">
+                        <div className="w-2 h-2 rounded-full bg-purple-500" />
+                        Recurring Items ({recurringExpenses.length})
+                      </div>
+                      {recurringExpenses.slice(0, 5).map(recurring => (
+                        <div key={recurring.id} className="pl-4 space-y-1">
+                          <div className="text-xs text-muted-foreground">{recurring.name} - ${recurring.amount.toLocaleString()}</div>
+                          <div className="flex gap-2">
+                            <Select 
+                              value={dataSourceAdjustments[`recurring_${recurring.id}`]?.type || 'percentage'}
+                              onValueChange={(v: any) => setDataSourceAdjustments(prev => ({
+                                ...prev,
+                                [`recurring_${recurring.id}`]: { ...prev[`recurring_${recurring.id}`], type: v, value: prev[`recurring_${recurring.id}`]?.value || 0 }
+                              }))}
+                            >
+                              <SelectTrigger className="w-[100px] h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="z-50 bg-background">
+                                <SelectItem value="percentage">%</SelectItem>
+                                <SelectItem value="absolute">$</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              type="number"
+                              className="h-8 text-xs"
+                              value={dataSourceAdjustments[`recurring_${recurring.id}`]?.value || 0}
+                              onChange={(e) => setDataSourceAdjustments(prev => ({
+                                ...prev,
+                                [`recurring_${recurring.id}`]: { type: prev[`recurring_${recurring.id}`]?.type || 'percentage', value: Number(e.target.value) }
+                              }))}
+                              placeholder="0"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Credit Cards */}
+                  {creditCards.filter(c => c.payment_due_date).length > 0 && (
+                    <div className="border rounded-lg p-3 space-y-2">
+                      <div className="flex items-center gap-2 font-medium text-sm">
+                        <div className="w-2 h-2 rounded-full bg-orange-500" />
+                        Credit Card Payments ({creditCards.filter(c => c.payment_due_date).length})
+                      </div>
+                      {creditCards.filter(c => c.payment_due_date).slice(0, 5).map(card => (
+                        <div key={card.id} className="pl-4 space-y-1">
+                          <div className="text-xs text-muted-foreground">{card.account_name} - ${(card.statement_balance || card.balance).toLocaleString()}</div>
+                          <div className="flex gap-2">
+                            <Select 
+                              value={dataSourceAdjustments[`cc_${card.id}`]?.type || 'percentage'}
+                              onValueChange={(v: any) => setDataSourceAdjustments(prev => ({
+                                ...prev,
+                                [`cc_${card.id}`]: { ...prev[`cc_${card.id}`], type: v, value: prev[`cc_${card.id}`]?.value || 0 }
+                              }))}
+                            >
+                              <SelectTrigger className="w-[100px] h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="z-50 bg-background">
+                                <SelectItem value="percentage">%</SelectItem>
+                                <SelectItem value="absolute">$</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              type="number"
+                              className="h-8 text-xs"
+                              value={dataSourceAdjustments[`cc_${card.id}`]?.value || 0}
+                              onChange={(e) => setDataSourceAdjustments(prev => ({
+                                ...prev,
+                                [`cc_${card.id}`]: { type: prev[`cc_${card.id}`]?.type || 'percentage', value: Number(e.target.value) }
+                              }))}
+                              placeholder="0"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <Button onClick={handleSaveScenario} className="w-full" disabled={!scenarioName}>
@@ -705,26 +858,23 @@ export default function ScenarioPlanner() {
               </div>
               
               <div className="pt-4 border-t">
-                <p className="text-sm font-medium mb-2">Adjustment Settings:</p>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Revenue Adjustment:</span>
-                    <span className="font-medium">
-                      {revenueAdjustmentType === 'percentage' 
-                        ? `${revenueAdjustment > 0 ? '+' : ''}${revenueAdjustment}%`
-                        : `${revenueAdjustment > 0 ? '+' : ''}$${Math.abs(revenueAdjustment).toLocaleString()}`
-                      }
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Expense Adjustment:</span>
-                    <span className="font-medium">
-                      {expenseAdjustmentType === 'percentage'
-                        ? `${expenseAdjustment > 0 ? '+' : ''}${expenseAdjustment}%`
-                        : `${expenseAdjustment > 0 ? '+' : ''}$${Math.abs(expenseAdjustment).toLocaleString()}`
-                      }
-                    </span>
-                  </div>
+                <p className="text-sm font-medium mb-2">Active Adjustments:</p>
+                <div className="space-y-1 text-sm">
+                  {Object.keys(dataSourceAdjustments).length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No adjustments configured</p>
+                  ) : (
+                    Object.entries(dataSourceAdjustments).map(([key, adj]) => (
+                      <div key={key} className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">{key}:</span>
+                        <span className="font-medium">
+                          {adj.type === 'percentage' 
+                            ? `${adj.value > 0 ? '+' : ''}${adj.value}%`
+                            : `${adj.value > 0 ? '+' : ''}$${Math.abs(adj.value).toLocaleString()}`
+                          }
+                        </span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </CardContent>
