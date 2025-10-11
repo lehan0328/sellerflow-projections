@@ -173,7 +173,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "Priority support", included: true },
     ],
     enterprise_tier1: [
-      { text: "$200k - $500k monthly revenue", included: true },
+      { text: "Up to $500k monthly revenue", included: true },
       { text: "5 bank/credit card connections", included: true },
       { text: "2 Amazon connections", included: true },
       { text: "7 additional users", included: true },
@@ -182,7 +182,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "Dedicated account manager", included: true },
     ],
     enterprise_tier2: [
-      { text: "$500k - $1M monthly revenue", included: true },
+      { text: "Up to $1M monthly revenue", included: true },
       { text: "5 bank/credit card connections", included: true },
       { text: "2 Amazon connections", included: true },
       { text: "7 additional users", included: true },
