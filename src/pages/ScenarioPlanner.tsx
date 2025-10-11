@@ -631,31 +631,40 @@ export default function ScenarioPlanner() {
                           />
                         </div>
                         {globalAdjustments.income?.enabled && (
-                          <div className="flex gap-2">
-                            <Select 
-                              value={globalAdjustments.income?.type || 'percentage'}
-                              onValueChange={(v: any) => setGlobalAdjustments(prev => ({
-                                ...prev,
-                                income: { ...prev.income, type: v }
-                              }))}
-                            >
-                              <SelectTrigger className="w-[100px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="z-50 bg-background">
-                                <SelectItem value="percentage">%</SelectItem>
-                                <SelectItem value="absolute">$</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Input
-                              type="number"
-                              value={globalAdjustments.income?.value || 0}
-                              onChange={(e) => setGlobalAdjustments(prev => ({
-                                ...prev,
-                                income: { ...prev.income, value: Number(e.target.value) }
-                              }))}
-                              placeholder="0"
-                            />
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <Select 
+                                value={globalAdjustments.income?.type || 'percentage'}
+                                onValueChange={(v: any) => setGlobalAdjustments(prev => ({
+                                  ...prev,
+                                  income: { ...prev.income, type: v }
+                                }))}
+                              >
+                                <SelectTrigger className="w-[100px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="z-50 bg-background">
+                                  <SelectItem value="percentage">%</SelectItem>
+                                  <SelectItem value="absolute">$</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                type="number"
+                                value={globalAdjustments.income?.value || 0}
+                                onChange={(e) => setGlobalAdjustments(prev => ({
+                                  ...prev,
+                                  income: { ...prev.income, value: Number(e.target.value) }
+                                }))}
+                                placeholder="0"
+                              />
+                            </div>
+                            <div className="pl-4 space-y-1 max-h-[200px] overflow-y-auto">
+                              {incomeItems.filter(i => i.status !== 'received').map(income => (
+                                <div key={income.id} className="text-xs text-muted-foreground py-1 border-t">
+                                  {income.description} - ${income.amount.toLocaleString()}
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -703,31 +712,40 @@ export default function ScenarioPlanner() {
                           ${displayedPayouts.reduce((sum, p) => sum + p.total_amount, 0).toLocaleString()} total
                         </div>
                         {globalAdjustments.amazonPayouts?.enabled && (
-                          <div className="flex gap-2">
-                            <Select 
-                              value={globalAdjustments.amazonPayouts?.type || 'percentage'}
-                              onValueChange={(v: any) => setGlobalAdjustments(prev => ({
-                                ...prev,
-                                amazonPayouts: { ...prev.amazonPayouts, type: v }
-                              }))}
-                            >
-                              <SelectTrigger className="w-[100px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="z-50 bg-background">
-                                <SelectItem value="percentage">%</SelectItem>
-                                <SelectItem value="absolute">$</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Input
-                              type="number"
-                              value={globalAdjustments.amazonPayouts?.value || 0}
-                              onChange={(e) => setGlobalAdjustments(prev => ({
-                                ...prev,
-                                amazonPayouts: { ...prev.amazonPayouts, value: Number(e.target.value) }
-                              }))}
-                              placeholder="0"
-                            />
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <Select 
+                                value={globalAdjustments.amazonPayouts?.type || 'percentage'}
+                                onValueChange={(v: any) => setGlobalAdjustments(prev => ({
+                                  ...prev,
+                                  amazonPayouts: { ...prev.amazonPayouts, type: v }
+                                }))}
+                              >
+                                <SelectTrigger className="w-[100px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="z-50 bg-background">
+                                  <SelectItem value="percentage">%</SelectItem>
+                                  <SelectItem value="absolute">$</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                type="number"
+                                value={globalAdjustments.amazonPayouts?.value || 0}
+                                onChange={(e) => setGlobalAdjustments(prev => ({
+                                  ...prev,
+                                  amazonPayouts: { ...prev.amazonPayouts, value: Number(e.target.value) }
+                                }))}
+                                placeholder="0"
+                              />
+                            </div>
+                            <div className="pl-4 space-y-1 max-h-[200px] overflow-y-auto">
+                              {displayedPayouts.map(payout => (
+                                <div key={payout.id} className="text-xs text-muted-foreground py-1 border-t">
+                                  {payout.marketplace_name} - {format(new Date(payout.payout_date), 'MMM d')} - ${payout.total_amount.toLocaleString()}
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -750,31 +768,40 @@ export default function ScenarioPlanner() {
                           />
                         </div>
                         {globalAdjustments.purchaseOrders?.enabled && (
-                          <div className="flex gap-2">
-                            <Select 
-                              value={globalAdjustments.purchaseOrders?.type || 'percentage'}
-                              onValueChange={(v: any) => setGlobalAdjustments(prev => ({
-                                ...prev,
-                                purchaseOrders: { ...prev.purchaseOrders, type: v }
-                              }))}
-                            >
-                              <SelectTrigger className="w-[100px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="z-50 bg-background">
-                                <SelectItem value="percentage">%</SelectItem>
-                                <SelectItem value="absolute">$</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Input
-                              type="number"
-                              value={globalAdjustments.purchaseOrders?.value || 0}
-                              onChange={(e) => setGlobalAdjustments(prev => ({
-                                ...prev,
-                                purchaseOrders: { ...prev.purchaseOrders, value: Number(e.target.value) }
-                              }))}
-                              placeholder="0"
-                            />
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <Select 
+                                value={globalAdjustments.purchaseOrders?.type || 'percentage'}
+                                onValueChange={(v: any) => setGlobalAdjustments(prev => ({
+                                  ...prev,
+                                  purchaseOrders: { ...prev.purchaseOrders, type: v }
+                                }))}
+                              >
+                                <SelectTrigger className="w-[100px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="z-50 bg-background">
+                                  <SelectItem value="percentage">%</SelectItem>
+                                  <SelectItem value="absolute">$</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                type="number"
+                                value={globalAdjustments.purchaseOrders?.value || 0}
+                                onChange={(e) => setGlobalAdjustments(prev => ({
+                                  ...prev,
+                                  purchaseOrders: { ...prev.purchaseOrders, value: Number(e.target.value) }
+                                }))}
+                                placeholder="0"
+                              />
+                            </div>
+                            <div className="pl-4 space-y-1 max-h-[200px] overflow-y-auto">
+                              {transactions.filter(t => t.type === 'purchase_order' && t.status !== 'completed').map(tx => (
+                                <div key={tx.id} className="text-xs text-muted-foreground py-1 border-t">
+                                  {tx.description || 'Purchase Order'} - ${tx.amount.toLocaleString()}
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -797,31 +824,40 @@ export default function ScenarioPlanner() {
                           />
                         </div>
                         {globalAdjustments.recurringExpenses?.enabled && (
-                          <div className="flex gap-2">
-                            <Select 
-                              value={globalAdjustments.recurringExpenses?.type || 'percentage'}
-                              onValueChange={(v: any) => setGlobalAdjustments(prev => ({
-                                ...prev,
-                                recurringExpenses: { ...prev.recurringExpenses, type: v }
-                              }))}
-                            >
-                              <SelectTrigger className="w-[100px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="z-50 bg-background">
-                                <SelectItem value="percentage">%</SelectItem>
-                                <SelectItem value="absolute">$</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Input
-                              type="number"
-                              value={globalAdjustments.recurringExpenses?.value || 0}
-                              onChange={(e) => setGlobalAdjustments(prev => ({
-                                ...prev,
-                                recurringExpenses: { ...prev.recurringExpenses, value: Number(e.target.value) }
-                              }))}
-                              placeholder="0"
-                            />
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <Select 
+                                value={globalAdjustments.recurringExpenses?.type || 'percentage'}
+                                onValueChange={(v: any) => setGlobalAdjustments(prev => ({
+                                  ...prev,
+                                  recurringExpenses: { ...prev.recurringExpenses, type: v }
+                                }))}
+                              >
+                                <SelectTrigger className="w-[100px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="z-50 bg-background">
+                                  <SelectItem value="percentage">%</SelectItem>
+                                  <SelectItem value="absolute">$</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                type="number"
+                                value={globalAdjustments.recurringExpenses?.value || 0}
+                                onChange={(e) => setGlobalAdjustments(prev => ({
+                                  ...prev,
+                                  recurringExpenses: { ...prev.recurringExpenses, value: Number(e.target.value) }
+                                }))}
+                                placeholder="0"
+                              />
+                            </div>
+                            <div className="pl-4 space-y-1 max-h-[200px] overflow-y-auto">
+                              {recurringExpenses.map(recurring => (
+                                <div key={recurring.id} className="text-xs text-muted-foreground py-1 border-t">
+                                  {recurring.name} - ${recurring.amount.toLocaleString()}
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -844,31 +880,40 @@ export default function ScenarioPlanner() {
                           />
                         </div>
                         {globalAdjustments.creditCards?.enabled && (
-                          <div className="flex gap-2">
-                            <Select 
-                              value={globalAdjustments.creditCards?.type || 'percentage'}
-                              onValueChange={(v: any) => setGlobalAdjustments(prev => ({
-                                ...prev,
-                                creditCards: { ...prev.creditCards, type: v }
-                              }))}
-                            >
-                              <SelectTrigger className="w-[100px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent className="z-50 bg-background">
-                                <SelectItem value="percentage">%</SelectItem>
-                                <SelectItem value="absolute">$</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Input
-                              type="number"
-                              value={globalAdjustments.creditCards?.value || 0}
-                              onChange={(e) => setGlobalAdjustments(prev => ({
-                                ...prev,
-                                creditCards: { ...prev.creditCards, value: Number(e.target.value) }
-                              }))}
-                              placeholder="0"
-                            />
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <Select 
+                                value={globalAdjustments.creditCards?.type || 'percentage'}
+                                onValueChange={(v: any) => setGlobalAdjustments(prev => ({
+                                  ...prev,
+                                  creditCards: { ...prev.creditCards, type: v }
+                                }))}
+                              >
+                                <SelectTrigger className="w-[100px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="z-50 bg-background">
+                                  <SelectItem value="percentage">%</SelectItem>
+                                  <SelectItem value="absolute">$</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Input
+                                type="number"
+                                value={globalAdjustments.creditCards?.value || 0}
+                                onChange={(e) => setGlobalAdjustments(prev => ({
+                                  ...prev,
+                                  creditCards: { ...prev.creditCards, value: Number(e.target.value) }
+                                }))}
+                                placeholder="0"
+                              />
+                            </div>
+                            <div className="pl-4 space-y-1 max-h-[200px] overflow-y-auto">
+                              {creditCards.filter(c => c.payment_due_date).map(card => (
+                                <div key={card.id} className="text-xs text-muted-foreground py-1 border-t">
+                                  {card.account_name} - ${(card.statement_balance || card.balance).toLocaleString()}
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
