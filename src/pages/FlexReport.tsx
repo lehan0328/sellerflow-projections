@@ -11,6 +11,8 @@ import { useIncome } from "@/hooks/useIncome";
 import { useTransactions } from "@/hooks/useTransactions";
 import { addDays, isWithinInterval, startOfDay } from "date-fns";
 import aurenLogo from "@/assets/auren-full-logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 const FlexReport = () => {
   const navigate = useNavigate();
   const reportRef = useRef<HTMLDivElement>(null);
@@ -24,7 +26,8 @@ const FlexReport = () => {
     purchaseOrders: true,
     creditUtilization: true,
     vendorPayments: true,
-    vendorCount: true
+    vendorCount: true,
+    amazonRevenue: true
   });
 
   const [showPercentageChange, setShowPercentageChange] = useState(false);
@@ -51,6 +54,18 @@ const FlexReport = () => {
   const {
     transactions
   } = useTransactions();
+  const { data: amazonPayouts } = useQuery({
+    queryKey: ['amazon-payouts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('amazon_payouts')
+        .select('*')
+        .order('payout_date', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
 
   // Calculate metrics
   const today = startOfDay(new Date());
@@ -66,8 +81,14 @@ const FlexReport = () => {
   // Total vendor payments scheduled
   const upcomingVendorPayments = vendors.filter(v => v.status !== 'paid' && Number(v.totalOwed || 0) > 0).reduce((sum, v) => sum + Number(v.totalOwed || 0), 0);
 
-  // Active vendor count
-  const activeVendorCount = vendors.filter(v => v.status !== 'paid' && Number(v.totalOwed || 0) > 0).length;
+  // Total vendor count in system
+  const totalVendorCount = vendors.length;
+
+  // Amazon revenue (last 30 days)
+  const amazonRevenue30Days = amazonPayouts?.filter(payout => {
+    const payoutDate = new Date(payout.payout_date);
+    return isWithinInterval(payoutDate, { start: addDays(today, -30), end: today });
+  }).reduce((sum, payout) => sum + Number(payout.total_amount), 0) || 0;
 
   // Mock percentage changes (in a real app, you'd calculate these from historical data)
   const percentageChanges = {
@@ -76,7 +97,8 @@ const FlexReport = () => {
     availableCredit: -3.2,
     upcomingIncome: 15.7,
     purchaseOrders: -5.4,
-    vendorCount: 10.0
+    vendorCount: 10.0,
+    amazonRevenue: 22.3
   };
 
   // Upcoming income (next 30 days)
@@ -490,9 +512,9 @@ const FlexReport = () => {
                   <div className="p-2 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <Users className="w-4 h-4 text-white" />
                   </div>
-                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Active Vendors</p>
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Total Vendors</p>
                 </div>
-                <p className={`text-2xl font-black text-indigo-700 drop-shadow-sm transition-all duration-300 ${!visibility.vendorCount ? 'blur-lg' : ''}`}>{activeVendorCount}</p>
+                <p className={`text-2xl font-black text-indigo-700 drop-shadow-sm transition-all duration-300 ${!visibility.vendorCount ? 'blur-lg' : ''}`}>{totalVendorCount}</p>
                 {showPercentageChange && (
                   <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.vendorCount >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.vendorCount >= 0 ? '' : 'rotate-180'}`} />
@@ -504,6 +526,37 @@ const FlexReport = () => {
                   className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-indigo-100/50 transition-colors z-10"
                 >
                   {visibility.vendorCount ? (
+                    <Eye className="w-4 h-4 text-blue-600" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 text-slate-400" />
+                  )}
+                </button>
+              </div>
+
+              {/* Amazon Revenue */}
+              <div className="group bg-gradient-to-br from-amber-50 via-amber-100/80 to-amber-50 rounded-2xl p-4 border-2 border-amber-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-amber-50 border-2 border-amber-600 rounded-full">
+                  <div className="w-1 h-1 bg-amber-600 rounded-full"></div>
+                  <span className="text-[10px] font-black text-amber-700 uppercase tracking-wider">Verified</span>
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-2 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <ShoppingCart className="w-4 h-4 text-white" />
+                  </div>
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Amazon Revenue (30d)</p>
+                </div>
+                <p className={`text-2xl font-black text-amber-700 drop-shadow-sm transition-all duration-300 ${!visibility.amazonRevenue ? 'blur-lg' : ''}`}>{formatCurrency(amazonRevenue30Days)}</p>
+                {showPercentageChange && (
+                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.amazonRevenue >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.amazonRevenue >= 0 ? '' : 'rotate-180'}`} />
+                    <span className="text-[10px] font-bold">{Math.abs(percentageChanges.amazonRevenue)}%</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => toggleVisibility('amazonRevenue')}
+                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-amber-100/50 transition-colors z-10"
+                >
+                  {visibility.amazonRevenue ? (
                     <Eye className="w-4 h-4 text-blue-600" />
                   ) : (
                     <EyeOff className="w-4 h-4 text-slate-400" />
