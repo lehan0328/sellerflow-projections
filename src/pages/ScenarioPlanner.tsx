@@ -1894,6 +1894,7 @@ export default function ScenarioPlanner() {
                       ))}
                     </div>
                   )}
+                  </div>
                 </div>
               )}
             </div>
