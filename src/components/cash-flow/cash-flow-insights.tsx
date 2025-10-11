@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, ShoppingCart, Info, History } from "lucide-react";
+import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -81,6 +81,8 @@ export const CashFlowInsights = ({
   const [isForecastGenerating, setIsForecastGenerating] = useState(false);
   const [showTransactionHistory, setShowTransactionHistory] = useState(false);
   const [showForecastConfirm, setShowForecastConfirm] = useState(false);
+  const [lastRefreshTime, setLastRefreshTime] = useState<number | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<Array<{
     role: 'user' | 'assistant';
     content: string;
@@ -101,6 +103,25 @@ export const CashFlowInsights = ({
   useEffect(() => {
     setIncludeForecastPayouts(includeForecastPayoutsProp);
   }, [includeForecastPayoutsProp]);
+
+  // Load last refresh time from user_settings
+  useEffect(() => {
+    const loadLastRefreshTime = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from('user_settings')
+        .select('last_forecast_refresh')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (data?.last_forecast_refresh) {
+        setLastRefreshTime(new Date(data.last_forecast_refresh).getTime());
+      }
+    };
+    
+    loadLastRefreshTime();
+  }, [user]);
 
   // Handle toggle change with confirmation
   const handleToggleRequest = (checked: boolean) => {
@@ -198,6 +219,69 @@ export const CashFlowInsights = ({
 
     generateForecasts();
   }, [includeForecastPayouts, user, amazonPayouts.length]);
+
+  const handleRefreshForecast = async () => {
+    if (!user || !includeForecastPayouts) return;
+    
+    // Check 24-hour cooldown
+    const now = Date.now();
+    const twentyFourHours = 24 * 60 * 60 * 1000;
+    
+    if (lastRefreshTime && (now - lastRefreshTime) < twentyFourHours) {
+      const hoursRemaining = Math.ceil((twentyFourHours - (now - lastRefreshTime)) / (60 * 60 * 1000));
+      toast({
+        title: "Refresh limit reached",
+        description: `You can refresh the forecast again in ${hoursRemaining} hour${hoursRemaining !== 1 ? 's' : ''}`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setIsRefreshing(true);
+    
+    try {
+      // Delete existing forecasted payouts
+      await supabase
+        .from('amazon_payouts')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('status', 'forecasted');
+      
+      // Generate new forecasts
+      const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts', {
+        body: { userId: user.id }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.success) {
+        // Update last refresh time
+        const refreshTime = new Date().toISOString();
+        await supabase
+          .from('user_settings')
+          .update({ last_forecast_refresh: refreshTime })
+          .eq('user_id', user.id);
+        
+        setLastRefreshTime(Date.now());
+        
+        toast({
+          title: "Forecast refreshed!",
+          description: `Generated ${data.forecast?.predictions?.length || 0} new predictions`
+        });
+        
+        await refetchPayouts();
+      }
+    } catch (err) {
+      console.error('Failed to refresh forecast:', err);
+      toast({
+        title: "Refresh failed",
+        description: "Please try again later",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   const handleSaveReserve = async () => {
     const newAmount = parseFloat(editReserveValue);
     if (isNaN(newAmount) || newAmount < 0) {
@@ -399,11 +483,12 @@ export const CashFlowInsights = ({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setShowTransactionHistory(true)}
+                        onClick={handleRefreshForecast}
+                        disabled={!includeForecastPayouts || isRefreshing || isForecastGenerating}
                         className="h-7 text-xs hover:bg-white/50 dark:hover:bg-black/20"
                       >
-                        <History className="h-3 w-3 mr-1" />
-                        View History
+                        <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        Refresh
                       </Button>
                     </div>
                   </TooltipTrigger>
