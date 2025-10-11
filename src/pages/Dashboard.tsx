@@ -1417,13 +1417,13 @@ const Dashboard = () => {
           
           {/* Header with sidebar trigger */}
           <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-            <div className="flex items-center min-h-[120px] px-6">
-              <SidebarTrigger className="mr-4 self-start mt-6" />
+            <div className="flex items-center min-h-[60px] px-6">
+              <SidebarTrigger className="mr-4 self-start mt-2" />
               <DashboardHeader />
             </div>
           </div>
           
-          <div className="p-6 space-y-6">
+          <div className="p-4 space-y-4">
             {renderSection()}
           </div>
 
