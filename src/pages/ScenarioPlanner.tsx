@@ -58,8 +58,20 @@ export default function ScenarioPlanner() {
   const [scenarioName, setScenarioName] = useState("");
   const [scenarioDescription, setScenarioDescription] = useState("");
   
-  // Data source adjustments
+  // Toggle between global and individual adjustments
+  const [useIndividualAdjustments, setUseIndividualAdjustments] = useState(false);
+  
+  // Data source adjustments (individual)
   const [dataSourceAdjustments, setDataSourceAdjustments] = useState<Record<string, { type: 'percentage' | 'absolute'; value: number }>>({});
+  
+  // Global adjustments by data source type
+  const [globalAdjustments, setGlobalAdjustments] = useState<Record<string, { type: 'percentage' | 'absolute'; value: number }>>({
+    income: { type: 'percentage', value: 0 },
+    amazonPayouts: { type: 'percentage', value: 0 },
+    purchaseOrders: { type: 'percentage', value: 0 },
+    recurringExpenses: { type: 'percentage', value: 0 },
+    creditCards: { type: 'percentage', value: 0 },
+  });
   
   // Fixed 3-month projection
   const projectionMonths = 3;
@@ -218,14 +230,33 @@ export default function ScenarioPlanner() {
         const eventAmount = Math.abs(event.amount);
         let adjustedAmount = eventAmount;
         
-        // Check if this specific source has an adjustment
-        const adjustment = dataSourceAdjustments[event.sourceId];
-        
-        if (adjustment) {
-          if (adjustment.type === 'percentage') {
-            adjustedAmount = eventAmount * (1 + adjustment.value / 100);
-          } else {
-            adjustedAmount = eventAmount + adjustment.value;
+        if (useIndividualAdjustments) {
+          // Check if this specific source has an adjustment
+          const adjustment = dataSourceAdjustments[event.sourceId];
+          
+          if (adjustment) {
+            if (adjustment.type === 'percentage') {
+              adjustedAmount = eventAmount * (1 + adjustment.value / 100);
+            } else {
+              adjustedAmount = eventAmount + adjustment.value;
+            }
+          }
+        } else {
+          // Apply global adjustment based on source type
+          let globalKey = '';
+          if (event.sourceType === 'income') globalKey = 'income';
+          else if (event.sourceType === 'amazon_payout') globalKey = 'amazonPayouts';
+          else if (event.sourceType === 'purchase_order') globalKey = 'purchaseOrders';
+          else if (event.sourceType === 'recurring') globalKey = 'recurringExpenses';
+          else if (event.sourceType === 'credit_card') globalKey = 'creditCards';
+          
+          if (globalKey && globalAdjustments[globalKey]) {
+            const adjustment = globalAdjustments[globalKey];
+            if (adjustment.type === 'percentage') {
+              adjustedAmount = eventAmount * (1 + adjustment.value / 100);
+            } else {
+              adjustedAmount = eventAmount + adjustment.value;
+            }
           }
         }
         
@@ -251,7 +282,7 @@ export default function ScenarioPlanner() {
     }
 
     return periods;
-  }, [allEvents, baselineCash, dataSourceAdjustments]);
+  }, [allEvents, baselineCash, dataSourceAdjustments, globalAdjustments, useIndividualAdjustments]);
 
   // Calculate cumulative impact
   const cumulativeImpact = useMemo(() => {
@@ -280,7 +311,11 @@ export default function ScenarioPlanner() {
   const handleSaveScenario = () => {
     const scenarioData: ScenarioData = {
       projectionMonths: 3,
-      dataSourceAdjustments: {}, // Will be populated from dataSourceAdjustments state
+      dataSourceAdjustments: {}, // Will be populated from state
+      globalRevenueAdjustment: useIndividualAdjustments ? undefined : globalAdjustments.income?.value,
+      globalRevenueAdjustmentType: useIndividualAdjustments ? undefined : globalAdjustments.income?.type,
+      globalExpenseAdjustment: useIndividualAdjustments ? undefined : globalAdjustments.purchaseOrders?.value,
+      globalExpenseAdjustmentType: useIndividualAdjustments ? undefined : globalAdjustments.purchaseOrders?.type,
     };
 
     if (selectedScenarioId) {
@@ -307,6 +342,13 @@ export default function ScenarioPlanner() {
     setScenarioName(scenario.name);
     setScenarioDescription(scenario.description || "");
     setDataSourceAdjustments({});
+    setGlobalAdjustments({
+      income: { type: 'percentage', value: 0 },
+      amazonPayouts: { type: 'percentage', value: 0 },
+      purchaseOrders: { type: 'percentage', value: 0 },
+      recurringExpenses: { type: 'percentage', value: 0 },
+      creditCards: { type: 'percentage', value: 0 },
+    });
   };
 
   const handleNewScenario = () => {
@@ -314,6 +356,14 @@ export default function ScenarioPlanner() {
     setScenarioName("");
     setScenarioDescription("");
     setDataSourceAdjustments({});
+    setUseIndividualAdjustments(false);
+    setGlobalAdjustments({
+      income: { type: 'percentage', value: 0 },
+      amazonPayouts: { type: 'percentage', value: 0 },
+      purchaseOrders: { type: 'percentage', value: 0 },
+      recurringExpenses: { type: 'percentage', value: 0 },
+      creditCards: { type: 'percentage', value: 0 },
+    });
   };
 
   return (
@@ -432,11 +482,220 @@ export default function ScenarioPlanner() {
                 />
               </div>
 
-              <div className="space-y-3">
-                <Label className="text-base">Data Source Adjustments</Label>
-                <p className="text-sm text-muted-foreground">Adjust specific data sources individually</p>
-                
-                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+              <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+                <div>
+                  <Label htmlFor="adjustment-mode" className="text-sm font-medium">Individual Item Adjustments</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {useIndividualAdjustments 
+                      ? 'Adjust each data source item separately' 
+                      : 'Apply adjustments to all items in each category'}
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    id="adjustment-mode"
+                    type="checkbox"
+                    checked={useIndividualAdjustments}
+                    onChange={(e) => setUseIndividualAdjustments(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </div>
+
+              {!useIndividualAdjustments ? (
+                <div className="space-y-3">
+                  <Label className="text-base">Global Data Source Adjustments</Label>
+                  <p className="text-sm text-muted-foreground">Apply adjustments to entire categories</p>
+                  
+                  <div className="space-y-2">
+                    {/* Income Items */}
+                    {incomeItems.filter(i => i.status !== 'received').length > 0 && (
+                      <div className="border rounded-lg p-3">
+                        <div className="flex items-center gap-2 font-medium text-sm mb-2">
+                          <div className="w-2 h-2 rounded-full bg-green-500" />
+                          All Income Items ({incomeItems.filter(i => i.status !== 'received').length})
+                        </div>
+                        <div className="flex gap-2">
+                          <Select 
+                            value={globalAdjustments.income?.type || 'percentage'}
+                            onValueChange={(v: any) => setGlobalAdjustments(prev => ({
+                              ...prev,
+                              income: { ...prev.income, type: v }
+                            }))}
+                          >
+                            <SelectTrigger className="w-[100px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="z-50 bg-background">
+                              <SelectItem value="percentage">%</SelectItem>
+                              <SelectItem value="absolute">$</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            type="number"
+                            value={globalAdjustments.income?.value || 0}
+                            onChange={(e) => setGlobalAdjustments(prev => ({
+                              ...prev,
+                              income: { ...prev.income, value: Number(e.target.value) }
+                            }))}
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Amazon Payouts */}
+                    {amazonPayouts.length > 0 && (
+                      <div className="border rounded-lg p-3">
+                        <div className="flex items-center gap-2 font-medium text-sm mb-2">
+                          <div className="w-2 h-2 rounded-full bg-blue-500" />
+                          All Amazon Payouts ({amazonPayouts.length})
+                        </div>
+                        <div className="flex gap-2">
+                          <Select 
+                            value={globalAdjustments.amazonPayouts?.type || 'percentage'}
+                            onValueChange={(v: any) => setGlobalAdjustments(prev => ({
+                              ...prev,
+                              amazonPayouts: { ...prev.amazonPayouts, type: v }
+                            }))}
+                          >
+                            <SelectTrigger className="w-[100px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="z-50 bg-background">
+                              <SelectItem value="percentage">%</SelectItem>
+                              <SelectItem value="absolute">$</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            type="number"
+                            value={globalAdjustments.amazonPayouts?.value || 0}
+                            onChange={(e) => setGlobalAdjustments(prev => ({
+                              ...prev,
+                              amazonPayouts: { ...prev.amazonPayouts, value: Number(e.target.value) }
+                            }))}
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Purchase Orders */}
+                    {transactions.filter(t => t.type === 'purchase_order' && t.status !== 'completed').length > 0 && (
+                      <div className="border rounded-lg p-3">
+                        <div className="flex items-center gap-2 font-medium text-sm mb-2">
+                          <div className="w-2 h-2 rounded-full bg-red-500" />
+                          All Purchase Orders ({transactions.filter(t => t.type === 'purchase_order' && t.status !== 'completed').length})
+                        </div>
+                        <div className="flex gap-2">
+                          <Select 
+                            value={globalAdjustments.purchaseOrders?.type || 'percentage'}
+                            onValueChange={(v: any) => setGlobalAdjustments(prev => ({
+                              ...prev,
+                              purchaseOrders: { ...prev.purchaseOrders, type: v }
+                            }))}
+                          >
+                            <SelectTrigger className="w-[100px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="z-50 bg-background">
+                              <SelectItem value="percentage">%</SelectItem>
+                              <SelectItem value="absolute">$</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            type="number"
+                            value={globalAdjustments.purchaseOrders?.value || 0}
+                            onChange={(e) => setGlobalAdjustments(prev => ({
+                              ...prev,
+                              purchaseOrders: { ...prev.purchaseOrders, value: Number(e.target.value) }
+                            }))}
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recurring Expenses */}
+                    {recurringExpenses.length > 0 && (
+                      <div className="border rounded-lg p-3">
+                        <div className="flex items-center gap-2 font-medium text-sm mb-2">
+                          <div className="w-2 h-2 rounded-full bg-purple-500" />
+                          All Recurring Items ({recurringExpenses.length})
+                        </div>
+                        <div className="flex gap-2">
+                          <Select 
+                            value={globalAdjustments.recurringExpenses?.type || 'percentage'}
+                            onValueChange={(v: any) => setGlobalAdjustments(prev => ({
+                              ...prev,
+                              recurringExpenses: { ...prev.recurringExpenses, type: v }
+                            }))}
+                          >
+                            <SelectTrigger className="w-[100px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="z-50 bg-background">
+                              <SelectItem value="percentage">%</SelectItem>
+                              <SelectItem value="absolute">$</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            type="number"
+                            value={globalAdjustments.recurringExpenses?.value || 0}
+                            onChange={(e) => setGlobalAdjustments(prev => ({
+                              ...prev,
+                              recurringExpenses: { ...prev.recurringExpenses, value: Number(e.target.value) }
+                            }))}
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Credit Cards */}
+                    {creditCards.filter(c => c.payment_due_date).length > 0 && (
+                      <div className="border rounded-lg p-3">
+                        <div className="flex items-center gap-2 font-medium text-sm mb-2">
+                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          All Credit Card Payments ({creditCards.filter(c => c.payment_due_date).length})
+                        </div>
+                        <div className="flex gap-2">
+                          <Select 
+                            value={globalAdjustments.creditCards?.type || 'percentage'}
+                            onValueChange={(v: any) => setGlobalAdjustments(prev => ({
+                              ...prev,
+                              creditCards: { ...prev.creditCards, type: v }
+                            }))}
+                          >
+                            <SelectTrigger className="w-[100px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="z-50 bg-background">
+                              <SelectItem value="percentage">%</SelectItem>
+                              <SelectItem value="absolute">$</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            type="number"
+                            value={globalAdjustments.creditCards?.value || 0}
+                            onChange={(e) => setGlobalAdjustments(prev => ({
+                              ...prev,
+                              creditCards: { ...prev.creditCards, value: Number(e.target.value) }
+                            }))}
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <Label className="text-base">Individual Data Source Adjustments</Label>
+                  <p className="text-sm text-muted-foreground">Adjust each item separately</p>
+                  
+                  <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
                   {/* Income Items */}
                   {incomeItems.filter(i => i.status !== 'received').length > 0 && (
                     <div className="border rounded-lg p-3 space-y-2">
@@ -648,6 +907,7 @@ export default function ScenarioPlanner() {
                   )}
                 </div>
               </div>
+              )}
 
               <Button onClick={handleSaveScenario} className="w-full" disabled={!scenarioName}>
                 <Save className="h-4 w-4 mr-2" />
@@ -860,20 +1120,42 @@ export default function ScenarioPlanner() {
               <div className="pt-4 border-t">
                 <p className="text-sm font-medium mb-2">Active Adjustments:</p>
                 <div className="space-y-1 text-sm">
-                  {Object.keys(dataSourceAdjustments).length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No adjustments configured</p>
+                  {useIndividualAdjustments ? (
+                    Object.keys(dataSourceAdjustments).length === 0 ? (
+                      <p className="text-xs text-muted-foreground">No individual adjustments configured</p>
+                    ) : (
+                      Object.entries(dataSourceAdjustments).map(([key, adj]) => (
+                        <div key={key} className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{key}:</span>
+                          <span className="font-medium">
+                            {adj.type === 'percentage' 
+                              ? `${adj.value > 0 ? '+' : ''}${adj.value}%`
+                              : `${adj.value > 0 ? '+' : ''}$${Math.abs(adj.value).toLocaleString()}`
+                            }
+                          </span>
+                        </div>
+                      ))
+                    )
                   ) : (
-                    Object.entries(dataSourceAdjustments).map(([key, adj]) => (
-                      <div key={key} className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">{key}:</span>
-                        <span className="font-medium">
-                          {adj.type === 'percentage' 
-                            ? `${adj.value > 0 ? '+' : ''}${adj.value}%`
-                            : `${adj.value > 0 ? '+' : ''}$${Math.abs(adj.value).toLocaleString()}`
-                          }
-                        </span>
-                      </div>
-                    ))
+                    Object.entries(globalAdjustments)
+                      .filter(([_, adj]) => adj.value !== 0)
+                      .length === 0 ? (
+                      <p className="text-xs text-muted-foreground">No global adjustments configured</p>
+                    ) : (
+                      Object.entries(globalAdjustments)
+                        .filter(([_, adj]) => adj.value !== 0)
+                        .map(([key, adj]) => (
+                          <div key={key} className="flex justify-between text-xs">
+                            <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                            <span className="font-medium">
+                              {adj.type === 'percentage' 
+                                ? `${adj.value > 0 ? '+' : ''}${adj.value}%`
+                                : `${adj.value > 0 ? '+' : ''}$${Math.abs(adj.value).toLocaleString()}`
+                              }
+                            </span>
+                          </div>
+                        ))
+                    )
                   )}
                 </div>
               </div>
