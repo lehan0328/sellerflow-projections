@@ -482,13 +482,13 @@ export const CashFlowInsights = ({
                       </div>
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
                         onClick={handleRefreshForecast}
                         disabled={!includeForecastPayouts || isRefreshing || isForecastGenerating}
-                        className="h-7 text-xs hover:bg-white/50 dark:hover:bg-black/20"
+                        className="h-7 w-7 hover:bg-white/50 dark:hover:bg-black/20"
+                        title="Refresh forecast (24-hour cooldown)"
                       >
-                        <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-                        Refresh
+                        <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
                       </Button>
                     </div>
                   </TooltipTrigger>
