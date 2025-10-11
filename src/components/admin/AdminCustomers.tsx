@@ -28,6 +28,7 @@ interface Customer {
   account_status?: string;
   payment_failure_date?: string;
   email?: string;
+  amazon_revenue?: number;
 }
 
 interface ConversionMetrics {
@@ -68,12 +69,44 @@ export const AdminCustomers = () => {
         body: { userIds }
       });
 
-      const customersWithEmail = profiles?.map(profile => ({
-        ...profile,
-        email: emailData?.emails?.[profile.user_id] || 'Unknown'
-      })) || [];
+      // Calculate Amazon revenue for each user (last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      setCustomers(customersWithEmail);
+      const customersWithData = await Promise.all(
+        (profiles || []).map(async (profile) => {
+          // Fetch Amazon transactions for revenue calculation
+          const { data: amazonTransactions } = await supabase
+            .from('amazon_transactions')
+            .select('amount, transaction_type')
+            .eq('user_id', profile.user_id)
+            .gte('transaction_date', thirtyDaysAgo.toISOString())
+            .in('transaction_type', ['Order', 'Refund', 'Transfer']);
+
+          let revenue = 0;
+          if (amazonTransactions && amazonTransactions.length > 0) {
+            // Calculate revenue (orders) before fees
+            revenue = amazonTransactions
+              .filter(t => t.transaction_type === 'Order' || t.transaction_type === 'Transfer')
+              .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+            
+            // Subtract refunds
+            const refunds = amazonTransactions
+              .filter(t => t.transaction_type === 'Refund')
+              .reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
+            
+            revenue = Math.max(0, revenue - refunds);
+          }
+
+          return {
+            ...profile,
+            email: emailData?.emails?.[profile.user_id] || 'Unknown',
+            amazon_revenue: revenue
+          };
+        })
+      );
+
+      setCustomers(customersWithData);
 
       // Calculate metrics
       const now = new Date();
@@ -298,6 +331,7 @@ export const AdminCustomers = () => {
                 <TableHead>Joined</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Plan</TableHead>
+                <TableHead>Amazon Revenue (30d)</TableHead>
                 <TableHead>Churn Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -305,7 +339,7 @@ export const AdminCustomers = () => {
             <TableBody>
               {paginatedCustomers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                     No customers found
                   </TableCell>
                 </TableRow>
@@ -349,6 +383,11 @@ export const AdminCustomers = () => {
                         ) : (
                           <span className="text-muted-foreground">No Plan</span>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm font-medium">
+                          ${(customer.amazon_revenue || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                        </span>
                       </TableCell>
                       <TableCell>
                         {customer.churn_date ? (
