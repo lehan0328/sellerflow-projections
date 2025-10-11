@@ -6,6 +6,7 @@ import { useIncome } from "@/hooks/useIncome";
 import { useBankTransactions } from "@/hooks/useBankTransactions";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
+import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -49,17 +50,22 @@ export default function Analytics() {
   const { transactions } = useBankTransactions();
   const { creditCards } = useCreditCards();
   const { amazonPayouts } = useAmazonPayouts();
+  const { accounts } = useBankAccounts();
 
   // Calculate key metrics
   const metrics = useMemo(() => {
-    // Total revenue from received income
-    const totalRevenue = incomeItems
-      .filter(i => i.status === 'received')
-      .reduce((sum, i) => sum + i.amount, 0);
+    // Total cash inflow from bank transactions
+    const totalInflow = transactions
+      .filter(tx => tx.transactionType === 'credit')
+      .reduce((sum, tx) => sum + tx.amount, 0);
 
-    // Total expenses from vendors
-    const totalExpenses = vendors
-      .reduce((sum, v) => sum + (v.totalOwed || 0), 0);
+    // Total cash outflow from bank transactions
+    const totalOutflow = transactions
+      .filter(tx => tx.transactionType === 'debit')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+
+    // Current bank balance
+    const currentBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
 
     // Pending income
     const pendingIncome = incomeItems
@@ -74,20 +80,23 @@ export default function Analytics() {
     // Amazon revenue
     const amazonRevenue = amazonPayouts.reduce((sum, p) => sum + (p.total_amount || 0), 0);
 
-    // Calculate profit margin
-    const netProfit = totalRevenue - totalExpenses;
-    const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+    // Total expenses from vendors
+    const totalExpenses = vendors.reduce((sum, v) => sum + (v.totalOwed || 0), 0);
+
+    // Net cash flow
+    const netCashFlow = totalInflow - totalOutflow;
 
     return {
-      totalRevenue,
-      totalExpenses,
-      netProfit,
+      totalInflow,
+      totalOutflow,
+      currentBalance,
       pendingIncome,
       creditUtilization,
       amazonRevenue,
-      profitMargin
+      totalExpenses,
+      netCashFlow
     };
-  }, [incomeItems, vendors, creditCards, amazonPayouts]);
+  }, [transactions, incomeItems, vendors, creditCards, amazonPayouts, accounts]);
 
   // Revenue over time (last 6 months)
   const revenueData = useMemo(() => {
@@ -169,13 +178,13 @@ export default function Analytics() {
       }
     });
 
-    // Aggregate expenses from bank transactions
+    // Aggregate expenses from bank transactions (debit transactions)
     transactions.forEach(tx => {
-      if (tx.amount < 0) {
+      if (tx.transactionType === 'debit') {
         const date = new Date(tx.date);
         const key = date.toLocaleDateString('en-US', { month: 'short' });
         if (monthlyData[key]) {
-          monthlyData[key].expenses += Math.abs(tx.amount);
+          monthlyData[key].expenses += tx.amount;
         }
       }
     });
@@ -209,61 +218,58 @@ export default function Analytics() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-sm font-medium">Current Balance</CardTitle>
+            <DollarSign className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${metrics.totalRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Received income to date</p>
+            <div className="text-2xl font-bold">${metrics.currentBalance.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Total across all accounts</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Inflow</CardTitle>
+            <TrendingUp className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">${metrics.totalInflow.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Money received</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Outflow</CardTitle>
             <TrendingDown className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${metrics.totalExpenses.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Owed to vendors</p>
+            <div className="text-2xl font-bold text-red-600">${metrics.totalOutflow.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Money spent</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
-            <TrendingUp className="h-4 w-4 text-primary" />
+            <CardTitle className="text-sm font-medium">Net Cash Flow</CardTitle>
+            <Activity className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${metrics.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              ${metrics.netProfit.toLocaleString()}
+            <div className={`text-2xl font-bold ${metrics.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {metrics.netCashFlow >= 0 ? '+' : ''}${metrics.netCashFlow.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
-              {metrics.profitMargin.toFixed(1)}% profit margin
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Credit Utilization</CardTitle>
-            <CreditCardIcon className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.creditUtilization.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">
-              ${creditCards.reduce((sum, c) => sum + c.balance, 0).toLocaleString()} of ${creditCards.reduce((sum, c) => sum + c.credit_limit, 0).toLocaleString()}
+              Inflow - Outflow
             </p>
           </CardContent>
         </Card>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="cashflow">Cash Flow</TabsTrigger>
-          <TabsTrigger value="profitability">Profitability</TabsTrigger>
-          <TabsTrigger value="revenue">Revenue</TabsTrigger>
+          <TabsTrigger value="expenses">Expenses</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -480,30 +486,30 @@ export default function Analytics() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Current Balance Alert</CardTitle>
+                <CardTitle className="text-sm font-medium">Pending Obligations</CardTitle>
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {metrics.netProfit < 0 ? 'Low' : 'Good'}
+                  ${metrics.totalExpenses.toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Net position: ${metrics.netProfit.toLocaleString()}
+                  Owed to vendors
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Forecasted 30-Day Flow</CardTitle>
-                <Activity className="h-4 w-4 text-primary" />
+                <CardTitle className="text-sm font-medium">Available Credit</CardTitle>
+                <CreditCardIcon className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  ${((metrics.pendingIncome - metrics.totalExpenses) * 0.3).toLocaleString()}
+                  ${creditCards.reduce((sum, c) => sum + (c.available_credit || 0), 0).toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Based on current trends
+                  {metrics.creditUtilization.toFixed(1)}% utilized
                 </p>
               </CardContent>
             </Card>
@@ -550,146 +556,7 @@ export default function Analytics() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="profitability" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-4 mb-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Gross Margin</CardTitle>
-                <Calculator className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{metrics.profitMargin.toFixed(1)}%</div>
-                <p className="text-xs text-muted-foreground">Revenue - Expenses</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Contribution Margin</CardTitle>
-                <BarChart3 className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  ${((metrics.totalRevenue - metrics.totalExpenses) * 0.65).toLocaleString()}
-                </div>
-                <p className="text-xs text-muted-foreground">After variable costs</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Operating Cashflow</CardTitle>
-                <Activity className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  ${(metrics.netProfit * 0.85).toLocaleString()}
-                </div>
-                <p className="text-xs text-muted-foreground">Available for operations</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg ROI</CardTitle>
-                <Target className="h-4 w-4 text-green-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {metrics.totalExpenses > 0 ? ((metrics.totalRevenue / metrics.totalExpenses - 1) * 100).toFixed(1) : 0}%
-                </div>
-                <p className="text-xs text-muted-foreground">Return on investment</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Products by Profitability</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {amazonPayouts.slice(0, 5).map((payout, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Package className="h-8 w-8 text-primary" />
-                      <div>
-                        <p className="font-medium">{payout.marketplace_name || `Product ${idx + 1}`}</p>
-                        <p className="text-sm text-muted-foreground">Settlement: {new Date(payout.payout_date).toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-green-600">${Number(payout.total_amount).toLocaleString()}</p>
-                      <p className="text-sm text-muted-foreground">
-                        ROI: {((Number(payout.total_amount) / Math.max(Number(payout.fees_total) || 1, 1) - 1) * 100).toFixed(0)}%
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Revenue vs Fees Breakdown</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={amazonPayouts.slice(0, 6).map(p => ({
-                    name: new Date(p.payout_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                    revenue: Number(p.orders_total || 0),
-                    fees: Math.abs(Number(p.fees_total || 0)),
-                    net: Number(p.total_amount)
-                  }))}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
-                    <Legend />
-                    <Bar dataKey="revenue" fill="#10b981" name="Revenue" />
-                    <Bar dataKey="fees" fill="#ef4444" name="Fees" />
-                    <Bar dataKey="net" fill="#8b5cf6" name="Net" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Cost Structure Analysis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: 'Vendor Costs', value: metrics.totalExpenses },
-                        { name: 'Amazon Fees', value: amazonPayouts.reduce((sum, p) => sum + Math.abs(Number(p.fees_total || 0)), 0) },
-                        { name: 'Net Profit', value: Math.max(metrics.netProfit, 0) }
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {[0, 1, 2].map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="revenue" className="space-y-4">
+        <TabsContent value="expenses" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
