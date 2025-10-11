@@ -239,6 +239,11 @@ export const CashFlowInsights = ({
     
     setIsRefreshing(true);
     
+    toast({
+      title: "Fetching data...",
+      description: "Refreshing Amazon payout forecast"
+    });
+    
     try {
       // Delete existing forecasted payouts
       await supabase
@@ -481,25 +486,32 @@ export const CashFlowInsights = ({
                           </Label>
                         </div>
                         {includeForecastPayouts && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={handleRefreshForecast}
-                                  disabled={isRefreshing || isForecastGenerating}
-                                  className="h-7 w-7 hover:bg-white/50 dark:hover:bg-black/20"
-                                >
-                                  <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="text-xs">Refresh forecast</p>
-                                <p className="text-xs text-muted-foreground">Can only be refreshed once every 24 hours</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          <div className="flex flex-col items-end gap-1">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={handleRefreshForecast}
+                                    disabled={isRefreshing || isForecastGenerating}
+                                    className="h-7 w-7 hover:bg-white/50 dark:hover:bg-black/20"
+                                  >
+                                    <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-xs">Refresh forecast</p>
+                                  <p className="text-xs text-muted-foreground">Can only be refreshed once every 24 hours</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            {lastRefreshTime && (
+                              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                Synced {new Date(lastRefreshTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                   </TooltipTrigger>
