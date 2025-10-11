@@ -884,6 +884,102 @@ export type Database = {
           },
         ]
       }
+      notification_history: {
+        Row: {
+          action_label: string | null
+          actionable: boolean | null
+          amount: number | null
+          category: string
+          created_at: string
+          due_date: string | null
+          id: string
+          message: string
+          notification_type: string
+          priority: string | null
+          read: boolean | null
+          sent_at: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          action_label?: string | null
+          actionable?: boolean | null
+          amount?: number | null
+          category: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          message: string
+          notification_type: string
+          priority?: string | null
+          read?: boolean | null
+          sent_at?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          action_label?: string | null
+          actionable?: boolean | null
+          amount?: number | null
+          category?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          message?: string
+          notification_type?: string
+          priority?: string | null
+          read?: boolean | null
+          sent_at?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          advance_days: number | null
+          created_at: string
+          enabled: boolean
+          id: string
+          last_sent_at: string | null
+          notification_channels: string[] | null
+          notification_type: string
+          schedule_days: number[] | null
+          schedule_time: string
+          threshold_amount: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          advance_days?: number | null
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_sent_at?: string | null
+          notification_channels?: string[] | null
+          notification_type: string
+          schedule_days?: number[] | null
+          schedule_time?: string
+          threshold_amount?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          advance_days?: number | null
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_sent_at?: string | null
+          notification_channels?: string[] | null
+          notification_type?: string
+          schedule_days?: number[] | null
+          schedule_time?: string
+          threshold_amount?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       password_reset_tokens: {
         Row: {
           created_at: string | null
