@@ -1,5 +1,8 @@
 project_id = "ruvdqtqyfzaxlobmxgaj"
 
+[functions.daily-account-check]
+verify_jwt = false
+
 [functions.request-password-reset]
 verify_jwt = false
 
@@ -111,3 +114,5 @@ verify_jwt = false
 [functions.forecast-amazon-payouts]
 verify_jwt = true
 
+[functions.get-invoices]
+verify_jwt = true
