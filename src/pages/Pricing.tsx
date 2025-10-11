@@ -478,6 +478,29 @@ export default function Pricing() {
             </DialogDescription>
           </DialogHeader>
 
+          {/* Billing Frequency Toggle */}
+          <div className="flex items-center justify-center gap-3 py-4 border-b">
+            <span className={`text-sm font-medium ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
+              Monthly
+            </span>
+            <button
+              onClick={() => setIsYearly(!isYearly)}
+              className="relative w-14 h-7 bg-muted rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            >
+              <span
+                className={`absolute top-1 left-1 w-5 h-5 bg-primary rounded-full transition-transform ${
+                  isYearly ? 'translate-x-7' : ''
+                }`}
+              />
+            </button>
+            <span className={`text-sm font-medium ${isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
+              Yearly
+            </span>
+            {isYearly && (
+              <Badge variant="secondary" className="ml-2">Save 17%</Badge>
+            )}
+          </div>
+
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <label htmlFor="tier" className="text-right text-sm font-medium">
