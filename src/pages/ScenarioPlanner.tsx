@@ -751,7 +751,7 @@ export default function ScenarioPlanner() {
                                 className="h-7 text-xs"
                                 onClick={() => setAmazonForecastMode('average')}
                               >
-                                Last 2 Months Avg
+                                Average
                               </Button>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
