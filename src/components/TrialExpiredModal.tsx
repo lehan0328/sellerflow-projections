@@ -95,19 +95,20 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       const revenueNum = calculatedRevenue;
 
       // Determine appropriate plan based on revenue and get higher plans
-      if (revenueNum <= 20000) {
+      if (revenueNum <= 2000) {
         recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.starter };
         higherPlans = [
           { type: 'standard', plan: PRICING_PLANS.growing },
+          { type: 'standard', plan: PRICING_PLANS.professional },
         ];
-      } else if (revenueNum <= 100000) {
+      } else if (revenueNum <= 50000) {
         recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.growing };
         higherPlans = [
           { type: 'standard', plan: PRICING_PLANS.professional },
         ];
       } else if (revenueNum <= 200000) {
         recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.professional };
-        higherPlans = []; // No upgrade for Professional
+        higherPlans = [];
       } else if (revenueNum <= 500000) {
         recommendedPlanData = { type: 'enterprise', plan: ENTERPRISE_TIERS.tier1 };
         higherPlans = [
@@ -136,7 +137,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
   // Define complete feature lists for each plan with included flag
   const planFeatures = {
     starter: [
-      { text: "Up to $20k monthly Amazon payout", included: true },
+      { text: "Up to $2k monthly Amazon revenue", included: true },
       { text: "2 bank/credit card connections", included: true },
       { text: "1 Amazon connection", included: true },
       { text: "Advance forecasting workflow", included: true },
@@ -150,7 +151,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "Scenario planning", included: false },
     ],
     growing: [
-      { text: "Up to $50k monthly Amazon payout", included: true },
+      { text: "Up to $50k monthly Amazon revenue", included: true },
       { text: "4 bank/credit card connections", included: true },
       { text: "1 Amazon connection", included: true },
       { text: "AI insights", included: true },
@@ -165,7 +166,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "Scenario planning", included: false },
     ],
     professional: [
-      { text: "Up to $200k monthly Amazon payout", included: true },
+      { text: "Up to $200k monthly Amazon revenue", included: true },
       { text: "7 bank/credit card connections", included: true },
       { text: "1 Amazon connection", included: true },
       { text: "AI insights", included: true },
@@ -209,7 +210,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
   };
 
   // Get features for the displayed plans
-  const plansToDisplay = availablePlans.slice(0, 2).map((planData, index) => {
+  const plansToDisplay = availablePlans.slice(0, 3).map((planData, index) => {
     const plan = planData.plan;
     const isRecommended = index === 0;
     const isEnterprise = planData.type === 'enterprise';
@@ -251,7 +252,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       <DialogPortal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/20 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content 
-          className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-[600px] max-h-[90vh] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg"
+          className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-[1000px] max-h-[90vh] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg"
         >
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -311,8 +312,8 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
             <div className="text-xs text-muted-foreground mt-1">Before Amazon fees</div>
           </div>
 
-          {/* Display only recommended plan and one upsell plan */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Display all three plans */}
+          <div className="grid grid-cols-3 gap-4">
             {plansToDisplay.map((plan) => (
               <div
                 key={plan.priceId}
