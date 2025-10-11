@@ -259,6 +259,9 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                       <>
                         <div className="text-2xl font-bold">${plan.price}</div>
                         <div className="text-xs text-muted-foreground">/month</div>
+                        <div className="text-xs text-primary mt-1">
+                          💡 Save ${(plan.monthlyPrice * 12) - plan.yearlyPrice}/year with yearly billing
+                        </div>
                       </>
                     )}
                   </div>
