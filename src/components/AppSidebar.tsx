@@ -24,11 +24,14 @@ interface AppSidebarProps {
   onFlexReportClick?: () => void;
 }
 
-const dashboardSections = [
+const overviewSections = [
   { id: "overview", title: "Overview", icon: Home },
   { id: "analytics", title: "Analytics", icon: BarChart3 },
   { id: "scenario-planning", title: "Scenario Planning", icon: Calculator },
   { id: "notifications", title: "Automated Notifications", icon: Clock, showBadge: true },
+];
+
+const transactionSections = [
   { id: "transactions", title: "Transactions", icon: TrendingUp },
   { id: "bank-transactions", title: "Bank Transactions", icon: Building2 },
   { id: "financials", title: "Financials", icon: Wallet },
@@ -67,62 +70,94 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }
         )}
       </SidebarHeader>
       <SidebarContent className={isCollapsed ? "px-0" : "px-1"}>
-        {/* Dashboard Section */}
+        {/* Overview Section */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-2 mt-2">
             Dashboard
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className={`space-y-1 ${isCollapsed ? "px-0" : "px-1"}`}>
-              {dashboardSections.map((section) => {
+              {overviewSections.map((section) => {
                 const Icon = section.icon;
                 const isActive = activeSection === section.id;
-                const showSeparator = section.id === "notifications";
                 
                 return (
-                  <React.Fragment key={section.id}>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        onClick={() => onSectionChange(section.id)}
-                        className={`
-                          relative rounded-lg transition-all duration-200
-                          ${isCollapsed ? "justify-center h-12 w-12" : ""}
-                          ${isActive 
-                            ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" 
-                            : "hover:bg-accent/50 hover:translate-x-1"
-                          }
-                        `}
-                      >
-                        <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive ? "animate-pulse" : ""} ${isCollapsed ? "mx-auto" : ""}`} />
-                        {!isCollapsed && (
-                          <span className="flex items-center justify-between w-full pr-1">
-                            <span>{section.title}</span>
-                            {'showBadge' in section && section.showBadge && unreadCount > 0 && (
-                              <Badge 
-                                variant="destructive" 
-                                className="ml-auto text-[10px] font-bold px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center"
-                              >
-                                {unreadCount}
-                              </Badge>
-                            )}
-                          </span>
-                        )}
-                        {isCollapsed && 'showBadge' in section && section.showBadge && unreadCount > 0 && (
-                          <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
-                            {unreadCount}
-                          </div>
-                        )}
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    {showSeparator && (
-                      <Separator className="my-2" />
-                    )}
-                  </React.Fragment>
+                  <SidebarMenuItem key={section.id}>
+                    <SidebarMenuButton
+                      onClick={() => onSectionChange(section.id)}
+                      className={`
+                        relative rounded-lg transition-all duration-200
+                        ${isCollapsed ? "justify-center h-12 w-12" : ""}
+                        ${isActive 
+                          ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" 
+                          : "hover:bg-accent/50 hover:translate-x-1"
+                        }
+                      `}
+                    >
+                      <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive ? "animate-pulse" : ""} ${isCollapsed ? "mx-auto" : ""}`} />
+                      {!isCollapsed && (
+                        <span className="flex items-center justify-between w-full pr-1">
+                          <span>{section.title}</span>
+                          {'showBadge' in section && section.showBadge && unreadCount > 0 && (
+                            <Badge 
+                              variant="destructive" 
+                              className="ml-auto text-[10px] font-bold px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center"
+                            >
+                              {unreadCount}
+                            </Badge>
+                          )}
+                        </span>
+                      )}
+                      {isCollapsed && 'showBadge' in section && section.showBadge && unreadCount > 0 && (
+                        <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
+                          {unreadCount}
+                        </div>
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 );
               })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <Separator className="my-2" />
+
+        {/* Transactions Section */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-2">
+            Transactions
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className={`space-y-1 ${isCollapsed ? "px-0" : "px-1"}`}>
+              {transactionSections.map((section) => {
+                const Icon = section.icon;
+                const isActive = activeSection === section.id;
+                
+                return (
+                  <SidebarMenuItem key={section.id}>
+                    <SidebarMenuButton
+                      onClick={() => onSectionChange(section.id)}
+                      className={`
+                        relative rounded-lg transition-all duration-200
+                        ${isCollapsed ? "justify-center h-12 w-12" : ""}
+                        ${isActive 
+                          ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" 
+                          : "hover:bg-accent/50 hover:translate-x-1"
+                        }
+                      `}
+                    >
+                      <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive ? "animate-pulse" : ""} ${isCollapsed ? "mx-auto" : ""}`} />
+                      {!isCollapsed && <span>{section.title}</span>}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <Separator className="my-2" />
 
         {/* Resources Section */}
         <SidebarGroup>
