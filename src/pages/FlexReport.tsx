@@ -69,20 +69,49 @@ const FlexReport = () => {
     end: next30Days
   })).reduce((sum, income) => sum + Number(income.amount), 0);
 
-  // 180 day purchasing power calculation
-  const upcomingIncome180 = incomeItems.filter(income => income.status !== 'received' && income.paymentDate && isWithinInterval(new Date(income.paymentDate), {
-    start: today,
-    end: next180Days
-  })).reduce((sum, income) => sum + Number(income.amount), 0);
+  // Calculate highest projected balance within 180 days
+  const calculateMaxBalance180Days = () => {
+    // Create array of all cash flow events with dates
+    const events: { date: Date; amount: number }[] = [];
+    
+    // Add income events
+    incomeItems
+      .filter(income => income.status !== 'received' && income.paymentDate)
+      .forEach(income => {
+        const date = new Date(income.paymentDate);
+        if (isWithinInterval(date, { start: today, end: next180Days })) {
+          events.push({ date, amount: Number(income.amount) });
+        }
+      });
+    
+    // Add expense events (purchase orders)
+    transactions
+      .filter(tx => tx.type === 'purchase_order' && tx.status === 'pending' && tx.dueDate)
+      .forEach(tx => {
+        const date = new Date(tx.dueDate);
+        if (isWithinInterval(date, { start: today, end: next180Days })) {
+          events.push({ date, amount: -Number(tx.amount) });
+        }
+      });
+    
+    // Sort events by date
+    events.sort((a, b) => a.date.getTime() - b.date.getTime());
+    
+    // Calculate running balance and track maximum
+    let currentBalance = bankBalance;
+    let maxBalance = currentBalance;
+    
+    events.forEach(event => {
+      currentBalance += event.amount;
+      if (currentBalance > maxBalance) {
+        maxBalance = currentBalance;
+      }
+    });
+    
+    return maxBalance;
+  };
 
-  const upcomingObligations180 = transactions.filter(tx => 
-    tx.type === 'purchase_order' && 
-    tx.status === 'pending' && 
-    tx.dueDate && 
-    isWithinInterval(new Date(tx.dueDate), { start: today, end: next180Days })
-  ).reduce((sum, tx) => sum + Number(tx.amount), 0);
-
-  const max180DayPurchasingPower = bankBalance + upcomingIncome180 - upcomingObligations180 - upcomingVendorPayments;
+  const max180DayPurchasingPower = calculateMaxBalance180Days();
 
   // Credit utilization
   const totalCreditLimit = creditCards.reduce((sum, card) => sum + Number(card.credit_limit || 0), 0);
