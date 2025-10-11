@@ -72,11 +72,11 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }
       <SidebarContent className={isCollapsed ? "px-0" : "px-1"}>
         {/* Overview Section */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-1">
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-0.5">
             Dashboard
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className={`space-y-0.5 ${isCollapsed ? "px-0" : "px-1"}`}>
+            <SidebarMenu className={`space-y-0 ${isCollapsed ? "px-0" : "px-1"}`}>
               {overviewSections.map((section) => {
                 const Icon = section.icon;
                 const isActive = activeSection === section.id;
@@ -121,15 +121,15 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <Separator className="my-1" />
+        <Separator className="my-0.5" />
 
         {/* Transactions Section */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-1">
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-0.5">
             Transactions
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className={`space-y-0.5 ${isCollapsed ? "px-0" : "px-1"}`}>
+            <SidebarMenu className={`space-y-0 ${isCollapsed ? "px-0" : "px-1"}`}>
               {transactionSections.map((section) => {
                 const Icon = section.icon;
                 const isActive = activeSection === section.id;
@@ -157,15 +157,15 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <Separator className="my-1" />
+        <Separator className="my-0.5" />
 
         {/* Resources Section */}
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-1">
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-0.5">
             Resources
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className={`space-y-0.5 ${isCollapsed ? "px-0" : "px-1"}`}>
+            <SidebarMenu className={`space-y-0 ${isCollapsed ? "px-0" : "px-1"}`}>
               {resourceSections.map((section) => {
                 const Icon = section.icon;
                 const isActive = activeSection === section.id;
