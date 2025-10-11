@@ -1288,6 +1288,62 @@ const Dashboard = () => {
           />
         );
       
+      case "bank-transactions":
+        return (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold">Bank Transactions</h2>
+            {isBankTransactionsLoading ? (
+              <div className="text-center py-8 text-muted-foreground">Loading transactions...</div>
+            ) : accounts.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">No bank accounts connected yet.</p>
+                <button onClick={() => navigate('/settings')} className="btn btn-primary">
+                  Connect Bank Account
+                </button>
+              </div>
+            ) : bankTransactions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No transactions found.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {bankTransactions.map((tx) => (
+                  <div
+                    key={tx.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{tx.merchantName || tx.description}</p>
+                        {tx.status === 'pending' && (
+                          <span className="text-xs px-2 py-0.5 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-500/20 rounded">
+                            Pending
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                        <span>{format(tx.date, 'MMM dd, yyyy')}</span>
+                        <span>{tx.institutionName} - {tx.accountName}</span>
+                        {tx.category && (
+                          <span>{tx.category}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-semibold ${tx.type === 'debit' ? 'text-destructive' : 'text-green-600'}`}>
+                        {tx.type === 'debit' ? '-' : '+'}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-xs text-muted-foreground capitalize">
+                        {tx.type}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      
       case "financials":
         return (
           <div className="space-y-4">
