@@ -20,7 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { addDays, startOfDay, format } from "date-fns";
-import { ArrowLeft, Plus, Save, Trash2, TrendingUp, TrendingDown, Calculator } from "lucide-react";
+import { ArrowLeft, Plus, Save, Trash2, TrendingUp, TrendingDown, Calculator, Edit } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   LineChart,
@@ -45,6 +45,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function ScenarioPlanner() {
   const navigate = useNavigate();
@@ -61,6 +69,7 @@ export default function ScenarioPlanner() {
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
   const [scenarioName, setScenarioName] = useState("");
   const [scenarioDescription, setScenarioDescription] = useState("");
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   
   // Amazon payout forecast mode
   const [amazonForecastMode, setAmazonForecastMode] = useState<'ai' | 'average'>('average');
@@ -528,12 +537,23 @@ export default function ScenarioPlanner() {
     setUseIndividualAdjustments(false);
     setAmazonForecastMode('ai');
     setGlobalAdjustments({
-      income: { enabled: false, type: 'percentage', value: 0 },
-      amazonPayouts: { enabled: false, type: 'percentage', value: 0 },
-      purchaseOrders: { enabled: false, type: 'percentage', value: 0 },
-      recurringExpenses: { enabled: false, type: 'percentage', value: 0 },
-      creditCards: { enabled: false, type: 'percentage', value: 0 },
+      income: { enabled: false, type: 'percentage', value: '' },
+      amazonPayouts: { enabled: false, type: 'percentage', value: '' },
+      purchaseOrders: { enabled: false, type: 'percentage', value: '' },
+      recurringExpenses: { enabled: false, type: 'percentage', value: '' },
+      creditCards: { enabled: false, type: 'percentage', value: '' },
     });
+    setIsConfigModalOpen(true);
+  };
+
+  const handleEditScenario = (scenarioId: string) => {
+    handleLoadScenario(scenarioId);
+    setIsConfigModalOpen(true);
+  };
+
+  const handleSaveAndClose = () => {
+    handleSaveScenario();
+    setIsConfigModalOpen(false);
   };
 
   return (
@@ -582,40 +602,52 @@ export default function ScenarioPlanner() {
                   }`}
                   onClick={() => handleLoadScenario(scenario.id)}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <div className="flex-1">
                       <p className="font-medium">{scenario.name}</p>
                       {scenario.description && (
                         <p className="text-xs text-muted-foreground mt-1">{scenario.description}</p>
                       )}
                     </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Scenario</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{scenario.name}"? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => deleteScenario(scenario.id)}
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditScenario(scenario.id);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Scenario</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{scenario.name}"? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteScenario(scenario.id)}
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 </div>
               ))
@@ -623,13 +655,275 @@ export default function ScenarioPlanner() {
           </CardContent>
         </Card>
 
-        {/* Scenario Configuration */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Scenario Configuration</CardTitle>
-            <CardDescription>Adjust variables to model different outcomes</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
+        {/* Charts and Results - Moved to main area */}
+        <div className="md:col-span-2 space-y-6">
+          {/* Impact Summary */}
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Cumulative Impact</CardTitle>
+                <Calculator className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${cumulativeImpact.difference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ${Math.abs(cumulativeImpact.difference).toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {cumulativeImpact.difference >= 0 ? 'Better' : 'Worse'} than baseline ({cumulativeImpact.percentChange.toFixed(1)}%)
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Baseline Net</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  ${cumulativeImpact.baselineTotal.toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Over {projectionMonths} months
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Scenario Net</CardTitle>
+                <TrendingDown className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  ${cumulativeImpact.scenarioTotal.toLocaleString()}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Over {projectionMonths} months
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Projections */}
+          <Tabs defaultValue="comparison" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="comparison">Baseline vs Scenario</TabsTrigger>
+              <TabsTrigger value="revenue">Revenue Projection</TabsTrigger>
+              <TabsTrigger value="expenses">Expense Projection</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="comparison" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Cash Balance Projection</CardTitle>
+                  <CardDescription>3-month projected cash balance: baseline vs your scenario</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart data={scenarioProjection}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                      <Tooltip 
+                        formatter={(value) => `$${Number(value).toLocaleString()}`}
+                        labelFormatter={(label) => `Month: ${label}`}
+                      />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="baselineCash" 
+                        stroke="#8b5cf6" 
+                        strokeWidth={2} 
+                        name="Baseline Balance"
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="scenarioCash" 
+                        stroke="#06b6d4" 
+                        strokeWidth={2} 
+                        name="Scenario Balance"
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="revenue" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Impact Analysis</CardTitle>
+                  <CardDescription>How your scenario affects cash position</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 border rounded-lg">
+                      <p className="text-sm text-muted-foreground mb-1">Starting Balance</p>
+                      <p className="text-2xl font-bold">${baselineCash.toLocaleString()}</p>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <p className="text-sm text-muted-foreground mb-1">Scenario Impact (3mo)</p>
+                      <p className={`text-2xl font-bold ${cumulativeImpact.difference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {cumulativeImpact.difference >= 0 ? '+' : ''}${cumulativeImpact.difference.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <p className="text-sm text-muted-foreground mb-1">Baseline End Balance</p>
+                      <p className="text-2xl font-bold">${cumulativeImpact.baselineTotal.toLocaleString()}</p>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <p className="text-sm text-muted-foreground mb-1">Scenario End Balance</p>
+                      <p className="text-2xl font-bold text-primary">${cumulativeImpact.scenarioTotal.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4 border-t">
+                    <p className="text-sm text-muted-foreground mb-2">Projection includes:</p>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500" />
+                        <span>Pending Income ({incomeItems.filter(i => i.status !== 'received').length})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-red-500" />
+                        <span>Purchase Orders ({transactions.filter(t => t.type === 'purchase_order' && t.status !== 'completed').length})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-500" />
+                        <span>Amazon Payouts ({amazonPayouts.length})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-purple-500" />
+                        <span>Recurring Items ({recurringExpenses.length})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-orange-500" />
+                        <span>Credit Card Payments ({creditCards.filter(c => c.payment_due_date).length})</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="expenses" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Data Sources</CardTitle>
+                  <CardDescription>Active financial data included in projection</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center p-3 border rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-green-500" />
+                        <span className="font-medium">Pending Income</span>
+                      </div>
+                      <span className="text-muted-foreground">{incomeItems.filter(i => i.status !== 'received').length} items</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 border rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-red-500" />
+                        <span className="font-medium">Purchase Orders</span>
+                      </div>
+                      <span className="text-muted-foreground">{transactions.filter(t => t.type === 'purchase_order' && t.status !== 'completed').length} items</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 border rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-blue-500" />
+                        <span className="font-medium">Amazon Payouts</span>
+                      </div>
+                      <span className="text-muted-foreground">{amazonPayouts.length} payouts</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 border rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-purple-500" />
+                        <span className="font-medium">Recurring Transactions</span>
+                      </div>
+                      <span className="text-muted-foreground">{recurringExpenses.length} items</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 border rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-orange-500" />
+                        <span className="font-medium">Credit Card Payments</span>
+                      </div>
+                      <span className="text-muted-foreground">{creditCards.filter(c => c.payment_due_date).length} payments</span>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4 border-t">
+                    <p className="text-sm font-medium mb-2">Active Adjustments:</p>
+                    <div className="space-y-1 text-sm">
+                      {useIndividualAdjustments ? (
+                        Object.keys(dataSourceAdjustments).length === 0 ? (
+                          <p className="text-xs text-muted-foreground">No individual adjustments configured</p>
+                        ) : (
+                        Object.entries(dataSourceAdjustments).map(([key, adj]) => {
+                          const numValue = typeof adj.value === 'number' ? adj.value : 0;
+                          return (
+                            <div key={key} className="flex justify-between text-xs">
+                              <span className="text-muted-foreground">{key}:</span>
+                              <span className="font-medium">
+                                {adj.type === 'percentage' 
+                                  ? `${numValue > 0 ? '+' : ''}${numValue}%`
+                                  : `${numValue > 0 ? '+' : ''}$${Math.abs(numValue).toLocaleString()}`
+                                }
+                              </span>
+                            </div>
+                          );
+                        })
+                        )
+                      ) : (
+                        Object.entries(globalAdjustments)
+                          .filter(([_, adj]) => typeof adj.value === 'number' && adj.value !== 0)
+                          .length === 0 ? (
+                          <p className="text-xs text-muted-foreground">No global adjustments configured</p>
+                        ) : (
+                          Object.entries(globalAdjustments)
+                            .filter(([_, adj]) => typeof adj.value === 'number' && adj.value !== 0)
+                            .map(([key, adj]) => {
+                              const numValue = typeof adj.value === 'number' ? adj.value : 0;
+                              return (
+                                <div key={key} className="flex justify-between text-xs">
+                                  <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                                  <span className="font-medium">
+                                    {adj.type === 'percentage' 
+                                      ? `${numValue > 0 ? '+' : ''}${numValue}%`
+                                      : `${numValue > 0 ? '+' : ''}$${Math.abs(numValue).toLocaleString()}`
+                                    }
+                                  </span>
+                                </div>
+                              );
+                            })
+                        )
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+
+      {/* Configuration Modal */}
+      <Dialog open={isConfigModalOpen} onOpenChange={setIsConfigModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedScenarioId ? 'Edit Scenario' : 'New Scenario'}
+            </DialogTitle>
+            <DialogDescription>
+              Adjust variables to model different financial outcomes
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
             <div className="space-y-4">
               <div>
                 <Label htmlFor="scenario-name">Scenario Name</Label>
@@ -1601,269 +1895,21 @@ export default function ScenarioPlanner() {
                     </div>
                   )}
                 </div>
-              </div>
               )}
-
-              <Button onClick={handleSaveScenario} className="w-full" disabled={!scenarioName}>
-                <Save className="h-4 w-4 mr-2" />
-                {selectedScenarioId ? 'Update Scenario' : 'Save Scenario'}
-              </Button>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
 
-      {/* Impact Summary */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cumulative Impact</CardTitle>
-            <Calculator className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${cumulativeImpact.difference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              ${Math.abs(cumulativeImpact.difference).toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {cumulativeImpact.difference >= 0 ? 'Better' : 'Worse'} than baseline ({cumulativeImpact.percentChange.toFixed(1)}%)
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Baseline Net</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${cumulativeImpact.baselineTotal.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Over {projectionMonths} months
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Scenario Net</CardTitle>
-            <TrendingDown className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${cumulativeImpact.scenarioTotal.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Over {projectionMonths} months
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Projections */}
-      <Tabs defaultValue="comparison" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="comparison">Baseline vs Scenario</TabsTrigger>
-          <TabsTrigger value="revenue">Revenue Projection</TabsTrigger>
-          <TabsTrigger value="expenses">Expense Projection</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="comparison" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Cash Balance Projection</CardTitle>
-              <CardDescription>3-month projected cash balance: baseline vs your scenario</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={scenarioProjection}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
-                  <Tooltip 
-                    formatter={(value) => `$${Number(value).toLocaleString()}`}
-                    labelFormatter={(label) => `Month: ${label}`}
-                  />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="baselineCash" 
-                    stroke="#8b5cf6" 
-                    strokeWidth={2} 
-                    name="Baseline Balance"
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="scenarioCash" 
-                    stroke="#06b6d4" 
-                    strokeWidth={2} 
-                    name="Scenario Balance"
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="revenue" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Impact Analysis</CardTitle>
-              <CardDescription>How your scenario affects cash position</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 border rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">Starting Balance</p>
-                  <p className="text-2xl font-bold">${baselineCash.toLocaleString()}</p>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">Scenario Impact (3mo)</p>
-                  <p className={`text-2xl font-bold ${cumulativeImpact.difference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {cumulativeImpact.difference >= 0 ? '+' : ''}${cumulativeImpact.difference.toLocaleString()}
-                  </p>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">Baseline End Balance</p>
-                  <p className="text-2xl font-bold">${cumulativeImpact.baselineTotal.toLocaleString()}</p>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <p className="text-sm text-muted-foreground mb-1">Scenario End Balance</p>
-                  <p className="text-2xl font-bold text-primary">${cumulativeImpact.scenarioTotal.toLocaleString()}</p>
-                </div>
-              </div>
-              
-              <div className="pt-4 border-t">
-                <p className="text-sm text-muted-foreground mb-2">Projection includes:</p>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                    <span>Pending Income ({incomeItems.filter(i => i.status !== 'received').length})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-red-500" />
-                    <span>Purchase Orders ({transactions.filter(t => t.type === 'purchase_order' && t.status !== 'completed').length})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-500" />
-                    <span>Amazon Payouts ({amazonPayouts.length})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-purple-500" />
-                    <span>Recurring Items ({recurringExpenses.length})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-orange-500" />
-                    <span>Credit Card Payments ({creditCards.filter(c => c.payment_due_date).length})</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="expenses" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Data Sources</CardTitle>
-              <CardDescription>Active financial data included in projection</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center p-3 border rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-green-500" />
-                    <span className="font-medium">Pending Income</span>
-                  </div>
-                  <span className="text-muted-foreground">{incomeItems.filter(i => i.status !== 'received').length} items</span>
-                </div>
-                <div className="flex justify-between items-center p-3 border rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-500" />
-                    <span className="font-medium">Purchase Orders</span>
-                  </div>
-                  <span className="text-muted-foreground">{transactions.filter(t => t.type === 'purchase_order' && t.status !== 'completed').length} items</span>
-                </div>
-                <div className="flex justify-between items-center p-3 border rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-blue-500" />
-                    <span className="font-medium">Amazon Payouts</span>
-                  </div>
-                  <span className="text-muted-foreground">{amazonPayouts.length} payouts</span>
-                </div>
-                <div className="flex justify-between items-center p-3 border rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-purple-500" />
-                    <span className="font-medium">Recurring Transactions</span>
-                  </div>
-                  <span className="text-muted-foreground">{recurringExpenses.length} items</span>
-                </div>
-                <div className="flex justify-between items-center p-3 border rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-orange-500" />
-                    <span className="font-medium">Credit Card Payments</span>
-                  </div>
-                  <span className="text-muted-foreground">{creditCards.filter(c => c.payment_due_date).length} payments</span>
-                </div>
-              </div>
-              
-              <div className="pt-4 border-t">
-                <p className="text-sm font-medium mb-2">Active Adjustments:</p>
-                <div className="space-y-1 text-sm">
-                  {useIndividualAdjustments ? (
-                    Object.keys(dataSourceAdjustments).length === 0 ? (
-                      <p className="text-xs text-muted-foreground">No individual adjustments configured</p>
-                    ) : (
-                    Object.entries(dataSourceAdjustments).map(([key, adj]) => {
-                      const numValue = typeof adj.value === 'number' ? adj.value : 0;
-                      return (
-                        <div key={key} className="flex justify-between text-xs">
-                          <span className="text-muted-foreground">{key}:</span>
-                          <span className="font-medium">
-                            {adj.type === 'percentage' 
-                              ? `${numValue > 0 ? '+' : ''}${numValue}%`
-                              : `${numValue > 0 ? '+' : ''}$${Math.abs(numValue).toLocaleString()}`
-                            }
-                          </span>
-                        </div>
-                      );
-                    })
-                    )
-                  ) : (
-                    Object.entries(globalAdjustments)
-                      .filter(([_, adj]) => typeof adj.value === 'number' && adj.value !== 0)
-                      .length === 0 ? (
-                      <p className="text-xs text-muted-foreground">No global adjustments configured</p>
-                    ) : (
-                      Object.entries(globalAdjustments)
-                        .filter(([_, adj]) => typeof adj.value === 'number' && adj.value !== 0)
-                        .map(([key, adj]) => {
-                          const numValue = typeof adj.value === 'number' ? adj.value : 0;
-                          return (
-                            <div key={key} className="flex justify-between text-xs">
-                              <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                              <span className="font-medium">
-                                {adj.type === 'percentage' 
-                                  ? `${numValue > 0 ? '+' : ''}${numValue}%`
-                                  : `${numValue > 0 ? '+' : ''}$${Math.abs(numValue).toLocaleString()}`
-                                }
-                              </span>
-                            </div>
-                          );
-                        })
-                    )
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsConfigModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveAndClose} disabled={!scenarioName.trim()}>
+              <Save className="h-4 w-4 mr-2" />
+              {selectedScenarioId ? 'Update' : 'Save'} Scenario
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
