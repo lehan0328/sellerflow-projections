@@ -69,15 +69,15 @@ export default function ScenarioPlanner() {
   const [useIndividualAdjustments, setUseIndividualAdjustments] = useState(false);
   
   // Data source adjustments (individual)
-  const [dataSourceAdjustments, setDataSourceAdjustments] = useState<Record<string, { enabled: boolean; type: 'percentage' | 'absolute'; value: number }>>({});
+  const [dataSourceAdjustments, setDataSourceAdjustments] = useState<Record<string, { enabled: boolean; type: 'percentage' | 'absolute'; value: number | '' }>>({});
   
   // Global adjustments by data source type with enabled state
-  const [globalAdjustments, setGlobalAdjustments] = useState<Record<string, { enabled: boolean; type: 'percentage' | 'absolute'; value: number }>>({
-    income: { enabled: false, type: 'percentage', value: 0 },
-    amazonPayouts: { enabled: false, type: 'percentage', value: 0 },
-    purchaseOrders: { enabled: false, type: 'percentage', value: 0 },
-    recurringExpenses: { enabled: false, type: 'percentage', value: 0 },
-    creditCards: { enabled: false, type: 'percentage', value: 0 },
+  const [globalAdjustments, setGlobalAdjustments] = useState<Record<string, { enabled: boolean; type: 'percentage' | 'absolute'; value: number | '' }>>({
+    income: { enabled: false, type: 'percentage', value: '' },
+    amazonPayouts: { enabled: false, type: 'percentage', value: '' },
+    purchaseOrders: { enabled: false, type: 'percentage', value: '' },
+    recurringExpenses: { enabled: false, type: 'percentage', value: '' },
+    creditCards: { enabled: false, type: 'percentage', value: '' },
   });
   
   // Fixed 3-month projection
@@ -342,10 +342,11 @@ export default function ScenarioPlanner() {
           const adjustment = dataSourceAdjustments[event.sourceId];
           
           if (adjustment && adjustment.enabled) {
+            const adjValue = typeof adjustment.value === 'number' ? adjustment.value : 0;
             if (adjustment.type === 'percentage') {
-              adjustedAmount = eventAmount * (1 + adjustment.value / 100);
+              adjustedAmount = eventAmount * (1 + adjValue / 100);
             } else {
-              adjustedAmount = eventAmount + adjustment.value;
+              adjustedAmount = eventAmount + adjValue;
             }
           }
         } else {
@@ -359,10 +360,11 @@ export default function ScenarioPlanner() {
           
           if (globalKey && globalAdjustments[globalKey] && globalAdjustments[globalKey].enabled) {
             const adjustment = globalAdjustments[globalKey];
+            const adjValue = typeof adjustment.value === 'number' ? adjustment.value : 0;
             if (adjustment.type === 'percentage') {
-              adjustedAmount = eventAmount * (1 + adjustment.value / 100);
+              adjustedAmount = eventAmount * (1 + adjValue / 100);
             } else {
-              adjustedAmount = eventAmount + adjustment.value;
+              adjustedAmount = eventAmount + adjValue;
             }
           }
         }
@@ -419,9 +421,9 @@ export default function ScenarioPlanner() {
     const scenarioData: ScenarioData = {
       projectionMonths: 3,
       dataSourceAdjustments: {}, // Will be populated from state
-      globalRevenueAdjustment: useIndividualAdjustments ? undefined : globalAdjustments.income?.value,
+      globalRevenueAdjustment: useIndividualAdjustments ? undefined : (typeof globalAdjustments.income?.value === 'number' ? globalAdjustments.income.value : undefined),
       globalRevenueAdjustmentType: useIndividualAdjustments ? undefined : globalAdjustments.income?.type,
-      globalExpenseAdjustment: useIndividualAdjustments ? undefined : globalAdjustments.purchaseOrders?.value,
+      globalExpenseAdjustment: useIndividualAdjustments ? undefined : (typeof globalAdjustments.purchaseOrders?.value === 'number' ? globalAdjustments.purchaseOrders.value : undefined),
       globalExpenseAdjustmentType: useIndividualAdjustments ? undefined : globalAdjustments.purchaseOrders?.type,
     };
 
@@ -651,10 +653,10 @@ export default function ScenarioPlanner() {
                           </Select>
                           <Input
                             type="number"
-                            value={globalAdjustments.income?.value || 0}
+                            value={globalAdjustments.income?.value ?? ''}
                             onChange={(e) => setGlobalAdjustments(prev => ({
                               ...prev,
-                              income: { ...prev.income, value: Number(e.target.value) }
+                              income: { ...prev.income, value: e.target.value === '' ? '' : Number(e.target.value) }
                             }))}
                             placeholder="0"
                           />
@@ -703,13 +705,13 @@ export default function ScenarioPlanner() {
                                     <Input
                                       type="number"
                                       className="h-8 text-xs"
-                                      value={dataSourceAdjustments[`income_${income.id}`]?.value || 0}
+                                      value={dataSourceAdjustments[`income_${income.id}`]?.value ?? ''}
                                       onChange={(e) => setDataSourceAdjustments(prev => ({
                                         ...prev,
                                         [`income_${income.id}`]: {
                                           enabled: prev[`income_${income.id}`]?.enabled ?? true,
                                           type: prev[`income_${income.id}`]?.type || 'percentage',
-                                          value: Number(e.target.value)
+                                          value: e.target.value === '' ? '' : Number(e.target.value)
                                         }
                                       }))}
                                       placeholder="0"
@@ -825,10 +827,10 @@ export default function ScenarioPlanner() {
                           </Select>
                           <Input
                             type="number"
-                            value={globalAdjustments.amazonPayouts?.value || 0}
+                            value={globalAdjustments.amazonPayouts?.value ?? ''}
                             onChange={(e) => setGlobalAdjustments(prev => ({
                               ...prev,
-                              amazonPayouts: { ...prev.amazonPayouts, value: Number(e.target.value) }
+                              amazonPayouts: { ...prev.amazonPayouts, value: e.target.value === '' ? '' : Number(e.target.value) }
                             }))}
                             placeholder="0"
                           />
@@ -877,13 +879,13 @@ export default function ScenarioPlanner() {
                                     <Input
                                       type="number"
                                       className="h-8 text-xs"
-                                      value={dataSourceAdjustments[`payout_${payout.id}`]?.value || 0}
+                                      value={dataSourceAdjustments[`payout_${payout.id}`]?.value ?? ''}
                                       onChange={(e) => setDataSourceAdjustments(prev => ({
                                         ...prev,
                                         [`payout_${payout.id}`]: {
                                           enabled: prev[`payout_${payout.id}`]?.enabled ?? true,
                                           type: prev[`payout_${payout.id}`]?.type || 'percentage',
-                                          value: Number(e.target.value)
+                                          value: e.target.value === '' ? '' : Number(e.target.value)
                                         }
                                       }))}
                                       placeholder="0"
@@ -931,10 +933,10 @@ export default function ScenarioPlanner() {
                           </Select>
                           <Input
                             type="number"
-                            value={globalAdjustments.purchaseOrders?.value || 0}
+                            value={globalAdjustments.purchaseOrders?.value ?? ''}
                             onChange={(e) => setGlobalAdjustments(prev => ({
                               ...prev,
-                              purchaseOrders: { ...prev.purchaseOrders, value: Number(e.target.value) }
+                              purchaseOrders: { ...prev.purchaseOrders, value: e.target.value === '' ? '' : Number(e.target.value) }
                             }))}
                             placeholder="0"
                           />
@@ -983,13 +985,13 @@ export default function ScenarioPlanner() {
                                     <Input
                                       type="number"
                                       className="h-8 text-xs"
-                                      value={dataSourceAdjustments[`po_${tx.id}`]?.value || 0}
+                                      value={dataSourceAdjustments[`po_${tx.id}`]?.value ?? ''}
                                       onChange={(e) => setDataSourceAdjustments(prev => ({
                                         ...prev,
                                         [`po_${tx.id}`]: {
                                           enabled: prev[`po_${tx.id}`]?.enabled ?? true,
                                           type: prev[`po_${tx.id}`]?.type || 'percentage',
-                                          value: Number(e.target.value)
+                                          value: e.target.value === '' ? '' : Number(e.target.value)
                                         }
                                       }))}
                                       placeholder="0"
@@ -1037,10 +1039,10 @@ export default function ScenarioPlanner() {
                           </Select>
                           <Input
                             type="number"
-                            value={globalAdjustments.recurringExpenses?.value || 0}
+                            value={globalAdjustments.recurringExpenses?.value ?? ''}
                             onChange={(e) => setGlobalAdjustments(prev => ({
                               ...prev,
-                              recurringExpenses: { ...prev.recurringExpenses, value: Number(e.target.value) }
+                              recurringExpenses: { ...prev.recurringExpenses, value: e.target.value === '' ? '' : Number(e.target.value) }
                             }))}
                             placeholder="0"
                           />
@@ -1089,13 +1091,13 @@ export default function ScenarioPlanner() {
                                     <Input
                                       type="number"
                                       className="h-8 text-xs"
-                                      value={dataSourceAdjustments[`recurring_${recurring.id}`]?.value || 0}
+                                      value={dataSourceAdjustments[`recurring_${recurring.id}`]?.value ?? ''}
                                       onChange={(e) => setDataSourceAdjustments(prev => ({
                                         ...prev,
                                         [`recurring_${recurring.id}`]: {
                                           enabled: prev[`recurring_${recurring.id}`]?.enabled ?? true,
                                           type: prev[`recurring_${recurring.id}`]?.type || 'percentage',
-                                          value: Number(e.target.value)
+                                          value: e.target.value === '' ? '' : Number(e.target.value)
                                         }
                                       }))}
                                       placeholder="0"
@@ -1143,10 +1145,10 @@ export default function ScenarioPlanner() {
                           </Select>
                           <Input
                             type="number"
-                            value={globalAdjustments.creditCards?.value || 0}
+                            value={globalAdjustments.creditCards?.value ?? ''}
                             onChange={(e) => setGlobalAdjustments(prev => ({
                               ...prev,
-                              creditCards: { ...prev.creditCards, value: Number(e.target.value) }
+                              creditCards: { ...prev.creditCards, value: e.target.value === '' ? '' : Number(e.target.value) }
                             }))}
                             placeholder="0"
                           />
@@ -1195,13 +1197,13 @@ export default function ScenarioPlanner() {
                                     <Input
                                       type="number"
                                       className="h-8 text-xs"
-                                      value={dataSourceAdjustments[`cc_${card.id}`]?.value || 0}
+                                      value={dataSourceAdjustments[`cc_${card.id}`]?.value ?? ''}
                                       onChange={(e) => setDataSourceAdjustments(prev => ({
                                         ...prev,
                                         [`cc_${card.id}`]: {
                                           enabled: prev[`cc_${card.id}`]?.enabled ?? true,
                                           type: prev[`cc_${card.id}`]?.type || 'percentage',
-                                          value: Number(e.target.value)
+                                          value: e.target.value === '' ? '' : Number(e.target.value)
                                         }
                                       }))}
                                       placeholder="0"
@@ -1265,10 +1267,10 @@ export default function ScenarioPlanner() {
                               <Input
                                 type="number"
                                 className="h-8 text-xs"
-                                value={dataSourceAdjustments[`income_${income.id}`]?.value || 0}
+                                value={dataSourceAdjustments[`income_${income.id}`]?.value ?? ''}
                                 onChange={(e) => setDataSourceAdjustments(prev => ({
                                   ...prev,
-                                  [`income_${income.id}`]: { enabled: prev[`income_${income.id}`]?.enabled ?? true, type: prev[`income_${income.id}`]?.type || 'percentage', value: Number(e.target.value) }
+                                  [`income_${income.id}`]: { enabled: prev[`income_${income.id}`]?.enabled ?? true, type: prev[`income_${income.id}`]?.type || 'percentage', value: e.target.value === '' ? '' : Number(e.target.value) }
                                 }))}
                                 placeholder="0"
                               />
@@ -1324,10 +1326,10 @@ export default function ScenarioPlanner() {
                               <Input
                                 type="number"
                                 className="h-8 text-xs"
-                                value={dataSourceAdjustments[`amazon_${payout.id}`]?.value || 0}
+                                value={dataSourceAdjustments[`amazon_${payout.id}`]?.value ?? ''}
                                 onChange={(e) => setDataSourceAdjustments(prev => ({
                                   ...prev,
-                                  [`amazon_${payout.id}`]: { enabled: prev[`amazon_${payout.id}`]?.enabled ?? true, type: prev[`amazon_${payout.id}`]?.type || 'percentage', value: Number(e.target.value) }
+                                  [`amazon_${payout.id}`]: { enabled: prev[`amazon_${payout.id}`]?.enabled ?? true, type: prev[`amazon_${payout.id}`]?.type || 'percentage', value: e.target.value === '' ? '' : Number(e.target.value) }
                                 }))}
                                 placeholder="0"
                               />
@@ -1381,10 +1383,10 @@ export default function ScenarioPlanner() {
                               <Input
                                 type="number"
                                 className="h-8 text-xs"
-                                value={dataSourceAdjustments[`po_${tx.id}`]?.value || 0}
+                                value={dataSourceAdjustments[`po_${tx.id}`]?.value ?? ''}
                                 onChange={(e) => setDataSourceAdjustments(prev => ({
                                   ...prev,
-                                  [`po_${tx.id}`]: { enabled: prev[`po_${tx.id}`]?.enabled ?? true, type: prev[`po_${tx.id}`]?.type || 'percentage', value: Number(e.target.value) }
+                                  [`po_${tx.id}`]: { enabled: prev[`po_${tx.id}`]?.enabled ?? true, type: prev[`po_${tx.id}`]?.type || 'percentage', value: e.target.value === '' ? '' : Number(e.target.value) }
                                 }))}
                                 placeholder="0"
                               />
@@ -1438,10 +1440,10 @@ export default function ScenarioPlanner() {
                               <Input
                                 type="number"
                                 className="h-8 text-xs"
-                                value={dataSourceAdjustments[`recurring_${recurring.id}`]?.value || 0}
+                                value={dataSourceAdjustments[`recurring_${recurring.id}`]?.value ?? ''}
                                 onChange={(e) => setDataSourceAdjustments(prev => ({
                                   ...prev,
-                                  [`recurring_${recurring.id}`]: { enabled: prev[`recurring_${recurring.id}`]?.enabled ?? true, type: prev[`recurring_${recurring.id}`]?.type || 'percentage', value: Number(e.target.value) }
+                                  [`recurring_${recurring.id}`]: { enabled: prev[`recurring_${recurring.id}`]?.enabled ?? true, type: prev[`recurring_${recurring.id}`]?.type || 'percentage', value: e.target.value === '' ? '' : Number(e.target.value) }
                                 }))}
                                 placeholder="0"
                               />
@@ -1495,10 +1497,10 @@ export default function ScenarioPlanner() {
                               <Input
                                 type="number"
                                 className="h-8 text-xs"
-                                value={dataSourceAdjustments[`cc_${card.id}`]?.value || 0}
+                                value={dataSourceAdjustments[`cc_${card.id}`]?.value ?? ''}
                                 onChange={(e) => setDataSourceAdjustments(prev => ({
                                   ...prev,
-                                  [`cc_${card.id}`]: { enabled: prev[`cc_${card.id}`]?.enabled ?? true, type: prev[`cc_${card.id}`]?.type || 'percentage', value: Number(e.target.value) }
+                                  [`cc_${card.id}`]: { enabled: prev[`cc_${card.id}`]?.enabled ?? true, type: prev[`cc_${card.id}`]?.type || 'percentage', value: e.target.value === '' ? '' : Number(e.target.value) }
                                 }))}
                                 placeholder="0"
                               />
@@ -1727,37 +1729,43 @@ export default function ScenarioPlanner() {
                     Object.keys(dataSourceAdjustments).length === 0 ? (
                       <p className="text-xs text-muted-foreground">No individual adjustments configured</p>
                     ) : (
-                      Object.entries(dataSourceAdjustments).map(([key, adj]) => (
+                    Object.entries(dataSourceAdjustments).map(([key, adj]) => {
+                      const numValue = typeof adj.value === 'number' ? adj.value : 0;
+                      return (
                         <div key={key} className="flex justify-between text-xs">
                           <span className="text-muted-foreground">{key}:</span>
                           <span className="font-medium">
                             {adj.type === 'percentage' 
-                              ? `${adj.value > 0 ? '+' : ''}${adj.value}%`
-                              : `${adj.value > 0 ? '+' : ''}$${Math.abs(adj.value).toLocaleString()}`
+                              ? `${numValue > 0 ? '+' : ''}${numValue}%`
+                              : `${numValue > 0 ? '+' : ''}$${Math.abs(numValue).toLocaleString()}`
                             }
                           </span>
                         </div>
-                      ))
+                      );
+                    })
                     )
                   ) : (
                     Object.entries(globalAdjustments)
-                      .filter(([_, adj]) => adj.value !== 0)
+                      .filter(([_, adj]) => typeof adj.value === 'number' && adj.value !== 0)
                       .length === 0 ? (
                       <p className="text-xs text-muted-foreground">No global adjustments configured</p>
                     ) : (
                       Object.entries(globalAdjustments)
-                        .filter(([_, adj]) => adj.value !== 0)
-                        .map(([key, adj]) => (
-                          <div key={key} className="flex justify-between text-xs">
-                            <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
-                            <span className="font-medium">
-                              {adj.type === 'percentage' 
-                                ? `${adj.value > 0 ? '+' : ''}${adj.value}%`
-                                : `${adj.value > 0 ? '+' : ''}$${Math.abs(adj.value).toLocaleString()}`
-                              }
-                            </span>
-                          </div>
-                        ))
+                        .filter(([_, adj]) => typeof adj.value === 'number' && adj.value !== 0)
+                        .map(([key, adj]) => {
+                          const numValue = typeof adj.value === 'number' ? adj.value : 0;
+                          return (
+                            <div key={key} className="flex justify-between text-xs">
+                              <span className="text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                              <span className="font-medium">
+                                {adj.type === 'percentage' 
+                                  ? `${numValue > 0 ? '+' : ''}${numValue}%`
+                                  : `${numValue > 0 ? '+' : ''}$${Math.abs(numValue).toLocaleString()}`
+                                }
+                              </span>
+                            </div>
+                          );
+                        })
                     )
                   )}
                 </div>
