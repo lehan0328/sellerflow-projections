@@ -615,8 +615,25 @@ export default function ScenarioPlanner() {
 
               {!useIndividualAdjustments ? (
                 <div className="space-y-3">
-                  <Label className="text-base">Global Data Source Adjustments</Label>
-                  <p className="text-sm text-muted-foreground">Apply adjustments to entire categories</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-base">Global Data Source Adjustments</Label>
+                      <p className="text-sm text-muted-foreground">Apply adjustments to entire categories</p>
+                    </div>
+                    {(Object.values(globalAdjustments).some(adj => adj.enabled) || Object.values(dataSourceAdjustments).some(adj => adj.enabled)) && (
+                      <Card className="bg-muted/50 border-primary/20">
+                        <CardContent className="p-3">
+                          <div className="text-xs text-muted-foreground mb-1">Live Preview Impact</div>
+                          <div className={`text-lg font-bold ${cumulativeImpact.difference >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {cumulativeImpact.difference >= 0 ? '+' : ''}${Math.abs(cumulativeImpact.difference).toLocaleString()}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {cumulativeImpact.difference >= 0 ? 'Improvement' : 'Decline'} vs baseline
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
                   
                   <div className="space-y-2">
                     {/* Income Items */}
