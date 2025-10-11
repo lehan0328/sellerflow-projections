@@ -13,7 +13,8 @@ import {
   MessageSquare,
   Users,
   Database,
-  Repeat
+  Repeat,
+  FileText
 } from "lucide-react";
 
 const navigationItems = [
@@ -71,6 +72,11 @@ const navigationItems = [
     id: 'notifications',
     label: 'Notifications',
     icon: Bell,
+  },
+  {
+    id: 'invoices',
+    label: 'Billing & Invoices',
+    icon: FileText,
   },
   {
     id: 'export',
