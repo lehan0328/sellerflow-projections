@@ -480,16 +480,25 @@ export const CashFlowInsights = ({
                           {isForecastGenerating && <Loader2 className="h-3 w-3 animate-spin text-purple-600" />}
                         </Label>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleRefreshForecast}
-                        disabled={!includeForecastPayouts || isRefreshing || isForecastGenerating}
-                        className="h-7 w-7 hover:bg-white/50 dark:hover:bg-black/20"
-                        title="Refresh forecast (24-hour cooldown)"
-                      >
-                        <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={handleRefreshForecast}
+                              disabled={!includeForecastPayouts || isRefreshing || isForecastGenerating}
+                              className="h-7 w-7 hover:bg-white/50 dark:hover:bg-black/20"
+                            >
+                              <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">Refresh forecast</p>
+                            <p className="text-xs text-muted-foreground">Can only be refreshed once every 24 hours</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-sm">
