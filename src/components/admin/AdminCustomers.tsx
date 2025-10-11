@@ -387,13 +387,9 @@ export const AdminCustomers = () => {
                       </TableCell>
                       <TableCell>
                         {customer.plan_override === 'referred_user_discount' ? (
-                          <Badge variant="secondary" className="text-xs">
-                            Referred User (10% off)
-                          </Badge>
+                          <span className="text-sm">10% off</span>
                         ) : customer.discount_redeemed_at ? (
-                          <Badge variant="secondary" className="text-xs">
-                            Discount Applied
-                          </Badge>
+                          <span className="text-sm">10% off</span>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
