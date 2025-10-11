@@ -92,7 +92,7 @@ const BankTransactions = () => {
               <SelectItem value="all">All Accounts</SelectItem>
               {accounts.map(account => (
                 <SelectItem key={account.id} value={account.id}>
-                  {account.institution_name} - {account.account_name} (••{account.account_number})
+                  {account.institution_name} - {account.account_name}
                 </SelectItem>
               ))}
             </SelectContent>
