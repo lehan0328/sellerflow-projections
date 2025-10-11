@@ -43,16 +43,19 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Get all user emails from auth.users
-    const { data: usersData } = await supabaseClient.functions.invoke('get-user-emails', {
-      body: { userIds: [] } // Empty array to get all users
-    });
-
-    if (!usersData?.emails) {
-      throw new Error("Failed to fetch user emails");
+    // Get all users directly from auth.users using service role
+    const { data: authUsers, error: authError } = await supabaseClient.auth.admin.listUsers();
+    
+    if (authError) {
+      throw new Error(`Failed to fetch users: ${authError.message}`);
     }
 
-    const userEmails = usersData.emails;
+    const userEmails: Record<string, string> = {};
+    authUsers.users.forEach(user => {
+      if (user.email) {
+        userEmails[user.id] = user.email;
+      }
+    });
     let updated = 0;
     let skipped = 0;
     let errors = 0;
