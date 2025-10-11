@@ -347,7 +347,7 @@ export const AdminCustomers = () => {
                             {formatPlanName(customer.plan_override)}
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground">Free</span>
+                          <span className="text-muted-foreground">No Plan</span>
                         )}
                       </TableCell>
                       <TableCell>

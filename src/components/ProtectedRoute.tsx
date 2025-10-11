@@ -52,8 +52,8 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     fetchTrialStatus();
   }, [user]);
 
-  // Check if trial has expired
-  const isTrialExpired = !subscribed && trialEnd && new Date(trialEnd) < new Date();
+  // Check if trial has expired or user has no plan
+  const isTrialExpired = !subscribed && (!trialEnd || new Date(trialEnd) < new Date());
 
   if (loading || subLoading || checkingTrial) {
     return <LoadingScreen message="Verifying your session..." />;
