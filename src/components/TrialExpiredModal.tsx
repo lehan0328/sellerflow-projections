@@ -3,19 +3,51 @@ import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogPortal } fr
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
 import { PRICING_PLANS, ENTERPRISE_TIERS } from "@/hooks/useSubscription";
-import { AlertCircle, Check, X } from "lucide-react";
+import { AlertCircle, Check, X, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 
 export const TrialExpiredModal = ({ open }: { open: boolean }) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [userRevenue, setUserRevenue] = useState<string | null>(null);
   const [currentRevenue, setCurrentRevenue] = useState<number>(0);
   const [recommendedPlan, setRecommendedPlan] = useState<any>(null);
   const [availablePlans, setAvailablePlans] = useState<any[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [isYearly, setIsYearly] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/auth');
+  };
+
+  const handleSubscribe = async (priceId: string) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { priceId }
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create checkout session. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -179,9 +211,20 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
           className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-[700px] translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg"
         >
         <DialogHeader>
-          <div className="flex items-center gap-2 text-destructive">
-            <AlertCircle className="h-5 w-5" />
-            <DialogTitle>Your Trial Has Ended</DialogTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              <DialogTitle>Your Trial Has Ended</DialogTitle>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
           </div>
           <DialogDescription>
             Your free trial has expired. Continue with the plan that fits your business.
@@ -267,17 +310,15 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                   </div>
 
                   <Button 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      window.location.href = `/upgrade-plan?priceId=${plan.priceId}`;
-                    }}
+                    onClick={() => handleSubscribe(plan.priceId)}
+                    disabled={isLoading}
                     className={`w-full h-10 text-xs font-semibold mb-3 ${
                       plan.isRecommended ? 'bg-gradient-primary' : ''
                     }`}
                     variant={plan.isRecommended ? 'default' : 'outline'}
                     size="lg"
                   >
-                    Subscribe Now
+                    {isLoading ? 'Processing...' : 'Subscribe Now'}
                   </Button>
                 </div>
 
