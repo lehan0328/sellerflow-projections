@@ -1,7 +1,8 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain } from "lucide-react";
+import { Home, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { useNotifications } from "@/hooks/useNotifications";
 import {
   Sidebar,
   SidebarContent,
@@ -25,6 +26,7 @@ interface AppSidebarProps {
 
 const sections = [
   { id: "overview", title: "Overview", icon: Home },
+  { id: "notifications", title: "Notifications", icon: Bell, showBadge: true },
   { id: "transactions", title: "Transactions", icon: TrendingUp },
   { id: "bank-transactions", title: "Bank Transactions", icon: Building2 },
   { id: "financials", title: "Financials", icon: Wallet },
@@ -42,6 +44,7 @@ const sections = [
 export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }: AppSidebarProps) {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const { unreadCount } = useNotifications();
 
   return (
     <Sidebar className={isCollapsed ? "w-16" : "w-64"} collapsible="icon">
@@ -110,6 +113,14 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }
                         {!isCollapsed && (
                           <span className={`flex items-center ${isBookCall || isFlexReport ? "justify-center w-full" : "justify-between w-full pr-1"}`}>
                             <span>{section.title}</span>
+                            {'showBadge' in section && section.showBadge && unreadCount > 0 && (
+                              <Badge 
+                                variant="destructive" 
+                                className="ml-auto text-[10px] font-bold px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center"
+                              >
+                                {unreadCount}
+                              </Badge>
+                            )}
                             {section.id === "referrals" && (
                               <Badge 
                                 variant="secondary" 
@@ -119,6 +130,11 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }
                               </Badge>
                             )}
                           </span>
+                        )}
+                        {isCollapsed && 'showBadge' in section && section.showBadge && unreadCount > 0 && (
+                          <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
+                            {unreadCount}
+                          </div>
                         )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>

@@ -84,7 +84,6 @@ export const CashFlowChart = ({
   const events = propEvents || defaultEvents;
   const totalAvailableCash = 145750;
 
-  // Generate chart data
   const generateChartData = () => {
     const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
     let runningTotal = totalAvailableCash;
@@ -101,12 +100,14 @@ export const CashFlowChart = ({
       runningTotal += dailyChange;
       
       return {
-        date: format(day, 'MMM dd'),
+        date: format(day, 'MMM dd, yyyy'),
         fullDate: day,
         cashFlow: runningTotal,
         dailyChange,
         inflow: dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0),
         outflow: dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0),
+        eventCount: dayEvents.length,
+        events: dayEvents
       };
     });
   };
@@ -203,8 +204,11 @@ export const CashFlowChart = ({
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="date" 
-                    tick={{ fontSize: 12 }}
-                    interval="preserveStartEnd"
+                    tick={{ fontSize: 11 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    interval={Math.floor(chartData.length / 10)}
                   />
                   <YAxis 
                     tick={{ fontSize: 12 }}
@@ -214,25 +218,33 @@ export const CashFlowChart = ({
                     content={<ChartTooltipContent />}
                     formatter={(value: number, name: string) => [
                       `$${value.toLocaleString()}`,
-                      'Cash Flow'
+                      'Cash Balance'
                     ]}
                     labelFormatter={(label, payload) => {
                       if (payload && payload[0]) {
                         const data = payload[0].payload;
                         return (
-                          <div className="space-y-1">
-                            <p className="font-semibold">{label}</p>
-                            <div className="text-sm space-y-1">
+                          <div className="space-y-2">
+                            <p className="font-semibold text-base">{label}</p>
+                            <div className="text-sm space-y-1.5 border-t pt-2">
+                              <p className="font-semibold">
+                                Balance: ${data.cashFlow.toLocaleString()}
+                              </p>
                               {data.dailyChange !== 0 && (
-                                <p className={data.dailyChange > 0 ? 'text-green-600' : 'text-red-600'}>
-                                  Daily Change: ${data.dailyChange > 0 ? '+' : ''}${data.dailyChange.toLocaleString()}
+                                <p className={`font-medium ${data.dailyChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  Net Change: {data.dailyChange > 0 ? '+' : ''}${data.dailyChange.toLocaleString()}
                                 </p>
                               )}
                               {data.inflow > 0 && (
-                                <p className="text-green-600">Inflow: +${data.inflow.toLocaleString()}</p>
+                                <p className="text-green-600">↑ Inflow: +${data.inflow.toLocaleString()}</p>
                               )}
                               {data.outflow > 0 && (
-                                <p className="text-red-600">Outflow: -${data.outflow.toLocaleString()}</p>
+                                <p className="text-red-600">↓ Outflow: -${data.outflow.toLocaleString()}</p>
+                              )}
+                              {data.eventCount > 0 && (
+                                <p className="text-muted-foreground text-xs mt-2 pt-2 border-t">
+                                  {data.eventCount} transaction{data.eventCount > 1 ? 's' : ''} on this date
+                                </p>
                               )}
                             </div>
                           </div>
