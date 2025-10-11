@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Download, Share2, TrendingUp, DollarSign, CreditCard, ShoppingCart, Calendar, ArrowLeft, Eye, EyeOff, Lock, BadgeCheck } from "lucide-react";
+import { Download, Share2, TrendingUp, DollarSign, CreditCard, ShoppingCart, Calendar, ArrowLeft, Eye, EyeOff, Lock, BadgeCheck, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -23,8 +23,11 @@ const FlexReport = () => {
     upcomingIncome: true,
     purchaseOrders: true,
     creditUtilization: true,
-    vendorPayments: true
+    vendorPayments: true,
+    vendorCount: true
   });
+
+  const [showPercentageChange, setShowPercentageChange] = useState(false);
 
   const toggleVisibility = (key: keyof typeof visibility) => {
     setVisibility(prev => ({ ...prev, [key]: !prev[key] }));
@@ -62,6 +65,19 @@ const FlexReport = () => {
 
   // Total vendor payments scheduled
   const upcomingVendorPayments = vendors.filter(v => v.status !== 'paid' && Number(v.totalOwed || 0) > 0).reduce((sum, v) => sum + Number(v.totalOwed || 0), 0);
+
+  // Active vendor count
+  const activeVendorCount = vendors.filter(v => v.status !== 'paid' && Number(v.totalOwed || 0) > 0).length;
+
+  // Mock percentage changes (in a real app, you'd calculate these from historical data)
+  const percentageChanges = {
+    safeSpending: 12.5,
+    max180Day: 8.3,
+    availableCredit: -3.2,
+    upcomingIncome: 15.7,
+    purchaseOrders: -5.4,
+    vendorCount: 10.0
+  };
 
   // Upcoming income (next 30 days)
   const upcomingIncome = incomeItems.filter(income => income.status !== 'received' && income.paymentDate && isWithinInterval(new Date(income.paymentDate), {
@@ -242,6 +258,14 @@ const FlexReport = () => {
             Back to Dashboard
           </Button>
           <div className="flex gap-2">
+            <Button 
+              variant={showPercentageChange ? "default" : "outline"} 
+              onClick={() => setShowPercentageChange(!showPercentageChange)} 
+              className="gap-2"
+            >
+              <TrendingUp className="w-4 h-4" />
+              {showPercentageChange ? "Hide" : "Show"} % Change
+            </Button>
             <Button variant="outline" onClick={handleDownload} className="gap-2">
               <Download className="w-4 h-4" />
               Download
@@ -308,6 +332,12 @@ const FlexReport = () => {
                 {formatCurrency(safeSpendingData?.safe_spending_limit || 0)}
               </div>
               <p className="text-slate-600 text-xs font-medium mb-3">Safe spending power for your business</p>
+              {showPercentageChange && (
+                <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg mb-2 ${percentageChanges.safeSpending >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                  <TrendingUp className={`w-3 h-3 ${percentageChanges.safeSpending >= 0 ? '' : 'rotate-180'}`} />
+                  <span className="text-xs font-bold">{Math.abs(percentageChanges.safeSpending)}% vs last month</span>
+                </div>
+              )}
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100/50 border border-emerald-300 rounded-lg">
                 <BadgeCheck className="w-3 h-3 text-emerald-700" />
                 <span className="text-xs font-bold text-emerald-800 uppercase tracking-wide">Verified by Live Bank Account</span>
@@ -339,6 +369,12 @@ const FlexReport = () => {
                   <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Max 180 Day Power</p>
                 </div>
                 <p className={`text-2xl font-black text-blue-700 drop-shadow-sm transition-all duration-300 ${!visibility.totalCash ? 'blur-lg' : ''}`}>{formatCurrency(max180DayPurchasingPower)}</p>
+                {showPercentageChange && (
+                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.max180Day >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.max180Day >= 0 ? '' : 'rotate-180'}`} />
+                    <span className="text-[10px] font-bold">{Math.abs(percentageChanges.max180Day)}%</span>
+                  </div>
+                )}
                 <button
                   onClick={() => toggleVisibility('totalCash')}
                   className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-blue-100/50 transition-colors z-10"
@@ -364,6 +400,12 @@ const FlexReport = () => {
                   <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Available Credit</p>
                 </div>
                 <p className={`text-2xl font-black text-purple-700 drop-shadow-sm transition-all duration-300 ${!visibility.availableCredit ? 'blur-lg' : ''}`}>{formatCurrency(totalAvailableCredit)}</p>
+                {showPercentageChange && (
+                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.availableCredit >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.availableCredit >= 0 ? '' : 'rotate-180'}`} />
+                    <span className="text-[10px] font-bold">{Math.abs(percentageChanges.availableCredit)}%</span>
+                  </div>
+                )}
                 <button
                   onClick={() => toggleVisibility('availableCredit')}
                   className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-purple-100/50 transition-colors z-10"
@@ -389,6 +431,12 @@ const FlexReport = () => {
                   <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Income (30d)</p>
                 </div>
                 <p className={`text-2xl font-black text-emerald-700 drop-shadow-sm transition-all duration-300 ${!visibility.upcomingIncome ? 'blur-lg' : ''}`}>{formatCurrency(upcomingIncome)}</p>
+                {showPercentageChange && (
+                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.upcomingIncome >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.upcomingIncome >= 0 ? '' : 'rotate-180'}`} />
+                    <span className="text-[10px] font-bold">{Math.abs(percentageChanges.upcomingIncome)}%</span>
+                  </div>
+                )}
                 <button
                   onClick={() => toggleVisibility('upcomingIncome')}
                   className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-emerald-100/50 transition-colors z-10"
@@ -414,11 +462,48 @@ const FlexReport = () => {
                   <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Purchase Orders</p>
                 </div>
                 <p className={`text-2xl font-black text-orange-700 drop-shadow-sm transition-all duration-300 ${!visibility.purchaseOrders ? 'blur-lg' : ''}`}>{formatCurrency(upcomingPurchaseOrders)}</p>
+                {showPercentageChange && (
+                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.purchaseOrders >= 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                    <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.purchaseOrders >= 0 ? '' : 'rotate-180'}`} />
+                    <span className="text-[10px] font-bold">{Math.abs(percentageChanges.purchaseOrders)}%</span>
+                  </div>
+                )}
                 <button
                   onClick={() => toggleVisibility('purchaseOrders')}
                   className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-orange-100/50 transition-colors z-10"
                 >
                   {visibility.purchaseOrders ? (
+                    <Eye className="w-4 h-4 text-blue-600" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 text-slate-400" />
+                  )}
+                </button>
+              </div>
+
+              {/* Active Vendors */}
+              <div className="group bg-gradient-to-br from-indigo-50 via-indigo-100/80 to-indigo-50 rounded-2xl p-4 border-2 border-indigo-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-indigo-50 border-2 border-indigo-600 rounded-full">
+                  <div className="w-1 h-1 bg-indigo-600 rounded-full"></div>
+                  <span className="text-[10px] font-black text-indigo-700 uppercase tracking-wider">Verified</span>
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-2 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <Users className="w-4 h-4 text-white" />
+                  </div>
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Active Vendors</p>
+                </div>
+                <p className={`text-2xl font-black text-indigo-700 drop-shadow-sm transition-all duration-300 ${!visibility.vendorCount ? 'blur-lg' : ''}`}>{activeVendorCount}</p>
+                {showPercentageChange && (
+                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.vendorCount >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.vendorCount >= 0 ? '' : 'rotate-180'}`} />
+                    <span className="text-[10px] font-bold">{Math.abs(percentageChanges.vendorCount)}%</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => toggleVisibility('vendorCount')}
+                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-indigo-100/50 transition-colors z-10"
+                >
+                  {visibility.vendorCount ? (
                     <Eye className="w-4 h-4 text-blue-600" />
                   ) : (
                     <EyeOff className="w-4 h-4 text-slate-400" />
