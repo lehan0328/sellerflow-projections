@@ -1099,6 +1099,12 @@ export const CashFlowCalendar = ({
                         strokeWidth={2}
                         dot={(props: any) => {
                           const { cx, cy, payload } = props;
+                          
+                          // Only show dot if there are transactions on this date
+                          if (!payload.transactions || payload.transactions.length === 0) {
+                            return null;
+                          }
+                          
                           if (payload.hasAmazonForecast) {
                             // Forecasted payout - purple/dashed
                             return (
