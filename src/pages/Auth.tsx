@@ -19,6 +19,7 @@ export const Auth = () => {
   const [showResetForm, setShowResetForm] = useState(false);
   const [showNewPasswordForm, setShowNewPasswordForm] = useState(false);
   const [showEnterpriseSetup, setShowEnterpriseSetup] = useState(false);
+  const [showInviteSignup, setShowInviteSignup] = useState(false);
 
   // Sign in form data
   const [signInData, setSignInData] = useState({
@@ -32,12 +33,21 @@ export const Auth = () => {
     confirmPassword: ''
   });
 
+  const [inviteSignupData, setInviteSignupData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+  });
+
   useEffect(() => {
     // Check for invite token
     const inviteToken = searchParams.get('invite');
     if (inviteToken) {
       // Store invite token for after authentication
       sessionStorage.setItem('pendingInvite', inviteToken);
+      setShowInviteSignup(true);
     }
 
     // Check for password reset token
@@ -63,6 +73,8 @@ export const Auth = () => {
             
             sessionStorage.removeItem('pendingInvite');
             toast.success(`Successfully joined team as ${data.role}!`);
+            navigate('/dashboard');
+            return;
           } catch (error: any) {
             toast.error(error.message || 'Failed to accept invitation');
           }
@@ -76,6 +88,22 @@ export const Auth = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
+        // Check for pending invite after sign in
+        const pendingInvite = sessionStorage.getItem('pendingInvite');
+        if (pendingInvite) {
+          try {
+            const { data, error } = await supabase.functions.invoke('accept-team-invitation', {
+              body: { inviteToken: pendingInvite }
+            });
+            
+            if (error) throw error;
+            
+            sessionStorage.removeItem('pendingInvite');
+            toast.success(`Successfully joined team as ${data.role}!`);
+          } catch (error: any) {
+            toast.error(error.message || 'Failed to accept invitation');
+          }
+        }
         navigate('/dashboard');
       }
     });
@@ -212,6 +240,55 @@ export const Auth = () => {
     }
   };
 
+  const handleInviteSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!inviteSignupData.email || !inviteSignupData.password || !inviteSignupData.confirmPassword || !inviteSignupData.firstName || !inviteSignupData.lastName) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    if (inviteSignupData.password !== inviteSignupData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    if (inviteSignupData.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Create user account
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: inviteSignupData.email,
+        password: inviteSignupData.password,
+        options: {
+          data: {
+            first_name: inviteSignupData.firstName,
+            last_name: inviteSignupData.lastName,
+          }
+        }
+      });
+
+      if (signUpError) throw signUpError;
+
+      // The onAuthStateChange will handle accepting the invitation after sign in
+      toast.success('Account created! Joining team...');
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      if (error.message.includes('already registered')) {
+        toast.error('This email is already registered. Please sign in instead.');
+        setShowInviteSignup(false);
+      } else {
+        toast.error(error.message || 'Failed to create account');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
 
   return (
@@ -253,10 +330,12 @@ export const Auth = () => {
           
           <div className="space-y-3">
             <h1 className="text-4xl font-bold tracking-tight">
-              {showNewPasswordForm ? 'Set New Password' : showResetForm ? 'Reset Password' : 'Welcome Back'}
+              {showInviteSignup ? 'Join Your Team' : showNewPasswordForm ? 'Set New Password' : showResetForm ? 'Reset Password' : 'Welcome Back'}
             </h1>
             <p className="text-muted-foreground text-lg">
-              {showNewPasswordForm 
+              {showInviteSignup
+                ? 'Create your account to join the team'
+                : showNewPasswordForm 
                 ? 'Enter your new password below'
                 : showResetForm 
                 ? 'Enter your email to receive a password reset link'
@@ -271,7 +350,108 @@ export const Auth = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           
           <CardContent className="p-10 relative z-10">
-            {showNewPasswordForm ? (
+            {showInviteSignup ? (
+              <div className="space-y-4">
+                <form onSubmit={handleInviteSignup} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName" className="text-base">First Name</Label>
+                      <Input
+                        id="firstName"
+                        type="text"
+                        value={inviteSignupData.firstName}
+                        onChange={(e) => setInviteSignupData({ ...inviteSignupData, firstName: e.target.value })}
+                        className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName" className="text-base">Last Name</Label>
+                      <Input
+                        id="lastName"
+                        type="text"
+                        value={inviteSignupData.lastName}
+                        onChange={(e) => setInviteSignupData({ ...inviteSignupData, lastName: e.target.value })}
+                        className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                        disabled={loading}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="inviteEmail" className="text-base">Email</Label>
+                    <Input
+                      id="inviteEmail"
+                      type="email"
+                      value={inviteSignupData.email}
+                      onChange={(e) => setInviteSignupData({ ...inviteSignupData, email: e.target.value })}
+                      className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                      disabled={loading}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="invitePassword" className="text-base">Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="invitePassword"
+                        type={showPassword ? "text" : "password"}
+                        value={inviteSignupData.password}
+                        onChange={(e) => setInviteSignupData({ ...inviteSignupData, password: e.target.value })}
+                        className="h-12 pr-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                        disabled={loading}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="inviteConfirmPassword" className="text-base">Confirm Password</Label>
+                    <Input
+                      id="inviteConfirmPassword"
+                      type={showPassword ? "text" : "password"}
+                      value={inviteSignupData.confirmPassword}
+                      onChange={(e) => setInviteSignupData({ ...inviteSignupData, confirmPassword: e.target.value })}
+                      className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                      disabled={loading}
+                      required
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-primary h-12 text-base font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
+                    disabled={loading}
+                  >
+                    {loading ? 'Creating Account...' : 'Create Account & Join Team'}
+                  </Button>
+
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowInviteSignup(false);
+                        sessionStorage.removeItem('pendingInvite');
+                        navigate('/auth');
+                      }}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      Already have an account? Sign in
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : showNewPasswordForm ? (
               <div className="space-y-4">
                 <form onSubmit={handleNewPasswordSubmit} className="space-y-4">
                   <div className="space-y-2">
@@ -413,27 +593,33 @@ export const Auth = () => {
                   </Button>
                 </form>
 
-
-                <div className="text-center mt-8">
-                  <p className="text-base text-muted-foreground">
-                    Don't have an account?{' '}
-                    <button
-                      type="button"
-                      onClick={() => navigate('/')}
-                      className="text-primary hover:text-primary/80 font-semibold transition-colors relative after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-primary after:transition-all hover:after:w-full"
-                    >
-                      Start free trial
-                    </button>
-                  </p>
+                <div className="relative my-8">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-primary/20"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 text-muted-foreground bg-card">Don't have an account?</span>
+                  </div>
                 </div>
+
+                <Button
+                  variant="outline"
+                  className="w-full h-12 border-primary/20 bg-background/50 backdrop-blur-sm hover:bg-primary/5 hover:border-primary/40 transition-all text-base font-semibold"
+                  onClick={() => navigate('/sign-up')}
+                >
+                  Create Account
+                </Button>
               </div>
-          )}
-        </CardContent>
+            )}
+          </CardContent>
         </Card>
-        </div>
       </div>
     </div>
+
+    <EnterpriseSetupModal 
+      open={showEnterpriseSetup}
+      onOpenChange={setShowEnterpriseSetup}
+    />
+  </div>
   );
 };
-
-export default Auth;
