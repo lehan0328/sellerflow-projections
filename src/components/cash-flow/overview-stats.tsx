@@ -1,6 +1,7 @@
 import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw, CheckCircle, ShoppingCart, AlertCircle } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -10,6 +11,8 @@ import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useSafeSpending } from "@/hooks/useSafeSpending";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
+import { useVendorTransactions } from "@/hooks/useVendorTransactions";
+import { useIncome } from "@/hooks/useIncome";
 import { OverdueTransactionsModal } from "./overdue-transactions-modal";
 
 interface OverviewStatsProps {
@@ -75,6 +78,8 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const { totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
   const { data: safeSpendingData, isLoading: isLoadingSafeSpending, updateReserveAmount, refetch: refetchSafeSpending } = useSafeSpending();
   const { amazonPayouts, monthlyOrdersTotal } = useAmazonPayouts();
+  const { transactions: vendorTransactions } = useVendorTransactions();
+  const { incomeItems } = useIncome();
   const [reserveInput, setReserveInput] = useState<string>("");
   
   // Force fresh calculation on mount
@@ -282,6 +287,24 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
     })
     .reduce((sum, payout) => sum + (payout.orders_total || 0), 0);
 
+  // Calculate overdue transactions
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const overdueVendorCount = vendorTransactions.filter(tx => {
+    const dueDate = new Date(tx.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    return tx.status === 'pending' && dueDate < today;
+  }).length;
+
+  const overdueIncomeCount = incomeItems.filter(income => {
+    const paymentDate = new Date(income.paymentDate);
+    paymentDate.setHours(0, 0, 0, 0);
+    return income.status === 'pending' && paymentDate < today;
+  }).length;
+
+  const totalOverdueCount = overdueVendorCount + overdueIncomeCount;
+
   return (<>
       <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
@@ -390,13 +413,18 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                   {timeRangeOptions.find(opt => opt.value === upcomingTimeRange)?.label}
                 </p>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={() => setShowOverdueModal(true)}
-                  className="h-6 px-2 text-xs text-destructive hover:text-destructive"
+                  className="h-7 px-2 text-xs border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
                 >
                   <AlertCircle className="h-3 w-3 mr-1" />
                   Overdue
+                  {totalOverdueCount > 0 && (
+                    <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">
+                      {totalOverdueCount}
+                    </Badge>
+                  )}
                 </Button>
               </div>
             </div>
