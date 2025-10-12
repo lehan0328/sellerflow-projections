@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { addDays, isToday, isBefore, startOfDay, format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -79,6 +81,7 @@ const Dashboard = () => {
     match: TransactionMatch | null;
   }>({ open: false, match: null });
   const [matchingAll, setMatchingAll] = useState(false);
+  const [syncingTransactions, setSyncingTransactions] = useState(false);
   
   // Use database hooks
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, cleanupOrphanedVendors, refetch: refetchVendors } = useVendors();
@@ -1291,6 +1294,41 @@ const Dashboard = () => {
         );
       
       case "bank-transactions":
+        const handleSyncAllTransactions = async () => {
+          setSyncingTransactions(true);
+          try {
+            const syncPromises = accounts.map(account =>
+              supabase.functions.invoke('sync-plaid-transactions', {
+                body: { accountId: account.id, isInitialSync: false },
+              })
+            );
+
+            const results = await Promise.all(syncPromises);
+            const hasErrors = results.some(r => r.error);
+
+            if (hasErrors) {
+              toast({
+                title: "Sync completed with errors",
+                description: "Some accounts failed to sync. Please try again.",
+                variant: "destructive",
+              });
+            } else {
+              toast({
+                title: "Transactions synced",
+                description: "All bank transactions have been updated.",
+              });
+            }
+          } catch (error) {
+            toast({
+              title: "Sync failed",
+              description: "Failed to sync transactions. Please try again.",
+              variant: "destructive",
+            });
+          } finally {
+            setSyncingTransactions(false);
+          }
+        };
+
         const handleBankMatchAll = async () => {
           setMatchingAll(true);
           try {
@@ -1347,13 +1385,24 @@ const Dashboard = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">Bank Transactions</h2>
-              {matches.length > 0 && (
-                <TransactionMatchButton 
-                  matches={matches}
-                  onMatchAll={handleBankMatchAll}
-                  onReviewMatches={() => {}}
-                />
-              )}
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleSyncAllTransactions}
+                  disabled={syncingTransactions || accounts.length === 0}
+                  variant="outline"
+                  size="sm"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${syncingTransactions ? 'animate-spin' : ''}`} />
+                  {syncingTransactions ? 'Syncing...' : 'Sync All'}
+                </Button>
+                {matches.length > 0 && (
+                  <TransactionMatchButton 
+                    matches={matches}
+                    onMatchAll={handleBankMatchAll}
+                    onReviewMatches={() => {}}
+                  />
+                )}
+              </div>
             </div>
             {isBankTransactionsLoading ? (
               <div className="text-center py-8 text-muted-foreground">Loading transactions...</div>
