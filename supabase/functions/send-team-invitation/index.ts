@@ -82,20 +82,35 @@ serve(async (req) => {
       throw new Error("Team member limit reached. Please upgrade your plan or purchase additional seats.");
     }
 
-    // Check if user already exists in the account
-    const { data: existingUser, error: existingUserError } = await supabaseClient
-      .from("profiles")
-      .select("user_id, account_id")
+    // Check if there's already a pending invitation for this email
+    const { data: existingInvite } = await supabaseClient
+      .from("team_invitations")
+      .select("id")
+      .eq("account_id", profile.account_id)
       .eq("email", email)
-      .single();
+      .is("accepted_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
 
-    if (existingUserError && existingUserError.code !== 'PGRST116') {
-      console.error("[SEND-INVITATION] Error checking existing user:", existingUserError);
+    if (existingInvite) {
+      console.log("[SEND-INVITATION] Invitation already exists for this email");
+      throw new Error("An active invitation already exists for this email");
     }
 
-    if (existingUser && existingUser.account_id === profile.account_id) {
-      console.log("[SEND-INVITATION] User already member");
-      throw new Error("User is already a member of this team");
+    // Check if user with this email is already in auth.users and part of this account
+    const { data: { user: existingAuthUser } } = await supabaseClient.auth.admin.getUserByEmail(email);
+    
+    if (existingAuthUser) {
+      const { data: existingProfile } = await supabaseClient
+        .from("profiles")
+        .select("account_id")
+        .eq("user_id", existingAuthUser.id)
+        .maybeSingle();
+
+      if (existingProfile && existingProfile.account_id === profile.account_id) {
+        console.log("[SEND-INVITATION] User already member");
+        throw new Error("This user is already a member of your team");
+      }
     }
 
     console.log("[SEND-INVITATION] Creating invitation token");
