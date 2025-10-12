@@ -79,6 +79,7 @@ export const DataExport = () => {
           .select('*, vendors(name, category)')
           .eq('user_id', user.id)
           .eq('type', 'purchase_order')
+          .eq('archived', false)
           .gte('transaction_date', startDateStr)
           .lte('transaction_date', endDateStr)
           .order('transaction_date', { ascending: false });
@@ -88,6 +89,7 @@ export const DataExport = () => {
           .from('income')
           .select('*, customers(name)')
           .eq('user_id', user.id)
+          .eq('archived', false)
           .gte('payment_date', startDateStr)
           .lte('payment_date', endDateStr)
           .order('payment_date', { ascending: false });

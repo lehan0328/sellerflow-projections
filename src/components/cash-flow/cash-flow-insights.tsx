@@ -338,6 +338,7 @@ export const CashFlowInsights = ({
         .eq('user_id', user.id)
         .eq('type', 'purchase_order')
         .eq('status', 'pending')
+        .eq('archived', false)
         .not('credit_card_id', 'is', null);
 
       if (transactions) {
