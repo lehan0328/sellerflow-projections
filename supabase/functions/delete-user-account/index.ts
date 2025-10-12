@@ -37,12 +37,12 @@ serve(async (req) => {
     const adminUserId = userData.user?.id;
     if (!adminUserId) throw new Error("User not authenticated");
 
-    // Check if user has admin role
+    // Check if user has admin or owner role
     const { data: adminRole } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', adminUserId)
-      .eq('role', 'admin')
+      .in('role', ['admin', 'owner'])
       .maybeSingle();
 
     if (!adminRole) {
