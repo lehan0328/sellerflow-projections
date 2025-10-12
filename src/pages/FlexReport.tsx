@@ -13,8 +13,42 @@ import { addDays, isWithinInterval, startOfDay } from "date-fns";
 import aurenLogo from "@/assets/auren-full-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+
 const FlexReport = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  // Check user role - staff cannot access flex report
+  const { data: userRole } = useQuery({
+    queryKey: ['user-role', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data?.role;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Redirect staff users
+  React.useEffect(() => {
+    if (userRole === 'staff') {
+      toast({
+        title: "Access Restricted",
+        description: "Staff members cannot access the Flex Report.",
+        variant: "destructive",
+      });
+      navigate('/dashboard');
+    }
+  }, [userRole, navigate, toast]);
   const reportRef = useRef<HTMLDivElement>(null);
   
   // Visibility toggles for each metric

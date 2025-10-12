@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import aurenIcon from "@/assets/auren-icon-blue.png";
+import { useAdmin } from "@/hooks/useAdmin";
 
 interface AppSidebarProps {
   activeSection: string;
@@ -52,6 +53,7 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick, 
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
   const { unreadCount } = useNotifications();
+  const { userRole } = useAdmin();
 
   return (
     <Sidebar className={isCollapsed ? "w-16" : "w-64"} collapsible="icon">
@@ -186,6 +188,11 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick, 
                 const isRoute = 'isRoute' in section && section.isRoute;
                 const isBookCall = section.id === "book-call";
                 const isFlexReport = 'isFlexReport' in section && section.isFlexReport;
+                
+                // Hide flex report for staff users
+                if (isFlexReport && userRole === 'staff') {
+                  return null;
+                }
                 
                 return (
                   <SidebarMenuItem key={section.id}>

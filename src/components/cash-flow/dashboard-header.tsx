@@ -30,7 +30,7 @@ export function DashboardHeader({ onRefresh, isRefreshing = false, lastRefreshTi
       if (!user?.id) return null;
       const { data, error } = await supabase
         .from('profiles')
-        .select('first_name, last_name')
+        .select('first_name, last_name, company')
         .eq('user_id', user.id)
         .maybeSingle();
       
@@ -47,6 +47,10 @@ export function DashboardHeader({ onRefresh, isRefreshing = false, lastRefreshTi
   const getUserDisplayName = () => {
     if (isDemo) {
       return 'Demo';
+    }
+    // If user has a company name, use that (for accounts)
+    if (profile?.company) {
+      return profile.company;
     }
     if (profile?.first_name) {
       return profile.first_name;
