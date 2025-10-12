@@ -150,12 +150,12 @@ serve(async (req) => {
     console.log("[SEND-INVITATION] PREPARING TO SEND EMAIL");
     console.log("[SEND-INVITATION] To:", email);
     console.log("[SEND-INVITATION] Invite URL:", inviteUrl);
-    console.log("[SEND-INVITATION] From:", "Auren <onboarding@resend.dev>");
+    console.log("[SEND-INVITATION] From:", "Auren <team@aurenapp.com>");
     console.log("[SEND-INVITATION] ==========================================");
 
     try {
       const emailResult = await resend.emails.send({
-        from: "Auren <onboarding@resend.dev>",
+        from: "Auren <team@aurenapp.com>",
         to: [email],
         subject: `You've been invited to join ${companyName} on Auren`,
         html: `
