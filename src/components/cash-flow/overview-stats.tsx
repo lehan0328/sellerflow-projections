@@ -1,4 +1,4 @@
-import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw, CheckCircle, ShoppingCart } from "lucide-react";
+import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw, CheckCircle, ShoppingCart, AlertCircle } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,6 +10,7 @@ import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useSafeSpending } from "@/hooks/useSafeSpending";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
+import { OverdueTransactionsModal } from "./overdue-transactions-modal";
 
 interface OverviewStatsProps {
   totalCash?: number;
@@ -55,6 +56,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   });
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [showOverdueModal, setShowOverdueModal] = useState(false);
   
   // Save selections to localStorage
   useEffect(() => {
@@ -383,9 +385,20 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               <p className="text-sm text-slate-600">
                 {upcomingPayments.length > 0 ? `${upcomingPayments.length} payments due` : "No payments due"}
               </p>
-              <p className="text-xs text-amber-600">
-                {timeRangeOptions.find(opt => opt.value === upcomingTimeRange)?.label}
-              </p>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-amber-600">
+                  {timeRangeOptions.find(opt => opt.value === upcomingTimeRange)?.label}
+                </p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowOverdueModal(true)}
+                  className="h-6 px-2 text-xs text-destructive hover:text-destructive"
+                >
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  Overdue
+                </Button>
+              </div>
             </div>
             <Calendar className="h-8 w-8 text-amber-500" />
           </div>
@@ -446,6 +459,12 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Overdue Transactions Modal */}
+      <OverdueTransactionsModal 
+        open={showOverdueModal} 
+        onOpenChange={setShowOverdueModal} 
+      />
     </>
   );
 }

@@ -1,0 +1,186 @@
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useVendorTransactions } from "@/hooks/useVendorTransactions";
+import { useIncome } from "@/hooks/useIncome";
+import { AlertCircle, Trash2, CheckCircle } from "lucide-react";
+import { useState } from "react";
+
+interface OverdueTransactionsModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function OverdueTransactionsModal({ open, onOpenChange }: OverdueTransactionsModalProps) {
+  const { transactions, markAsPaid, deleteTransaction } = useVendorTransactions();
+  const { incomeItems, updateIncome, deleteIncome } = useIncome();
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Filter overdue vendor transactions
+  const overdueVendorTransactions = transactions.filter(tx => {
+    const dueDate = new Date(tx.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    return tx.status === 'pending' && dueDate < today;
+  });
+
+  // Filter overdue income
+  const overdueIncome = incomeItems.filter(income => {
+    const paymentDate = new Date(income.paymentDate);
+    paymentDate.setHours(0, 0, 0, 0);
+    return income.status === 'pending' && paymentDate < today;
+  });
+
+  const handleMarkVendorPaid = async (id: string) => {
+    setProcessingId(id);
+    try {
+      await markAsPaid(id);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleDeleteVendor = async (id: string) => {
+    setProcessingId(id);
+    try {
+      await deleteTransaction(id);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleMarkIncomePaid = async (income: any) => {
+    setProcessingId(income.id);
+    try {
+      await updateIncome(income.id, { ...income, status: 'collected' });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleDeleteIncome = async (id: string) => {
+    setProcessingId(id);
+    try {
+      await deleteIncome(id);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
+  const formatDate = (date: Date) => new Date(date).toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            Overdue Transactions
+          </DialogTitle>
+        </DialogHeader>
+
+        <Tabs defaultValue="vendors" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="vendors">
+              Overdue Payments ({overdueVendorTransactions.length})
+            </TabsTrigger>
+            <TabsTrigger value="income">
+              Overdue Income ({overdueIncome.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="vendors" className="space-y-4">
+            {overdueVendorTransactions.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No overdue vendor payments</p>
+            ) : (
+              <div className="space-y-3">
+                {overdueVendorTransactions.map((tx) => (
+                  <div key={tx.id} className="border rounded-lg p-4 bg-destructive/5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="font-medium">{tx.vendorName}</div>
+                        <div className="text-sm text-muted-foreground">{tx.description}</div>
+                        <div className="text-sm text-destructive mt-1">
+                          Due: {formatDate(tx.dueDate)}
+                        </div>
+                        <div className="text-lg font-bold mt-2">{formatCurrency(tx.amount)}</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleMarkVendorPaid(tx.id)}
+                          disabled={processingId === tx.id}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Mark Paid
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteVendor(tx.id)}
+                          disabled={processingId === tx.id}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="income" className="space-y-4">
+            {overdueIncome.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No overdue income</p>
+            ) : (
+              <div className="space-y-3">
+                {overdueIncome.map((income) => (
+                  <div key={income.id} className="border rounded-lg p-4 bg-destructive/5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="font-medium">{income.description}</div>
+                        <div className="text-sm text-muted-foreground">{income.source}</div>
+                        <div className="text-sm text-destructive mt-1">
+                          Expected: {formatDate(new Date(income.paymentDate))}
+                        </div>
+                        <div className="text-lg font-bold mt-2">{formatCurrency(income.amount)}</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleMarkIncomePaid(income)}
+                          disabled={processingId === income.id}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Mark Collected
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteIncome(income.id)}
+                          disabled={processingId === income.id}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}
