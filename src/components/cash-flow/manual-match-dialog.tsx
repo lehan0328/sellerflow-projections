@@ -23,12 +23,12 @@ interface BankTransaction {
   type: 'credit' | 'debit';
 }
 
-interface Vendor {
+interface VendorTransaction {
   id: string;
-  name: string;
-  totalOwed: number;
-  nextPaymentAmount: number;
-  nextPaymentDate: Date;
+  vendorName: string;
+  description: string;
+  amount: number;
+  dueDate: Date;
   category?: string;
 }
 
@@ -45,7 +45,7 @@ interface ManualMatchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   transaction: BankTransaction | null;
-  vendors?: Vendor[];
+  vendorTransactions?: VendorTransaction[];
   incomeItems?: Income[];
   onMatch: (matchId: string, matchType: 'income' | 'vendor') => Promise<void>;
 }
@@ -54,7 +54,7 @@ export function ManualMatchDialog({
   open,
   onOpenChange,
   transaction,
-  vendors = [],
+  vendorTransactions = [],
   incomeItems = [],
   onMatch,
 }: ManualMatchDialogProps) {
@@ -64,11 +64,11 @@ export function ManualMatchDialog({
   if (!transaction) return null;
 
   const isDebit = transaction.type === 'debit' || transaction.amount < 0;
-  const matchItems = isDebit ? vendors : incomeItems;
+  const matchItems = isDebit ? vendorTransactions : incomeItems;
 
   const filteredItems = matchItems.filter((item) => {
-    const searchString = 'name' in item 
-      ? item.name.toLowerCase()
+    const searchString = 'vendorName' in item 
+      ? `${item.vendorName} ${item.description}`.toLowerCase()
       : `${item.source} ${item.description}`.toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
   });
@@ -119,7 +119,7 @@ export function ManualMatchDialog({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={`Search ${isDebit ? 'vendors' : 'income items'}...`}
+              placeholder={`Search ${isDebit ? 'transactions' : 'income items'}...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
@@ -131,7 +131,7 @@ export function ManualMatchDialog({
             <div className="p-2 space-y-2">
               {filteredItems.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  No {isDebit ? 'vendors' : 'income items'} found
+                  No {isDebit ? 'transactions' : 'income items'} found
                 </div>
               ) : (
                 filteredItems.map((item) => (
@@ -152,11 +152,9 @@ export function ManualMatchDialog({
                         </div>
                         <div className="flex-1">
                           <p className="font-medium">
-                            {'name' in item ? item.name : item.source}
+                            {'vendorName' in item ? item.vendorName : item.source}
                           </p>
-                          {'description' in item && item.description && (
-                            <p className="text-sm text-muted-foreground">{item.description}</p>
-                          )}
+                          <p className="text-sm text-muted-foreground">{item.description}</p>
                           {'category' in item && item.category && (
                             <Badge variant="outline" className="mt-1 text-xs">
                               {item.category}
@@ -166,11 +164,11 @@ export function ManualMatchDialog({
                       </div>
                       <div className="text-right">
                         <p className="font-semibold">
-                          ${('totalOwed' in item ? item.totalOwed : item.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          ${item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {format(
-                            'nextPaymentDate' in item ? item.nextPaymentDate : item.paymentDate,
+                            'dueDate' in item ? item.dueDate : item.paymentDate,
                             'MMM dd, yyyy'
                           )}
                         </p>

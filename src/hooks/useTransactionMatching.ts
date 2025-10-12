@@ -1,6 +1,15 @@
 import { useMemo } from 'react';
 import { BankTransaction } from '@/components/cash-flow/bank-transaction-log';
-import { Vendor } from '@/hooks/useVendors';
+
+interface VendorTransaction {
+  id: string;
+  vendorName: string;
+  description: string;
+  amount: number;
+  dueDate: Date;
+  status: string;
+  category?: string;
+}
 
 interface IncomeItem {
   id: string;
@@ -14,7 +23,7 @@ interface IncomeItem {
 
 export interface TransactionMatch {
   bankTransaction: BankTransaction;
-  matchedVendor?: Vendor;
+  matchedVendorTransaction?: VendorTransaction;
   matchedIncome?: IncomeItem;
   matchScore: number;
   type: 'vendor' | 'income';
@@ -48,32 +57,39 @@ const areAmountsClose = (amount1: number, amount2: number): boolean => {
 
 export const useTransactionMatching = (
   bankTransactions: BankTransaction[],
-  vendors: Vendor[],
+  vendorTransactions: VendorTransaction[],
   incomeItems: IncomeItem[]
 ) => {
   const matches = useMemo(() => {
     const potentialMatches: TransactionMatch[] = [];
     
-    // Match bank transactions with vendors
+    // Match bank transactions with vendor transactions
     bankTransactions.forEach(bankTx => {
-      vendors.forEach(vendor => {
-        if (!vendor.totalOwed || vendor.totalOwed <= 0) return;
+      vendorTransactions.forEach(vendorTx => {
+        // Only match pending vendor transactions
+        if (vendorTx.status !== 'pending') return;
         
-        // Calculate name similarity
-        const nameSimilarity = calculateStringSimilarity(
-          bankTx.merchantName || bankTx.description,
-          vendor.name
+        // Calculate name similarity (compare bank transaction with vendor name and description)
+        const nameSimilarity = Math.max(
+          calculateStringSimilarity(
+            bankTx.merchantName || bankTx.description,
+            vendorTx.vendorName
+          ),
+          calculateStringSimilarity(
+            bankTx.merchantName || bankTx.description,
+            vendorTx.description
+          )
         );
         
         // Check if amounts are close
-        const amountMatch = areAmountsClose(Math.abs(bankTx.amount), vendor.totalOwed);
+        const amountMatch = areAmountsClose(Math.abs(bankTx.amount), vendorTx.amount);
         
-        // Match if name similarity is good and amounts are close
-        if (nameSimilarity >= 0.6 && amountMatch) {
-          const matchScore = (nameSimilarity + (amountMatch ? 0.4 : 0)) / 2;
+        // Match if name similarity is good OR (amounts match and moderate name similarity)
+        if ((nameSimilarity >= 0.6 && amountMatch) || (nameSimilarity >= 0.4 && amountMatch)) {
+          const matchScore = (nameSimilarity * 0.6) + (amountMatch ? 0.4 : 0);
           potentialMatches.push({
             bankTransaction: bankTx,
-            matchedVendor: vendor,
+            matchedVendorTransaction: vendorTx,
             matchScore,
             type: 'vendor'
           });
@@ -84,15 +100,21 @@ export const useTransactionMatching = (
       incomeItems.forEach(income => {
         if (income.status !== 'pending') return;
         
-        const nameSimilarity = calculateStringSimilarity(
-          bankTx.merchantName || bankTx.description,
-          income.source || income.description
+        const nameSimilarity = Math.max(
+          calculateStringSimilarity(
+            bankTx.merchantName || bankTx.description,
+            income.source
+          ),
+          calculateStringSimilarity(
+            bankTx.merchantName || bankTx.description,
+            income.description
+          )
         );
         
         const amountMatch = areAmountsClose(Math.abs(bankTx.amount), income.amount);
         
-        if (nameSimilarity >= 0.6 && amountMatch) {
-          const matchScore = (nameSimilarity + (amountMatch ? 0.4 : 0)) / 2;
+        if ((nameSimilarity >= 0.6 && amountMatch) || (nameSimilarity >= 0.4 && amountMatch)) {
+          const matchScore = (nameSimilarity * 0.6) + (amountMatch ? 0.4 : 0);
           potentialMatches.push({
             bankTransaction: bankTx,
             matchedIncome: income,
@@ -104,14 +126,14 @@ export const useTransactionMatching = (
     });
     
     return potentialMatches;
-  }, [bankTransactions, vendors, incomeItems]);
+  }, [bankTransactions, vendorTransactions, incomeItems]);
   
   const getMatchesForBankTransaction = (bankTxId: string) => {
     return matches.filter(m => m.bankTransaction.id === bankTxId);
   };
   
-  const getMatchesForVendor = (vendorId: string) => {
-    return matches.filter(m => m.matchedVendor?.id === vendorId);
+  const getMatchesForVendorTransaction = (vendorTxId: string) => {
+    return matches.filter(m => m.matchedVendorTransaction?.id === vendorTxId);
   };
   
   const getMatchesForIncome = (incomeId: string) => {
@@ -122,7 +144,7 @@ export const useTransactionMatching = (
     matches,
     isLoading: false,
     getMatchesForBankTransaction,
-    getMatchesForVendor,
+    getMatchesForVendorTransaction,
     getMatchesForIncome
   };
 };

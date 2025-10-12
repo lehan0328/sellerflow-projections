@@ -34,6 +34,7 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useBankTransactions } from "@/hooks/useBankTransactions";
 import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
@@ -92,7 +93,7 @@ const Dashboard = () => {
   // Use database hooks
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, cleanupOrphanedVendors, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction, refetch: refetchTransactions } = useTransactions();
-  const { transactions: vendorTransactions } = require('@/hooks/useVendorTransactions').useVendorTransactions();
+  const { transactions: vendorTransactions } = useVendorTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { transactions: bankTransactionsData, isLoading: isBankTransactionsLoading } = useBankTransactions();
   const { creditCards } = useCreditCards();
@@ -215,7 +216,11 @@ const Dashboard = () => {
   const { incomeItems, addIncome, updateIncome, deleteIncome, refetch: refetchIncome } = useIncome();
 
   // Transaction matching for bank transactions
-  const { matches, getMatchesForIncome } = useTransactionMatching(bankTransactions, vendors, incomeItems);
+  const { matches, getMatchesForIncome } = useTransactionMatching(
+    bankTransactions, 
+    vendorTransactions || [],
+    incomeItems
+  );
   
   // Calculate unmatched transactions that need attention
   const unmatchedTransactionsCount = matches.length;
@@ -1299,15 +1304,17 @@ const Dashboard = () => {
                               transactionDate: new Date(),
                               status: 'completed'
                             });
-                          } else if (match.type === 'vendor' && match.matchedVendor) {
-                            await updateVendor(match.matchedVendor.id, {
-                              totalOwed: Math.max(0, match.matchedVendor.totalOwed - Math.abs(match.bankTransaction.amount))
-                            });
+                          } else if (match.type === 'vendor' && match.matchedVendorTransaction) {
+                            // Mark the vendor transaction as paid
+                            await supabase
+                              .from('transactions')
+                              .update({ status: 'completed' })
+                              .eq('id', match.matchedVendorTransaction.id);
+                              
                             await addTransaction({
                               type: 'vendor_payment',
                               amount: Math.abs(match.bankTransaction.amount),
-                              description: `Auto-matched: Payment to ${match.matchedVendor.name}`,
-                              vendorId: match.matchedVendor.id,
+                              description: `Auto-matched: Payment to ${match.matchedVendorTransaction.vendorName} - ${match.matchedVendorTransaction.description}`,
                               transactionDate: new Date(),
                               status: 'completed'
                             });
@@ -1414,15 +1421,17 @@ const Dashboard = () => {
                   transactionDate: new Date(),
                   status: 'completed'
                 });
-              } else if (match.type === 'vendor' && match.matchedVendor) {
-                await updateVendor(match.matchedVendor.id, {
-                  totalOwed: Math.max(0, match.matchedVendor.totalOwed - Math.abs(match.bankTransaction.amount))
-                });
+              } else if (match.type === 'vendor' && match.matchedVendorTransaction) {
+                // Mark the vendor transaction as paid
+                await supabase
+                  .from('transactions')
+                  .update({ status: 'completed' })
+                  .eq('id', match.matchedVendorTransaction.id);
+                  
                 await addTransaction({
                   type: 'vendor_payment',
                   amount: Math.abs(match.bankTransaction.amount),
-                  description: `Auto-matched: Payment to ${match.matchedVendor.name}`,
-                  vendorId: match.matchedVendor.id,
+                  description: `Auto-matched: Payment to ${match.matchedVendorTransaction.vendorName} - ${match.matchedVendorTransaction.description}`,
                   transactionDate: new Date(),
                   status: 'completed'
                 });
@@ -1537,7 +1546,7 @@ const Dashboard = () => {
                             <span className="font-medium text-green-600 dark:text-green-400">
                               {topMatch.type === 'income' 
                                 ? `${topMatch.matchedIncome?.source} - ${topMatch.matchedIncome?.description}`
-                                : topMatch.matchedVendor?.name
+                                : `${topMatch.matchedVendorTransaction?.vendorName} - ${topMatch.matchedVendorTransaction?.description}`
                               }
                             </span>
                           </div>
@@ -1810,28 +1819,14 @@ const Dashboard = () => {
               date: manualMatchDialog.transaction.date,
               type: manualMatchDialog.transaction.type,
             } : null}
-            vendors={vendors.map(v => {
-              // Calculate total owed from pending vendor transactions
-              const vendorPendingTransactions = vendorTransactions?.filter(
-                tx => tx.vendorId === v.id && tx.status === 'pending'
-              ) || [];
-              const calculatedTotalOwed = vendorPendingTransactions.reduce(
-                (sum, tx) => sum + tx.amount, 
-                0
-              );
-              const nextTx = vendorPendingTransactions.sort((a, b) => 
-                a.dueDate.getTime() - b.dueDate.getTime()
-              )[0];
-              
-              return {
-                id: v.id,
-                name: v.name,
-                totalOwed: calculatedTotalOwed || v.totalOwed || 0,
-                nextPaymentAmount: nextTx?.amount || v.nextPaymentAmount || 0,
-                nextPaymentDate: nextTx?.dueDate || v.nextPaymentDate,
-                category: v.category,
-              };
-            })}
+            vendorTransactions={vendorTransactions?.filter(tx => tx.status === 'pending').map(tx => ({
+              id: tx.id,
+              vendorName: tx.vendorName,
+              description: tx.description,
+              amount: tx.amount,
+              dueDate: tx.dueDate,
+              category: tx.category,
+            })) || []}
             incomeItems={incomeItems.map(i => ({
               id: i.id,
               description: i.description,

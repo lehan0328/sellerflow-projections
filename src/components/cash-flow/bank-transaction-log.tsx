@@ -352,7 +352,7 @@ export const BankTransactionLog = ({ transactions = [], vendors = [], incomeItem
                               <div className="flex items-center space-x-2">
                                 <Link2 className="h-3 w-3 text-primary" />
                                 <span className="text-xs font-medium">
-                                  Potential match: {match.type === 'vendor' ? match.matchedVendor?.name : match.matchedIncome?.source}
+                                  Potential match: {match.type === 'vendor' ? match.matchedVendorTransaction?.vendorName : match.matchedIncome?.source}
                                 </span>
                                 <Badge variant="secondary" className="text-xs">
                                   {Math.round(match.matchScore * 100)}% match

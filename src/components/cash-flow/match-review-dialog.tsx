@@ -29,7 +29,7 @@ export const MatchReviewDialog = ({
   if (!match) return null;
 
   const isIncome = match.type === 'income';
-  const matchedItem = isIncome ? match.matchedIncome : match.matchedVendor;
+  const matchedItem = isIncome ? match.matchedIncome : match.matchedVendorTransaction;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -91,14 +91,14 @@ export const MatchReviewDialog = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">
-                  {isIncome ? match.matchedIncome?.description : match.matchedVendor?.name}
+                  {isIncome ? match.matchedIncome?.description : match.matchedVendorTransaction?.vendorName}
                 </span>
                 <span className={`text-sm font-semibold ${
                   isIncome ? 'text-green-600' : 'text-orange-600'
                 }`}>
                   ${isIncome 
                     ? match.matchedIncome?.amount.toLocaleString()
-                    : match.matchedVendor?.totalOwed.toLocaleString()
+                    : match.matchedVendorTransaction?.amount.toLocaleString()
                   }
                 </span>
               </div>

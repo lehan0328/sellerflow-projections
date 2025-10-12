@@ -98,7 +98,7 @@ export const TransactionMatchingPanel = ({ matches, onAcceptMatch }: Transaction
                     <p className="text-xs text-muted-foreground truncate">
                       {match.type === 'income' 
                         ? `Income: ${match.matchedIncome?.description}`
-                        : `Vendor: ${match.matchedVendor?.name}`
+                        : `Vendor: ${match.matchedVendorTransaction?.vendorName}`
                       }
                     </p>
                   </div>
