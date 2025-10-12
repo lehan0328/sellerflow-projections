@@ -60,8 +60,9 @@ export const useTransactionMatching = (
   vendorTransactions: VendorTransaction[],
   incomeItems: IncomeItem[]
 ) => {
-  const matches = useMemo(() => {
-    const potentialMatches: TransactionMatch[] = [];
+  const { matches, potentialMatches } = useMemo(() => {
+    const highConfidenceMatches: TransactionMatch[] = [];
+    const lowConfidencePotentialMatches: TransactionMatch[] = [];
     
     // Match bank transactions with vendor transactions
     bankTransactions.forEach(bankTx => {
@@ -81,13 +82,24 @@ export const useTransactionMatching = (
           )
         );
         
-        // Check if amounts are close
+        // Check if amounts are exactly equal
+        const exactAmountMatch = Math.abs(Math.abs(bankTx.amount) - vendorTx.amount) === 0;
         const amountMatch = areAmountsClose(Math.abs(bankTx.amount), vendorTx.amount);
         
-        // Match if name similarity is good OR (amounts match and moderate name similarity)
+        // High confidence match: name similarity is good OR (amounts match and moderate name similarity)
         if ((nameSimilarity >= 0.6 && amountMatch) || (nameSimilarity >= 0.4 && amountMatch)) {
           const matchScore = (nameSimilarity * 0.6) + (amountMatch ? 0.4 : 0);
-          potentialMatches.push({
+          highConfidenceMatches.push({
+            bankTransaction: bankTx,
+            matchedVendorTransaction: vendorTx,
+            matchScore,
+            type: 'vendor'
+          });
+        }
+        // Potential match: exact amount but low name similarity
+        else if (exactAmountMatch && nameSimilarity < 0.4) {
+          const matchScore = nameSimilarity * 0.3; // Lower score for potential matches
+          lowConfidencePotentialMatches.push({
             bankTransaction: bankTx,
             matchedVendorTransaction: vendorTx,
             matchScore,
@@ -111,11 +123,23 @@ export const useTransactionMatching = (
           )
         );
         
+        const exactAmountMatch = Math.abs(Math.abs(bankTx.amount) - income.amount) === 0;
         const amountMatch = areAmountsClose(Math.abs(bankTx.amount), income.amount);
         
+        // High confidence match
         if ((nameSimilarity >= 0.6 && amountMatch) || (nameSimilarity >= 0.4 && amountMatch)) {
           const matchScore = (nameSimilarity * 0.6) + (amountMatch ? 0.4 : 0);
-          potentialMatches.push({
+          highConfidenceMatches.push({
+            bankTransaction: bankTx,
+            matchedIncome: income,
+            matchScore,
+            type: 'income'
+          });
+        }
+        // Potential match: exact amount but low name similarity
+        else if (exactAmountMatch && nameSimilarity < 0.4) {
+          const matchScore = nameSimilarity * 0.3;
+          lowConfidencePotentialMatches.push({
             bankTransaction: bankTx,
             matchedIncome: income,
             matchScore,
@@ -125,7 +149,10 @@ export const useTransactionMatching = (
       });
     });
     
-    return potentialMatches;
+    return { 
+      matches: highConfidenceMatches,
+      potentialMatches: lowConfidencePotentialMatches 
+    };
   }, [bankTransactions, vendorTransactions, incomeItems]);
   
   const getMatchesForBankTransaction = (bankTxId: string) => {
@@ -142,6 +169,7 @@ export const useTransactionMatching = (
   
   return {
     matches,
+    potentialMatches,
     isLoading: false,
     getMatchesForBankTransaction,
     getMatchesForVendorTransaction,

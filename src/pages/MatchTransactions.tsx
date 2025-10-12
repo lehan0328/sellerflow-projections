@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Link2, CheckCircle2, XCircle, TrendingDown, TrendingUp } from "lucide-react";
+import { Link2, CheckCircle2, XCircle, TrendingDown, TrendingUp, AlertTriangle } from "lucide-react";
 import { useTransactionMatching, TransactionMatch } from "@/hooks/useTransactionMatching";
 import { useBankTransactions } from "@/hooks/useBankTransactions";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
@@ -19,6 +19,7 @@ const MatchTransactions = () => {
   const [selectedMatch, setSelectedMatch] = useState<TransactionMatch | null>(null);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [processingMatches, setProcessingMatches] = useState<Set<string>>(new Set());
+  const [showPotentialMatches, setShowPotentialMatches] = useState(false);
 
   const { accounts } = useBankAccounts();
   const { transactions: bankTransactionsData } = useBankTransactions();
@@ -62,11 +63,13 @@ const MatchTransactions = () => {
     customerId: i.customerId
   }));
 
-  const { matches } = useTransactionMatching(
+  const { matches, potentialMatches } = useTransactionMatching(
     bankTransactions,
     vendorTransactionsForMatching,
     incomeItemsForMatching
   );
+
+  const displayedMatches = showPotentialMatches ? potentialMatches : matches;
 
   const handleReviewMatch = (match: TransactionMatch) => {
     setSelectedMatch(match);
@@ -131,7 +134,7 @@ const MatchTransactions = () => {
   };
 
   // Group matches by transaction
-  const groupedMatches = matches.reduce((acc, match) => {
+  const groupedMatches = displayedMatches.reduce((acc, match) => {
     const txId = match.bankTransaction.id;
     if (!acc[txId]) {
       acc[txId] = [];
@@ -149,23 +152,46 @@ const MatchTransactions = () => {
             Review and approve potential transaction matches between your bank transactions and income/expenses
           </p>
         </div>
-        {matches.length > 0 && (
-          <Button onClick={handleMatchAll} size="lg">
-            <CheckCircle2 className="h-4 w-4 mr-2" />
-            Match All ({matches.length})
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          {potentialMatches.length > 0 && (
+            <Button 
+              onClick={() => setShowPotentialMatches(!showPotentialMatches)} 
+              variant={showPotentialMatches ? "default" : "outline"}
+            >
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              Potential Matches ({potentialMatches.length})
+            </Button>
+          )}
+          {displayedMatches.length > 0 && (
+            <Button onClick={handleMatchAll} size="lg">
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              Match All ({displayedMatches.length})
+            </Button>
+          )}
+        </div>
       </div>
 
-      {matches.length === 0 ? (
+      {displayedMatches.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Link2 className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No Matches Found</h3>
-            <p className="text-muted-foreground text-center max-w-md">
-              There are currently no potential matches between your bank transactions and income/expenses.
-              Matches will appear here automatically when the system detects similar transactions.
-            </p>
+            {showPotentialMatches ? (
+              <>
+                <AlertTriangle className="h-16 w-16 text-yellow-500 mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No Potential Matches Found</h3>
+                <p className="text-muted-foreground text-center max-w-md">
+                  There are no transactions with exact amounts but different names.
+                </p>
+              </>
+            ) : (
+              <>
+                <Link2 className="h-16 w-16 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No Matches Found</h3>
+                <p className="text-muted-foreground text-center max-w-md">
+                  There are currently no potential matches between your bank transactions and income/expenses.
+                  Matches will appear here automatically when the system detects similar transactions.
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -175,12 +201,16 @@ const MatchTransactions = () => {
             const isProcessing = processingMatches.has(txId);
             
             return (
-              <Card key={txId} className="border-green-500/50 bg-green-500/5">
+              <Card key={txId} className={showPotentialMatches ? "border-yellow-500/50 bg-yellow-500/5" : "border-green-500/50 bg-green-500/5"}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <CardTitle className="flex items-center gap-2">
-                        <Link2 className="h-5 w-5 text-green-600" />
+                        {showPotentialMatches ? (
+                          <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                        ) : (
+                          <Link2 className="h-5 w-5 text-green-600" />
+                        )}
                         {topMatch.bankTransaction.merchantName || topMatch.bankTransaction.description}
                         <Badge variant="secondary" className="ml-2">
                           {Math.round(topMatch.matchScore * 100)}% Match
