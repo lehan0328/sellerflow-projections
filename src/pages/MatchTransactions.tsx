@@ -22,7 +22,7 @@ const MatchTransactions = () => {
   const [showPotentialMatches, setShowPotentialMatches] = useState(false);
 
   const { accounts } = useBankAccounts();
-  const { transactions: bankTransactionsData } = useBankTransactions();
+  const { transactions: bankTransactionsData, refetch: refetchBankTransactions } = useBankTransactions();
   const { vendors } = useVendors();
   const { transactions: vendorTransactions, markAsPaid, refetch: refetchVendorTransactions } = useVendorTransactions();
   const { incomeItems, updateIncome, refetch: refetchIncome } = useIncome();
@@ -104,7 +104,7 @@ const MatchTransactions = () => {
         });
       }
       
-      await Promise.all([refetchIncome(), refetchVendorTransactions()]);
+      await Promise.all([refetchIncome(), refetchVendorTransactions(), refetchBankTransactions()]);
     } catch (error) {
       toast({
         title: 'Error',
