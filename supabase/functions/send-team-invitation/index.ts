@@ -12,6 +12,8 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  console.log("[SEND-INVITATION] Function started");
+
   try {
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -19,59 +21,84 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
+    console.log("[SEND-INVITATION] Supabase client created");
+
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
     
     if (userError || !user) {
+      console.error("[SEND-INVITATION] Auth error:", userError);
       throw new Error("Unauthorized");
     }
 
+    console.log("[SEND-INVITATION] User authenticated:", user.email);
+
     const { email, role } = await req.json();
+    console.log("[SEND-INVITATION] Request data:", { email, role });
 
     // Get user's account and verify admin rights
-    const { data: profile } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseClient
       .from("profiles")
       .select("account_id, max_team_members")
       .eq("user_id", user.id)
       .single();
 
-    if (!profile) {
+    if (profileError || !profile) {
+      console.error("[SEND-INVITATION] Profile error:", profileError);
       throw new Error("Profile not found");
     }
 
+    console.log("[SEND-INVITATION] Profile found:", { account_id: profile.account_id });
+
     // Check if user is admin
-    const { data: userRole } = await supabaseClient
+    const { data: userRole, error: roleError } = await supabaseClient
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
       .eq("account_id", profile.account_id)
       .single();
 
-    if (!userRole || !['owner', 'admin'].includes(userRole.role)) {
+    if (roleError || !userRole || !['owner', 'admin'].includes(userRole.role)) {
+      console.error("[SEND-INVITATION] Role check failed:", { roleError, userRole });
       throw new Error("Only admins can send invitations");
     }
 
+    console.log("[SEND-INVITATION] Admin verification passed");
+
     // Check team member limit
-    const { count: currentMembers } = await supabaseClient
+    const { count: currentMembers, error: countError } = await supabaseClient
       .from("user_roles")
       .select("*", { count: "exact", head: true })
       .eq("account_id", profile.account_id);
+
+    console.log("[SEND-INVITATION] Team member count:", { currentMembers, max: profile.max_team_members });
+
+    if (countError) {
+      console.error("[SEND-INVITATION] Count error:", countError);
+    }
 
     if (currentMembers && currentMembers >= profile.max_team_members) {
       throw new Error("Team member limit reached. Please upgrade your plan or purchase additional seats.");
     }
 
     // Check if user already exists in the account
-    const { data: existingUser } = await supabaseClient
+    const { data: existingUser, error: existingUserError } = await supabaseClient
       .from("profiles")
       .select("user_id, account_id")
       .eq("email", email)
       .single();
 
+    if (existingUserError && existingUserError.code !== 'PGRST116') {
+      console.error("[SEND-INVITATION] Error checking existing user:", existingUserError);
+    }
+
     if (existingUser && existingUser.account_id === profile.account_id) {
+      console.log("[SEND-INVITATION] User already member");
       throw new Error("User is already a member of this team");
     }
+
+    console.log("[SEND-INVITATION] Creating invitation token");
 
     // Generate invitation token
     const token_string = crypto.randomUUID();
@@ -91,8 +118,11 @@ serve(async (req) => {
       });
 
     if (inviteError) {
+      console.error("[SEND-INVITATION] Database insert error:", inviteError);
       throw inviteError;
     }
+
+    console.log("[SEND-INVITATION] Invitation created in database");
 
     // Get company/inviter information
     const { data: inviterProfile } = await supabaseClient
@@ -104,13 +134,24 @@ serve(async (req) => {
     const companyName = inviterProfile?.company || "the team";
     const inviterName = inviterProfile ? `${inviterProfile.first_name} ${inviterProfile.last_name}` : "A team member";
 
+    console.log("[SEND-INVITATION] Company info:", { companyName, inviterName });
+
     // Send invitation email via Resend
-    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      console.error("[SEND-INVITATION] RESEND_API_KEY not found");
+      throw new Error("Email service not configured");
+    }
+
+    const resend = new Resend(resendApiKey);
     const origin = req.headers.get("origin") || "http://localhost:3000";
     const inviteUrl = `${origin}/auth?invite=${token_string}`;
 
-    await resend.emails.send({
-      from: "Auren <noreply@auren.app>",
+    console.log("[SEND-INVITATION] Sending email to:", email);
+    console.log("[SEND-INVITATION] Invite URL:", inviteUrl);
+
+    const emailResult = await resend.emails.send({
+      from: "Auren <onboarding@resend.dev>",
       to: [email],
       subject: `You've been invited to join ${companyName} on Auren`,
       html: `
@@ -169,11 +210,14 @@ serve(async (req) => {
       `,
     });
 
+    console.log("[SEND-INVITATION] Email sent successfully:", emailResult);
+
     return new Response(
       JSON.stringify({ success: true, message: "Invitation sent successfully" }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {
+    console.error("[SEND-INVITATION] Error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
