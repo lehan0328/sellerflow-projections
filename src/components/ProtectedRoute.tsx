@@ -38,13 +38,30 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         console.error('Failed to clear cache:', e);
       }
 
+      // Get user's profile to check if they're part of a team
       const { data: profile } = await supabase
         .from('profiles')
-        .select('trial_end')
+        .select('trial_end, account_id, is_account_owner')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      const trialEndDate = profile?.trial_end || null;
+      let trialEndDate = profile?.trial_end || null;
+
+      // If user is part of a team (not account owner), check account owner's trial
+      if (profile?.account_id && !profile?.is_account_owner) {
+        const { data: ownerProfile } = await supabase
+          .from('profiles')
+          .select('trial_end')
+          .eq('account_id', profile.account_id)
+          .eq('is_account_owner', true)
+          .maybeSingle();
+
+        // Use account owner's trial status for team members
+        if (ownerProfile) {
+          trialEndDate = ownerProfile.trial_end;
+        }
+      }
+
       setTrialEnd(trialEndDate);
       setCheckingTrial(false);
     };

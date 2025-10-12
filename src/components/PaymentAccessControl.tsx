@@ -34,19 +34,36 @@ export const PaymentAccessControl = ({ children }: PaymentAccessControlProps) =>
         return;
       }
 
-      // Get user's profile to check account status
+      // Get user's profile to check if they're part of a team
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('account_status')
+        .select('account_status, account_id, is_account_owner')
         .eq('user_id', session.user.id)
         .single();
 
       if (error) throw error;
 
-      setAccountStatus(profile?.account_status || 'active');
+      let accountStatus = profile?.account_status || 'active';
+
+      // If user is part of a team (not account owner), check account owner's status
+      if (profile?.account_id && !profile?.is_account_owner) {
+        const { data: ownerProfile } = await supabase
+          .from('profiles')
+          .select('account_status')
+          .eq('account_id', profile.account_id)
+          .eq('is_account_owner', true)
+          .single();
+
+        // Use account owner's status for team members
+        if (ownerProfile) {
+          accountStatus = ownerProfile.account_status;
+        }
+      }
+
+      setAccountStatus(accountStatus);
 
       // If account is suspended and user is not admin, redirect to payment page
-      if (profile?.account_status === 'suspended_payment' && !isAdmin) {
+      if (accountStatus === 'suspended_payment' && !isAdmin) {
         navigate('/payment-required');
         return;
       }
