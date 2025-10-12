@@ -23,13 +23,17 @@ const Notifications = () => {
     try {
       const { data, error } = await supabase
         .from('notification_preferences')
-        .select('enabled')
+        .select('enabled, notification_type')
         .eq('user_id', user!.id);
 
       if (error) throw error;
 
+      console.log('Notification preferences:', data); // Debug log
+      
+      const enabledCount = data?.filter(p => p.enabled === true).length || 0;
+      
       setStats({
-        activeNotifications: data?.filter(p => p.enabled).length || 0,
+        activeNotifications: enabledCount,
         totalConfigured: data?.length || 0,
       });
     } catch (error) {
@@ -115,7 +119,7 @@ const Notifications = () => {
         </div>
       )}
 
-      <NotificationSettings />
+      <NotificationSettings onUpdate={fetchStats} />
     </div>
   );
 };

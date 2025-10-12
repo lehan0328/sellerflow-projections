@@ -64,7 +64,11 @@ const notificationTypes = [
 
 const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export const NotificationSettings = () => {
+interface NotificationSettingsProps {
+  onUpdate?: () => void;
+}
+
+export const NotificationSettings = ({ onUpdate }: NotificationSettingsProps = {}) => {
   const { user } = useAuth();
   const [preferences, setPreferences] = useState<NotificationPreference[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,6 +142,11 @@ export const NotificationSettings = () => {
       );
 
       toast.success('Notification settings updated');
+      
+      // Call onUpdate callback to refresh parent stats
+      if (onUpdate) {
+        onUpdate();
+      }
     } catch (error) {
       console.error('Error updating preference:', error);
       toast.error('Failed to update settings');
