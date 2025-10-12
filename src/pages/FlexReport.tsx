@@ -90,22 +90,49 @@ const FlexReport = () => {
     return isWithinInterval(payoutDate, { start: addDays(today, -30), end: today });
   }).reduce((sum, payout) => sum + Number(payout.total_amount), 0) || 0;
 
-  // Mock percentage changes (in a real app, you'd calculate these from historical data)
-  const percentageChanges = {
-    safeSpending: 12.5,
-    max180Day: 8.3,
-    availableCredit: -3.2,
-    upcomingIncome: 15.7,
-    purchaseOrders: -5.4,
-    vendorCount: 10.0,
-    amazonRevenue: 22.3
+  // Received income (last 30 days)
+  const last30DaysStart = addDays(today, -30);
+  const receivedIncome = incomeItems.filter(income => 
+    income.status === 'received' && 
+    income.paymentDate && 
+    isWithinInterval(new Date(income.paymentDate), {
+      start: last30DaysStart,
+      end: today
+    })
+  ).reduce((sum, income) => sum + Number(income.amount), 0);
+
+  // Previous 30 days income for comparison
+  const previous60DaysStart = addDays(today, -60);
+  const previous30DaysIncome = incomeItems.filter(income => 
+    income.status === 'received' && 
+    income.paymentDate && 
+    isWithinInterval(new Date(income.paymentDate), {
+      start: previous60DaysStart,
+      end: last30DaysStart
+    })
+  ).reduce((sum, income) => sum + Number(income.amount), 0);
+
+  // Previous 30 days Amazon revenue
+  const previous30DaysAmazonRevenue = amazonPayouts?.filter(payout => {
+    const payoutDate = new Date(payout.payout_date);
+    return isWithinInterval(payoutDate, { start: previous60DaysStart, end: last30DaysStart });
+  }).reduce((sum, payout) => sum + Number(payout.total_amount), 0) || 0;
+
+  // Calculate percentage changes
+  const calculatePercentageChange = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return ((current - previous) / previous) * 100;
   };
 
-  // Upcoming income (next 30 days)
-  const upcomingIncome = incomeItems.filter(income => income.status !== 'received' && income.paymentDate && isWithinInterval(new Date(income.paymentDate), {
-    start: today,
-    end: next30Days
-  })).reduce((sum, income) => sum + Number(income.amount), 0);
+  const percentageChanges = {
+    safeSpending: 0, // Point-in-time value, no historical data
+    max180Day: 0, // Point-in-time value, no historical data
+    availableCredit: 0, // Point-in-time value, no historical data
+    upcomingIncome: calculatePercentageChange(receivedIncome, previous30DaysIncome),
+    purchaseOrders: 0, // Could calculate if we track creation dates
+    vendorCount: 0, // Could calculate if we track vendor creation dates
+    amazonRevenue: calculatePercentageChange(amazonRevenue30Days, previous30DaysAmazonRevenue)
+  };
 
   // Calculate highest projected balance within 180 days
   const calculateMaxBalance180Days = () => {
@@ -450,9 +477,9 @@ const FlexReport = () => {
                   <div className="p-2 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <TrendingUp className="w-4 h-4 text-white" />
                   </div>
-                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Income (30d)</p>
-                </div>
-                <p className={`text-2xl font-black text-emerald-700 drop-shadow-sm transition-all duration-300 ${!visibility.upcomingIncome ? 'blur-lg' : ''}`}>{formatCurrency(upcomingIncome)}</p>
+              <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Received Income (30d)</p>
+            </div>
+            <p className={`text-2xl font-black text-emerald-700 drop-shadow-sm transition-all duration-300 ${!visibility.upcomingIncome ? 'blur-lg' : ''}`}>{formatCurrency(receivedIncome)}</p>
                 {showPercentageChange && (
                   <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.upcomingIncome >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.upcomingIncome >= 0 ? '' : 'rotate-180'}`} />
