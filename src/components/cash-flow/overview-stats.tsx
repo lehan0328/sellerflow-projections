@@ -412,20 +412,20 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 <p className="text-xs text-amber-600">
                   {timeRangeOptions.find(opt => opt.value === upcomingTimeRange)?.label}
                 </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowOverdueModal(true)}
-                  className="h-7 px-2 text-xs border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                >
-                  <AlertCircle className="h-3 w-3 mr-1" />
-                  Overdue
-                  {totalOverdueCount > 0 && (
+                {totalOverdueCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowOverdueModal(true)}
+                    className="h-7 px-2 text-xs border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  >
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Overdue
                     <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">
                       {totalOverdueCount}
                     </Badge>
-                  )}
-                </Button>
+                  </Button>
+                )}
               </div>
             </div>
             <Calendar className="h-8 w-8 text-amber-500" />
