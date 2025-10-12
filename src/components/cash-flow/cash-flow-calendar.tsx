@@ -636,8 +636,8 @@ export const CashFlowCalendar = ({
         </div>
       )}
       
-      <CardContent className="flex-1 overflow-hidden">
-        <div className="h-full flex flex-col">
+      <CardContent className="p-6">
+        <div className="flex flex-col">
           {viewType === 'calendar' ? (
             <div className="flex-1 min-h-0 flex flex-col">
               <div className="grid grid-cols-7 gap-1 mb-2 flex-shrink-0">
@@ -814,8 +814,8 @@ export const CashFlowCalendar = ({
                 </div>
              </div>
           ) : (
-            <div className="h-[400px] flex-shrink-0">
-              <ChartContainer config={chartConfig}>
+            <div className="w-full" style={{ height: '500px' }}>
+              <ChartContainer config={chartConfig} className="h-full w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   {chartType === 'bar' ? (
                     <BarChart data={chartData} onClick={handleChartClick}>
