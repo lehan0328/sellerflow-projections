@@ -64,6 +64,7 @@ interface CashFlowCalendarProps {
   onVendorClick?: (vendor: Vendor) => void;
   onIncomeClick?: (income: IncomeItem) => void;
   reserveAmount?: number;
+  includeForecastPayouts?: boolean;
 }
 
 export const CashFlowCalendar = ({ 
@@ -80,6 +81,7 @@ export const CashFlowCalendar = ({
   onVendorClick,
   onIncomeClick,
   reserveAmount = 0,
+  includeForecastPayouts = false,
 }: CashFlowCalendarProps) => {
   const { totalAvailableCredit } = useCreditCards();
   const { chartPreferences, updateChartPreferences } = useUserSettings();
@@ -118,6 +120,12 @@ export const CashFlowCalendar = ({
     setReserveColor(chartPreferences.reserveColor);
     setForecastColor(chartPreferences.forecastColor);
   }, [chartPreferences]);
+
+  // Sync forecast line visibility with includeForecastPayouts prop
+  useEffect(() => {
+    setShowForecastLine(includeForecastPayouts);
+    updateChartPreferences({ showForecastLine: includeForecastPayouts });
+  }, [includeForecastPayouts, updateChartPreferences]);
   
   // Total available cash baseline comes from Overview (displayCash)
   const totalAvailableCash = totalCash;

@@ -1258,6 +1258,7 @@ const Dashboard = () => {
                   onVendorClick={handleEditVendorOrder}
                   onIncomeClick={handleEditIncome}
                   reserveAmount={safeSpendingData?.reserve_amount || 0}
+                  includeForecastPayouts={includeForecastPayouts}
                 />
               </div>
               <div className="lg:col-span-1 h-full">
