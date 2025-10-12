@@ -66,15 +66,32 @@ export default function DocumentStorage() {
 
   const { vendors } = useVendors();
 
+  // Fetch user's account_id
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
   // Fetch documents with metadata
   const { data: documents, isLoading } = useQuery({
-    queryKey: ['documents', user?.id],
+    queryKey: ['documents', profile?.account_id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!profile?.account_id) return [];
       
       const { data: files, error: filesError } = await supabase.storage
         .from('purchase-orders')
-        .list(user.id, {
+        .list(profile.account_id, {
           sortBy: { column: 'created_at', order: 'desc' }
         });
 
@@ -87,7 +104,7 @@ export default function DocumentStorage() {
           *,
           vendor:vendors(name)
         `)
-        .eq('user_id', user.id);
+        .eq('account_id', profile.account_id);
 
       if (metadataError) throw metadataError;
 
@@ -107,16 +124,16 @@ export default function DocumentStorage() {
         } as StoredDocument;
       });
     },
-    enabled: !!user?.id,
+    enabled: !!profile?.account_id,
   });
 
   // Upload mutation
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
-      if (!user?.id) throw new Error('Not authenticated');
+      if (!profile?.account_id) throw new Error('Not authenticated');
       
       const fileName = `${Date.now()}_${file.name}`;
-      const filePath = `${user.id}/${fileName}`;
+      const filePath = `${profile.account_id}/${fileName}`;
 
       const { error } = await supabase.storage
         .from('purchase-orders')
@@ -126,7 +143,7 @@ export default function DocumentStorage() {
       return fileName;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['documents', profile?.account_id] });
       toast.success('Document uploaded successfully');
     },
     onError: (error: Error) => {
@@ -137,11 +154,11 @@ export default function DocumentStorage() {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (fileName: string) => {
-      if (!user?.id) throw new Error('Not authenticated');
+      if (!profile?.account_id) throw new Error('Not authenticated');
       
       const { error } = await supabase.storage
         .from('purchase-orders')
-        .remove([`${user.id}/${fileName}`]);
+        .remove([`${profile.account_id}/${fileName}`]);
 
       if (error) throw error;
 
@@ -149,11 +166,11 @@ export default function DocumentStorage() {
       await supabase
         .from('documents_metadata')
         .delete()
-        .eq('user_id', user.id)
+        .eq('account_id', profile.account_id)
         .eq('file_name', fileName);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['documents', profile?.account_id] });
       toast.success('Document deleted successfully');
       setDeleteTarget(null);
     },
@@ -171,14 +188,15 @@ export default function DocumentStorage() {
       documentDate?: string;
       displayName?: string;
     }) => {
-      if (!user?.id) throw new Error('Not authenticated');
+      if (!user?.id || !profile?.account_id) throw new Error('Not authenticated');
 
       const { error } = await supabase
         .from('documents_metadata')
         .upsert({
           user_id: user.id,
+          account_id: profile.account_id,
           file_name: fileName,
-          file_path: `${user.id}/${fileName}`,
+          file_path: `${profile.account_id}/${fileName}`,
           vendor_id: vendorId || null,
           notes: notes || null,
           document_date: documentDate || null,
@@ -190,7 +208,7 @@ export default function DocumentStorage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['documents', profile?.account_id] });
       toast.success('Document updated successfully');
       setEditingDoc(null);
     },
@@ -257,13 +275,13 @@ export default function DocumentStorage() {
   const handleReplaceDocument = async (doc: StoredDocument, file: File) => {
     try {
       setReplacingDocument(doc.id);
-      if (!user?.id) throw new Error('User not authenticated');
+      if (!profile?.account_id) throw new Error('User not authenticated');
 
       // Get the document metadata by file_name
       const { data: metadataList, error: metaError } = await supabase
         .from('documents_metadata')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('account_id', profile.account_id)
         .eq('file_name', doc.name)
         .maybeSingle();
 
@@ -272,14 +290,14 @@ export default function DocumentStorage() {
       // Delete old file from storage
       const { error: deleteError } = await supabase.storage
         .from('purchase-orders')
-        .remove([`${user.id}/${doc.name}`]);
+        .remove([`${profile.account_id}/${doc.name}`]);
 
       if (deleteError) console.error('Error deleting old file:', deleteError);
 
       // Upload new file with new timestamped name
       const fileExtension = file.name.split('.').pop();
       const safeFileName = `${Date.now()}_${file.name}`;
-      const filePath = `${user.id}/${safeFileName}`;
+      const filePath = `${profile.account_id}/${safeFileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('purchase-orders')
@@ -302,7 +320,7 @@ export default function DocumentStorage() {
       }
 
       toast.success('Document replaced successfully');
-      queryClient.invalidateQueries({ queryKey: ['documents', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['documents', profile?.account_id] });
     } catch (error) {
       console.error('Error replacing document:', error);
       toast.error('Failed to replace document');
@@ -312,11 +330,11 @@ export default function DocumentStorage() {
   };
 
   const handleDownload = async (fileName: string) => {
-    if (!user?.id) return;
+    if (!profile?.account_id) return;
 
     const { data, error } = await supabase.storage
       .from('purchase-orders')
-      .download(`${user.id}/${fileName}`);
+      .download(`${profile.account_id}/${fileName}`);
 
     if (error) {
       toast.error('Failed to download document');
