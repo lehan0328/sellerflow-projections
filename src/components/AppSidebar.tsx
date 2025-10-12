@@ -99,21 +99,20 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick, 
                       <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive ? "animate-pulse" : ""} ${isCollapsed ? "mx-auto" : ""}`} />
                       {!isCollapsed && (
                         <span className="flex items-center justify-between w-full pr-1">
-                          <span>{section.title}</span>
+                          <span>
+                            {section.title}
+                            {'showMatchCount' in section && section.showMatchCount && matchCount > 0 && (
+                              <span className="ml-1 text-green-600 dark:text-green-400 font-bold">
+                                ({matchCount})
+                              </span>
+                            )}
+                          </span>
                           {'showBadge' in section && section.showBadge && unreadCount > 0 && (
                             <Badge 
                               variant="destructive" 
                               className="ml-auto text-[10px] font-bold px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center"
                             >
                               {unreadCount}
-                            </Badge>
-                          )}
-                          {'showMatchCount' in section && section.showMatchCount && matchCount > 0 && (
-                            <Badge 
-                              variant="secondary" 
-                              className="ml-auto text-[10px] font-bold px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
-                            >
-                              {matchCount}
                             </Badge>
                           )}
                         </span>
