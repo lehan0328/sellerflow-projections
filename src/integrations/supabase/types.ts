@@ -173,6 +173,7 @@ export type Database = {
       }
       amazon_accounts: {
         Row: {
+          account_id: string | null
           account_name: string
           created_at: string
           encrypted_access_token: string | null
@@ -191,6 +192,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           account_name: string
           created_at?: string
           encrypted_access_token?: string | null
@@ -209,6 +211,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           account_name?: string
           created_at?: string
           encrypted_access_token?: string | null
@@ -230,6 +233,7 @@ export type Database = {
       }
       amazon_payouts: {
         Row: {
+          account_id: string | null
           amazon_account_id: string
           created_at: string
           currency_code: string
@@ -250,6 +254,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           amazon_account_id: string
           created_at?: string
           currency_code?: string
@@ -270,6 +275,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           amazon_account_id?: string
           created_at?: string
           currency_code?: string
@@ -301,6 +307,7 @@ export type Database = {
       }
       amazon_transactions: {
         Row: {
+          account_id: string | null
           amazon_account_id: string
           amount: number
           created_at: string
@@ -321,6 +328,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           amazon_account_id: string
           amount?: number
           created_at?: string
@@ -341,6 +349,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           amazon_account_id?: string
           amount?: number
           created_at?: string
@@ -372,7 +381,7 @@ export type Database = {
       }
       bank_accounts: {
         Row: {
-          account_id: string
+          account_id: string | null
           account_name: string
           account_type: string
           available_balance: number | null
@@ -391,7 +400,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          account_id: string
+          account_id?: string | null
           account_name: string
           account_type: string
           available_balance?: number | null
@@ -410,7 +419,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          account_id?: string
+          account_id?: string | null
           account_name?: string
           account_type?: string
           available_balance?: number | null
@@ -432,6 +441,7 @@ export type Database = {
       }
       bank_transactions: {
         Row: {
+          account_id: string | null
           amount: number
           archived: boolean
           bank_account_id: string
@@ -453,6 +463,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           amount: number
           archived?: boolean
           bank_account_id: string
@@ -474,6 +485,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           amount?: number
           archived?: boolean
           bank_account_id?: string
@@ -506,6 +518,7 @@ export type Database = {
       }
       cash_flow_events: {
         Row: {
+          account_id: string | null
           amount: number
           created_at: string
           customer_id: string | null
@@ -518,6 +531,7 @@ export type Database = {
           vendor_id: string | null
         }
         Insert: {
+          account_id?: string | null
           amount: number
           created_at?: string
           customer_id?: string | null
@@ -530,6 +544,7 @@ export type Database = {
           vendor_id?: string | null
         }
         Update: {
+          account_id?: string | null
           amount?: number
           created_at?: string
           customer_id?: string | null
@@ -560,6 +575,7 @@ export type Database = {
       }
       cash_flow_insights: {
         Row: {
+          account_id: string | null
           advice: string
           created_at: string
           current_balance: number | null
@@ -572,6 +588,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           advice: string
           created_at?: string
           current_balance?: number | null
@@ -584,6 +601,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           advice?: string
           created_at?: string
           current_balance?: number | null
@@ -599,6 +617,7 @@ export type Database = {
       }
       credit_cards: {
         Row: {
+          account_id: string | null
           account_name: string
           account_type: string
           annual_fee: number | null
@@ -630,6 +649,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           account_name: string
           account_type?: string
           annual_fee?: number | null
@@ -661,6 +681,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           account_name?: string
           account_type?: string
           annual_fee?: number | null
@@ -695,6 +716,7 @@ export type Database = {
       }
       customers: {
         Row: {
+          account_id: string | null
           created_at: string
           id: string
           name: string
@@ -704,6 +726,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           created_at?: string
           id?: string
           name: string
@@ -713,6 +736,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           created_at?: string
           id?: string
           name?: string
@@ -770,6 +794,7 @@ export type Database = {
       }
       documents_metadata: {
         Row: {
+          account_id: string | null
           amount: number | null
           created_at: string
           customer_id: string | null
@@ -786,6 +811,7 @@ export type Database = {
           vendor_id: string | null
         }
         Insert: {
+          account_id?: string | null
           amount?: number | null
           created_at?: string
           customer_id?: string | null
@@ -802,6 +828,7 @@ export type Database = {
           vendor_id?: string | null
         }
         Update: {
+          account_id?: string | null
           amount?: number | null
           created_at?: string
           customer_id?: string | null
@@ -836,6 +863,7 @@ export type Database = {
       }
       income: {
         Row: {
+          account_id: string | null
           amount: number
           category: string | null
           created_at: string
@@ -852,6 +880,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           amount: number
           category?: string | null
           created_at?: string
@@ -868,6 +897,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           amount?: number
           category?: string | null
           created_at?: string
@@ -895,6 +925,7 @@ export type Database = {
       }
       notification_history: {
         Row: {
+          account_id: string | null
           action_label: string | null
           actionable: boolean | null
           amount: number | null
@@ -911,6 +942,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           action_label?: string | null
           actionable?: boolean | null
           amount?: number | null
@@ -927,6 +959,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           action_label?: string | null
           actionable?: boolean | null
           amount?: number | null
@@ -946,6 +979,7 @@ export type Database = {
       }
       notification_preferences: {
         Row: {
+          account_id: string | null
           advance_days: number | null
           created_at: string
           enabled: boolean
@@ -960,6 +994,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           advance_days?: number | null
           created_at?: string
           enabled?: boolean
@@ -974,6 +1009,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           advance_days?: number | null
           created_at?: string
           enabled?: boolean
@@ -1135,6 +1171,7 @@ export type Database = {
       }
       recurring_expenses: {
         Row: {
+          account_id: string | null
           amount: number
           category: string | null
           created_at: string
@@ -1151,6 +1188,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           amount?: number
           category?: string | null
           created_at?: string
@@ -1167,6 +1205,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           amount?: number
           category?: string | null
           created_at?: string
@@ -1300,6 +1339,7 @@ export type Database = {
       }
       scenarios: {
         Row: {
+          account_id: string | null
           created_at: string
           description: string | null
           id: string
@@ -1309,6 +1349,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -1318,6 +1359,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -1446,6 +1488,7 @@ export type Database = {
       }
       transactions: {
         Row: {
+          account_id: string | null
           amount: number
           created_at: string
           credit_card_id: string | null
@@ -1462,6 +1505,7 @@ export type Database = {
           vendor_id: string | null
         }
         Insert: {
+          account_id?: string | null
           amount: number
           created_at?: string
           credit_card_id?: string | null
@@ -1478,6 +1522,7 @@ export type Database = {
           vendor_id?: string | null
         }
         Update: {
+          account_id?: string | null
           amount?: number
           created_at?: string
           credit_card_id?: string | null
@@ -1636,6 +1681,7 @@ export type Database = {
       }
       vendors: {
         Row: {
+          account_id: string | null
           category: string | null
           created_at: string
           description: string | null
@@ -1656,6 +1702,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           category?: string | null
           created_at?: string
           description?: string | null
@@ -1676,6 +1723,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           category?: string | null
           created_at?: string
           description?: string | null
@@ -1922,6 +1970,10 @@ export type Database = {
               p_plaid_item_id?: string
               p_statement_close_date?: string
             }
+        Returns: boolean
+      }
+      user_belongs_to_account: {
+        Args: { _account_id: string }
         Returns: boolean
       }
     }
