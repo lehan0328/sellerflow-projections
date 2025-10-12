@@ -166,7 +166,7 @@ export function ManualMatchDialog({
                       </div>
                       <div className="text-right">
                         <p className="font-semibold">
-                          ${('totalOwed' in item ? item.nextPaymentAmount : item.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          ${('totalOwed' in item ? item.totalOwed : item.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {format(
