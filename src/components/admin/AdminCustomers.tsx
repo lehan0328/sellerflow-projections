@@ -32,6 +32,8 @@ interface Customer {
   renewal_date?: string;
   last_paid_date?: string;
   stripe_customer_id?: string;
+  role?: string;
+  account_owner_company?: string;
 }
 
 interface ConversionMetrics {
@@ -79,6 +81,26 @@ export const AdminCustomers = () => {
 
       const customersWithData = await Promise.all(
         (profiles || []).map(async (profile) => {
+          // Fetch user role
+          const { data: userRole } = await supabase
+            .from('user_roles')
+            .select('role, account_id')
+            .eq('user_id', profile.user_id)
+            .maybeSingle();
+
+          // If user is staff/admin (not owner), fetch the account owner's company
+          let accountOwnerCompany = null;
+          if (userRole && userRole.role !== 'owner') {
+            const { data: ownerProfile } = await supabase
+              .from('profiles')
+              .select('company')
+              .eq('account_id', userRole.account_id)
+              .eq('is_account_owner', true)
+              .maybeSingle();
+            
+            accountOwnerCompany = ownerProfile?.company;
+          }
+
           // Fetch Amazon transactions for revenue calculation
           const { data: amazonTransactions } = await supabase
             .from('amazon_transactions')
@@ -126,7 +148,9 @@ export const AdminCustomers = () => {
             email: emailData?.emails?.[profile.user_id] || 'Unknown',
             amazon_revenue: revenue,
             renewal_date: renewalDate,
-            last_paid_date: lastPaidDate
+            last_paid_date: lastPaidDate,
+            role: userRole?.role,
+            account_owner_company: accountOwnerCompany
           };
         })
       );
@@ -420,7 +444,13 @@ export const AdminCustomers = () => {
                           : 'Unnamed'}
                       </TableCell>
                       <TableCell>{customer.email}</TableCell>
-                      <TableCell>{customer.company || '-'}</TableCell>
+                      <TableCell>
+                        {customer.role && customer.role !== 'owner' && customer.account_owner_company ? (
+                          <span className="text-sm">{customer.account_owner_company}</span>
+                        ) : (
+                          customer.company || '-'
+                        )}
+                      </TableCell>
                       <TableCell>
                         {new Date(customer.created_at).toLocaleDateString('en-US', { 
                           month: 'short', 
@@ -441,7 +471,11 @@ export const AdminCustomers = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {customer.plan_override && ['starter', 'growing', 'professional', 'admin'].includes(customer.plan_override) ? (
+                        {customer.role && customer.role !== 'owner' ? (
+                          <Badge variant="outline" className="text-xs">
+                            Team
+                          </Badge>
+                        ) : customer.plan_override && ['starter', 'growing', 'professional', 'admin'].includes(customer.plan_override) ? (
                           <Badge variant="outline" className="text-xs capitalize">
                             {formatPlanName(customer.plan_override)}
                           </Badge>
