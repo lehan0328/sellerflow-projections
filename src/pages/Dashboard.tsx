@@ -92,6 +92,7 @@ const Dashboard = () => {
   // Use database hooks
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, cleanupOrphanedVendors, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction, refetch: refetchTransactions } = useTransactions();
+  const { transactions: vendorTransactions } = require('@/hooks/useVendorTransactions').useVendorTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { transactions: bankTransactionsData, isLoading: isBankTransactionsLoading } = useBankTransactions();
   const { creditCards } = useCreditCards();
@@ -1809,14 +1810,28 @@ const Dashboard = () => {
               date: manualMatchDialog.transaction.date,
               type: manualMatchDialog.transaction.type,
             } : null}
-            vendors={vendors.map(v => ({
-              id: v.id,
-              name: v.name,
-              totalOwed: v.totalOwed || 0,
-              nextPaymentAmount: v.nextPaymentAmount || 0,
-              nextPaymentDate: v.nextPaymentDate,
-              category: v.category,
-            }))}
+            vendors={vendors.map(v => {
+              // Calculate total owed from pending vendor transactions
+              const vendorPendingTransactions = vendorTransactions?.filter(
+                tx => tx.vendorId === v.id && tx.status === 'pending'
+              ) || [];
+              const calculatedTotalOwed = vendorPendingTransactions.reduce(
+                (sum, tx) => sum + tx.amount, 
+                0
+              );
+              const nextTx = vendorPendingTransactions.sort((a, b) => 
+                a.dueDate.getTime() - b.dueDate.getTime()
+              )[0];
+              
+              return {
+                id: v.id,
+                name: v.name,
+                totalOwed: calculatedTotalOwed || v.totalOwed || 0,
+                nextPaymentAmount: nextTx?.amount || v.nextPaymentAmount || 0,
+                nextPaymentDate: nextTx?.dueDate || v.nextPaymentDate,
+                category: v.category,
+              };
+            })}
             incomeItems={incomeItems.map(i => ({
               id: i.id,
               description: i.description,
