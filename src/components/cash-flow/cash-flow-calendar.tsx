@@ -89,6 +89,9 @@ export const CashFlowCalendar = ({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDayTransactionsModal, setShowDayTransactionsModal] = useState(false);
   const [draggedTransaction, setDraggedTransaction] = useState<CashFlowEvent | null>(null);
+  const [showCashFlowLine, setShowCashFlowLine] = useState(true);
+  const [showTotalResourcesLine, setShowTotalResourcesLine] = useState(true);
+  const [showCreditCardLine, setShowCreditCardLine] = useState(true);
   
   // Total available cash baseline comes from Overview (displayCash)
   const totalAvailableCash = totalCash;
@@ -949,20 +952,24 @@ export const CashFlowCalendar = ({
                         radius={[4, 4, 0, 0]}
                         cursor="pointer"
                       />
-                      <Line
-                        type="monotone"
-                        dataKey="availableCredit"
-                        stroke="#10b981"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="creditCardCredit"
-                        stroke="#f59e0b"
-                        strokeWidth={2}
-                        dot={false}
-                      />
+                      {showTotalResourcesLine && (
+                        <Line
+                          type="monotone"
+                          dataKey="availableCredit"
+                          stroke="#10b981"
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                      )}
+                      {showCreditCardLine && (
+                        <Line
+                          type="monotone"
+                          dataKey="creditCardCredit"
+                          stroke="#f59e0b"
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                      )}
                     </BarChart>
                   ) : (
                     <LineChart data={chartData} onClick={handleChartClick}>
@@ -1104,55 +1111,61 @@ export const CashFlowCalendar = ({
                           return label;
                         }}
                       />
-                      <Line 
-                        type="monotone" 
-                        dataKey="cashFlow" 
-                        stroke="hsl(var(--primary))" 
-                        strokeWidth={2}
-                        dot={(props: any) => {
-                          const { cx, cy, payload } = props;
-                          
-                          // Only show dot if there are transactions on this date
-                          if (!payload.transactions || payload.transactions.length === 0) {
-                            return null;
-                          }
-                          
-                          if (payload.hasAmazonForecast) {
-                            // Forecasted payout - purple/dashed
-                            return (
-                              <g>
-                                <circle cx={cx} cy={cy} r={6} fill="#a855f7" stroke="#9333ea" strokeWidth={2} strokeDasharray="3,3" />
-                                <circle cx={cx} cy={cy} r={3} fill="#fff" />
-                              </g>
-                            );
-                          }
-                          if (payload.hasAmazonPayout) {
-                            // Confirmed payout - orange
-                            return (
-                              <g>
-                                <circle cx={cx} cy={cy} r={6} fill="#f97316" stroke="#ea580c" strokeWidth={2} />
-                                <circle cx={cx} cy={cy} r={3} fill="#fff" />
-                              </g>
-                            );
-                          }
-                          return <circle cx={cx} cy={cy} r={4} fill="hsl(var(--primary))" cursor="pointer" />;
-                        }}
-                        activeDot={{ r: 6, cursor: 'pointer' }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="availableCredit"
-                        stroke="#10b981"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="creditCardCredit"
-                        stroke="#f59e0b"
-                        strokeWidth={2}
-                        dot={false}
-                      />
+                      {showCashFlowLine && (
+                        <Line 
+                          type="monotone" 
+                          dataKey="cashFlow" 
+                          stroke="hsl(var(--primary))" 
+                          strokeWidth={2}
+                          dot={(props: any) => {
+                            const { cx, cy, payload } = props;
+                            
+                            // Only show dot if there are transactions on this date
+                            if (!payload.transactions || payload.transactions.length === 0) {
+                              return null;
+                            }
+                            
+                            if (payload.hasAmazonForecast) {
+                              // Forecasted payout - purple/dashed
+                              return (
+                                <g>
+                                  <circle cx={cx} cy={cy} r={6} fill="#a855f7" stroke="#9333ea" strokeWidth={2} strokeDasharray="3,3" />
+                                  <circle cx={cx} cy={cy} r={3} fill="#fff" />
+                                </g>
+                              );
+                            }
+                            if (payload.hasAmazonPayout) {
+                              // Confirmed payout - orange
+                              return (
+                                <g>
+                                  <circle cx={cx} cy={cy} r={6} fill="#f97316" stroke="#ea580c" strokeWidth={2} />
+                                  <circle cx={cx} cy={cy} r={3} fill="#fff" />
+                                </g>
+                              );
+                            }
+                            return <circle cx={cx} cy={cy} r={4} fill="hsl(var(--primary))" cursor="pointer" />;
+                          }}
+                          activeDot={{ r: 6, cursor: 'pointer' }}
+                        />
+                      )}
+                      {showTotalResourcesLine && (
+                        <Line
+                          type="monotone"
+                          dataKey="availableCredit"
+                          stroke="#10b981"
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                      )}
+                      {showCreditCardLine && (
+                        <Line
+                          type="monotone"
+                          dataKey="creditCardCredit"
+                          stroke="#f59e0b"
+                          strokeWidth={2}
+                          dot={false}
+                        />
+                      )}
                     </LineChart>
                   )}
                 </ResponsiveContainer>
@@ -1161,28 +1174,62 @@ export const CashFlowCalendar = ({
           )}
           
           <div className="flex flex-wrap items-center justify-between gap-4 mt-6 pt-4 border-t flex-shrink-0">
-            <div className="flex items-center space-x-4 text-sm">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded bg-finance-positive"></div>
-                <span>Inflows</span>
+            {viewType === 'chart' ? (
+              <div className="flex items-center gap-6 text-sm">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="cashflow-toggle"
+                    checked={showCashFlowLine}
+                    onChange={(e) => setShowCashFlowLine(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(var(--primary))' }}></div>
+                  <label htmlFor="cashflow-toggle" className="cursor-pointer">Cash Balance</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="resources-toggle"
+                    checked={showTotalResourcesLine}
+                    onChange={(e) => setShowTotalResourcesLine(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <div className="w-3 h-3 rounded bg-[#10b981]"></div>
+                  <label htmlFor="resources-toggle" className="cursor-pointer">Total Resources (Cash + Credit)</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="credit-toggle"
+                    checked={showCreditCardLine}
+                    onChange={(e) => setShowCreditCardLine(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <div className="w-3 h-3 rounded bg-[#f59e0b]"></div>
+                  <label htmlFor="credit-toggle" className="cursor-pointer">Available Credit</label>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded bg-finance-negative"></div>
-                <span>Outflows</span>
+            ) : (
+              <div className="flex items-center space-x-4 text-sm">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 rounded bg-finance-positive"></div>
+                  <span>Inflows</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 rounded bg-finance-negative"></div>
+                  <span>Outflows</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 rounded bg-warning"></div>
+                  <span>Credit Payments</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 rounded bg-primary"></div>
+                  <span>Purchase Orders</span>
+                </div>
               </div>
-              {viewType === 'calendar' && (
-                <>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 rounded bg-warning"></div>
-                    <span>Credit Payments</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 rounded bg-primary"></div>
-                    <span>Purchase Orders</span>
-                  </div>
-                </>
-              )}
-            </div>
+            )}
             
           </div>
         </div>
