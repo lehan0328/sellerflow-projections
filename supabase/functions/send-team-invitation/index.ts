@@ -146,70 +146,85 @@ serve(async (req) => {
     const origin = req.headers.get("origin") || "http://localhost:3000";
     const inviteUrl = `${origin}/auth?invite=${token_string}`;
 
-    console.log("[SEND-INVITATION] Sending email to:", email);
+    console.log("[SEND-INVITATION] ==========================================");
+    console.log("[SEND-INVITATION] PREPARING TO SEND EMAIL");
+    console.log("[SEND-INVITATION] To:", email);
     console.log("[SEND-INVITATION] Invite URL:", inviteUrl);
+    console.log("[SEND-INVITATION] From:", "Auren <onboarding@resend.dev>");
+    console.log("[SEND-INVITATION] ==========================================");
 
-    const emailResult = await resend.emails.send({
-      from: "Auren <onboarding@resend.dev>",
-      to: [email],
-      subject: `You've been invited to join ${companyName} on Auren`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          </head>
-          <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 0;">
-              <tr>
-                <td align="center">
-                  <table width="600" cellpadding="0" cellspacing="0" style="background-color: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                    <tr>
-                      <td style="padding: 40px;">
-                        <h1 style="margin: 0 0 24px 0; color: #1a1a1a; font-size: 24px; font-weight: 600;">
-                          You've been invited!
-                        </h1>
-                        <p style="margin: 0 0 16px 0; color: #4a4a4a; font-size: 16px; line-height: 1.5;">
-                          ${inviterName} has invited you to join <strong>${companyName}</strong> on Auren as a <strong>${role || 'staff'}</strong> member.
-                        </p>
-                        <p style="margin: 0 0 24px 0; color: #4a4a4a; font-size: 16px; line-height: 1.5;">
-                          Auren is a powerful cash flow management platform that helps teams manage their finances, forecast payouts, and make better business decisions.
-                        </p>
-                        <table cellpadding="0" cellspacing="0" style="margin: 0 0 24px 0;">
-                          <tr>
-                            <td style="border-radius: 6px; background-color: #2563eb;">
-                              <a href="${inviteUrl}" style="display: inline-block; padding: 14px 32px; color: white; text-decoration: none; font-size: 16px; font-weight: 500;">
-                                Accept Invitation
-                              </a>
-                            </td>
-                          </tr>
-                        </table>
-                        <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px; line-height: 1.5;">
-                          This invitation will expire in 7 days.
-                        </p>
-                        <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.5;">
-                          If you didn't expect this invitation, you can safely ignore this email.
-                        </p>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 24px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
-                        <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">
-                          © ${new Date().getFullYear()} Auren. All rights reserved.
-                        </p>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
-          </body>
-        </html>
-      `,
-    });
+    try {
+      const emailResult = await resend.emails.send({
+        from: "Auren <onboarding@resend.dev>",
+        to: [email],
+        subject: `You've been invited to join ${companyName} on Auren`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 0;">
+                <tr>
+                  <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background-color: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                      <tr>
+                        <td style="padding: 40px;">
+                          <h1 style="margin: 0 0 24px 0; color: #1a1a1a; font-size: 24px; font-weight: 600;">
+                            You've been invited!
+                          </h1>
+                          <p style="margin: 0 0 16px 0; color: #4a4a4a; font-size: 16px; line-height: 1.5;">
+                            ${inviterName} has invited you to join <strong>${companyName}</strong> on Auren as a <strong>${role || 'staff'}</strong> member.
+                          </p>
+                          <p style="margin: 0 0 24px 0; color: #4a4a4a; font-size: 16px; line-height: 1.5;">
+                            Auren is a powerful cash flow management platform that helps teams manage their finances, forecast payouts, and make better business decisions.
+                          </p>
+                          <table cellpadding="0" cellspacing="0" style="margin: 0 0 24px 0;">
+                            <tr>
+                              <td style="border-radius: 6px; background-color: #2563eb;">
+                                <a href="${inviteUrl}" style="display: inline-block; padding: 14px 32px; color: white; text-decoration: none; font-size: 16px; font-weight: 500;">
+                                  Accept Invitation
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                          <p style="margin: 0 0 8px 0; color: #6b7280; font-size: 14px; line-height: 1.5;">
+                            This invitation will expire in 7 days.
+                          </p>
+                          <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.5;">
+                            If you didn't expect this invitation, you can safely ignore this email.
+                          </p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 24px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
+                          <p style="margin: 0; color: #6b7280; font-size: 12px; text-align: center;">
+                            © ${new Date().getFullYear()} Auren. All rights reserved.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+          </html>
+        `,
+      });
 
-    console.log("[SEND-INVITATION] Email sent successfully:", emailResult);
+      console.log("[SEND-INVITATION] ==========================================");
+      console.log("[SEND-INVITATION] EMAIL SENT SUCCESSFULLY!");
+      console.log("[SEND-INVITATION] Result:", JSON.stringify(emailResult, null, 2));
+      console.log("[SEND-INVITATION] ==========================================");
+    } catch (emailError) {
+      console.error("[SEND-INVITATION] ==========================================");
+      console.error("[SEND-INVITATION] EMAIL SEND FAILED!");
+      console.error("[SEND-INVITATION] Error:", emailError);
+      console.error("[SEND-INVITATION] ==========================================");
+      throw new Error(`Failed to send email: ${emailError.message}`);
+    }
 
     return new Response(
       JSON.stringify({ success: true, message: "Invitation sent successfully" }),
