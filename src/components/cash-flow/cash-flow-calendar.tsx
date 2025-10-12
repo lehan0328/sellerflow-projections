@@ -98,10 +98,12 @@ export const CashFlowCalendar = ({
   const [showTotalResourcesLine, setShowTotalResourcesLine] = useState(chartPreferences.showTotalResourcesLine);
   const [showCreditCardLine, setShowCreditCardLine] = useState(chartPreferences.showCreditCardLine);
   const [showReserveLine, setShowReserveLine] = useState(chartPreferences.showReserveLine);
+  const [showForecastLine, setShowForecastLine] = useState(chartPreferences.showForecastLine);
   const [cashFlowColor, setCashFlowColor] = useState(chartPreferences.cashFlowColor);
   const [totalResourcesColor, setTotalResourcesColor] = useState(chartPreferences.totalResourcesColor);
   const [creditCardColor, setCreditCardColor] = useState(chartPreferences.creditCardColor);
   const [reserveColor, setReserveColor] = useState(chartPreferences.reserveColor);
+  const [forecastColor, setForecastColor] = useState(chartPreferences.forecastColor);
   
   // Sync local state with loaded preferences
   useEffect(() => {
@@ -109,10 +111,12 @@ export const CashFlowCalendar = ({
     setShowTotalResourcesLine(chartPreferences.showTotalResourcesLine);
     setShowCreditCardLine(chartPreferences.showCreditCardLine);
     setShowReserveLine(chartPreferences.showReserveLine);
+    setShowForecastLine(chartPreferences.showForecastLine);
     setCashFlowColor(chartPreferences.cashFlowColor);
     setTotalResourcesColor(chartPreferences.totalResourcesColor);
     setCreditCardColor(chartPreferences.creditCardColor);
     setReserveColor(chartPreferences.reserveColor);
+    setForecastColor(chartPreferences.forecastColor);
   }, [chartPreferences]);
   
   // Total available cash baseline comes from Overview (displayCash)
@@ -473,6 +477,11 @@ export const CashFlowCalendar = ({
       const hasAmazonPayout = dayEvents.some(e => e.source === 'Amazon' && e.type === 'inflow');
       const hasAmazonForecast = dayEvents.some(e => e.source === 'Amazon-Forecasted' && e.type === 'inflow');
       
+      // Calculate forecast payout amount
+      const forecastPayoutAmount = dayEvents
+        .filter(e => e.source === 'Amazon-Forecasted' && e.type === 'inflow')
+        .reduce((sum, e) => sum + e.amount, 0);
+      
       // Group events by type for detailed breakdown
       const inflowEvents = dayEvents.filter(e => e.type === 'inflow');
       const purchaseOrderEvents = dayEvents.filter(e => e.type === 'purchase-order');
@@ -508,9 +517,14 @@ export const CashFlowCalendar = ({
         date: format(day, 'MMM dd'),
         fullDate: day,
         cashFlow: runningTotal,
+        cashBalance: runningTotal,
+        totalResources: runningTotal + totalAvailableCredit,
         availableCredit: runningTotal + totalAvailableCredit,
+        creditCardBalance: totalAvailableCredit,
         creditCardCredit: totalAvailableCredit,
         reserve: reserveAmount,
+        reserveAmount: reserveAmount,
+        forecastPayout: forecastPayoutAmount,
         dailyChange,
         inflow: dailyInflow,
         outflow: dailyOutflow,
@@ -551,21 +565,25 @@ export const CashFlowCalendar = ({
   const chartData = generateChartData();
 
   const chartConfig = {
-    cashFlow: {
-      label: "Cash Flow",
+    cashBalance: {
+      label: "Cash Balance",
       color: cashFlowColor,
     },
-    availableCredit: {
-      label: "Available Credit",
+    totalResources: {
+      label: "Total Resources",
       color: totalResourcesColor,
     },
-    creditCardCredit: {
-      label: "Credit Card Credit",
+    creditCardBalance: {
+      label: "Available Credit",
       color: creditCardColor,
     },
-    reserve: {
+    reserveAmount: {
       label: "Reserve Amount",
       color: reserveColor,
+    },
+    forecastPayout: {
+      label: "Forecast Payout",
+      color: forecastColor,
     },
   };
 
@@ -893,12 +911,13 @@ export const CashFlowCalendar = ({
                                 totalResources: "Total Resources:",
                                 cashBalance: "Cash Flow:",
                                 creditCardBalance: "Available Credit:",
-                                reserveAmount: "Reserve Amount:"
+                                reserveAmount: "Reserve Amount:",
+                                forecastPayout: "Forecast Payout:"
                               };
                               return [`$${value.toLocaleString()}`, labels[name] || name];
                             }}
                             itemSorter={(item) => {
-                              const order = ["totalResources", "cashBalance", "creditCardBalance", "reserveAmount"];
+                              const order = ["totalResources", "cashBalance", "creditCardBalance", "reserveAmount", "forecastPayout"];
                               return order.indexOf(item.dataKey as string);
                             }}
                           />
@@ -1040,12 +1059,13 @@ export const CashFlowCalendar = ({
                                 totalResources: "Total Resources:",
                                 cashBalance: "Cash Flow:",
                                 creditCardBalance: "Available Credit:",
-                                reserveAmount: "Reserve Amount:"
+                                reserveAmount: "Reserve Amount:",
+                                forecastPayout: "Forecast Payout:"
                               };
                               return [`$${value.toLocaleString()}`, labels[name] || name];
                             }}
                             itemSorter={(item) => {
-                              const order = ["totalResources", "cashBalance", "creditCardBalance", "reserveAmount"];
+                              const order = ["totalResources", "cashBalance", "creditCardBalance", "reserveAmount", "forecastPayout"];
                               return order.indexOf(item.dataKey as string);
                             }}
                           />
@@ -1175,7 +1195,7 @@ export const CashFlowCalendar = ({
                       {showCashFlowLine && (
                         <Line 
                           type="monotone" 
-                          dataKey="cashFlow" 
+                          dataKey="cashBalance" 
                           stroke={cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor}
                           strokeWidth={2}
                           dot={(props: any) => {
@@ -1213,7 +1233,7 @@ export const CashFlowCalendar = ({
                       {showTotalResourcesLine && (
                         <Line
                           type="monotone"
-                          dataKey="availableCredit"
+                          dataKey="totalResources"
                           stroke={totalResourcesColor}
                           strokeWidth={2}
                           dot={false}
@@ -1222,7 +1242,7 @@ export const CashFlowCalendar = ({
                       {showCreditCardLine && (
                         <Line
                           type="monotone"
-                          dataKey="creditCardCredit"
+                          dataKey="creditCardBalance"
                           stroke={creditCardColor}
                           strokeWidth={2}
                           dot={false}
@@ -1231,11 +1251,32 @@ export const CashFlowCalendar = ({
                       {showReserveLine && (
                         <Line
                           type="monotone"
-                          dataKey="reserve"
+                          dataKey="reserveAmount"
                           stroke={reserveColor}
                           strokeWidth={2}
                           strokeDasharray="5 5"
                           dot={false}
+                        />
+                      )}
+                      {showForecastLine && (
+                        <Line
+                          type="monotone"
+                          dataKey="forecastPayout"
+                          stroke={forecastColor}
+                          strokeWidth={2}
+                          strokeDasharray="3 3"
+                          dot={(props: any) => {
+                            const { cx, cy, payload } = props;
+                            if (!payload.forecastPayout || payload.forecastPayout === 0) {
+                              return null;
+                            }
+                            return (
+                              <g>
+                                <circle cx={cx} cy={cy} r={6} fill={forecastColor} stroke="#9333ea" strokeWidth={2} />
+                                <circle cx={cx} cy={cy} r={3} fill="#fff" />
+                              </g>
+                            );
+                          }}
                         />
                       )}
                     </LineChart>
@@ -1351,6 +1392,32 @@ export const CashFlowCalendar = ({
                     />
                   </label>
                   <label htmlFor="reserve-toggle" className="cursor-pointer">Reserve Amount</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="forecast-toggle"
+                    checked={showForecastLine}
+                    onChange={(e) => {
+                      setShowForecastLine(e.target.checked);
+                      updateChartPreferences({ showForecastLine: e.target.checked });
+                    }}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <label htmlFor="forecast-color" className="cursor-pointer">
+                    <input
+                      type="color"
+                      id="forecast-color"
+                      value={forecastColor}
+                      onChange={(e) => {
+                        setForecastColor(e.target.value);
+                        updateChartPreferences({ forecastColor: e.target.value });
+                      }}
+                      className="w-3 h-3 rounded cursor-pointer border-0 p-0"
+                      style={{ appearance: 'none', backgroundColor: forecastColor }}
+                    />
+                  </label>
+                  <label htmlFor="forecast-toggle" className="cursor-pointer">Forecast Payout</label>
                 </div>
               </div>
             ) : (

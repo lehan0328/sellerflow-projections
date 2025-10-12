@@ -10,10 +10,12 @@ export const useUserSettings = () => {
     showTotalResourcesLine: true,
     showCreditCardLine: true,
     showReserveLine: true,
+    showForecastLine: true,
     cashFlowColor: 'hsl(221, 83%, 53%)',
     totalResourcesColor: '#10b981',
     creditCardColor: '#f59e0b',
     reserveColor: '#ef4444',
+    forecastColor: '#a855f7',
   });
   const { toast } = useToast();
 
@@ -45,10 +47,12 @@ export const useUserSettings = () => {
         showTotalResourcesLine: data.chart_show_resources_line ?? true,
         showCreditCardLine: data.chart_show_credit_line ?? true,
         showReserveLine: data.chart_show_reserve_line ?? true,
+        showForecastLine: data.chart_show_forecast_line ?? true,
         cashFlowColor: data.chart_cashflow_color ?? 'hsl(221, 83%, 53%)',
         totalResourcesColor: data.chart_resources_color ?? '#10b981',
         creditCardColor: data.chart_credit_color ?? '#f59e0b',
         reserveColor: data.chart_reserve_color ?? '#ef4444',
+        forecastColor: data.chart_forecast_color ?? '#a855f7',
       });
     } catch (error) {
       console.error('Error fetching user settings:', error);
@@ -73,10 +77,12 @@ export const useUserSettings = () => {
       if (preferences.showTotalResourcesLine !== undefined) dbUpdates.chart_show_resources_line = preferences.showTotalResourcesLine;
       if (preferences.showCreditCardLine !== undefined) dbUpdates.chart_show_credit_line = preferences.showCreditCardLine;
       if (preferences.showReserveLine !== undefined) dbUpdates.chart_show_reserve_line = preferences.showReserveLine;
+      if (preferences.showForecastLine !== undefined) dbUpdates.chart_show_forecast_line = preferences.showForecastLine;
       if (preferences.cashFlowColor !== undefined) dbUpdates.chart_cashflow_color = preferences.cashFlowColor;
       if (preferences.totalResourcesColor !== undefined) dbUpdates.chart_resources_color = preferences.totalResourcesColor;
       if (preferences.creditCardColor !== undefined) dbUpdates.chart_credit_color = preferences.creditCardColor;
       if (preferences.reserveColor !== undefined) dbUpdates.chart_reserve_color = preferences.reserveColor;
+      if (preferences.forecastColor !== undefined) dbUpdates.chart_forecast_color = preferences.forecastColor;
 
       const { error } = await supabase
         .from('user_settings')
