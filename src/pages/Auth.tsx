@@ -40,6 +40,7 @@ export const Auth = () => {
     firstName: '',
     lastName: '',
   });
+  const [invitedEmail, setInvitedEmail] = useState('');
 
   useEffect(() => {
     // Check for invite token
@@ -48,6 +49,22 @@ export const Auth = () => {
       // Store invite token for after authentication
       sessionStorage.setItem('pendingInvite', inviteToken);
       setShowInviteSignup(true);
+      
+      // Fetch invitation details to get the invited email
+      const fetchInvitation = async () => {
+        const { data, error } = await supabase
+          .from('team_invitations')
+          .select('email')
+          .eq('token', inviteToken)
+          .single();
+        
+        if (data && !error) {
+          setInvitedEmail(data.email);
+          setInviteSignupData(prev => ({ ...prev, email: data.email }));
+        }
+      };
+      
+      fetchInvitation();
     }
 
     // Check for password reset token
@@ -388,9 +405,15 @@ export const Auth = () => {
                       value={inviteSignupData.email}
                       onChange={(e) => setInviteSignupData({ ...inviteSignupData, email: e.target.value })}
                       className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
-                      disabled={loading}
+                      disabled={loading || !!invitedEmail}
+                      readOnly={!!invitedEmail}
                       required
                     />
+                    {invitedEmail && (
+                      <p className="text-xs text-muted-foreground">
+                        This invitation was sent to {invitedEmail}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
