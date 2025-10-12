@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Settings, CreditCard, LogOut, History, Lightbulb, Shield } from "lucide-react";
+import { Settings, CreditCard, LogOut, History, Lightbulb, Shield, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -99,6 +99,10 @@ export function UserMenu() {
         <DropdownMenuItem onClick={() => navigate('/settings')}>
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/settings?section=team')}>
+          <Users className="mr-2 h-4 w-4" />
+          <span>Team Management</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate('/upgrade-plan')}>
           <CreditCard className="mr-2 h-4 w-4" />
