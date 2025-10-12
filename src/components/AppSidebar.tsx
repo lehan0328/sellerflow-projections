@@ -103,11 +103,11 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick, 
                           <span>
                             {section.title}
                             {'showMatchCount' in section && section.showMatchCount && matchCount > 0 && (
-                              <Badge 
-                                className="ml-2 bg-green-600 dark:bg-green-500 text-white text-[10px] font-bold px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center"
+                              <span 
+                                className="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center"
                               >
                                 {matchCount}
-                              </Badge>
+                              </span>
                             )}
                           </span>
                           {'showBadge' in section && section.showBadge && unreadCount > 0 && (
