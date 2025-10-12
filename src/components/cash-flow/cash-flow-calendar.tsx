@@ -887,10 +887,10 @@ export const CashFlowCalendar = ({
                       />
                       <ChartTooltip 
                         content={<ChartTooltipContent />}
-                        formatter={(value: number, name: string) => [
-                          `$${value.toLocaleString()}`,
-                          'Cash Flow'
-                        ]}
+                        formatter={(value: number, name: string) => {
+                          const label = chartConfig[name as keyof typeof chartConfig]?.label || name;
+                          return [`$${value.toLocaleString()}`, label];
+                        }}
                         labelFormatter={(label, payload) => {
                           if (payload && payload[0]) {
                             const data = payload[0].payload;
@@ -1022,10 +1022,10 @@ export const CashFlowCalendar = ({
                       />
                       <ChartTooltip 
                         content={<ChartTooltipContent />}
-                        formatter={(value: number, name: string) => [
-                          `$${value.toLocaleString()}`,
-                          'Cash Flow'
-                        ]}
+                        formatter={(value: number, name: string) => {
+                          const label = chartConfig[name as keyof typeof chartConfig]?.label || name;
+                          return [`$${value.toLocaleString()}`, label];
+                        }}
                         labelFormatter={(label, payload) => {
                           if (payload && payload[0]) {
                             const data = payload[0].payload;
