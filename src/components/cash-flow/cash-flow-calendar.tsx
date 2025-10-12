@@ -535,7 +535,7 @@ export const CashFlowCalendar = ({
     },
     creditCardCredit: {
       label: "Credit Card Credit",
-      color: "#3b82f6",
+      color: "#f59e0b",
     },
   };
 
@@ -959,7 +959,7 @@ export const CashFlowCalendar = ({
                       <Line
                         type="monotone"
                         dataKey="creditCardCredit"
-                        stroke="#3b82f6"
+                        stroke="#f59e0b"
                         strokeWidth={2}
                         dot={false}
                       />
@@ -1149,7 +1149,7 @@ export const CashFlowCalendar = ({
                       <Line
                         type="monotone"
                         dataKey="creditCardCredit"
-                        stroke="#3b82f6"
+                        stroke="#f59e0b"
                         strokeWidth={2}
                         dot={false}
                       />
