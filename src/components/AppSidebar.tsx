@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock } from "lucide-react";
+import { Home, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/useNotifications";
 import {
@@ -22,6 +22,7 @@ interface AppSidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
   onFlexReportClick?: () => void;
+  matchCount?: number;
 }
 
 const overviewSections = [
@@ -29,6 +30,7 @@ const overviewSections = [
   { id: "analytics", title: "Analytics", icon: BarChart3 },
   { id: "scenario-planning", title: "Scenario Planning", icon: Calculator },
   { id: "notifications", title: "Automated Notifications", icon: Clock, showBadge: true },
+  { id: "match-transactions", title: "Match Transactions", icon: Link2, showMatchCount: true },
 ];
 
 const transactionSections = [
@@ -47,7 +49,7 @@ const resourceSections = [
   { id: "flex-report", title: "Flex Report", icon: FileBarChart, isExternal: true, isFlexReport: true },
 ];
 
-export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }: AppSidebarProps) {
+export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick, matchCount = 0 }: AppSidebarProps) {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
   const { unreadCount } = useNotifications();
@@ -106,11 +108,24 @@ export function AppSidebar({ activeSection, onSectionChange, onFlexReportClick }
                               {unreadCount}
                             </Badge>
                           )}
+                          {'showMatchCount' in section && section.showMatchCount && matchCount > 0 && (
+                            <Badge 
+                              variant="secondary" 
+                              className="ml-auto text-[10px] font-bold px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
+                            >
+                              {matchCount}
+                            </Badge>
+                          )}
                         </span>
                       )}
                       {isCollapsed && 'showBadge' in section && section.showBadge && unreadCount > 0 && (
                         <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
                           {unreadCount}
+                        </div>
+                      )}
+                      {isCollapsed && 'showMatchCount' in section && section.showMatchCount && matchCount > 0 && (
+                        <div className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
+                          {matchCount}
                         </div>
                       )}
                     </SidebarMenuButton>

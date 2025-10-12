@@ -25,6 +25,7 @@ import Analytics from "@/pages/Analytics";
 import DocumentStorage from "@/pages/DocumentStorage";
 import Support from "@/pages/Support";
 import Notifications from "@/pages/Notifications";
+import MatchTransactions from "@/pages/MatchTransactions";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useToast } from "@/hooks/use-toast";
@@ -1266,6 +1267,9 @@ const Dashboard = () => {
       case "notifications":
         return <Notifications />;
       
+      case "match-transactions":
+        return <MatchTransactions />;
+      
       case "transactions":
         return (
           <TransactionsView
@@ -1559,6 +1563,7 @@ const Dashboard = () => {
           activeSection={activeSection} 
           onSectionChange={setActiveSection}
           onFlexReportClick={() => navigate('/flex-report')}
+          matchCount={matches.length}
         />
         
         <div className="flex-1 overflow-auto relative">
