@@ -347,9 +347,9 @@ const FlexReport = () => {
                   Cash Flow Management Software For Amazon Sellers
                 </p>
               </div>
-              <div className="text-right">
+              <div className="text-right flex flex-col items-end">
                 <img src={aurenLogo} alt="Auren" className="h-12 md:h-14 drop-shadow-lg mb-2" />
-                <p className="text-xs font-semibold text-blue-600">www.aurenapp.com</p>
+                <p className="text-xs font-semibold text-blue-600 text-center">www.aurenapp.com</p>
               </div>
             </div>
 
