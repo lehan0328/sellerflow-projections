@@ -89,7 +89,6 @@ export const CashFlowCalendar = ({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDayTransactionsModal, setShowDayTransactionsModal] = useState(false);
   const [draggedTransaction, setDraggedTransaction] = useState<CashFlowEvent | null>(null);
-  const [ignoreOverdue, setIgnoreOverdue] = useState(false);
   
   // Total available cash baseline comes from Overview (displayCash)
   const totalAvailableCash = totalCash;
@@ -105,42 +104,40 @@ export const CashFlowCalendar = ({
     return d >= accountStartDate;
   });
 
-  // Filter out overdue unmatched transactions if toggle is enabled
-  if (ignoreOverdue) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  // Automatically filter out overdue unmatched transactions
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  events = events.filter(event => {
+    const eventDate = new Date(event.date);
+    eventDate.setHours(0, 0, 0, 0);
     
-    events = events.filter(event => {
-      const eventDate = new Date(event.date);
-      eventDate.setHours(0, 0, 0, 0);
-      
-      // Keep future events
-      if (eventDate >= today) return true;
-      
-      // For past events, check if they're matched/received
-      // If it's an income event, check if corresponding income item is received
-      if (event.type === 'inflow') {
-        const correspondingIncome = incomeItems.find(income => 
-          income.description === event.description &&
-          Math.abs(income.amount - event.amount) < 0.01
-        );
-        // Keep if received, filter out if pending/overdue
-        return correspondingIncome?.status === 'received';
-      }
-      
-      // For vendor/purchase-order events, check if corresponding vendor is paid
-      if (event.type === 'purchase-order' || event.vendor) {
-        const correspondingVendor = vendors.find(vendor =>
-          vendor.name === event.vendor || vendor.poName === event.poName
-        );
-        // Keep if paid, filter out if not paid
-        return correspondingVendor?.status === 'paid';
-      }
-      
-      // Keep all other event types (credit payments, recurring, etc.)
-      return true;
-    });
-  }
+    // Keep future events
+    if (eventDate >= today) return true;
+    
+    // For past events, check if they're matched/received
+    // If it's an income event, check if corresponding income item is received
+    if (event.type === 'inflow') {
+      const correspondingIncome = incomeItems.find(income => 
+        income.description === event.description &&
+        Math.abs(income.amount - event.amount) < 0.01
+      );
+      // Keep if received, filter out if pending/overdue
+      return correspondingIncome?.status === 'received';
+    }
+    
+    // For vendor/purchase-order events, check if corresponding vendor is paid
+    if (event.type === 'purchase-order' || event.vendor) {
+      const correspondingVendor = vendors.find(vendor =>
+        vendor.name === event.vendor || vendor.poName === event.poName
+      );
+      // Keep if paid, filter out if not paid
+      return correspondingVendor?.status === 'paid';
+    }
+    
+    // Keep all other event types (credit payments, recurring, etc.)
+    return true;
+  });
 
   // Hide calendar monetary summaries if there's no user data
   const hasAnyData = events.length > 0 || (incomeItems?.length ?? 0) > 0;
@@ -597,17 +594,6 @@ export const CashFlowCalendar = ({
               </div>
               
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
-                  <Switch
-                    id="ignore-overdue"
-                    checked={ignoreOverdue}
-                    onCheckedChange={setIgnoreOverdue}
-                  />
-                  <Label htmlFor="ignore-overdue" className="text-sm cursor-pointer">
-                    Ignore Overdue
-                  </Label>
-                </div>
-                
                 <PendingNotificationsPanel
                   vendors={vendors}
                   incomeItems={incomeItems}

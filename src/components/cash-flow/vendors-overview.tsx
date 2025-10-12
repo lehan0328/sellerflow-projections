@@ -92,9 +92,14 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
         if (!matchesSearch) return false;
       }
       
-      // Status filter
+      // Status filter - automatically exclude overdue from 'all' filter
       let matchesStatus = true;
-      if (statusFilter === 'overdue') {
+      if (statusFilter === 'all') {
+        // Exclude overdue transactions by default
+        if (tx.status === 'pending' && tx.dueDate && new Date(tx.dueDate) < new Date()) {
+          matchesStatus = false;
+        }
+      } else if (statusFilter === 'overdue') {
         matchesStatus = tx.status === 'pending' && tx.dueDate && new Date(tx.dueDate) < new Date();
       } else if (statusFilter === 'paid') {
         matchesStatus = tx.status === 'completed' || tx.status === 'paid';

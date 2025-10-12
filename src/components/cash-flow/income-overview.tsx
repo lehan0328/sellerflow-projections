@@ -56,9 +56,19 @@ export const IncomeOverview = ({ incomeItems, bankTransactions = [], onCollectTo
 
   // Filter and sort income items
   const filteredAndSortedIncomes = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     let filtered = incomeItems.filter(income => {
       // Hide archived (received) income
       if (income.status === 'received') return false;
+
+      // Automatically exclude overdue income from calculations
+      const paymentDate = new Date(income.paymentDate);
+      paymentDate.setHours(0, 0, 0, 0);
+      if (income.status === 'pending' && paymentDate < today) {
+        return false;
+      }
 
       // Search filter
       const matchesSearch = income.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
