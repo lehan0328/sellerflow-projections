@@ -33,9 +33,9 @@ const overviewSections = [
 
 const transactionSections = [
   { id: "transactions", title: "Transactions", icon: TrendingUp },
+  { id: "recurring", title: "Recurring", icon: Repeat },
   { id: "bank-transactions", title: "Bank Transactions", icon: Building2 },
   { id: "financials", title: "Financials", icon: Wallet },
-  { id: "recurring", title: "Recurring Expenses", icon: Repeat },
   { id: "amazon", title: "Amazon Payouts", icon: ShoppingCart },
 ];
 
