@@ -1244,7 +1244,10 @@ const Dashboard = () => {
             />
             
             {/* Transaction Match Notification */}
-            <TransactionMatchNotification unmatchedCount={unmatchedTransactionsCount} />
+            <TransactionMatchNotification 
+              unmatchedCount={unmatchedTransactionsCount} 
+              onNavigate={() => setActiveSection("match-transactions")}
+            />
             
             
             {/* Row 1: Cash Flow Calendar and AI Insights (Side by Side) */}

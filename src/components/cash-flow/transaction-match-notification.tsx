@@ -2,19 +2,19 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, X } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 interface TransactionMatchNotificationProps {
   unmatchedCount: number;
   onDismiss?: () => void;
+  onNavigate?: () => void;
 }
 
 export const TransactionMatchNotification = ({ 
   unmatchedCount,
-  onDismiss 
+  onDismiss,
+  onNavigate 
 }: TransactionMatchNotificationProps) => {
   const [dismissed, setDismissed] = useState(false);
-  const navigate = useNavigate();
 
   if (unmatchedCount === 0 || dismissed) {
     return null;
@@ -26,7 +26,7 @@ export const TransactionMatchNotification = ({
   };
 
   const handleNavigate = () => {
-    navigate('/bank-transactions');
+    onNavigate?.();
   };
 
   return (
