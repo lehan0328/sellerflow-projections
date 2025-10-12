@@ -97,22 +97,6 @@ serve(async (req) => {
       throw new Error("An active invitation already exists for this email");
     }
 
-    // Check if user with this email is already in auth.users and part of this account
-    const { data: { user: existingAuthUser } } = await supabaseClient.auth.admin.getUserByEmail(email);
-    
-    if (existingAuthUser) {
-      const { data: existingProfile } = await supabaseClient
-        .from("profiles")
-        .select("account_id")
-        .eq("user_id", existingAuthUser.id)
-        .maybeSingle();
-
-      if (existingProfile && existingProfile.account_id === profile.account_id) {
-        console.log("[SEND-INVITATION] User already member");
-        throw new Error("This user is already a member of your team");
-      }
-    }
-
     console.log("[SEND-INVITATION] Creating invitation token");
 
     // Generate invitation token
