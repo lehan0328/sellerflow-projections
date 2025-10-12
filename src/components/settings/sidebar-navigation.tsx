@@ -103,12 +103,33 @@ const navigationItems = [
 interface SidebarNavigationProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
+  isAdmin: boolean;
 }
 
-export function SidebarNavigation({ activeSection, onSectionChange }: SidebarNavigationProps) {
+// Sections that require admin access (owner or admin role)
+const adminOnlySections = [
+  'team',
+  'bank-accounts',
+  'credit-cards',
+  'vendors',
+  'customers',
+  'recurring-expenses',
+  'amazon',
+  'financial',
+  'invoices',
+  'export',
+  'data-management'
+];
+
+export function SidebarNavigation({ activeSection, onSectionChange, isAdmin }: SidebarNavigationProps) {
   return (
     <nav className="space-y-1">
       {navigationItems.map((item) => {
+        // Hide admin-only sections from staff users
+        if (!isAdmin && adminOnlySections.includes(item.id)) {
+          return null;
+        }
+        
         const Icon = item.icon;
         return (
           <Button

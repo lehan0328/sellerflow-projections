@@ -44,6 +44,7 @@ import { NotificationSettings } from "@/components/settings/notification-setting
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { PageLoadingWrapper } from "@/components/PageLoadingWrapper";
 import { useUserSettings } from "@/hooks/useUserSettings";
+import { useAdmin } from "@/hooks/useAdmin";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -56,6 +57,7 @@ const Settings = () => {
   const queryClient = useQueryClient();
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   const { resetAccount } = useUserSettings();
+  const { isAdmin, isLoading: adminLoading } = useAdmin();
 
   // Fetch user profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -485,6 +487,41 @@ const Settings = () => {
   );
 
   const renderContent = () => {
+    // Admin-only sections
+    const adminOnlySections = [
+      'team',
+      'bank-accounts',
+      'credit-cards',
+      'vendors',
+      'customers',
+      'recurring-expenses',
+      'amazon',
+      'financial',
+      'invoices',
+      'export',
+      'data-management'
+    ];
+
+    // If user is staff and trying to access admin-only section, show access denied
+    if (!isAdmin && adminOnlySections.includes(activeSection)) {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2 text-destructive">
+              <Shield className="h-5 w-5" />
+              <span>Access Restricted</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              This section is only accessible to account owners and administrators. 
+              Please contact your account administrator for access.
+            </p>
+          </CardContent>
+        </Card>
+      );
+    }
+
     switch (activeSection) {
       case 'profile':
         return renderProfileSettings();
@@ -528,7 +565,7 @@ const Settings = () => {
   }
 
   return (
-    <PageLoadingWrapper isLoading={profileLoading} loadingMessage="Loading your settings...">
+    <PageLoadingWrapper isLoading={profileLoading || adminLoading} loadingMessage="Loading your settings...">
       <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -569,6 +606,7 @@ const Settings = () => {
                 <SidebarNavigation 
                   activeSection={activeSection}
                   onSectionChange={setActiveSection}
+                  isAdmin={isAdmin}
                 />
               </CardContent>
             </Card>
