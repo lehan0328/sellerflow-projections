@@ -483,6 +483,7 @@ export const CashFlowCalendar = ({
         date: format(day, 'MMM dd'),
         fullDate: day,
         cashFlow: runningTotal,
+        availableCredit: runningTotal + totalAvailableCredit,
         dailyChange,
         inflow: dailyInflow,
         outflow: dailyOutflow,
@@ -526,6 +527,10 @@ export const CashFlowCalendar = ({
     cashFlow: {
       label: "Cash Flow",
       color: "hsl(var(--primary))",
+    },
+    availableCredit: {
+      label: "Available Credit",
+      color: "#10b981",
     },
   };
 
@@ -939,6 +944,13 @@ export const CashFlowCalendar = ({
                         radius={[4, 4, 0, 0]}
                         cursor="pointer"
                       />
+                      <Line
+                        type="monotone"
+                        dataKey="availableCredit"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        dot={false}
+                      />
                     </BarChart>
                   ) : (
                     <LineChart data={chartData} onClick={handleChartClick}>
@@ -1108,6 +1120,13 @@ export const CashFlowCalendar = ({
                           return <circle cx={cx} cy={cy} r={4} fill="hsl(var(--primary))" cursor="pointer" />;
                         }}
                         activeDot={{ r: 6, cursor: 'pointer' }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="availableCredit"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        dot={false}
                       />
                     </LineChart>
                   )}
