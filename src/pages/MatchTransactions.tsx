@@ -8,6 +8,7 @@ import { useTransactionMatching, TransactionMatch } from "@/hooks/useTransaction
 import { useBankTransactions } from "@/hooks/useBankTransactions";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useVendors } from "@/hooks/useVendors";
+import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 import { useIncome } from "@/hooks/useIncome";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +22,8 @@ const MatchTransactions = () => {
 
   const { accounts } = useBankAccounts();
   const { transactions: bankTransactionsData } = useBankTransactions();
-  const { vendors, updateVendor, refetch: refetchVendors } = useVendors();
+  const { vendors } = useVendors();
+  const { transactions: vendorTransactions, markAsPaid, refetch: refetchVendorTransactions } = useVendorTransactions();
   const { incomeItems, updateIncome, refetch: refetchIncome } = useIncome();
   const { addTransaction } = useTransactions();
 
@@ -40,17 +42,15 @@ const MatchTransactions = () => {
     pending: tx.pending
   })) || [];
 
-  const vendorsForMatching = vendors.map(v => ({
-    id: v.id,
-    name: v.name,
-    totalOwed: v.totalOwed || 0,
-    nextPaymentDate: v.nextPaymentDate,
-    nextPaymentAmount: v.nextPaymentAmount || 0,
-    status: v.status,
-    category: v.category || 'Other',
-    paymentType: v.paymentType,
-    netTermsDays: v.netTermsDays
-  }));
+  const vendorTransactionsForMatching = vendorTransactions?.filter(tx => tx.status === 'pending').map(tx => ({
+    id: tx.id,
+    vendorName: tx.vendorName,
+    description: tx.description,
+    amount: tx.amount,
+    dueDate: tx.dueDate,
+    status: tx.status,
+    category: tx.category
+  })) || [];
 
   const incomeItemsForMatching = incomeItems.map(i => ({
     id: i.id,
@@ -64,7 +64,7 @@ const MatchTransactions = () => {
 
   const { matches } = useTransactionMatching(
     bankTransactions,
-    vendorsForMatching,
+    vendorTransactionsForMatching,
     incomeItemsForMatching
   );
 
@@ -92,18 +92,8 @@ const MatchTransactions = () => {
           title: 'Income matched',
           description: 'Income has been matched with bank transaction.',
         });
-      } else if (match.type === 'vendor' && match.matchedVendor) {
-        await updateVendor(match.matchedVendor.id, {
-          totalOwed: Math.max(0, match.matchedVendor.totalOwed - Math.abs(match.bankTransaction.amount))
-        });
-        await addTransaction({
-          type: 'vendor_payment',
-          amount: Math.abs(match.bankTransaction.amount),
-          description: `Matched: Payment to ${match.matchedVendor.name}`,
-          vendorId: match.matchedVendor.id,
-          transactionDate: new Date(),
-          status: 'completed'
-        });
+      } else if (match.type === 'vendor' && match.matchedVendorTransaction) {
+        await markAsPaid(match.matchedVendorTransaction.id);
         
         toast({
           title: 'Vendor payment matched',
@@ -111,7 +101,7 @@ const MatchTransactions = () => {
         });
       }
       
-      await Promise.all([refetchIncome(), refetchVendors()]);
+      await Promise.all([refetchIncome(), refetchVendorTransactions()]);
     } catch (error) {
       toast({
         title: 'Error',
@@ -239,11 +229,11 @@ const MatchTransactions = () => {
                                 ${match.matchedIncome.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                               </>
                             )}
-                            {match.type === 'vendor' && match.matchedVendor && (
+                            {match.type === 'vendor' && match.matchedVendorTransaction && (
                               <>
-                                {match.matchedVendor.name}
+                                {match.matchedVendorTransaction.vendorName} - {match.matchedVendorTransaction.description}
                                 <span className="mx-2">•</span>
-                                ${match.matchedVendor.nextPaymentAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                ${match.matchedVendorTransaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                               </>
                             )}
                           </p>

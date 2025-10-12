@@ -504,7 +504,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                           {getStatusIcon(tx)}
                           <span className="ml-1">{getStatusText(tx)}</span>
                         </Badge>
-                        {getMatchesForVendor(tx.vendorId).length > 0 && (
+                        {getMatchesForVendorTransaction(tx.id).length > 0 && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
@@ -513,7 +513,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                                 </Badge>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>{getMatchesForVendor(tx.vendorId).length} potential bank transaction match(es)</p>
+                                <p>{getMatchesForVendorTransaction(tx.id).length} potential bank transaction match(es)</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>

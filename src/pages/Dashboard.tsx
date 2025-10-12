@@ -93,7 +93,7 @@ const Dashboard = () => {
   // Use database hooks
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, cleanupOrphanedVendors, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction, refetch: refetchTransactions } = useTransactions();
-  const { transactions: vendorTransactions } = useVendorTransactions();
+  const { transactions: vendorTransactions, markAsPaid } = useVendorTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { transactions: bankTransactionsData, isLoading: isBankTransactionsLoading } = useBankTransactions();
   const { creditCards } = useCreditCards();
@@ -1776,21 +1776,9 @@ const Dashboard = () => {
                   title: 'Match accepted',
                   description: 'Income has been matched with bank transaction.',
                 });
-              } else if (match.type === 'vendor' && match.matchedVendor) {
-                // Update vendor to reduce amount owed
-                await updateVendor(match.matchedVendor.id, {
-                  totalOwed: Math.max(0, match.matchedVendor.totalOwed - Math.abs(match.bankTransaction.amount))
-                });
-                
-                // Create completed transaction
-                await addTransaction({
-                  type: 'vendor_payment',
-                  amount: Math.abs(match.bankTransaction.amount),
-                  description: `Matched: Payment to ${match.matchedVendor.name}`,
-                  vendorId: match.matchedVendor.id,
-                  transactionDate: new Date(),
-                  status: 'completed'
-                });
+              } else if (match.type === 'vendor' && match.matchedVendorTransaction) {
+                // Mark vendor transaction as paid
+                await markAsPaid(match.matchedVendorTransaction.id);
                 
                 toast({
                   title: 'Match accepted',

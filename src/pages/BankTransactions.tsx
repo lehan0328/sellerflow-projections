@@ -221,8 +221,7 @@ const BankTransactions = () => {
       await supabase
         .from('transactions')
         .update({ status: 'paid' })
-        .eq('vendor_id', match.matchedVendor!.id)
-        .eq('status', 'pending');
+        .eq('id', match.matchedVendorTransaction!.id);
     }
     
     // Archive the bank transaction by storing it and deleting from bank_transactions
@@ -232,7 +231,7 @@ const BankTransactions = () => {
         user_id: user.id,
         original_id: match.bankTransaction.id,
         name: match.bankTransaction.merchantName || match.bankTransaction.description,
-        description: `Matched with ${match.type === 'income' ? match.matchedIncome?.description : match.matchedVendor?.name}`,
+        description: `Matched with ${match.type === 'income' ? match.matchedIncome?.description : match.matchedVendorTransaction?.vendorName}`,
         amount: match.bankTransaction.amount,
         payment_date: match.bankTransaction.date.toISOString().split('T')[0],
         transaction_type: 'bank',
@@ -240,7 +239,7 @@ const BankTransactions = () => {
         category: match.type,
         metadata: {
           matchedType: match.type,
-          matchedId: match.type === 'income' ? match.matchedIncome?.id : match.matchedVendor?.id,
+          matchedId: match.type === 'income' ? match.matchedIncome?.id : match.matchedVendorTransaction?.id,
           matchScore: match.matchScore
         }
       }]);
@@ -362,7 +361,7 @@ const BankTransactions = () => {
                           {hasMatches && (
                             <span className="text-primary font-medium">
                               Matches: {txMatches.map(m => 
-                                m.type === 'income' ? m.matchedIncome?.description : m.matchedVendor?.name
+                                m.type === 'income' ? m.matchedIncome?.description : m.matchedVendorTransaction?.vendorName
                               ).join(', ')}
                             </span>
                           )}
