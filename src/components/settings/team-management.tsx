@@ -315,23 +315,22 @@ export function TeamManagement() {
     },
   });
 
-  // Remove member mutation
+  // Remove member mutation - deletes entire account
   const removeMemberMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const { error } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId)
-        .eq('account_id', profile!.account_id);
+      const { data, error } = await supabase.functions.invoke('delete-user-account', {
+        body: { userId }
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
     },
     onSuccess: () => {
-      toast.success('Team member removed');
+      toast.success('Team member account deleted');
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to remove team member');
+      toast.error(error.message || 'Failed to delete team member account');
     },
   });
 
