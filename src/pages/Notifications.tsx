@@ -48,70 +48,72 @@ const Notifications = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Active Alerts
-              </CardTitle>
-              <Bell className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline gap-2">
-              <div className="text-3xl font-bold">{stats.activeNotifications}</div>
-              <div className="text-sm text-muted-foreground">
-                / {stats.totalConfigured} configured
+      {stats.totalConfigured > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Active Alerts
+                </CardTitle>
+                <Bell className="h-4 w-4 text-muted-foreground" />
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-baseline gap-2">
+                <div className="text-3xl font-bold">{stats.activeNotifications}</div>
+                <div className="text-sm text-muted-foreground">
+                  / {stats.totalConfigured} configured
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Notification Types
-              </CardTitle>
-              <Zap className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">Balance</Badge>
-              <Badge variant="secondary">Payments</Badge>
-              <Badge variant="secondary">Income</Badge>
-            </div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Notification Types
+                </CardTitle>
+                <Zap className="h-4 w-4 text-muted-foreground" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary">Balance</Badge>
+                <Badge variant="secondary">Payments</Badge>
+                <Badge variant="secondary">Income</Badge>
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Automation Status
-              </CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              {stats.activeNotifications > 0 ? (
-                <>
-                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-sm font-medium">Running</span>
-                </>
-              ) : (
-                <>
-                  <BellOff className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">No active alerts</span>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Automation Status
+                </CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                {stats.activeNotifications > 0 ? (
+                  <>
+                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-sm font-medium">Running</span>
+                  </>
+                ) : (
+                  <>
+                    <BellOff className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">No active alerts</span>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <NotificationSettings />
     </div>
