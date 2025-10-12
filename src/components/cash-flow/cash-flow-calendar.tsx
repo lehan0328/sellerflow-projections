@@ -886,11 +886,23 @@ export const CashFlowCalendar = ({
                         tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                       />
                       <ChartTooltip 
-                        content={<ChartTooltipContent />}
-                        formatter={(value: number, name: string) => {
-                          const label = chartConfig[name as keyof typeof chartConfig]?.label || name;
-                          return [`$${value.toLocaleString()}`, label];
-                        }}
+                        content={
+                          <ChartTooltipContent 
+                            formatter={(value: number, name: string) => {
+                              const labels: Record<string, string> = {
+                                totalResources: "Total Resources:",
+                                cashBalance: "Cash Flow:",
+                                creditCardBalance: "Available Credit:",
+                                reserveAmount: "Reserve Amount:"
+                              };
+                              return [`$${value.toLocaleString()}`, labels[name] || name];
+                            }}
+                            itemSorter={(item) => {
+                              const order = ["totalResources", "cashBalance", "creditCardBalance", "reserveAmount"];
+                              return order.indexOf(item.dataKey as string);
+                            }}
+                          />
+                        }
                         labelFormatter={(label, payload) => {
                           if (payload && payload[0]) {
                             const data = payload[0].payload;
@@ -1021,11 +1033,23 @@ export const CashFlowCalendar = ({
                         tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                       />
                       <ChartTooltip 
-                        content={<ChartTooltipContent />}
-                        formatter={(value: number, name: string) => {
-                          const label = chartConfig[name as keyof typeof chartConfig]?.label || name;
-                          return [`$${value.toLocaleString()}`, label];
-                        }}
+                        content={
+                          <ChartTooltipContent 
+                            formatter={(value: number, name: string) => {
+                              const labels: Record<string, string> = {
+                                totalResources: "Total Resources:",
+                                cashBalance: "Cash Flow:",
+                                creditCardBalance: "Available Credit:",
+                                reserveAmount: "Reserve Amount:"
+                              };
+                              return [`$${value.toLocaleString()}`, labels[name] || name];
+                            }}
+                            itemSorter={(item) => {
+                              const order = ["totalResources", "cashBalance", "creditCardBalance", "reserveAmount"];
+                              return order.indexOf(item.dataKey as string);
+                            }}
+                          />
+                        }
                         labelFormatter={(label, payload) => {
                           if (payload && payload[0]) {
                             const data = payload[0].payload;
