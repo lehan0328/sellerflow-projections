@@ -1355,6 +1355,10 @@ const Dashboard = () => {
               refetchVendors();
               refetchTransactions();
               setVendorTxRefresh((v) => v + 1);
+              // Refresh safe spending after vendor transaction updates
+              setTimeout(() => {
+                refetchSafeSpending();
+              }, 500);
             }}
             refreshKey={vendorTxRefresh}
             incomeItems={incomeItems}
