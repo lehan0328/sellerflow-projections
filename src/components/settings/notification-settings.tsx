@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Clock, DollarSign, Calendar, TrendingUp, Mail, BellOff } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Bell, Clock, DollarSign, Calendar, TrendingUp, Mail, BellOff, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -68,6 +69,7 @@ export const NotificationSettings = () => {
   const [preferences, setPreferences] = useState<NotificationPreference[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -155,6 +157,51 @@ export const NotificationSettings = () => {
     updatePreference(prefId, { schedule_days: newDays });
   };
 
+  const toggleChannel = (prefId: string, channel: string) => {
+    const pref = preferences.find(p => p.id === prefId);
+    if (!pref) return;
+
+    const newChannels = pref.notification_channels.includes(channel)
+      ? pref.notification_channels.filter(c => c !== channel)
+      : [...pref.notification_channels, channel];
+
+    // Ensure at least one channel is selected
+    if (newChannels.length === 0) {
+      toast.error('At least one notification channel must be selected');
+      return;
+    }
+
+    updatePreference(prefId, { notification_channels: newChannels });
+  };
+
+  const sendNotificationNow = async (notificationType: string) => {
+    try {
+      setSending(notificationType);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.functions.invoke('send-automated-notifications', {
+        body: { 
+          notificationType,
+          manual: true 
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success(`${notificationType.replace('_', ' ')} notification sent successfully!`);
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      toast.error('Failed to send notification');
+    } finally {
+      setSending(null);
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-8">Loading notification settings...</div>;
   }
@@ -235,15 +282,35 @@ export const NotificationSettings = () => {
                     {/* Notification Channels */}
                     <div className="space-y-2">
                       <Label>Send via</Label>
-                      <div className="flex items-center gap-2 h-10">
-                        <Badge variant="secondary">
-                          <Bell className="h-3 w-3 mr-1" />
-                          In-App
-                        </Badge>
-                        <Badge variant="outline" className="opacity-50">
-                          <Mail className="h-3 w-3 mr-1" />
-                          Email (Coming Soon)
-                        </Badge>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`${pref.id}-in-app`}
+                            checked={pref.notification_channels.includes('in_app')}
+                            onCheckedChange={() => toggleChannel(pref.id, 'in_app')}
+                            disabled={saving}
+                          />
+                          <Label htmlFor={`${pref.id}-in-app`} className="font-normal cursor-pointer">
+                            <div className="flex items-center gap-2">
+                              <Bell className="h-3 w-3" />
+                              In-App Notifications
+                            </div>
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`${pref.id}-email`}
+                            checked={pref.notification_channels.includes('email')}
+                            onCheckedChange={() => toggleChannel(pref.id, 'email')}
+                            disabled={saving}
+                          />
+                          <Label htmlFor={`${pref.id}-email`} className="font-normal cursor-pointer">
+                            <div className="flex items-center gap-2">
+                              <Mail className="h-3 w-3" />
+                              Email Notifications
+                            </div>
+                          </Label>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -321,6 +388,22 @@ export const NotificationSettings = () => {
                       </Select>
                     </div>
                   )}
+
+                  {/* Manual Send Button */}
+                  <div className="pt-2 border-t">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => sendNotificationNow(nt.type)}
+                      disabled={sending === nt.type || saving}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      {sending === nt.type ? 'Sending...' : 'Send Now'}
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Test this notification by sending it immediately
+                    </p>
+                  </div>
                 </CardContent>
               )}
             </Card>

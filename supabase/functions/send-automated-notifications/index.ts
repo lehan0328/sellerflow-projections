@@ -12,48 +12,97 @@ serve(async (req) => {
   }
 
   try {
-    console.log("[NOTIFICATIONS] Starting automated notifications check");
+    // Check if this is a manual trigger
+    const body = req.method === "POST" ? await req.json() : {};
+    const isManual = body.manual === true;
+    const manualNotificationType = body.notificationType;
+    
+    console.log(`[NOTIFICATIONS] ${isManual ? 'Manual' : 'Automated'} notifications check`);
     
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // For manual sends, get the user from the auth header
+    let targetUserId: string | null = null;
+    if (isManual) {
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader) {
+        throw new Error('Authorization required for manual sends');
+      }
+      
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+      
+      if (authError || !user) {
+        throw new Error('Invalid authentication token');
+      }
+      
+      targetUserId = user.id;
+      console.log(`[NOTIFICATIONS] Manual send requested by user ${targetUserId} for ${manualNotificationType}`);
+    }
+
     const now = new Date();
-    const currentDay = now.getDay() === 0 ? 7 : now.getDay(); // Convert Sunday=0 to Sunday=7
-    const currentTime = now.toTimeString().substring(0, 8); // HH:MM:SS
+    const currentDay = now.getDay() === 0 ? 7 : now.getDay();
+    const currentTime = now.toTimeString().substring(0, 8);
 
     console.log(`[NOTIFICATIONS] Current time: ${currentTime}, day: ${currentDay}`);
 
-    // Get all enabled notification preferences that should run now
-    const { data: preferences, error: prefError } = await supabaseAdmin
-      .from('notification_preferences')
-      .select('*, profiles!inner(email, first_name)')
-      .eq('enabled', true)
-      .lte('schedule_time', currentTime)
-      .gte('schedule_time', `${String(parseInt(currentTime.split(':')[0]) - 1).padStart(2, '0')}:${currentTime.split(':')[1]}:00`);
+    // Get notification preferences
+    let preferences: any[];
+    
+    if (isManual && targetUserId && manualNotificationType) {
+      // For manual sends, get the specific notification preference for this user
+      const { data, error } = await supabaseAdmin
+        .from('notification_preferences')
+        .select('*, profiles!inner(email, first_name)')
+        .eq('user_id', targetUserId)
+        .eq('notification_type', manualNotificationType)
+        .single();
+      
+      if (error) {
+        console.error("[NOTIFICATIONS] Error fetching preference:", error);
+        throw error;
+      }
+      
+      preferences = data ? [data] : [];
+    } else {
+      // For automated sends, get all enabled preferences that should run now
+      const { data, error } = await supabaseAdmin
+        .from('notification_preferences')
+        .select('*, profiles!inner(email, first_name)')
+        .eq('enabled', true)
+        .lte('schedule_time', currentTime)
+        .gte('schedule_time', `${String(parseInt(currentTime.split(':')[0]) - 1).padStart(2, '0')}:${currentTime.split(':')[1]}:00`);
 
-    if (prefError) {
-      console.error("[NOTIFICATIONS] Error fetching preferences:", prefError);
-      throw prefError;
+      if (error) {
+        console.error("[NOTIFICATIONS] Error fetching preferences:", error);
+        throw error;
+      }
+      
+      preferences = data || [];
     }
 
     console.log(`[NOTIFICATIONS] Found ${preferences?.length || 0} preferences to process`);
 
     for (const pref of preferences || []) {
-      // Check if notification should run today
-      if (pref.schedule_days && !pref.schedule_days.includes(currentDay)) {
-        console.log(`[NOTIFICATIONS] Skipping ${pref.notification_type} for user ${pref.user_id} - not scheduled for today`);
-        continue;
-      }
-
-      // Check if already sent recently (within last hour)
-      if (pref.last_sent_at) {
-        const lastSent = new Date(pref.last_sent_at);
-        const hoursSinceLastSent = (now.getTime() - lastSent.getTime()) / (1000 * 60 * 60);
-        if (hoursSinceLastSent < 1) {
-          console.log(`[NOTIFICATIONS] Skipping ${pref.notification_type} for user ${pref.user_id} - already sent recently`);
+      // Skip day and time checks for manual sends
+      if (!isManual) {
+        // Check if notification should run today
+        if (pref.schedule_days && !pref.schedule_days.includes(currentDay)) {
+          console.log(`[NOTIFICATIONS] Skipping ${pref.notification_type} for user ${pref.user_id} - not scheduled for today`);
           continue;
+        }
+
+        // Check if already sent recently (within last hour)
+        if (pref.last_sent_at) {
+          const lastSent = new Date(pref.last_sent_at);
+          const hoursSinceLastSent = (now.getTime() - lastSent.getTime()) / (1000 * 60 * 60);
+          if (hoursSinceLastSent < 1) {
+            console.log(`[NOTIFICATIONS] Skipping ${pref.notification_type} for user ${pref.user_id} - already sent recently`);
+            continue;
+          }
         }
       }
 
@@ -62,11 +111,13 @@ serve(async (req) => {
       try {
         await processNotification(supabaseAdmin, pref);
         
-        // Update last_sent_at
-        await supabaseAdmin
-          .from('notification_preferences')
-          .update({ last_sent_at: now.toISOString() })
-          .eq('id', pref.id);
+        // Update last_sent_at only for automated sends
+        if (!isManual) {
+          await supabaseAdmin
+            .from('notification_preferences')
+            .update({ last_sent_at: now.toISOString() })
+            .eq('id', pref.id);
+        }
           
         console.log(`[NOTIFICATIONS] Successfully sent ${pref.notification_type} to user ${pref.user_id}`);
       } catch (error) {
