@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp, ShoppingBag, AlertTriangle } from "lucide-react";
 import { useCreditCards } from "@/hooks/useCreditCards";
+import { useUserSettings } from "@/hooks/useUserSettings";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays, startOfWeek, endOfWeek, getDay, startOfDay } from "date-fns";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -81,6 +82,8 @@ export const CashFlowCalendar = ({
   reserveAmount = 0,
 }: CashFlowCalendarProps) => {
   const { totalAvailableCredit } = useCreditCards();
+  const { chartPreferences, updateChartPreferences } = useUserSettings();
+  
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'calendar' | 'chart'>('chart');
   const [chartTimeRange, setChartTimeRange] = useState<'1' | '3' | '6' | '12'>('3');
@@ -91,14 +94,26 @@ export const CashFlowCalendar = ({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDayTransactionsModal, setShowDayTransactionsModal] = useState(false);
   const [draggedTransaction, setDraggedTransaction] = useState<CashFlowEvent | null>(null);
-  const [showCashFlowLine, setShowCashFlowLine] = useState(true);
-  const [showTotalResourcesLine, setShowTotalResourcesLine] = useState(true);
-  const [showCreditCardLine, setShowCreditCardLine] = useState(true);
-  const [showReserveLine, setShowReserveLine] = useState(true);
-  const [cashFlowColor, setCashFlowColor] = useState('hsl(221, 83%, 53%)'); // Primary color
-  const [totalResourcesColor, setTotalResourcesColor] = useState('#10b981');
-  const [creditCardColor, setCreditCardColor] = useState('#f59e0b');
-  const [reserveColor, setReserveColor] = useState('#ef4444');
+  const [showCashFlowLine, setShowCashFlowLine] = useState(chartPreferences.showCashFlowLine);
+  const [showTotalResourcesLine, setShowTotalResourcesLine] = useState(chartPreferences.showTotalResourcesLine);
+  const [showCreditCardLine, setShowCreditCardLine] = useState(chartPreferences.showCreditCardLine);
+  const [showReserveLine, setShowReserveLine] = useState(chartPreferences.showReserveLine);
+  const [cashFlowColor, setCashFlowColor] = useState(chartPreferences.cashFlowColor);
+  const [totalResourcesColor, setTotalResourcesColor] = useState(chartPreferences.totalResourcesColor);
+  const [creditCardColor, setCreditCardColor] = useState(chartPreferences.creditCardColor);
+  const [reserveColor, setReserveColor] = useState(chartPreferences.reserveColor);
+  
+  // Sync local state with loaded preferences
+  useEffect(() => {
+    setShowCashFlowLine(chartPreferences.showCashFlowLine);
+    setShowTotalResourcesLine(chartPreferences.showTotalResourcesLine);
+    setShowCreditCardLine(chartPreferences.showCreditCardLine);
+    setShowReserveLine(chartPreferences.showReserveLine);
+    setCashFlowColor(chartPreferences.cashFlowColor);
+    setTotalResourcesColor(chartPreferences.totalResourcesColor);
+    setCreditCardColor(chartPreferences.creditCardColor);
+    setReserveColor(chartPreferences.reserveColor);
+  }, [chartPreferences]);
   
   // Total available cash baseline comes from Overview (displayCash)
   const totalAvailableCash = totalCash;
@@ -1214,7 +1229,10 @@ export const CashFlowCalendar = ({
                     type="checkbox"
                     id="cashflow-toggle"
                     checked={showCashFlowLine}
-                    onChange={(e) => setShowCashFlowLine(e.target.checked)}
+                    onChange={(e) => {
+                      setShowCashFlowLine(e.target.checked);
+                      updateChartPreferences({ showCashFlowLine: e.target.checked });
+                    }}
                     className="w-4 h-4 rounded border-gray-300"
                   />
                   <label htmlFor="cashflow-color" className="cursor-pointer">
@@ -1222,7 +1240,10 @@ export const CashFlowCalendar = ({
                       type="color"
                       id="cashflow-color"
                       value={cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor}
-                      onChange={(e) => setCashFlowColor(e.target.value)}
+                      onChange={(e) => {
+                        setCashFlowColor(e.target.value);
+                        updateChartPreferences({ cashFlowColor: e.target.value });
+                      }}
                       className="w-3 h-3 rounded cursor-pointer border-0 p-0"
                       style={{ appearance: 'none', backgroundColor: cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor }}
                     />
@@ -1234,7 +1255,10 @@ export const CashFlowCalendar = ({
                     type="checkbox"
                     id="resources-toggle"
                     checked={showTotalResourcesLine}
-                    onChange={(e) => setShowTotalResourcesLine(e.target.checked)}
+                    onChange={(e) => {
+                      setShowTotalResourcesLine(e.target.checked);
+                      updateChartPreferences({ showTotalResourcesLine: e.target.checked });
+                    }}
                     className="w-4 h-4 rounded border-gray-300"
                   />
                   <label htmlFor="resources-color" className="cursor-pointer">
@@ -1242,7 +1266,10 @@ export const CashFlowCalendar = ({
                       type="color"
                       id="resources-color"
                       value={totalResourcesColor}
-                      onChange={(e) => setTotalResourcesColor(e.target.value)}
+                      onChange={(e) => {
+                        setTotalResourcesColor(e.target.value);
+                        updateChartPreferences({ totalResourcesColor: e.target.value });
+                      }}
                       className="w-3 h-3 rounded cursor-pointer border-0 p-0"
                       style={{ appearance: 'none', backgroundColor: totalResourcesColor }}
                     />
@@ -1254,7 +1281,10 @@ export const CashFlowCalendar = ({
                     type="checkbox"
                     id="credit-toggle"
                     checked={showCreditCardLine}
-                    onChange={(e) => setShowCreditCardLine(e.target.checked)}
+                    onChange={(e) => {
+                      setShowCreditCardLine(e.target.checked);
+                      updateChartPreferences({ showCreditCardLine: e.target.checked });
+                    }}
                     className="w-4 h-4 rounded border-gray-300"
                   />
                   <label htmlFor="credit-color" className="cursor-pointer">
@@ -1262,7 +1292,10 @@ export const CashFlowCalendar = ({
                       type="color"
                       id="credit-color"
                       value={creditCardColor}
-                      onChange={(e) => setCreditCardColor(e.target.value)}
+                      onChange={(e) => {
+                        setCreditCardColor(e.target.value);
+                        updateChartPreferences({ creditCardColor: e.target.value });
+                      }}
                       className="w-3 h-3 rounded cursor-pointer border-0 p-0"
                       style={{ appearance: 'none', backgroundColor: creditCardColor }}
                     />
@@ -1274,7 +1307,10 @@ export const CashFlowCalendar = ({
                     type="checkbox"
                     id="reserve-toggle"
                     checked={showReserveLine}
-                    onChange={(e) => setShowReserveLine(e.target.checked)}
+                    onChange={(e) => {
+                      setShowReserveLine(e.target.checked);
+                      updateChartPreferences({ showReserveLine: e.target.checked });
+                    }}
                     className="w-4 h-4 rounded border-gray-300"
                   />
                   <label htmlFor="reserve-color" className="cursor-pointer">
@@ -1282,7 +1318,10 @@ export const CashFlowCalendar = ({
                       type="color"
                       id="reserve-color"
                       value={reserveColor}
-                      onChange={(e) => setReserveColor(e.target.value)}
+                      onChange={(e) => {
+                        setReserveColor(e.target.value);
+                        updateChartPreferences({ reserveColor: e.target.value });
+                      }}
                       className="w-3 h-3 rounded cursor-pointer border-0 p-0"
                       style={{ appearance: 'none', backgroundColor: reserveColor }}
                     />

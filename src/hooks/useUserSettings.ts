@@ -5,6 +5,16 @@ import { useToast } from "@/hooks/use-toast";
 export const useUserSettings = () => {
   const [totalCash, setTotalCash] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [chartPreferences, setChartPreferences] = useState({
+    showCashFlowLine: true,
+    showTotalResourcesLine: true,
+    showCreditCardLine: true,
+    showReserveLine: true,
+    cashFlowColor: 'hsl(221, 83%, 53%)',
+    totalResourcesColor: '#10b981',
+    creditCardColor: '#f59e0b',
+    reserveColor: '#ef4444',
+  });
   const { toast } = useToast();
 
   const fetchUserSettings = async () => {
@@ -28,6 +38,18 @@ export const useUserSettings = () => {
       }
 
       setTotalCash(Number(data.total_cash));
+      
+      // Load chart preferences if they exist
+      setChartPreferences({
+        showCashFlowLine: data.chart_show_cashflow_line ?? true,
+        showTotalResourcesLine: data.chart_show_resources_line ?? true,
+        showCreditCardLine: data.chart_show_credit_line ?? true,
+        showReserveLine: data.chart_show_reserve_line ?? true,
+        cashFlowColor: data.chart_cashflow_color ?? 'hsl(221, 83%, 53%)',
+        totalResourcesColor: data.chart_resources_color ?? '#10b981',
+        creditCardColor: data.chart_credit_color ?? '#f59e0b',
+        reserveColor: data.chart_reserve_color ?? '#ef4444',
+      });
     } catch (error) {
       console.error('Error fetching user settings:', error);
       toast({
@@ -37,6 +59,35 @@ export const useUserSettings = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateChartPreferences = async (preferences: Partial<typeof chartPreferences>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Map preferences to database column names
+      const dbUpdates: Record<string, any> = {};
+      if (preferences.showCashFlowLine !== undefined) dbUpdates.chart_show_cashflow_line = preferences.showCashFlowLine;
+      if (preferences.showTotalResourcesLine !== undefined) dbUpdates.chart_show_resources_line = preferences.showTotalResourcesLine;
+      if (preferences.showCreditCardLine !== undefined) dbUpdates.chart_show_credit_line = preferences.showCreditCardLine;
+      if (preferences.showReserveLine !== undefined) dbUpdates.chart_show_reserve_line = preferences.showReserveLine;
+      if (preferences.cashFlowColor !== undefined) dbUpdates.chart_cashflow_color = preferences.cashFlowColor;
+      if (preferences.totalResourcesColor !== undefined) dbUpdates.chart_resources_color = preferences.totalResourcesColor;
+      if (preferences.creditCardColor !== undefined) dbUpdates.chart_credit_color = preferences.creditCardColor;
+      if (preferences.reserveColor !== undefined) dbUpdates.chart_reserve_color = preferences.reserveColor;
+
+      const { error } = await supabase
+        .from('user_settings')
+        .update(dbUpdates)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setChartPreferences(prev => ({ ...prev, ...preferences }));
+    } catch (error) {
+      console.error('Error updating chart preferences:', error);
     }
   };
 
@@ -214,9 +265,11 @@ export const useUserSettings = () => {
   return {
     totalCash,
     loading,
+    chartPreferences,
     updateTotalCash,
     setStartingBalance,
     resetAccount,
+    updateChartPreferences,
     refetch: fetchUserSettings
   };
 };

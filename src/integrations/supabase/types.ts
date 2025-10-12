@@ -1564,6 +1564,14 @@ export type Database = {
       }
       user_settings: {
         Row: {
+          chart_cashflow_color: string | null
+          chart_credit_color: string | null
+          chart_reserve_color: string | null
+          chart_resources_color: string | null
+          chart_show_cashflow_line: boolean | null
+          chart_show_credit_line: boolean | null
+          chart_show_reserve_line: boolean | null
+          chart_show_resources_line: boolean | null
           created_at: string
           id: string
           last_forecast_refresh: string | null
@@ -1574,6 +1582,14 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          chart_cashflow_color?: string | null
+          chart_credit_color?: string | null
+          chart_reserve_color?: string | null
+          chart_resources_color?: string | null
+          chart_show_cashflow_line?: boolean | null
+          chart_show_credit_line?: boolean | null
+          chart_show_reserve_line?: boolean | null
+          chart_show_resources_line?: boolean | null
           created_at?: string
           id?: string
           last_forecast_refresh?: string | null
@@ -1584,6 +1600,14 @@ export type Database = {
           user_id: string
         }
         Update: {
+          chart_cashflow_color?: string | null
+          chart_credit_color?: string | null
+          chart_reserve_color?: string | null
+          chart_resources_color?: string | null
+          chart_show_cashflow_line?: boolean | null
+          chart_show_credit_line?: boolean | null
+          chart_show_reserve_line?: boolean | null
+          chart_show_resources_line?: boolean | null
           created_at?: string
           id?: string
           last_forecast_refresh?: string | null
