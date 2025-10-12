@@ -1618,6 +1618,7 @@ export type Database = {
       }
       user_settings: {
         Row: {
+          account_id: string | null
           chart_cashflow_color: string | null
           chart_credit_color: string | null
           chart_forecast_color: string | null
@@ -1638,6 +1639,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           chart_cashflow_color?: string | null
           chart_credit_color?: string | null
           chart_forecast_color?: string | null
@@ -1658,6 +1660,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           chart_cashflow_color?: string | null
           chart_credit_color?: string | null
           chart_forecast_color?: string | null

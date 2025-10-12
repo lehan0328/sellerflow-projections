@@ -59,12 +59,24 @@ export const useSafeSpending = () => {
         return;
       }
 
-      // Get user settings for reserve
+      // Get user's account_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      if (!profile?.account_id) {
+        setError("Account not found");
+        return;
+      }
+
+      // Get user settings for reserve (shared across account)
       const { data: settings } = await supabase
         .from('user_settings')
         .select('safe_spending_reserve')
-        .eq('user_id', session.user.id)
-        .single();
+        .eq('account_id', profile.account_id)
+        .maybeSingle();
 
       const reserve = Number(settings?.safe_spending_reserve || 0);
       setReserveAmount(reserve);
@@ -574,12 +586,42 @@ export const useSafeSpending = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const { error: updateError } = await supabase
-        .from('user_settings')
-        .update({ safe_spending_reserve: newAmount })
-        .eq('user_id', session.user.id);
+      // Get user's account_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
 
-      if (updateError) throw updateError;
+      if (!profile?.account_id) return;
+
+      // Check if settings record exists
+      const { data: existingSettings } = await supabase
+        .from('user_settings')
+        .select('id')
+        .eq('account_id', profile.account_id)
+        .maybeSingle();
+
+      if (existingSettings) {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('user_settings')
+          .update({ safe_spending_reserve: newAmount })
+          .eq('account_id', profile.account_id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Insert new record
+        const { error: insertError } = await supabase
+          .from('user_settings')
+          .insert({
+            user_id: session.user.id,
+            account_id: profile.account_id,
+            safe_spending_reserve: newAmount
+          });
+
+        if (insertError) throw insertError;
+      }
 
       await fetchSafeSpending();
     } catch (err) {
