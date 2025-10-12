@@ -34,7 +34,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
   const navigate = useNavigate();
   const { transactions, markAsPaid, markAsPartiallyPaid, updateRemarks, deleteTransaction, refetch } = useVendorTransactions();
   const { vendors } = useVendors();
-  const { getMatchesForVendor } = useTransactionMatching(bankTransactions, vendors, []);
+  const { getMatchesForVendorTransaction } = useTransactionMatching(bankTransactions, transactions, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVendor, setSelectedVendor] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | 'paid'>('all');

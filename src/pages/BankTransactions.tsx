@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useBankTransactions } from "@/hooks/useBankTransactions";
 import { useVendors } from "@/hooks/useVendors";
+import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 import { useIncome } from "@/hooks/useIncome";
 import { useTransactionMatching, TransactionMatch } from "@/hooks/useTransactionMatching";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -49,17 +50,17 @@ const BankTransactions = () => {
     pending: tx.pending
   }));
   
-  const vendorsForMatching = vendors.map(v => ({
-    id: v.id,
-    name: v.name,
-    totalOwed: v.totalOwed || 0,
-    nextPaymentDate: v.nextPaymentDate,
-    nextPaymentAmount: v.nextPaymentAmount || 0,
-    status: v.status,
-    category: v.category || 'Other',
-    paymentType: v.paymentType,
-    netTermsDays: v.netTermsDays
-  }));
+  const { transactions: vendorTransactions } = useVendorTransactions();
+  
+  const vendorTransactionsForMatching = vendorTransactions?.filter(tx => tx.status === 'pending').map(tx => ({
+    id: tx.id,
+    vendorName: tx.vendorName,
+    description: tx.description,
+    amount: tx.amount,
+    dueDate: tx.dueDate,
+    status: tx.status,
+    category: tx.category
+  })) || [];
   
   const incomeItemsForMatching = incomeItems.map(i => ({
     id: i.id,
@@ -73,7 +74,7 @@ const BankTransactions = () => {
   
   const { matches } = useTransactionMatching(
     bankTransactionsForMatching,
-    vendorsForMatching,
+    vendorTransactionsForMatching,
     incomeItemsForMatching
   );
 
