@@ -96,7 +96,7 @@ const Dashboard = () => {
   const { transactions: vendorTransactions, markAsPaid } = useVendorTransactions();
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { transactions: bankTransactionsData, isLoading: isBankTransactionsLoading } = useBankTransactions();
-  const { creditCards } = useCreditCards();
+  const { creditCards, refetch: refetchCreditCards } = useCreditCards();
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
   const { data: safeSpendingData, updateReserveAmount, refetch: refetchSafeSpending } = useSafeSpending();
   const { amazonPayouts } = useAmazonPayouts();
@@ -1355,9 +1355,10 @@ const Dashboard = () => {
               refetchVendors();
               refetchTransactions();
               setVendorTxRefresh((v) => v + 1);
-              // Refresh safe spending after vendor transaction updates
+              // Refresh safe spending and credit cards after vendor transaction updates
               setTimeout(() => {
                 refetchSafeSpending();
+                refetchCreditCards();
               }, 500);
             }}
             refreshKey={vendorTxRefresh}

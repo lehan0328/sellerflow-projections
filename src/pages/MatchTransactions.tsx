@@ -12,6 +12,7 @@ import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 import { useIncome } from "@/hooks/useIncome";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useSafeSpending } from "@/hooks/useSafeSpending";
+import { useCreditCards } from "@/hooks/useCreditCards";
 import { useToast } from "@/hooks/use-toast";
 import { MatchReviewDialog } from "@/components/cash-flow/match-review-dialog";
 
@@ -29,6 +30,7 @@ const MatchTransactions = () => {
   const { incomeItems, updateIncome, refetch: refetchIncome } = useIncome();
   const { addTransaction } = useTransactions();
   const { refetch: refetchSafeSpending } = useSafeSpending();
+  const { refetch: refetchCreditCards } = useCreditCards();
 
   // Transform data for transaction matching
   const bankTransactions = bankTransactionsData?.map(tx => ({
@@ -108,9 +110,10 @@ const MatchTransactions = () => {
       
       await Promise.all([refetchIncome(), refetchVendorTransactions(), refetchBankTransactions()]);
       
-      // Refresh safe spending calculations after archiving
+      // Refresh safe spending and credit cards after archiving
       setTimeout(() => {
         refetchSafeSpending();
+        refetchCreditCards();
       }, 500);
     } catch (error) {
       toast({
