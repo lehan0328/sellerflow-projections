@@ -92,6 +92,9 @@ export const CashFlowCalendar = ({
   const [showCashFlowLine, setShowCashFlowLine] = useState(true);
   const [showTotalResourcesLine, setShowTotalResourcesLine] = useState(true);
   const [showCreditCardLine, setShowCreditCardLine] = useState(true);
+  const [cashFlowColor, setCashFlowColor] = useState('hsl(221, 83%, 53%)'); // Primary color
+  const [totalResourcesColor, setTotalResourcesColor] = useState('#10b981');
+  const [creditCardColor, setCreditCardColor] = useState('#f59e0b');
   
   // Total available cash baseline comes from Overview (displayCash)
   const totalAvailableCash = totalCash;
@@ -530,15 +533,15 @@ export const CashFlowCalendar = ({
   const chartConfig = {
     cashFlow: {
       label: "Cash Flow",
-      color: "hsl(var(--primary))",
+      color: cashFlowColor,
     },
     availableCredit: {
       label: "Available Credit",
-      color: "#10b981",
+      color: totalResourcesColor,
     },
     creditCardCredit: {
       label: "Credit Card Credit",
-      color: "#f59e0b",
+      color: creditCardColor,
     },
   };
 
@@ -948,7 +951,7 @@ export const CashFlowCalendar = ({
                       />
                       <Bar 
                         dataKey="cashFlow" 
-                        fill="hsl(var(--primary))" 
+                        fill={cashFlowColor}
                         radius={[4, 4, 0, 0]}
                         cursor="pointer"
                       />
@@ -956,7 +959,7 @@ export const CashFlowCalendar = ({
                         <Line
                           type="monotone"
                           dataKey="availableCredit"
-                          stroke="#10b981"
+                          stroke={totalResourcesColor}
                           strokeWidth={2}
                           dot={false}
                         />
@@ -965,7 +968,7 @@ export const CashFlowCalendar = ({
                         <Line
                           type="monotone"
                           dataKey="creditCardCredit"
-                          stroke="#f59e0b"
+                          stroke={creditCardColor}
                           strokeWidth={2}
                           dot={false}
                         />
@@ -1115,7 +1118,7 @@ export const CashFlowCalendar = ({
                         <Line 
                           type="monotone" 
                           dataKey="cashFlow" 
-                          stroke="hsl(var(--primary))" 
+                          stroke={cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor}
                           strokeWidth={2}
                           dot={(props: any) => {
                             const { cx, cy, payload } = props;
@@ -1143,7 +1146,8 @@ export const CashFlowCalendar = ({
                                 </g>
                               );
                             }
-                            return <circle cx={cx} cy={cy} r={4} fill="hsl(var(--primary))" cursor="pointer" />;
+                            const fillColor = cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor;
+                            return <circle cx={cx} cy={cy} r={4} fill={fillColor} cursor="pointer" />;
                           }}
                           activeDot={{ r: 6, cursor: 'pointer' }}
                         />
@@ -1152,7 +1156,7 @@ export const CashFlowCalendar = ({
                         <Line
                           type="monotone"
                           dataKey="availableCredit"
-                          stroke="#10b981"
+                          stroke={totalResourcesColor}
                           strokeWidth={2}
                           dot={false}
                         />
@@ -1161,7 +1165,7 @@ export const CashFlowCalendar = ({
                         <Line
                           type="monotone"
                           dataKey="creditCardCredit"
-                          stroke="#f59e0b"
+                          stroke={creditCardColor}
                           strokeWidth={2}
                           dot={false}
                         />
@@ -1184,7 +1188,16 @@ export const CashFlowCalendar = ({
                     onChange={(e) => setShowCashFlowLine(e.target.checked)}
                     className="w-4 h-4 rounded border-gray-300"
                   />
-                  <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(var(--primary))' }}></div>
+                  <label htmlFor="cashflow-color" className="cursor-pointer">
+                    <input
+                      type="color"
+                      id="cashflow-color"
+                      value={cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor}
+                      onChange={(e) => setCashFlowColor(e.target.value)}
+                      className="w-3 h-3 rounded cursor-pointer border-0 p-0"
+                      style={{ appearance: 'none', backgroundColor: cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor }}
+                    />
+                  </label>
                   <label htmlFor="cashflow-toggle" className="cursor-pointer">Cash Balance</label>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1195,7 +1208,16 @@ export const CashFlowCalendar = ({
                     onChange={(e) => setShowTotalResourcesLine(e.target.checked)}
                     className="w-4 h-4 rounded border-gray-300"
                   />
-                  <div className="w-3 h-3 rounded bg-[#10b981]"></div>
+                  <label htmlFor="resources-color" className="cursor-pointer">
+                    <input
+                      type="color"
+                      id="resources-color"
+                      value={totalResourcesColor}
+                      onChange={(e) => setTotalResourcesColor(e.target.value)}
+                      className="w-3 h-3 rounded cursor-pointer border-0 p-0"
+                      style={{ appearance: 'none', backgroundColor: totalResourcesColor }}
+                    />
+                  </label>
                   <label htmlFor="resources-toggle" className="cursor-pointer">Total Resources (Cash + Credit)</label>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1206,7 +1228,16 @@ export const CashFlowCalendar = ({
                     onChange={(e) => setShowCreditCardLine(e.target.checked)}
                     className="w-4 h-4 rounded border-gray-300"
                   />
-                  <div className="w-3 h-3 rounded bg-[#f59e0b]"></div>
+                  <label htmlFor="credit-color" className="cursor-pointer">
+                    <input
+                      type="color"
+                      id="credit-color"
+                      value={creditCardColor}
+                      onChange={(e) => setCreditCardColor(e.target.value)}
+                      className="w-3 h-3 rounded cursor-pointer border-0 p-0"
+                      style={{ appearance: 'none', backgroundColor: creditCardColor }}
+                    />
+                  </label>
                   <label htmlFor="credit-toggle" className="cursor-pointer">Available Credit</label>
                 </div>
               </div>
