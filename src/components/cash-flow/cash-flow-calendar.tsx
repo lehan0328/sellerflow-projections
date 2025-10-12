@@ -484,6 +484,7 @@ export const CashFlowCalendar = ({
         fullDate: day,
         cashFlow: runningTotal,
         availableCredit: runningTotal + totalAvailableCredit,
+        creditCardCredit: totalAvailableCredit,
         dailyChange,
         inflow: dailyInflow,
         outflow: dailyOutflow,
@@ -531,6 +532,10 @@ export const CashFlowCalendar = ({
     availableCredit: {
       label: "Available Credit",
       color: "#10b981",
+    },
+    creditCardCredit: {
+      label: "Credit Card Credit",
+      color: "#3b82f6",
     },
   };
 
@@ -951,6 +956,13 @@ export const CashFlowCalendar = ({
                         strokeWidth={2}
                         dot={false}
                       />
+                      <Line
+                        type="monotone"
+                        dataKey="creditCardCredit"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        dot={false}
+                      />
                     </BarChart>
                   ) : (
                     <LineChart data={chartData} onClick={handleChartClick}>
@@ -1131,6 +1143,13 @@ export const CashFlowCalendar = ({
                         type="monotone"
                         dataKey="availableCredit"
                         stroke="#10b981"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="creditCardCredit"
+                        stroke="#3b82f6"
                         strokeWidth={2}
                         dot={false}
                       />
