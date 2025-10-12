@@ -1187,6 +1187,7 @@ const Dashboard = () => {
                   vendors={vendors}
                   onVendorClick={handleEditVendorOrder}
                   onIncomeClick={handleEditIncome}
+                  reserveAmount={safeSpendingData?.reserve_amount || 0}
                 />
               </div>
               <div className="lg:col-span-1 h-full">

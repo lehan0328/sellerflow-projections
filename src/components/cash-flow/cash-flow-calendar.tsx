@@ -62,6 +62,7 @@ interface CashFlowCalendarProps {
   vendors?: Vendor[];
   onVendorClick?: (vendor: Vendor) => void;
   onIncomeClick?: (income: IncomeItem) => void;
+  reserveAmount?: number;
 }
 
 export const CashFlowCalendar = ({ 
@@ -77,6 +78,7 @@ export const CashFlowCalendar = ({
   vendors = [],
   onVendorClick,
   onIncomeClick,
+  reserveAmount = 0,
 }: CashFlowCalendarProps) => {
   const { totalAvailableCredit } = useCreditCards();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -92,9 +94,11 @@ export const CashFlowCalendar = ({
   const [showCashFlowLine, setShowCashFlowLine] = useState(true);
   const [showTotalResourcesLine, setShowTotalResourcesLine] = useState(true);
   const [showCreditCardLine, setShowCreditCardLine] = useState(true);
+  const [showReserveLine, setShowReserveLine] = useState(true);
   const [cashFlowColor, setCashFlowColor] = useState('hsl(221, 83%, 53%)'); // Primary color
   const [totalResourcesColor, setTotalResourcesColor] = useState('#10b981');
   const [creditCardColor, setCreditCardColor] = useState('#f59e0b');
+  const [reserveColor, setReserveColor] = useState('#ef4444');
   
   // Total available cash baseline comes from Overview (displayCash)
   const totalAvailableCash = totalCash;
@@ -491,6 +495,7 @@ export const CashFlowCalendar = ({
         cashFlow: runningTotal,
         availableCredit: runningTotal + totalAvailableCredit,
         creditCardCredit: totalAvailableCredit,
+        reserve: reserveAmount,
         dailyChange,
         inflow: dailyInflow,
         outflow: dailyOutflow,
@@ -542,6 +547,10 @@ export const CashFlowCalendar = ({
     creditCardCredit: {
       label: "Credit Card Credit",
       color: creditCardColor,
+    },
+    reserve: {
+      label: "Reserve Amount",
+      color: reserveColor,
     },
   };
 
@@ -973,6 +982,16 @@ export const CashFlowCalendar = ({
                           dot={false}
                         />
                       )}
+                      {showReserveLine && (
+                        <Line
+                          type="monotone"
+                          dataKey="reserve"
+                          stroke={reserveColor}
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          dot={false}
+                        />
+                      )}
                     </BarChart>
                   ) : (
                     <LineChart data={chartData} onClick={handleChartClick}>
@@ -1170,6 +1189,16 @@ export const CashFlowCalendar = ({
                           dot={false}
                         />
                       )}
+                      {showReserveLine && (
+                        <Line
+                          type="monotone"
+                          dataKey="reserve"
+                          stroke={reserveColor}
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          dot={false}
+                        />
+                      )}
                     </LineChart>
                   )}
                 </ResponsiveContainer>
@@ -1239,6 +1268,26 @@ export const CashFlowCalendar = ({
                     />
                   </label>
                   <label htmlFor="credit-toggle" className="cursor-pointer">Available Credit</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="reserve-toggle"
+                    checked={showReserveLine}
+                    onChange={(e) => setShowReserveLine(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <label htmlFor="reserve-color" className="cursor-pointer">
+                    <input
+                      type="color"
+                      id="reserve-color"
+                      value={reserveColor}
+                      onChange={(e) => setReserveColor(e.target.value)}
+                      className="w-3 h-3 rounded cursor-pointer border-0 p-0"
+                      style={{ appearance: 'none', backgroundColor: reserveColor }}
+                    />
+                  </label>
+                  <label htmlFor="reserve-toggle" className="cursor-pointer">Reserve Amount</label>
                 </div>
               </div>
             ) : (
