@@ -213,6 +213,33 @@ const Settings = () => {
                 onBlur={(e) => handleProfileChange('company', e.target.value)}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="default-currency">Default Currency</Label>
+              <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                <SelectTrigger id="default-currency" className="bg-background">
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="USD">USD - US Dollar ($)</SelectItem>
+                  <SelectItem value="EUR">EUR - Euro (€)</SelectItem>
+                  <SelectItem value="GBP">GBP - British Pound (£)</SelectItem>
+                  <SelectItem value="CAD">CAD - Canadian Dollar (C$)</SelectItem>
+                  <SelectItem value="AUD">AUD - Australian Dollar (A$)</SelectItem>
+                  <SelectItem value="JPY">JPY - Japanese Yen (¥)</SelectItem>
+                  <SelectItem value="CNY">CNY - Chinese Yuan (¥)</SelectItem>
+                  <SelectItem value="INR">INR - Indian Rupee (₹)</SelectItem>
+                  <SelectItem value="MXN">MXN - Mexican Peso ($)</SelectItem>
+                  <SelectItem value="BRL">BRL - Brazilian Real (R$)</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={() => updateProfileMutation.mutate({ currency: selectedCurrency })}
+                disabled={updateProfileMutation.isPending || selectedCurrency === profile?.currency}
+                className="w-full mt-2"
+              >
+                {updateProfileMutation.isPending ? 'Saving...' : 'Save Currency'}
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>
@@ -267,57 +294,6 @@ const Settings = () => {
     </Card>
   );
 
-  const renderFinancialSettings = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <CreditCard className="h-5 w-5" />
-          <span>Financial Settings</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="default-currency">Default Currency</Label>
-          <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-            <SelectTrigger id="default-currency" className="bg-background">
-              <SelectValue placeholder="Select currency" />
-            </SelectTrigger>
-            <SelectContent className="bg-popover z-50">
-              <SelectItem value="USD">USD - US Dollar ($)</SelectItem>
-              <SelectItem value="EUR">EUR - Euro (€)</SelectItem>
-              <SelectItem value="GBP">GBP - British Pound (£)</SelectItem>
-              <SelectItem value="CAD">CAD - Canadian Dollar (C$)</SelectItem>
-              <SelectItem value="AUD">AUD - Australian Dollar (A$)</SelectItem>
-              <SelectItem value="JPY">JPY - Japanese Yen (¥)</SelectItem>
-              <SelectItem value="CNY">CNY - Chinese Yuan (¥)</SelectItem>
-              <SelectItem value="INR">INR - Indian Rupee (₹)</SelectItem>
-              <SelectItem value="MXN">MXN - Mexican Peso ($)</SelectItem>
-              <SelectItem value="BRL">BRL - Brazilian Real (R$)</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button 
-            onClick={() => updateProfileMutation.mutate({ currency: selectedCurrency })}
-            disabled={updateProfileMutation.isPending || selectedCurrency === profile?.currency}
-            className="w-full mt-2"
-          >
-            {updateProfileMutation.isPending ? 'Saving...' : 'Save Currency'}
-          </Button>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Switch id="auto-categorize" />
-          <Label htmlFor="auto-categorize">Auto-categorize transactions</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Switch id="smart-forecasting" defaultChecked />
-          <Label htmlFor="smart-forecasting">Enable smart cash flow forecasting</Label>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Switch id="auto-sync-cash" defaultChecked />
-          <Label htmlFor="auto-sync-cash">Automatically sync cash balance with bank accounts</Label>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   const renderNotificationSettings = () => (
     <Card>
@@ -453,7 +429,6 @@ const Settings = () => {
       'customers',
       'recurring-expenses',
       'amazon',
-      'financial',
       'invoices',
       'export',
       'data-management'
@@ -498,8 +473,6 @@ const Settings = () => {
         return <CreditCardManagement />;
       case 'appearance':
         return renderAppearanceSettings();
-      case 'financial':
-        return renderFinancialSettings();
       case 'notifications':
         return <NotificationSettings />;
       case 'invoices':

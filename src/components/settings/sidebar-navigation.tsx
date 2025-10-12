@@ -63,11 +63,6 @@ const navigationItems = [
     icon: Palette,
   },
   {
-    id: 'financial',
-    label: 'Financial Settings',
-    icon: Settings,
-  },
-  {
     id: 'notifications',
     label: 'Notifications',
     icon: Bell,
@@ -109,7 +104,6 @@ const adminOnlySections = [
   'customers',
   'recurring-expenses',
   'amazon',
-  'financial',
   'invoices',
   'export',
   'data-management'
