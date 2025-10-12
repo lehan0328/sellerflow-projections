@@ -10,7 +10,7 @@ export const useUserSettings = () => {
     showTotalResourcesLine: true,
     showCreditCardLine: true,
     showReserveLine: true,
-    showForecastLine: true,
+    showForecastLine: false,
     cashFlowColor: 'hsl(221, 83%, 53%)',
     totalResourcesColor: '#10b981',
     creditCardColor: '#f59e0b',
@@ -47,7 +47,7 @@ export const useUserSettings = () => {
         showTotalResourcesLine: data.chart_show_resources_line ?? true,
         showCreditCardLine: data.chart_show_credit_line ?? true,
         showReserveLine: data.chart_show_reserve_line ?? true,
-        showForecastLine: data.chart_show_forecast_line ?? true,
+        showForecastLine: data.chart_show_forecast_line ?? false,
         cashFlowColor: data.chart_cashflow_color ?? 'hsl(221, 83%, 53%)',
         totalResourcesColor: data.chart_resources_color ?? '#10b981',
         creditCardColor: data.chart_credit_color ?? '#f59e0b',
@@ -103,7 +103,8 @@ export const useUserSettings = () => {
         .from('user_settings')
         .insert({
           user_id: userId,
-          total_cash: 0
+          total_cash: 0,
+          chart_show_forecast_line: false
         });
 
       if (error) throw error;
@@ -229,7 +230,8 @@ export const useUserSettings = () => {
           user_id: user.id,
           total_cash: 0,
           safe_spending_percentage: 20,
-          safe_spending_reserve: 0
+          safe_spending_reserve: 0,
+          chart_show_forecast_line: false
         }, {
           onConflict: 'user_id'
         });
