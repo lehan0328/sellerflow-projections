@@ -365,49 +365,6 @@ const Settings = () => {
 
   const renderDataExportSettings = () => <DataExport />;
 
-  const renderSecuritySettings = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Shield className="h-5 w-5" />
-          <span>Security</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Button variant="outline" size="sm" className="w-full">
-          Change Password
-        </Button>
-        <Button variant="outline" size="sm" className="w-full">
-          Two-Factor Auth
-        </Button>
-        <Separator />
-        <Button variant="destructive" size="sm" className="w-full">
-          Delete Account
-        </Button>
-        
-        <div className="mt-6">
-          <h4 className="font-medium mb-3">Connected Services</h4>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Amazon Seller Central</span>
-              <Badge variant="secondary" className="text-xs">Connected</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Chase Bank</span>
-              <Badge variant="secondary" className="text-xs">Connected</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">American Express</span>
-              <Badge variant="outline" className="text-xs">Disconnected</Badge>
-            </div>
-            <Button variant="outline" size="sm" className="w-full mt-4">
-              Manage Connections
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   const renderDataManagement = () => (
     <Card>
@@ -549,8 +506,6 @@ const Settings = () => {
         return <BillingInvoices />;
       case 'export':
         return renderDataExportSettings();
-      case 'security':
-        return renderSecuritySettings();
       case 'data-management':
         return renderDataManagement();
       case 'feature-request':

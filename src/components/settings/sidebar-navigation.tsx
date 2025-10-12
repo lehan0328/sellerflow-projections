@@ -5,7 +5,6 @@ import {
   Download, 
   Palette, 
   CreditCard, 
-  Shield, 
   Building2,
   Bell,
   Settings,
@@ -82,11 +81,6 @@ const navigationItems = [
     id: 'export',
     label: 'Data Export',
     icon: Download,
-  },
-  {
-    id: 'security',
-    label: 'Security',
-    icon: Shield,
   },
   {
     id: 'data-management',
