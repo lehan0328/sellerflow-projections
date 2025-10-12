@@ -1330,7 +1330,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-semibold ${tx.type === 'debit' ? 'text-destructive' : 'text-green-600'}`}>
+                      <p className="font-semibold">
                         {tx.type === 'debit' ? '-' : '+'}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                       <p className="text-xs text-muted-foreground capitalize">
