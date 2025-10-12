@@ -103,11 +103,13 @@ export const useSafeSpending = () => {
       const [transactionsResult, incomeResult, recurringResult, vendorsResult, amazonResult, creditCardsResult] = await Promise.all([
         supabase
           .from('transactions')
-          .select('*'),
+          .select('*')
+          .eq('archived', false),
         
         supabase
           .from('income')
-          .select('*'),
+          .select('*')
+          .eq('archived', false),
         
         supabase
           .from('recurring_expenses')

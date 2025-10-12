@@ -865,6 +865,7 @@ export type Database = {
         Row: {
           account_id: string | null
           amount: number
+          archived: boolean
           category: string | null
           created_at: string
           customer_id: string | null
@@ -882,6 +883,7 @@ export type Database = {
         Insert: {
           account_id?: string | null
           amount: number
+          archived?: boolean
           category?: string | null
           created_at?: string
           customer_id?: string | null
@@ -899,6 +901,7 @@ export type Database = {
         Update: {
           account_id?: string | null
           amount?: number
+          archived?: boolean
           category?: string | null
           created_at?: string
           customer_id?: string | null
@@ -1490,6 +1493,7 @@ export type Database = {
         Row: {
           account_id: string | null
           amount: number
+          archived: boolean
           created_at: string
           credit_card_id: string | null
           customer_id: string | null
@@ -1507,6 +1511,7 @@ export type Database = {
         Insert: {
           account_id?: string | null
           amount: number
+          archived?: boolean
           created_at?: string
           credit_card_id?: string | null
           customer_id?: string | null
@@ -1524,6 +1529,7 @@ export type Database = {
         Update: {
           account_id?: string | null
           amount?: number
+          archived?: boolean
           created_at?: string
           credit_card_id?: string | null
           customer_id?: string | null

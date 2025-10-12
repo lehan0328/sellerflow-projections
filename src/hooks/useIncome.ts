@@ -51,6 +51,7 @@ export const useIncome = () => {
       const { data, error } = await supabase
         .from('income')
         .select('*')
+        .eq('archived', false)
         .order('payment_date', { ascending: false });
 
       if (error) {
@@ -156,7 +157,13 @@ export const useIncome = () => {
       if (updates.amount !== undefined) updateData.amount = updates.amount;
       if (updates.paymentDate !== undefined) updateData.payment_date = formatDateForDB(updates.paymentDate);
       if (updates.source !== undefined) updateData.source = updates.source;
-      if (updates.status !== undefined) updateData.status = updates.status;
+      if (updates.status !== undefined) {
+        updateData.status = updates.status;
+        // Automatically archive when status is set to 'received'
+        if (updates.status === 'received') {
+          updateData.archived = true;
+        }
+      }
       if (updates.category !== undefined) updateData.category = updates.category;
       if (updates.isRecurring !== undefined) updateData.is_recurring = updates.isRecurring;
       if (updates.recurringFrequency !== undefined) updateData.recurring_frequency = updates.recurringFrequency;
@@ -174,6 +181,13 @@ export const useIncome = () => {
         console.error('Error updating income:', error);
         toast.error('Failed to update income');
         return false;
+      }
+
+      // If archived, remove from local state instead of updating
+      if (data.archived) {
+        setIncomeItems(prev => prev.filter(item => item.id !== id));
+        toast.success('Income marked as received and archived');
+        return true;
       }
 
       const updatedItem: IncomeItem = {

@@ -1308,10 +1308,10 @@ const Dashboard = () => {
                               status: 'completed'
                             });
                           } else if (match.type === 'vendor' && match.matchedVendorTransaction) {
-                            // Mark the vendor transaction as paid
+                            // Mark the vendor transaction as paid and archive
                             await supabase
                               .from('transactions')
-                              .update({ status: 'completed' })
+                              .update({ status: 'completed', archived: true })
                               .eq('id', match.matchedVendorTransaction.id);
                               
                             await addTransaction({
@@ -1424,12 +1424,12 @@ const Dashboard = () => {
                   transactionDate: new Date(),
                   status: 'completed'
                 });
-              } else if (match.type === 'vendor' && match.matchedVendorTransaction) {
-                // Mark the vendor transaction as paid
-                await supabase
-                  .from('transactions')
-                  .update({ status: 'completed' })
-                  .eq('id', match.matchedVendorTransaction.id);
+                } else if (match.type === 'vendor' && match.matchedVendorTransaction) {
+                  // Mark the vendor transaction as paid and archive
+                  await supabase
+                    .from('transactions')
+                    .update({ status: 'completed', archived: true })
+                    .eq('id', match.matchedVendorTransaction.id);
                   
                 await addTransaction({
                   type: 'vendor_payment',

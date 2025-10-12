@@ -45,7 +45,7 @@ export const useVendorTransactions = () => {
         return;
       }
 
-      // Fetch transactions with vendor information
+      // Fetch transactions with vendor information (exclude archived)
       const { data, error } = await supabase
         .from('transactions')
         .select(`
@@ -53,6 +53,7 @@ export const useVendorTransactions = () => {
           vendors!inner(name, category)
         `)
         .eq('type', 'purchase_order')
+        .eq('archived', false)
         .order('due_date', { ascending: true });
 
       if (error) throw error;
@@ -89,18 +90,20 @@ export const useVendorTransactions = () => {
     try {
       const { error } = await supabase
         .from('transactions')
-        .update({ status: 'completed' } as any)
+        .update({ 
+          status: 'completed',
+          archived: true 
+        } as any)
         .eq('id', transactionId);
 
       if (error) throw error;
 
-      setTransactions(prev => prev.map(tx => 
-        tx.id === transactionId ? { ...tx, status: 'completed' as const } : tx
-      ));
+      // Remove from local state since it's now archived
+      setTransactions(prev => prev.filter(tx => tx.id !== transactionId));
 
       toast({
         title: "Success",
-        description: "Payment marked as paid",
+        description: "Payment marked as paid and archived",
       });
     } catch (error) {
       console.error('Error updating transaction:', error);
@@ -249,7 +252,7 @@ export const useVendorTransactions = () => {
 
       if (updateError) throw updateError;
 
-      // Create PO#.1 transaction for the paid amount (hidden from vendors overview)
+      // Create PO#.1 transaction for the paid amount (archived, not shown anywhere)
       const { error: paidError } = await supabase
         .from('transactions')
         .insert({
@@ -262,6 +265,7 @@ export const useVendorTransactions = () => {
           status: 'completed',
           description: `${originalTx.description}.1`,
           remarks: 'Partially Paid',
+          archived: true
         } as any);
 
       if (paidError) throw paidError;
