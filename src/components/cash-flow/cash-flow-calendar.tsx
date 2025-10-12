@@ -1227,32 +1227,6 @@ export const CashFlowCalendar = ({
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    id="cashflow-toggle"
-                    checked={showCashFlowLine}
-                    onChange={(e) => {
-                      setShowCashFlowLine(e.target.checked);
-                      updateChartPreferences({ showCashFlowLine: e.target.checked });
-                    }}
-                    className="w-4 h-4 rounded border-gray-300"
-                  />
-                  <label htmlFor="cashflow-color" className="cursor-pointer">
-                    <input
-                      type="color"
-                      id="cashflow-color"
-                      value={cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor}
-                      onChange={(e) => {
-                        setCashFlowColor(e.target.value);
-                        updateChartPreferences({ cashFlowColor: e.target.value });
-                      }}
-                      className="w-3 h-3 rounded cursor-pointer border-0 p-0"
-                      style={{ appearance: 'none', backgroundColor: cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor }}
-                    />
-                  </label>
-                  <label htmlFor="cashflow-toggle" className="cursor-pointer">Cash Balance</label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
                     id="resources-toggle"
                     checked={showTotalResourcesLine}
                     onChange={(e) => {
@@ -1275,6 +1249,32 @@ export const CashFlowCalendar = ({
                     />
                   </label>
                   <label htmlFor="resources-toggle" className="cursor-pointer">Total Resources (Cash + Credit)</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="cashflow-toggle"
+                    checked={showCashFlowLine}
+                    onChange={(e) => {
+                      setShowCashFlowLine(e.target.checked);
+                      updateChartPreferences({ showCashFlowLine: e.target.checked });
+                    }}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <label htmlFor="cashflow-color" className="cursor-pointer">
+                    <input
+                      type="color"
+                      id="cashflow-color"
+                      value={cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor}
+                      onChange={(e) => {
+                        setCashFlowColor(e.target.value);
+                        updateChartPreferences({ cashFlowColor: e.target.value });
+                      }}
+                      className="w-3 h-3 rounded cursor-pointer border-0 p-0"
+                      style={{ appearance: 'none', backgroundColor: cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor }}
+                    />
+                  </label>
+                  <label htmlFor="cashflow-toggle" className="cursor-pointer">Cash Balance</label>
                 </div>
                 <div className="flex items-center gap-2">
                   <input
