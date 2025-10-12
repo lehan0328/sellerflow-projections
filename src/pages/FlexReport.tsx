@@ -349,7 +349,7 @@ const FlexReport = () => {
               </div>
               <div className="text-center flex flex-col items-center">
                 <img src={aurenLogo} alt="Auren" className="h-12 md:h-14 drop-shadow-lg mb-1" />
-                <p className="text-lg font-black bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-1">auren</p>
+                <p className="text-lg font-black bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-1">Auren</p>
                 <p className="text-xs font-semibold text-blue-600">www.aurenapp.com</p>
               </div>
             </div>
