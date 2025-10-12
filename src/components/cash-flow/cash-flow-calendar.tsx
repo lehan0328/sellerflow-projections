@@ -914,7 +914,7 @@ export const CashFlowCalendar = ({
                                 reserveAmount: "Reserve Amount:",
                                 forecastPayout: "Forecast Payout:"
                               };
-                              return [`$${value.toLocaleString()}`, labels[name] || name];
+                              return [labels[name] || name, `$${value.toLocaleString()}`];
                             }}
                             itemSorter={(item) => {
                               const order = ["totalResources", "cashBalance", "creditCardBalance", "reserveAmount", "forecastPayout"];
@@ -1062,7 +1062,7 @@ export const CashFlowCalendar = ({
                                 reserveAmount: "Reserve Amount:",
                                 forecastPayout: "Forecast Payout:"
                               };
-                              return [`$${value.toLocaleString()}`, labels[name] || name];
+                              return [labels[name] || name, `$${value.toLocaleString()}`];
                             }}
                             itemSorter={(item) => {
                               const order = ["totalResources", "cashBalance", "creditCardBalance", "reserveAmount", "forecastPayout"];
