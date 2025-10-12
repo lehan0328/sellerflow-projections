@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, TrendingUp, CreditCard, Repeat, ShoppingCart, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2 } from "lucide-react";
+import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/useNotifications";
 import {
@@ -38,7 +38,6 @@ const transactionSections = [
   { id: "recurring", title: "Recurring", icon: Repeat },
   { id: "bank-transactions", title: "Bank Transactions", icon: Building2 },
   { id: "financials", title: "Financials", icon: Wallet },
-  { id: "amazon", title: "Amazon Payouts", icon: ShoppingCart },
 ];
 
 const resourceSections = [

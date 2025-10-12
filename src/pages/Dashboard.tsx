@@ -66,7 +66,7 @@ interface CashFlowEvent {
 const Dashboard = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("overview");
-  const [financialsView, setFinancialsView] = useState<"bank-accounts" | "credit-cards">("bank-accounts");
+  const [financialsView, setFinancialsView] = useState<"bank-accounts" | "credit-cards" | "amazon-payouts">("bank-accounts");
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [showRecurringIncomeForm, setShowRecurringIncomeForm] = useState(false);
@@ -1589,8 +1589,8 @@ const Dashboard = () => {
                   onClick={() => setFinancialsView("bank-accounts")}
                   className={`px-4 py-2 rounded-md transition-all ${
                     financialsView === "bank-accounts"
-                      ? "bg-background shadow-sm font-medium"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-background shadow-sm font-semibold text-primary"
+                      : "hover:bg-background/50 text-muted-foreground"
                   }`}
                 >
                   Bank Accounts
@@ -1599,23 +1599,32 @@ const Dashboard = () => {
                   onClick={() => setFinancialsView("credit-cards")}
                   className={`px-4 py-2 rounded-md transition-all ${
                     financialsView === "credit-cards"
-                      ? "bg-background shadow-sm font-medium"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-background shadow-sm font-semibold text-primary"
+                      : "hover:bg-background/50 text-muted-foreground"
                   }`}
                 >
                   Credit Cards
                 </button>
+                <button
+                  onClick={() => setFinancialsView("amazon-payouts")}
+                  className={`px-4 py-2 rounded-md transition-all ${
+                    financialsView === "amazon-payouts"
+                      ? "bg-background shadow-sm font-semibold text-primary"
+                      : "hover:bg-background/50 text-muted-foreground"
+                  }`}
+                >
+                  Amazon Payouts
+                </button>
               </div>
             </div>
-            {financialsView === "bank-accounts" ? <BankAccounts /> : <CreditCards />}
+            {financialsView === "bank-accounts" && <BankAccounts />}
+            {financialsView === "credit-cards" && <CreditCards />}
+            {financialsView === "amazon-payouts" && <AmazonPayouts />}
           </div>
         );
       
       case "recurring":
         return <RecurringExpensesOverview />;
-      
-      case "amazon":
-        return <AmazonPayouts />;
       
       case "scenario-planning":
         return <ScenarioPlanner />;
