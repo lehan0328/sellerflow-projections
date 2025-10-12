@@ -52,7 +52,6 @@ export const useAmazonPayouts = () => {
             marketplace_name
           )
         `)
-        .eq("user_id", user.id)
         .gte("payout_date", todayStr)
         .order("payout_date", { ascending: true });
 
@@ -91,7 +90,6 @@ export const useAmazonPayouts = () => {
           event: "*",
           schema: "public",
           table: "amazon_payouts",
-          filter: `user_id=eq.${user.id}`,
         },
         () => {
           fetchAmazonPayouts();

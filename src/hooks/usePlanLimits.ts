@@ -73,9 +73,9 @@ export const usePlanLimits = () => {
       if (!user) return;
 
       const [bankAccounts, creditCards, amazonAccounts] = await Promise.all([
-        supabase.from('bank_accounts').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('credit_cards').select('id', { count: 'exact' }).eq('user_id', user.id),
-        supabase.from('amazon_accounts').select('id', { count: 'exact' }).eq('user_id', user.id)
+        supabase.from('bank_accounts').select('id', { count: 'exact' }),
+        supabase.from('credit_cards').select('id', { count: 'exact' }),
+        supabase.from('amazon_accounts').select('id', { count: 'exact' })
       ]);
 
       const bankCount = (bankAccounts.count || 0) + (creditCards.count || 0);

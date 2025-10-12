@@ -46,7 +46,6 @@ export const useCreditCards = () => {
       const { data, error } = await supabase
         .from("credit_cards")
         .select("*")
-        .eq("user_id", user.id)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
@@ -113,8 +112,7 @@ export const useCreditCards = () => {
       const { error } = await supabase
         .from("credit_cards")
         .update(sanitizedUpdates)
-        .eq("id", cardId)
-        .eq("user_id", user.id);
+        .eq("id", cardId);
 
       if (error) {
         console.error("Error updating credit card:", error);
@@ -142,8 +140,7 @@ export const useCreditCards = () => {
       const { error } = await supabase
         .from("credit_cards")
         .update({ is_active: false })
-        .eq("id", cardId)
-        .eq("user_id", user.id);
+        .eq("id", cardId);
 
       if (error) {
         console.error("Error removing credit card:", error);
@@ -187,7 +184,6 @@ export const useCreditCards = () => {
           event: '*',
           schema: 'public',
           table: 'credit_cards',
-          filter: `user_id=eq.${user.id}`
         },
         () => {
           fetchCreditCards();

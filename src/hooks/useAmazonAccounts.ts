@@ -54,7 +54,6 @@ export const useAmazonAccounts = () => {
           created_at,
           updated_at
         `)
-        .eq("user_id", user.id)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
@@ -229,7 +228,6 @@ export const useAmazonAccounts = () => {
           event: "*",
           schema: "public",
           table: "amazon_accounts",
-          filter: `user_id=eq.${user.id}`,
         },
         () => {
           fetchAmazonAccounts();

@@ -38,7 +38,6 @@ export const useAmazonTransactions = () => {
       const { data, error } = await supabase
         .from("amazon_transactions")
         .select("*")
-        .eq("user_id", user.id)
         .order("transaction_date", { ascending: false })
         .limit(100);
 

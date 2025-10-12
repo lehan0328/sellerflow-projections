@@ -51,7 +51,6 @@ export const useIncome = () => {
       const { data, error } = await supabase
         .from('income')
         .select('*')
-        .eq('user_id', user.id)
         .order('payment_date', { ascending: false });
 
       if (error) {
@@ -245,8 +244,7 @@ export const useIncome = () => {
       const { error } = await supabase
         .from('income')
         .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
 
       if (error) {
         console.error('Error deleting income:', error);
@@ -258,7 +256,6 @@ export const useIncome = () => {
       const { error: txDeleteError } = await supabase
         .from('transactions')
         .delete()
-        .eq('user_id', user.id)
         .eq('type', 'sales_order')
         .eq('amount', income.amount)
         .eq('transaction_date', formatDateForDB(income.paymentDate));
@@ -301,7 +298,6 @@ export const useIncome = () => {
           event: '*',
           schema: 'public',
           table: 'income',
-          filter: `user_id=eq.${user.id}`,
         }, () => {
           fetchIncome();
         })

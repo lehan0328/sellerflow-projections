@@ -57,7 +57,6 @@ export const useVendors = () => {
       const { data, error } = await supabase
         .from('vendors')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       console.log('Vendors query result:', { data, error });
@@ -335,7 +334,6 @@ export const useVendors = () => {
           event: '*',
           schema: 'public',
           table: 'vendors',
-          filter: `user_id=eq.${user.id}`,
         }, () => {
           fetchVendors();
         })
@@ -379,7 +377,7 @@ export const useVendors = () => {
       const { error } = await supabase
         .from('vendors')
         .delete()
-        .eq('user_id', user.id);
+        .is('vendor_id', null);
 
       if (error) throw error;
 
@@ -408,7 +406,6 @@ export const useVendors = () => {
       const { data: orphaned, error: queryError } = await supabase
         .from('vendors')
         .select('id, name')
-        .eq('user_id', user.id)
         .or('total_owed.eq.0,total_owed.is.null')
         .or('next_payment_amount.eq.0,next_payment_amount.is.null');
 

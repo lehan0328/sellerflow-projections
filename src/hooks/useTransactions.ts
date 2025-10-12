@@ -46,7 +46,6 @@ export const useTransactions = () => {
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -157,9 +156,9 @@ export const useTransactions = () => {
        if (!user) throw new Error('User not authenticated');
  
        const { error } = await supabase
-         .from('transactions')
-         .delete()
-         .eq('user_id', user.id);
+          .from('transactions')
+          .delete()
+          .is('transaction_id', null);
  
        if (error) throw error;
  
@@ -212,7 +211,6 @@ export const useTransactions = () => {
           event: '*',
           schema: 'public',
           table: 'transactions',
-          filter: `user_id=eq.${user.id}`,
         }, () => {
           fetchTransactions();
         })

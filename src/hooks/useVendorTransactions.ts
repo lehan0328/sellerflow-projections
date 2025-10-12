@@ -52,7 +52,6 @@ export const useVendorTransactions = () => {
           *,
           vendors!inner(name, category)
         `)
-        .eq('user_id', user.id)
         .eq('type', 'purchase_order')
         .order('due_date', { ascending: true });
 
@@ -214,7 +213,6 @@ export const useVendorTransactions = () => {
           event: '*',
           schema: 'public',
           table: 'transactions',
-          filter: `user_id=eq.${user.id}`,
         }, () => {
           fetchVendorTransactions();
         })

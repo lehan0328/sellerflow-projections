@@ -73,7 +73,6 @@ export const useSafeSpending = () => {
       const { data: bankAccounts } = await supabase
         .from('bank_accounts')
         .select('balance')
-        .eq('user_id', session.user.id)
         .eq('is_active', true);
 
       const bankBalance = bankAccounts?.reduce((sum, acc) => sum + Number(acc.balance || 0), 0) || 0;
@@ -92,36 +91,30 @@ export const useSafeSpending = () => {
       const [transactionsResult, incomeResult, recurringResult, vendorsResult, amazonResult, creditCardsResult] = await Promise.all([
         supabase
           .from('transactions')
-          .select('*')
-          .eq('user_id', session.user.id),
+          .select('*'),
         
         supabase
           .from('income')
-          .select('*')
-          .eq('user_id', session.user.id),
+          .select('*'),
         
         supabase
           .from('recurring_expenses')
           .select('*')
-          .eq('user_id', session.user.id)
           .eq('is_active', true),
         
         supabase
           .from('vendors')
-          .select('*')
-          .eq('user_id', session.user.id),
+          .select('*'),
         
         supabase
           .from('amazon_payouts')
           .select('*')
-          .eq('user_id', session.user.id)
           .gte('payout_date', todayStr)  // ONLY future payouts from today onwards
           .lte('payout_date', futureDateStr),
         
         supabase
           .from('credit_cards')
           .select('*')
-          .eq('user_id', session.user.id)
           .eq('is_active', true)
       ]);
 

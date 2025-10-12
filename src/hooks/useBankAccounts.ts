@@ -82,7 +82,6 @@ export const useBankAccounts = () => {
         const { data: existingAccounts, error: checkError } = await supabase
           .from("bank_accounts")
           .select("id, account_name, institution_name, plaid_account_id")
-          .eq("user_id", user.id)
           .eq("is_active", true);
 
         if (checkError) {
@@ -177,8 +176,7 @@ export const useBankAccounts = () => {
       const { error } = await supabase
         .from("bank_accounts")
         .update({ is_active: false })
-        .eq("id", accountId)
-        .eq("user_id", user.id);
+        .eq("id", accountId);
 
       if (error) {
         console.error("Error removing bank account:", error);
@@ -220,7 +218,6 @@ export const useBankAccounts = () => {
           event: '*',
           schema: 'public',
           table: 'bank_accounts',
-          filter: `user_id=eq.${user.id}`
         },
         () => {
           fetchAccounts();

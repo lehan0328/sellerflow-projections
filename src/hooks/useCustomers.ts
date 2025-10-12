@@ -21,7 +21,6 @@ export const useCustomers = () => {
       const { data, error } = await supabase
         .from('customers')
         .select('*')
-        .eq('user_id', user.id)
         .order('name');
 
       if (error) throw error;
@@ -84,7 +83,7 @@ export const useCustomers = () => {
       const { error } = await supabase
         .from('customers')
         .delete()
-        .eq('user_id', user.id);
+        .is('customer_id', null);
 
       if (error) throw error;
 

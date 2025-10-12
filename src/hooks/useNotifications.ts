@@ -33,7 +33,6 @@ export const useNotifications = () => {
       const { data, error } = await supabase
         .from('notification_history')
         .select('*')
-        .eq('user_id', user.id)
         .order('sent_at', { ascending: false })
         .limit(50);
 
@@ -78,7 +77,6 @@ export const useNotifications = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'notification_history',
-          filter: `user_id=eq.${user.id}`,
         },
         () => {
           fetchNotifications();
@@ -115,7 +113,6 @@ export const useNotifications = () => {
       const { error } = await supabase
         .from('notification_history')
         .update({ read: true })
-        .eq('user_id', user.id)
         .eq('read', false);
 
       if (error) throw error;
