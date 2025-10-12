@@ -219,7 +219,7 @@ const Dashboard = () => {
   const { matches, getMatchesForIncome } = useTransactionMatching(
     bankTransactions, 
     vendorTransactions || [],
-    incomeItems
+    incomeItems.filter(item => item.status !== 'received')
   );
   
   // Calculate unmatched transactions that need attention

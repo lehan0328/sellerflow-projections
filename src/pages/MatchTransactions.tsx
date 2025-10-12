@@ -53,7 +53,7 @@ const MatchTransactions = () => {
     category: tx.category
   })) || [];
 
-  const incomeItemsForMatching = incomeItems.map(i => ({
+  const incomeItemsForMatching = incomeItems.filter(i => i.status !== 'received').map(i => ({
     id: i.id,
     description: i.description,
     amount: i.amount,
