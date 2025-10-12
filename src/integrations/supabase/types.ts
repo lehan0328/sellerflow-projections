@@ -433,12 +433,15 @@ export type Database = {
       bank_transactions: {
         Row: {
           amount: number
+          archived: boolean
           bank_account_id: string
           category: string[] | null
           created_at: string
           currency_code: string | null
           date: string
           id: string
+          matched_transaction_id: string | null
+          matched_type: string | null
           merchant_name: string | null
           name: string
           payment_channel: string | null
@@ -451,12 +454,15 @@ export type Database = {
         }
         Insert: {
           amount: number
+          archived?: boolean
           bank_account_id: string
           category?: string[] | null
           created_at?: string
           currency_code?: string | null
           date: string
           id?: string
+          matched_transaction_id?: string | null
+          matched_type?: string | null
           merchant_name?: string | null
           name: string
           payment_channel?: string | null
@@ -469,12 +475,15 @@ export type Database = {
         }
         Update: {
           amount?: number
+          archived?: boolean
           bank_account_id?: string
           category?: string[] | null
           created_at?: string
           currency_code?: string | null
           date?: string
           id?: string
+          matched_transaction_id?: string | null
+          matched_type?: string | null
           merchant_name?: string | null
           name?: string
           payment_channel?: string | null

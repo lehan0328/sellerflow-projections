@@ -46,6 +46,7 @@ import { TransactionMatchNotification } from "@/components/cash-flow/transaction
 import { TransactionMatchButton } from "@/components/cash-flow/transaction-match-button";
 import { MatchReviewDialog } from "@/components/cash-flow/match-review-dialog";
 import { TransactionMatch } from "@/hooks/useTransactionMatching";
+import { ManualMatchDialog } from "@/components/cash-flow/manual-match-dialog";
 
 // ========== Type Definitions ==========
 
@@ -83,6 +84,10 @@ const Dashboard = () => {
   }>({ open: false, match: null });
   const [matchingAll, setMatchingAll] = useState(false);
   const [syncingTransactions, setSyncingTransactions] = useState(false);
+  const [manualMatchDialog, setManualMatchDialog] = useState<{
+    open: boolean;
+    transaction: BankTransaction | null;
+  }>({ open: false, transaction: null });
   
   // Use database hooks
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, cleanupOrphanedVendors, refetch: refetchVendors } = useVendors();
@@ -857,6 +862,66 @@ const Dashboard = () => {
     console.log("Cash balance is now managed through Plaid integration");
   };
 
+  const handleManualMatchConfirm = async (matchId: string, matchType: 'income' | 'vendor') => {
+    if (!manualMatchDialog.transaction) return;
+    
+    try {
+      // Archive the bank transaction
+      const { error: archiveError } = await supabase
+        .from('bank_transactions')
+        .update({
+          archived: true,
+          matched_transaction_id: matchId,
+          matched_type: matchType,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', manualMatchDialog.transaction.id);
+
+      if (archiveError) throw archiveError;
+
+      // Update income or vendor
+      if (matchType === 'income') {
+        await updateIncome(matchId, { status: 'received' });
+        await addTransaction({
+          type: 'customer_payment',
+          amount: Math.abs(manualMatchDialog.transaction.amount),
+          description: `Manual match: ${manualMatchDialog.transaction.merchantName || manualMatchDialog.transaction.description}`,
+          transactionDate: new Date(),
+          status: 'completed'
+        });
+      } else {
+        const vendor = vendors.find(v => v.id === matchId);
+        if (vendor) {
+          await updateVendor(matchId, {
+            totalOwed: Math.max(0, vendor.totalOwed - Math.abs(manualMatchDialog.transaction.amount))
+          });
+          await addTransaction({
+            type: 'vendor_payment',
+            amount: Math.abs(manualMatchDialog.transaction.amount),
+            description: `Manual match: Payment to ${vendor.name}`,
+            vendorId: matchId,
+            transactionDate: new Date(),
+            status: 'completed'
+          });
+        }
+      }
+
+      toast({
+        title: 'Transaction matched',
+        description: 'Bank transaction has been matched and archived.',
+      });
+
+      await Promise.all([refetchIncome(), refetchVendors(), refetchSafeSpending()]);
+    } catch (error) {
+      console.error('Failed to match transaction:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to match transaction. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Convert database transactions to component format
   const formattedTransactions = transactions.map(t => ({
     id: t.id,
@@ -1381,6 +1446,10 @@ const Dashboard = () => {
           }
         };
 
+        const handleOpenManualMatch = (transaction: BankTransaction) => {
+          setManualMatchDialog({ open: true, transaction });
+        };
+
         const getMatchesForBankTransaction = (txId: string) => {
           return matches.filter(m => m.bankTransaction.id === txId);
         };
@@ -1481,14 +1550,25 @@ const Dashboard = () => {
                             {tx.type}
                           </p>
                         </div>
-                        {hasMatch && (
-                          <button
-                            onClick={() => handleBankManualMatch(tx)}
-                            className="px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors"
-                          >
-                            Review Match
-                          </button>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {hasMatch ? (
+                            <Button
+                              size="sm"
+                              onClick={() => handleBankManualMatch(tx)}
+                              className="bg-green-500 hover:bg-green-600"
+                            >
+                              Review Match
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleOpenManualMatch(tx)}
+                            >
+                              Manual Match
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -1705,6 +1785,37 @@ const Dashboard = () => {
             onReject={() => {
               setMatchReviewDialog({ open: false, match: null });
             }}
+          />
+
+          {/* Manual Match Dialog */}
+          <ManualMatchDialog
+            open={manualMatchDialog.open}
+            onOpenChange={(open) => setManualMatchDialog({ open, transaction: null })}
+            transaction={manualMatchDialog.transaction ? {
+              id: manualMatchDialog.transaction.id,
+              description: manualMatchDialog.transaction.description,
+              merchantName: manualMatchDialog.transaction.merchantName,
+              amount: manualMatchDialog.transaction.amount,
+              date: manualMatchDialog.transaction.date,
+              type: manualMatchDialog.transaction.type,
+            } : null}
+            vendors={vendors.map(v => ({
+              id: v.id,
+              name: v.name,
+              totalOwed: v.totalOwed || 0,
+              nextPaymentAmount: v.nextPaymentAmount || 0,
+              nextPaymentDate: v.nextPaymentDate,
+              category: v.category,
+            }))}
+            incomeItems={incomeItems.map(i => ({
+              id: i.id,
+              description: i.description,
+              source: i.source || i.description,
+              amount: i.amount,
+              paymentDate: i.paymentDate,
+              status: i.status,
+            }))}
+            onMatch={handleManualMatchConfirm}
           />
         </div>
       </div>
