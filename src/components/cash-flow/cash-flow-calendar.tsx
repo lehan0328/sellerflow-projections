@@ -626,6 +626,36 @@ export const CashFlowCalendar = ({
         <div className="flex flex-col">
           {viewType === 'calendar' ? (
             <div className="flex-1 min-h-0 flex flex-col">
+              {/* Financial Summary Stats */}
+              <div className="grid grid-cols-3 gap-3 mb-4 flex-shrink-0">
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Wallet className="h-4 w-4 text-green-600" />
+                    <span className="text-xs font-medium text-green-700 dark:text-green-400">Cash Balance</span>
+                  </div>
+                  <p className="text-xl font-bold text-green-700 dark:text-green-300">
+                    ${bankAccountBalance.toLocaleString()}
+                  </p>
+                </div>
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CreditCard className="h-4 w-4 text-blue-600" />
+                    <span className="text-xs font-medium text-blue-700 dark:text-blue-400">Available Credit</span>
+                  </div>
+                  <p className="text-xl font-bold text-blue-700 dark:text-blue-300">
+                    ${totalAvailableCredit.toLocaleString()}
+                  </p>
+                </div>
+                <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Building2 className="h-4 w-4 text-purple-600" />
+                    <span className="text-xs font-medium text-purple-700 dark:text-purple-400">Total Resources</span>
+                  </div>
+                  <p className="text-xl font-bold text-purple-700 dark:text-purple-300">
+                    ${(bankAccountBalance + totalAvailableCredit).toLocaleString()}
+                  </p>
+                </div>
+              </div>
               <div className="grid grid-cols-7 gap-1 mb-2 flex-shrink-0">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                 <div key={day} className="text-center text-sm font-medium text-muted-foreground p-1">
