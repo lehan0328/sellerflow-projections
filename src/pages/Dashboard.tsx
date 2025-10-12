@@ -78,6 +78,7 @@ const Dashboard = () => {
     open: boolean;
     match: TransactionMatch | null;
   }>({ open: false, match: null });
+  const [matchingAll, setMatchingAll] = useState(false);
   
   // Use database hooks
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, cleanupOrphanedVendors, refetch: refetchVendors } = useVendors();
@@ -1290,9 +1291,70 @@ const Dashboard = () => {
         );
       
       case "bank-transactions":
+        const handleBankMatchAll = async () => {
+          setMatchingAll(true);
+          try {
+            for (const match of matches) {
+              if (match.type === 'income' && match.matchedIncome) {
+                await updateIncome(match.matchedIncome.id, { status: 'received' });
+                await addTransaction({
+                  type: 'customer_payment',
+                  amount: match.matchedIncome.amount,
+                  description: `Auto-matched: ${match.matchedIncome.source} - ${match.matchedIncome.description}`,
+                  customerId: match.matchedIncome.customerId,
+                  transactionDate: new Date(),
+                  status: 'completed'
+                });
+              } else if (match.type === 'vendor' && match.matchedVendor) {
+                await updateVendor(match.matchedVendor.id, {
+                  totalOwed: Math.max(0, match.matchedVendor.totalOwed - Math.abs(match.bankTransaction.amount))
+                });
+                await addTransaction({
+                  type: 'vendor_payment',
+                  amount: Math.abs(match.bankTransaction.amount),
+                  description: `Auto-matched: Payment to ${match.matchedVendor.name}`,
+                  vendorId: match.matchedVendor.id,
+                  transactionDate: new Date(),
+                  status: 'completed'
+                });
+              }
+            }
+            
+            toast({
+              title: 'All matches completed',
+              description: `${matches.length} transactions have been automatically matched.`,
+            });
+            
+            refetchIncome();
+            refetchVendors();
+          } finally {
+            setMatchingAll(false);
+          }
+        };
+
+        const handleBankManualMatch = (transaction: BankTransaction) => {
+          const txMatches = matches.filter(m => m.bankTransaction.id === transaction.id);
+          if (txMatches.length > 0) {
+            setMatchReviewDialog({ open: true, match: txMatches[0] });
+          }
+        };
+
+        const getMatchesForBankTransaction = (txId: string) => {
+          return matches.filter(m => m.bankTransaction.id === txId);
+        };
+
         return (
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold">Bank Transactions</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Bank Transactions</h2>
+              {matches.length > 0 && (
+                <TransactionMatchButton 
+                  matches={matches}
+                  onMatchAll={handleBankMatchAll}
+                  onReviewMatches={() => {}}
+                />
+              )}
+            </div>
             {isBankTransactionsLoading ? (
               <div className="text-center py-8 text-muted-foreground">Loading transactions...</div>
             ) : accounts.length === 0 ? (
@@ -1308,38 +1370,76 @@ const Dashboard = () => {
               </div>
             ) : (
               <div className="space-y-2">
-                {bankTransactions.map((tx) => (
-                  <div
-                    key={tx.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{tx.merchantName || tx.description}</p>
-                        {tx.status === 'pending' && (
-                          <span className="text-xs px-2 py-0.5 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-500/20 rounded">
-                            Pending
-                          </span>
+                {bankTransactions.map((tx) => {
+                  const txMatches = getMatchesForBankTransaction(tx.id);
+                  const hasMatch = txMatches.length > 0;
+                  const topMatch = txMatches[0];
+                  
+                  return (
+                    <div
+                      key={tx.id}
+                      className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                        hasMatch 
+                          ? 'border-green-500/50 bg-green-500/5 hover:bg-green-500/10' 
+                          : 'hover:bg-accent/50'
+                      }`}
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{tx.merchantName || tx.description}</p>
+                          {tx.status === 'pending' && (
+                            <span className="text-xs px-2 py-0.5 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-500/20 rounded">
+                              Pending
+                            </span>
+                          )}
+                          {hasMatch && (
+                            <span className="text-xs px-2 py-0.5 bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20 rounded">
+                              Match Found ({Math.round(topMatch.matchScore * 100)}%)
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                          <span>{format(tx.date, 'MMM dd, yyyy')}</span>
+                          <span>{tx.institutionName} - {tx.accountName}</span>
+                          {tx.category && (
+                            <span>{tx.category}</span>
+                          )}
+                        </div>
+                        {hasMatch && topMatch && (
+                          <div className="flex items-center gap-2 mt-2 text-sm">
+                            <span className="text-muted-foreground">
+                              Matched with:
+                            </span>
+                            <span className="font-medium text-green-600 dark:text-green-400">
+                              {topMatch.type === 'income' 
+                                ? `${topMatch.matchedIncome?.source} - ${topMatch.matchedIncome?.description}`
+                                : topMatch.matchedVendor?.name
+                              }
+                            </span>
+                          </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                        <span>{format(tx.date, 'MMM dd, yyyy')}</span>
-                        <span>{tx.institutionName} - {tx.accountName}</span>
-                        {tx.category && (
-                          <span>{tx.category}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="font-semibold">
+                            {tx.type === 'debit' ? '-' : '+'}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-xs text-muted-foreground capitalize">
+                            {tx.type}
+                          </p>
+                        </div>
+                        {hasMatch && (
+                          <button
+                            onClick={() => handleBankManualMatch(tx)}
+                            className="px-3 py-1.5 text-sm bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors"
+                          >
+                            Review Match
+                          </button>
                         )}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold">
-                        {tx.type === 'debit' ? '-' : '+'}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {tx.type}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
