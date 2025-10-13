@@ -151,10 +151,10 @@ export default function Partners() {
                 <p className="text-sm text-muted-foreground">
                   You need to create an account or sign in to access the referral dashboard and affiliate program. Have questions?{' '}
                   <a 
-                    href="mailto:andy@aurenapp.com" 
+                    href="mailto:support@aurenapp.com" 
                     className="text-primary hover:text-accent transition-colors font-semibold underline decoration-primary/30 hover:decoration-accent"
                   >
-                    Email andy@aurenapp.com
+                    Email support@aurenapp.com
                   </a>
                 </p>
               </div>
