@@ -173,12 +173,6 @@ const Support = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check if user already has an open ticket
-    if (hasOpenTicket) {
-      toast.error("You already have an open ticket. Please wait for it to be resolved before creating a new one.");
-      return;
-    }
-    
     if (!formData.subject.trim() || !formData.message.trim()) {
       toast.error("Please fill in all required fields");
       return;
@@ -420,10 +414,9 @@ const Support = () => {
                       <Button 
                         onClick={() => setShowNewTicket(true)}
                         className="hover-scale"
-                        disabled={hasOpenTicket}
                       >
                         <Send className="h-4 w-4 mr-2" />
-                        {hasOpenTicket ? "Open Ticket Pending" : "Create Ticket"}
+                        Create Ticket
                       </Button>
                     )}
                   </div>
