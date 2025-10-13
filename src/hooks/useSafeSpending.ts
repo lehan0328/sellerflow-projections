@@ -586,7 +586,7 @@ export const useSafeSpending = () => {
   const updateReserveAmount = async (newAmount: number) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) throw new Error("Not authenticated");
 
       // Get user's account_id
       const { data: profile } = await supabase
@@ -595,7 +595,7 @@ export const useSafeSpending = () => {
         .eq('user_id', session.user.id)
         .maybeSingle();
 
-      if (!profile?.account_id) return;
+      if (!profile?.account_id) throw new Error("Account not found");
 
       // Check if settings record exists
       const { data: existingSettings } = await supabase
@@ -625,9 +625,14 @@ export const useSafeSpending = () => {
         if (insertError) throw insertError;
       }
 
+      // Update local state immediately
+      setReserveAmount(newAmount);
+      
+      // Recalculate safe spending with new reserve
       await fetchSafeSpending();
     } catch (err) {
       console.error("Error updating reserve amount:", err);
+      throw err; // Re-throw to let the component handle the error
     }
   };
 
