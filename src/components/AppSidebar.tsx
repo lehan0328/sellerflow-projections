@@ -3,6 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useSupportMessageCount } from "@/hooks/useSupportMessageCount";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar, SidebarHeader } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import aurenIcon from "@/assets/auren-icon-blue.png";
@@ -60,7 +61,8 @@ const resourceSections = [{
 }, {
   id: "support",
   title: "Support",
-  icon: MessageSquare
+  icon: MessageSquare,
+  showSupportBadge: true
 }, {
   id: "referrals",
   title: "Referrals",
@@ -91,6 +93,9 @@ export function AppSidebar({
   const {
     unreadCount
   } = useNotifications();
+  const {
+    unreadSupportCount
+  } = useSupportMessageCount();
   const {
     userRole
   } = useAdmin();
@@ -214,8 +219,16 @@ export function AppSidebar({
                       <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive || isBookCall || isFlexReport ? "animate-pulse" : ""} ${isCollapsed || isBookCall || isFlexReport ? "mx-auto" : ""}`} />
                       {!isCollapsed && <span className={`flex items-center ${isBookCall || isFlexReport ? "justify-center w-full" : "justify-between w-full pr-1"}`}>
                           <span>{section.title}</span>
-                          {section.id === "referrals" && <Badge variant="secondary" className="ml-auto text-[10px] bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30 font-bold px-1.5 py-0">Earn $2k</Badge>}
+                          <span className="flex items-center gap-2">
+                            {'showSupportBadge' in section && section.showSupportBadge && unreadSupportCount > 0 && <Badge variant="destructive" className="text-[10px] font-bold px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center">
+                                {unreadSupportCount}
+                              </Badge>}
+                            {section.id === "referrals" && <Badge variant="secondary" className="ml-auto text-[10px] bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30 font-bold px-1.5 py-0">Earn $2k</Badge>}
+                          </span>
                         </span>}
+                      {isCollapsed && 'showSupportBadge' in section && section.showSupportBadge && unreadSupportCount > 0 && <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
+                          {unreadSupportCount}
+                        </div>}
                     </SidebarMenuButton>
                   </SidebarMenuItem>;
             })}

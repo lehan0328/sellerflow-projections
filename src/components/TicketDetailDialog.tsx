@@ -81,6 +81,15 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
     }
 
     setMessages(data || []);
+    
+    // Mark ticket as viewed by customer
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && ticket.user_id === user.id) {
+      await supabase
+        .from('support_tickets')
+        .update({ customer_last_viewed_at: new Date().toISOString() })
+        .eq('id', ticket.id);
+    }
   };
 
   const handleSendMessage = async () => {
