@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { useCategories } from "@/hooks/useCategories";
+import { AddCategoryDialog } from "./add-category-dialog";
+import { Plus } from "lucide-react";
 
 interface VendorFormProps {
   open: boolean;
@@ -18,7 +20,8 @@ interface VendorFormProps {
 }
 
 export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = [], initialVendorName }: VendorFormProps) => {
-  const { categories } = useCategories('expense');
+  const { categories, addCategory } = useCategories('expense');
+  const [showAddCategory, setShowAddCategory] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -122,11 +125,28 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
 
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
-            <Select onValueChange={(value) => handleInputChange("category", value)}>
+            <Select 
+              value={formData.category}
+              onValueChange={(value) => {
+                if (value === "__add_new__") {
+                  setShowAddCategory(true);
+                } else {
+                  handleInputChange("category", value);
+                }
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
+                <div className="border-b pb-1 mb-1">
+                  <SelectItem value="__add_new__" className="text-primary font-medium">
+                    <div className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Add New Category
+                    </div>
+                  </SelectItem>
+                </div>
                 {categories.map(category => (
                   <SelectItem key={category.id} value={category.name}>
                     {category.name}
@@ -135,6 +155,16 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
               </SelectContent>
             </Select>
           </div>
+
+          <AddCategoryDialog
+            open={showAddCategory}
+            onOpenChange={setShowAddCategory}
+            onAddCategory={async (name) => {
+              await addCategory(name);
+              handleInputChange("category", name);
+            }}
+            type="expense"
+          />
 
           <div className="space-y-3">
             <Label>Payment Method</Label>

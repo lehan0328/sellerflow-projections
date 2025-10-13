@@ -6,10 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCategories } from "@/hooks/useCategories";
+import { AddCategoryDialog } from "./add-category-dialog";
+import { Plus } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Search, Plus, Trash2 } from "lucide-react";
+import { CalendarIcon, Search, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -46,7 +48,8 @@ export const IncomeForm = ({
   onAddCustomer,
   onDeleteAllCustomers
 }: IncomeFormProps) => {
-  const { categories: incomeCategories } = useCategories('income');
+  const { categories: incomeCategories, addCategory } = useCategories('income');
+  const [showAddCategory, setShowAddCategory] = useState(false);
   const [formData, setFormData] = useState({
     type: "income" as "income" | "expense",
     customer: "",
@@ -463,11 +466,28 @@ export const IncomeForm = ({
               {!formData.isRecurring && !isRecurring && (
                 <div className="space-y-2">
                   <Label htmlFor="category">Category (Optional)</Label>
-                  <Select value={formData.category} onValueChange={(value) => handleInputChange("category", value)}>
+                  <Select 
+                    value={formData.category} 
+                    onValueChange={(value) => {
+                      if (value === "__add_new__") {
+                        setShowAddCategory(true);
+                      } else {
+                        handleInputChange("category", value);
+                      }
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
+                      <div className="border-b pb-1 mb-1">
+                        <SelectItem value="__add_new__" className="text-primary font-medium">
+                          <div className="flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
+                            Add New Category
+                          </div>
+                        </SelectItem>
+                      </div>
                       {incomeCategories.map(category => (
                         <SelectItem key={category.id} value={category.name}>
                           {category.name}
@@ -477,6 +497,16 @@ export const IncomeForm = ({
                   </Select>
                 </div>
               )}
+
+              <AddCategoryDialog
+                open={showAddCategory}
+                onOpenChange={setShowAddCategory}
+                onAddCategory={async (name) => {
+                  await addCategory(name);
+                  handleInputChange("category", name);
+                }}
+                type="income"
+              />
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description (Optional)</Label>
