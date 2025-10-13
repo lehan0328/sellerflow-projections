@@ -221,15 +221,32 @@ export const PurchaseOrderForm = ({
 
     // Check credit card availability and limits if using credit card
     if (formData.paymentMethod === "credit-card") {
-      if (!formData.selectedCreditCard) {
-        toast.error('Please select a credit card for payment');
-        return;
-      }
-      const selectedCard = creditCards.find(card => card.id === formData.selectedCreditCard);
-      const orderAmount = parseFloat(formData.amount) || 0;
-      if (selectedCard && selectedCard.available_credit < orderAmount) {
-        toast.error(`Insufficient credit limit. Available: $${selectedCard.available_credit.toFixed(2)}, Required: $${orderAmount.toFixed(2)}`);
-        return;
+      if (formData.splitPayment) {
+        // Validate split payment amounts
+        const splitTotal = cardSplits.reduce((sum, s) => sum + parseFloat(s.amount || "0"), 0);
+        const orderAmount = parseFloat(formData.amount) || 0;
+        
+        if (splitTotal !== orderAmount) {
+          toast.error(`Split total ($${splitTotal.toFixed(2)}) must equal order amount ($${orderAmount.toFixed(2)})`);
+          return;
+        }
+        
+        // Check if all cards are selected
+        if (cardSplits.some(s => !s.cardId || !s.amount)) {
+          toast.error('Please select a card and amount for each split');
+          return;
+        }
+      } else {
+        if (!formData.selectedCreditCard) {
+          toast.error('Please select a credit card for payment');
+          return;
+        }
+        const selectedCard = creditCards.find(card => card.id === formData.selectedCreditCard);
+        const orderAmount = parseFloat(formData.amount) || 0;
+        if (selectedCard && selectedCard.available_credit < orderAmount) {
+          toast.error(`Insufficient credit limit. Available: $${selectedCard.available_credit.toFixed(2)}, Required: $${orderAmount.toFixed(2)}`);
+          return;
+        }
       }
     }
     
