@@ -597,33 +597,18 @@ export const useSafeSpending = () => {
 
       if (!profile?.account_id) throw new Error("Account not found");
 
-      // Check if settings record exists
-      const { data: existingSettings } = await supabase
+      // Update reserve in user_settings using UPSERT to avoid duplicate key errors
+      const { error: upsertError } = await supabase
         .from('user_settings')
-        .select('id')
-        .eq('account_id', profile.account_id)
-        .maybeSingle();
+        .upsert({
+          user_id: session.user.id,
+          account_id: profile.account_id,
+          safe_spending_reserve: newAmount
+        }, {
+          onConflict: 'user_id'
+        });
 
-      if (existingSettings) {
-        // Update existing record
-        const { error: updateError } = await supabase
-          .from('user_settings')
-          .update({ safe_spending_reserve: newAmount })
-          .eq('account_id', profile.account_id);
-
-        if (updateError) throw updateError;
-      } else {
-        // Insert new record
-        const { error: insertError } = await supabase
-          .from('user_settings')
-          .insert({
-            user_id: session.user.id,
-            account_id: profile.account_id,
-            safe_spending_reserve: newAmount
-          });
-
-        if (insertError) throw insertError;
-      }
+      if (upsertError) throw upsertError;
 
       // Update local state immediately
       setReserveAmount(newAmount);
