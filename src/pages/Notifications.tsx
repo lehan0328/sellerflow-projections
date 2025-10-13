@@ -34,7 +34,7 @@ const Notifications = () => {
       
       setStats({
         activeNotifications: enabledCount,
-        totalConfigured: data?.length || 0,
+        totalConfigured: 9, // Total number of notification types available
       });
     } catch (error) {
       console.error('Error fetching notification stats:', error);
