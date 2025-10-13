@@ -19,7 +19,7 @@ const REWARD_TIERS = [
   { referrals: 10, discount: 30, bonus: 100, duration: 3 },
   { referrals: 20, discount: 40, bonus: 200, duration: 3 },
   { referrals: 50, discount: 50, bonus: 1000, duration: 3 },
-  { referrals: 100, discount: 0, bonus: 3000, duration: 6, special: "Free for 6 months" },
+  { referrals: 100, discount: 0, bonus: 2000, duration: 6, special: "Free for 6 months" },
 ];
 
 interface ReferralDashboardContentProps {

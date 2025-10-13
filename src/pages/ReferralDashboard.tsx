@@ -17,7 +17,7 @@ const REWARD_TIERS = [
   { referrals: 10, discount: 30, bonus: 100, duration: 3 },
   { referrals: 20, discount: 40, bonus: 200, duration: 3 },
   { referrals: 50, discount: 50, bonus: 1000, duration: 3 },
-  { referrals: 100, discount: 0, bonus: 3000, duration: 6, special: "Free for 6 months" },
+  { referrals: 100, discount: 0, bonus: 2000, duration: 6, special: "Free for 6 months" },
 ];
 
 export default function ReferralDashboard() {
@@ -190,12 +190,12 @@ export default function ReferralDashboard() {
                 <h2 className="text-5xl md:text-7xl font-black mb-4 text-primary-foreground leading-none animate-scale-in">
                   EARN UP TO
                   <span className="block text-6xl md:text-8xl bg-gradient-to-r from-yellow-300 via-yellow-100 to-yellow-300 bg-clip-text text-transparent animate-pulse mt-2">
-                    $3,000!
+                    $2,000!
                   </span>
                 </h2>
                 
                 <p className="text-xl md:text-2xl text-primary-foreground/90 font-semibold mb-2">
-                  💰 Refer 100 friends with active subscriptions = 6 months FREE + $3,000 cash!
+                  💰 Refer 100 friends with active subscriptions = 6 months FREE + $2,000 cash!
                 </p>
                 <p className="text-lg text-primary-foreground/80">
                   Start earning rewards at just 1 active subscription referral!
