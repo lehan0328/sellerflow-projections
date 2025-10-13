@@ -55,9 +55,10 @@ export function DashboardHeader({
     if (isDemo) {
       return 'Demo';
     }
-    // If user has a company name, use that (for accounts)
+    // If user has a company name, use the first word capitalized
     if (profile?.company) {
-      return profile.company;
+      const firstWord = profile.company.trim().split(/\s+/)[0];
+      return firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase();
     }
     if (profile?.first_name) {
       return profile.first_name;
