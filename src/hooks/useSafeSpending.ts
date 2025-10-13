@@ -48,7 +48,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
 
   const fetchSafeSpending = useCallback(async () => {
     try {
-      console.log('🔄 [SAFE SPENDING] Starting fresh calculation...');
+      console.log('🔄 [SAFE SPENDING] Starting fresh calculation with reserve:', reserveAmountInput);
       setIsLoading(true);
       setError(null);
 
@@ -573,7 +573,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [reserveAmountInput]);
 
 
   useEffect(() => {
@@ -614,6 +614,10 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'credit_cards' }, () => {
         console.log('🔄 Credit cards changed - refetching safe spending');
+        fetchSafeSpending();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_settings' }, () => {
+        console.log('🔄 User settings (reserve) changed - refetching safe spending');
         fetchSafeSpending();
       })
       .subscribe();

@@ -48,9 +48,24 @@ export const useIncome = () => {
     }
 
     try {
+      // Get user's account_id for proper filtering
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!profile?.account_id) {
+        console.error('[Income] No account_id found');
+        setIncomeItems([]);
+        setIsLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('income')
         .select('*')
+        .eq('account_id', profile.account_id)
         .eq('archived', false)
         .order('payment_date', { ascending: false });
 
@@ -81,7 +96,7 @@ export const useIncome = () => {
         index === self.findIndex(i => i.id === item.id)
       );
 
-      console.log('[Income] Fetched items:', data.length, 'Unique items:', uniqueItems.length);
+      console.log('[Income] Account:', profile.account_id, 'Fetched:', data.length, 'Unique:', uniqueItems.length);
       setIncomeItems(uniqueItems);
     } catch (error) {
       console.error('Error fetching income:', error);
@@ -99,10 +114,23 @@ export const useIncome = () => {
     }
 
     try {
+      // Get user's account_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!profile?.account_id) {
+        toast.error('Account not found');
+        return null;
+      }
+
       const { data, error } = await supabase
         .from('income')
         .insert({
           user_id: user.id,
+          account_id: profile.account_id,
           description: incomeData.description,
           amount: incomeData.amount,
           payment_date: formatDateForDB(incomeData.paymentDate),
@@ -122,6 +150,8 @@ export const useIncome = () => {
         toast.error('Failed to add income');
         return null;
       }
+
+      console.log('[Income] Added income to account:', profile.account_id);
 
       const newItem: IncomeItem = {
         id: data.id,

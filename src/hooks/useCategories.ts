@@ -19,10 +19,23 @@ export function useCategories(type: 'expense' | 'income') {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Get user's account_id to filter categories properly
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!profile?.account_id) {
+        console.error('[Categories] No account_id found for user');
+        return;
+      }
+
       const { data, error } = await supabase
         .from('categories')
         .select('*')
         .eq('type', type)
+        .eq('account_id', profile.account_id)
         .order('is_default', { ascending: false })
         .order('name');
 
@@ -36,7 +49,7 @@ export function useCategories(type: 'expense' | 'income') {
         return acc;
       }, [] as Category[]);
       
-      console.log('[Categories] Fetched categories:', { type, count: uniqueCategories.length });
+      console.log('[Categories] Type:', type, 'Account:', profile.account_id, 'Fetched:', uniqueCategories.length);
       setCategories(uniqueCategories);
     } catch (error) {
       console.error('Error fetching categories:', error);
