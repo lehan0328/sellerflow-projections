@@ -180,10 +180,23 @@ export const CashFlowInsights = ({
           description: "Analyzing your Amazon payouts..."
         });
         
+        // Set timeout to reset generating state if stuck
+        const timeout = setTimeout(() => {
+          console.log('⏰ Forecast generation timeout - resetting state');
+          setIsForecastGenerating(false);
+          toast({
+            title: "Forecast timeout",
+            description: "Please try again",
+            variant: "destructive"
+          });
+        }, 30000); // 30 second timeout
+        
         try {
           const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts', {
             body: { userId: user.id }
           });
+          
+          clearTimeout(timeout);
           
           if (error) {
             console.error('Forecast generation error:', error);
@@ -192,6 +205,7 @@ export const CashFlowInsights = ({
               description: error.message || "Unable to generate forecast",
               variant: "destructive"
             });
+            setIsForecastGenerating(false);
           } else if (data?.success) {
             console.log('✅ Amazon payouts forecasted successfully');
             toast({
@@ -199,26 +213,34 @@ export const CashFlowInsights = ({
               description: `Generated ${data.forecast?.predictions?.length || 0} future payouts`
             });
             await refetchPayouts();
+            setIsForecastGenerating(false);
+          } else {
+            console.error('Unexpected response:', data);
+            setIsForecastGenerating(false);
           }
         } catch (err) {
           console.error('Failed to generate forecasts:', err);
+          clearTimeout(timeout);
           toast({
             title: "Forecast error",
             description: "Please try again",
             variant: "destructive"
           });
-        } finally {
           setIsForecastGenerating(false);
         }
       } else if (forecastedPayouts.length > 0) {
         console.log('📊 Forecasts already exist, showing them');
+        // Reset generating state if forecasts exist
+        if (isForecastGenerating) {
+          setIsForecastGenerating(false);
+        }
       } else if (confirmedPayouts.length < 1) {
         console.log('⚠️ Not enough payouts to generate forecast');
       }
     };
 
     generateForecasts();
-  }, [includeForecastPayouts, user, amazonPayouts.length]);
+  }, [includeForecastPayouts, user, amazonPayouts, isForecastGenerating]);
 
   const handleRefreshForecast = async () => {
     if (!user || !includeForecastPayouts) return;
