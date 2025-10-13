@@ -90,7 +90,15 @@ export default function AmazonForecast() {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Forecast error:', error);
+        throw new Error(error.message || 'Failed to generate forecast');
+      }
+
+      if (data?.error) {
+        console.error('Forecast function error:', data.error);
+        throw new Error(data.error);
+      }
 
       if (data?.forecast) {
         setForecast(data.forecast);

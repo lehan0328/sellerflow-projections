@@ -46,11 +46,12 @@ export const useVendorTransactions = () => {
       }
 
       // Fetch transactions with vendor information (exclude archived)
+      // Using left join to include transactions even if vendor is deleted
       const { data, error } = await supabase
         .from('transactions')
         .select(`
           *,
-          vendors!inner(name, category)
+          vendors(name, category)
         `)
         .eq('type', 'purchase_order')
         .eq('archived', false)
