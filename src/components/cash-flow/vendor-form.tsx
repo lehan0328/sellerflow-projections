@@ -81,9 +81,6 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
     
     onAddVendor(vendor);
     
-    // Show success toast
-    toast.success(`Vendor "${formData.name}" added successfully!`);
-    
     onOpenChange(false);
     
     // Reset form

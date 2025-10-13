@@ -352,7 +352,6 @@ export const PurchaseOrderForm = ({
       setVendorSearchTerm(vendorData.name);
       setShowVendorForm(false);
       setExtractedVendorName(""); // Clear extracted name after successful addition
-      toast.success(`Vendor "${vendorData.name}" created successfully!`);
     } catch (error) {
       console.error('Error adding vendor:', error);
       toast.error('Failed to create vendor. Please try again.');

@@ -158,7 +158,7 @@ export const useVendors = () => {
       
       toast({
         title: "Success",
-        description: "Vendor added successfully",
+        description: `Vendor "${newVendor.name}" created successfully!`,
       });
 
       return newVendor;
