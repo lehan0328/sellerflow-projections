@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSupportTickets } from "@/hooks/useSupportTickets";
-import { CheckCircle, Clock, AlertCircle, XCircle, MessageSquare } from "lucide-react";
+import { CheckCircle, Clock, AlertCircle, XCircle, MessageSquare, RefreshCw } from "lucide-react";
 import { TicketMessagesDialog } from "./TicketMessagesDialog";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -24,11 +24,12 @@ const priorityColors = {
 };
 
 export const AdminSupportTickets = () => {
-  const { tickets, isLoading, updateTicket } = useSupportTickets(true);
+  const { tickets, isLoading, updateTicket, refetch } = useSupportTickets(true);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [showMessagesDialog, setShowMessagesDialog] = useState(false);
   const [messageCounts, setMessageCounts] = useState<Record<string, number>>({});
   const [ticketView, setTicketView] = useState<'open' | 'needs_response' | 'closed'>('needs_response');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     const fetchMessageCounts = async () => {
@@ -86,6 +87,12 @@ export const AdminSupportTickets = () => {
     setMessageCounts(prev => ({ ...prev, [ticket.id]: 0 }));
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
+  };
+
 
   if (isLoading) {
     return (
@@ -111,7 +118,7 @@ export const AdminSupportTickets = () => {
       <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle>Support Tickets</CardTitle>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <Button
             variant={ticketView === 'open' ? 'default' : 'outline'}
             size="sm"
@@ -132,6 +139,14 @@ export const AdminSupportTickets = () => {
             onClick={() => setTicketView('closed')}
           >
             Closed ({closedTickets.length})
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </CardHeader>
