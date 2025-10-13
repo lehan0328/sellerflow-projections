@@ -14,7 +14,7 @@ import {
   TrendingDown, 
   DollarSign, 
   CreditCard as CreditCardIcon,
-  Calendar,
+  Calendar as CalendarIcon,
   PieChart as PieChartIcon,
   Calculator,
   Package,
@@ -44,6 +44,10 @@ import {
 } from "recharts";
 import { useMemo, useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default function Analytics() {
   const navigate = useNavigate();
@@ -121,8 +125,14 @@ export default function Analytics() {
   const { creditCards } = useCreditCards();
   const { amazonPayouts } = useAmazonPayouts();
   const { accounts } = useBankAccounts();
-  const [vendorDateRange, setVendorDateRange] = useState<string>("this-month");
-  const [incomeDateRange, setIncomeDateRange] = useState<string>("this-month");
+  const now = new Date();
+  const defaultStartDate = new Date(now.getFullYear(), now.getMonth() - 9, 1);
+  const defaultEndDate = new Date(now.getFullYear(), now.getMonth() + 3, 0);
+  
+  const [vendorDateRange, setVendorDateRange] = useState<string>("custom");
+  const [incomeDateRange, setIncomeDateRange] = useState<string>("custom");
+  const [customStartDate, setCustomStartDate] = useState<Date>(defaultStartDate);
+  const [customEndDate, setCustomEndDate] = useState<Date>(defaultEndDate);
 
   // Calculate key metrics
   const metrics = useMemo(() => {
@@ -298,7 +308,7 @@ export default function Analytics() {
       .map(([name, value]) => ({ name, value }))
       .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value);
-  }, [incomeItems, amazonPayouts, dbTransactions, incomeDateRange]);
+  }, [incomeItems, amazonPayouts, dbTransactions, incomeDateRange, customStartDate, customEndDate]);
 
   // Expense breakdown by vendor category
   // Helper to get date range
@@ -310,6 +320,11 @@ export default function Analytics() {
     const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
     
     switch (rangeType) {
+      case "custom":
+        return { 
+          start: new Date(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate(), 0, 0, 0, 0),
+          end: new Date(customEndDate.getFullYear(), customEndDate.getMonth(), customEndDate.getDate(), 23, 59, 59, 999)
+        };
       case "this-month":
         return { start: startOfThisMonth, end: endOfThisMonth };
       case "last-month":
@@ -326,7 +341,10 @@ export default function Analytics() {
       case "ytd":
         return { start: startOfYear, end: endOfThisMonth };
       default:
-        return { start: startOfThisMonth, end: endOfThisMonth };
+        return { 
+          start: new Date(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate(), 0, 0, 0, 0),
+          end: new Date(customEndDate.getFullYear(), customEndDate.getMonth(), customEndDate.getDate(), 23, 59, 59, 999)
+        };
     }
   };
 
@@ -397,7 +415,7 @@ export default function Analytics() {
       }))
       .filter(item => item.value > 0) // Only show categories with expenses
       .sort((a, b) => b.value - a.value);
-  }, [vendors, vendorTransactions, bankTransactions, vendorDateRange]);
+  }, [vendors, vendorTransactions, bankTransactions, vendorDateRange, customStartDate, customEndDate]);
 
   // Top vendors by spending
   const topVendors = useMemo(() => {
@@ -430,7 +448,7 @@ export default function Analytics() {
       .map(([name, amount]) => ({ name, amount }))
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 10);
-  }, [vendors, vendorTransactions, vendorDateRange]);
+  }, [vendors, vendorTransactions, vendorDateRange, customStartDate, customEndDate]);
 
   // Cash flow trend (income vs expenses over time)
   const cashFlowData = useMemo(() => {
@@ -567,21 +585,55 @@ export default function Analytics() {
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
                   <CardTitle>Income Breakdown by Source</CardTitle>
-                  <Select value={incomeDateRange} onValueChange={setIncomeDateRange}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="this-month">This Month</SelectItem>
-                      <SelectItem value="last-month">Last Month</SelectItem>
-                      <SelectItem value="last-2-months">Last 2 Months</SelectItem>
-                      <SelectItem value="last-3-months">Last 3 Months</SelectItem>
-                      <SelectItem value="last-6-months">Last 6 Months</SelectItem>
-                      <SelectItem value="ytd">Year to Date</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2 items-center">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-auto">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {format(customStartDate, "MMM d, yyyy")} - {format(customEndDate, "MMM d, yyyy")}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-50 bg-background" align="start">
+                        <div className="p-4 space-y-4">
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Start Date</label>
+                            <Calendar
+                              mode="single"
+                              selected={customStartDate}
+                              onSelect={(date) => date && setCustomStartDate(date)}
+                              initialFocus
+                              className={cn("pointer-events-auto")}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">End Date</label>
+                            <Calendar
+                              mode="single"
+                              selected={customEndDate}
+                              onSelect={(date) => date && setCustomEndDate(date)}
+                              className={cn("pointer-events-auto")}
+                            />
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                    <Select value={incomeDateRange} onValueChange={setIncomeDateRange}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 bg-background">
+                        <SelectItem value="custom">Custom Range</SelectItem>
+                        <SelectItem value="this-month">This Month</SelectItem>
+                        <SelectItem value="last-month">Last Month</SelectItem>
+                        <SelectItem value="last-2-months">Last 2 Months</SelectItem>
+                        <SelectItem value="last-3-months">Last 3 Months</SelectItem>
+                        <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+                        <SelectItem value="ytd">Year to Date</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -628,21 +680,55 @@ export default function Analytics() {
 
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
                   <CardTitle>Expense Breakdown by Category</CardTitle>
-                  <Select value={vendorDateRange} onValueChange={setVendorDateRange}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="this-month">This Month</SelectItem>
-                      <SelectItem value="last-month">Last Month</SelectItem>
-                      <SelectItem value="last-2-months">Last 2 Months</SelectItem>
-                      <SelectItem value="last-3-months">Last 3 Months</SelectItem>
-                      <SelectItem value="last-6-months">Last 6 Months</SelectItem>
-                      <SelectItem value="ytd">Year to Date</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2 items-center">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-auto">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {format(customStartDate, "MMM d, yyyy")} - {format(customEndDate, "MMM d, yyyy")}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-50 bg-background" align="start">
+                        <div className="p-4 space-y-4">
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Start Date</label>
+                            <Calendar
+                              mode="single"
+                              selected={customStartDate}
+                              onSelect={(date) => date && setCustomStartDate(date)}
+                              initialFocus
+                              className={cn("pointer-events-auto")}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">End Date</label>
+                            <Calendar
+                              mode="single"
+                              selected={customEndDate}
+                              onSelect={(date) => date && setCustomEndDate(date)}
+                              className={cn("pointer-events-auto")}
+                            />
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                    <Select value={vendorDateRange} onValueChange={setVendorDateRange}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 bg-background">
+                        <SelectItem value="custom">Custom Range</SelectItem>
+                        <SelectItem value="this-month">This Month</SelectItem>
+                        <SelectItem value="last-month">Last Month</SelectItem>
+                        <SelectItem value="last-2-months">Last 2 Months</SelectItem>
+                        <SelectItem value="last-3-months">Last 3 Months</SelectItem>
+                        <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+                        <SelectItem value="ytd">Year to Date</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
