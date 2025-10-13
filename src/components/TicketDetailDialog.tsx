@@ -129,8 +129,8 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
         </DialogHeader>
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Original ticket message */}
-          <div className="mb-3 p-3 bg-muted/50 rounded-lg flex-shrink-0">
+          {/* Original ticket message - acts as divider */}
+          <div className="mb-3 p-3 bg-muted/50 rounded-lg flex-shrink-0 border-b-2 border-border">
             <p className="text-xs font-medium mb-1">Original Message:</p>
             <p className="text-sm text-muted-foreground">{ticket.message}</p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -147,8 +147,8 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
             </Alert>
           )}
 
-          {/* Messages */}
-          <div className="flex-1 min-h-0 overflow-hidden max-h-[400px]">
+          {/* Messages - scrollable area */}
+          <div className="flex-1 min-h-0 overflow-hidden">
             <ScrollArea className="h-full pr-4">
               <div className="space-y-3">
               {messages.length === 0 ? (
