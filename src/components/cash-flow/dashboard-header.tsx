@@ -45,9 +45,12 @@ export function DashboardHeader({
         console.error('Error fetching profile:', error);
         return null;
       }
+      console.log('Profile data for dashboard:', data);
       return data;
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 0, // Don't cache
   });
 
   // Get user display name for dashboard title
