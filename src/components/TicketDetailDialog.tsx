@@ -115,7 +115,7 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{ticket.subject}</DialogTitle>
           <DialogDescription asChild>
@@ -130,16 +130,16 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
 
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Original ticket message */}
-          <div className="mb-4 p-4 bg-muted/50 rounded-lg flex-shrink-0">
-            <p className="text-sm font-medium mb-2">Original Message:</p>
+          <div className="mb-3 p-3 bg-muted/50 rounded-lg flex-shrink-0">
+            <p className="text-xs font-medium mb-1">Original Message:</p>
             <p className="text-sm text-muted-foreground">{ticket.message}</p>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs text-muted-foreground mt-1">
               {new Date(ticket.created_at).toLocaleString()}
             </p>
           </div>
 
           {isTicketClosed && (
-            <Alert className="mb-4 flex-shrink-0">
+            <Alert className="mb-3 flex-shrink-0">
               <Lock className="h-4 w-4" />
               <AlertDescription>
                 This ticket is {ticket.status}. You cannot add new messages to a closed or resolved ticket.
@@ -150,7 +150,7 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
           {/* Messages */}
           <div className="flex-1 min-h-0 overflow-hidden">
             <ScrollArea className="h-full pr-4">
-              <div className="space-y-4">
+              <div className="space-y-3">
               {messages.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
                   No responses yet. Our team will respond soon.
@@ -166,31 +166,31 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
                         isUserMessage ? 'flex-row-reverse' : 'flex-row'
                       }`}
                     >
-                      <div className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                         isUserMessage ? 'bg-muted border-2 border-border' : 'bg-primary text-primary-foreground'
                       }`}>
                         {isUserMessage ? (
-                          <User className="h-5 w-5" />
+                          <User className="h-4 w-4" />
                         ) : (
-                          <Shield className="h-5 w-5" />
+                          <Shield className="h-4 w-4" />
                         )}
                       </div>
                       <div className={`flex-1 max-w-[75%] ${
                         isUserMessage ? 'flex flex-col items-end' : ''
                       }`}>
-                        <p className={`text-xs font-semibold mb-1 ${
+                        <p className={`text-xs font-semibold mb-0.5 ${
                           isUserMessage ? 'text-right' : 'text-left'
                         }`}>
                           {isUserMessage ? 'You' : 'Support Team'}
                         </p>
-                        <div className={`rounded-lg p-3 shadow-sm ${
+                        <div className={`rounded-lg p-2.5 shadow-sm ${
                           isUserMessage 
                             ? 'bg-muted border border-border' 
                             : 'bg-primary/5 border border-primary/20'
                         }`}>
                           <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1.5">
+                        <p className="text-xs text-muted-foreground mt-1">
                           {new Date(msg.created_at).toLocaleString()}
                         </p>
                       </div>
@@ -205,13 +205,13 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
 
           {/* Reply form - disabled if ticket is closed */}
           {!isTicketClosed && (
-            <div className="mt-4 space-y-3 border-t pt-4">
+            <div className="mt-3 space-y-2 border-t pt-3">
               <Textarea
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type your message..."
-                rows={3}
-                className="resize-none"
+                rows={2}
+                className="resize-none text-sm"
                 disabled={isTicketClosed}
               />
               <div className="flex justify-end gap-2">
@@ -234,8 +234,8 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
 
           {/* Show resolution notes if ticket is resolved */}
           {ticket.resolution_notes && (
-            <div className="mt-4 p-4 bg-primary/5 rounded-lg border-l-4 border-primary">
-              <p className="text-sm font-medium text-primary mb-2">Resolution:</p>
+            <div className="mt-3 p-3 bg-primary/5 rounded-lg border-l-4 border-primary flex-shrink-0">
+              <p className="text-xs font-medium text-primary mb-1">Resolution:</p>
               <p className="text-sm text-muted-foreground">{ticket.resolution_notes}</p>
             </div>
           )}
