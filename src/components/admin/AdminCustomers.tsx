@@ -59,7 +59,7 @@ export const AdminCustomers = () => {
   const [metrics, setMetrics] = useState<ConversionMetrics | null>(null);
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<'active' | 'churned'>('active');
+  const [viewMode, setViewMode] = useState<'trial' | 'active' | 'churned'>('trial');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -377,18 +377,28 @@ export const AdminCustomers = () => {
     return matchesSearch && status.label.toLowerCase() === statusFilter;
   });
 
-  // Separate active and expired/churned customers
-  const activeCustomers = filteredCustomers.filter(customer => {
+  // Separate customers into trial, active (paid), and churned
+  const trialCustomers = filteredCustomers.filter(customer => {
     const status = getAccountStatus(customer);
-    return status.label !== 'Expired';
+    return status.label === 'Trial';
   });
 
-  const expiredCustomers = filteredCustomers.filter(customer => {
+  const activeCustomers = filteredCustomers.filter(customer => {
+    const status = getAccountStatus(customer);
+    return status.label === 'Paid';
+  });
+
+  const churnedCustomers = filteredCustomers.filter(customer => {
     const status = getAccountStatus(customer);
     return status.label === 'Expired';
   });
 
-  const displayedCustomers = viewMode === 'active' ? activeCustomers : expiredCustomers;
+  const displayedCustomers = viewMode === 'trial' 
+    ? trialCustomers 
+    : viewMode === 'active' 
+    ? activeCustomers 
+    : churnedCustomers;
+    
   const totalPages = Math.ceil(displayedCustomers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedCustomers = displayedCustomers.slice(startIndex, startIndex + itemsPerPage);
@@ -403,7 +413,7 @@ export const AdminCustomers = () => {
     setCurrentPage(1);
   };
 
-  const handleViewModeChange = (mode: 'active' | 'churned') => {
+  const handleViewModeChange = (mode: 'trial' | 'active' | 'churned') => {
     setViewMode(mode);
     setCurrentPage(1);
   };
@@ -455,14 +465,22 @@ export const AdminCustomers = () => {
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <CardTitle>
-                {viewMode === 'active' ? 'Active' : 'Expired / Churned'} Customers ({displayedCustomers.length})
+                {viewMode === 'trial' ? 'Trial' : viewMode === 'active' ? 'Active (Paid)' : 'Churned'} Customers ({displayedCustomers.length})
               </CardTitle>
-              <div className="flex gap-1 border rounded-md">
+              <div className="flex gap-0 border rounded-md">
+                <Button
+                  variant={viewMode === 'trial' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleViewModeChange('trial')}
+                  className="rounded-r-none border-r"
+                >
+                  Trial ({trialCustomers.length})
+                </Button>
                 <Button
                   variant={viewMode === 'active' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => handleViewModeChange('active')}
-                  className="rounded-r-none"
+                  className="rounded-none border-r"
                 >
                   Active ({activeCustomers.length})
                 </Button>
@@ -472,7 +490,7 @@ export const AdminCustomers = () => {
                   onClick={() => handleViewModeChange('churned')}
                   className="rounded-l-none"
                 >
-                  Churned ({expiredCustomers.length})
+                  Churned ({churnedCustomers.length})
                 </Button>
               </div>
             </div>
@@ -519,12 +537,12 @@ export const AdminCustomers = () => {
                 <TableHead>Company</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>{viewMode === 'active' ? 'Plan' : 'Last Plan'}</TableHead>
+                <TableHead>{viewMode === 'churned' ? 'Last Plan' : 'Plan'}</TableHead>
                 <TableHead>Discount</TableHead>
                 <TableHead>Amazon Revenue (30d)</TableHead>
                 <TableHead>Renewal Date</TableHead>
                 <TableHead>Last Paid</TableHead>
-                <TableHead>Churn Date</TableHead>
+                {viewMode === 'churned' && <TableHead>Churn Date</TableHead>}
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -660,19 +678,21 @@ export const AdminCustomers = () => {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell>
-                        {customer.churn_date ? (
-                          <span className="text-sm">
-                            {new Date(customer.churn_date).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric',
-                              year: 'numeric'
-                            })}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
+                      {viewMode === 'churned' && (
+                        <TableCell>
+                          {customer.churn_date ? (
+                            <span className="text-sm">
+                              {new Date(customer.churn_date).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                      )}
                       <TableCell className="text-right">
                         <div className="flex gap-2 justify-end">
                           <Button
@@ -741,9 +761,11 @@ export const AdminCustomers = () => {
                           <TableCell>
                             <span className="text-muted-foreground">-</span>
                           </TableCell>
-                          <TableCell>
-                            <span className="text-muted-foreground">-</span>
-                          </TableCell>
+                          {viewMode === 'churned' && (
+                            <TableCell>
+                              <span className="text-muted-foreground">-</span>
+                            </TableCell>
+                          )}
                           <TableCell className="text-right">
                             <div className="flex gap-2 justify-end">
                               <Button
