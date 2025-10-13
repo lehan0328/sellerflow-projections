@@ -127,6 +127,7 @@ export default function Analytics() {
   const revenueData = useMemo(() => {
     const monthlyData: Record<string, number> = {};
     const now = new Date();
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
     
     // Initialize last 6 months
     for (let i = 5; i >= 0; i--) {
@@ -135,33 +136,39 @@ export default function Analytics() {
       monthlyData[key] = 0;
     }
 
-    // Aggregate received income
+    // Aggregate received income from last 6 months
     incomeItems.forEach(item => {
       if (item.status === 'received') {
         const date = new Date(item.paymentDate);
-        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        if (monthlyData.hasOwnProperty(key)) {
-          monthlyData[key] += item.amount;
+        if (date >= sixMonthsAgo) {
+          const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+          if (monthlyData.hasOwnProperty(key)) {
+            monthlyData[key] += item.amount;
+          }
         }
       }
     });
 
-    // Aggregate Amazon payouts
+    // Aggregate Amazon payouts from last 6 months
     amazonPayouts.forEach(payout => {
       const date = new Date(payout.payout_date);
-      const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      if (monthlyData.hasOwnProperty(key)) {
-        monthlyData[key] += payout.total_amount || 0;
+      if (date >= sixMonthsAgo) {
+        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (monthlyData.hasOwnProperty(key)) {
+          monthlyData[key] += payout.total_amount || 0;
+        }
       }
     });
 
-    // Aggregate completed sales orders
+    // Aggregate completed sales orders from last 6 months
     dbTransactions.forEach(tx => {
       if ((tx.type === 'sales_order' || tx.type === 'customer_payment') && tx.status === 'completed') {
         const date = new Date(tx.transactionDate);
-        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        if (monthlyData.hasOwnProperty(key)) {
-          monthlyData[key] += tx.amount;
+        if (date >= sixMonthsAgo) {
+          const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+          if (monthlyData.hasOwnProperty(key)) {
+            monthlyData[key] += tx.amount;
+          }
         }
       }
     });
