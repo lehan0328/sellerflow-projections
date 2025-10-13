@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 const statusIcons = {
   open: <Clock className="h-4 w-4" />,
   in_progress: <AlertCircle className="h-4 w-4" />,
+  needs_response: <AlertCircle className="h-4 w-4 text-orange-500" />,
   resolved: <CheckCircle className="h-4 w-4" />,
   closed: <XCircle className="h-4 w-4" />
 };
@@ -27,7 +28,7 @@ export const AdminSupportTickets = () => {
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [showMessagesDialog, setShowMessagesDialog] = useState(false);
   const [messageCounts, setMessageCounts] = useState<Record<string, number>>({});
-  const [showClosed, setShowClosed] = useState(false);
+  const [ticketView, setTicketView] = useState<'open' | 'needs_response' | 'closed'>('needs_response');
 
   useEffect(() => {
     const fetchMessageCounts = async () => {
@@ -96,22 +97,28 @@ export const AdminSupportTickets = () => {
     );
   }
 
-  const activeTickets = tickets.filter(t => t.status === 'open' || t.status === 'in_progress');
+  const openTickets = tickets.filter(t => t.status === 'open' || t.status === 'in_progress');
+  const needsResponseTickets = tickets.filter(t => t.status === 'needs_response');
   const closedTickets = tickets.filter(t => t.status === 'resolved' || t.status === 'closed');
-  const displayedTickets = showClosed ? closedTickets : activeTickets;
+  
+  const displayedTickets = 
+    ticketView === 'open' ? openTickets :
+    ticketView === 'needs_response' ? needsResponseTickets :
+    closedTickets;
 
   return (
     <>
       <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle>Support Tickets</CardTitle>
-        <Select value={showClosed ? "closed" : "active"} onValueChange={(value) => setShowClosed(value === "closed")}>
-          <SelectTrigger className="w-[180px]">
+        <Select value={ticketView} onValueChange={(value: any) => setTicketView(value)}>
+          <SelectTrigger className="w-[200px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="active">Active Tickets</SelectItem>
-            <SelectItem value="closed">Closed Tickets</SelectItem>
+            <SelectItem value="open">Open ({openTickets.length})</SelectItem>
+            <SelectItem value="needs_response">Need Response ({needsResponseTickets.length})</SelectItem>
+            <SelectItem value="closed">Closed ({closedTickets.length})</SelectItem>
           </SelectContent>
         </Select>
       </CardHeader>
@@ -119,7 +126,7 @@ export const AdminSupportTickets = () => {
         <div className="space-y-4">
           {displayedTickets.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No {showClosed ? 'closed' : 'active'} support tickets
+              No {ticketView === 'open' ? 'open' : ticketView === 'needs_response' ? 'tickets needing response' : 'closed'} tickets
             </div>
           ) : (
             displayedTickets.map((ticket) => (
@@ -159,7 +166,7 @@ export const AdminSupportTickets = () => {
                       <p className="text-sm text-muted-foreground mb-3">{ticket.message}</p>
                       <div className="text-xs text-muted-foreground">
                         Created: {new Date(ticket.created_at).toLocaleString()}
-                        {ticket.resolved_at && showClosed && (
+                        {ticket.resolved_at && ticketView === 'closed' && (
                           <> • Resolved: {new Date(ticket.resolved_at).toLocaleString()}</>
                         )}
                       </div>
@@ -193,6 +200,7 @@ export const AdminSupportTickets = () => {
                         <SelectContent>
                           <SelectItem value="open">Open</SelectItem>
                           <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="needs_response">Needs Response</SelectItem>
                           <SelectItem value="resolved">Resolved</SelectItem>
                           <SelectItem value="closed">Closed</SelectItem>
                         </SelectContent>

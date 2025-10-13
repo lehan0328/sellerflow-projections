@@ -7,7 +7,7 @@ export interface SupportTicket {
   user_id: string;
   subject: string;
   message: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  status: 'open' | 'in_progress' | 'needs_response' | 'resolved' | 'closed';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   category?: string;
   assigned_to?: string;
