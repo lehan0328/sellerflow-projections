@@ -367,13 +367,21 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               <p className="text-sm text-slate-600">Available Credit</p>
               <p className="text-2xl font-bold text-purple-700">{formatCurrency(totalAvailableCredit)}</p>
               <div className="space-y-0.5">
-                {pendingCreditTotal > 0 && (
-                  <p className="text-sm text-slate-600">
-                    Pending: {formatCurrency(pendingCreditTotal)}
+                {totalCreditLimit === 0 ? (
+                  <p className="text-sm text-slate-500 italic">
+                    No credit cards linked
                   </p>
+                ) : (
+                  <>
+                    {pendingCreditTotal > 0 && (
+                      <p className="text-sm text-slate-600">
+                        Pending: {formatCurrency(pendingCreditTotal)}
+                      </p>
+                    )}
+                    <p className="text-sm text-slate-600">of {formatCurrency(totalCreditLimit)} limit</p>
+                    <p className="text-xs text-purple-600">{formatCurrency(totalCreditBalance)} used • {creditUtilization.toFixed(1)}% utilization</p>
+                  </>
                 )}
-                <p className="text-sm text-slate-600">of {formatCurrency(totalCreditLimit)} limit</p>
-                <p className="text-xs text-purple-600">{formatCurrency(totalCreditBalance)} used • {creditUtilization.toFixed(1)}% utilization</p>
               </div>
             </div>
             <CreditCard className="h-8 w-8 text-purple-500" />
