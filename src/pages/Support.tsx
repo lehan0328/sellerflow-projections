@@ -360,42 +360,7 @@ const Support = () => {
           {/* Tickets List - Only for authenticated users */}
           {user && (
             <Card className="shadow-card border-0">
-              <CardHeader className="border-b bg-gradient-to-r from-background to-muted/30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-2xl">Your Support Tickets</CardTitle>
-                    <CardDescription className="text-base mt-1">
-                      View and track your support requests
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex gap-0 border rounded-md">
-                      <Button
-                        variant={ticketViewMode === 'open' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setTicketViewMode('open')}
-                        className="rounded-r-none border-r"
-                      >
-                        Open ({openTicketsCount})
-                      </Button>
-                      <Button
-                        variant={ticketViewMode === 'closed' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setTicketViewMode('closed')}
-                        className="rounded-l-none"
-                      >
-                        Closed ({closedTicketsCount})
-                      </Button>
-                    </div>
-                    {tickets.length > 0 && (
-                      <Badge variant="secondary" className="text-sm px-3 py-1">
-                        {filteredTickets.length} {filteredTickets.length === 1 ? 'Ticket' : 'Tickets'}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-6 border-b">
                 {filteredTickets.length === 0 ? (
                   <div className="text-center py-16 animate-fade-in">
                     <div className="mx-auto h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
@@ -512,6 +477,41 @@ const Support = () => {
                   </div>
                 )}
               </CardContent>
+              <CardHeader className="bg-gradient-to-r from-background to-muted/30">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-2xl">Your Support Tickets</CardTitle>
+                    <CardDescription className="text-base mt-1">
+                      View and track your support requests
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-0 border rounded-md">
+                      <Button
+                        variant={ticketViewMode === 'open' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setTicketViewMode('open')}
+                        className="rounded-r-none border-r"
+                      >
+                        Open ({openTicketsCount})
+                      </Button>
+                      <Button
+                        variant={ticketViewMode === 'closed' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setTicketViewMode('closed')}
+                        className="rounded-l-none"
+                      >
+                        Closed ({closedTicketsCount})
+                      </Button>
+                    </div>
+                    {tickets.length > 0 && (
+                      <Badge variant="secondary" className="text-sm px-3 py-1">
+                        {filteredTickets.length} {filteredTickets.length === 1 ? 'Ticket' : 'Tickets'}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
             </Card>
           )}
 
