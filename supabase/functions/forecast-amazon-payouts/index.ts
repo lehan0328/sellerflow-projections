@@ -228,6 +228,7 @@ Return ONLY this JSON (no markdown):
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
 
+    let aiResponse;
     try {
       const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
@@ -262,7 +263,7 @@ Return ONLY this JSON (no markdown):
       }
 
       const aiData = await response.json();
-      const aiResponse = aiData.choices?.[0]?.message?.content;
+      aiResponse = aiData.choices?.[0]?.message?.content;
 
       if (!aiResponse) {
         throw new Error('No response from AI service');
