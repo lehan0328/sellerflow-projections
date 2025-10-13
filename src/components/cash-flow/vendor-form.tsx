@@ -72,7 +72,7 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
       id: Date.now().toString(),
       name: formData.name,
       category: formData.category,
-      paymentMethod: formData.paymentMethod,
+      paymentMethod: formData.paymentMethod, // Include payment method in vendor data
       paymentType: formData.paymentType,
       netTermsDays: formData.paymentType === 'net-terms' ? 
         (formData.netTermsDays === 'custom' ? formData.customNetDays : formData.netTermsDays) : 

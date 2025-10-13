@@ -11,6 +11,7 @@ export interface Vendor {
   status: 'upcoming' | 'current' | 'overdue' | 'paid';
   category: string;
   paymentType?: 'total' | 'preorder' | 'net-terms';
+  paymentMethod?: 'bank-transfer' | 'credit-card'; // Add payment method
   netTermsDays?: string;
   poName?: string;
   description?: string;
@@ -75,6 +76,7 @@ export const useVendors = () => {
         status: vendor.status as Vendor['status'],
         category: vendor.category || '',
         paymentType: vendor.payment_type as Vendor['paymentType'],
+        paymentMethod: vendor.payment_method as Vendor['paymentMethod'] || 'bank-transfer', // Load payment method
         netTermsDays: vendor.net_terms_days?.toString(),
         poName: vendor.po_name || '',
         description: vendor.description || '',
@@ -116,6 +118,7 @@ export const useVendors = () => {
         status: vendorData.status,
         category: vendorData.category,
         payment_type: vendorData.paymentType,
+        payment_method: vendorData.paymentMethod || 'bank-transfer', // Save payment method
         net_terms_days: vendorData.netTermsDays ? parseInt(vendorData.netTermsDays) : null,
         po_name: vendorData.poName || null,
         description: vendorData.description || null,
@@ -146,6 +149,7 @@ export const useVendors = () => {
         status: data.status as Vendor['status'],
         category: data.category || '',
         paymentType: data.payment_type as Vendor['paymentType'],
+        paymentMethod: data.payment_method as Vendor['paymentMethod'] || 'bank-transfer', // Load payment method
         netTermsDays: data.net_terms_days?.toString(),
         poName: data.po_name || '',
         description: data.description || '',

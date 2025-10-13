@@ -334,6 +334,7 @@ export const PurchaseOrderForm = ({
         status: 'upcoming',
         category: vendorData.category || '',
         paymentType: vendorData.paymentType,
+        paymentMethod: vendorData.paymentMethod, // Save payment method
         netTermsDays: vendorData.netTermsDays,
         source: 'management'
       });
@@ -346,6 +347,7 @@ export const PurchaseOrderForm = ({
         // Will be updated when vendors refresh
         category: vendorData.category || '',
         paymentType: mapVendorPaymentType(vendorData.paymentType),
+        paymentMethod: vendorData.paymentMethod === 'credit-card' ? 'credit-card' : 'bank-transfer', // Auto-select payment method
         netTermsDays: mapNetTermsDays(vendorData.netTermsDays),
         customDays: isCustomNetTerms(vendorData.netTermsDays) ? vendorData.netTermsDays?.toString() || '' : ''
       }));

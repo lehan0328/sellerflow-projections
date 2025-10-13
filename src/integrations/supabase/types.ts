@@ -1742,6 +1742,7 @@ export type Database = {
           next_payment_amount: number | null
           next_payment_date: string | null
           notes: string | null
+          payment_method: string | null
           payment_schedule: Json | null
           payment_type: string | null
           po_name: string | null
@@ -1763,6 +1764,7 @@ export type Database = {
           next_payment_amount?: number | null
           next_payment_date?: string | null
           notes?: string | null
+          payment_method?: string | null
           payment_schedule?: Json | null
           payment_type?: string | null
           po_name?: string | null
@@ -1784,6 +1786,7 @@ export type Database = {
           next_payment_amount?: number | null
           next_payment_date?: string | null
           notes?: string | null
+          payment_method?: string | null
           payment_schedule?: Json | null
           payment_type?: string | null
           po_name?: string | null
