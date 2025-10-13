@@ -16,7 +16,6 @@ import {
   CreditCard as CreditCardIcon,
   Calendar,
   PieChart as PieChartIcon,
-  ArrowLeft,
   Calculator,
   Package,
   ShoppingCart,
@@ -97,6 +96,27 @@ export default function Analytics() {
     };
 
     fetchAllVendorTransactions();
+    
+    // Set up real-time subscription for vendor transactions
+    const channel = supabase
+      .channel('vendor-transactions-analytics')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'transactions',
+          filter: 'type=eq.purchase_order'
+        },
+        () => {
+          fetchAllVendorTransactions();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
   const { creditCards } = useCreditCards();
   const { amazonPayouts } = useAmazonPayouts();
@@ -429,14 +449,6 @@ export default function Analytics() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div>
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate('/dashboard')}
-          className="mb-2"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Dashboard
-        </Button>
         <h1 className="text-3xl font-bold">Business Analytics</h1>
         <p className="text-muted-foreground">Comprehensive insights into your financial performance</p>
       </div>
