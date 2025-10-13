@@ -110,10 +110,22 @@ export const useUserSettings = () => {
 
   const createDefaultSettings = async (userId: string) => {
     try {
+      // Get user's account_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (!profile?.account_id) {
+        throw new Error('Account not found');
+      }
+
       const { error } = await supabase
         .from('user_settings')
         .insert({
           user_id: userId,
+          account_id: profile.account_id,
           total_cash: 0,
           chart_show_forecast_line: false
         });
@@ -130,13 +142,24 @@ export const useUserSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Get user's account_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!profile?.account_id) {
+        throw new Error('Account not found');
+      }
+
       // Calculate new total by adding to current amount
       const newTotal = totalCash + amountToAdd;
 
       const { error } = await supabase
         .from('user_settings')
         .update({ total_cash: newTotal })
-        .eq('user_id', user.id);
+        .eq('account_id', profile.account_id);
 
       if (error) throw error;
 
@@ -161,10 +184,21 @@ export const useUserSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Get user's account_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!profile?.account_id) {
+        throw new Error('Account not found');
+      }
+
       const { error } = await supabase
         .from('user_settings')
         .update({ total_cash: amount })
-        .eq('user_id', user.id);
+        .eq('account_id', profile.account_id);
 
       if (error) throw error;
 
@@ -234,18 +268,27 @@ export const useUserSettings = () => {
         }
       });
 
-      // Reset user_settings using UPSERT to avoid duplicate key errors
+      // Get user's account_id for reset
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!profile?.account_id) {
+        throw new Error('Account not found');
+      }
+
+      // Reset user_settings using account_id
       const { error: upsertError } = await supabase
         .from('user_settings')
-        .upsert({
-          user_id: user.id,
+        .update({
           total_cash: 0,
           safe_spending_percentage: 20,
           safe_spending_reserve: 0,
           chart_show_forecast_line: false
-        }, {
-          onConflict: 'user_id'
-        });
+        })
+        .eq('account_id', profile.account_id);
 
       if (upsertError) {
         console.error('Failed to reset user settings:', upsertError);
