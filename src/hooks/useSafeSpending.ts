@@ -599,25 +599,41 @@ export const useSafeSpending = () => {
 
       console.log("💾 Updating reserve amount to:", newAmount, "for account:", profile.account_id);
 
-      // Update reserve in user_settings using UPSERT to avoid duplicate key errors
-      const { data: upsertedData, error: upsertError } = await supabase
+      // Check if user_settings record exists
+      const { data: existing } = await supabase
         .from('user_settings')
-        .upsert({
-          user_id: session.user.id,
-          account_id: profile.account_id,
-          safe_spending_reserve: newAmount
-        }, {
-          onConflict: 'user_id'
-        })
-        .select()
-        .single();
+        .select('id')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
 
-      if (upsertError) {
-        console.error("❌ Upsert error:", upsertError);
-        throw upsertError;
+      let result;
+      if (existing) {
+        // Update existing record
+        result = await supabase
+          .from('user_settings')
+          .update({ safe_spending_reserve: newAmount })
+          .eq('user_id', session.user.id)
+          .select()
+          .single();
+      } else {
+        // Insert new record with account_id
+        result = await supabase
+          .from('user_settings')
+          .insert({
+            user_id: session.user.id,
+            account_id: profile.account_id,
+            safe_spending_reserve: newAmount
+          })
+          .select()
+          .single();
       }
 
-      console.log("✅ Reserve updated successfully:", upsertedData);
+      if (result.error) {
+        console.error("❌ Database error:", result.error);
+        throw result.error;
+      }
+
+      console.log("✅ Reserve updated successfully:", result.data);
 
       // Update local state immediately
       setReserveAmount(newAmount);
