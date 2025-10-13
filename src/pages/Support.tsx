@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/useAuth";
+import { TicketDetailDialog } from "@/components/TicketDetailDialog";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -23,6 +24,8 @@ const Support = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [showAIChat, setShowAIChat] = useState(true);
+  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [showTicketDialog, setShowTicketDialog] = useState(false);
   
   const [formData, setFormData] = useState({
     subject: "",
@@ -280,6 +283,11 @@ const Support = () => {
     });
   };
 
+  const handleViewTicket = (ticket: any) => {
+    setSelectedTicket(ticket);
+    setShowTicketDialog(true);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90 animate-fade-in">
       <div className="container mx-auto p-6 space-y-6">
@@ -527,58 +535,61 @@ const Support = () => {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {tickets.map((ticket) => (
-                    <div
-                      key={ticket.id}
-                      className="rounded-lg border bg-gradient-card p-4 hover:shadow-card transition-all"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-2 flex-1">
-                          <div className="flex items-center space-x-2">
-                            {getStatusIcon(ticket.status)}
-                            <h3 className="font-semibold text-foreground">{ticket.subject}</h3>
-                          </div>
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {ticket.message}
-                          </p>
-                          <div className="flex items-center space-x-2">
-                            <Badge variant={getStatusColor(ticket.status)}>
-                              {ticket.status.replace("_", " ")}
-                            </Badge>
-                            <Badge variant={getPriorityColor(ticket.priority)}>
-                              {ticket.priority}
-                            </Badge>
-                            {ticket.category && (
-                              <Badge variant="outline">{ticket.category}</Badge>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-right text-sm text-muted-foreground ml-4">
-                          <div>{formatDate(ticket.created_at)}</div>
-                          {ticket.resolved_at && (
-                            <div className="text-xs text-finance-positive mt-1">
-                              Resolved {formatDate(ticket.resolved_at)}
-                            </div>
-                          )}
+                 <div className="space-y-4">
+                   {tickets.map((ticket) => (
+                     <div
+                       key={ticket.id}
+                       className="rounded-lg border bg-gradient-card p-4 hover:shadow-card transition-all cursor-pointer"
+                       onClick={() => handleViewTicket(ticket)}
+                     >
+                       <div className="flex items-start justify-between">
+                         <div className="space-y-2 flex-1">
+                           <div className="flex items-center space-x-2">
+                             {getStatusIcon(ticket.status)}
+                             <h3 className="font-semibold text-foreground">{ticket.subject}</h3>
+                           </div>
+                           <p className="text-sm text-muted-foreground line-clamp-2">
+                             {ticket.message}
+                           </p>
+                           <div className="flex items-center space-x-2">
+                             <Badge variant={getStatusColor(ticket.status)}>
+                               {ticket.status.replace("_", " ")}
+                             </Badge>
+                             <Badge variant={getPriorityColor(ticket.priority)}>
+                               {ticket.priority}
+                             </Badge>
+                             {ticket.category && (
+                               <Badge variant="outline">{ticket.category}</Badge>
+                             )}
+                           </div>
+                         </div>
+                         <div className="text-right text-sm text-muted-foreground ml-4">
+                           <div>{formatDate(ticket.created_at)}</div>
+                           {ticket.resolved_at && (
+                             <div className="text-xs text-finance-positive mt-1">
+                               Resolved {formatDate(ticket.resolved_at)}
+                             </div>
+                           )}
+                         </div>
                         </div>
                       </div>
-                      {ticket.resolution_notes && (
-                        <div className="mt-4 p-3 bg-muted/50 rounded-md">
-                          <p className="text-sm font-medium text-foreground mb-1">Resolution:</p>
-                          <p className="text-sm text-muted-foreground">{ticket.resolution_notes}</p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          )}
-        </div>
-      </div>
-  );
+                    ))}
+                 </div>
+               )}
+             </CardContent>
+           </Card>
+           )}
+
+           {selectedTicket && (
+             <TicketDetailDialog
+               ticket={selectedTicket}
+               open={showTicketDialog}
+               onOpenChange={setShowTicketDialog}
+             />
+           )}
+         </div>
+       </div>
+   );
 };
 
 export default Support;

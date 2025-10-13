@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSupportTickets } from "@/hooks/useSupportTickets";
-import { CheckCircle, Clock, AlertCircle, XCircle } from "lucide-react";
+import { CheckCircle, Clock, AlertCircle, XCircle, MessageSquare } from "lucide-react";
+import { TicketMessagesDialog } from "./TicketMessagesDialog";
 
 const statusIcons = {
   open: <Clock className="h-4 w-4" />,
@@ -21,6 +23,8 @@ const priorityColors = {
 
 export const AdminSupportTickets = () => {
   const { tickets, isLoading, updateTicket } = useSupportTickets(true);
+  const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [showMessagesDialog, setShowMessagesDialog] = useState(false);
 
   const handleStatusChange = async (ticketId: string, newStatus: string) => {
     const updates: any = { status: newStatus };
@@ -40,8 +44,14 @@ export const AdminSupportTickets = () => {
     );
   }
 
+  const handleViewMessages = (ticket: any) => {
+    setSelectedTicket(ticket);
+    setShowMessagesDialog(true);
+  };
+
   return (
-    <Card>
+    <>
+      <Card>
       <CardHeader>
         <CardTitle>Support Tickets</CardTitle>
       </CardHeader>
@@ -72,6 +82,14 @@ export const AdminSupportTickets = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleViewMessages(ticket)}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        View Messages
+                      </Button>
                       {statusIcons[ticket.status]}
                       <Select 
                         value={ticket.status} 
@@ -96,5 +114,14 @@ export const AdminSupportTickets = () => {
         </div>
       </CardContent>
     </Card>
+
+    {selectedTicket && (
+      <TicketMessagesDialog
+        ticket={selectedTicket}
+        open={showMessagesDialog}
+        onOpenChange={setShowMessagesDialog}
+      />
+    )}
+    </>
   );
 };
