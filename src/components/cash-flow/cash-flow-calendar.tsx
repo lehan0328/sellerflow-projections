@@ -458,7 +458,7 @@ export const CashFlowCalendar = ({
     const chartEnd = endOfMonth(addMonths(today, monthsToShow)); // End at the end of month X months from now
     
     const days = eachDayOfInterval({ start: chartStart, end: chartEnd });
-    let runningTotal = totalAvailableCash;
+    let runningTotal = bankAccountBalance; // Use actual bank account balance
     let cumulativeInflow = 0;
     let cumulativeOutflow = 0;
     
