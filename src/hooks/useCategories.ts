@@ -41,9 +41,10 @@ export function useCategories(type: 'expense' | 'income') {
 
       if (error) throw error;
       
-      // Deduplicate by ID to prevent duplicates
+      // Deduplicate by NAME (case-insensitive) for the same account
       const uniqueCategories = (data || []).reduce((acc, category) => {
-        if (!acc.find(c => c.id === category.id)) {
+        const normalizedName = category.name.toLowerCase().trim();
+        if (!acc.find(c => c.name.toLowerCase().trim() === normalizedName)) {
           acc.push(category as Category);
         }
         return acc;
