@@ -27,6 +27,7 @@ export const AdminSupportTickets = () => {
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [showMessagesDialog, setShowMessagesDialog] = useState(false);
   const [messageCounts, setMessageCounts] = useState<Record<string, number>>({});
+  const [showClosed, setShowClosed] = useState(false);
 
   useEffect(() => {
     const fetchMessageCounts = async () => {
@@ -97,21 +98,31 @@ export const AdminSupportTickets = () => {
 
   const activeTickets = tickets.filter(t => t.status === 'open' || t.status === 'in_progress');
   const closedTickets = tickets.filter(t => t.status === 'resolved' || t.status === 'closed');
+  const displayedTickets = showClosed ? closedTickets : activeTickets;
 
   return (
     <>
       <Card>
-      <CardHeader>
-        <CardTitle>Active Support Tickets</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardTitle>Support Tickets</CardTitle>
+        <Select value={showClosed ? "closed" : "active"} onValueChange={(value) => setShowClosed(value === "closed")}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">Active Tickets</SelectItem>
+            <SelectItem value="closed">Closed Tickets</SelectItem>
+          </SelectContent>
+        </Select>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {activeTickets.length === 0 ? (
+          {displayedTickets.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No active support tickets
+              No {showClosed ? 'closed' : 'active'} support tickets
             </div>
           ) : (
-            activeTickets.map((ticket) => (
+            displayedTickets.map((ticket) => (
               <Card key={ticket.id} className="p-4">
                 <div className="space-y-3">
                   <div className="flex items-start justify-between">
@@ -148,100 +159,7 @@ export const AdminSupportTickets = () => {
                       <p className="text-sm text-muted-foreground mb-3">{ticket.message}</p>
                       <div className="text-xs text-muted-foreground">
                         Created: {new Date(ticket.created_at).toLocaleString()}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleViewMessages(ticket)}
-                        className="relative"
-                      >
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        View Messages
-                        {messageCounts[ticket.id] > 0 && (
-                          <Badge 
-                            variant="destructive" 
-                            className="ml-2 h-5 min-w-5 px-1.5"
-                          >
-                            {messageCounts[ticket.id]}
-                          </Badge>
-                        )}
-                      </Button>
-                      {statusIcons[ticket.status]}
-                      <Select 
-                        value={ticket.status} 
-                        onValueChange={(value) => handleStatusChange(ticket.id, value)}
-                      >
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="open">Open</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="resolved">Resolved</SelectItem>
-                          <SelectItem value="closed">Closed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))
-          )}
-        </div>
-      </CardContent>
-    </Card>
-
-    <Card className="mt-6">
-      <CardHeader>
-        <CardTitle>Closed Support Tickets</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {closedTickets.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No closed support tickets
-            </div>
-          ) : (
-            closedTickets.map((ticket) => (
-              <Card key={ticket.id} className="p-4">
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold">{ticket.subject}</h3>
-                        <Badge className={priorityColors[ticket.priority]}>
-                          {ticket.priority}
-                        </Badge>
-                        {ticket.category && (
-                          <Badge variant="outline">{ticket.category}</Badge>
-                        )}
-                      </div>
-                      
-                      {/* User information */}
-                      <div className="flex items-center gap-3 mb-2 text-xs text-muted-foreground">
-                        {ticket.user_email && (
-                          <span className="flex items-center gap-1">
-                            <strong>Email:</strong> {ticket.user_email}
-                          </span>
-                        )}
-                        {ticket.user_role && (
-                          <Badge variant="secondary" className="text-xs">
-                            {ticket.user_role}
-                          </Badge>
-                        )}
-                        {ticket.user_company && (
-                          <span className="flex items-center gap-1">
-                            <strong>Company:</strong> {ticket.user_company}
-                          </span>
-                        )}
-                      </div>
-                      
-                      <p className="text-sm text-muted-foreground mb-3">{ticket.message}</p>
-                      <div className="text-xs text-muted-foreground">
-                        Created: {new Date(ticket.created_at).toLocaleString()}
-                        {ticket.resolved_at && (
+                        {ticket.resolved_at && showClosed && (
                           <> • Resolved: {new Date(ticket.resolved_at).toLocaleString()}</>
                         )}
                       </div>

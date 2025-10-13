@@ -45,10 +45,10 @@ export const useSupportTickets = (adminView = false) => {
       const { data: authData, error: usersError } = await supabase.auth.admin.listUsers();
       const users = authData?.users || [];
       
-      // Fetch profiles for company info
+      // Fetch profiles for company info - get all profiles to map account companies
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, company');
+        .select('user_id, company, account_id');
       
       // Fetch user roles
       const { data: userRoles, error: rolesError } = await supabase
@@ -61,9 +61,21 @@ export const useSupportTickets = (adminView = false) => {
         if (u.id && u.email) userEmailMap.set(u.id, u.email);
       });
       
+      // Create account to company mapping (from account owners)
+      const accountCompanyMap = new Map<string, string>();
+      profiles?.forEach((p: any) => {
+        if (p.account_id && p.company) {
+          accountCompanyMap.set(p.account_id, p.company);
+        }
+      });
+      
+      // Map user to company via their account_id
       const userCompanyMap = new Map<string, string>();
       profiles?.forEach((p: any) => {
-        if (p.user_id && p.company) userCompanyMap.set(p.user_id, p.company);
+        if (p.user_id && p.account_id) {
+          const company = accountCompanyMap.get(p.account_id);
+          if (company) userCompanyMap.set(p.user_id, company);
+        }
       });
       
       const userRoleMap = new Map<string, string>();
