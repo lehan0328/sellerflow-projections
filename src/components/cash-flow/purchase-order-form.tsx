@@ -1023,7 +1023,7 @@ export const PurchaseOrderForm = ({
 
             {/* Notes */}
             <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
+              <Label htmlFor="notes">Notes(optional)</Label>
               <Textarea id="notes" placeholder="Additional notes or comments" value={formData.notes} onChange={e => setFormData(prev => ({
               ...prev,
               notes: e.target.value
