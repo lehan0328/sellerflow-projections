@@ -336,43 +336,59 @@ Be precise with numbers, show your mathematical reasoning, and provide actionabl
 
     console.log('[FORECAST] Calling Lovable AI for analysis...');
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-pro', // Using pro model for complex mathematical reasoning
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: analysisPrompt }
-        ],
-        temperature: 0.3, // Lower temperature for more consistent, analytical output
-      }),
-    });
+    // Set timeout for AI call
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 50000); // 50 second timeout
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[FORECAST] AI API error:', response.status, errorText);
-      
-      if (response.status === 429) {
-        throw new Error('Rate limit exceeded. Please try again in a moment.');
+    try {
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash', // Using flash model for faster response
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: analysisPrompt }
+          ],
+          temperature: 0.3,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[FORECAST] AI API error:', response.status, errorText);
+        
+        if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please try again in a moment.');
+        }
+        if (response.status === 402) {
+          throw new Error('AI service requires payment. Please add credits to continue.');
+        }
+        throw new Error(`AI service error: ${response.status}`);
       }
-      if (response.status === 402) {
-        throw new Error('AI service requires payment. Please add credits to continue.');
+
+      const aiData = await response.json();
+      const aiResponse = aiData.choices?.[0]?.message?.content;
+
+      if (!aiResponse) {
+        throw new Error('No response from AI service');
       }
-      throw new Error(`AI service error: ${response.status}`);
+
+      console.log('[FORECAST] AI response received, parsing...');
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        console.error('[FORECAST] AI request timed out');
+        throw new Error('AI analysis timed out. Please try again.');
+      }
+      throw fetchError;
     }
-
-    const aiData = await response.json();
-    const aiResponse = aiData.choices?.[0]?.message?.content;
-
-    if (!aiResponse) {
-      throw new Error('No response from AI service');
-    }
-
-    console.log('[FORECAST] AI response received, parsing...');
 
     // Try to extract JSON from the response
     let forecast;
