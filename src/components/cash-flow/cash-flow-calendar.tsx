@@ -557,15 +557,18 @@ export const CashFlowCalendar = ({
         })
         .reduce((sum, vendor) => sum + vendor.nextPaymentAmount, 0);
       
+      // Calculate available credit for this specific day
+      const availableCreditForDay = getAvailableCreditForDay(day);
+      
       return {
         date: format(day, 'MMM dd'),
         fullDate: day,
         cashFlow: runningTotal,
         cashBalance: runningTotal,
-        totalResources: runningTotal + totalAvailableCredit,
-        availableCredit: runningTotal + totalAvailableCredit,
-        creditCardBalance: totalAvailableCredit,
-        creditCardCredit: totalAvailableCredit,
+        totalResources: runningTotal + availableCreditForDay,
+        availableCredit: runningTotal + availableCreditForDay,
+        creditCardBalance: availableCreditForDay,
+        creditCardCredit: availableCreditForDay,
         reserve: reserveAmount,
         reserveAmount: reserveAmount,
         forecastPayout: forecastPayoutAmount,
