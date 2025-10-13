@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSupportTickets } from "@/hooks/useSupportTickets";
 import { CheckCircle, Clock, AlertCircle, XCircle, MessageSquare } from "lucide-react";
 import { TicketMessagesDialog } from "./TicketMessagesDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const statusIcons = {
   open: <Clock className="h-4 w-4" />,
@@ -25,6 +26,29 @@ export const AdminSupportTickets = () => {
   const { tickets, isLoading, updateTicket } = useSupportTickets(true);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [showMessagesDialog, setShowMessagesDialog] = useState(false);
+  const [messageCounts, setMessageCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const fetchMessageCounts = async () => {
+      if (!tickets.length) return;
+      
+      const counts: Record<string, number> = {};
+      
+      for (const ticket of tickets) {
+        const { count } = await supabase
+          .from('ticket_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('ticket_id', ticket.id)
+          .eq('user_id', ticket.user_id);
+        
+        counts[ticket.id] = count || 0;
+      }
+      
+      setMessageCounts(counts);
+    };
+    
+    fetchMessageCounts();
+  }, [tickets]);
 
   const handleStatusChange = async (ticketId: string, newStatus: string) => {
     const updates: any = { status: newStatus };
@@ -86,9 +110,18 @@ export const AdminSupportTickets = () => {
                         size="sm"
                         variant="outline"
                         onClick={() => handleViewMessages(ticket)}
+                        className="relative"
                       >
                         <MessageSquare className="h-4 w-4 mr-2" />
                         View Messages
+                        {messageCounts[ticket.id] > 0 && (
+                          <Badge 
+                            variant="secondary" 
+                            className="ml-2 h-5 min-w-5 px-1.5 bg-primary text-primary-foreground"
+                          >
+                            {messageCounts[ticket.id]}
+                          </Badge>
+                        )}
                       </Button>
                       {statusIcons[ticket.status]}
                       <Select 
