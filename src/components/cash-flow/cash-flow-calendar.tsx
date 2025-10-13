@@ -386,20 +386,7 @@ export const CashFlowCalendar = ({
     // Start with current total available credit
     let availableCredit = totalAvailableCredit;
 
-    // Get all credit payment events up to target date
-    const creditPaymentsUpToDay = events.filter((event) => {
-      if (event.type !== 'credit-payment') return false;
-      const ed = new Date(event.date);
-      ed.setHours(0, 0, 0, 0);
-      return ed <= target;
-    });
-
-    // Subtract credit payments (they reduce available credit until paid)
-    creditPaymentsUpToDay.forEach(payment => {
-      availableCredit -= payment.amount;
-    });
-
-    // Also subtract purchase orders that were paid with credit cards
+    // Get all credit card PURCHASES up to target date (these DECREASE available credit)
     const creditCardPurchasesUpToDay = events.filter((event) => {
       if (!event.creditCardId) return false; // Only credit card purchases
       const ed = new Date(event.date);
@@ -407,8 +394,22 @@ export const CashFlowCalendar = ({
       return ed <= target;
     });
 
+    // Subtract purchases made with credit cards
     creditCardPurchasesUpToDay.forEach(purchase => {
       availableCredit -= purchase.amount;
+    });
+
+    // Get all credit card PAYMENTS up to target date (these INCREASE available credit when paid)
+    const creditPaymentsUpToDay = events.filter((event) => {
+      if (event.type !== 'credit-payment') return false;
+      const ed = new Date(event.date);
+      ed.setHours(0, 0, 0, 0);
+      return ed <= target;
+    });
+
+    // Add back credit when payments are made (paying off the card increases available credit)
+    creditPaymentsUpToDay.forEach(payment => {
+      availableCredit += payment.amount;
     });
 
     return Math.max(0, availableCredit);
@@ -532,6 +533,9 @@ export const CashFlowCalendar = ({
       const creditPaymentEvents = dayEvents.filter(e => e.type === 'credit-payment');
       const outflowEvents = dayEvents.filter(e => e.type === 'outflow');
       
+      // Check if any credit card transactions on this day
+      const hasCreditCardTransaction = dayEvents.some(e => e.creditCardId || e.type === 'credit-payment');
+      
       // Calculate pending/overdue for this specific date
       const dayPendingIncome = incomeItems
         .filter(income => {
@@ -587,6 +591,7 @@ export const CashFlowCalendar = ({
         overdueVendors: dayOverdueVendors,
         hasAmazonPayout,
         hasAmazonForecast,
+        hasCreditCardTransaction,
       };
     });
   };
@@ -1072,7 +1077,22 @@ export const CashFlowCalendar = ({
                           dataKey="creditCardCredit"
                           stroke={creditCardColor}
                           strokeWidth={2}
-                          dot={false}
+                          dot={(props: any) => {
+                            const { cx, cy, payload } = props;
+                            if (payload.hasCreditCardTransaction) {
+                              return (
+                                <circle 
+                                  cx={cx} 
+                                  cy={cy} 
+                                  r={4} 
+                                  fill={creditCardColor}
+                                  stroke="white"
+                                  strokeWidth={2}
+                                />
+                              );
+                            }
+                            return null;
+                          }}
                         />
                       )}
                       {showReserveLine && (
@@ -1292,7 +1312,22 @@ export const CashFlowCalendar = ({
                           dataKey="creditCardBalance"
                           stroke={creditCardColor}
                           strokeWidth={2}
-                          dot={false}
+                          dot={(props: any) => {
+                            const { cx, cy, payload } = props;
+                            if (payload.hasCreditCardTransaction) {
+                              return (
+                                <circle 
+                                  cx={cx} 
+                                  cy={cy} 
+                                  r={4} 
+                                  fill={creditCardColor}
+                                  stroke="white"
+                                  strokeWidth={2}
+                                />
+                              );
+                            }
+                            return null;
+                          }}
                         />
                       )}
                       {showReserveLine && (
