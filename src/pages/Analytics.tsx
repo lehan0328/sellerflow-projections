@@ -5,6 +5,7 @@ import { useVendors } from "@/hooks/useVendors";
 import { useIncome } from "@/hooks/useIncome";
 import { useBankTransactions } from "@/hooks/useBankTransactions";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
@@ -50,6 +51,7 @@ export default function Analytics() {
   const { incomeItems } = useIncome();
   const { transactions: bankTransactions } = useBankTransactions();
   const { transactions: dbTransactions } = useTransactions();
+  const { transactions: vendorTransactions } = useVendorTransactions();
   const { creditCards } = useCreditCards();
   const { amazonPayouts } = useAmazonPayouts();
   const { accounts } = useBankAccounts();
@@ -183,29 +185,53 @@ export default function Analytics() {
   const vendorCategoryData = useMemo(() => {
     const categoryTotals: Record<string, number> = {};
     
+    // Add amounts from vendors table
     vendors.forEach(vendor => {
       const category = vendor.category || 'Uncategorized';
       categoryTotals[category] = (categoryTotals[category] || 0) + vendor.totalOwed;
     });
+    
+    // Add amounts from active purchase orders (pending transactions)
+    vendorTransactions
+      .filter(tx => tx.status === 'pending')
+      .forEach(tx => {
+        const category = tx.category || 'Uncategorized';
+        categoryTotals[category] = (categoryTotals[category] || 0) + tx.amount;
+      });
 
     return Object.entries(categoryTotals)
       .map(([category, total]) => ({
         name: category,
         value: total
       }))
+      .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value);
-  }, [vendors]);
+  }, [vendors, vendorTransactions]);
 
   // Top vendors by spending
   const topVendors = useMemo(() => {
-    return [...vendors]
-      .sort((a, b) => b.totalOwed - a.totalOwed)
-      .slice(0, 10)
-      .map(v => ({
-        name: v.name,
-        amount: v.totalOwed
-      }));
-  }, [vendors]);
+    // Combine vendor data with purchase order transactions
+    const vendorTotals: Record<string, number> = {};
+    
+    // Add amounts from vendors table
+    vendors.forEach(v => {
+      vendorTotals[v.name] = (vendorTotals[v.name] || 0) + v.totalOwed;
+    });
+    
+    // Add amounts from active purchase orders (pending)
+    vendorTransactions
+      .filter(tx => tx.status === 'pending')
+      .forEach(tx => {
+        const vendorName = tx.vendorName || 'Unknown Vendor';
+        vendorTotals[vendorName] = (vendorTotals[vendorName] || 0) + tx.amount;
+      });
+    
+    return Object.entries(vendorTotals)
+      .map(([name, amount]) => ({ name, amount }))
+      .filter(item => item.amount > 0)
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 10);
+  }, [vendors, vendorTransactions]);
 
   // Cash flow trend (income vs expenses over time)
   const cashFlowData = useMemo(() => {
