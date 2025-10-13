@@ -588,23 +588,13 @@ export const useSafeSpending = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      // Get user's account_id
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('account_id')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-
-      if (!profile?.account_id) throw new Error("Account not found");
-
-      console.log("Updating reserve amount to:", newAmount);
+      console.log("💾 Updating reserve amount to:", newAmount);
 
       // Update reserve in user_settings using UPSERT to avoid duplicate key errors
       const { data: upsertedData, error: upsertError } = await supabase
         .from('user_settings')
         .upsert({
           user_id: session.user.id,
-          account_id: profile.account_id,
           safe_spending_reserve: newAmount
         }, {
           onConflict: 'user_id'
@@ -613,11 +603,11 @@ export const useSafeSpending = () => {
         .single();
 
       if (upsertError) {
-        console.error("Upsert error:", upsertError);
+        console.error("❌ Upsert error:", upsertError);
         throw upsertError;
       }
 
-      console.log("Reserve updated successfully:", upsertedData);
+      console.log("✅ Reserve updated successfully:", upsertedData);
 
       // Update local state immediately
       setReserveAmount(newAmount);
@@ -625,7 +615,7 @@ export const useSafeSpending = () => {
       // Recalculate safe spending with new reserve
       await fetchSafeSpending();
     } catch (err) {
-      console.error("Error updating reserve amount:", err);
+      console.error("❌ Error updating reserve amount:", err);
       throw err; // Re-throw to let the component handle the error
     }
   };
