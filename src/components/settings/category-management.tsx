@@ -5,12 +5,24 @@ import { Input } from "@/components/ui/input";
 import { Trash2, Plus } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function CategoryManagement() {
   const expenseCategories = useCategories('expense');
   const incomeCategories = useCategories('income');
   const [newExpenseCategory, setNewExpenseCategory] = useState("");
   const [newIncomeCategory, setNewIncomeCategory] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string; type: 'expense' | 'income' } | null>(null);
 
   const handleAddExpenseCategory = async () => {
     if (!newExpenseCategory.trim()) return;
@@ -22,6 +34,24 @@ export function CategoryManagement() {
     if (!newIncomeCategory.trim()) return;
     await incomeCategories.addCategory(newIncomeCategory.trim());
     setNewIncomeCategory("");
+  };
+
+  const handleDeleteClick = (id: string, name: string, type: 'expense' | 'income') => {
+    setCategoryToDelete({ id, name, type });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!categoryToDelete) return;
+    
+    if (categoryToDelete.type === 'expense') {
+      await expenseCategories.deleteCategory(categoryToDelete.id);
+    } else {
+      await incomeCategories.deleteCategory(categoryToDelete.id);
+    }
+    
+    setDeleteDialogOpen(false);
+    setCategoryToDelete(null);
   };
 
   return (
@@ -66,7 +96,7 @@ export function CategoryManagement() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => expenseCategories.deleteCategory(category.id)}
+                        onClick={() => handleDeleteClick(category.id, category.name, 'expense')}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -104,7 +134,7 @@ export function CategoryManagement() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => incomeCategories.deleteCategory(category.id)}
+                        onClick={() => handleDeleteClick(category.id, category.name, 'income')}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -116,6 +146,23 @@ export function CategoryManagement() {
           </TabsContent>
         </Tabs>
       </CardContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Category</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the category "{categoryToDelete?.name}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

@@ -27,7 +27,17 @@ export function useCategories(type: 'expense' | 'income') {
         .order('name');
 
       if (error) throw error;
-      setCategories((data || []) as Category[]);
+      
+      // Deduplicate by ID to prevent duplicates
+      const uniqueCategories = (data || []).reduce((acc, category) => {
+        if (!acc.find(c => c.id === category.id)) {
+          acc.push(category as Category);
+        }
+        return acc;
+      }, [] as Category[]);
+      
+      console.log('[Categories] Fetched categories:', { type, count: uniqueCategories.length });
+      setCategories(uniqueCategories);
     } catch (error) {
       console.error('Error fetching categories:', error);
       toast({
@@ -58,23 +68,25 @@ export function useCategories(type: 'expense' | 'income') {
         accountId: profile?.account_id 
       });
 
-      // Check if category already exists
+      // Trim and normalize the name
+      const normalizedName = name.trim();
+      
+      // Check if category already exists (case-insensitive)
       const { data: existing } = await supabase
         .from('categories')
         .select('id, name')
-        .eq('user_id', user.id)
-        .eq('name', name)
+        .eq('account_id', profile?.account_id)
         .eq('type', type)
-        .maybeSingle();
+        .ilike('name', normalizedName);
 
-      if (existing) {
-        console.log('[Category] Category already exists:', existing);
+      if (existing && existing.length > 0) {
+        console.log('[Category] Category already exists:', existing[0]);
         toast({
           title: "Category already exists",
-          description: `"${name}" is already in your ${type} categories`,
+          description: `"${normalizedName}" is already in your ${type} categories`,
           variant: "destructive",
         });
-        return existing;
+        return existing[0];
       }
 
       const { data, error } = await supabase
@@ -82,7 +94,7 @@ export function useCategories(type: 'expense' | 'income') {
         .insert({
           user_id: user.id,
           account_id: profile?.account_id,
-          name,
+          name: normalizedName,
           type,
           is_default: false,
         })
@@ -96,7 +108,7 @@ export function useCategories(type: 'expense' | 'income') {
         if (error.code === '23505') {
           toast({
             title: "Category already exists",
-            description: `"${name}" is already in your ${type} categories`,
+            description: `"${normalizedName}" is already in your ${type} categories`,
             variant: "destructive",
           });
           return null;
@@ -109,7 +121,7 @@ export function useCategories(type: 'expense' | 'income') {
 
       toast({
         title: "Success",
-        description: `Category "${name}" added successfully`,
+        description: `Category "${normalizedName}" added successfully`,
       });
 
       await fetchCategories();
