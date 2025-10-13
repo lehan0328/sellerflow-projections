@@ -75,9 +75,13 @@ export const PurchaseOrderForm = ({
     selectedCreditCard: "",
     splitPayment: false
   });
-  const [cardSplits, setCardSplits] = useState<Array<{ cardId: string; amount: string }>>([
-    { cardId: "", amount: "" }
-  ]);
+  const [cardSplits, setCardSplits] = useState<Array<{
+    cardId: string;
+    amount: string;
+  }>>([{
+    cardId: "",
+    amount: ""
+  }]);
   const [paymentSchedule, setPaymentSchedule] = useState<PaymentSchedule[]>([{
     id: "1",
     amount: "",
@@ -128,7 +132,10 @@ export const PurchaseOrderForm = ({
         selectedCreditCard: "",
         splitPayment: false
       });
-      setCardSplits([{ cardId: "", amount: "" }]);
+      setCardSplits([{
+        cardId: "",
+        amount: ""
+      }]);
       setPaymentSchedule([{
         id: "1",
         amount: "",
@@ -225,12 +232,11 @@ export const PurchaseOrderForm = ({
         // Validate split payment amounts
         const splitTotal = cardSplits.reduce((sum, s) => sum + parseFloat(s.amount || "0"), 0);
         const orderAmount = parseFloat(formData.amount) || 0;
-        
         if (splitTotal !== orderAmount) {
           toast.error(`Split total ($${splitTotal.toFixed(2)}) must equal order amount ($${orderAmount.toFixed(2)})`);
           return;
         }
-        
+
         // Check if all cards are selected
         if (cardSplits.some(s => !s.cardId || !s.amount)) {
           toast.error('Please select a card and amount for each split');
@@ -249,21 +255,23 @@ export const PurchaseOrderForm = ({
         }
       }
     }
-    
     const calculatedDueDate = calculateDueDate();
     const orderData = {
       ...formData,
       dueDate: calculatedDueDate,
       paymentSchedule: formData.paymentType === "preorder" ? paymentSchedule : undefined
     };
-    
     console.log("Submitting purchase order:", orderData);
     onSubmitOrder(orderData);
-    
+
     // Save uploaded document to storage if exists and toggle is on
     if (uploadedFile && saveToStorage) {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: {
+            user
+          }
+        } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
         // Create a safe filename using PO name
@@ -272,37 +280,33 @@ export const PurchaseOrderForm = ({
         const filePath = `${user.id}/${safeFileName}`;
 
         // Upload to storage
-        const { error: uploadError } = await supabase.storage
-          .from('purchase-orders')
-          .upload(filePath, uploadedFile);
-
+        const {
+          error: uploadError
+        } = await supabase.storage.from('purchase-orders').upload(filePath, uploadedFile);
         if (uploadError) throw uploadError;
 
         // Save metadata
-        const { error: metadataError } = await supabase
-          .from('documents_metadata')
-          .insert({
-            user_id: user.id,
-            file_name: safeFileName,
-            file_path: filePath,
-            display_name: formData.poName,
-            description: formData.description,
-            notes: formData.notes,
-            vendor_id: formData.vendorId || null,
-            amount: parseFloat(formData.amount),
-            document_date: formData.poDate.toISOString().split('T')[0],
-            document_type: 'purchase_order'
-          });
-
+        const {
+          error: metadataError
+        } = await supabase.from('documents_metadata').insert({
+          user_id: user.id,
+          file_name: safeFileName,
+          file_path: filePath,
+          display_name: formData.poName,
+          description: formData.description,
+          notes: formData.notes,
+          vendor_id: formData.vendorId || null,
+          amount: parseFloat(formData.amount),
+          document_date: formData.poDate.toISOString().split('T')[0],
+          document_type: 'purchase_order'
+        });
         if (metadataError) throw metadataError;
-
         console.log('Document saved to storage:', safeFileName);
       } catch (error) {
         console.error('Error saving document:', error);
         toast.error('Failed to save document to storage');
       }
     }
-    
     toast.success(`Purchase Order "${formData.poName}" created successfully!`);
     onOpenChange(false);
   };
@@ -364,10 +368,7 @@ export const PurchaseOrderForm = ({
     if (!file) return;
 
     // Check if user has access to PDF extractor (growing, professional plans or subscribed)
-    const hasAccess = subscription.subscribed && 
-                      (subscription.plan === 'growing' || 
-                       subscription.plan === 'professional');
-    
+    const hasAccess = subscription.subscribed && (subscription.plan === 'growing' || subscription.plan === 'professional');
     if (!hasAccess) {
       toast.error('PDF Extractor is available on Growing and Professional plans. Please upgrade to access this feature.');
       return;
@@ -384,10 +385,9 @@ export const PurchaseOrderForm = ({
       toast.error('File size must be less than 10MB');
       return;
     }
-    
+
     // Store the file for later upload when PO is finalized
     setUploadedFile(file);
-    
     setIsProcessingDocument(true);
     setUploadedFileName(file.name);
     try {
@@ -483,14 +483,10 @@ export const PurchaseOrderForm = ({
                         Save to Document Storage
                       </Label>
                     </div>
-                    <Switch
-                      id="save-toggle"
-                      checked={saveToStorage}
-                      onCheckedChange={(checked) => {
-                        setSaveToStorage(checked);
-                        localStorage.setItem('po-save-to-storage', String(checked));
-                      }}
-                    />
+                    <Switch id="save-toggle" checked={saveToStorage} onCheckedChange={checked => {
+                  setSaveToStorage(checked);
+                  localStorage.setItem('po-save-to-storage', String(checked));
+                }} />
                   </div>
                   <div className="text-center space-y-3">
                     <div className="flex justify-center">
@@ -727,9 +723,9 @@ export const PurchaseOrderForm = ({
                   
                   {/* Payment Due Date Display for Net Terms */}
                   {(() => {
-                    const calculatedDueDate = calculateDueDate();
-                    if (calculatedDueDate) {
-                      return <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
+                const calculatedDueDate = calculateDueDate();
+                if (calculatedDueDate) {
+                  return <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">Payment Due Date:</span>
                           <span className="text-sm font-semibold text-accent-foreground">
@@ -737,9 +733,9 @@ export const PurchaseOrderForm = ({
                           </span>
                         </div>
                       </div>;
-                    }
-                    return null;
-                  })()}
+                }
+                return null;
+              })()}
                 </div>}
 
               {/* Delivery Date for Due Upon Delivery */}
@@ -844,35 +840,34 @@ export const PurchaseOrderForm = ({
                   {/* Split Payment Toggle */}
                   <div className="flex items-center justify-between">
                     <Label htmlFor="split-payment">Split between multiple cards</Label>
-                    <Switch 
-                      id="split-payment"
-                      checked={formData.splitPayment}
-                      onCheckedChange={(checked) => {
-                        setFormData(prev => ({ ...prev, splitPayment: checked }));
-                        if (!checked) {
-                          setCardSplits([{ cardId: "", amount: "" }]);
-                        }
-                      }}
-                    />
+                    <Switch id="split-payment" checked={formData.splitPayment} onCheckedChange={checked => {
+                  setFormData(prev => ({
+                    ...prev,
+                    splitPayment: checked
+                  }));
+                  if (!checked) {
+                    setCardSplits([{
+                      cardId: "",
+                      amount: ""
+                    }]);
+                  }
+                }} />
                   </div>
 
-                  {!formData.splitPayment ? (
-                    // Single Card Selection
-                    <>
+                  {!formData.splitPayment ?
+              // Single Card Selection
+              <>
                       <div className="space-y-2">
                         <Label>Select Credit Card</Label>
                         <Select value={formData.selectedCreditCard} onValueChange={value => setFormData(prev => ({
-                      ...prev,
-                      selectedCreditCard: value
-                    }))}>
+                    ...prev,
+                    selectedCreditCard: value
+                  }))}>
                           <SelectTrigger className="bg-background">
                             <SelectValue placeholder="Choose a credit card" />
                           </SelectTrigger>
                           <SelectContent className="bg-background z-50">
-                            {creditCards
-                              .filter(card => card.is_active)
-                              .sort((a, b) => (a.priority || 3) - (b.priority || 3))
-                              .map(card => <SelectItem key={card.id} value={card.id}>
+                            {creditCards.filter(card => card.is_active).sort((a, b) => (a.priority || 3) - (b.priority || 3)).map(card => <SelectItem key={card.id} value={card.id}>
                                 <div className="flex items-center gap-2 w-full">
                                   <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
                                     {card.priority || 3}
@@ -889,11 +884,11 @@ export const PurchaseOrderForm = ({
 
                       {/* Credit Card Info */}
                       {formData.selectedCreditCard && (() => {
-                    const selectedCard = creditCards.find(card => card.id === formData.selectedCreditCard);
-                    const orderAmount = parseFloat(formData.amount) || 0;
-                    const remainingCredit = selectedCard ? selectedCard.available_credit - orderAmount : 0;
-                    const hasInsufficientCredit = selectedCard ? selectedCard.available_credit < orderAmount : false;
-                    return selectedCard ? <div className="space-y-2">
+                  const selectedCard = creditCards.find(card => card.id === formData.selectedCreditCard);
+                  const orderAmount = parseFloat(formData.amount) || 0;
+                  const remainingCredit = selectedCard ? selectedCard.available_credit - orderAmount : 0;
+                  const hasInsufficientCredit = selectedCard ? selectedCard.available_credit < orderAmount : false;
+                  return selectedCard ? <div className="space-y-2">
                             <div className="text-sm">
                               <div className="flex justify-between">
                                 <span>Credit Limit:</span>
@@ -928,32 +923,23 @@ export const PurchaseOrderForm = ({
                               * Credit will be reserved from the purchase order date
                             </div>
                           </div> : null;
-                  })()}
-                    </>
-                  ) : (
-                    // Split Payment UI
-                    <div className="space-y-3">
+                })()}
+                    </> :
+              // Split Payment UI
+              <div className="space-y-3">
                       <Label>Split Transaction</Label>
-                      {cardSplits.map((split, index) => (
-                        <div key={index} className="flex gap-2 items-end">
+                      {cardSplits.map((split, index) => <div key={index} className="flex gap-2 items-end">
                           <div className="flex-1">
-                            <Select 
-                              value={split.cardId} 
-                              onValueChange={(value) => {
-                                const newSplits = [...cardSplits];
-                                newSplits[index].cardId = value;
-                                setCardSplits(newSplits);
-                              }}
-                            >
+                            <Select value={split.cardId} onValueChange={value => {
+                      const newSplits = [...cardSplits];
+                      newSplits[index].cardId = value;
+                      setCardSplits(newSplits);
+                    }}>
                               <SelectTrigger className="bg-background">
                                 <SelectValue placeholder="Choose card" />
                               </SelectTrigger>
                               <SelectContent className="bg-background z-50">
-                                {creditCards
-                                  .filter(card => card.is_active && !cardSplits.some((s, i) => i !== index && s.cardId === card.id))
-                                  .sort((a, b) => (a.priority || 3) - (b.priority || 3))
-                                  .map(card => (
-                                    <SelectItem key={card.id} value={card.id}>
+                                {creditCards.filter(card => card.is_active && !cardSplits.some((s, i) => i !== index && s.cardId === card.id)).sort((a, b) => (a.priority || 3) - (b.priority || 3)).map(card => <SelectItem key={card.id} value={card.id}>
                                       <div className="flex items-center gap-2">
                                         <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
                                           {card.priority || 3}
@@ -963,71 +949,46 @@ export const PurchaseOrderForm = ({
                                           ${card.available_credit.toLocaleString()}
                                         </span>
                                       </div>
-                                    </SelectItem>
-                                  ))}
+                                    </SelectItem>)}
                               </SelectContent>
                             </Select>
                           </div>
                           <div className="w-32">
-                            <Input
-                              type="number"
-                              placeholder="Amount"
-                              value={split.amount}
-                              onChange={(e) => {
-                                const newSplits = [...cardSplits];
-                                newSplits[index].amount = e.target.value;
-                                setCardSplits(newSplits);
-                              }}
-                            />
+                            <Input type="number" placeholder="Amount" value={split.amount} onChange={e => {
+                      const newSplits = [...cardSplits];
+                      newSplits[index].amount = e.target.value;
+                      setCardSplits(newSplits);
+                    }} />
                           </div>
-                          {cardSplits.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setCardSplits(cardSplits.filter((_, i) => i !== index));
-                              }}
-                            >
+                          {cardSplits.length > 1 && <Button type="button" variant="ghost" size="icon" onClick={() => {
+                    setCardSplits(cardSplits.filter((_, i) => i !== index));
+                  }}>
                               <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
+                            </Button>}
+                        </div>)}
                       
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCardSplits([...cardSplits, { cardId: "", amount: "" }])}
-                        disabled={cardSplits.length >= creditCards.filter(c => c.is_active).length}
-                      >
+                      <Button type="button" variant="outline" size="sm" onClick={() => setCardSplits([...cardSplits, {
+                  cardId: "",
+                  amount: ""
+                }])} disabled={cardSplits.length >= creditCards.filter(c => c.is_active).length}>
                         <Plus className="h-4 w-4 mr-2" />
                         Add Card
                       </Button>
 
                       {/* Split Summary */}
-                      {cardSplits.some(s => s.amount) && (
-                        <div className="bg-accent/20 rounded-lg p-3 space-y-1">
+                      {cardSplits.some(s => s.amount) && <div className="bg-accent/20 rounded-lg p-3 space-y-1">
                           <div className="flex justify-between text-sm">
                             <span>Total Amount:</span>
                             <span className="font-semibold">${parseFloat(formData.amount || "0").toLocaleString()}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span>Split Total:</span>
-                            <span className={cn(
-                              "font-semibold",
-                              cardSplits.reduce((sum, s) => sum + parseFloat(s.amount || "0"), 0) === parseFloat(formData.amount || "0") 
-                                ? "text-green-600" 
-                                : "text-red-600"
-                            )}>
+                            <span className={cn("font-semibold", cardSplits.reduce((sum, s) => sum + parseFloat(s.amount || "0"), 0) === parseFloat(formData.amount || "0") ? "text-green-600" : "text-red-600")}>
                               ${cardSplits.reduce((sum, s) => sum + parseFloat(s.amount || "0"), 0).toLocaleString()}
                             </span>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        </div>}
+                    </div>}
                   
                   {creditCards.filter(card => card.is_active).length === 0 && <div className="text-center text-sm text-muted-foreground py-4">
                       No active credit cards found. Please add a credit card in Settings.
@@ -1053,7 +1014,7 @@ export const PurchaseOrderForm = ({
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">Description(optional)</Label>
               <Textarea id="description" placeholder="Brief description of the purchase order" value={formData.description} onChange={e => setFormData(prev => ({
               ...prev,
               description: e.target.value
