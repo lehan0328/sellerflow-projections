@@ -212,9 +212,7 @@ export const AdminSupportTickets = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="open">Open</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
                           <SelectItem value="needs_response">Needs Response</SelectItem>
-                          <SelectItem value="resolved">Resolved</SelectItem>
                           <SelectItem value="closed">Closed</SelectItem>
                         </SelectContent>
                       </Select>
