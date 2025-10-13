@@ -306,19 +306,9 @@ const Support = () => {
       <div className="container mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/")}
-            >
-              <Home className="h-4 w-4 mr-2" />
-              Back to Home
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Support</h1>
-              <p className="text-muted-foreground">Get help with Auren features and your account</p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Support</h1>
+            <p className="text-muted-foreground">Get help with Auren features and your account</p>
           </div>
           <div className="flex items-center space-x-2">
             <Button
