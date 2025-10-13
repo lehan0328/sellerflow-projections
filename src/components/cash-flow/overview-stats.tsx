@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useSafeSpending } from "@/hooks/useSafeSpending";
+import { useReserveAmount } from "@/hooks/useReserveAmount";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 import { useIncome } from "@/hooks/useIncome";
@@ -76,7 +77,8 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
-  const { data: safeSpendingData, isLoading: isLoadingSafeSpending, updateReserveAmount, refetch: refetchSafeSpending } = useSafeSpending();
+  const { reserveAmount, updateReserveAmount: updateReserve } = useReserveAmount();
+  const { data: safeSpendingData, isLoading: isLoadingSafeSpending, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount);
   const { amazonPayouts, monthlyOrdersTotal } = useAmazonPayouts();
   const { transactions: vendorTransactions } = useVendorTransactions();
   const { incomeItems } = useIncome();

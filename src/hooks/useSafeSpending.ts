@@ -28,11 +28,10 @@ interface DailyBalance {
   balance: number;
 }
 
-export const useSafeSpending = () => {
+export const useSafeSpending = (reserveAmountInput: number = 0) => {
   const [data, setData] = useState<SafeSpendingData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [reserveAmount, setReserveAmount] = useState(0);
 
   const formatDate = (date: Date | string): string => {
     if (typeof date === 'string') return date.split('T')[0];
@@ -71,15 +70,8 @@ export const useSafeSpending = () => {
         return;
       }
 
-      // Get user settings for reserve (shared across account)
-      const { data: settings } = await supabase
-        .from('user_settings')
-        .select('safe_spending_reserve')
-        .eq('account_id', profile.account_id)
-        .maybeSingle();
-
-      const reserve = Number(settings?.safe_spending_reserve || 0);
-      setReserveAmount(reserve);
+      // Use the reserve amount passed in
+      const reserve = reserveAmountInput;
 
       // Get bank account balance
       const { data: bankAccounts } = await supabase
@@ -583,85 +575,12 @@ export const useSafeSpending = () => {
     }
   }, []);
 
-  const updateReserveAmount = async (newAmount: number) => {
-    try {
-      console.log('[Reserve] Starting update to:', newAmount);
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-
-      // Get user's account_id (required for RLS)
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('account_id')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-
-      if (!profile?.account_id) {
-        console.error('[Reserve] No account_id found in profile');
-        throw new Error("Account not found");
-      }
-
-      console.log('[Reserve] Updating for account:', profile.account_id);
-
-      // Check if user_settings record exists for this account
-      const { data: existing, error: selectError } = await supabase
-        .from('user_settings')
-        .select('id, user_id, account_id, safe_spending_reserve')
-        .eq('account_id', profile.account_id)
-        .maybeSingle();
-
-      if (selectError) {
-        console.error('[Reserve] Error checking existing settings:', selectError);
-        throw selectError;
-      }
-
-      console.log('[Reserve] Existing settings:', existing);
-
-      let result;
-      if (existing) {
-        // Update existing record by account_id
-        console.log('[Reserve] Updating existing record for account:', profile.account_id);
-        result = await supabase
-          .from('user_settings')
-          .update({ safe_spending_reserve: newAmount })
-          .eq('account_id', profile.account_id)
-          .select()
-          .single();
-      } else {
-        // Insert new record with account_id
-        console.log('[Reserve] Inserting new record');
-        result = await supabase
-          .from('user_settings')
-          .insert({
-            user_id: session.user.id,
-            account_id: profile.account_id,
-            safe_spending_reserve: newAmount
-          })
-          .select()
-          .single();
-      }
-
-      if (result.error) {
-        console.error('[Reserve] Database error:', result.error);
-        throw result.error;
-      }
-
-      console.log('[Reserve] Update successful:', result.data);
-
-      // Update local state immediately
-      setReserveAmount(newAmount);
-      
-      // Recalculate safe spending with new reserve
-      await fetchSafeSpending();
-    } catch (err) {
-      console.error('[Reserve] Error updating reserve amount:', err);
-      throw err; // Re-throw to let the component handle the error
-    }
-  };
 
   useEffect(() => {
     fetchSafeSpending();
+  }, [fetchSafeSpending, reserveAmountInput]); // Recalculate when reserve changes
+
+  useEffect(() => {
 
     const channel = supabase
       .channel('safe-spending-changes')
@@ -704,5 +623,5 @@ export const useSafeSpending = () => {
     };
   }, [fetchSafeSpending]);
 
-  return { data, isLoading, error, reserveAmount, updateReserveAmount, refetch: fetchSafeSpending };
+  return { data, isLoading, error, refetch: fetchSafeSpending };
 };

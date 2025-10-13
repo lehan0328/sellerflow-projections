@@ -27,6 +27,7 @@ import Support from "@/pages/Support";
 import Notifications from "@/pages/Notifications";
 import MatchTransactions from "@/pages/MatchTransactions";
 import { useUserSettings } from "@/hooks/useUserSettings";
+import { useReserveAmount } from "@/hooks/useReserveAmount";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,7 +100,8 @@ const Dashboard = () => {
   const { transactions: bankTransactionsData, isLoading: isBankTransactionsLoading } = useBankTransactions();
   const { creditCards, refetch: refetchCreditCards } = useCreditCards();
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
-  const { data: safeSpendingData, updateReserveAmount, refetch: refetchSafeSpending } = useSafeSpending();
+  const { reserveAmount, updateReserveAmount } = useReserveAmount();
+  const { data: safeSpendingData, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount);
   const { amazonPayouts } = useAmazonPayouts();
   
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
