@@ -254,7 +254,7 @@ export default function Partners() {
                             100 friends
                           </p>
                           <p className="text-2xl font-bold text-foreground mt-2">
-                            6 months FREE + <span className="text-accent">$3,000</span>
+                            6 months FREE + <span className="text-accent">$2,000</span>
                           </p>
                         </div>
                       </div>
