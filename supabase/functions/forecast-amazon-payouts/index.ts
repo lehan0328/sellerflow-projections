@@ -189,156 +189,44 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    // Prepare the data analysis prompt with mathematical context
-    const systemPrompt = `You are an expert financial analyst and data scientist specializing in time series forecasting and predictive modeling for e-commerce businesses.
+    // Prepare a simplified data analysis prompt
+    const systemPrompt = `You are a financial analyst specializing in Amazon marketplace forecasting. Analyze payout data and provide accurate predictions.`;
 
-Your expertise includes:
-- Time series analysis (ARIMA, exponential smoothing, seasonal decomposition)
-- Regression analysis and trend fitting
-- Statistical modeling and confidence intervals
-- Seasonality and cyclical pattern detection
-- Growth rate analysis and trajectory prediction
-- Amazon marketplace dynamics and payout cycles
+    const analysisPrompt = `Analyze Amazon Seller payout data and forecast next 3 months (6 bi-weekly periods).
 
-When analyzing Amazon payout data, consider:
-1. Historical payout patterns and frequency
-2. Sales velocity trends and growth rates
-3. Seasonal variations (Q4 spikes, summer lulls)
-4. Recent momentum and acceleration/deceleration
-5. Marketplace fee structures and their impact
-6. Statistical confidence in predictions
-
-Provide forecasts with:
-- Clear mathematical reasoning
-- Confidence intervals
-- Risk factors and assumptions
-- Actionable insights for business planning`;
-
-    const analysisPrompt = `Analyze the following Amazon Seller data comprehensively and generate accurate payout forecasts for the next 3 months.
-
-CRITICAL CONTEXT: The payout amounts shown are NET amounts - Amazon has already deducted ALL fees. These are actual deposit amounts.
-
-HISTORICAL PAYOUT DATA (Most Recent ${Math.min(20, amazonPayouts.length)} entries):
-${JSON.stringify(amazonPayouts.slice(0, 20).map(p => ({
-  payout_date: p.payout_date,
-  total_amount: p.total_amount,
-  orders_total: p.orders_total,
-  fees_total: p.fees_total,
-  refunds_total: p.refunds_total,
+HISTORICAL PAYOUTS (Last 10):
+${JSON.stringify(amazonPayouts.slice(0, 10).map(p => ({
+  date: p.payout_date,
+  amount: p.total_amount
 })), null, 2)}
 
-DETAILED TRANSACTION ANALYSIS (Last 6 Months):
-Total Transactions: ${amazonTransactions?.length || 0}
-Recent Transactions (Last 3 Months - WEIGHTED 2X): ${recentTransactions.length}
-
-Transaction Breakdown:
-- Orders/Sales: ${transactionsByType.orders.length} transactions
-  Recent 3mo: ${transactionsByType.orders.filter(t => new Date(t.transaction_date) >= threeMonthsAgo).length}
-  Total Amount: $${transactionsByType.orders.reduce((s, t) => s + Number(t.amount), 0).toFixed(2)}
-  
-- Fees: ${transactionsByType.fees.length} transactions  
-  Recent 3mo: ${transactionsByType.fees.filter(t => new Date(t.transaction_date) >= threeMonthsAgo).length}
-  Total Amount: $${transactionsByType.fees.reduce((s, t) => s + Math.abs(Number(t.amount)), 0).toFixed(2)}
-  
-- Refunds: ${transactionsByType.refunds.length} transactions
-  Recent 3mo: ${transactionsByType.refunds.filter(t => new Date(t.transaction_date) >= threeMonthsAgo).length}
-  Total Amount: $${transactionsByType.refunds.reduce((s, t) => s + Math.abs(Number(t.amount)), 0).toFixed(2)}
-  
-- Returns: ${transactionsByType.returns.length} transactions
-  Recent 3mo: ${transactionsByType.returns.filter(t => new Date(t.transaction_date) >= threeMonthsAgo).length}
-  Total Amount: $${transactionsByType.returns.reduce((s, t) => s + Math.abs(Number(t.amount)), 0).toFixed(2)}
-
-MONTHLY AGGREGATED TRANSACTION DATA:
-${JSON.stringify(Object.values(monthlyTransactions).sort((a: any, b: any) => b.month.localeCompare(a.month)), null, 2)}
-
-AGGREGATED MONTHLY PAYOUT DATA (Last 6 Months):
+MONTHLY AGGREGATES:
 ${JSON.stringify(historicalData, null, 2)}
 
-BASELINE METRICS:
-Total Historical Payouts: ${amazonPayouts.length}
-Date Range: ${amazonPayouts[amazonPayouts.length - 1]?.payout_date} to ${amazonPayouts[0]?.payout_date}
-Weighted Average Payout (recent weighted 2x): $${avgPayoutAmount.toFixed(2)}
+Baseline: $${avgPayoutAmount.toFixed(2)} per payout
 
-ANALYSIS REQUIREMENTS:
-
-1. COMPREHENSIVE TRANSACTION ANALYSIS:
-   - Analyze ALL transaction types: Orders, Fees, Refunds, Returns
-   - Calculate growth/decline trends for EACH transaction type
-   - Identify correlations between transaction patterns and payout amounts
-   - Weight recent 3-month transactions 2X MORE than older data
-   - Assess velocity of orders, fee structures, and refund rates
-
-2. TREND ANALYSIS (Multi-dimensional):
-   - Overall payout growth trajectory based on NET amounts
-   - Order volume and value trends (weighted toward recent)
-   - Fee structure changes and patterns
-   - Refund and return rate trends
-   - Seasonal patterns across all metrics
-   - Recent momentum (last 3 months DOUBLE WEIGHTED)
-
-3. STATISTICAL MODELING:
-   - Apply time series forecasting considering ALL transaction types
-   - Weight recent data (last 3 months) 2X in calculations
-   - Use transaction-level data to validate payout predictions
-   - Calculate confidence intervals based on data volatility
-   - Consider fee rate changes and their impact
-   - Factor in refund/return trends
-
-4. BUSINESS CONTEXT:
-   - Amazon payout cycles (bi-weekly typical)
-   - All fees ALREADY DEDUCTED in payout amounts
-   - Recent business performance (3mo) is 2X more predictive
-   - Economic and seasonal factors
-   - Order velocity trends inform future payouts
-
-5. FORECAST GENERATION (Next 3 Months):
-   Generate predictions for next 6 bi-weekly periods with:
-   - Predicted NET payout (actual bank deposit amount)
-   - Based on: payouts (primary) + transaction trends (validation)
-   - Recent 3-month data weighted 2X
-   - Transaction type analysis (orders up/down, fees, refunds)
-   - Confidence interval (upper/lower bounds)
-   - Confidence level (0-1 scale)
-   - Estimated payout dates
-   - Period identifier
-
-5. RISK ASSESSMENT:
-   - Key assumptions made in the forecast
-   - Potential risk factors
-   - Scenarios that could impact accuracy
-   - Confidence level in overall forecast
-
-Return your analysis in this JSON structure:
+Return ONLY this JSON (no markdown):
 {
-  "analysis": "Comprehensive narrative analysis of trends, patterns, and key insights (3-4 paragraphs)",
+  "analysis": "Brief trend analysis (2-3 sentences)",
   "predictions": [
     {
-      "period": "Period identifier",
+      "period": "Period 1",
       "predicted_amount": number,
-      "upper_bound": number,
-      "lower_bound": number,
-      "confidence": number (0-1),
-      "date_range": "Estimated date range"
+      "confidence": 0.8,
+      "date_range": "estimate"
     }
   ],
   "trends": {
-    "overall_growth_rate": "X% month-over-month",
-    "seasonality": "Description of seasonal patterns",
-    "velocity": "Assessment of sales momentum"
-  },
-  "methodology": "Brief description of forecasting methods used",
-  "assumptions": ["List of key assumptions"],
-  "risk_factors": ["List of potential risks to forecast accuracy"],
-  "confidence_level": "overall confidence description"
-}
-
-Be precise with numbers, show your mathematical reasoning, and provide actionable insights.`;
+    "overall_growth_rate": "X%",
+    "seasonality": "brief description"
+  }
+}`;
 
     console.log('[FORECAST] Calling Lovable AI for analysis...');
 
     // Set timeout for AI call
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 50000); // 50 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
 
     try {
       const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
