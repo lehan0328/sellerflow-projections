@@ -378,6 +378,29 @@ export const CashFlowCalendar = ({
     return bankAccountBalance + netChange;
   };
 
+  const getAvailableCreditForDay = (date: Date) => {
+    const target = new Date(date);
+    target.setHours(0, 0, 0, 0);
+
+    // Start with current total available credit
+    let availableCredit = totalAvailableCredit;
+
+    // Get all credit payment events up to target date
+    const creditPaymentsUpToDay = events.filter((event) => {
+      if (event.type !== 'credit-payment') return false;
+      const ed = new Date(event.date);
+      ed.setHours(0, 0, 0, 0);
+      return ed <= target;
+    });
+
+    // Subtract credit payments (they reduce available credit until paid)
+    creditPaymentsUpToDay.forEach(payment => {
+      availableCredit -= payment.amount;
+    });
+
+    return Math.max(0, availableCredit);
+  };
+
   const getEventIcon = (event: CashFlowEvent) => {
     if (event.source === 'Amazon-Forecasted') return <ShoppingBag className="h-3 w-3 text-purple-600" />;
     if (event.source === 'Amazon') return <ShoppingBag className="h-3 w-3" />;
@@ -803,9 +826,9 @@ export const CashFlowCalendar = ({
                                     }
                                     return null;
                                   })()}
-                                  <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium w-full">
-                                    Credit: ${totalAvailableCredit.toLocaleString()}
-                                  </div>
+                                   <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium w-full">
+                                     Credit: ${getAvailableCreditForDay(day).toLocaleString()}
+                                   </div>
                                 </>
                               ) : (
                                 <>
@@ -818,15 +841,15 @@ export const CashFlowCalendar = ({
                                       ${getTotalCashForDay(day).toLocaleString()}
                                     </div>
                                   </div>
-                                  <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium w-full">
-                                    Credit: ${totalAvailableCredit.toLocaleString()}
-                                  </div>
-                                </>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </div>
+                                   <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium w-full">
+                                     Credit: ${getAvailableCreditForDay(day).toLocaleString()}
+                                   </div>
+                                 </>
+                               )}
+                             </>
+                           )}
+                         </div>
+                       </div>
                       {totalCash < 0 && (
                         <AlertTriangle className="h-3 w-3 text-red-500 absolute top-1 right-1" />
                       )}
@@ -954,28 +977,28 @@ export const CashFlowCalendar = ({
                                 {hasTransactions && (
                                   <div className="space-y-1.5 border-t pt-2">
                                     <p className="font-semibold text-xs uppercase text-muted-foreground">Daily Activity</p>
-                                    {data.inflow > 0 && (
-                                      <div>
-                                        <p className="text-green-600 font-medium">↑ Inflows: +${data.inflow.toLocaleString()}</p>
-                                        {data.inflowEvents?.map((evt: CashFlowEvent, idx: number) => (
-                                          <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
-                                        ))}
-                                      </div>
-                                    )}
-                                    {data.outflow > 0 && (
-                                      <div>
-                                        <p className="text-red-600 font-medium">↓ Outflows: -${data.outflow.toLocaleString()}</p>
-                                        {data.purchaseOrderEvents?.map((evt: CashFlowEvent, idx: number) => (
-                                          <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
-                                        ))}
-                                        {data.creditPaymentEvents?.map((evt: CashFlowEvent, idx: number) => (
-                                          <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
-                                        ))}
-                                        {data.outflowEvents?.map((evt: CashFlowEvent, idx: number) => (
-                                          <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
-                                        ))}
-                                      </div>
-                                    )}
+                                     {data.inflow > 0 && (
+                                       <div>
+                                         <p className="text-green-600 font-medium">↑ Inflows: +${data.inflow.toLocaleString()}</p>
+                                         {data.inflowEvents?.map((evt: CashFlowEvent, idx: number) => (
+                                           <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
+                                         ))}
+                                       </div>
+                                     )}
+                                     {data.outflow > 0 && (
+                                       <div>
+                                         <p className="text-red-600 font-medium">↓ Outflows: -${data.outflow.toLocaleString()}</p>
+                                         {data.purchaseOrderEvents?.map((evt: CashFlowEvent, idx: number) => (
+                                           <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
+                                         ))}
+                                         {data.creditPaymentEvents?.map((evt: CashFlowEvent, idx: number) => (
+                                           <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
+                                         ))}
+                                         {data.outflowEvents?.map((evt: CashFlowEvent, idx: number) => (
+                                           <p key={idx} className="text-xs text-muted-foreground ml-3">• {evt.description}: ${evt.amount.toLocaleString()}</p>
+                                         ))}
+                                       </div>
+                                     )}
                                   </div>
                                 )}
 
