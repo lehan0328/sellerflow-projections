@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useVendors } from "@/hooks/useVendors";
 import { useIncome } from "@/hooks/useIncome";
 import { useBankTransactions } from "@/hooks/useBankTransactions";
+import { useTransactions } from "@/hooks/useTransactions";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
@@ -47,22 +48,42 @@ export default function Analytics() {
   const navigate = useNavigate();
   const { vendors } = useVendors();
   const { incomeItems } = useIncome();
-  const { transactions } = useBankTransactions();
+  const { transactions: bankTransactions } = useBankTransactions();
+  const { transactions: dbTransactions } = useTransactions();
   const { creditCards } = useCreditCards();
   const { amazonPayouts } = useAmazonPayouts();
   const { accounts } = useBankAccounts();
 
   // Calculate key metrics
   const metrics = useMemo(() => {
-    // Total cash inflow from bank transactions
-    const totalInflow = transactions
+    // Total cash inflow from bank transactions (credits)
+    const bankInflow = bankTransactions
       .filter(tx => tx.transactionType === 'credit')
       .reduce((sum, tx) => sum + tx.amount, 0);
 
-    // Total cash outflow from bank transactions
-    const totalOutflow = transactions
+    // Total inflow from sales orders and customer payments
+    const transactionInflow = dbTransactions
+      .filter(tx => (tx.type === 'sales_order' || tx.type === 'customer_payment') && tx.status === 'completed')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+
+    // Total inflow from income items (received)
+    const incomeInflow = incomeItems
+      .filter(i => i.status === 'received')
+      .reduce((sum, i) => sum + i.amount, 0);
+
+    const totalInflow = bankInflow + transactionInflow + incomeInflow;
+
+    // Total cash outflow from bank transactions (debits)
+    const bankOutflow = bankTransactions
       .filter(tx => tx.transactionType === 'debit')
       .reduce((sum, tx) => sum + tx.amount, 0);
+
+    // Total outflow from purchase orders and vendor payments
+    const transactionOutflow = dbTransactions
+      .filter(tx => (tx.type === 'purchase_order' || tx.type === 'vendor_payment') && tx.status !== 'cancelled')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+
+    const totalOutflow = bankOutflow + transactionOutflow;
 
     // Current bank balance
     const currentBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
@@ -80,8 +101,12 @@ export default function Analytics() {
     // Amazon revenue
     const amazonRevenue = amazonPayouts.reduce((sum, p) => sum + (p.total_amount || 0), 0);
 
-    // Total expenses from vendors
-    const totalExpenses = vendors.reduce((sum, v) => sum + (v.totalOwed || 0), 0);
+    // Total expenses from vendors + purchase orders
+    const vendorExpenses = vendors.reduce((sum, v) => sum + (v.totalOwed || 0), 0);
+    const purchaseOrders = dbTransactions
+      .filter(tx => tx.type === 'purchase_order' && tx.status === 'pending')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    const totalExpenses = vendorExpenses + purchaseOrders;
 
     // Net cash flow
     const netCashFlow = totalInflow - totalOutflow;
@@ -96,7 +121,7 @@ export default function Analytics() {
       totalExpenses,
       netCashFlow
     };
-  }, [transactions, incomeItems, vendors, creditCards, amazonPayouts, accounts]);
+  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts]);
 
   // Revenue over time (last 6 months)
   const revenueData = useMemo(() => {
@@ -167,7 +192,7 @@ export default function Analytics() {
       monthlyData[key] = { income: 0, expenses: 0 };
     }
 
-    // Aggregate income
+    // Aggregate income from received income items
     incomeItems.forEach(item => {
       if (item.status === 'received') {
         const date = new Date(item.paymentDate);
@@ -178,10 +203,32 @@ export default function Analytics() {
       }
     });
 
-    // Aggregate expenses from bank transactions (debit transactions)
-    transactions.forEach(tx => {
+    // Aggregate income from completed sales orders
+    dbTransactions.forEach(tx => {
+      if ((tx.type === 'sales_order' || tx.type === 'customer_payment') && tx.status === 'completed') {
+        const date = new Date(tx.transactionDate);
+        const key = date.toLocaleDateString('en-US', { month: 'short' });
+        if (monthlyData[key]) {
+          monthlyData[key].income += tx.amount;
+        }
+      }
+    });
+
+    // Aggregate expenses from bank transactions (debit)
+    bankTransactions.forEach(tx => {
       if (tx.transactionType === 'debit') {
         const date = new Date(tx.date);
+        const key = date.toLocaleDateString('en-US', { month: 'short' });
+        if (monthlyData[key]) {
+          monthlyData[key].expenses += tx.amount;
+        }
+      }
+    });
+
+    // Aggregate expenses from purchase orders and vendor payments
+    dbTransactions.forEach(tx => {
+      if ((tx.type === 'purchase_order' || tx.type === 'vendor_payment') && tx.status !== 'cancelled') {
+        const date = new Date(tx.transactionDate);
         const key = date.toLocaleDateString('en-US', { month: 'short' });
         if (monthlyData[key]) {
           monthlyData[key].expenses += tx.amount;
@@ -195,7 +242,7 @@ export default function Analytics() {
       expenses: data.expenses,
       net: data.income - data.expenses
     }));
-  }, [incomeItems, transactions]);
+  }, [incomeItems, bankTransactions, dbTransactions]);
 
   const COLORS = ['#8b5cf6', '#06b6d4', '#f59e0b', '#10b981', '#ef4444', '#ec4899'];
 
