@@ -352,6 +352,8 @@ export default function DocumentStorage() {
     mutationFn: async () => {
       if (!profile?.account_id) throw new Error('Not authenticated');
       
+      const accountId = profile.account_id;
+      
       // Get all files from storage at root and in account folder
       const { data: rootFiles } = await supabase.storage
         .from('purchase-orders')
@@ -359,20 +361,19 @@ export default function DocumentStorage() {
       
       const { data: accountFiles } = await supabase.storage
         .from('purchase-orders')
-        .list(profile.account_id, { limit: 1000 });
+        .list(accountId, { limit: 1000 });
       
       // Get all metadata
       const { data: metadata } = await supabase
         .from('documents_metadata')
         .select('*')
-        .eq('account_id', profile.account_id);
+        .eq('account_id', accountId);
       
       let fixed = 0;
       let missing = 0;
       
       for (const meta of metadata || []) {
-        // Check if file exists in expected location
-        const expectedPath = `${profile.account_id}/${meta.file_name}`;
+        const expectedPath = `${accountId}/${meta.file_name}`;
         const fileInExpectedLocation = accountFiles?.find(f => f.name === meta.file_name);
         
         if (fileInExpectedLocation) {
@@ -385,36 +386,64 @@ export default function DocumentStorage() {
             fixed++;
           }
         } else {
-          // Check if file exists at root level
-          const fileAtRoot = rootFiles?.find(f => f.name === meta.file_name);
-          if (fileAtRoot) {
-            // Try to move file to correct location
+          // File not in expected location - check old file_path location
+          let moved = false;
+          
+          // If file_path contains a slash, it might be in a user_id folder
+          if (meta.file_path && meta.file_path.includes('/')) {
             try {
-              const { data: fileData } = await supabase.storage
+              // Try to move from old path to new path
+              const { error: moveError } = await supabase.storage
                 .from('purchase-orders')
-                .download(meta.file_name);
+                .move(meta.file_path, expectedPath);
               
-              if (fileData) {
-                await supabase.storage
-                  .from('purchase-orders')
-                  .upload(expectedPath, fileData, { upsert: true });
-                
-                await supabase.storage
-                  .from('purchase-orders')
-                  .remove([meta.file_name]);
-                
+              if (!moveError) {
+                // Successfully moved, update metadata
                 await supabase
                   .from('documents_metadata')
                   .update({ file_path: expectedPath })
                   .eq('id', meta.id);
-                
                 fixed++;
+                moved = true;
               }
             } catch (error) {
-              console.error('Error moving file:', error);
-              missing++;
+              console.error(`Failed to move from ${meta.file_path}:`, error);
             }
-          } else {
+          }
+          
+          // If not moved yet, check if file exists at root level
+          if (!moved) {
+            const fileAtRoot = rootFiles?.find(f => f.name === meta.file_name);
+            if (fileAtRoot) {
+              try {
+                const { data: fileData } = await supabase.storage
+                  .from('purchase-orders')
+                  .download(meta.file_name);
+                
+                if (fileData) {
+                  await supabase.storage
+                    .from('purchase-orders')
+                    .upload(expectedPath, fileData, { upsert: true });
+                  
+                  await supabase.storage
+                    .from('purchase-orders')
+                    .remove([meta.file_name]);
+                  
+                  await supabase
+                    .from('documents_metadata')
+                    .update({ file_path: expectedPath })
+                    .eq('id', meta.id);
+                  
+                  fixed++;
+                  moved = true;
+                }
+              } catch (error) {
+                console.error('Error moving file from root:', error);
+              }
+            }
+          }
+          
+          if (!moved) {
             missing++;
           }
         }
@@ -434,23 +463,37 @@ export default function DocumentStorage() {
   const handleDownload = async (fileName: string, doc: any) => {
     if (!profile?.account_id) return;
 
-    const { data, error } = await supabase.storage
-      .from('purchase-orders')
-      .download(`${profile.account_id}/${fileName}`);
-
-    if (error) {
-      toast.error('Failed to download document');
+    // Check if file doesn't exist in storage
+    if (doc.storage_exists === false) {
+      toast.error('File is missing from storage. Try clicking "Sync/Repair Files" first.');
       return;
     }
 
-    const url = URL.createObjectURL(data);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Try downloading from the file_path in metadata first, then fallback to expected path
+    const pathsToTry = [
+      doc.file_path || `${profile.account_id}/${fileName}`,
+      `${profile.account_id}/${fileName}`
+    ];
+
+    for (const path of pathsToTry) {
+      const { data, error } = await supabase.storage
+        .from('purchase-orders')
+        .download(path);
+
+      if (!error && data) {
+        const url = URL.createObjectURL(data);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        return;
+      }
+    }
+
+    toast.error('Failed to download document. File may be in an old location - try "Sync/Repair Files".');
   };
 
   const filteredDocuments = documents?.filter(doc => {
