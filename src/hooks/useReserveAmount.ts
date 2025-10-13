@@ -77,17 +77,24 @@ export const useReserveAmount = () => {
         return;
       }
 
-      console.log('[Reserve] Updating to:', newAmount);
+      console.log('[Reserve] Starting update to:', newAmount);
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log('[Reserve] User:', user?.id, 'Error:', userError);
       if (!user) throw new Error("Not authenticated");
 
       // Get user's account_id
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('account_id')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      console.log('[Reserve] Profile:', profile, 'Error:', profileError);
+      
+      if (profileError) {
+        throw new Error(`Profile fetch error: ${profileError.message}`);
+      }
 
       if (!profile?.account_id) {
         throw new Error("Account not found");
@@ -96,42 +103,54 @@ export const useReserveAmount = () => {
       console.log('[Reserve] Using account_id:', profile.account_id);
 
       // Check if settings exist
-      const { data: existing } = await supabase
+      const { data: existing, error: existingError } = await supabase
         .from('user_settings')
         .select('id')
         .eq('account_id', profile.account_id)
         .maybeSingle();
 
+      console.log('[Reserve] Existing settings:', existing, 'Error:', existingError);
+
+      if (existingError) {
+        throw new Error(`Settings fetch error: ${existingError.message}`);
+      }
+
       if (!existing) {
         // Create new settings record
         console.log('[Reserve] Creating new settings record');
-        const { error: insertError } = await supabase
+        const { data: insertData, error: insertError } = await supabase
           .from('user_settings')
           .insert({
             user_id: user.id,
             account_id: profile.account_id,
             safe_spending_reserve: newAmount,
             reserve_last_updated_at: new Date().toISOString()
-          });
+          })
+          .select();
+
+        console.log('[Reserve] Insert result:', insertData, 'Error:', insertError);
 
         if (insertError) {
           console.error('[Reserve] Insert error:', insertError);
-          throw insertError;
+          throw new Error(`Insert error: ${insertError.message}`);
         }
       } else {
         // Update existing record
-        console.log('[Reserve] Updating existing record');
-        const { error: updateError } = await supabase
+        console.log('[Reserve] Updating existing record, id:', existing.id);
+        const { data: updateData, error: updateError } = await supabase
           .from('user_settings')
           .update({ 
             safe_spending_reserve: newAmount,
             reserve_last_updated_at: new Date().toISOString()
           })
-          .eq('account_id', profile.account_id);
+          .eq('account_id', profile.account_id)
+          .select();
+
+        console.log('[Reserve] Update result:', updateData, 'Error:', updateError);
 
         if (updateError) {
           console.error('[Reserve] Update error:', updateError);
-          throw updateError;
+          throw new Error(`Update error: ${updateError.message}`);
         }
       }
 
