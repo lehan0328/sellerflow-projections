@@ -323,6 +323,7 @@ export default function Analytics() {
         name: category,
         value: total
       }))
+      .filter(item => item.value > 0) // Only show categories with expenses
       .sort((a, b) => b.value - a.value);
   }, [vendors, vendorTransactions, bankTransactions, vendorDateRange]);
 
