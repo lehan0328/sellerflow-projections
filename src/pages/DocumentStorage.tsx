@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -89,15 +90,7 @@ export default function DocumentStorage() {
     queryFn: async () => {
       if (!profile?.account_id) return [];
       
-      const { data: files, error: filesError } = await supabase.storage
-        .from('purchase-orders')
-        .list(profile.account_id, {
-          sortBy: { column: 'created_at', order: 'desc' }
-        });
-
-      if (filesError) throw filesError;
-
-      // Fetch metadata for all files
+      // Fetch all metadata first
       const { data: metadata, error: metadataError } = await supabase
         .from('documents_metadata')
         .select(`
@@ -108,21 +101,46 @@ export default function DocumentStorage() {
 
       if (metadataError) throw metadataError;
 
-      // Merge storage files with metadata
-      return files.map(file => {
-        const meta = metadata?.find(m => m.file_name === file.name) as any;
+      // Try to fetch files from storage
+      let files: any[] = [];
+      try {
+        const { data: storageFiles, error: filesError } = await supabase.storage
+          .from('purchase-orders')
+          .list(profile.account_id, {
+            sortBy: { column: 'created_at', order: 'desc' }
+          });
+
+        if (!filesError && storageFiles) {
+          files = storageFiles;
+        }
+      } catch (error) {
+        console.warn('Could not fetch storage files:', error);
+      }
+
+      // Create a map of storage files for quick lookup
+      const storageFilesMap = new Map(files.map(f => [f.name, f]));
+
+      // Return all metadata documents, marking which ones have storage files
+      return (metadata || []).map(meta => {
+        const storageFile = storageFilesMap.get(meta.file_name);
         return {
-          ...file,
-          vendor_id: meta?.vendor_id,
-          vendor_name: meta?.vendor?.name,
-          notes: meta?.notes,
-          document_date: meta?.document_date || file.created_at,
-          display_name: meta?.display_name || file.name,
-          amount: meta?.amount,
-          description: meta?.description,
-          document_type: meta?.document_type
-        } as StoredDocument;
-      });
+          id: meta.id,
+          name: meta.file_name,
+          created_at: meta.created_at,
+          metadata: {},
+          vendor_id: meta.vendor_id,
+          vendor_name: (meta as any).vendor?.name,
+          notes: meta.notes,
+          document_date: meta.document_date || meta.created_at,
+          display_name: meta.display_name || meta.file_name,
+          amount: meta.amount,
+          description: meta.description,
+          document_type: meta.document_type,
+          file_path: meta.file_path,
+          storage_exists: !!storageFile,
+          storage_file: storageFile
+        } as StoredDocument & { storage_exists: boolean; storage_file?: any };
+      }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
     enabled: !!profile?.account_id,
   });
@@ -329,7 +347,91 @@ export default function DocumentStorage() {
     }
   };
 
-  const handleDownload = async (fileName: string) => {
+  // Repair/Sync function to find and fix missing files
+  const repairMutation = useMutation({
+    mutationFn: async () => {
+      if (!profile?.account_id) throw new Error('Not authenticated');
+      
+      // Get all files from storage at root and in account folder
+      const { data: rootFiles } = await supabase.storage
+        .from('purchase-orders')
+        .list('', { limit: 1000 });
+      
+      const { data: accountFiles } = await supabase.storage
+        .from('purchase-orders')
+        .list(profile.account_id, { limit: 1000 });
+      
+      // Get all metadata
+      const { data: metadata } = await supabase
+        .from('documents_metadata')
+        .select('*')
+        .eq('account_id', profile.account_id);
+      
+      let fixed = 0;
+      let missing = 0;
+      
+      for (const meta of metadata || []) {
+        // Check if file exists in expected location
+        const expectedPath = `${profile.account_id}/${meta.file_name}`;
+        const fileInExpectedLocation = accountFiles?.find(f => f.name === meta.file_name);
+        
+        if (fileInExpectedLocation) {
+          // File is in correct location, update metadata if needed
+          if (meta.file_path !== expectedPath) {
+            await supabase
+              .from('documents_metadata')
+              .update({ file_path: expectedPath })
+              .eq('id', meta.id);
+            fixed++;
+          }
+        } else {
+          // Check if file exists at root level
+          const fileAtRoot = rootFiles?.find(f => f.name === meta.file_name);
+          if (fileAtRoot) {
+            // Try to move file to correct location
+            try {
+              const { data: fileData } = await supabase.storage
+                .from('purchase-orders')
+                .download(meta.file_name);
+              
+              if (fileData) {
+                await supabase.storage
+                  .from('purchase-orders')
+                  .upload(expectedPath, fileData, { upsert: true });
+                
+                await supabase.storage
+                  .from('purchase-orders')
+                  .remove([meta.file_name]);
+                
+                await supabase
+                  .from('documents_metadata')
+                  .update({ file_path: expectedPath })
+                  .eq('id', meta.id);
+                
+                fixed++;
+              }
+            } catch (error) {
+              console.error('Error moving file:', error);
+              missing++;
+            }
+          } else {
+            missing++;
+          }
+        }
+      }
+      
+      return { fixed, missing };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['documents', profile?.account_id] });
+      toast.success(`Repair complete: ${data.fixed} fixed, ${data.missing} missing`);
+    },
+    onError: (error: Error) => {
+      toast.error(`Repair failed: ${error.message}`);
+    },
+  });
+
+  const handleDownload = async (fileName: string, doc: any) => {
     if (!profile?.account_id) return;
 
     const { data, error } = await supabase.storage
@@ -440,6 +542,23 @@ export default function DocumentStorage() {
               </p>
             </div>
           </div>
+          <Button
+            variant="outline"
+            onClick={() => repairMutation.mutate()}
+            disabled={repairMutation.isPending}
+          >
+            {repairMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Syncing...
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 mr-2" />
+                Sync/Repair Files
+              </>
+            )}
+          </Button>
         </div>
 
 
@@ -614,6 +733,11 @@ export default function DocumentStorage() {
                           >
                             {doc.display_name || doc.name}
                           </span>
+                          {!(doc as any).storage_exists && (
+                            <Badge variant="destructive" className="text-xs ml-2">
+                              Missing File
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="text-sm">
@@ -677,8 +801,9 @@ export default function DocumentStorage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDownload(doc.name)}
+                            onClick={() => handleDownload(doc.name, doc)}
                             title="Download document"
+                            disabled={!(doc as any).storage_exists}
                           >
                             <Download className="h-4 w-4" />
                           </Button>
