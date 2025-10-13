@@ -59,6 +59,7 @@ export const AdminCustomers = () => {
   const [metrics, setMetrics] = useState<ConversionMetrics | null>(null);
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<'active' | 'churned'>('active');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -387,14 +388,10 @@ export const AdminCustomers = () => {
     return status.label === 'Expired';
   });
 
-  const totalPages = Math.ceil(activeCustomers.length / itemsPerPage);
+  const displayedCustomers = viewMode === 'active' ? activeCustomers : expiredCustomers;
+  const totalPages = Math.ceil(displayedCustomers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedCustomers = activeCustomers.slice(startIndex, startIndex + itemsPerPage);
-
-  const expiredTotalPages = Math.ceil(expiredCustomers.length / itemsPerPage);
-  const [expiredCurrentPage, setExpiredCurrentPage] = useState(1);
-  const expiredStartIndex = (expiredCurrentPage - 1) * itemsPerPage;
-  const paginatedExpiredCustomers = expiredCustomers.slice(expiredStartIndex, expiredStartIndex + itemsPerPage);
+  const paginatedCustomers = displayedCustomers.slice(startIndex, startIndex + itemsPerPage);
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
@@ -403,6 +400,11 @@ export const AdminCustomers = () => {
 
   const handleFilterChange = (value: string) => {
     setStatusFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleViewModeChange = (mode: 'active' | 'churned') => {
+    setViewMode(mode);
     setCurrentPage(1);
   };
 
@@ -451,7 +453,29 @@ export const AdminCustomers = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-4">
-            <CardTitle>Active Customers ({activeCustomers.length})</CardTitle>
+            <div className="flex items-center gap-3">
+              <CardTitle>
+                {viewMode === 'active' ? 'Active' : 'Expired / Churned'} Customers ({displayedCustomers.length})
+              </CardTitle>
+              <div className="flex gap-1 border rounded-md">
+                <Button
+                  variant={viewMode === 'active' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleViewModeChange('active')}
+                  className="rounded-r-none"
+                >
+                  Active ({activeCustomers.length})
+                </Button>
+                <Button
+                  variant={viewMode === 'churned' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleViewModeChange('churned')}
+                  className="rounded-l-none"
+                >
+                  Churned ({expiredCustomers.length})
+                </Button>
+              </div>
+            </div>
             <div className="flex gap-3">
               <Button
                 onClick={backfillStripeCustomerIds}
@@ -495,7 +519,7 @@ export const AdminCustomers = () => {
                 <TableHead>Company</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Plan</TableHead>
+                <TableHead>{viewMode === 'active' ? 'Plan' : 'Last Plan'}</TableHead>
                 <TableHead>Discount</TableHead>
                 <TableHead>Amazon Revenue (30d)</TableHead>
                 <TableHead>Renewal Date</TableHead>
@@ -748,7 +772,7 @@ export const AdminCustomers = () => {
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4">
             <p className="text-sm text-muted-foreground">
-              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, activeCustomers.length)} of {activeCustomers.length}
+              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, displayedCustomers.length)} of {displayedCustomers.length}
             </p>
             <div className="flex gap-2">
               <Button
@@ -774,124 +798,6 @@ export const AdminCustomers = () => {
         )}
       </CardContent>
     </Card>
-
-      {/* Expired/Churned Customers Section */}
-      {expiredCustomers.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Expired / Churned Customers ({expiredCustomers.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Last Plan</TableHead>
-                    <TableHead>Churn Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedExpiredCustomers.map((customer) => {
-                    const status = getAccountStatus(customer);
-                    const isSuspended = customer.account_status === 'suspended_payment';
-                    return (
-                      <TableRow key={customer.user_id} className={`text-sm ${isSuspended ? 'bg-destructive/5' : ''}`}>
-                        <TableCell className="font-medium">
-                          {customer.first_name || customer.last_name
-                            ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
-                            : 'Unnamed'}
-                        </TableCell>
-                        <TableCell>{customer.email}</TableCell>
-                        <TableCell>{customer.company || '-'}</TableCell>
-                        <TableCell>
-                          {new Date(customer.created_at).toLocaleDateString('en-US', { 
-                            month: 'short', 
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={status.variant} className="text-xs w-fit">
-                            {status.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {customer.plan_override ? (
-                            <Badge variant="outline" className="text-xs capitalize">
-                              {formatPlanName(customer.plan_override)}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {customer.churn_date ? (
-                            <span className="text-sm">
-                              {new Date(customer.churn_date).toLocaleDateString('en-US', { 
-                                month: 'short', 
-                                day: 'numeric',
-                                year: 'numeric'
-                              })}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => deleteAccount(
-                              customer.user_id, 
-                              `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || customer.email || 'User'
-                            )}
-                          >
-                            Delete
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-            
-            {expiredTotalPages > 1 && (
-              <div className="flex items-center justify-between mt-4">
-                <p className="text-sm text-muted-foreground">
-                  Showing {expiredStartIndex + 1} to {Math.min(expiredStartIndex + itemsPerPage, expiredCustomers.length)} of {expiredCustomers.length}
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setExpiredCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={expiredCurrentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setExpiredCurrentPage(p => Math.min(expiredTotalPages, p + 1))}
-                    disabled={expiredCurrentPage === expiredTotalPages}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
