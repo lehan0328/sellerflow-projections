@@ -118,13 +118,14 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
       <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{ticket.subject}</DialogTitle>
-          <DialogDescription>
-            <div className="flex items-center gap-2 mt-2">
-              <Badge variant="outline">{ticket.status.replace('_', ' ')}</Badge>
-              <Badge variant="outline">{ticket.priority}</Badge>
-              {ticket.category && <Badge variant="outline">{ticket.category}</Badge>}
-            </div>
+          <DialogDescription asChild>
+            <span>Ticket Details</span>
           </DialogDescription>
+          <div className="flex items-center gap-2 mt-2">
+            <Badge variant="outline">{ticket.status.replace('_', ' ')}</Badge>
+            <Badge variant="outline">{ticket.priority}</Badge>
+            {ticket.category && <Badge variant="outline">{ticket.category}</Badge>}
+          </div>
         </DialogHeader>
 
         <div className="flex-1 flex flex-col overflow-hidden">
@@ -147,8 +148,9 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
           )}
 
           {/* Messages */}
-          <ScrollArea className="flex-1 min-h-0 pr-4">
-            <div className="space-y-4">
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <ScrollArea className="h-full pr-4">
+              <div className="space-y-4">
               {messages.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
                   No responses yet. Our team will respond soon.
@@ -196,9 +198,10 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
                   );
                 })
               )}
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+          </div>
 
           {/* Reply form - disabled if ticket is closed */}
           {!isTicketClosed && (
