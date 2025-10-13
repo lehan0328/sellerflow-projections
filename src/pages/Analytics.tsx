@@ -5,7 +5,7 @@ import { useVendors } from "@/hooks/useVendors";
 import { useIncome } from "@/hooks/useIncome";
 import { useBankTransactions } from "@/hooks/useBankTransactions";
 import { useTransactions } from "@/hooks/useTransactions";
-import { useVendorTransactions } from "@/hooks/useVendorTransactions";
+import { supabase } from "@/integrations/supabase/client";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
@@ -43,7 +43,7 @@ import {
   Area,
   AreaChart
 } from "recharts";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Analytics() {
@@ -52,7 +52,52 @@ export default function Analytics() {
   const { incomeItems } = useIncome();
   const { transactions: bankTransactions } = useBankTransactions();
   const { transactions: dbTransactions } = useTransactions();
-  const { transactions: vendorTransactions } = useVendorTransactions();
+  // Fetch ALL vendor transactions (including archived/completed, excluding deleted)
+  const [vendorTransactions, setVendorTransactions] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const fetchAllVendorTransactions = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('transactions')
+        .select(`
+          *,
+          vendors(name, category)
+        `)
+        .eq('type', 'purchase_order')
+        .order('due_date', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching vendor transactions:', error);
+        return;
+      }
+
+      const parseDateFromDB = (dateString: string) => {
+        const [y, m, d] = dateString.split('-').map(Number);
+        return new Date(y, (m || 1) - 1, d || 1);
+      };
+
+      const formatted = data?.map(tx => ({
+        id: tx.id,
+        vendorId: tx.vendor_id,
+        vendorName: tx.vendors?.name || 'Unknown',
+        amount: Number(tx.amount),
+        dueDate: tx.due_date ? parseDateFromDB(tx.due_date) : new Date(),
+        transactionDate: tx.transaction_date ? parseDateFromDB(tx.transaction_date) : new Date(),
+        status: tx.status,
+        description: tx.description || '',
+        category: tx.vendors?.category || '',
+        type: tx.type,
+        archived: tx.archived || false
+      })) || [];
+
+      setVendorTransactions(formatted);
+    };
+
+    fetchAllVendorTransactions();
+  }, []);
   const { creditCards } = useCreditCards();
   const { amazonPayouts } = useAmazonPayouts();
   const { accounts } = useBankAccounts();
@@ -215,25 +260,35 @@ export default function Analytics() {
     const categoryTotals: Record<string, number> = {};
     const { start, end } = getDateRange(vendorDateRange);
     
-    // Add amounts from vendors table (only if they fall in range)
-    vendors.forEach(vendor => {
-      const paymentDate = vendor.nextPaymentDate;
-      if (paymentDate >= start && paymentDate <= end) {
-        const category = vendor.category || 'Uncategorized';
-        categoryTotals[category] = (categoryTotals[category] || 0) + vendor.totalOwed;
-      }
+    console.log('📊 Vendor Analytics Debug:', {
+      dateRange: vendorDateRange,
+      start: start.toISOString(),
+      end: end.toISOString(),
+      totalVendorTransactions: vendorTransactions.length
     });
     
-    // Add amounts from vendor transactions (both pending and completed, exclude deleted)
+    // Add amounts from vendor transactions (both pending and completed)
     vendorTransactions
-      .filter(tx => {
-        const txDate = tx.dueDate || tx.transactionDate;
-        return txDate >= start && txDate <= end;
-      })
       .forEach(tx => {
-        const category = tx.category || 'Uncategorized';
-        categoryTotals[category] = (categoryTotals[category] || 0) + tx.amount;
+        const txDate = new Date(tx.dueDate || tx.transactionDate);
+        const isInRange = txDate >= start && txDate <= end;
+        
+        console.log('📊 Transaction check:', {
+          vendor: tx.vendorName,
+          amount: tx.amount,
+          txDate: txDate.toISOString(),
+          isInRange,
+          status: tx.status,
+          archived: tx.archived
+        });
+        
+        if (isInRange) {
+          const category = tx.category || 'Uncategorized';
+          categoryTotals[category] = (categoryTotals[category] || 0) + tx.amount;
+        }
       });
+
+    console.log('📊 Category totals:', categoryTotals);
 
     return Object.entries(categoryTotals)
       .map(([category, total]) => ({
@@ -242,25 +297,25 @@ export default function Analytics() {
       }))
       .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value);
-  }, [vendors, vendorTransactions, vendorDateRange]);
+  }, [vendorTransactions, vendorDateRange]);
 
   // Top vendors by spending
   const topVendors = useMemo(() => {
     const vendorTotals: Record<string, number> = {};
     const { start, end } = getDateRange(vendorDateRange);
     
-    // Add amounts from vendor transactions (both pending and completed, exclude deleted)
+    // Add amounts from vendor transactions (both pending and completed)
     vendorTransactions
       .forEach(tx => {
         const txDate = new Date(tx.dueDate || tx.transactionDate);
-        const startDate = new Date(start);
-        const endDate = new Date(end);
         
-        if (txDate >= startDate && txDate <= endDate) {
+        if (txDate >= start && txDate <= end) {
           const vendorName = tx.vendorName || 'Unknown Vendor';
           vendorTotals[vendorName] = (vendorTotals[vendorName] || 0) + tx.amount;
         }
       });
+    
+    console.log('📊 Vendor totals:', vendorTotals);
     
     return Object.entries(vendorTotals)
       .map(([name, amount]) => ({ name, amount }))
