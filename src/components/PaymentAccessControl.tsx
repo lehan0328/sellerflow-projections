@@ -11,24 +11,25 @@ interface PaymentAccessControlProps {
 export const PaymentAccessControl = ({ children }: PaymentAccessControlProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAdmin } = useAdmin();
+  const { isAdmin, isLoading: adminLoading } = useAdmin();
   const [isChecking, setIsChecking] = useState(true);
   const [accountStatus, setAccountStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    checkAccountStatus();
-  }, [location.pathname]);
+    // Skip check for public routes
+    if (location.pathname === '/auth' || location.pathname === '/payment-required') {
+      setIsChecking(false);
+      return;
+    }
+    
+    // Wait for admin check to complete before checking account status
+    if (!adminLoading) {
+      checkAccountStatus();
+    }
+  }, [location.pathname, adminLoading]);
 
   const checkAccountStatus = async () => {
     try {
-      setIsChecking(true);
-      
-      // Skip check for auth and payment pages
-      if (location.pathname === '/auth' || location.pathname === '/payment-required') {
-        setIsChecking(false);
-        return;
-      }
-
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
