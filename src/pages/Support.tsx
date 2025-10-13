@@ -353,6 +353,138 @@ const Support = () => {
           </div>
           </div>
 
+          {/* Tickets List - Only for authenticated users */}
+          {user && (
+            <Card className="shadow-card border-0">
+              <CardHeader className="border-b bg-gradient-to-r from-background to-muted/30">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-2xl">Your Support Tickets</CardTitle>
+                    <CardDescription className="text-base mt-1">
+                      View and track your support requests
+                    </CardDescription>
+                  </div>
+                  {tickets.length > 0 && (
+                    <Badge variant="secondary" className="text-sm px-3 py-1">
+                      {tickets.length} {tickets.length === 1 ? 'Ticket' : 'Tickets'}
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                {tickets.length === 0 ? (
+                  <div className="text-center py-16 animate-fade-in">
+                    <div className="mx-auto h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                      <MessageSquare className="h-10 w-10 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">No support tickets yet</h3>
+                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                      Create your first support ticket to get help from our team
+                    </p>
+                    <Button 
+                      onClick={() => setShowNewTicket(true)}
+                      className="hover-scale"
+                      disabled={hasOpenTicket}
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      {hasOpenTicket ? "Open Ticket Pending" : "Create Ticket"}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {tickets.map((ticket, index) => (
+                      <div
+                        key={ticket.id}
+                        className="group relative rounded-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-muted/20 p-6 hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer animate-fade-in"
+                        style={{ animationDelay: `${index * 50}ms` }}
+                        onClick={() => handleViewTicket(ticket)}
+                      >
+                        {/* Status indicator bar */}
+                        <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl transition-all duration-300 ${
+                          ticket.status === 'open' || ticket.status === 'in_progress' ? 'bg-blue-500' :
+                          ticket.status === 'needs_response' ? 'bg-orange-500' :
+                          ticket.status === 'resolved' ? 'bg-green-500' : 'bg-gray-400'
+                        }`} />
+                        
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 space-y-3">
+                            {/* Header with icon and title */}
+                            <div className="flex items-start gap-3">
+                              <div className={`mt-0.5 rounded-lg p-2 ${
+                                ticket.status === 'open' || ticket.status === 'in_progress' ? 'bg-blue-500/10 text-blue-600' :
+                                ticket.status === 'needs_response' ? 'bg-orange-500/10 text-orange-600' :
+                                ticket.status === 'resolved' ? 'bg-green-500/10 text-green-600' : 'bg-gray-500/10 text-gray-600'
+                              }`}>
+                                {getStatusIcon(ticket.status)}
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                                  {ticket.subject}
+                                </h3>
+                                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                  {ticket.message}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {/* Badges */}
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge 
+                                variant={getStatusColor(ticket.status)}
+                                className="font-medium"
+                              >
+                                {ticket.status.replace("_", " ").toUpperCase()}
+                              </Badge>
+                              <Badge 
+                                variant={getPriorityColor(ticket.priority)}
+                                className="font-medium"
+                              >
+                                {ticket.priority.toUpperCase()}
+                              </Badge>
+                              {ticket.category && (
+                                <Badge variant="outline" className="font-medium">
+                                  {ticket.category}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Date info */}
+                          <div className="text-right space-y-1 min-w-[140px]">
+                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                              Created
+                            </div>
+                            <div className="text-sm font-semibold text-foreground">
+                              {formatDate(ticket.created_at)}
+                            </div>
+                            {ticket.resolved_at && (
+                              <>
+                                <div className="text-xs font-medium text-green-600 uppercase tracking-wide mt-2">
+                                  Resolved
+                                </div>
+                                <div className="text-sm font-semibold text-green-600">
+                                  {formatDate(ticket.resolved_at)}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Hover indicator */}
+                        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="text-xs text-primary font-medium flex items-center gap-1">
+                            Click to view
+                            <MessageSquare className="h-3 w-3" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* AI Chat Assistant */}
           {showAIChat && (
             <Card className="shadow-card">
@@ -530,138 +662,6 @@ const Support = () => {
                     </Button>
                   </div>
                 </form>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Tickets List - Only for authenticated users */}
-          {user && (
-            <Card className="shadow-card border-0">
-              <CardHeader className="border-b bg-gradient-to-r from-background to-muted/30">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-2xl">Your Support Tickets</CardTitle>
-                    <CardDescription className="text-base mt-1">
-                      View and track your support requests
-                    </CardDescription>
-                  </div>
-                  {tickets.length > 0 && (
-                    <Badge variant="secondary" className="text-sm px-3 py-1">
-                      {tickets.length} {tickets.length === 1 ? 'Ticket' : 'Tickets'}
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="p-6">
-                {tickets.length === 0 ? (
-                  <div className="text-center py-16 animate-fade-in">
-                    <div className="mx-auto h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                      <MessageSquare className="h-10 w-10 text-primary" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-2">No support tickets yet</h3>
-                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                      Create your first support ticket to get help from our team
-                    </p>
-                    <Button 
-                      onClick={() => setShowNewTicket(true)}
-                      className="hover-scale"
-                      disabled={hasOpenTicket}
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      {hasOpenTicket ? "Open Ticket Pending" : "Create Ticket"}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="grid gap-4">
-                    {tickets.map((ticket, index) => (
-                      <div
-                        key={ticket.id}
-                        className="group relative rounded-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-muted/20 p-6 hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer animate-fade-in"
-                        style={{ animationDelay: `${index * 50}ms` }}
-                        onClick={() => handleViewTicket(ticket)}
-                      >
-                        {/* Status indicator bar */}
-                        <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl transition-all duration-300 ${
-                          ticket.status === 'open' || ticket.status === 'in_progress' ? 'bg-blue-500' :
-                          ticket.status === 'needs_response' ? 'bg-orange-500' :
-                          ticket.status === 'resolved' ? 'bg-green-500' : 'bg-gray-400'
-                        }`} />
-                        
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 space-y-3">
-                            {/* Header with icon and title */}
-                            <div className="flex items-start gap-3">
-                              <div className={`mt-0.5 rounded-lg p-2 ${
-                                ticket.status === 'open' || ticket.status === 'in_progress' ? 'bg-blue-500/10 text-blue-600' :
-                                ticket.status === 'needs_response' ? 'bg-orange-500/10 text-orange-600' :
-                                ticket.status === 'resolved' ? 'bg-green-500/10 text-green-600' : 'bg-gray-500/10 text-gray-600'
-                              }`}>
-                                {getStatusIcon(ticket.status)}
-                              </div>
-                              <div className="flex-1">
-                                <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                                  {ticket.subject}
-                                </h3>
-                                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                  {ticket.message}
-                                </p>
-                              </div>
-                            </div>
-                            
-                            {/* Badges */}
-                            <div className="flex flex-wrap items-center gap-2">
-                              <Badge 
-                                variant={getStatusColor(ticket.status)}
-                                className="font-medium"
-                              >
-                                {ticket.status.replace("_", " ").toUpperCase()}
-                              </Badge>
-                              <Badge 
-                                variant={getPriorityColor(ticket.priority)}
-                                className="font-medium"
-                              >
-                                {ticket.priority.toUpperCase()}
-                              </Badge>
-                              {ticket.category && (
-                                <Badge variant="outline" className="font-medium">
-                                  {ticket.category}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {/* Date info */}
-                          <div className="text-right space-y-1 min-w-[140px]">
-                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                              Created
-                            </div>
-                            <div className="text-sm font-semibold text-foreground">
-                              {formatDate(ticket.created_at)}
-                            </div>
-                            {ticket.resolved_at && (
-                              <>
-                                <div className="text-xs font-medium text-green-600 uppercase tracking-wide mt-2">
-                                  Resolved
-                                </div>
-                                <div className="text-sm font-semibold text-green-600">
-                                  {formatDate(ticket.resolved_at)}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {/* Hover indicator */}
-                        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <div className="text-xs text-primary font-medium flex items-center gap-1">
-                            Click to view
-                            <MessageSquare className="h-3 w-3" />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </CardContent>
             </Card>
           )}
