@@ -260,20 +260,34 @@ export default function Analytics() {
     const categoryTotals: Record<string, number> = {};
     const { start, end } = getDateRange(vendorDateRange);
     
-    console.log('📊 Vendor Analytics Debug:', {
+    console.log('📊 Expense Analytics Debug:', {
       dateRange: vendorDateRange,
       start: start.toISOString(),
       end: end.toISOString(),
       totalVendorTransactions: vendorTransactions.length,
+      totalBankTransactions: bankTransactions.length,
       totalVendors: vendors.length
     });
     
-    // Initialize all vendor categories with 0
+    // Define all possible expense categories
+    const allCategories = new Set<string>();
+    
+    // Collect categories from vendors
     vendors.forEach(vendor => {
       const category = vendor.category || 'Uncategorized';
-      if (!categoryTotals[category]) {
-        categoryTotals[category] = 0;
+      allCategories.add(category);
+    });
+    
+    // Collect categories from bank transactions
+    bankTransactions.forEach(tx => {
+      if (tx.transactionType === 'debit' && tx.category && tx.category.length > 0) {
+        allCategories.add(tx.category[0]);
       }
+    });
+    
+    // Initialize all categories with 0
+    allCategories.forEach(category => {
+      categoryTotals[category] = 0;
     });
     
     // Add amounts from vendor transactions (both pending and completed)
@@ -281,18 +295,22 @@ export default function Analytics() {
       const txDate = new Date(tx.dueDate || tx.transactionDate);
       const isInRange = txDate >= start && txDate <= end;
       
-      console.log('📊 Transaction check:', {
-        vendor: tx.vendorName,
-        amount: tx.amount,
-        txDate: txDate.toISOString(),
-        isInRange,
-        status: tx.status,
-        archived: tx.archived
-      });
-      
-      if (isInRange) {
+      if (isInRange && tx.status !== 'cancelled') {
         const category = tx.category || 'Uncategorized';
         categoryTotals[category] = (categoryTotals[category] || 0) + tx.amount;
+      }
+    });
+    
+    // Add amounts from bank transactions (current expenses)
+    bankTransactions.forEach(tx => {
+      if (tx.transactionType === 'debit') {
+        const txDate = new Date(tx.date);
+        const isInRange = txDate >= start && txDate <= end;
+        
+        if (isInRange && !tx.archived) {
+          const category = (tx.category && tx.category.length > 0) ? tx.category[0] : 'Uncategorized';
+          categoryTotals[category] = (categoryTotals[category] || 0) + tx.amount;
+        }
       }
     });
 
@@ -303,9 +321,8 @@ export default function Analytics() {
         name: category,
         value: total
       }))
-      .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value);
-  }, [vendors, vendorTransactions, vendorDateRange]);
+  }, [vendors, vendorTransactions, bankTransactions, vendorDateRange]);
 
   // Top vendors by spending
   const topVendors = useMemo(() => {
