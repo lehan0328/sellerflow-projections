@@ -59,6 +59,7 @@ const Settings = () => {
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   const { resetAccount } = useUserSettings();
   const { isAdmin, isLoading: adminLoading } = useAdmin();
+  const [companyName, setCompanyName] = useState('');
 
   // Fetch user profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -107,6 +108,9 @@ const Settings = () => {
     if (profile?.currency) {
       setSelectedCurrency(profile.currency);
     }
+    if (profile?.company) {
+      setCompanyName(profile.company);
+    }
   }, [profile]);
 
   // Update active section based on location state or URL params
@@ -124,8 +128,19 @@ const Settings = () => {
   }, [location]);
 
   const handleProfileChange = (field: string, value: string) => {
+    // Trim and validate input
+    const trimmedValue = value.trim();
+    
+    // Validate max length
+    if (trimmedValue.length > 255) {
+      toast.error('Value is too long (max 255 characters)');
+      return;
+    }
+    
+    console.log('[Settings] Saving profile field:', field, 'Value:', trimmedValue);
+    
     const profileData = {
-      [field]: value,
+      [field]: trimmedValue,
     };
     updateProfileMutation.mutate(profileData);
   };
@@ -209,10 +224,20 @@ const Settings = () => {
               <Label htmlFor="company">Company Name</Label>
               <Input 
                 id="company" 
-                defaultValue={profile?.company || ""} 
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
                 placeholder="Enter your company name"
-                onBlur={(e) => handleProfileChange('company', e.target.value)}
+                onBlur={(e) => {
+                  const trimmed = e.target.value.trim();
+                  if (trimmed !== profile?.company) {
+                    handleProfileChange('company', trimmed);
+                  }
+                }}
+                maxLength={255}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Changes are saved automatically when you click away.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="default-currency">Default Currency</Label>
