@@ -569,6 +569,25 @@ export default function Analytics() {
                     <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
                   </PieChart>
                 </ResponsiveContainer>
+                
+                <div className="mt-6 space-y-3">
+                  <h4 className="text-sm font-semibold text-muted-foreground">Total Spending by Category</h4>
+                  {vendorCategoryData.map((category, index) => (
+                    <div key={category.name} className="flex items-center justify-between border-b border-border pb-2">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        />
+                        <span className="text-sm font-medium">{category.name}</span>
+                      </div>
+                      <span className="text-sm font-semibold">${category.value.toLocaleString()}</span>
+                    </div>
+                  ))}
+                  {vendorCategoryData.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">No expenses in this period</p>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
