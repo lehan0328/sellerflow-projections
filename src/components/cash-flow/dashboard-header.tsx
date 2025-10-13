@@ -76,10 +76,11 @@ export function DashboardHeader({
     }
     
     if (user?.email) {
-      return user.email.split('@')[0];
+      const userName = user.email.split('@')[0];
+      return userName.charAt(0).toUpperCase() + userName.slice(1);
     }
     
-    return 'Your';
+    return 'User';
   };
   return <div className="relative w-full">
       {/* Logo - Top Left - Only show when sidebar is collapsed */}

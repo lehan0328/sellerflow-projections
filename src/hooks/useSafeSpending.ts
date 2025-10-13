@@ -585,6 +585,8 @@ export const useSafeSpending = () => {
 
   const updateReserveAmount = async (newAmount: number) => {
     try {
+      console.log('[Reserve] Starting update to:', newAmount);
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
@@ -595,28 +597,40 @@ export const useSafeSpending = () => {
         .eq('user_id', session.user.id)
         .maybeSingle();
 
-      if (!profile?.account_id) throw new Error("Account not found");
+      if (!profile?.account_id) {
+        console.error('[Reserve] No account_id found in profile');
+        throw new Error("Account not found");
+      }
 
-      console.log("💾 Updating reserve amount to:", newAmount, "for account:", profile.account_id);
+      console.log('[Reserve] Updating for account:', profile.account_id);
 
-      // Check if user_settings record exists
-      const { data: existing } = await supabase
+      // Check if user_settings record exists for this account
+      const { data: existing, error: selectError } = await supabase
         .from('user_settings')
-        .select('id')
-        .eq('user_id', session.user.id)
+        .select('id, user_id, account_id, safe_spending_reserve')
+        .eq('account_id', profile.account_id)
         .maybeSingle();
+
+      if (selectError) {
+        console.error('[Reserve] Error checking existing settings:', selectError);
+        throw selectError;
+      }
+
+      console.log('[Reserve] Existing settings:', existing);
 
       let result;
       if (existing) {
-        // Update existing record
+        // Update existing record by account_id
+        console.log('[Reserve] Updating existing record for account:', profile.account_id);
         result = await supabase
           .from('user_settings')
           .update({ safe_spending_reserve: newAmount })
-          .eq('user_id', session.user.id)
+          .eq('account_id', profile.account_id)
           .select()
           .single();
       } else {
         // Insert new record with account_id
+        console.log('[Reserve] Inserting new record');
         result = await supabase
           .from('user_settings')
           .insert({
@@ -629,11 +643,11 @@ export const useSafeSpending = () => {
       }
 
       if (result.error) {
-        console.error("❌ Database error:", result.error);
+        console.error('[Reserve] Database error:', result.error);
         throw result.error;
       }
 
-      console.log("✅ Reserve updated successfully:", result.data);
+      console.log('[Reserve] Update successful:', result.data);
 
       // Update local state immediately
       setReserveAmount(newAmount);
@@ -641,7 +655,7 @@ export const useSafeSpending = () => {
       // Recalculate safe spending with new reserve
       await fetchSafeSpending();
     } catch (err) {
-      console.error("❌ Error updating reserve amount:", err);
+      console.error('[Reserve] Error updating reserve amount:', err);
       throw err; // Re-throw to let the component handle the error
     }
   };
