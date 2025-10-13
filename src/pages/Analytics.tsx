@@ -123,7 +123,7 @@ export default function Analytics() {
     };
   }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts]);
 
-  // Revenue over time (last 6 months)
+  // Revenue over time (last 6 months) - includes Amazon payouts
   const revenueData = useMemo(() => {
     const monthlyData: Record<string, number> = {};
     const now = new Date();
@@ -146,11 +146,31 @@ export default function Analytics() {
       }
     });
 
+    // Aggregate Amazon payouts
+    amazonPayouts.forEach(payout => {
+      const date = new Date(payout.payout_date);
+      const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      if (monthlyData.hasOwnProperty(key)) {
+        monthlyData[key] += payout.total_amount || 0;
+      }
+    });
+
+    // Aggregate completed sales orders
+    dbTransactions.forEach(tx => {
+      if ((tx.type === 'sales_order' || tx.type === 'customer_payment') && tx.status === 'completed') {
+        const date = new Date(tx.transactionDate);
+        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (monthlyData.hasOwnProperty(key)) {
+          monthlyData[key] += tx.amount;
+        }
+      }
+    });
+
     return Object.entries(monthlyData).map(([month, revenue]) => ({
       month,
       revenue
     }));
-  }, [incomeItems]);
+  }, [incomeItems, amazonPayouts, dbTransactions]);
 
   // Expense breakdown by vendor category
   const vendorCategoryData = useMemo(() => {
