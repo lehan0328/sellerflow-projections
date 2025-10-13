@@ -169,6 +169,14 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   });
   const upcomingTotal = upcomingPayments.reduce((sum, payment) => sum + payment.amount, 0);
   
+  // Calculate pending credit card transactions (future purchases)
+  const pendingCreditPurchases = events.filter(event => {
+    const eventDate = new Date(event.date);
+    eventDate.setHours(0, 0, 0, 0);
+    return (event as any).creditCardId && eventDate >= now;
+  });
+  const pendingCreditTotal = pendingCreditPurchases.reduce((sum, purchase) => sum + purchase.amount, 0);
+  
   // Calculate credit utilization
   const creditUtilization = totalCreditLimit > 0 ? (totalCreditBalance / totalCreditLimit) * 100 : 0;
   
@@ -351,8 +359,15 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
             <div className="flex-1">
               <p className="text-sm text-slate-600">Available Credit</p>
               <p className="text-2xl font-bold text-purple-700">{formatCurrency(totalAvailableCredit)}</p>
-              <p className="text-sm text-slate-600">of {formatCurrency(totalCreditLimit)} limit</p>
-              <p className="text-xs text-purple-600">{formatCurrency(totalCreditBalance)} used • {creditUtilization.toFixed(1)}% utilization</p>
+              <div className="space-y-0.5">
+                {pendingCreditTotal > 0 && (
+                  <p className="text-sm text-slate-600">
+                    Pending: {formatCurrency(pendingCreditTotal)}
+                  </p>
+                )}
+                <p className="text-sm text-slate-600">of {formatCurrency(totalCreditLimit)} limit</p>
+                <p className="text-xs text-purple-600">{formatCurrency(totalCreditBalance)} used • {creditUtilization.toFixed(1)}% utilization</p>
+              </div>
             </div>
             <CreditCard className="h-8 w-8 text-purple-500" />
           </div>
