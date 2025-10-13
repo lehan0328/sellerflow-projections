@@ -312,10 +312,10 @@ export default function Analytics() {
       categoryTotals[category] = 0;
     });
     
-    // Add amounts from vendor transactions (both pending and completed)
+    // Add amounts from vendor transactions - ONLY include if due date is in the selected range
     vendorTransactions.forEach(tx => {
-      const txDate = new Date(tx.dueDate || tx.transactionDate);
-      const isInRange = txDate >= start && txDate <= end;
+      const dueDate = new Date(tx.dueDate);
+      const isInRange = dueDate >= start && dueDate <= end;
       
       if (isInRange && tx.status !== 'cancelled') {
         const category = tx.category || 'Uncategorized';
@@ -357,11 +357,11 @@ export default function Analytics() {
       vendorTotals[vendor.name] = 0;
     });
     
-    // Add amounts from vendor transactions (both pending and completed)
+    // Add amounts from vendor transactions - ONLY if due date is in range
     vendorTransactions.forEach(tx => {
-      const txDate = new Date(tx.dueDate || tx.transactionDate);
+      const dueDate = new Date(tx.dueDate);
       
-      if (txDate >= start && txDate <= end) {
+      if (dueDate >= start && dueDate <= end && tx.status !== 'cancelled') {
         const vendorName = tx.vendorName || 'Unknown Vendor';
         vendorTotals[vendorName] = (vendorTotals[vendorName] || 0) + tx.amount;
       }
