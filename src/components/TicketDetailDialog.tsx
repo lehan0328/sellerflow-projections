@@ -148,7 +148,7 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
           )}
 
           {/* Messages */}
-          <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-hidden max-h-[400px]">
             <ScrollArea className="h-full pr-4">
               <div className="space-y-3">
               {messages.length === 0 ? (
