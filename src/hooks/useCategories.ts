@@ -58,6 +58,25 @@ export function useCategories(type: 'expense' | 'income') {
         accountId: profile?.account_id 
       });
 
+      // Check if category already exists
+      const { data: existing } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('user_id', user.id)
+        .eq('name', name)
+        .eq('type', type)
+        .maybeSingle();
+
+      if (existing) {
+        console.log('[Category] Category already exists:', existing);
+        toast({
+          title: "Category already exists",
+          description: `"${name}" is already in your ${type} categories`,
+          variant: "destructive",
+        });
+        return existing;
+      }
+
       const { data, error } = await supabase
         .from('categories')
         .insert({
@@ -72,6 +91,17 @@ export function useCategories(type: 'expense' | 'income') {
 
       if (error) {
         console.error('[Category] Error adding category:', error);
+        
+        // Handle duplicate key error with friendly message
+        if (error.code === '23505') {
+          toast({
+            title: "Category already exists",
+            description: `"${name}" is already in your ${type} categories`,
+            variant: "destructive",
+          });
+          return null;
+        }
+        
         throw error;
       }
 

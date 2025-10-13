@@ -149,7 +149,12 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
                 </div>
                 {categories.map(category => (
                   <SelectItem key={category.id} value={category.name}>
-                    {category.name}
+                    <div className="flex items-center justify-between w-full">
+                      <span>{category.name}</span>
+                      {category.is_default && (
+                        <span className="text-xs text-muted-foreground ml-2">(default)</span>
+                      )}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
