@@ -425,7 +425,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
             
             allBuyingOpportunities.push({
               date: currentDay.date,
-              balance: opportunityAmount,
+              balance: Math.max(0, opportunityAmount - reserve), // Deduct reserve
               available_date: availableDate
             });
           }

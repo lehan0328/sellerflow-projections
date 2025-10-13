@@ -77,7 +77,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
-  const { reserveAmount, updateReserveAmount: updateReserve } = useReserveAmount();
+  const { reserveAmount, updateReserveAmount: updateReserve, canUpdate, lastUpdated } = useReserveAmount();
   const { data: safeSpendingData, isLoading: isLoadingSafeSpending, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount);
   const { amazonPayouts, monthlyOrdersTotal } = useAmazonPayouts();
   const { transactions: vendorTransactions } = useVendorTransactions();

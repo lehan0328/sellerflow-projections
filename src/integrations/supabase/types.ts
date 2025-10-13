@@ -1677,6 +1677,7 @@ export type Database = {
           created_at: string
           id: string
           last_forecast_refresh: string | null
+          reserve_last_updated_at: string | null
           safe_spending_percentage: number | null
           safe_spending_reserve: number | null
           total_cash: number | null
@@ -1698,6 +1699,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_forecast_refresh?: string | null
+          reserve_last_updated_at?: string | null
           safe_spending_percentage?: number | null
           safe_spending_reserve?: number | null
           total_cash?: number | null
@@ -1719,6 +1721,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_forecast_refresh?: string | null
+          reserve_last_updated_at?: string | null
           safe_spending_percentage?: number | null
           safe_spending_reserve?: number | null
           total_cash?: number | null

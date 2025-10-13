@@ -24,13 +24,15 @@ interface CashFlowChartProps {
   events?: CashFlowEvent[];
   viewType: 'calendar' | 'chart';
   onViewTypeChange: (type: 'calendar' | 'chart') => void;
+  reserveAmount?: number;
 }
 
 export const CashFlowChart = ({ 
   onAddPurchaseOrder, 
   events: propEvents, 
   viewType, 
-  onViewTypeChange 
+  onViewTypeChange,
+  reserveAmount = 0
 }: CashFlowChartProps) => {
   const [dateRange, setDateRange] = useState({
     start: subDays(new Date(), 30),
@@ -317,6 +319,17 @@ export const CashFlowChart = ({
                     dot={{ r: 4 }}
                     activeDot={{ r: 6 }}
                   />
+                  {reserveAmount > 0 && (
+                    <Line
+                      type="monotone"
+                      dataKey={() => reserveAmount}
+                      stroke="orange"
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      dot={false}
+                      name="Reserve Amount"
+                    />
+                  )}
                 </LineChart>
               </ResponsiveContainer>
             </ChartContainer>
