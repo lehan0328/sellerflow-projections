@@ -597,8 +597,10 @@ export const useSafeSpending = () => {
 
       if (!profile?.account_id) throw new Error("Account not found");
 
+      console.log("Updating reserve amount to:", newAmount);
+
       // Update reserve in user_settings using UPSERT to avoid duplicate key errors
-      const { error: upsertError } = await supabase
+      const { data: upsertedData, error: upsertError } = await supabase
         .from('user_settings')
         .upsert({
           user_id: session.user.id,
@@ -606,9 +608,16 @@ export const useSafeSpending = () => {
           safe_spending_reserve: newAmount
         }, {
           onConflict: 'user_id'
-        });
+        })
+        .select()
+        .single();
 
-      if (upsertError) throw upsertError;
+      if (upsertError) {
+        console.error("Upsert error:", upsertError);
+        throw upsertError;
+      }
+
+      console.log("Reserve updated successfully:", upsertedData);
 
       // Update local state immediately
       setReserveAmount(newAmount);
