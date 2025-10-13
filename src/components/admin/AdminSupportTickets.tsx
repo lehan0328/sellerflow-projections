@@ -37,13 +37,22 @@ export const AdminSupportTickets = () => {
       for (const ticket of tickets) {
         // Count only customer messages created after admin last viewed
         const ticketData = ticket as any;
-        const { count } = await supabase
+        const cutoffDate = ticketData.admin_last_viewed_at || ticket.created_at;
+        
+        console.log(`Ticket ${ticket.id}: admin_last_viewed_at =`, ticketData.admin_last_viewed_at, 'cutoff =', cutoffDate);
+        
+        const { count, error } = await supabase
           .from('ticket_messages')
           .select('*', { count: 'exact', head: true })
           .eq('ticket_id', ticket.id)
           .eq('user_id', ticket.user_id)
-          .gte('created_at', ticketData.admin_last_viewed_at || ticket.created_at);
+          .gte('created_at', cutoffDate);
         
+        if (error) {
+          console.error('Error fetching message count:', error);
+        }
+        
+        console.log(`Ticket ${ticket.id}: unread count =`, count);
         counts[ticket.id] = count || 0;
       }
       
@@ -129,8 +138,8 @@ export const AdminSupportTickets = () => {
                         View Messages
                         {messageCounts[ticket.id] > 0 && (
                           <Badge 
-                            variant="secondary" 
-                            className="ml-2 h-5 min-w-5 px-1.5 bg-primary text-primary-foreground"
+                            variant="destructive" 
+                            className="ml-2 h-5 min-w-5 px-1.5"
                           >
                             {messageCounts[ticket.id]}
                           </Badge>
