@@ -588,13 +588,23 @@ export const useSafeSpending = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
-      console.log("💾 Updating reserve amount to:", newAmount);
+      // Get user's account_id (required for RLS)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      if (!profile?.account_id) throw new Error("Account not found");
+
+      console.log("💾 Updating reserve amount to:", newAmount, "for account:", profile.account_id);
 
       // Update reserve in user_settings using UPSERT to avoid duplicate key errors
       const { data: upsertedData, error: upsertError } = await supabase
         .from('user_settings')
         .upsert({
           user_id: session.user.id,
+          account_id: profile.account_id,
           safe_spending_reserve: newAmount
         }, {
           onConflict: 'user_id'
