@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Table,
@@ -36,6 +36,9 @@ interface Customer {
   account_owner_company?: string;
   referral_code?: string;
   affiliate_code?: string;
+  account_id?: string;
+  is_account_owner?: boolean;
+  team_members?: Customer[];
 }
 
 interface ConversionMetrics {
@@ -55,6 +58,7 @@ export const AdminCustomers = () => {
   const [itemsPerPage] = useState(20);
   const [metrics, setMetrics] = useState<ConversionMetrics | null>(null);
   const [isBackfilling, setIsBackfilling] = useState(false);
+  const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -66,7 +70,7 @@ export const AdminCustomers = () => {
       setIsLoading(true);
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('user_id, first_name, last_name, company, created_at, plan_override, discount_redeemed_at, trial_end, churn_date, account_status, payment_failure_date, stripe_customer_id')
+        .select('user_id, first_name, last_name, company, created_at, plan_override, discount_redeemed_at, trial_end, churn_date, account_status, payment_failure_date, stripe_customer_id, account_id, is_account_owner')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -168,12 +172,41 @@ export const AdminCustomers = () => {
             role: userRole?.role,
             account_owner_company: accountOwnerCompany,
             referral_code: referralData?.referral_code,
-            affiliate_code: affiliateData?.affiliate_code
+            affiliate_code: affiliateData?.affiliate_code,
+            team_members: []
           };
         })
       );
 
-      setCustomers(customersWithData);
+      // Group team members under their parent accounts
+      const groupedCustomers: Customer[] = [];
+      const accountOwnersMap = new Map<string, Customer>();
+      
+      // First pass: identify account owners
+      customersWithData.forEach(customer => {
+        if (customer.is_account_owner) {
+          accountOwnersMap.set(customer.account_id!, customer);
+          groupedCustomers.push(customer);
+        }
+      });
+      
+      // Second pass: attach team members to their owners
+      customersWithData.forEach(customer => {
+        if (!customer.is_account_owner && customer.account_id) {
+          const owner = accountOwnersMap.get(customer.account_id);
+          if (owner) {
+            owner.team_members!.push(customer);
+          } else {
+            // If no owner found, add as standalone
+            groupedCustomers.push(customer);
+          }
+        } else if (!customer.is_account_owner) {
+          // No account_id, add as standalone
+          groupedCustomers.push(customer);
+        }
+      });
+
+      setCustomers(groupedCustomers);
 
       // Calculate metrics
       const now = new Date();
@@ -293,6 +326,18 @@ export const AdminCustomers = () => {
     }
   };
 
+  const toggleAccountExpansion = (accountId: string) => {
+    setExpandedAccounts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(accountId)) {
+        newSet.delete(accountId);
+      } else {
+        newSet.add(accountId);
+      }
+      return newSet;
+    });
+  };
+
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch = customer.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -305,9 +350,25 @@ export const AdminCustomers = () => {
     return matchesSearch && status.label.toLowerCase() === statusFilter;
   });
 
-  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+  // Separate active and expired/churned customers
+  const activeCustomers = filteredCustomers.filter(customer => {
+    const status = getAccountStatus(customer);
+    return status.label !== 'Expired';
+  });
+
+  const expiredCustomers = filteredCustomers.filter(customer => {
+    const status = getAccountStatus(customer);
+    return status.label === 'Expired';
+  });
+
+  const totalPages = Math.ceil(activeCustomers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedCustomers = filteredCustomers.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedCustomers = activeCustomers.slice(startIndex, startIndex + itemsPerPage);
+
+  const expiredTotalPages = Math.ceil(expiredCustomers.length / itemsPerPage);
+  const [expiredCurrentPage, setExpiredCurrentPage] = useState(1);
+  const expiredStartIndex = (expiredCurrentPage - 1) * itemsPerPage;
+  const paginatedExpiredCustomers = expiredCustomers.slice(expiredStartIndex, expiredStartIndex + itemsPerPage);
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
@@ -390,7 +451,7 @@ export const AdminCustomers = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-4">
-            <CardTitle>Customers ({filteredCustomers.length})</CardTitle>
+            <CardTitle>Active Customers ({activeCustomers.length})</CardTitle>
             <div className="flex gap-3">
               <Button
                 onClick={backfillStripeCustomerIds}
@@ -454,12 +515,37 @@ export const AdminCustomers = () => {
                 paginatedCustomers.map((customer) => {
                   const status = getAccountStatus(customer);
                   const isSuspended = customer.account_status === 'suspended_payment';
+                  const hasTeamMembers = customer.team_members && customer.team_members.length > 0;
+                  const isExpanded = customer.account_id ? expandedAccounts.has(customer.account_id) : false;
+                  
                   return (
+                    <>
                     <TableRow key={customer.user_id} className={`text-sm ${isSuspended ? 'bg-destructive/5' : ''}`}>
                       <TableCell className="font-medium">
-                        {customer.first_name || customer.last_name
-                          ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
-                          : 'Unnamed'}
+                        <div className="flex items-center gap-2">
+                          {hasTeamMembers && (
+                            <button
+                              onClick={() => toggleAccountExpansion(customer.account_id!)}
+                              className="hover:bg-muted p-1 rounded"
+                            >
+                              {isExpanded ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </button>
+                          )}
+                          <span>
+                            {customer.first_name || customer.last_name
+                              ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
+                              : 'Unnamed'}
+                            {hasTeamMembers && (
+                              <Badge variant="outline" className="ml-2 text-xs">
+                                {customer.team_members!.length} {customer.team_members!.length === 1 ? 'member' : 'members'}
+                              </Badge>
+                            )}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell>{customer.email}</TableCell>
                       <TableCell>
@@ -585,6 +671,73 @@ export const AdminCustomers = () => {
                         </div>
                       </TableCell>
                     </TableRow>
+                    {/* Team members */}
+                    {hasTeamMembers && isExpanded && customer.team_members!.map((member) => {
+                      const memberStatus = getAccountStatus(member);
+                      const memberSuspended = member.account_status === 'suspended_payment';
+                      return (
+                        <TableRow key={member.user_id} className={`text-sm bg-muted/30 ${memberSuspended ? 'bg-destructive/5' : ''}`}>
+                          <TableCell className="font-medium pl-12">
+                            <span className="text-muted-foreground">└─</span> {member.first_name || member.last_name
+                              ? `${member.first_name || ''} ${member.last_name || ''}`.trim()
+                              : 'Unnamed'}
+                          </TableCell>
+                          <TableCell>{member.email}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">Team Member</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(member.created_at).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={memberStatus.variant} className="text-xs w-fit">
+                              {memberStatus.label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {member.role || 'staff'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-muted-foreground">-</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm font-medium">
+                              ${(member.amazon_revenue || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-muted-foreground">-</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-muted-foreground">-</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-muted-foreground">-</span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex gap-2 justify-end">
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => deleteAccount(
+                                  member.user_id, 
+                                  `${member.first_name || ''} ${member.last_name || ''}`.trim() || member.email || 'User'
+                                )}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    </>
                   );
                 })
               )}
@@ -595,7 +748,7 @@ export const AdminCustomers = () => {
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4">
             <p className="text-sm text-muted-foreground">
-              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, filteredCustomers.length)} of {filteredCustomers.length}
+              Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, activeCustomers.length)} of {activeCustomers.length}
             </p>
             <div className="flex gap-2">
               <Button
@@ -621,6 +774,124 @@ export const AdminCustomers = () => {
         )}
       </CardContent>
     </Card>
+
+      {/* Expired/Churned Customers Section */}
+      {expiredCustomers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Expired / Churned Customers ({expiredCustomers.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Last Plan</TableHead>
+                    <TableHead>Churn Date</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedExpiredCustomers.map((customer) => {
+                    const status = getAccountStatus(customer);
+                    const isSuspended = customer.account_status === 'suspended_payment';
+                    return (
+                      <TableRow key={customer.user_id} className={`text-sm ${isSuspended ? 'bg-destructive/5' : ''}`}>
+                        <TableCell className="font-medium">
+                          {customer.first_name || customer.last_name
+                            ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
+                            : 'Unnamed'}
+                        </TableCell>
+                        <TableCell>{customer.email}</TableCell>
+                        <TableCell>{customer.company || '-'}</TableCell>
+                        <TableCell>
+                          {new Date(customer.created_at).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={status.variant} className="text-xs w-fit">
+                            {status.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {customer.plan_override ? (
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {formatPlanName(customer.plan_override)}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {customer.churn_date ? (
+                            <span className="text-sm">
+                              {new Date(customer.churn_date).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => deleteAccount(
+                              customer.user_id, 
+                              `${customer.first_name || ''} ${customer.last_name || ''}`.trim() || customer.email || 'User'
+                            )}
+                          >
+                            Delete
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            
+            {expiredTotalPages > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <p className="text-sm text-muted-foreground">
+                  Showing {expiredStartIndex + 1} to {Math.min(expiredStartIndex + itemsPerPage, expiredCustomers.length)} of {expiredCustomers.length}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setExpiredCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={expiredCurrentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setExpiredCurrentPage(p => Math.min(expiredTotalPages, p + 1))}
+                    disabled={expiredCurrentPage === expiredTotalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
