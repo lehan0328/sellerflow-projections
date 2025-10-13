@@ -198,23 +198,20 @@ export function ReferralDashboardContent({ isDemo = false }: ReferralDashboardCo
                             </div>
                           </div>
                           <div className="space-y-2 ml-14">
-                            {tier.special ? (
+                            {tier.special && (
                               <p className="text-lg font-semibold text-primary">
                                 🎉 {tier.special}
                               </p>
-                            ) : (
-                              <>
-                                {tier.discount > 0 && (
-                                  <p className="text-sm">
-                                    💰 <span className="font-semibold">{tier.discount}% discount</span> for {tier.duration} months
-                                  </p>
-                                )}
-                                {tier.bonus > 0 && (
-                                  <p className="text-sm">
-                                    💵 <span className="font-semibold">${tier.bonus} cash bonus</span>
-                                  </p>
-                                )}
-                              </>
+                            )}
+                            {tier.discount > 0 && (
+                              <p className="text-sm">
+                                💰 <span className="font-semibold">{tier.discount}% discount</span> for {tier.duration} months
+                              </p>
+                            )}
+                            {tier.bonus > 0 && (
+                              <p className="text-sm">
+                                💵 <span className="font-semibold">${tier.bonus} cash bonus</span>
+                              </p>
                             )}
                           </div>
                         </div>
