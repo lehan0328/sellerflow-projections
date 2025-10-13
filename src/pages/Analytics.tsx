@@ -233,26 +233,28 @@ export default function Analytics() {
   const getDateRange = (rangeType: string) => {
     const now = new Date();
     const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
     
     switch (rangeType) {
       case "this-month":
-        return { start: startOfThisMonth, end: now };
+        return { start: startOfThisMonth, end: endOfThisMonth };
       case "last-month":
         return { 
           start: new Date(now.getFullYear(), now.getMonth() - 1, 1), 
-          end: new Date(now.getFullYear(), now.getMonth(), 0) 
+          end: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999) 
         };
       case "last-2-months":
-        return { start: new Date(now.getFullYear(), now.getMonth() - 2, 1), end: now };
+        return { start: new Date(now.getFullYear(), now.getMonth() - 2, 1), end: endOfThisMonth };
       case "last-3-months":
-        return { start: new Date(now.getFullYear(), now.getMonth() - 3, 1), end: now };
+        return { start: new Date(now.getFullYear(), now.getMonth() - 3, 1), end: endOfThisMonth };
       case "last-6-months":
-        return { start: new Date(now.getFullYear(), now.getMonth() - 6, 1), end: now };
+        return { start: new Date(now.getFullYear(), now.getMonth() - 6, 1), end: endOfThisMonth };
       case "ytd":
-        return { start: startOfYear, end: now };
+        return { start: startOfYear, end: endOfThisMonth };
       default:
-        return { start: startOfThisMonth, end: now };
+        return { start: startOfThisMonth, end: endOfThisMonth };
     }
   };
 
