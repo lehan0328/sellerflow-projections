@@ -575,13 +575,13 @@ export const AdminCustomers = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {customer.role && customer.role !== 'owner' ? (
-                          <Badge variant="outline" className="text-xs">
-                            Team
-                          </Badge>
-                        ) : customer.plan_override && ['starter', 'growing', 'professional', 'admin'].includes(customer.plan_override) ? (
+                        {customer.plan_override && ['starter', 'growing', 'professional', 'admin'].includes(customer.plan_override) ? (
                           <Badge variant="outline" className="text-xs capitalize">
                             {formatPlanName(customer.plan_override)}
+                          </Badge>
+                        ) : customer.role && customer.role !== 'owner' ? (
+                          <Badge variant="outline" className="text-xs">
+                            Team
                           </Badge>
                         ) : (
                           <span className="text-muted-foreground">No Plan</span>
