@@ -34,6 +34,8 @@ interface Customer {
   stripe_customer_id?: string;
   role?: string;
   account_owner_company?: string;
+  referral_code?: string;
+  affiliate_code?: string;
 }
 
 interface ConversionMetrics {
@@ -81,6 +83,20 @@ export const AdminCustomers = () => {
 
       const customersWithData = await Promise.all(
         (profiles || []).map(async (profile) => {
+          // Fetch referral code used by this customer
+          const { data: referralData } = await supabase
+            .from('referrals')
+            .select('referral_code')
+            .eq('referred_user_id', profile.user_id)
+            .maybeSingle();
+
+          // Fetch affiliate code used by this customer
+          const { data: affiliateData } = await supabase
+            .from('affiliate_referrals')
+            .select('affiliate_code')
+            .eq('referred_user_id', profile.user_id)
+            .maybeSingle();
+
           // Fetch user role
           const { data: userRole } = await supabase
             .from('user_roles')
@@ -150,7 +166,9 @@ export const AdminCustomers = () => {
             renewal_date: renewalDate,
             last_paid_date: lastPaidDate,
             role: userRole?.role,
-            account_owner_company: accountOwnerCompany
+            account_owner_company: accountOwnerCompany,
+            referral_code: referralData?.referral_code,
+            affiliate_code: affiliateData?.affiliate_code
           };
         })
       );
@@ -484,8 +502,17 @@ export const AdminCustomers = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        {customer.plan_override === 'referred_user_discount' ? (
-                          <span className="text-sm">10% off</span>
+                        {customer.referral_code || customer.affiliate_code ? (
+                          <div className="flex flex-col gap-1">
+                            <span className="text-sm font-medium">
+                              {customer.referral_code || customer.affiliate_code}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {customer.referral_code ? 'Referral' : 'Affiliate'} - 10% off
+                            </span>
+                          </div>
+                        ) : customer.plan_override === 'referred_user_discount' ? (
+                          <span className="text-sm">10% off (legacy)</span>
                         ) : customer.discount_redeemed_at ? (
                           <span className="text-sm">10% off</span>
                         ) : (
