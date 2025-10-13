@@ -21,6 +21,8 @@ export const PaymentAccessControl = ({ children }: PaymentAccessControlProps) =>
 
   const checkAccountStatus = async () => {
     try {
+      setIsChecking(true);
+      
       // Skip check for auth and payment pages
       if (location.pathname === '/auth' || location.pathname === '/payment-required') {
         setIsChecking(false);
@@ -39,23 +41,34 @@ export const PaymentAccessControl = ({ children }: PaymentAccessControlProps) =>
         .from('profiles')
         .select('account_status, account_id, is_account_owner')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching profile:', error);
+        setIsChecking(false);
+        return;
+      }
 
-      let accountStatus = profile?.account_status || 'active';
+      if (!profile) {
+        console.warn('No profile found for user');
+        setIsChecking(false);
+        return;
+      }
+
+      let accountStatus = profile.account_status || 'active';
 
       // If user is part of a team (not account owner), check account owner's status
-      if (profile?.account_id && !profile?.is_account_owner) {
-        const { data: ownerProfile } = await supabase
+      if (profile.account_id && !profile.is_account_owner) {
+        const { data: ownerProfile, error: ownerError } = await supabase
           .from('profiles')
           .select('account_status')
           .eq('account_id', profile.account_id)
           .eq('is_account_owner', true)
-          .single();
+          .maybeSingle();
 
-        // Use account owner's status for team members
-        if (ownerProfile) {
+        if (ownerError) {
+          console.error('Error fetching owner profile:', ownerError);
+        } else if (ownerProfile) {
           accountStatus = ownerProfile.account_status;
         }
       }
