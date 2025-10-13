@@ -19,6 +19,8 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 import { useSubscription } from "@/hooks/useSubscription";
 import { VendorForm } from "./vendor-form";
 import { supabase } from "@/integrations/supabase/client";
+import { useCategories } from "@/hooks/useCategories";
+import { AddCategoryDialog } from "./add-category-dialog";
 interface Vendor {
   id: string;
   name: string;
@@ -49,6 +51,7 @@ export const PurchaseOrderForm = ({
   onDeleteAllVendors,
   onAddVendor
 }: PurchaseOrderFormProps) => {
+  const { categories, addCategory } = useCategories('expense');
   const {
     creditCards
   } = useCreditCards();
@@ -93,6 +96,7 @@ export const PurchaseOrderForm = ({
   const [vendorSearchTerm, setVendorSearchTerm] = useState("");
   const [showVendorForm, setShowVendorForm] = useState(false);
   const [extractedVendorName, setExtractedVendorName] = useState<string>("");
+  const [showAddCategory, setShowAddCategory] = useState(false);
   const [saveToStorage, setSaveToStorage] = useState(() => {
     const saved = localStorage.getItem('po-save-to-storage');
     return saved !== null ? saved === 'true' : true;
@@ -103,7 +107,6 @@ export const PurchaseOrderForm = ({
   const [isDueDatePickerOpen, setIsDueDatePickerOpen] = useState(false);
   const [isDeliveryDatePickerOpen, setIsDeliveryDatePickerOpen] = useState(false);
   const [openPaymentDatePickers, setOpenPaymentDatePickers] = useState<Record<string, boolean>>({});
-  const categories = ["Inventory", "Packaging Materials", "Marketing/PPC", "Shipping & Logistics", "Professional Services", "Other"];
 
   // Get unique vendors first, then filter and sort alphabetically
   const uniqueVendors = vendors.filter((vendor, index, self) => index === self.findIndex(v => v.id === vendor.id)).sort((a, b) => a.name.localeCompare(b.name));
@@ -1000,18 +1003,57 @@ export const PurchaseOrderForm = ({
             {/* Category */}
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select value={formData.category} onValueChange={value => setFormData(prev => ({
-              ...prev,
-              category: value
-            }))}>
+              <Select 
+                value={formData.category}
+                onValueChange={(value) => {
+                  if (value === "__add_new__") {
+                    setShowAddCategory(true);
+                  } else {
+                    setFormData(prev => ({
+                      ...prev,
+                      category: value
+                    }));
+                  }
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map(category => <SelectItem key={category} value={category}>{category}</SelectItem>)}
+                  <div className="border-b pb-1 mb-1">
+                    <SelectItem value="__add_new__" className="text-primary font-medium">
+                      <div className="flex items-center gap-2">
+                        <Plus className="h-4 w-4" />
+                        Add New Category
+                      </div>
+                    </SelectItem>
+                  </div>
+                  {categories.map(category => (
+                    <SelectItem key={category.id} value={category.name}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{category.name}</span>
+                        {category.is_default && (
+                          <span className="text-xs text-muted-foreground ml-2">(default)</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+
+            <AddCategoryDialog
+              open={showAddCategory}
+              onOpenChange={setShowAddCategory}
+              onAddCategory={async (name) => {
+                await addCategory(name);
+                setFormData(prev => ({
+                  ...prev,
+                  category: name
+                }));
+              }}
+              type="expense"
+            />
 
             {/* Description */}
             <div className="space-y-2">
