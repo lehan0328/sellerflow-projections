@@ -72,8 +72,12 @@ export const PurchaseOrderForm = ({
     netTermsDays: "30" as "30" | "60" | "90" | "custom",
     customDays: "",
     paymentMethod: "bank-transfer" as "bank-transfer" | "credit-card",
-    selectedCreditCard: ""
+    selectedCreditCard: "",
+    splitPayment: false
   });
+  const [cardSplits, setCardSplits] = useState<Array<{ cardId: string; amount: string }>>([
+    { cardId: "", amount: "" }
+  ]);
   const [paymentSchedule, setPaymentSchedule] = useState<PaymentSchedule[]>([{
     id: "1",
     amount: "",
@@ -121,8 +125,10 @@ export const PurchaseOrderForm = ({
         netTermsDays: "30",
         customDays: "",
         paymentMethod: "bank-transfer",
-        selectedCreditCard: ""
+        selectedCreditCard: "",
+        splitPayment: false
       });
+      setCardSplits([{ cardId: "", amount: "" }]);
       setPaymentSchedule([{
         id: "1",
         amount: "",
@@ -818,70 +824,193 @@ export const PurchaseOrderForm = ({
 
               {/* Credit Card Selection */}
               {formData.paymentMethod === "credit-card" && <div className="space-y-3 p-4 bg-accent/10 rounded-lg border">
-                  <div className="space-y-2">
-                    <Label>Select Credit Card</Label>
-                    <Select value={formData.selectedCreditCard} onValueChange={value => setFormData(prev => ({
-                  ...prev,
-                  selectedCreditCard: value
-                }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a credit card" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {creditCards.filter(card => card.is_active).map(card => <SelectItem key={card.id} value={card.id}>
-                            <div className="flex items-center justify-between w-full">
-                              <span className="font-medium">{card.account_name}</span>
-                              <span className="text-sm text-muted-foreground ml-2">
-                                Available: ${card.available_credit.toFixed(2)}
-                              </span>
-                            </div>
-                          </SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                  {/* Split Payment Toggle */}
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="split-payment">Split between multiple cards</Label>
+                    <Switch 
+                      id="split-payment"
+                      checked={formData.splitPayment}
+                      onCheckedChange={(checked) => {
+                        setFormData(prev => ({ ...prev, splitPayment: checked }));
+                        if (!checked) {
+                          setCardSplits([{ cardId: "", amount: "" }]);
+                        }
+                      }}
+                    />
                   </div>
 
-                  {/* Credit Card Info */}
-                  {formData.selectedCreditCard && (() => {
-                const selectedCard = creditCards.find(card => card.id === formData.selectedCreditCard);
-                const orderAmount = parseFloat(formData.amount) || 0;
-                const remainingCredit = selectedCard ? selectedCard.available_credit - orderAmount : 0;
-                const hasInsufficientCredit = selectedCard ? selectedCard.available_credit < orderAmount : false;
-                return selectedCard ? <div className="space-y-2">
-                        <div className="text-sm">
-                          <div className="flex justify-between">
-                            <span>Credit Limit:</span>
-                            <span className="font-medium">${selectedCard.credit_limit.toFixed(2)}</span>
+                  {!formData.splitPayment ? (
+                    // Single Card Selection
+                    <>
+                      <div className="space-y-2">
+                        <Label>Select Credit Card</Label>
+                        <Select value={formData.selectedCreditCard} onValueChange={value => setFormData(prev => ({
+                      ...prev,
+                      selectedCreditCard: value
+                    }))}>
+                          <SelectTrigger className="bg-background">
+                            <SelectValue placeholder="Choose a credit card" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-background z-50">
+                            {creditCards
+                              .filter(card => card.is_active)
+                              .sort((a, b) => (a.priority || 3) - (b.priority || 3))
+                              .map(card => <SelectItem key={card.id} value={card.id}>
+                                <div className="flex items-center gap-2 w-full">
+                                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                                    {card.priority || 3}
+                                  </span>
+                                  <span className="font-medium">{card.account_name}</span>
+                                  <span className="text-sm text-muted-foreground ml-auto">
+                                    ${card.available_credit.toLocaleString()}
+                                  </span>
+                                </div>
+                              </SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Credit Card Info */}
+                      {formData.selectedCreditCard && (() => {
+                    const selectedCard = creditCards.find(card => card.id === formData.selectedCreditCard);
+                    const orderAmount = parseFloat(formData.amount) || 0;
+                    const remainingCredit = selectedCard ? selectedCard.available_credit - orderAmount : 0;
+                    const hasInsufficientCredit = selectedCard ? selectedCard.available_credit < orderAmount : false;
+                    return selectedCard ? <div className="space-y-2">
+                            <div className="text-sm">
+                              <div className="flex justify-between">
+                                <span>Credit Limit:</span>
+                                <span className="font-medium">${selectedCard.credit_limit.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Available Credit:</span>
+                                <span className="font-medium">${selectedCard.available_credit.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Order Amount:</span>
+                                <span className="font-medium">${orderAmount.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between border-t pt-1 mt-2">
+                                <span>Remaining After Purchase:</span>
+                                <span className={cn("font-semibold", hasInsufficientCredit ? "text-red-600" : remainingCredit < 1000 ? "text-yellow-600" : "text-green-600")}>
+                                  ${remainingCredit.toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {hasInsufficientCredit && <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                  <span className="text-sm font-medium text-red-800">
+                                    Insufficient Credit Available
+                                  </span>
+                                </div>
+                              </div>}
+
+                            <div className="text-xs text-muted-foreground">
+                              * Credit will be reserved from the purchase order date
+                            </div>
+                          </div> : null;
+                  })()}
+                    </>
+                  ) : (
+                    // Split Payment UI
+                    <div className="space-y-3">
+                      <Label>Split Transaction</Label>
+                      {cardSplits.map((split, index) => (
+                        <div key={index} className="flex gap-2 items-end">
+                          <div className="flex-1">
+                            <Select 
+                              value={split.cardId} 
+                              onValueChange={(value) => {
+                                const newSplits = [...cardSplits];
+                                newSplits[index].cardId = value;
+                                setCardSplits(newSplits);
+                              }}
+                            >
+                              <SelectTrigger className="bg-background">
+                                <SelectValue placeholder="Choose card" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-background z-50">
+                                {creditCards
+                                  .filter(card => card.is_active && !cardSplits.some((s, i) => i !== index && s.cardId === card.id))
+                                  .sort((a, b) => (a.priority || 3) - (b.priority || 3))
+                                  .map(card => (
+                                    <SelectItem key={card.id} value={card.id}>
+                                      <div className="flex items-center gap-2">
+                                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                                          {card.priority || 3}
+                                        </span>
+                                        <span className="font-medium">{card.account_name}</span>
+                                        <span className="text-sm text-muted-foreground ml-auto">
+                                          ${card.available_credit.toLocaleString()}
+                                        </span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
                           </div>
-                          <div className="flex justify-between">
-                            <span>Available Credit:</span>
-                            <span className="font-medium">${selectedCard.available_credit.toFixed(2)}</span>
+                          <div className="w-32">
+                            <Input
+                              type="number"
+                              placeholder="Amount"
+                              value={split.amount}
+                              onChange={(e) => {
+                                const newSplits = [...cardSplits];
+                                newSplits[index].amount = e.target.value;
+                                setCardSplits(newSplits);
+                              }}
+                            />
                           </div>
-                          <div className="flex justify-between">
-                            <span>Order Amount:</span>
-                            <span className="font-medium">${orderAmount.toFixed(2)}</span>
+                          {cardSplits.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                setCardSplits(cardSplits.filter((_, i) => i !== index));
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCardSplits([...cardSplits, { cardId: "", amount: "" }])}
+                        disabled={cardSplits.length >= creditCards.filter(c => c.is_active).length}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Card
+                      </Button>
+
+                      {/* Split Summary */}
+                      {cardSplits.some(s => s.amount) && (
+                        <div className="bg-accent/20 rounded-lg p-3 space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span>Total Amount:</span>
+                            <span className="font-semibold">${parseFloat(formData.amount || "0").toLocaleString()}</span>
                           </div>
-                          <div className="flex justify-between border-t pt-1 mt-2">
-                            <span>Remaining After Purchase:</span>
-                            <span className={cn("font-semibold", hasInsufficientCredit ? "text-red-600" : remainingCredit < 1000 ? "text-yellow-600" : "text-green-600")}>
-                              ${remainingCredit.toFixed(2)}
+                          <div className="flex justify-between text-sm">
+                            <span>Split Total:</span>
+                            <span className={cn(
+                              "font-semibold",
+                              cardSplits.reduce((sum, s) => sum + parseFloat(s.amount || "0"), 0) === parseFloat(formData.amount || "0") 
+                                ? "text-green-600" 
+                                : "text-red-600"
+                            )}>
+                              ${cardSplits.reduce((sum, s) => sum + parseFloat(s.amount || "0"), 0).toLocaleString()}
                             </span>
                           </div>
                         </div>
-                        
-                        {hasInsufficientCredit && <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                              <span className="text-sm font-medium text-red-800">
-                                Insufficient Credit Available
-                              </span>
-                            </div>
-                          </div>}
-
-                        <div className="text-xs text-muted-foreground">
-                          * Credit will be reserved from the purchase order date
-                        </div>
-                      </div> : null;
-              })()}
+                      )}
+                    </div>
+                  )}
                   
                   {creditCards.filter(card => card.is_active).length === 0 && <div className="text-center text-sm text-muted-foreground py-4">
                       No active credit cards found. Please add a credit card in Settings.
