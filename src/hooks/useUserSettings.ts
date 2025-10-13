@@ -71,6 +71,17 @@ export const useUserSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Get user's account_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!profile?.account_id) {
+        throw new Error('Account not found');
+      }
+
       // Map preferences to database column names
       const dbUpdates: Record<string, any> = {};
       if (preferences.showCashFlowLine !== undefined) dbUpdates.chart_show_cashflow_line = preferences.showCashFlowLine;
@@ -87,7 +98,7 @@ export const useUserSettings = () => {
       const { error } = await supabase
         .from('user_settings')
         .update(dbUpdates)
-        .eq('user_id', user.id);
+        .eq('account_id', profile.account_id);
 
       if (error) throw error;
 
