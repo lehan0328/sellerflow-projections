@@ -26,6 +26,7 @@ const Support = () => {
   const [showAIChat, setShowAIChat] = useState(true);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [showTicketDialog, setShowTicketDialog] = useState(false);
+  const [ticketViewMode, setTicketViewMode] = useState<'open' | 'closed'>('open');
   
   const [formData, setFormData] = useState({
     subject: "",
@@ -243,6 +244,25 @@ const Support = () => {
               ticket.status === 'needs_response'
   );
 
+  // Filter tickets based on view mode
+  const filteredTickets = tickets.filter(ticket => {
+    const isOpen = ticket.status === 'open' || 
+                   ticket.status === 'in_progress' || 
+                   ticket.status === 'needs_response';
+    return ticketViewMode === 'open' ? isOpen : !isOpen;
+  });
+
+  const openTicketsCount = tickets.filter(ticket => 
+    ticket.status === 'open' || 
+    ticket.status === 'in_progress' || 
+    ticket.status === 'needs_response'
+  ).length;
+
+  const closedTicketsCount = tickets.filter(ticket => 
+    ticket.status === 'resolved' || 
+    ticket.status === 'closed'
+  ).length;
+
   useEffect(() => {
     loadTickets();
   }, []);
@@ -354,35 +374,62 @@ const Support = () => {
                       View and track your support requests
                     </CardDescription>
                   </div>
-                  {tickets.length > 0 && (
-                    <Badge variant="secondary" className="text-sm px-3 py-1">
-                      {tickets.length} {tickets.length === 1 ? 'Ticket' : 'Tickets'}
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-0 border rounded-md">
+                      <Button
+                        variant={ticketViewMode === 'open' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setTicketViewMode('open')}
+                        className="rounded-r-none border-r"
+                      >
+                        Open ({openTicketsCount})
+                      </Button>
+                      <Button
+                        variant={ticketViewMode === 'closed' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setTicketViewMode('closed')}
+                        className="rounded-l-none"
+                      >
+                        Closed ({closedTicketsCount})
+                      </Button>
+                    </div>
+                    {tickets.length > 0 && (
+                      <Badge variant="secondary" className="text-sm px-3 py-1">
+                        {filteredTickets.length} {filteredTickets.length === 1 ? 'Ticket' : 'Tickets'}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                {tickets.length === 0 ? (
+                {filteredTickets.length === 0 ? (
                   <div className="text-center py-16 animate-fade-in">
                     <div className="mx-auto h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
                       <MessageSquare className="h-10 w-10 text-primary" />
                     </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-2">No support tickets yet</h3>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">
+                      {ticketViewMode === 'open' ? 'No open support tickets' : 'No closed support tickets'}
+                    </h3>
                     <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                      Create your first support ticket to get help from our team
+                      {ticketViewMode === 'open' 
+                        ? 'Create your first support ticket to get help from our team'
+                        : 'Your resolved and closed tickets will appear here'
+                      }
                     </p>
-                    <Button 
-                      onClick={() => setShowNewTicket(true)}
-                      className="hover-scale"
-                      disabled={hasOpenTicket}
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      {hasOpenTicket ? "Open Ticket Pending" : "Create Ticket"}
-                    </Button>
+                    {ticketViewMode === 'open' && (
+                      <Button 
+                        onClick={() => setShowNewTicket(true)}
+                        className="hover-scale"
+                        disabled={hasOpenTicket}
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        {hasOpenTicket ? "Open Ticket Pending" : "Create Ticket"}
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="grid gap-4">
-                    {tickets.map((ticket, index) => (
+                    {filteredTickets.map((ticket, index) => (
                       <div
                         key={ticket.id}
                         className="group relative rounded-xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-muted/20 p-6 hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer animate-fade-in"
