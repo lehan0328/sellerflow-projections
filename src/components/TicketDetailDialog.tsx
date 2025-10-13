@@ -147,7 +147,7 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
           )}
 
           {/* Messages */}
-          <ScrollArea className="flex-1 pr-4">
+          <ScrollArea className="flex-1 pr-4 h-[400px]">
             <div className="space-y-4">
               {messages.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
