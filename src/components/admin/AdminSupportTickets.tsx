@@ -35,11 +35,14 @@ export const AdminSupportTickets = () => {
       const counts: Record<string, number> = {};
       
       for (const ticket of tickets) {
+        // Count only customer messages created after admin last viewed
+        const ticketData = ticket as any;
         const { count } = await supabase
           .from('ticket_messages')
           .select('*', { count: 'exact', head: true })
           .eq('ticket_id', ticket.id)
-          .eq('user_id', ticket.user_id);
+          .eq('user_id', ticket.user_id)
+          .gte('created_at', ticketData.admin_last_viewed_at || ticket.created_at);
         
         counts[ticket.id] = count || 0;
       }
@@ -58,6 +61,21 @@ export const AdminSupportTickets = () => {
     await updateTicket(ticketId, updates);
   };
 
+  const handleViewMessages = async (ticket: any) => {
+    setSelectedTicket(ticket);
+    setShowMessagesDialog(true);
+    
+    // Mark as viewed by admin
+    await supabase
+      .from('support_tickets')
+      .update({ admin_last_viewed_at: new Date().toISOString() })
+      .eq('id', ticket.id);
+    
+    // Reset the count for this ticket
+    setMessageCounts(prev => ({ ...prev, [ticket.id]: 0 }));
+  };
+
+
   if (isLoading) {
     return (
       <Card>
@@ -67,11 +85,6 @@ export const AdminSupportTickets = () => {
       </Card>
     );
   }
-
-  const handleViewMessages = (ticket: any) => {
-    setSelectedTicket(ticket);
-    setShowMessagesDialog(true);
-  };
 
   return (
     <>

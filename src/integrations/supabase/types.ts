@@ -1375,6 +1375,7 @@ export type Database = {
       }
       support_tickets: {
         Row: {
+          admin_last_viewed_at: string | null
           assigned_to: string | null
           category: string | null
           created_at: string
@@ -1389,6 +1390,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          admin_last_viewed_at?: string | null
           assigned_to?: string | null
           category?: string | null
           created_at?: string
@@ -1403,6 +1405,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          admin_last_viewed_at?: string | null
           assigned_to?: string | null
           category?: string | null
           created_at?: string
