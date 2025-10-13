@@ -667,6 +667,55 @@ export const CashFlowInsights = ({
                   )}
                 </div>
 
+                {/* Next Buying Opportunity Preview */}
+                {nextBuyingOpportunityBalance && nextBuyingOpportunityBalance > 0 && (
+                  <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-2 border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center gap-2 mb-3">
+                      <TrendingUp className="h-5 w-5 text-blue-600" />
+                      <h5 className="font-semibold text-sm">Next Buying Opportunity</h5>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-muted-foreground">Available Amount</span>
+                        <span className="text-xl font-bold text-blue-600">
+                          ${nextBuyingOpportunityBalance.toLocaleString()}
+                        </span>
+                      </div>
+                      {nextBuyingOpportunityDate && (
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-muted-foreground">Low Point</span>
+                          <span className="font-medium">
+                            {(() => {
+                              const [year, month, day] = nextBuyingOpportunityDate.split('-').map(Number);
+                              const date = new Date(year, month - 1, day);
+                              return date.toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              });
+                            })()}
+                          </span>
+                        </div>
+                      )}
+                      {nextBuyingOpportunityAvailableDate && (
+                        <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800 mt-2">
+                          <span className="text-xs font-medium text-muted-foreground">Earliest Purchase</span>
+                          <span className="text-sm font-semibold text-green-600">
+                            {(() => {
+                              const [year, month, day] = nextBuyingOpportunityAvailableDate.split('-').map(Number);
+                              const date = new Date(year, month - 1, day);
+                              return date.toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric'
+                              });
+                            })()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2 text-sm">
                   
                 <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
