@@ -338,6 +338,32 @@ export const AdminCustomers = () => {
     });
   };
 
+  const getAccountStatus = (customer: Customer) => {
+    const now = new Date();
+    
+    // Check for admin status
+    if (customer.plan_override === 'admin') {
+      return { label: 'Admin', variant: 'default' as const };
+    }
+    
+    // Check trial status first (active trial period)
+    if (customer.trial_end && new Date(customer.trial_end) > now) {
+      return { label: 'Trial', variant: 'secondary' as const };
+    }
+    
+    // Check for actual paid plans (not discounts or trial-related overrides)
+    if (customer.plan_override && ['starter', 'growing', 'professional'].includes(customer.plan_override)) {
+      return { label: 'Paid', variant: 'default' as const };
+    }
+    
+    // Check if suspended
+    if (customer.account_status === 'suspended_payment') {
+      return { label: 'Suspended', variant: 'destructive' as const };
+    }
+    
+    return { label: 'Expired', variant: 'destructive' as const };
+  };
+
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch = customer.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -389,32 +415,6 @@ export const AdminCustomers = () => {
       </Card>
     );
   }
-
-  const getAccountStatus = (customer: Customer) => {
-    const now = new Date();
-    
-    // Check for admin status
-    if (customer.plan_override === 'admin') {
-      return { label: 'Admin', variant: 'default' as const };
-    }
-    
-    // Check trial status first (active trial period)
-    if (customer.trial_end && new Date(customer.trial_end) > now) {
-      return { label: 'Trial', variant: 'secondary' as const };
-    }
-    
-    // Check for actual paid plans (not discounts or trial-related overrides)
-    if (customer.plan_override && ['starter', 'growing', 'professional'].includes(customer.plan_override)) {
-      return { label: 'Paid', variant: 'default' as const };
-    }
-    
-    // Check if suspended
-    if (customer.account_status === 'suspended_payment') {
-      return { label: 'Suspended', variant: 'destructive' as const };
-    }
-    
-    return { label: 'Expired', variant: 'destructive' as const };
-  };
 
   const formatPlanName = (planOverride: string | undefined) => {
     if (!planOverride) return '-';
