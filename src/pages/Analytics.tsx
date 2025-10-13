@@ -264,29 +264,37 @@ export default function Analytics() {
       dateRange: vendorDateRange,
       start: start.toISOString(),
       end: end.toISOString(),
-      totalVendorTransactions: vendorTransactions.length
+      totalVendorTransactions: vendorTransactions.length,
+      totalVendors: vendors.length
+    });
+    
+    // Initialize all vendor categories with 0
+    vendors.forEach(vendor => {
+      const category = vendor.category || 'Uncategorized';
+      if (!categoryTotals[category]) {
+        categoryTotals[category] = 0;
+      }
     });
     
     // Add amounts from vendor transactions (both pending and completed)
-    vendorTransactions
-      .forEach(tx => {
-        const txDate = new Date(tx.dueDate || tx.transactionDate);
-        const isInRange = txDate >= start && txDate <= end;
-        
-        console.log('📊 Transaction check:', {
-          vendor: tx.vendorName,
-          amount: tx.amount,
-          txDate: txDate.toISOString(),
-          isInRange,
-          status: tx.status,
-          archived: tx.archived
-        });
-        
-        if (isInRange) {
-          const category = tx.category || 'Uncategorized';
-          categoryTotals[category] = (categoryTotals[category] || 0) + tx.amount;
-        }
+    vendorTransactions.forEach(tx => {
+      const txDate = new Date(tx.dueDate || tx.transactionDate);
+      const isInRange = txDate >= start && txDate <= end;
+      
+      console.log('📊 Transaction check:', {
+        vendor: tx.vendorName,
+        amount: tx.amount,
+        txDate: txDate.toISOString(),
+        isInRange,
+        status: tx.status,
+        archived: tx.archived
       });
+      
+      if (isInRange) {
+        const category = tx.category || 'Uncategorized';
+        categoryTotals[category] = (categoryTotals[category] || 0) + tx.amount;
+      }
+    });
 
     console.log('📊 Category totals:', categoryTotals);
 
@@ -297,32 +305,40 @@ export default function Analytics() {
       }))
       .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value);
-  }, [vendorTransactions, vendorDateRange]);
+  }, [vendors, vendorTransactions, vendorDateRange]);
 
   // Top vendors by spending
   const topVendors = useMemo(() => {
     const vendorTotals: Record<string, number> = {};
     const { start, end } = getDateRange(vendorDateRange);
     
+    // Initialize all vendors with 0
+    vendors.forEach(vendor => {
+      vendorTotals[vendor.name] = 0;
+    });
+    
     // Add amounts from vendor transactions (both pending and completed)
-    vendorTransactions
-      .forEach(tx => {
-        const txDate = new Date(tx.dueDate || tx.transactionDate);
-        
-        if (txDate >= start && txDate <= end) {
-          const vendorName = tx.vendorName || 'Unknown Vendor';
-          vendorTotals[vendorName] = (vendorTotals[vendorName] || 0) + tx.amount;
-        }
-      });
+    vendorTransactions.forEach(tx => {
+      const txDate = new Date(tx.dueDate || tx.transactionDate);
+      
+      if (txDate >= start && txDate <= end) {
+        const vendorName = tx.vendorName || 'Unknown Vendor';
+        vendorTotals[vendorName] = (vendorTotals[vendorName] || 0) + tx.amount;
+      }
+    });
     
     console.log('📊 Vendor totals:', vendorTotals);
+    console.log('📊 All vendors:', vendors.map(v => v.name));
+    console.log('📊 Transactions in range:', vendorTransactions.filter(tx => {
+      const txDate = new Date(tx.dueDate || tx.transactionDate);
+      return txDate >= start && txDate <= end;
+    }));
     
     return Object.entries(vendorTotals)
       .map(([name, amount]) => ({ name, amount }))
-      .filter(item => item.amount > 0)
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 10);
-  }, [vendorTransactions, vendorDateRange]);
+  }, [vendors, vendorTransactions, vendorDateRange]);
 
   // Cash flow trend (income vs expenses over time)
   const cashFlowData = useMemo(() => {
