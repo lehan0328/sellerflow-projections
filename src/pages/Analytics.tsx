@@ -122,6 +122,7 @@ export default function Analytics() {
   const { amazonPayouts } = useAmazonPayouts();
   const { accounts } = useBankAccounts();
   const [vendorDateRange, setVendorDateRange] = useState<string>("this-month");
+  const [incomeDateRange, setIncomeDateRange] = useState<string>("this-month");
 
   // Calculate key metrics
   const metrics = useMemo(() => {
@@ -192,7 +193,7 @@ export default function Analytics() {
     };
   }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts]);
 
-  // Revenue over time (last 6 months) - includes Amazon payouts
+  // Revenue over time (last 6 months) - includes Amazon payouts and recurring income
   const revenueData = useMemo(() => {
     const monthlyData: Record<string, number> = {};
     const now = new Date();
@@ -205,15 +206,13 @@ export default function Analytics() {
       monthlyData[key] = 0;
     }
 
-    // Aggregate received income from last 6 months
+    // Aggregate income from last 6 months - filter by payment date
     incomeItems.forEach(item => {
-      if (item.status === 'received') {
-        const date = new Date(item.paymentDate);
-        if (date >= sixMonthsAgo) {
-          const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-          if (monthlyData.hasOwnProperty(key)) {
-            monthlyData[key] += item.amount;
-          }
+      const paymentDate = new Date(item.paymentDate);
+      if (paymentDate >= sixMonthsAgo) {
+        const key = paymentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (monthlyData.hasOwnProperty(key)) {
+          monthlyData[key] += item.amount;
         }
       }
     });
@@ -247,6 +246,59 @@ export default function Analytics() {
       revenue
     }));
   }, [incomeItems, amazonPayouts, dbTransactions]);
+
+  // Income breakdown by source (filtered by date range)
+  const incomeBySource = useMemo(() => {
+    const { start, end } = getDateRange(incomeDateRange);
+    const sourceData: Record<string, number> = {
+      'Customer Payments': 0,
+      'Sales Orders': 0,
+      'Recurring Income': 0,
+      'Amazon Payouts': 0,
+      'Other Income': 0
+    };
+
+    // Income items filtered by payment date
+    incomeItems.forEach(item => {
+      const paymentDate = new Date(item.paymentDate);
+      if (paymentDate >= start && paymentDate <= end) {
+        if (item.isRecurring) {
+          sourceData['Recurring Income'] += item.amount;
+        } else if (item.source === 'Amazon') {
+          sourceData['Amazon Payouts'] += item.amount;
+        } else if (item.category) {
+          sourceData[item.category] = (sourceData[item.category] || 0) + item.amount;
+        } else {
+          sourceData['Other Income'] += item.amount;
+        }
+      }
+    });
+
+    // Amazon payouts filtered by payout date
+    amazonPayouts.forEach(payout => {
+      const payoutDate = new Date(payout.payout_date);
+      if (payoutDate >= start && payoutDate <= end) {
+        sourceData['Amazon Payouts'] += payout.total_amount || 0;
+      }
+    });
+
+    // Completed sales orders and customer payments filtered by transaction date
+    dbTransactions.forEach(tx => {
+      const txDate = new Date(tx.transactionDate);
+      if (txDate >= start && txDate <= end) {
+        if (tx.type === 'customer_payment' && tx.status === 'completed') {
+          sourceData['Customer Payments'] += tx.amount;
+        } else if (tx.type === 'sales_order' && tx.status === 'completed') {
+          sourceData['Sales Orders'] += tx.amount;
+        }
+      }
+    });
+
+    return Object.entries(sourceData)
+      .map(([name, value]) => ({ name, value }))
+      .filter(item => item.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [incomeItems, amazonPayouts, dbTransactions, incomeDateRange]);
 
   // Expense breakdown by vendor category
   // Helper to get date range
@@ -515,18 +567,62 @@ export default function Analytics() {
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Revenue Trend (Last 6 Months)</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Income Breakdown by Source</CardTitle>
+                  <Select value={incomeDateRange} onValueChange={setIncomeDateRange}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="this-month">This Month</SelectItem>
+                      <SelectItem value="last-month">Last Month</SelectItem>
+                      <SelectItem value="last-2-months">Last 2 Months</SelectItem>
+                      <SelectItem value="last-3-months">Last 3 Months</SelectItem>
+                      <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+                      <SelectItem value="ytd">Year to Date</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={revenueData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
+                  <PieChart>
+                    <Pie
+                      data={incomeBySource}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {incomeBySource.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
                     <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
-                    <Area type="monotone" dataKey="revenue" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.3} />
-                  </AreaChart>
+                  </PieChart>
                 </ResponsiveContainer>
+                
+                <div className="mt-6 space-y-3">
+                  <h4 className="text-sm font-semibold text-muted-foreground">Total Income by Source</h4>
+                  {incomeBySource.map((source, index) => (
+                    <div key={source.name} className="flex items-center justify-between border-b border-border pb-2">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        />
+                        <span className="text-sm font-medium">{source.name}</span>
+                      </div>
+                      <span className="text-sm font-semibold">${source.value.toLocaleString()}</span>
+                    </div>
+                  ))}
+                  {incomeBySource.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">No income in this period</p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
