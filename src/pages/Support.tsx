@@ -172,6 +172,12 @@ const Support = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Check if user already has an open ticket
+    if (hasOpenTicket) {
+      toast.error("You already have an open ticket. Please wait for it to be resolved before creating a new one.");
+      return;
+    }
+    
     if (!formData.subject.trim() || !formData.message.trim()) {
       toast.error("Please fill in all required fields");
       return;
@@ -229,6 +235,13 @@ const Support = () => {
       setTickets(data);
     }
   };
+
+  // Check if user has any open tickets
+  const hasOpenTicket = tickets.some(
+    ticket => ticket.status === 'open' || 
+              ticket.status === 'in_progress' || 
+              ticket.status === 'needs_response'
+  );
 
   useEffect(() => {
     loadTickets();
@@ -316,9 +329,18 @@ const Support = () => {
               {showAIChat ? "Hide" : "Show"} AI Assistant
             </Button>
             {user ? (
-              <Button onClick={() => setShowNewTicket(!showNewTicket)}>
+              <Button 
+                onClick={() => {
+                  if (hasOpenTicket) {
+                    toast.error("You already have an open ticket. Please wait for it to be resolved before creating a new one.");
+                  } else {
+                    setShowNewTicket(!showNewTicket);
+                  }
+                }}
+                disabled={hasOpenTicket}
+              >
                 <Send className="h-4 w-4 mr-2" />
-                New Ticket
+                {hasOpenTicket ? "Open Ticket Pending" : "New Ticket"}
               </Button>
             ) : (
               <Button asChild>
