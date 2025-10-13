@@ -128,7 +128,7 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
           </div>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden min-h-0">
           {/* Original ticket message - acts as divider */}
           <div className="mb-3 p-3 bg-muted/50 rounded-lg flex-shrink-0 border-b-2 border-border">
             <p className="text-xs font-medium mb-1">Original Message:</p>
@@ -148,9 +148,8 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
           )}
 
           {/* Messages - scrollable area */}
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <ScrollArea className="h-full pr-4">
-              <div className="space-y-3">
+          <div className="flex-1 overflow-auto min-h-0">
+            <div className="space-y-3 pr-4">
               {messages.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
                   No responses yet. Our team will respond soon.
@@ -200,8 +199,7 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
               )}
                 <div ref={messagesEndRef} />
               </div>
-            </ScrollArea>
-          </div>
+            </div>
 
           {/* Reply form - disabled if ticket is closed */}
           {!isTicketClosed && (
