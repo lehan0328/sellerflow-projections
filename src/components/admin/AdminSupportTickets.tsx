@@ -111,16 +111,29 @@ export const AdminSupportTickets = () => {
       <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <CardTitle>Support Tickets</CardTitle>
-        <Select value={ticketView} onValueChange={(value: any) => setTicketView(value)}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="open">Open ({openTickets.length})</SelectItem>
-            <SelectItem value="needs_response">Need Response ({needsResponseTickets.length})</SelectItem>
-            <SelectItem value="closed">Closed ({closedTickets.length})</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2">
+          <Button
+            variant={ticketView === 'open' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setTicketView('open')}
+          >
+            Open ({openTickets.length})
+          </Button>
+          <Button
+            variant={ticketView === 'needs_response' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setTicketView('needs_response')}
+          >
+            Need Response ({needsResponseTickets.length})
+          </Button>
+          <Button
+            variant={ticketView === 'closed' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setTicketView('closed')}
+          >
+            Closed ({closedTickets.length})
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
