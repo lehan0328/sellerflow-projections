@@ -41,6 +41,7 @@ import { RecurringExpenseManagement } from "@/components/settings/recurring-expe
 import { DataExport } from "@/components/settings/data-export";
 import { BillingInvoices } from "@/components/settings/billing-invoices";
 import { NotificationSettings } from "@/components/settings/notification-settings";
+import { CategoryManagement } from "@/components/settings/category-management";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { PageLoadingWrapper } from "@/components/PageLoadingWrapper";
 import { useUserSettings } from "@/hooks/useUserSettings";
@@ -428,6 +429,7 @@ const Settings = () => {
       'vendors',
       'customers',
       'recurring-expenses',
+      'categories',
       'amazon',
       'invoices',
       'export',
@@ -467,6 +469,8 @@ const Settings = () => {
         return <CustomerManagement />;
       case 'recurring-expenses':
         return <RecurringExpenseManagement />;
+      case 'categories':
+        return <CategoryManagement />;
       case 'amazon':
         return <AmazonManagement />;
       case 'credit-cards':

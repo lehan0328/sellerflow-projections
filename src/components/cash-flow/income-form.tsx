@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useCategories } from "@/hooks/useCategories";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -45,6 +46,7 @@ export const IncomeForm = ({
   onAddCustomer,
   onDeleteAllCustomers
 }: IncomeFormProps) => {
+  const { categories: incomeCategories } = useCategories('income');
   const [formData, setFormData] = useState({
     type: "income" as "income" | "expense",
     customer: "",
@@ -144,14 +146,6 @@ export const IncomeForm = ({
     setShowCustomerForm(false);
   };
 
-  const incomeCategories = [
-    "Retail Partner",
-    "Wholesale Client", 
-    "Direct Consumer",
-    "B2B Customer",
-    "Distributor",
-    "Other"
-  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -475,8 +469,8 @@ export const IncomeForm = ({
                     </SelectTrigger>
                     <SelectContent>
                       {incomeCategories.map(category => (
-                        <SelectItem key={category} value={category}>
-                          {category}
+                        <SelectItem key={category.id} value={category.name}>
+                          {category.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

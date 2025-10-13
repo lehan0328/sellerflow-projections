@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
+import { useCategories } from "@/hooks/useCategories";
 
 interface VendorFormProps {
   open: boolean;
@@ -17,6 +18,7 @@ interface VendorFormProps {
 }
 
 export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = [], initialVendorName }: VendorFormProps) => {
+  const { categories } = useCategories('expense');
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -36,15 +38,6 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
       }));
     }
   }, [initialVendorName, open]);
-
-  const categories = [
-    "Inventory",
-    "Packaging Materials", 
-    "Marketing/PPC",
-    "Shipping & Logistics",
-    "Professional Services",
-    "Other"
-  ];
 
   const paymentTypeOptions = [
     { value: 'total', label: 'Due Upon Order' },
@@ -135,8 +128,8 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
               </SelectTrigger>
               <SelectContent>
                 {categories.map(category => (
-                  <SelectItem key={category} value={category}>
-                    {category}
+                  <SelectItem key={category.id} value={category.name}>
+                    {category.name}
                   </SelectItem>
                 ))}
               </SelectContent>

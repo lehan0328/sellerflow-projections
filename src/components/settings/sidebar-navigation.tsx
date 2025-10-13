@@ -13,7 +13,8 @@ import {
   Users,
   Database,
   Repeat,
-  FileText
+  FileText,
+  Tags
 } from "lucide-react";
 
 const navigationItems = [
@@ -51,6 +52,11 @@ const navigationItems = [
     id: 'recurring-expenses',
     label: 'Recurring Transactions',
     icon: Repeat,
+  },
+  {
+    id: 'categories',
+    label: 'Category Management',
+    icon: Tags,
   },
   {
     id: 'amazon',
@@ -103,6 +109,7 @@ const adminOnlySections = [
   'vendors',
   'customers',
   'recurring-expenses',
+  'categories',
   'amazon',
   'invoices',
   'export',

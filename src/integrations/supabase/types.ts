@@ -615,6 +615,39 @@ export type Database = {
         }
         Relationships: []
       }
+      categories: {
+        Row: {
+          account_id: string | null
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       credit_cards: {
         Row: {
           account_id: string | null
