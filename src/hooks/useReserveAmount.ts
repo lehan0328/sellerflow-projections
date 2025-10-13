@@ -34,7 +34,7 @@ export const useReserveAmount = () => {
       const { data: settings, error } = await supabase
         .from('user_settings')
         .select('safe_spending_reserve, reserve_last_updated_at')
-        .eq('account_id', profile.account_id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (error) {
@@ -106,7 +106,7 @@ export const useReserveAmount = () => {
       const { data: existing, error: existingError } = await supabase
         .from('user_settings')
         .select('id')
-        .eq('account_id', profile.account_id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       console.log('[Reserve] Existing settings:', existing, 'Error:', existingError);
@@ -143,7 +143,7 @@ export const useReserveAmount = () => {
             safe_spending_reserve: newAmount,
             reserve_last_updated_at: new Date().toISOString()
           })
-          .eq('account_id', profile.account_id)
+          .eq('user_id', user.id)
           .select();
 
         console.log('[Reserve] Update result:', updateData, 'Error:', updateError);
@@ -158,7 +158,7 @@ export const useReserveAmount = () => {
       const { data: verified } = await supabase
         .from('user_settings')
         .select('safe_spending_reserve')
-        .eq('account_id', profile.account_id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       console.log('[Reserve] Verified value:', verified?.safe_spending_reserve);
