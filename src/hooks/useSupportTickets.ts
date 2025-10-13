@@ -15,6 +15,9 @@ export interface SupportTicket {
   created_at: string;
   updated_at: string;
   resolved_at?: string;
+  user_email?: string;
+  user_company?: string;
+  user_role?: string;
 }
 
 export const useSupportTickets = (adminView = false) => {
@@ -29,14 +32,54 @@ export const useSupportTickets = (adminView = false) => {
   const fetchTickets = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      
+      // Fetch tickets with user profile and role information
+      const { data: ticketsData, error: ticketsError } = await supabase
         .from('support_tickets')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (ticketsError) throw ticketsError;
 
-      setTickets((data || []) as SupportTicket[]);
+      // Fetch user emails from auth.users via admin API
+      const { data: authData, error: usersError } = await supabase.auth.admin.listUsers();
+      const users = authData?.users || [];
+      
+      // Fetch profiles for company info
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, company');
+      
+      // Fetch user roles
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      // Map user data
+      const userEmailMap = new Map<string, string>();
+      users.forEach((u: any) => {
+        if (u.id && u.email) userEmailMap.set(u.id, u.email);
+      });
+      
+      const userCompanyMap = new Map<string, string>();
+      profiles?.forEach((p: any) => {
+        if (p.user_id && p.company) userCompanyMap.set(p.user_id, p.company);
+      });
+      
+      const userRoleMap = new Map<string, string>();
+      userRoles?.forEach((r: any) => {
+        if (r.user_id && r.role) userRoleMap.set(r.user_id, r.role);
+      });
+
+      // Enrich tickets with user info
+      const enrichedTickets = (ticketsData || []).map(ticket => ({
+        ...ticket,
+        user_email: userEmailMap.get(ticket.user_id),
+        user_company: userCompanyMap.get(ticket.user_id),
+        user_role: userRoleMap.get(ticket.user_id)
+      }));
+
+      setTickets(enrichedTickets as SupportTicket[]);
     } catch (error) {
       console.error('Error fetching tickets:', error);
       toast({

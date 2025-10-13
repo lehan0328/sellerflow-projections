@@ -122,6 +122,26 @@ export const AdminSupportTickets = () => {
                           <Badge variant="outline">{ticket.category}</Badge>
                         )}
                       </div>
+                      
+                      {/* User information */}
+                      <div className="flex items-center gap-3 mb-2 text-xs text-muted-foreground">
+                        {ticket.user_email && (
+                          <span className="flex items-center gap-1">
+                            <strong>Email:</strong> {ticket.user_email}
+                          </span>
+                        )}
+                        {ticket.user_role && (
+                          <Badge variant="secondary" className="text-xs">
+                            {ticket.user_role}
+                          </Badge>
+                        )}
+                        {ticket.user_company && (
+                          <span className="flex items-center gap-1">
+                            <strong>Company:</strong> {ticket.user_company}
+                          </span>
+                        )}
+                      </div>
+                      
                       <p className="text-sm text-muted-foreground mb-3">{ticket.message}</p>
                       <div className="text-xs text-muted-foreground">
                         Created: {new Date(ticket.created_at).toLocaleString()}
