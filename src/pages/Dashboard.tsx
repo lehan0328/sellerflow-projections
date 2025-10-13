@@ -1666,7 +1666,7 @@ const Dashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="h-screen flex w-full bg-background overflow-hidden">
         <AppSidebar 
           activeSection={activeSection} 
           onSectionChange={setActiveSection}
@@ -1674,7 +1674,7 @@ const Dashboard = () => {
           matchCount={matches.length}
         />
         
-        <div className="flex-1 overflow-auto relative">
+        <div className="flex-1 overflow-y-auto relative">
           {/* Subtle gradient orbs */}
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tl from-accent/5 to-transparent rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }} />
           
