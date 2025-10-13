@@ -101,7 +101,7 @@ export default function Partners() {
           <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 border border-primary/30 mb-4 backdrop-blur-sm animate-shimmer bg-[length:200%_100%]">
             <Gift className="h-4 w-4 text-primary animate-pulse" />
             <span className="text-sm font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
-              Partner Programs • Earn Up To $3,000+
+              Partner Programs • Earn Up To $2,000+
             </span>
           </div>
           <h1 className="text-6xl md:text-7xl font-bold leading-relaxed">
