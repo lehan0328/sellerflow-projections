@@ -249,23 +249,17 @@ export default function Analytics() {
     const vendorTotals: Record<string, number> = {};
     const { start, end } = getDateRange(vendorDateRange);
     
-    // Add amounts from vendors table (only if they fall in range)
-    vendors.forEach(v => {
-      const paymentDate = v.nextPaymentDate;
-      if (paymentDate >= start && paymentDate <= end) {
-        vendorTotals[v.name] = (vendorTotals[v.name] || 0) + v.totalOwed;
-      }
-    });
-    
     // Add amounts from vendor transactions (both pending and completed, exclude deleted)
     vendorTransactions
-      .filter(tx => {
-        const txDate = tx.dueDate || tx.transactionDate;
-        return txDate >= start && txDate <= end;
-      })
       .forEach(tx => {
-        const vendorName = tx.vendorName || 'Unknown Vendor';
-        vendorTotals[vendorName] = (vendorTotals[vendorName] || 0) + tx.amount;
+        const txDate = new Date(tx.dueDate || tx.transactionDate);
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        
+        if (txDate >= startDate && txDate <= endDate) {
+          const vendorName = tx.vendorName || 'Unknown Vendor';
+          vendorTotals[vendorName] = (vendorTotals[vendorName] || 0) + tx.amount;
+        }
       });
     
     return Object.entries(vendorTotals)
@@ -273,7 +267,7 @@ export default function Analytics() {
       .filter(item => item.amount > 0)
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 10);
-  }, [vendors, vendorTransactions, vendorDateRange]);
+  }, [vendorTransactions, vendorDateRange]);
 
   // Cash flow trend (income vs expenses over time)
   const cashFlowData = useMemo(() => {
