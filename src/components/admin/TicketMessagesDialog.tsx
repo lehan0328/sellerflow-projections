@@ -123,29 +123,34 @@ export function TicketMessagesDialog({ ticket, open, onOpenChange }: TicketMessa
                   <div
                     key={msg.id}
                     className={`flex items-start gap-3 ${
-                      isAdminMessage ? 'flex-row' : 'flex-row-reverse'
+                      isAdminMessage ? 'flex-row-reverse' : 'flex-row'
                     }`}
                   >
-                    <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      isAdminMessage ? 'bg-primary/10' : 'bg-muted'
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      isAdminMessage ? 'bg-primary text-primary-foreground' : 'bg-muted border-2 border-border'
                     }`}>
                       {isAdminMessage ? (
-                        <Shield className="h-4 w-4 text-primary" />
+                        <Shield className="h-5 w-5" />
                       ) : (
-                        <User className="h-4 w-4 text-muted-foreground" />
+                        <User className="h-5 w-5" />
                       )}
                     </div>
-                    <div className={`flex-1 max-w-[80%] ${
-                      isAdminMessage ? '' : 'flex flex-col items-end'
+                    <div className={`flex-1 max-w-[75%] ${
+                      isAdminMessage ? 'flex flex-col items-end' : ''
                     }`}>
-                      <div className={`rounded-lg p-3 ${
+                      <p className={`text-xs font-semibold mb-1 ${
+                        isAdminMessage ? 'text-right' : 'text-left'
+                      }`}>
+                        {isAdminMessage ? 'You (Support)' : 'Customer'}
+                      </p>
+                      <div className={`rounded-lg p-3 shadow-sm ${
                         isAdminMessage 
-                          ? 'bg-primary/10 text-foreground' 
-                          : 'bg-muted text-foreground'
+                          ? 'bg-primary/5 border border-primary/20' 
+                          : 'bg-muted border border-border'
                       }`}>
                         <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-muted-foreground mt-1.5">
                         {new Date(msg.created_at).toLocaleString()}
                       </p>
                     </div>
