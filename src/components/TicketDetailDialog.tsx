@@ -127,9 +127,9 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col overflow-hidden">
           {/* Original ticket message */}
-          <div className="mb-4 p-4 bg-muted/50 rounded-lg">
+          <div className="mb-4 p-4 bg-muted/50 rounded-lg flex-shrink-0">
             <p className="text-sm font-medium mb-2">Original Message:</p>
             <p className="text-sm text-muted-foreground">{ticket.message}</p>
             <p className="text-xs text-muted-foreground mt-2">
@@ -138,7 +138,7 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
           </div>
 
           {isTicketClosed && (
-            <Alert className="mb-4">
+            <Alert className="mb-4 flex-shrink-0">
               <Lock className="h-4 w-4" />
               <AlertDescription>
                 This ticket is {ticket.status}. You cannot add new messages to a closed or resolved ticket.
@@ -147,7 +147,7 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
           )}
 
           {/* Messages */}
-          <ScrollArea className="flex-1 pr-4 h-[400px]">
+          <ScrollArea className="flex-1 min-h-0 pr-4">
             <div className="space-y-4">
               {messages.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
