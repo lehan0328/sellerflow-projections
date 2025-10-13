@@ -58,6 +58,7 @@ interface CashFlowEvent {
   description: string;
   vendor?: string;
   creditCard?: string;
+  creditCardId?: string | null;
   source?: string;
   date: Date;
   // Whether this event should affect cash balance calculations
@@ -979,7 +980,8 @@ const Dashboard = () => {
         dueDate: tx.dueDate,
         transactionDate: tx.transactionDate,
         eventDate: eventDate,
-        status: tx.status
+        status: tx.status,
+        creditCardId: tx.creditCardId
       });
       
       return {
@@ -988,6 +990,7 @@ const Dashboard = () => {
         amount: tx.amount,
         description: tx.description || `${vendor?.name || 'Vendor'} - Payment Due`,
         vendor: vendor?.name,
+        creditCardId: tx.creditCardId,
         date: eventDate
       };
     });

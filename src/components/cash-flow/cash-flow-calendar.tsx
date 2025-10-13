@@ -26,6 +26,7 @@ interface CashFlowEvent {
   description: string;
   vendor?: string;
   creditCard?: string;
+  creditCardId?: string | null;
   poName?: string;
   source?: string; // Added to identify Amazon payouts
   date: Date;
@@ -396,6 +397,18 @@ export const CashFlowCalendar = ({
     // Subtract credit payments (they reduce available credit until paid)
     creditPaymentsUpToDay.forEach(payment => {
       availableCredit -= payment.amount;
+    });
+
+    // Also subtract purchase orders that were paid with credit cards
+    const creditCardPurchasesUpToDay = events.filter((event) => {
+      if (!event.creditCardId) return false; // Only credit card purchases
+      const ed = new Date(event.date);
+      ed.setHours(0, 0, 0, 0);
+      return ed <= target;
+    });
+
+    creditCardPurchasesUpToDay.forEach(purchase => {
+      availableCredit -= purchase.amount;
     });
 
     return Math.max(0, availableCredit);
