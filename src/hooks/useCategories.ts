@@ -163,10 +163,11 @@ export function useCategories(type: 'expense' | 'income') {
   };
 
   useEffect(() => {
+    console.log('[Categories] Setting up subscription for type:', type);
     fetchCategories();
 
     const channel = supabase
-      .channel('categories_changes')
+      .channel(`categories_changes_${type}_${Date.now()}`)
       .on(
         'postgres_changes',
         {
@@ -175,13 +176,15 @@ export function useCategories(type: 'expense' | 'income') {
           table: 'categories',
           filter: `type=eq.${type}`,
         },
-        () => {
+        (payload) => {
+          console.log('[Categories] Realtime update received:', { type, event: payload.eventType });
           fetchCategories();
         }
       )
       .subscribe();
 
     return () => {
+      console.log('[Categories] Cleaning up subscription for type:', type);
       supabase.removeChannel(channel);
     };
   }, [type]);

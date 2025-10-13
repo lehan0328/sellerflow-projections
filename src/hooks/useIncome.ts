@@ -76,7 +76,13 @@ export const useIncome = () => {
         updatedAt: new Date(item.updated_at)
       }));
 
-      setIncomeItems(formattedData);
+      // Deduplicate by ID
+      const uniqueItems = formattedData.filter((item, index, self) => 
+        index === self.findIndex(i => i.id === item.id)
+      );
+
+      console.log('[Income] Fetched items:', data.length, 'Unique items:', uniqueItems.length);
+      setIncomeItems(uniqueItems);
     } catch (error) {
       console.error('Error fetching income:', error);
       toast.error('Failed to load income data');
@@ -313,15 +319,19 @@ export const useIncome = () => {
           schema: 'public',
           table: 'income',
         }, () => {
+          console.log('[Income] Realtime update received, refetching...');
           fetchIncome();
         })
         .subscribe();
     };
     setup();
     return () => {
-      if (channel) supabase.removeChannel(channel);
+      if (channel) {
+        console.log('[Income] Cleaning up realtime subscription');
+        supabase.removeChannel(channel);
+      }
     };
-  }, []);
+  }, [user]);
 
   return {
     incomeItems,
