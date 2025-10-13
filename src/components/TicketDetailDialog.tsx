@@ -164,29 +164,31 @@ export function TicketDetailDialog({ ticket, open, onOpenChange }: TicketDetailD
                         isUserMessage ? 'flex-row-reverse' : 'flex-row'
                       }`}
                     >
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        isUserMessage ? 'bg-muted' : 'bg-primary/10'
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        isUserMessage ? 'bg-muted border-2 border-border' : 'bg-primary text-primary-foreground'
                       }`}>
                         {isUserMessage ? (
-                          <User className="h-4 w-4 text-muted-foreground" />
+                          <User className="h-5 w-5" />
                         ) : (
-                          <Shield className="h-4 w-4 text-primary" />
+                          <Shield className="h-5 w-5" />
                         )}
                       </div>
-                      <div className={`flex-1 max-w-[80%] ${
+                      <div className={`flex-1 max-w-[75%] ${
                         isUserMessage ? 'flex flex-col items-end' : ''
                       }`}>
-                        <div className={`rounded-lg p-3 ${
-                          isUserMessage 
-                            ? 'bg-muted text-foreground' 
-                            : 'bg-primary/10 text-foreground'
+                        <p className={`text-xs font-semibold mb-1 ${
+                          isUserMessage ? 'text-right' : 'text-left'
                         }`}>
-                          {!isUserMessage && (
-                            <p className="text-xs font-medium text-primary mb-1">Support Team</p>
-                          )}
+                          {isUserMessage ? 'You' : 'Support Team'}
+                        </p>
+                        <div className={`rounded-lg p-3 shadow-sm ${
+                          isUserMessage 
+                            ? 'bg-muted border border-border' 
+                            : 'bg-primary/5 border border-primary/20'
+                        }`}>
                           <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs text-muted-foreground mt-1.5">
                           {new Date(msg.created_at).toLocaleString()}
                         </p>
                       </div>
