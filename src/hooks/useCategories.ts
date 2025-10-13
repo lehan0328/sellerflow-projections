@@ -51,7 +51,14 @@ export function useCategories(type: 'expense' | 'income') {
         .eq('user_id', user.id)
         .single();
 
-      const { error } = await supabase
+      console.log('[Category] Adding new category:', { 
+        name, 
+        type, 
+        userId: user.id, 
+        accountId: profile?.account_id 
+      });
+
+      const { data, error } = await supabase
         .from('categories')
         .insert({
           user_id: user.id,
@@ -59,23 +66,32 @@ export function useCategories(type: 'expense' | 'income') {
           name,
           type,
           is_default: false,
-        });
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('[Category] Error adding category:', error);
+        throw error;
+      }
+
+      console.log('[Category] Successfully added category:', data);
 
       toast({
         title: "Success",
-        description: "Category added successfully",
+        description: `Category "${name}" added successfully`,
       });
 
       await fetchCategories();
+      return data;
     } catch (error: any) {
-      console.error('Error adding category:', error);
+      console.error('[Category] Failed to add category:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to add category",
         variant: "destructive",
       });
+      throw error;
     }
   };
 

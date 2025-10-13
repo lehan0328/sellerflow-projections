@@ -31,26 +31,27 @@ export function DashboardHeader({
   const isSidebarCollapsed = state === "collapsed";
 
   // Fetch user profile for display name
-  const {
-    data: profile
-  } = useQuery({
+  const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const {
-        data,
-        error
-      } = await supabase.from('profiles').select('first_name, last_name, company').eq('user_id', user.id).maybeSingle();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, company')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
       if (error) {
-        console.error('Error fetching profile:', error);
+        console.error('[Dashboard] Error fetching profile:', error);
         return null;
       }
-      console.log('Profile data for dashboard:', data);
+      console.log('[Dashboard] Profile data loaded:', data);
       return data;
     },
     enabled: !!user?.id,
-    staleTime: 0, // Always fetch fresh data
-    gcTime: 0, // Don't cache
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Get user display name for dashboard title
@@ -58,17 +59,26 @@ export function DashboardHeader({
     if (isDemo) {
       return 'Demo';
     }
+    
+    // Show loading state to prevent flicker
+    if (profileLoading) {
+      return 'Loading';
+    }
+    
     // If user has a company name, use the first word capitalized
     if (profile?.company) {
       const firstWord = profile.company.trim().split(/\s+/)[0];
       return firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase();
     }
+    
     if (profile?.first_name) {
       return profile.first_name;
     }
+    
     if (user?.email) {
       return user.email.split('@')[0];
     }
+    
     return 'Your';
   };
   return <div className="relative w-full">
