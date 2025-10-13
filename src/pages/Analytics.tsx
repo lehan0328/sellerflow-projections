@@ -43,7 +43,8 @@ import {
   Area,
   AreaChart
 } from "recharts";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Analytics() {
   const navigate = useNavigate();
@@ -55,6 +56,7 @@ export default function Analytics() {
   const { creditCards } = useCreditCards();
   const { amazonPayouts } = useAmazonPayouts();
   const { accounts } = useBankAccounts();
+  const [vendorDateRange, setVendorDateRange] = useState<string>("this-month");
 
   // Calculate key metrics
   const metrics = useMemo(() => {
@@ -182,18 +184,52 @@ export default function Analytics() {
   }, [incomeItems, amazonPayouts, dbTransactions]);
 
   // Expense breakdown by vendor category
+  // Helper to get date range
+  const getDateRange = (rangeType: string) => {
+    const now = new Date();
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    
+    switch (rangeType) {
+      case "this-month":
+        return { start: startOfThisMonth, end: now };
+      case "last-month":
+        return { 
+          start: new Date(now.getFullYear(), now.getMonth() - 1, 1), 
+          end: new Date(now.getFullYear(), now.getMonth(), 0) 
+        };
+      case "last-2-months":
+        return { start: new Date(now.getFullYear(), now.getMonth() - 2, 1), end: now };
+      case "last-3-months":
+        return { start: new Date(now.getFullYear(), now.getMonth() - 3, 1), end: now };
+      case "last-6-months":
+        return { start: new Date(now.getFullYear(), now.getMonth() - 6, 1), end: now };
+      case "ytd":
+        return { start: startOfYear, end: now };
+      default:
+        return { start: startOfThisMonth, end: now };
+    }
+  };
+
   const vendorCategoryData = useMemo(() => {
     const categoryTotals: Record<string, number> = {};
+    const { start, end } = getDateRange(vendorDateRange);
     
-    // Add amounts from vendors table
+    // Add amounts from vendors table (only if they fall in range)
     vendors.forEach(vendor => {
-      const category = vendor.category || 'Uncategorized';
-      categoryTotals[category] = (categoryTotals[category] || 0) + vendor.totalOwed;
+      const paymentDate = vendor.nextPaymentDate;
+      if (paymentDate >= start && paymentDate <= end) {
+        const category = vendor.category || 'Uncategorized';
+        categoryTotals[category] = (categoryTotals[category] || 0) + vendor.totalOwed;
+      }
     });
     
-    // Add amounts from active purchase orders (pending transactions)
+    // Add amounts from vendor transactions (both pending and completed, exclude deleted)
     vendorTransactions
-      .filter(tx => tx.status === 'pending')
+      .filter(tx => {
+        const txDate = tx.dueDate || tx.transactionDate;
+        return txDate >= start && txDate <= end;
+      })
       .forEach(tx => {
         const category = tx.category || 'Uncategorized';
         categoryTotals[category] = (categoryTotals[category] || 0) + tx.amount;
@@ -206,21 +242,27 @@ export default function Analytics() {
       }))
       .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value);
-  }, [vendors, vendorTransactions]);
+  }, [vendors, vendorTransactions, vendorDateRange]);
 
   // Top vendors by spending
   const topVendors = useMemo(() => {
-    // Combine vendor data with purchase order transactions
     const vendorTotals: Record<string, number> = {};
+    const { start, end } = getDateRange(vendorDateRange);
     
-    // Add amounts from vendors table
+    // Add amounts from vendors table (only if they fall in range)
     vendors.forEach(v => {
-      vendorTotals[v.name] = (vendorTotals[v.name] || 0) + v.totalOwed;
+      const paymentDate = v.nextPaymentDate;
+      if (paymentDate >= start && paymentDate <= end) {
+        vendorTotals[v.name] = (vendorTotals[v.name] || 0) + v.totalOwed;
+      }
     });
     
-    // Add amounts from active purchase orders (pending)
+    // Add amounts from vendor transactions (both pending and completed, exclude deleted)
     vendorTransactions
-      .filter(tx => tx.status === 'pending')
+      .filter(tx => {
+        const txDate = tx.dueDate || tx.transactionDate;
+        return txDate >= start && txDate <= end;
+      })
       .forEach(tx => {
         const vendorName = tx.vendorName || 'Unknown Vendor';
         vendorTotals[vendorName] = (vendorTotals[vendorName] || 0) + tx.amount;
@@ -231,7 +273,7 @@ export default function Analytics() {
       .filter(item => item.amount > 0)
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 10);
-  }, [vendors, vendorTransactions]);
+  }, [vendors, vendorTransactions, vendorDateRange]);
 
   // Cash flow trend (income vs expenses over time)
   const cashFlowData = useMemo(() => {
@@ -393,7 +435,22 @@ export default function Analytics() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Expense Breakdown by Category</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Expense Breakdown by Category</CardTitle>
+                  <Select value={vendorDateRange} onValueChange={setVendorDateRange}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="this-month">This Month</SelectItem>
+                      <SelectItem value="last-month">Last Month</SelectItem>
+                      <SelectItem value="last-2-months">Last 2 Months</SelectItem>
+                      <SelectItem value="last-3-months">Last 3 Months</SelectItem>
+                      <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+                      <SelectItem value="ytd">Year to Date</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -421,7 +478,22 @@ export default function Analytics() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Top 10 Vendors by Spending</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Top 10 Vendors by Spending</CardTitle>
+                <Select value={vendorDateRange} onValueChange={setVendorDateRange}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="this-month">This Month</SelectItem>
+                    <SelectItem value="last-month">Last Month</SelectItem>
+                    <SelectItem value="last-2-months">Last 2 Months</SelectItem>
+                    <SelectItem value="last-3-months">Last 3 Months</SelectItem>
+                    <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+                    <SelectItem value="ytd">Year to Date</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
