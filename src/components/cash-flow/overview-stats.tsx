@@ -84,6 +84,11 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const { incomeItems } = useIncome();
   const [reserveInput, setReserveInput] = useState<string>("");
   
+  // Calculate hours until next update is allowed
+  const hoursUntilNextUpdate = lastUpdated && !canUpdate 
+    ? Math.ceil(24 - ((Date.now() - lastUpdated.getTime()) / (1000 * 60 * 60)))
+    : 0;
+  
   // Force fresh calculation on mount
   useEffect(() => {
     console.log('🔄 OverviewStats mounted - fetching safe spending data');
