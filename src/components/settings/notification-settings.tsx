@@ -83,12 +83,19 @@ export const NotificationSettings = ({ onUpdate }: NotificationSettingsProps = {
 
   const fetchPreferences = async () => {
     try {
+      console.log('[NOTIFICATION SETTINGS] Fetching preferences for user:', user!.id);
+      
       const { data, error } = await supabase
         .from('notification_preferences')
         .select('*')
         .eq('user_id', user!.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('[NOTIFICATION SETTINGS] Fetch error:', error);
+        throw error;
+      }
+
+      console.log('[NOTIFICATION SETTINGS] Fetched preferences:', data);
 
       // Create default preferences for types that don't exist
       const existingTypes = new Set(data?.map(p => p.notification_type) || []);
@@ -108,6 +115,7 @@ export const NotificationSettings = ({ onUpdate }: NotificationSettingsProps = {
       }));
 
       if (defaultPrefs.length > 0) {
+        console.log('[NOTIFICATION SETTINGS] Creating default preferences:', defaultPrefs.length);
         const { data: newData, error: insertError } = await supabase
           .from('notification_preferences')
           .insert(defaultPrefs)
@@ -119,6 +127,8 @@ export const NotificationSettings = ({ onUpdate }: NotificationSettingsProps = {
       } else {
         setPreferences(data || []);
       }
+      
+      console.log('[NOTIFICATION SETTINGS] Preferences loaded successfully');
     } catch (error) {
       console.error('Error fetching preferences:', error);
       toast.error('Failed to load notification settings');
@@ -130,12 +140,20 @@ export const NotificationSettings = ({ onUpdate }: NotificationSettingsProps = {
   const updatePreference = async (id: string, updates: Partial<NotificationPreference>) => {
     try {
       setSaving(true);
+      
+      console.log('[NOTIFICATION SETTINGS] Updating preference:', { id, updates });
+      
       const { error } = await supabase
         .from('notification_preferences')
         .update(updates)
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('[NOTIFICATION SETTINGS] Update error:', error);
+        throw error;
+      }
+
+      console.log('[NOTIFICATION SETTINGS] Update successful');
 
       setPreferences(prefs =>
         prefs.map(p => (p.id === id ? { ...p, ...updates } : p))
