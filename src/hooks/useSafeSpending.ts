@@ -77,6 +77,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
       const { data: bankAccounts } = await supabase
         .from('bank_accounts')
         .select('balance')
+        .eq('account_id', profile.account_id)
         .eq('is_active', true);
 
       const bankBalance = bankAccounts?.reduce((sum, acc) => sum + Number(acc.balance || 0), 0) || 0;
@@ -96,31 +97,37 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
         supabase
           .from('transactions')
           .select('*')
+          .eq('account_id', profile.account_id)
           .eq('archived', false),
         
         supabase
           .from('income')
           .select('*')
+          .eq('account_id', profile.account_id)
           .eq('archived', false),
         
         supabase
           .from('recurring_expenses')
           .select('*')
+          .eq('account_id', profile.account_id)
           .eq('is_active', true),
         
         supabase
           .from('vendors')
-          .select('*'),
+          .select('*')
+          .eq('account_id', profile.account_id),
         
         supabase
           .from('amazon_payouts')
           .select('*')
+          .eq('account_id', profile.account_id)
           .gte('payout_date', todayStr)  // ONLY future payouts from today onwards
           .lte('payout_date', futureDateStr),
         
         supabase
           .from('credit_cards')
           .select('*')
+          .eq('account_id', profile.account_id)
           .eq('is_active', true)
       ]);
 
