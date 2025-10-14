@@ -58,9 +58,9 @@ export function DashboardHeader({
       return data;
     },
     enabled: !!user?.id,
-    staleTime: 0, // Don't use cached data
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   // Get user display name for dashboard title
