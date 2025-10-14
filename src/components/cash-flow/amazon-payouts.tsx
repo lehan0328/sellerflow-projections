@@ -37,8 +37,13 @@ export function AmazonPayouts() {
     });
   };
   const getDaysUntil = (dateString: string) => {
+    // Normalize both dates to midnight local time for accurate day calculation
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     const payoutDate = new Date(dateString);
+    payoutDate.setHours(0, 0, 0, 0);
+    
     const diffTime = payoutDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
@@ -160,6 +165,9 @@ export function AmazonPayouts() {
         const daysUntil = getDaysUntil(payout.payout_date);
         const isUpcoming = daysUntil <= 7;
         const isForecasted = payout.status === 'forecasted';
+        const confidence = isForecasted ? payout.raw_settlement_data?.forecast_metadata?.confidence : null;
+        const riskLevel = isForecasted ? payout.raw_settlement_data?.forecast_metadata?.risk_level : null;
+        
         return <div key={payout.id} className={`rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card ${isForecasted ? 'border-purple-500/30 bg-purple-500/5' : isUpcoming ? 'border-primary/30 bg-primary/5' : ''}`}>
                 <div className="flex items-center justify-between">
                   <div className="space-y-2">
@@ -167,6 +175,12 @@ export function AmazonPayouts() {
                       {isForecasted && <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
                           <Sparkles className="h-3 w-3 mr-1" />
                           AI Forecast
+                        </Badge>}
+                      {isForecasted && confidence && <Badge variant="secondary" className="text-xs">
+                          {(confidence * 100).toFixed(0)}% confidence
+                        </Badge>}
+                      {isForecasted && riskLevel && <Badge variant="outline" className="text-xs capitalize">
+                          {riskLevel.replace('_', ' ')}
                         </Badge>}
                       <Badge variant={getStatusColor(payout.status)} className="text-xs">
                         {payout.status}
@@ -184,7 +198,7 @@ export function AmazonPayouts() {
                         {formatDate(payout.payout_date)}
                       </span>
                       <span className={`font-medium ${daysUntil <= 0 ? 'text-finance-positive' : daysUntil <= 3 ? 'text-warning' : 'text-muted-foreground'}`}>
-                        {daysUntil <= 0 ? 'Today' : `${daysUntil} days`}
+                        {daysUntil <= 0 ? 'Today' : daysUntil < 0 ? `${Math.abs(daysUntil)} days ago` : `in ${daysUntil} days`}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {payout.transaction_count} transactions

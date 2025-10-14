@@ -18,6 +18,7 @@ export interface AmazonPayout {
   orders_total: number;
   refunds_total: number;
   other_total: number;
+  raw_settlement_data?: any;
   created_at: string;
   updated_at: string;
   amazon_accounts?: {
