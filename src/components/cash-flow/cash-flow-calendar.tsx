@@ -11,7 +11,7 @@ import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, Calenda
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays, startOfWeek, endOfWeek, getDay, startOfDay } from "date-fns";
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { TransactionDetailModal } from "./transaction-detail-modal";
 import { DayTransactionsModal } from "./day-transactions-modal";
@@ -481,6 +481,18 @@ export const CashFlowCalendar = ({
     
     setDraggedTransaction(null);
   };
+
+  // Calculate average Amazon payout from historical confirmed payouts  
+  const averageAmazonPayout = (() => {
+    const confirmedPayouts = events.filter(e => 
+      e.source === 'Amazon' && e.type === 'inflow'
+    );
+    
+    if (confirmedPayouts.length === 0) return 0;
+    
+    const total = confirmedPayouts.reduce((sum, e) => sum + e.amount, 0);
+    return total / confirmedPayouts.length;
+  })();
 
   // Generate chart data based on selected time range
   const generateChartData = () => {
@@ -1358,6 +1370,23 @@ export const CashFlowCalendar = ({
                                 <circle cx={cx} cy={cy} r={3} fill="#fff" />
                               </g>
                             );
+                          }}
+                        />
+                      )}
+                      
+                      {/* Average Amazon Payout Reference Line */}
+                      {includeForecastPayouts && averageAmazonPayout > 0 && (
+                        <ReferenceLine
+                          y={averageAmazonPayout}
+                          stroke="#a855f7"
+                          strokeWidth={2}
+                          strokeDasharray="8 4"
+                          label={{
+                            value: `Avg Payout: $${averageAmazonPayout.toLocaleString()}`,
+                            position: 'insideTopRight',
+                            fill: '#a855f7',
+                            fontSize: 11,
+                            fontWeight: 600
                           }}
                         />
                       )}
