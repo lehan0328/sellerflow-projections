@@ -1027,6 +1027,7 @@ export type Database = {
           account_id: string | null
           advance_days: number | null
           created_at: string
+          email_recipients: string[] | null
           enabled: boolean
           id: string
           last_sent_at: string | null
@@ -1042,6 +1043,7 @@ export type Database = {
           account_id?: string | null
           advance_days?: number | null
           created_at?: string
+          email_recipients?: string[] | null
           enabled?: boolean
           id?: string
           last_sent_at?: string | null
@@ -1057,6 +1059,7 @@ export type Database = {
           account_id?: string | null
           advance_days?: number | null
           created_at?: string
+          email_recipients?: string[] | null
           enabled?: boolean
           id?: string
           last_sent_at?: string | null

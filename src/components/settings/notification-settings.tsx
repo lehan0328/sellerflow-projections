@@ -21,6 +21,7 @@ interface NotificationPreference {
   threshold_amount?: number;
   advance_days?: number;
   notification_channels: string[];
+  email_recipients?: string[];
 }
 
 const notificationTypes = [
@@ -112,6 +113,7 @@ export const NotificationSettings = ({ onUpdate }: NotificationSettingsProps = {
         threshold_amount: type === 'low_balance' ? 10000 : undefined,
         advance_days: type === 'payment_due' ? 3 : undefined,
         notification_channels: ['in_app'],
+        email_recipients: [],
       }));
 
       if (defaultPrefs.length > 0) {
@@ -341,6 +343,32 @@ export const NotificationSettings = ({ onUpdate }: NotificationSettingsProps = {
                       </div>
                     </div>
                   </div>
+
+                  {/* Email Recipients - Only show when email channel is selected */}
+                  {pref.notification_channels.includes('email') && (
+                    <div className="space-y-2">
+                      <Label>Email Recipients</Label>
+                      <Input
+                        type="text"
+                        value={(pref.email_recipients || []).join(', ')}
+                        onChange={(e) => {
+                          const emails = e.target.value
+                            .split(',')
+                            .map(email => email.trim())
+                            .filter(email => email.length > 0);
+                          updatePreference(pref.id, {
+                            email_recipients: emails,
+                          });
+                        }}
+                        disabled={saving}
+                        placeholder="email1@example.com, email2@example.com"
+                        className="w-full"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Enter one or more email addresses separated by commas
+                      </p>
+                    </div>
+                  )}
 
                   {/* Schedule Days */}
                   <div className="space-y-2">
