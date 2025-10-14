@@ -60,49 +60,39 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      // Fetch actual Amazon revenue from last 30 days (before fees)
+      // Calculate revenue from last 30 days using aggregated payout data
+      // This is much more efficient than summing individual transactions (which can be 10k-100k rows)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      const { data: amazonTransactions } = await supabase
-        .from('amazon_transactions')
-        .select('amount, transaction_type, transaction_date')
+      // PRIORITIZE amazon_payouts - they contain pre-aggregated revenue data
+      // This is the correct approach for accounts with many transactions
+      const { data: amazonPayouts } = await supabase
+        .from('amazon_payouts')
+        .select('total_amount, orders_total, refunds_total, payout_date, status')
         .eq('user_id', user.id)
-        .gte('transaction_date', thirtyDaysAgo.toISOString())
-        .in('transaction_type', ['Order', 'Refund', 'Service Fee', 'Transfer']);
+        .gte('payout_date', thirtyDaysAgo.toISOString().split('T')[0])
+        .in('status', ['completed', 'forecasted']);
 
-      // Calculate revenue (orders) before fees
       let calculatedRevenue = 0;
-      if (amazonTransactions && amazonTransactions.length > 0) {
-        calculatedRevenue = amazonTransactions
-          .filter(t => t.transaction_type === 'Order' || t.transaction_type === 'Transfer')
-          .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+      
+      if (amazonPayouts && amazonPayouts.length > 0) {
+        // Use aggregated orders_total (gross revenue) and subtract refunds
+        calculatedRevenue = amazonPayouts.reduce((sum, p) => {
+          const orders = Number(p.orders_total) || 0;
+          const refunds = Math.abs(Number(p.refunds_total) || 0);
+          return sum + orders - refunds;
+        }, 0);
         
-        // Subtract refunds
-        const refunds = amazonTransactions
-          .filter(t => t.transaction_type === 'Refund')
-          .reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
-        
-        calculatedRevenue = Math.max(0, calculatedRevenue - refunds);
-      } else {
-        // If no transactions, check payouts (for forecasted/demo data)
-        const { data: amazonPayouts } = await supabase
-          .from('amazon_payouts')
-          .select('total_amount, orders_total, payout_date')
-          .eq('user_id', user.id)
-          .gte('payout_date', thirtyDaysAgo.toISOString().split('T')[0])
-          .in('status', ['completed', 'forecasted']);
-
-        if (amazonPayouts && amazonPayouts.length > 0) {
-          // Use orders_total if available (revenue before fees), otherwise use total_amount
+        // If orders_total is not populated, fall back to total_amount
+        if (calculatedRevenue === 0) {
           calculatedRevenue = amazonPayouts.reduce((sum, p) => {
-            const revenue = p.orders_total > 0 ? p.orders_total : p.total_amount;
-            return sum + (Number(revenue) || 0);
+            return sum + (Number(p.total_amount) || 0);
           }, 0);
         }
       }
       
-      setCurrentRevenue(calculatedRevenue);
+      setCurrentRevenue(Math.max(0, calculatedRevenue));
 
       let recommendedPlanData = null;
       let higherPlans: any[] = [];
