@@ -763,7 +763,7 @@ export const CashFlowInsights = ({
                 <Sparkles className="h-4 w-4 text-primary" />
                 Confirmed Cash Opportunities
               </h3>
-              <ScrollArea className="max-h-[500px] pr-4">
+              <ScrollArea className="h-[500px] pr-4 border rounded-md p-2 bg-gradient-to-b from-transparent via-transparent to-muted/20">
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground mb-4">
                     <span className="font-semibold text-amber-600">Important:</span> These opportunities assume <span className="font-semibold">$0 spending until each date</span>. The available amounts shown are what you'll have if you don't make any purchases before then. Plan your spending timeline accordingly to preserve these opportunities.
@@ -818,7 +818,7 @@ export const CashFlowInsights = ({
                 <Sparkles className="h-4 w-4 text-purple-600" />
                 Projected Opportunities (with AI Forecasts)
               </h3>
-              <ScrollArea className="max-h-[500px] pr-4">
+              <ScrollArea className="h-[500px] pr-4 border rounded-md p-2 bg-gradient-to-b from-transparent via-transparent to-muted/20">
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground mb-4">
                     <span className="font-semibold text-purple-600">AI-Enhanced:</span> These projections include AI forecasted Amazon payouts. Use for planning purposes, but note that forecasts may vary from actual payouts.
