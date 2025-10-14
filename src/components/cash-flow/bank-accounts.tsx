@@ -169,7 +169,7 @@ export function BankAccounts() {
             <Button 
               variant="default" 
               size="sm" 
-              onClick={() => navigate('/manage-accounts')}
+              onClick={() => navigate('/settings?tab=bank-accounts')}
               className="ml-4"
             >
               <Settings className="h-4 w-4 mr-2" />
