@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
-import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw } from "lucide-react";
+import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -441,39 +441,15 @@ export const CashFlowInsights = ({
             AI Insights
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-between p-2 rounded-lg bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950/20 dark:via-blue-950/20 dark:to-indigo-950/20 border border-purple-200 dark:border-purple-800">
-              <div className="flex items-center gap-2">
-                <img src={aurenLogo} alt="AI" className="h-4 w-4" />
-                <span className="text-xs font-semibold">AI Payout Forecasts</span>
-                {isForecastGenerating && <Loader2 className="h-3 w-3 animate-spin text-purple-600" />}
-              </div>
-              <div className="flex items-center gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleGenerateForecast}
-                        disabled={isRefreshing || isForecastGenerating}
-                        className="h-7 w-7 hover:bg-white/50 dark:hover:bg-black/20"
-                      >
-                        <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs">Generate forecast</p>
-                      <p className="text-xs text-muted-foreground">Can only be generated once every 24 hours</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                {lastRefreshTime && (
-                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                    Generated {new Date(lastRefreshTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                )}
-              </div>
-            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => navigate('/settings#forecast')}
+              className="bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950/20 dark:via-blue-950/20 dark:to-indigo-950/20 border-purple-200 dark:border-purple-800"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              AI Forecast Settings
+            </Button>
             <Button variant={chatMode ? "default" : "ghost"} size="sm" onClick={() => setChatMode(!chatMode)}>
               <MessageCircle className="h-4 w-4 mr-1" />
               {chatMode ? "Back" : "Chat"}
