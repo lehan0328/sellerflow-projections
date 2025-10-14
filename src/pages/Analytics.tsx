@@ -682,53 +682,20 @@ export default function Analytics() {
               <CardHeader>
                 <div className="flex items-center justify-between gap-4 flex-wrap">
                   <CardTitle>Expense Breakdown by Category</CardTitle>
-                  <div className="flex gap-2 items-center">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-auto">
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {format(customStartDate, "MMM d, yyyy")} - {format(customEndDate, "MMM d, yyyy")}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-50 bg-background" align="start">
-                        <div className="p-4 space-y-4">
-                          <div>
-                            <label className="text-sm font-medium mb-2 block">Start Date</label>
-                            <Calendar
-                              mode="single"
-                              selected={customStartDate}
-                              onSelect={(date) => date && setCustomStartDate(date)}
-                              initialFocus
-                              className={cn("pointer-events-auto")}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium mb-2 block">End Date</label>
-                            <Calendar
-                              mode="single"
-                              selected={customEndDate}
-                              onSelect={(date) => date && setCustomEndDate(date)}
-                              className={cn("pointer-events-auto")}
-                            />
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                    <Select value={vendorDateRange} onValueChange={setVendorDateRange}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="z-50 bg-background">
-                        <SelectItem value="custom">Custom Range</SelectItem>
-                        <SelectItem value="this-month">This Month</SelectItem>
-                        <SelectItem value="last-month">Last Month</SelectItem>
-                        <SelectItem value="last-2-months">Last 2 Months</SelectItem>
-                        <SelectItem value="last-3-months">Last 3 Months</SelectItem>
-                        <SelectItem value="last-6-months">Last 6 Months</SelectItem>
-                        <SelectItem value="ytd">Year to Date</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select value={vendorDateRange} onValueChange={setVendorDateRange}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="z-50 bg-background">
+                      <SelectItem value="custom">Custom Range</SelectItem>
+                      <SelectItem value="this-month">This Month</SelectItem>
+                      <SelectItem value="last-month">Last Month</SelectItem>
+                      <SelectItem value="last-2-months">Last 2 Months</SelectItem>
+                      <SelectItem value="last-3-months">Last 3 Months</SelectItem>
+                      <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+                      <SelectItem value="ytd">Year to Date</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardHeader>
               <CardContent>
