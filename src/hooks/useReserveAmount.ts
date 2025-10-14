@@ -186,21 +186,33 @@ export const useReserveAmount = () => {
   useEffect(() => {
     fetchReserveAmount();
 
-    // Subscribe to changes
-    const channel = supabase
-      .channel('reserve-changes')
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'user_settings' 
-      }, () => {
-        console.log('[Reserve] Settings changed, refetching');
-        fetchReserveAmount();
-      })
-      .subscribe();
+    // Subscribe to changes for current user only
+    const setupSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const channel = supabase
+        .channel('reserve-changes')
+        .on('postgres_changes', { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'user_settings',
+          filter: `user_id=eq.${user.id}`
+        }, (payload) => {
+          console.log('[Reserve] Settings changed for current user, refetching');
+          fetchReserveAmount();
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
+
+    const cleanup = setupSubscription();
 
     return () => {
-      supabase.removeChannel(channel);
+      cleanup.then(fn => fn?.());
     };
   }, []);
 

@@ -69,11 +69,6 @@ export function DashboardHeader({
       return 'Demo Dashboard';
     }
     
-    // Show loading state to prevent flicker
-    if (profileLoading) {
-      return 'Loading...';
-    }
-    
     // If user has a company name, use the first word capitalized + "Dashboard"
     if (profile?.company) {
       const firstWord = profile.company.trim().split(/\s+/)[0];

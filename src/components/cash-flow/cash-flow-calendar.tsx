@@ -508,6 +508,7 @@ export const CashFlowCalendar = ({
     
     const days = eachDayOfInterval({ start: chartStart, end: chartEnd });
     let runningTotal = bankAccountBalance; // Use actual bank account balance
+    let runningTotalWithForecast = bankAccountBalance; // Track balance with forecasted payouts
     let cumulativeInflow = 0;
     let cumulativeOutflow = 0;
     
@@ -520,12 +521,20 @@ export const CashFlowCalendar = ({
       const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0);
       const dailyChange = dailyInflow - dailyOutflow;
       
+      // Separate forecasted from confirmed transactions
+      const forecastedInflow = dayEvents.filter(e => e.source === 'Amazon-Forecasted' && e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
+      const confirmedInflow = dailyInflow - forecastedInflow;
+      const confirmedChange = confirmedInflow - dailyOutflow;
+      
       // Update running total from account start date onwards
       const dayToCheck = new Date(day);
       dayToCheck.setHours(0, 0, 0, 0);
       
       if (dayToCheck >= accountStartDate) {
-        runningTotal += dailyChange;
+        // Regular cash balance only includes confirmed transactions
+        runningTotal += confirmedChange;
+        // Forecast line includes both confirmed and forecasted
+        runningTotalWithForecast += dailyChange;
         cumulativeInflow += dailyInflow;
         cumulativeOutflow += dailyOutflow;
       }
@@ -533,11 +542,6 @@ export const CashFlowCalendar = ({
       // Check if this day has an Amazon payout
       const hasAmazonPayout = dayEvents.some(e => e.source === 'Amazon' && e.type === 'inflow');
       const hasAmazonForecast = dayEvents.some(e => e.source === 'Amazon-Forecasted' && e.type === 'inflow');
-      
-      // Calculate forecast payout amount
-      const forecastPayoutAmount = dayEvents
-        .filter(e => e.source === 'Amazon-Forecasted' && e.type === 'inflow')
-        .reduce((sum, e) => sum + e.amount, 0);
       
       // Group events by type for detailed breakdown
       const inflowEvents = dayEvents.filter(e => e.type === 'inflow');
@@ -587,7 +591,8 @@ export const CashFlowCalendar = ({
         creditCardCredit: availableCreditForDay,
         reserve: reserveAmount,
         reserveAmount: reserveAmount,
-        forecastPayout: forecastPayoutAmount,
+        // Forecast line shows projected balance including forecasted payouts for all future dates
+        forecastPayout: dayToCheck >= today ? runningTotalWithForecast : null,
         dailyChange,
         inflow: dailyInflow,
         outflow: dailyOutflow,

@@ -1296,7 +1296,7 @@ const Dashboard = () => {
                   vendors={vendors}
                   onVendorClick={handleEditVendorOrder}
                   onIncomeClick={handleEditIncome}
-                  reserveAmount={safeSpendingData?.reserve_amount || 0}
+                  reserveAmount={reserveAmount}
                   includeForecastPayouts={includeForecastPayouts}
                 />
               </div>
@@ -1310,7 +1310,7 @@ const Dashboard = () => {
                   vendors={vendors}
                   income={incomeItems}
                   safeSpendingLimit={safeSpendingData?.safe_spending_limit || 0}
-                  reserveAmount={safeSpendingData?.reserve_amount || 0}
+                  reserveAmount={reserveAmount}
                   projectedLowestBalance={safeSpendingData?.calculation?.lowest_projected_balance || 0}
                   lowestBalanceDate={safeSpendingData?.calculation?.lowest_balance_date || ""}
                   safeSpendingAvailableDate={safeSpendingData?.calculation?.safe_spending_available_date}
@@ -1374,7 +1374,7 @@ const Dashboard = () => {
                       forecastedPayouts={amazonPayouts.filter(p => p.status === 'forecasted')}
                       currentBalance={bankAccountBalance}
                       upcomingExpenses={upcomingExpenses}
-                      reserveAmount={safeSpendingData?.reserve_amount || 0}
+                      reserveAmount={reserveAmount}
                     />
                   </div>
                 )}
