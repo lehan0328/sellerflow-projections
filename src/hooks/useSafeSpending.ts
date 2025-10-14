@@ -515,7 +515,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
       }
       
       // Safe Spending = Min Balance - Reserve
-      const safeSpendingLimit = Math.max(0, minBalance - reserve);
+      const safeSpendingLimit = minBalance - reserve;
 
       console.log('🎯🎯🎯 SAFE SPENDING CALCULATION 🎯🎯🎯');
       console.log('Minimum Balance Found:', minBalance);
