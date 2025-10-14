@@ -41,11 +41,17 @@ export const ForecastSettings = () => {
 
       if (error && error.code !== 'PGRST116') throw error;
 
+      // If data exists and has a valid threshold, use it; otherwise keep default of 5 (Safe)
       if (data?.forecast_confidence_threshold !== null && data?.forecast_confidence_threshold !== undefined) {
         setConfidenceThreshold(data.forecast_confidence_threshold);
+      } else {
+        // No setting exists yet, keep default of 5 (Safe)
+        setConfidenceThreshold(5);
       }
     } catch (error) {
       console.error('Error fetching forecast settings:', error);
+      // On error, default to 5 (Safe)
+      setConfidenceThreshold(5);
     } finally {
       setLoading(false);
     }
@@ -140,9 +146,9 @@ export const ForecastSettings = () => {
   };
 
   const tiers = [
-    { value: 0, label: "Medium (Risky)", color: "bg-orange-500" },
-    { value: 5, label: "Safe", color: "bg-blue-500" },
-    { value: 15, label: "Very Safe", color: "bg-emerald-500" }
+    { value: 0, label: "Medium (Risky)", color: "bg-orange-500", recommended: false },
+    { value: 5, label: "Safe", color: "bg-blue-500", recommended: true },
+    { value: 15, label: "Very Safe", color: "bg-emerald-500", recommended: false }
   ];
 
   const riskLevel = getRiskLevel(confidenceThreshold);
@@ -196,12 +202,17 @@ export const ForecastSettings = () => {
                 key={tier.value}
                 type="button"
                 onClick={() => setConfidenceThreshold(tier.value)}
-                className={`p-3 rounded-lg border-2 transition-all ${
+                className={`p-3 rounded-lg border-2 transition-all relative ${
                   confidenceThreshold === tier.value
                     ? 'border-primary bg-primary/10'
                     : 'border-border hover:border-primary/50'
                 }`}
               >
+                {tier.recommended && (
+                  <Badge className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-0.5">
+                    Recommended
+                  </Badge>
+                )}
                 <div className={`w-3 h-3 rounded-full ${tier.color} mx-auto mb-2`} />
                 <div className="text-sm font-medium">{tier.label}</div>
               </button>
