@@ -1519,32 +1519,6 @@ export const CashFlowCalendar = ({
                   </label>
                   <label htmlFor="reserve-toggle" className="cursor-pointer">Reserve Amount</label>
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="forecast-toggle"
-                    checked={showForecastLine}
-                    onChange={(e) => {
-                      setShowForecastLine(e.target.checked);
-                      updateChartPreferences({ showForecastLine: e.target.checked });
-                    }}
-                    className="w-4 h-4 rounded border-gray-300"
-                  />
-                  <label htmlFor="forecast-color" className="cursor-pointer">
-                    <input
-                      type="color"
-                      id="forecast-color"
-                      value="#9333ea"
-                      onChange={(e) => {
-                        setForecastColor(e.target.value);
-                        updateChartPreferences({ forecastColor: e.target.value });
-                      }}
-                      className="w-3 h-3 rounded cursor-pointer border-0 p-0"
-                      style={{ appearance: 'none', backgroundColor: '#9333ea' }}
-                    />
-                  </label>
-                  <label htmlFor="forecast-toggle" className="cursor-pointer">AI Forecasted Payout</label>
-                </div>
               </div>
             ) : (
               <div className="flex items-center space-x-4 text-sm">
