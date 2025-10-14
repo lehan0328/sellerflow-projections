@@ -59,14 +59,14 @@ serve(async (req) => {
         .select('*')
         .eq('user_id', targetUserId)
         .eq('notification_type', manualNotificationType)
-        .single();
+        .limit(1);
       
       if (error) {
         console.error("[NOTIFICATIONS] Error fetching preference:", error);
         throw error;
       }
       
-      preferences = data ? [data] : [];
+      preferences = data || [];
     } else {
       // For automated sends, get all enabled preferences that should run now
       const { data, error } = await supabaseAdmin
