@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkles, TrendingUp, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -17,9 +18,12 @@ import {
 
 export const ForecastSettings = () => {
   const { user } = useAuth();
+  const { amazonAccounts } = useAmazonAccounts();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [confidenceThreshold, setConfidenceThreshold] = useState(5); // 0 = Medium, 5 = Safe, 15 = Very Safe
+  
+  const hasAmazonStore = amazonAccounts && amazonAccounts.length > 0;
 
   useEffect(() => {
     if (user) {
@@ -218,13 +222,26 @@ export const ForecastSettings = () => {
           </ul>
         </div>
 
-        <Button 
-          onClick={handleSave} 
-          disabled={saving}
-          className="w-full"
-        >
-          {saving ? "Saving..." : "Save Forecast Settings"}
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <Button 
+                  onClick={handleSave} 
+                  disabled={saving || !hasAmazonStore}
+                  className="w-full"
+                >
+                  {saving ? "Saving..." : "Save Forecast Settings"}
+                </Button>
+              </div>
+            </TooltipTrigger>
+            {!hasAmazonStore && (
+              <TooltipContent>
+                <p>Connect an Amazon store to enable forecast settings</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
       </CardContent>
     </Card>
   );
