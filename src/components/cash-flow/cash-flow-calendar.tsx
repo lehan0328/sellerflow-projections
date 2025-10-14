@@ -499,7 +499,7 @@ export const CashFlowCalendar = ({
     
     const days = eachDayOfInterval({ start: chartStart, end: chartEnd });
     let runningTotal = bankAccountBalance; // Use actual bank account balance
-    let runningTotalWithForecast = bankAccountBalance; // Track balance with forecasted payouts
+    let runningForecastOnly = bankAccountBalance; // Track forecast-only balance separately
     let cumulativeInflow = 0;
     let cumulativeOutflow = 0;
     
@@ -514,8 +514,7 @@ export const CashFlowCalendar = ({
       
       // Separate forecasted from confirmed transactions
       const forecastedInflow = dayEvents.filter(e => e.source === 'Amazon-Forecasted' && e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
-      const confirmedInflow = dailyInflow - forecastedInflow;
-      const confirmedChange = confirmedInflow - dailyOutflow;
+      const confirmedChange = dailyInflow - forecastedInflow - dailyOutflow;
       
       // Update running total from account start date onwards
       const dayToCheck = new Date(day);
@@ -524,8 +523,8 @@ export const CashFlowCalendar = ({
       if (dayToCheck >= accountStartDate) {
         // Regular cash balance only includes confirmed transactions
         runningTotal += confirmedChange;
-        // Forecast line includes both confirmed and forecasted
-        runningTotalWithForecast += dailyChange;
+        // Forecast line only shows where balance would be WITH forecasted payouts
+        runningForecastOnly += dailyChange;
         cumulativeInflow += dailyInflow;
         cumulativeOutflow += dailyOutflow;
       }
@@ -582,8 +581,8 @@ export const CashFlowCalendar = ({
         creditCardCredit: availableCreditForDay,
         reserve: reserveAmount,
         reserveAmount: reserveAmount,
-        // Forecast line shows projected balance including forecasted payouts for all future dates
-        forecastPayout: dayToCheck >= today ? runningTotalWithForecast : null,
+        // Forecast line only shows for future dates with forecasted payouts
+        forecastPayout: dayToCheck >= today && forecastedInflow > 0 ? runningForecastOnly : null,
         dailyChange,
         inflow: dailyInflow,
         outflow: dailyOutflow,

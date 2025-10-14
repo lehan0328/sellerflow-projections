@@ -332,11 +332,11 @@ Return ONLY this JSON (no markdown):
       let currentDate = new Date(lastPayoutDate);
       let forecastIndex = 0;
       
-      while (currentDate <= threeMonthsOut) {
-        // Move to next payout date based on frequency
+      while (currentDate <= threeMonthsOut && forecastIndex < 6) { // Limit to 6 forecasts
+        // Move to next payout date based on frequency (14 days for bi-weekly)
         if (payoutFrequency === 'daily') {
           currentDate.setDate(currentDate.getDate() + 1);
-        } else { // bi-weekly
+        } else { // bi-weekly = every 14 days
           currentDate.setDate(currentDate.getDate() + 14);
         }
         
