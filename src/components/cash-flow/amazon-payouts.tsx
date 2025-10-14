@@ -7,14 +7,15 @@ import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles } fro
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export function AmazonPayouts() {
   const { amazonPayouts, isLoading, totalUpcoming, refetch } = useAmazonPayouts();
   const { amazonAccounts, syncAmazonAccount } = useAmazonAccounts();
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
   const [showForecasts, setShowForecasts] = useState(true);
-  const { toast } = useToast();
+  const [isGeneratingForecasts, setIsGeneratingForecasts] = useState(false);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -73,6 +74,23 @@ export function AmazonPayouts() {
     setIsSyncing(null);
   };
 
+  const handleGenerateForecasts = async () => {
+    setIsGeneratingForecasts(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts');
+      
+      if (error) throw error;
+      
+      toast.success('AI forecasts generated successfully!');
+      await refetch();
+    } catch (error) {
+      console.error('Error generating forecasts:', error);
+      toast.error('Failed to generate AI forecasts');
+    } finally {
+      setIsGeneratingForecasts(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <Card className="shadow-card">
@@ -109,6 +127,15 @@ export function AmazonPayouts() {
                 AI Forecasts
               </Label>
             </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleGenerateForecasts}
+              disabled={isGeneratingForecasts || amazonAccounts.length === 0}
+            >
+              <Sparkles className={`h-4 w-4 mr-2 ${isGeneratingForecasts ? 'animate-spin' : ''}`} />
+              {isGeneratingForecasts ? 'Generating...' : 'Generate Forecasts'}
+            </Button>
             <Button 
               variant="outline" 
               size="sm" 
