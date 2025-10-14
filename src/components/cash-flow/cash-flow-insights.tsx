@@ -89,6 +89,16 @@ export const CashFlowInsights = ({
   const netDaily = dailyInflow - dailyOutflow;
   const healthStatus = netDaily >= 0 ? "positive" : "negative";
 
+  // Debug: Log the received values
+  useEffect(() => {
+    console.log('💰 CashFlowInsights received:', {
+      safeSpendingLimit,
+      reserveAmount,
+      projectedLowestBalance,
+      calculation: `${projectedLowestBalance} - ${reserveAmount} = ${projectedLowestBalance - reserveAmount}`
+    });
+  }, [safeSpendingLimit, reserveAmount, projectedLowestBalance]);
+
   // Update edit value when reserveAmount prop changes
   useEffect(() => {
     setEditReserveValue(reserveAmount.toString());
