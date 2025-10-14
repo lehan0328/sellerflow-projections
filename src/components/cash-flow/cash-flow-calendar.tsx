@@ -1378,23 +1378,6 @@ export const CashFlowCalendar = ({
                           />
                         </>
                       )}
-                      
-                      {/* Average Amazon Payout Reference Line */}
-                      {averageAmazonPayout > 0 && (
-                        <ReferenceLine
-                          y={averageAmazonPayout}
-                          stroke="#a855f7"
-                          strokeWidth={2}
-                          strokeDasharray="8 4"
-                          label={{
-                            value: `Avg Payout: $${averageAmazonPayout.toLocaleString()}`,
-                            position: 'insideTopRight',
-                            fill: '#a855f7',
-                            fontSize: 11,
-                            fontWeight: 600
-                          }}
-                        />
-                      )}
                     </LineChart>
                   )}
                 </ResponsiveContainer>
