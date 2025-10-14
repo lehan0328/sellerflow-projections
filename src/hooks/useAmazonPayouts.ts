@@ -62,7 +62,24 @@ export const useAmazonPayouts = () => {
         return;
       }
 
-      setAmazonPayouts((data || []).map(payout => ({
+      // Filter out forecasted payouts when actual payouts exist for same date & account
+      const filteredPayouts = (data || []).filter((payout) => {
+        // Keep all non-forecasted payouts
+        if (payout.status !== 'forecasted') return true;
+        
+        // For forecasted payouts, only keep if no actual payout exists for same date & account
+        const hasActualPayout = data.some(
+          (p) =>
+            p.amazon_account_id === payout.amazon_account_id &&
+            p.payout_date === payout.payout_date &&
+            p.status !== 'forecasted' &&
+            p.id !== payout.id
+        );
+        
+        return !hasActualPayout;
+      });
+
+      setAmazonPayouts(filteredPayouts.map(payout => ({
         ...payout,
         status: payout.status as "confirmed" | "estimated" | "processing" | "forecasted",
         payout_type: payout.payout_type as "bi-weekly" | "reserve-release" | "adjustment"
