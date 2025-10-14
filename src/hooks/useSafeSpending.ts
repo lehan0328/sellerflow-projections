@@ -550,7 +550,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
       });
 
       setData({
-        safe_spending_limit: safeSpendingLimit,
+        safe_spending_limit: Math.max(0, safeSpendingLimit),
         reserve_amount: reserve,
         will_go_negative: willGoNegative || willDropBelowLimit,
         negative_date: willGoNegative 

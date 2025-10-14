@@ -499,7 +499,7 @@ export const CashFlowCalendar = ({
     
     const days = eachDayOfInterval({ start: chartStart, end: chartEnd });
     let runningTotal = bankAccountBalance; // Blue line: confirmed transactions only
-    let runningTotalWithForecast = bankAccountBalance; // Purple line: confirmed + forecasted payouts
+    let projectedBalance = bankAccountBalance; // Green line: projected balance with forecasts
     let cumulativeInflow = 0;
     let cumulativeOutflow = 0;
     
@@ -523,8 +523,8 @@ export const CashFlowCalendar = ({
       if (dayToCheck >= accountStartDate) {
         // Blue line: confirmed transactions only
         runningTotal += confirmedChange;
-        // Purple line: confirmed + forecasted payouts
-        runningTotalWithForecast += dailyChange; // Includes both confirmed and forecasted
+        // Projected balance: confirmed + forecasted payouts
+        projectedBalance += dailyChange; // Includes both confirmed and forecasted
         cumulativeInflow += dailyInflow;
         cumulativeOutflow += dailyOutflow;
       }
@@ -581,8 +581,10 @@ export const CashFlowCalendar = ({
         creditCardCredit: availableCreditForDay,
         reserve: reserveAmount,
         reserveAmount: reserveAmount,
-        // Purple forecast line: only show on days with actual forecasted payouts (every 14 days)
-        forecastBalance: dayToCheck >= today && forecastedInflow > 0 ? runningTotalWithForecast : null,
+        // Purple dotted line: show ONLY forecasted payout amount on days with forecasts
+        forecastPayout: dayToCheck >= today && forecastedInflow > 0 ? forecastedInflow : null,
+        // Projected balance line: show projected balance including forecasts
+        projectedBalance: dayToCheck >= today ? projectedBalance : null,
         dailyChange,
         inflow: dailyInflow,
         outflow: dailyOutflow,
@@ -1348,26 +1350,40 @@ export const CashFlowCalendar = ({
                         />
                       )}
                       {showForecastLine && (
-                        <Line
-                          type="monotone"
-                          dataKey="forecastBalance"
-                          stroke={forecastColor}
-                          strokeWidth={2}
-                          strokeDasharray="5 5"
-                          dot={(props: any) => {
-                            const { cx, cy, payload } = props;
-                            if (!payload.forecastBalance || payload.forecastBalance === null) {
-                              return null;
-                            }
-                            return (
-                              <g>
-                                <circle cx={cx} cy={cy} r={6} fill={forecastColor} stroke="#9333ea" strokeWidth={2} />
-                                <circle cx={cx} cy={cy} r={3} fill="#fff" />
-                              </g>
-                            );
-                          }}
-                          name="Projected with Forecasts"
-                        />
+                        <>
+                          {/* Purple dotted line - Forecasted Payout amounts only */}
+                          <Line
+                            type="monotone"
+                            dataKey="forecastPayout"
+                            stroke={forecastColor}
+                            strokeWidth={3}
+                            strokeDasharray="5 5"
+                            dot={(props: any) => {
+                              const { cx, cy, payload } = props;
+                              if (!payload.forecastPayout || payload.forecastPayout === null) {
+                                return null;
+                              }
+                              return (
+                                <g>
+                                  <circle cx={cx} cy={cy} r={6} fill={forecastColor} stroke="#9333ea" strokeWidth={2} />
+                                  <circle cx={cx} cy={cy} r={3} fill="#fff" />
+                                </g>
+                              );
+                            }}
+                            name="Forecasted Payouts"
+                            connectNulls={false}
+                          />
+                          {/* Projected Balance line - Cash + Forecasts */}
+                          <Line
+                            type="monotone"
+                            dataKey="projectedBalance"
+                            stroke="#10b981"
+                            strokeWidth={2}
+                            strokeDasharray="3 3"
+                            dot={false}
+                            name="Projected Cash Balance"
+                          />
+                        </>
                       )}
                       
                       {/* Average Amazon Payout Reference Line */}

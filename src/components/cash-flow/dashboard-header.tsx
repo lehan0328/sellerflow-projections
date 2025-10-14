@@ -69,19 +69,25 @@ export function DashboardHeader({
       return 'Demo Dashboard';
     }
     
-    // If user has a company name, use the first word capitalized + "Dashboard"
+    // Format: Company - First Name - Dashboard
+    if (profile?.company && profile?.first_name) {
+      return `${profile.company} - ${profile.first_name} - Dashboard`;
+    }
+    
+    // If only company name
     if (profile?.company) {
-      const firstWord = profile.company.trim().split(/\s+/)[0];
-      return `${firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase()} Dashboard`;
+      return `${profile.company} - Dashboard`;
     }
     
+    // If only first name
     if (profile?.first_name) {
-      return `${profile.first_name}'s Dashboard`;
+      return `${profile.first_name} - Dashboard`;
     }
     
+    // Fallback to email
     if (user?.email) {
       const userName = user.email.split('@')[0];
-      return `${userName.charAt(0).toUpperCase() + userName.slice(1)}'s Dashboard`;
+      return `${userName.charAt(0).toUpperCase() + userName.slice(1)} - Dashboard`;
     }
     
     return 'Dashboard';
