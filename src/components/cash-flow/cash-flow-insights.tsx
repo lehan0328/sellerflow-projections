@@ -863,16 +863,8 @@ export const CashFlowInsights = ({
                       );
                     }
                     
-                    // Calculate projected balances with forecasted payouts
-                    // Start from the last confirmed opportunity's LOW POINT (before the increase)
-                    // The allBuyingOpportunities.balance is AFTER reserve is deducted, so we need to add it back
-                    let startingProjectedBalance = currentBalance;
-                    if (allBuyingOpportunities.length > 0) {
-                      const lastOpp = allBuyingOpportunities[allBuyingOpportunities.length - 1];
-                      // The opportunity balance is spending power (actual balance - reserve)
-                      // So actual balance = opportunity balance + reserve
-                      startingProjectedBalance = lastOpp.balance + reserveAmount;
-                    }
+                    // Calculate projected balances starting from current balance
+                    // and including all forecasted payouts + other cash flow events
                     
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
@@ -884,7 +876,7 @@ export const CashFlowInsights = ({
                     
                     // Calculate daily balances from today to last payout
                     const dailyBalances: Array<{ date: string; balance: number }> = [];
-                    let runningBalance = startingProjectedBalance;
+                    let runningBalance = currentBalance; // Start with actual current balance
                     
                     const daysDiff = Math.ceil((lastPayoutDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
                     
@@ -905,7 +897,7 @@ export const CashFlowInsights = ({
                       
                       // Add income for future dates only
                       income.forEach(inc => {
-                        if (inc.payment_date === targetDateStr && inc.payment_date >= todayStr) {
+                        if (inc.payment_date === targetDateStr && inc.payment_date >= todayStr && inc.status !== 'received') {
                           dayChange += inc.amount || 0;
                         }
                       });
@@ -931,7 +923,8 @@ export const CashFlowInsights = ({
                       balance: number; 
                       formattedDate: string; 
                       payoutAmount: number; 
-                      confidence: number 
+                      confidence: number;
+                      actualBalance: number;
                     }> = [];
                     
                     for (let i = 0; i < dailyBalances.length - 1; i++) {
@@ -964,6 +957,7 @@ export const CashFlowInsights = ({
                               year: 'numeric'
                             }),
                             balance: opportunityAmount,
+                            actualBalance: currentDay.balance,
                             payoutAmount: payoutForThisDate?.total_amount || 0,
                             confidence
                           });
