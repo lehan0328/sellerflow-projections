@@ -240,7 +240,7 @@ export const CashFlowInsights = ({
     };
 
     generateForecasts();
-  }, [includeForecastPayouts, user, amazonPayouts, isForecastGenerating]);
+  }, [includeForecastPayouts, user, amazonPayouts]);
 
   const handleRefreshForecast = async () => {
     if (!user || !includeForecastPayouts) return;
