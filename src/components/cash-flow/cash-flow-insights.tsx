@@ -741,7 +741,7 @@ export const CashFlowInsights = ({
 
       {/* All Buying Opportunities Modal */}
       <Dialog open={showAllOpportunities} onOpenChange={setShowAllOpportunities}>
-        <DialogContent className="max-w-6xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5 text-blue-600" />
