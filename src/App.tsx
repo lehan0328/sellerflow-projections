@@ -52,6 +52,9 @@ import Pricing from "./pages/Pricing";
 import FlexReport from "./pages/FlexReport";
 import AmazonOAuthCallback from "./pages/AmazonOAuthCallback";
 import Demo from "./pages/Demo";
+import SampleDataGenerator from "./pages/SampleDataGenerator";
+import MatchTransactions from "./pages/MatchTransactions";
+import Notifications from "./pages/Notifications";
 
 const queryClient = new QueryClient();
 
@@ -112,6 +115,11 @@ const App = () => (
           <Route path="/onboarding" element={
             <ProtectedRoute>
               <Onboarding />
+            </ProtectedRoute>
+          } />
+          <Route path="/sample-data" element={
+            <ProtectedRoute>
+              <SampleDataGenerator />
             </ProtectedRoute>
           } />
           <Route path="/settings" element={
