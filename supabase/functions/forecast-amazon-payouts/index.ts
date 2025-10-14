@@ -405,12 +405,64 @@ Return ONLY this JSON (no markdown):
         // For bi-weekly: generate 6 bi-weekly payouts (3 months)
         const maxForecasts = payoutFrequency === 'daily' ? 90 : 6;
         
+        // For daily payouts, analyze last 14 days of sales to predict next 14 days
+        let last14DaysSales: number[] = [];
+        let recentSalesTrend = 0;
+        
+        if (payoutFrequency === 'daily' && amazonTransactions && amazonTransactions.length > 0) {
+          // Get last 14 days of transaction data (orders only)
+          const fourteenDaysAgo = new Date();
+          fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+          
+          const recentOrders = amazonTransactions
+            .filter(t => 
+              (t.transaction_type === 'Order' || t.transaction_type === 'Sale') &&
+              new Date(t.transaction_date) >= fourteenDaysAgo
+            )
+            .sort((a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime());
+          
+          // Group by day and calculate net sales per day
+          const dailySales: { [key: string]: number } = {};
+          recentOrders.forEach(txn => {
+            const dayKey = txn.transaction_date.split('T')[0];
+            if (!dailySales[dayKey]) dailySales[dayKey] = 0;
+            dailySales[dayKey] += Number(txn.amount || 0);
+          });
+          
+          // Convert to array of daily amounts
+          last14DaysSales = Object.values(dailySales);
+          
+          // Calculate trend (simple linear regression slope)
+          if (last14DaysSales.length >= 3) {
+            const n = last14DaysSales.length;
+            const xMean = (n - 1) / 2;
+            const yMean = last14DaysSales.reduce((a, b) => a + b, 0) / n;
+            
+            let numerator = 0;
+            let denominator = 0;
+            for (let i = 0; i < n; i++) {
+              numerator += (i - xMean) * (last14DaysSales[i] - yMean);
+              denominator += (i - xMean) ** 2;
+            }
+            
+            recentSalesTrend = denominator !== 0 ? numerator / denominator : 0;
+          }
+          
+          console.log(`[FORECAST] ${amazonAccount.account_name} - Last 14 days sales analysis:`, {
+            daysWithSales: last14DaysSales.length,
+            avgDailySales: last14DaysSales.length > 0 ? (last14DaysSales.reduce((a, b) => a + b, 0) / last14DaysSales.length).toFixed(2) : 0,
+            trend: recentSalesTrend > 0 ? 'increasing' : recentSalesTrend < 0 ? 'decreasing' : 'stable',
+            trendValue: recentSalesTrend.toFixed(2)
+          });
+        }
+        
         console.log(`[FORECAST] Starting forecast generation for ${amazonAccount.account_name}:`, {
           payoutFrequency,
           maxForecasts,
           lastPayoutDate: lastPayoutDate.toISOString().split('T')[0],
           threeMonthsOut: threeMonthsOut.toISOString().split('T')[0],
-          baselineAmount
+          baselineAmount,
+          usingSalesTrendForFirst14Days: payoutFrequency === 'daily' && last14DaysSales.length > 0
         });
         
         while (currentDate <= threeMonthsOut && dayCount < maxForecasts) {
@@ -440,11 +492,32 @@ Return ONLY this JSON (no markdown):
             
             console.log(`[FORECAST] ${amazonAccount.account_name} - Period ${biweeklyPeriodIndex + 1} AI prediction: ${aiPrediction}`);
           } else if (payoutFrequency === 'daily') {
-            // For daily payouts, use the calculated daily average
-            calculationMethod = 'daily_average';
+            // For first 14 days: use recent sales trend if available
+            if (dayCount <= 14 && last14DaysSales.length > 0) {
+              // Project sales forward based on recent trend
+              const avgRecentSales = last14DaysSales.reduce((a, b) => a + b, 0) / last14DaysSales.length;
+              const projectedSales = avgRecentSales + (recentSalesTrend * dayCount);
+              
+              // Payout is typically ~90% of sales (after fees)
+              basePrediction = projectedSales * 0.90;
+              calculationMethod = 'recent_sales_trend';
+              
+              if (dayCount === 1) {
+                console.log(`[FORECAST] ${amazonAccount.account_name} - Using recent sales trend for first 14 days:`, {
+                  avgRecentSales: avgRecentSales.toFixed(2),
+                  dailyTrend: recentSalesTrend.toFixed(2),
+                  payoutMultiplier: 0.90
+                });
+              }
+            } else {
+              // Days 15-90: use historical daily average with variation for realism
+              const variation = 0.92 + (Math.random() * 0.16); // 92-108% variation
+              basePrediction = baselineAmount * variation;
+              calculationMethod = 'historical_avg_with_variation';
+            }
             
-            if (dayCount === 1) {
-              console.log(`[FORECAST] ${amazonAccount.account_name} - Daily average payout: ${basePrediction}`);
+            if (dayCount === 1 || dayCount === 15) {
+              console.log(`[FORECAST] ${amazonAccount.account_name} - Day ${dayCount} prediction method: ${calculationMethod}, amount: ${basePrediction.toFixed(2)}`);
             }
           } else {
             // Add 5-10% variation for realism on bi-weekly
