@@ -102,56 +102,25 @@ export const useReserveAmount = () => {
 
       console.log('[Reserve] Using account_id:', profile.account_id);
 
-      // Check if settings exist
-      const { data: existing, error: existingError } = await supabase
+      // Use upsert to handle both create and update cases
+      console.log('[Reserve] Upserting settings record');
+      const { data: upsertData, error: upsertError } = await supabase
         .from('user_settings')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        .upsert({
+          user_id: user.id,
+          account_id: profile.account_id,
+          safe_spending_reserve: newAmount,
+          reserve_last_updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        })
+        .select();
 
-      console.log('[Reserve] Existing settings:', existing, 'Error:', existingError);
+      console.log('[Reserve] Upsert result:', upsertData, 'Error:', upsertError);
 
-      if (existingError) {
-        throw new Error(`Settings fetch error: ${existingError.message}`);
-      }
-
-      if (!existing) {
-        // Create new settings record
-        console.log('[Reserve] Creating new settings record');
-        const { data: insertData, error: insertError } = await supabase
-          .from('user_settings')
-          .insert({
-            user_id: user.id,
-            account_id: profile.account_id,
-            safe_spending_reserve: newAmount,
-            reserve_last_updated_at: new Date().toISOString()
-          })
-          .select();
-
-        console.log('[Reserve] Insert result:', insertData, 'Error:', insertError);
-
-        if (insertError) {
-          console.error('[Reserve] Insert error:', insertError);
-          throw new Error(`Insert error: ${insertError.message}`);
-        }
-      } else {
-        // Update existing record
-        console.log('[Reserve] Updating existing record, id:', existing.id);
-        const { data: updateData, error: updateError } = await supabase
-          .from('user_settings')
-          .update({ 
-            safe_spending_reserve: newAmount,
-            reserve_last_updated_at: new Date().toISOString()
-          })
-          .eq('user_id', user.id)
-          .select();
-
-        console.log('[Reserve] Update result:', updateData, 'Error:', updateError);
-
-        if (updateError) {
-          console.error('[Reserve] Update error:', updateError);
-          throw new Error(`Update error: ${updateError.message}`);
-        }
+      if (upsertError) {
+        console.error('[Reserve] Upsert error:', upsertError);
+        throw new Error(`Upsert error: ${upsertError.message}`);
       }
 
       // Verify the update
