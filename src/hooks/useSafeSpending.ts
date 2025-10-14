@@ -434,22 +434,30 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
           
           // Only add if there's actually money to spend
           if (opportunityAmount > 0) {
-            // The earliest available date is when you'll actually have this money
-            // which is the low point date itself (the valley bottom)
-            const availableDate = currentDay.date;
+            // Work backward to find the EARLIEST date when balance first reached this level
+            // Start from beginning (today) and find first date where balance >= lowPointBalance
+            let earliestAvailableDate = currentDay.date; // Default to low point date
+            
+            for (let j = 0; j <= i; j++) {
+              if (dailyBalances[j].balance >= lowPointBalance) {
+                earliestAvailableDate = dailyBalances[j].date;
+                break; // Found the earliest date
+              }
+            }
             
             console.log(`🛒 Opportunity #${allBuyingOpportunities.length + 1} at ${currentDay.date}:`, {
               lowPointBalance: lowPointBalance.toFixed(2),
               reserve: reserve.toFixed(2),
               opportunityAmount: opportunityAmount.toFixed(2),
-              availableDate,
+              earliestAvailableDate,
+              lowPointDate: currentDay.date,
               nextDayBalance: nextDay.balance.toFixed(2)
             });
             
             allBuyingOpportunities.push({
               date: currentDay.date,
               balance: opportunityAmount, // Already has reserve deducted above
-              available_date: availableDate
+              available_date: earliestAvailableDate
             });
           }
         }
@@ -471,20 +479,29 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
           const alreadyCaptured = allBuyingOpportunities.some(opp => opp.date === lastDay.date);
           
           if (!alreadyCaptured && opportunityAmount > 0) {
-            // Available date is the last day itself
-            const availableDate = lastDay.date;
+            // Work backward to find the EARLIEST date when balance first reached this level
+            let earliestAvailableDate = lastDay.date; // Default to last day
+            const terminalBalance = lastDay.balance;
+            
+            for (let j = 0; j < dailyBalances.length - 1; j++) {
+              if (dailyBalances[j].balance >= terminalBalance) {
+                earliestAvailableDate = dailyBalances[j].date;
+                break; // Found the earliest date
+              }
+            }
             
             console.log(`🛒 Terminal opportunity at ${lastDay.date}:`, {
               balance: lastDay.balance.toFixed(2),
               reserve: reserve.toFixed(2),
               opportunityAmount: opportunityAmount.toFixed(2),
-              availableDate
+              earliestAvailableDate,
+              terminalDate: lastDay.date
             });
             
             allBuyingOpportunities.push({
               date: lastDay.date,
               balance: opportunityAmount,
-              available_date: availableDate
+              available_date: earliestAvailableDate
             });
           }
         }
