@@ -69,25 +69,22 @@ export function DashboardHeader({
       return 'Demo Dashboard';
     }
     
-    // Format: Company - First Name - Dashboard
-    if (profile?.company && profile?.first_name) {
-      return `${profile.company} - ${profile.first_name} - Dashboard`;
-    }
-    
-    // If only company name
+    // Use first word of company name + "'s Dashboard"
     if (profile?.company) {
-      return `${profile.company} - Dashboard`;
+      const firstWord = profile.company.trim().split(/\s+/)[0];
+      const capitalized = firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase();
+      return `${capitalized}'s Dashboard`;
     }
     
-    // If only first name
+    // Fallback to first name
     if (profile?.first_name) {
-      return `${profile.first_name} - Dashboard`;
+      return `${profile.first_name}'s Dashboard`;
     }
     
     // Fallback to email
     if (user?.email) {
       const userName = user.email.split('@')[0];
-      return `${userName.charAt(0).toUpperCase() + userName.slice(1)} - Dashboard`;
+      return `${userName.charAt(0).toUpperCase() + userName.slice(1)}'s Dashboard`;
     }
     
     return 'Dashboard';
