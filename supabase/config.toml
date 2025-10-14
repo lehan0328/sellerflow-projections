@@ -128,3 +128,6 @@ verify_jwt = true
 
 [functions.restore-admin-access]
 verify_jwt = true
+
+[functions.generate-admin-test-data]
+verify_jwt = true
