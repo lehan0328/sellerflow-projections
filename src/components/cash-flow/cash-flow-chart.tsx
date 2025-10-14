@@ -131,6 +131,10 @@ export const CashFlowChart = ({
   };
 
   const chartData = generateChartData();
+  
+  // Calculate max value with 20% padding for better visualization
+  const maxCashFlow = Math.max(...chartData.map(d => d.cashFlow));
+  const chartMaxValue = Math.ceil(maxCashFlow * 1.2);
 
   const chartConfig = {
     cashFlow: {
@@ -231,6 +235,7 @@ export const CashFlowChart = ({
                   <YAxis 
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                    domain={[0, chartMaxValue]}
                   />
                   <ChartTooltip 
                     content={<ChartTooltipContent />}
