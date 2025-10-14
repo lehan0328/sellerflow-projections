@@ -83,7 +83,7 @@ serve(async (req) => {
         refunds_total: refundsTotal,
         other_total: 0,
         transaction_count: Math.floor(Math.random() * 100) + 50,
-        status: 'settled',
+        status: 'confirmed',
         currency_code: 'USD',
         marketplace_name: 'Amazon.com',
         payout_type: 'bi-weekly',
