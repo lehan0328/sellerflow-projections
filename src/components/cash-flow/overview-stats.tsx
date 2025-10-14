@@ -320,65 +320,6 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
 
   const totalOverdueCount = overdueVendorCount + overdueIncomeCount;
 
-  // Calculate pending transactions for TODAY only
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const todayEnd = new Date();
-  todayEnd.setHours(23, 59, 59, 999);
-
-  // Pending Amazon payouts for today (confirmed payouts dated today that haven't settled)
-  const todayAmazonPayouts = amazonPayouts.filter(payout => {
-    const payoutDate = new Date(payout.payout_date);
-    payoutDate.setHours(0, 0, 0, 0);
-    const isToday = payoutDate.getTime() === todayStart.getTime();
-    return isToday;
-  });
-  const todayAmazonAmount = todayAmazonPayouts.reduce((sum, payout) => sum + (payout.total_amount || 0), 0);
-
-  // Pending income for today
-  const todayPendingIncome = incomeItems.filter(income => {
-    const paymentDate = new Date(income.paymentDate);
-    paymentDate.setHours(0, 0, 0, 0);
-    const isToday = paymentDate.getTime() === todayStart.getTime();
-    return income.status === 'pending' && isToday;
-  });
-  const todayIncomeAmount = todayPendingIncome.reduce((sum, income) => sum + income.amount, 0);
-
-  // Pending vendor transactions for today
-  const todayPendingExpenses = vendorTransactions.filter(tx => {
-    const dueDate = new Date(tx.dueDate);
-    dueDate.setHours(0, 0, 0, 0);
-    const isToday = dueDate.getTime() === todayStart.getTime();
-    return tx.status === 'pending' && isToday;
-  });
-  const todayExpenseAmount = todayPendingExpenses.reduce((sum, tx) => sum + tx.amount, 0);
-
-  // Pending recurring expenses for today
-  const todayPendingRecurring = events.filter(event => {
-    const eventDate = new Date(event.date);
-    eventDate.setHours(0, 0, 0, 0);
-    const isToday = eventDate.getTime() === todayStart.getTime();
-    const isRecurringExpense = event.type === 'outflow' && 
-      (typeof (event as any).id === 'string' && (event as any).id.startsWith('recurring-'));
-    return isRecurringExpense && isToday;
-  });
-  const todayRecurringAmount = todayPendingRecurring.reduce((sum, event) => sum + event.amount, 0);
-
-  const todayTotalPending = todayAmazonAmount + todayIncomeAmount + todayExpenseAmount + todayRecurringAmount;
-
-  console.log('📊 Pending Today Breakdown:', {
-    todayStart: todayStart.toISOString(),
-    amazonPayouts: todayAmazonPayouts.length,
-    amazonAmount: todayAmazonAmount,
-    income: todayPendingIncome.length,
-    incomeAmount: todayIncomeAmount,
-    expenses: todayPendingExpenses.length,
-    expenseAmount: todayExpenseAmount,
-    recurring: todayPendingRecurring.length,
-    recurringAmount: todayRecurringAmount,
-    total: todayTotalPending
-  });
-
   return (<>
       <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
@@ -406,45 +347,9 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               <p className="text-2xl font-bold text-blue-700">
                 {formatCurrency(bankAccountBalance)}
               </p>
-              {todayTotalPending > 0 ? (
-                <div className="space-y-0.5 mt-2">
-                  <p className="text-xs font-semibold text-slate-700">Pending Today:</p>
-                  {todayAmazonAmount > 0 && (
-                    <p className="text-xs text-green-600">
-                      Amazon: {formatCurrency(todayAmazonAmount)}
-                    </p>
-                  )}
-                  {todayIncomeAmount > 0 && (
-                    <p className="text-xs text-green-600">
-                      Income: {formatCurrency(todayIncomeAmount)}
-                    </p>
-                  )}
-                  {todayRecurringAmount > 0 && (
-                    <p className="text-xs text-amber-600">
-                      Recurring: {formatCurrency(todayRecurringAmount)}
-                    </p>
-                  )}
-                  {todayExpenseAmount > 0 && (
-                    <p className="text-xs text-red-600">
-                      Expense: {formatCurrency(todayExpenseAmount)}
-                    </p>
-                  )}
-                  <div className="pt-1 border-t border-blue-200">
-                    <p className="text-sm font-semibold text-blue-700">
-                      Total Projected: {formatCurrency(bankAccountBalance + todayAmazonAmount + todayIncomeAmount - todayExpenseAmount - todayRecurringAmount)}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-0.5">
-                  <p className="text-sm text-slate-600">
-                    No pending today
-                  </p>
-                  <p className="text-sm text-slate-600">
-                    Total Projected: {formatCurrency(bankAccountBalance)}
-                  </p>
-                </div>
-              )}
+              <p className="text-sm text-slate-600">
+                {accounts.length === 0 ? 'No accounts connected' : 'Current balance'}
+              </p>
             </div>
             <DollarSign className="h-8 w-8 text-blue-500" />
           </div>
