@@ -186,7 +186,7 @@ export const useReserveAmount = () => {
   useEffect(() => {
     fetchReserveAmount();
 
-    // Subscribe to changes for current user only
+    // Subscribe to changes for current user only - but only refetch if reserve amount actually changed
     const setupSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -198,9 +198,15 @@ export const useReserveAmount = () => {
           schema: 'public', 
           table: 'user_settings',
           filter: `user_id=eq.${user.id}`
-        }, (payload) => {
-          console.log('[Reserve] Settings changed for current user, refetching');
-          fetchReserveAmount();
+        }, (payload: any) => {
+          // Only refetch if safe_spending_reserve actually changed
+          const oldReserve = payload.old?.safe_spending_reserve;
+          const newReserve = payload.new?.safe_spending_reserve;
+          
+          if (oldReserve !== newReserve) {
+            console.log('[Reserve] Reserve amount changed, refetching');
+            fetchReserveAmount();
+          }
         })
         .subscribe();
 

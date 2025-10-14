@@ -31,25 +31,28 @@ export function BuyingOpportunitiesPanel({
   // Calculate buying opportunities based on forecasted payouts
   const calculateOpportunities = (): BuyingOpportunity[] => {
     const opportunities: BuyingOpportunity[] = [];
-    let projectedBalance = currentBalance;
+    
+    // Start with current available amount (currentBalance - reserveAmount - upcomingExpenses)
+    // This ensures consistency with "Available to Spend"
+    let baseAvailableAmount = Math.max(0, currentBalance - reserveAmount - upcomingExpenses);
     
     forecastedPayouts.forEach((payout, index) => {
-      // Project balance after payout
-      projectedBalance += payout.total_amount;
+      // Add forecasted payout to available amount
+      const availableWithPayout = baseAvailableAmount + payout.total_amount;
       
-      // Calculate safe buying amount (balance - reserve - upcoming expenses)
-      const safeAmount = Math.max(0, projectedBalance - reserveAmount - upcomingExpenses);
-      
-      if (safeAmount > 1000) { // Only show opportunities above $1k
+      if (availableWithPayout > 1000) { // Only show opportunities above $1k
         const confidence = payout.raw_settlement_data?.forecast_metadata?.confidence || 0.7;
         
         opportunities.push({
           date: payout.payout_date,
-          availableAmount: safeAmount,
+          availableAmount: availableWithPayout,
           confidence: confidence,
           reasoning: `After ${format(new Date(payout.payout_date), 'MMM dd')} payout`
         });
       }
+      
+      // Update base for next iteration (cumulative)
+      baseAvailableAmount = availableWithPayout;
     });
     
     return opportunities.slice(0, 3); // Show top 3 opportunities
