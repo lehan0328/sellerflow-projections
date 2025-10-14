@@ -1367,15 +1367,11 @@ export const CashFlowCalendar = ({
                               return null;
                             }
                             
+                            // Don't show dots for forecasted Amazon payouts
                             if (payload.hasAmazonForecast) {
-                              // Forecasted payout - purple/dashed
-                              return (
-                                <g>
-                                  <circle cx={cx} cy={cy} r={6} fill="#a855f7" stroke="#9333ea" strokeWidth={2} strokeDasharray="3,3" />
-                                  <circle cx={cx} cy={cy} r={3} fill="#fff" />
-                                </g>
-                              );
+                              return null;
                             }
+                            
                             if (payload.hasAmazonPayout) {
                               // Confirmed payout - orange
                               return (
@@ -1445,15 +1441,7 @@ export const CashFlowCalendar = ({
                             strokeDasharray="3 3"
                             dot={(props: any) => {
                               const { cx, cy, payload } = props;
-                              // Show dot on days with AI forecasted Amazon payouts
-                              if (payload.hasAmazonForecast) {
-                                return (
-                                  <g>
-                                    <circle cx={cx} cy={cy} r={6} fill="#9333ea" stroke="#7e22ce" strokeWidth={2} />
-                                    <circle cx={cx} cy={cy} r={3} fill="#fff" />
-                                  </g>
-                                );
-                              }
+                              // Don't show dots for AI forecasted Amazon payouts
                               return null;
                             }}
                             name="Projected Cash Balance (with AI Forecasts)"
