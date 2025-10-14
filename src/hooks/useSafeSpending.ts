@@ -410,41 +410,33 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
       // Find ALL buying opportunities using a simple approach:
       // An opportunity occurs when balance INCREASES from one day to the next
       // The opportunity is the amount you can spend on the LOW day (before the increase)
-      // ONLY look at FUTURE dates (exclude today and past)
+      // ONLY look at FUTURE dates (exclude today and overdue)
       const allBuyingOpportunities: Array<{ date: string; balance: number; available_date?: string }> = [];
       
       const todayCheck = new Date();
       todayCheck.setHours(0, 0, 0, 0);
       
-      for (let i = 0; i < dailyBalances.length - 1; i++) {
+      for (let i = 1; i < dailyBalances.length - 1; i++) {  // Start from i=1 to skip today
         const currentDay = dailyBalances[i];
         const nextDay = dailyBalances[i + 1];
         
-        // Skip today and past dates - only look at FUTURE
+        // Double check: Skip today and past dates - only look at FUTURE
         const currentDate = new Date(currentDay.date);
         if (currentDate <= todayCheck) {
           continue;
         }
         
-        // Check if balance increases from today to tomorrow
-        // This means today is a low point (valley bottom)
+        // Check if balance increases from current to next day
+        // This means current day is a low point (valley bottom)
         if (nextDay.balance > currentDay.balance) {
           const lowPointBalance = currentDay.balance;
           const opportunityAmount = Math.max(0, lowPointBalance - reserve);
           
           // Only add if there's actually money to spend
           if (opportunityAmount > 0) {
-            // Find earliest date when this purchase could be made
-            // Work backwards to find when we first had enough balance
-            let earliestAvailableIndex = 0;
-            for (let k = i - 1; k >= 0; k--) {
-              if (dailyBalances[k].balance < lowPointBalance) {
-                earliestAvailableIndex = k + 1;
-                break;
-              }
-            }
-            
-            const availableDate = dailyBalances[earliestAvailableIndex].date;
+            // The earliest available date is when you'll actually have this money
+            // which is the low point date itself (the valley bottom)
+            const availableDate = currentDay.date;
             
             console.log(`🛒 Opportunity #${allBuyingOpportunities.length + 1} at ${currentDay.date}:`, {
               lowPointBalance: lowPointBalance.toFixed(2),
@@ -465,30 +457,22 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
       
       // Check the last day - if it's at a high or equal to previous day, it's an opportunity
       // BUT only if it's a FUTURE date (not today)
-      if (dailyBalances.length > 0) {
+      if (dailyBalances.length > 1) {
         const lastDay = dailyBalances[dailyBalances.length - 1];
-        const secondLastDay = dailyBalances.length > 1 ? dailyBalances[dailyBalances.length - 2] : null;
+        const secondLastDay = dailyBalances[dailyBalances.length - 2];
         
         // Check if last day is in the future
         const lastDayDate = new Date(lastDay.date);
         const isFuture = lastDayDate > todayCheck;
         
         // If last day is at high or equal level and wasn't already captured
-        if (isFuture && secondLastDay && lastDay.balance >= secondLastDay.balance) {
+        if (isFuture && lastDay.balance >= secondLastDay.balance) {
           const opportunityAmount = Math.max(0, lastDay.balance - reserve);
           const alreadyCaptured = allBuyingOpportunities.some(opp => opp.date === lastDay.date);
           
           if (!alreadyCaptured && opportunityAmount > 0) {
-            // Find earliest available date
-            let earliestAvailableIndex = 0;
-            for (let k = dailyBalances.length - 2; k >= 0; k--) {
-              if (dailyBalances[k].balance < lastDay.balance) {
-                earliestAvailableIndex = k + 1;
-                break;
-              }
-            }
-            
-            const availableDate = dailyBalances[earliestAvailableIndex].date;
+            // Available date is the last day itself
+            const availableDate = lastDay.date;
             
             console.log(`🛒 Terminal opportunity at ${lastDay.date}:`, {
               balance: lastDay.balance.toFixed(2),
