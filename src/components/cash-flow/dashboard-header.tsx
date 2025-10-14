@@ -66,30 +66,30 @@ export function DashboardHeader({
   // Get user display name for dashboard title
   const getUserDisplayName = () => {
     if (isDemo) {
-      return 'Demo';
+      return 'Demo Dashboard';
     }
     
     // Show loading state to prevent flicker
     if (profileLoading) {
-      return 'Loading';
+      return 'Loading...';
     }
     
-    // If user has a company name, use the first word capitalized
+    // If user has a company name, use the first word capitalized + "Dashboard"
     if (profile?.company) {
       const firstWord = profile.company.trim().split(/\s+/)[0];
-      return firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase();
+      return `${firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase()} Dashboard`;
     }
     
     if (profile?.first_name) {
-      return profile.first_name;
+      return `${profile.first_name}'s Dashboard`;
     }
     
     if (user?.email) {
       const userName = user.email.split('@')[0];
-      return userName.charAt(0).toUpperCase() + userName.slice(1);
+      return `${userName.charAt(0).toUpperCase() + userName.slice(1)}'s Dashboard`;
     }
     
-    return 'User';
+    return 'Dashboard';
   };
   return <div className="relative w-full">
       {/* Logo - Top Left - Only show when sidebar is collapsed */}
@@ -125,7 +125,7 @@ export function DashboardHeader({
       <div className="flex justify-center items-center pt-8 pb-6">
         <div className="text-center">
           <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            {isDemo ? 'Demo Dashboard' : `${getUserDisplayName()}'s Dashboard`}
+            {getUserDisplayName()}
           </h1>
           <p className="text-muted-foreground mt-2">
             Real-time insights and financial management
