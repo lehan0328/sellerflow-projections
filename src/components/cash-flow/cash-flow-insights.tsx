@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
 import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -815,7 +816,7 @@ export const CashFlowInsights = ({
             </DialogTitle>
           </DialogHeader>
           
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-[1fr_auto_1fr] gap-6">
             {/* Left Side - Confirmed Buying Opportunities */}
             <div>
               <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
@@ -867,6 +868,9 @@ export const CashFlowInsights = ({
                 </div>
               </ScrollArea>
             </div>
+            
+            {/* Vertical Divider */}
+            <Separator orientation="vertical" className="h-auto" />
             
             {/* Right Side - Projected Opportunities with AI Forecasts */}
             <div>
