@@ -129,6 +129,13 @@ export const CashFlowInsights = ({
           setIsForecastGenerating(true);
           
           try {
+            // Delete old forecasts first
+            await supabase
+              .from('amazon_payouts')
+              .delete()
+              .eq('user_id', user.id)
+              .eq('status', 'forecasted');
+            
             const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts', {
               body: { userId: user.id }
             });
@@ -140,6 +147,7 @@ export const CashFlowInsights = ({
               setIsForecastGenerating(false);
             } else if (data?.success) {
               console.log('✅ Amazon payouts forecasted successfully');
+              // Refetch to get fresh data
               await refetchPayouts();
               setIsForecastGenerating(false);
             } else {

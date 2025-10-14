@@ -39,14 +39,14 @@ export function DashboardHeader({
   } = useSidebar();
   const isSidebarCollapsed = state === "collapsed";
 
-  // Fetch user profile for display name
+  // Fetch user profile for display name - only fetch company
   const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ['profile', user?.id],
+    queryKey: ['profile-company', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       const { data, error } = await supabase
         .from('profiles')
-        .select('first_name, last_name, company')
+        .select('company')
         .eq('user_id', user.id)
         .maybeSingle();
       
@@ -54,7 +54,7 @@ export function DashboardHeader({
         console.error('[Dashboard] Error fetching profile:', error);
         return null;
       }
-      console.log('[Dashboard] Profile data loaded:', data);
+      console.log('[Dashboard] Company data loaded:', data);
       return data;
     },
     enabled: !!user?.id,
@@ -69,22 +69,11 @@ export function DashboardHeader({
       return 'Demo Dashboard';
     }
     
-    // Use first word of company name + "'s Dashboard"
+    // Only use company name - first word + "'s Dashboard"
     if (profile?.company) {
       const firstWord = profile.company.trim().split(/\s+/)[0];
       const capitalized = firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase();
       return `${capitalized}'s Dashboard`;
-    }
-    
-    // Fallback to first name
-    if (profile?.first_name) {
-      return `${profile.first_name}'s Dashboard`;
-    }
-    
-    // Fallback to email
-    if (user?.email) {
-      const userName = user.email.split('@')[0];
-      return `${userName.charAt(0).toUpperCase() + userName.slice(1)}'s Dashboard`;
     }
     
     return 'Dashboard';
