@@ -25,15 +25,16 @@ serve(async (req) => {
     
     console.log('[FORECAST] Fetching Amazon data for user:', userId);
 
-    // Fetch Amazon payouts from last 6 months
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    // Fetch Amazon payouts from last 3 months for trend analysis
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
     
     const { data: amazonPayouts, error: payoutsError } = await supabase
       .from('amazon_payouts')
       .select('*')
       .eq('user_id', userId)
-      .gte('payout_date', sixMonthsAgo.toISOString().split('T')[0])
+      .eq('status', 'confirmed') // Only use confirmed payouts for baseline
+      .gte('payout_date', threeMonthsAgo.toISOString().split('T')[0])
       .order('payout_date', { ascending: false });
 
     if (payoutsError) {
@@ -41,14 +42,14 @@ serve(async (req) => {
       throw new Error('Failed to fetch Amazon payout data');
     }
 
-    // Fetch Amazon transactions for detailed analysis
+    // Fetch Amazon transactions from last 3 months for sales trend analysis
     const { data: amazonTransactions, error: transactionsError } = await supabase
       .from('amazon_transactions')
       .select('*')
       .eq('user_id', userId)
-      .gte('transaction_date', sixMonthsAgo.toISOString())
+      .gte('transaction_date', threeMonthsAgo.toISOString())
       .order('transaction_date', { ascending: false })
-      .limit(2000);
+      .limit(1000);
 
     if (transactionsError) {
       console.error('[FORECAST] Error fetching transactions:', transactionsError);
@@ -92,11 +93,8 @@ serve(async (req) => {
       monthlyTransactions[monthKey].net_amount += amount;
     });
 
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-    const recentTransactions = amazonTransactions?.filter(t => 
-      new Date(t.transaction_date) >= threeMonthsAgo
-    ) || [];
+    // All transactions are already from last 3 months
+    const recentTransactions = amazonTransactions || [];
 
     console.log('[FORECAST] Data fetched', { 
       payoutCount: amazonPayouts?.length || 0,
@@ -192,33 +190,42 @@ serve(async (req) => {
     // Prepare a simplified data analysis prompt
     const systemPrompt = `You are a financial analyst specializing in Amazon marketplace forecasting. Analyze payout data and provide accurate predictions.`;
 
-    const analysisPrompt = `Analyze Amazon Seller payout data and forecast next 3 months (6 bi-weekly periods).
+    const analysisPrompt = `Analyze Amazon Seller data from LAST 3 MONTHS ONLY and forecast next 3 months (6 bi-weekly periods).
 
-HISTORICAL PAYOUTS (Last 10):
-${JSON.stringify(amazonPayouts.slice(0, 10).map(p => ({
+RECENT SALES TRENDS (Last 3 Months):
+Monthly Order Volume: ${JSON.stringify(Object.values(monthlyTransactions).map((m: any) => ({
+  month: m.month,
+  orders_amount: m.orders_amount,
+  net_amount: m.net_amount,
+  transaction_count: m.transaction_count
+})), null, 2)}
+
+RECENT PAYOUTS (Last 3 Months):
+${JSON.stringify(amazonPayouts.map(p => ({
   date: p.payout_date,
   amount: p.total_amount
 })), null, 2)}
 
-MONTHLY AGGREGATES:
-${JSON.stringify(historicalData, null, 2)}
+3-Month Average Payout: $${avgPayoutAmount.toFixed(2)}
 
-Baseline: $${avgPayoutAmount.toFixed(2)} per payout
+Analyze sales velocity trends, growth patterns, and provide 6 forecasted payout amounts.
 
 Return ONLY this JSON (no markdown):
 {
-  "analysis": "Brief trend analysis (2-3 sentences)",
+  "analysis": "Brief trend analysis based on last 3 months (2-3 sentences)",
+  "sales_trend": "increasing/decreasing/stable",
   "predictions": [
     {
       "period": "Period 1",
       "predicted_amount": number,
       "confidence": 0.8,
-      "date_range": "estimate"
+      "reasoning": "brief reason"
     }
   ],
-  "trends": {
-    "overall_growth_rate": "X%",
-    "seasonality": "brief description"
+  "buying_opportunity": {
+    "recommended_amount": number,
+    "timing": "specific date recommendation",
+    "confidence": 0.85
   }
 }`;
 
