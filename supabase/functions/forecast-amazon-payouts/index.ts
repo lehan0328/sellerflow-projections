@@ -54,8 +54,8 @@ serve(async (req) => {
       .eq('user_id', userId)
       .maybeSingle();
 
-    const riskAdjustment = userSettings?.forecast_confidence_threshold ?? 5; // 0 = Medium, 5 = Safe, 15 = Very Safe
-    console.log('[FORECAST] User risk adjustment:', riskAdjustment, '(0=Medium, 5=Safe, 15=Very Safe)');
+    const riskAdjustment = userSettings?.forecast_confidence_threshold ?? 5; // -5 = Aggressive, 0 = Medium, 5 = Safe, 10 = Very Safe
+    console.log('[FORECAST] User risk adjustment:', riskAdjustment, '(-5=Aggressive+5%, 0=Medium, 5=Safe-5%, 10=Very Safe-10%)');
 
     // Fetch Amazon payouts from last 3 months for trend analysis
     const threeMonthsAgo = new Date();
@@ -241,7 +241,7 @@ ${JSON.stringify(amazonPayouts.map(p => ({
 3-Month Average Payout: $${avgPayoutAmount.toFixed(2)}
 
 IMPORTANT: Amazon payout forecasts are highly predictable based on historical data.
-User's Risk Adjustment: ${riskAdjustment}% (0=Medium/Average, 5=Safe/-5%, 15=Very Safe/-15%)
+User's Risk Adjustment: ${riskAdjustment}% (-5=Aggressive+5%, 0=Medium, 5=Safe-5%, 10=Very Safe-10%)
 
 Analyze sales velocity trends, growth patterns, and provide 6 forecasted payout amounts.
 Note: The system will apply the user's risk adjustment AFTER your predictions, so predict based on actual trends.
@@ -395,10 +395,10 @@ Return ONLY this JSON (no markdown):
           console.log(`[FORECAST] Period ${forecastIndex + 1} baseline: ${baselineAmount} * 100 * ${variation.toFixed(2)} = ${basePrediction}`);
         }
         
-        // Apply risk adjustment: 0 = no adjustment, 5 = -5%, 15 = -15%
+        // Apply risk adjustment: -5 = +5%, 0 = no adjustment, 5 = -5%, 10 = -10%
         const riskMultiplier = 1 - (riskAdjustment / 100);
         const predictedAmount = Math.round(basePrediction * riskMultiplier);
-        console.log(`[FORECAST] Period ${forecastIndex + 1} after ${riskAdjustment}% risk adjustment: ${basePrediction} * ${riskMultiplier} = ${predictedAmount}`);
+        console.log(`[FORECAST] Period ${forecastIndex + 1} after ${riskAdjustment}% risk adjustment: ${basePrediction} * ${riskMultiplier.toFixed(2)} = ${predictedAmount}`);
         
         const forecastPayout = {
           user_id: userId,
@@ -420,7 +420,7 @@ Return ONLY this JSON (no markdown):
             forecast_metadata: {
               confidence: forecast.predictions?.[forecastIndex]?.confidence || 0.90,
               risk_adjustment: riskAdjustment,
-              risk_level: riskAdjustment === 0 ? 'medium' : riskAdjustment === 5 ? 'safe' : 'very_safe',
+              risk_level: riskAdjustment === -5 ? 'aggressive' : riskAdjustment === 0 ? 'medium' : riskAdjustment === 5 ? 'safe' : 'very_safe',
               upper_bound: Math.round(predictedAmount * 1.2),
               lower_bound: Math.round(predictedAmount * 0.8),
               period: `Forecast ${forecastIndex + 1}`,
