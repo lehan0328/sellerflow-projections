@@ -3,6 +3,9 @@ project_id = "ruvdqtqyfzaxlobmxgaj"
 [functions.daily-account-check]
 verify_jwt = false
 
+[functions.maintain-amazon-forecasts]
+verify_jwt = false
+
 [functions.request-password-reset]
 verify_jwt = false
 

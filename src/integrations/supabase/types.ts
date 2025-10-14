@@ -238,9 +238,12 @@ export type Database = {
           created_at: string
           currency_code: string
           fees_total: number | null
+          forecast_accuracy_percentage: number | null
+          forecast_replaced_at: string | null
           id: string
           marketplace_name: string
           orders_total: number | null
+          original_forecast_amount: number | null
           other_total: number | null
           payout_date: string
           payout_type: string
@@ -259,9 +262,12 @@ export type Database = {
           created_at?: string
           currency_code?: string
           fees_total?: number | null
+          forecast_accuracy_percentage?: number | null
+          forecast_replaced_at?: string | null
           id?: string
           marketplace_name: string
           orders_total?: number | null
+          original_forecast_amount?: number | null
           other_total?: number | null
           payout_date: string
           payout_type?: string
@@ -280,9 +286,12 @@ export type Database = {
           created_at?: string
           currency_code?: string
           fees_total?: number | null
+          forecast_accuracy_percentage?: number | null
+          forecast_replaced_at?: string | null
           id?: string
           marketplace_name?: string
           orders_total?: number | null
+          original_forecast_amount?: number | null
           other_total?: number | null
           payout_date?: string
           payout_type?: string

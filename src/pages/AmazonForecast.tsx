@@ -31,6 +31,7 @@ import {
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AmazonForecastAccuracy } from "@/components/cash-flow/amazon-forecast-accuracy";
 
 export default function AmazonForecast() {
   const navigate = useNavigate();
@@ -399,6 +400,9 @@ export default function AmazonForecast() {
           </CardContent>
         </Card>
       )}
+
+      {/* Forecast Accuracy Archive */}
+      <AmazonForecastAccuracy />
     </div>
   );
 }

@@ -167,17 +167,49 @@ serve(async (req) => {
       }
     }
 
-    // Insert payouts (with conflict resolution)
+    // Before inserting actual payouts, check for existing forecasted payouts
+    // and update them with actual data while preserving forecast for comparison
     if (payoutsToAdd.length > 0) {
-      const { error: payoutError } = await supabase
-        .from('amazon_payouts')
-        .upsert(payoutsToAdd, { 
-          onConflict: 'amazon_account_id,settlement_id',
-          ignoreDuplicates: true 
-        })
+      for (const payout of payoutsToAdd) {
+        // Find any existing forecasted payout for this date
+        const { data: existingForecasts } = await supabase
+          .from('amazon_payouts')
+          .select('*')
+          .eq('amazon_account_id', payout.amazon_account_id)
+          .eq('payout_date', payout.payout_date)
+          .eq('status', 'forecasted')
+          .maybeSingle()
 
-      if (payoutError) {
-        console.error('Error inserting payouts:', payoutError)
+        if (existingForecasts) {
+          // We found a forecasted payout - replace it with actual data
+          const forecastAmount = Number(existingForecasts.total_amount)
+          const actualAmount = Number(payout.total_amount)
+          const accuracy = actualAmount > 0 
+            ? (100 - Math.abs(((actualAmount - forecastAmount) / actualAmount) * 100))
+            : 0
+
+          console.log(`Replacing forecast for ${payout.payout_date}: Forecast=$${forecastAmount}, Actual=$${actualAmount}, Accuracy=${accuracy.toFixed(2)}%`)
+
+          // Update the existing record with actual data + forecast comparison
+          await supabase
+            .from('amazon_payouts')
+            .update({
+              ...payout,
+              original_forecast_amount: forecastAmount,
+              forecast_replaced_at: new Date().toISOString(),
+              forecast_accuracy_percentage: accuracy,
+              status: payout.status // Use actual status (confirmed/estimated)
+            })
+            .eq('id', existingForecasts.id)
+        } else {
+          // No forecast exists, just insert the actual payout
+          await supabase
+            .from('amazon_payouts')
+            .upsert(payout, { 
+              onConflict: 'amazon_account_id,settlement_id',
+              ignoreDuplicates: false 
+            })
+        }
       }
     }
 
