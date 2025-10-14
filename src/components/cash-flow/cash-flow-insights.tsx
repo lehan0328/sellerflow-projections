@@ -695,7 +695,7 @@ export const CashFlowInsights = ({
                       </div>
                       {allBuyingOpportunities[1].available_date && (
                         <div className="flex items-center justify-between p-1.5 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
-                          <span className="text-muted-foreground">Purchase</span>
+                          <span className="text-muted-foreground text-xs">Earliest Purchase Date</span>
                           <span className="font-semibold text-green-600">
                             {(() => {
                               const [year, month, day] = allBuyingOpportunities[1].available_date.split('-').map(Number);
