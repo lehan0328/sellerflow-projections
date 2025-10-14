@@ -425,7 +425,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
             
             allBuyingOpportunities.push({
               date: currentDay.date,
-              balance: Math.max(0, opportunityAmount - reserve), // Deduct reserve
+              balance: opportunityAmount, // Already has reserve deducted above
               available_date: availableDate
             });
           }
@@ -494,7 +494,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
       // Find earliest date when you can make purchases for safe spending
       // This is the first date from today UP TO the lowest point where you have enough buffer
       let safeSpendingAvailableDate: string | undefined;
-      const calculatedSafeSpending = Math.max(0, minBalance - reserve);
+      const calculatedSafeSpending = minBalance - reserve;
       
       // Find the earliest date before the lowest point where spending won't drop us below minimum
       // We need: current balance - safe spending >= minimum balance that will occur
