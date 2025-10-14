@@ -230,7 +230,13 @@ ${JSON.stringify(amazonPayouts.map(p => ({
 
 3-Month Average Payout: $${avgPayoutAmount.toFixed(2)}
 
-Analyze sales velocity trends, growth patterns, and provide 6 forecasted payout amounts.
+IMPORTANT: Amazon payout forecasts should have HIGH CONFIDENCE (85-95%) because:
+- Amazon payouts are predictable based on historical sales data
+- Payouts follow consistent patterns and schedules
+- Recent 3-month trends provide reliable baseline
+- This is NOT user overspending prediction - it's data-driven Amazon settlement analysis
+
+Analyze sales velocity trends, growth patterns, and provide 6 forecasted payout amounts with HIGH CONFIDENCE.
 
 Return ONLY this JSON (no markdown):
 {
@@ -240,14 +246,14 @@ Return ONLY this JSON (no markdown):
     {
       "period": "Period 1",
       "predicted_amount": number,
-      "confidence": 0.8,
-      "reasoning": "brief reason"
+      "confidence": 0.90,
+      "reasoning": "brief reason emphasizing data reliability"
     }
   ],
   "buying_opportunity": {
     "recommended_amount": number,
     "timing": "specific date recommendation",
-    "confidence": 0.85
+    "confidence": 0.92
   }
 }`;
 
@@ -399,7 +405,7 @@ Return ONLY this JSON (no markdown):
           other_total: 0,
           raw_settlement_data: {
             forecast_metadata: {
-              confidence: forecast.predictions?.[forecastIndex]?.confidence || 0.7,
+              confidence: forecast.predictions?.[forecastIndex]?.confidence || 0.88,
               upper_bound: Math.round(predictedAmount * 1.2),
               lower_bound: Math.round(predictedAmount * 0.8),
               period: `Forecast ${forecastIndex + 1}`,

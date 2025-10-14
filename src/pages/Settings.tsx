@@ -41,6 +41,7 @@ import { RecurringExpenseManagement } from "@/components/settings/recurring-expe
 import { DataExport } from "@/components/settings/data-export";
 import { BillingInvoices } from "@/components/settings/billing-invoices";
 import { NotificationSettings } from "@/components/settings/notification-settings";
+import { ForecastSettings } from "@/components/settings/forecast-settings";
 import { CategoryManagement } from "@/components/settings/category-management";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { PageLoadingWrapper } from "@/components/PageLoadingWrapper";
@@ -504,6 +505,8 @@ const Settings = () => {
         return renderAppearanceSettings();
       case 'notifications':
         return <NotificationSettings />;
+      case 'forecast-settings':
+        return <ForecastSettings />;
       case 'invoices':
         return <BillingInvoices />;
       case 'export':

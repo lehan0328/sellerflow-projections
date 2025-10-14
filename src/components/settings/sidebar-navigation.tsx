@@ -14,7 +14,8 @@ import {
   Database,
   Repeat,
   FileText,
-  Tags
+  Tags,
+  Sparkles
 } from "lucide-react";
 
 const navigationItems = [
@@ -72,6 +73,11 @@ const navigationItems = [
     id: 'notifications',
     label: 'Notifications',
     icon: Bell,
+  },
+  {
+    id: 'forecast-settings',
+    label: 'AI Forecast Settings',
+    icon: Sparkles,
   },
   {
     id: 'invoices',
