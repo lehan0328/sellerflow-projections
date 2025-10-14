@@ -500,6 +500,7 @@ export const CashFlowCalendar = ({
     const days = eachDayOfInterval({ start: chartStart, end: chartEnd });
     let runningTotal = bankAccountBalance; // Blue line: confirmed transactions only
     let projectedBalance = bankAccountBalance; // Green line: projected balance with forecasts
+    let projectedWithoutForecast = bankAccountBalance; // Track balance without forecasts for purple line calculation
     let cumulativeInflow = 0;
     let cumulativeOutflow = 0;
     
@@ -525,6 +526,8 @@ export const CashFlowCalendar = ({
         runningTotal += confirmedChange;
         // Projected balance: confirmed + forecasted payouts
         projectedBalance += dailyChange; // Includes both confirmed and forecasted
+        // Projected without forecasts: only confirmed transactions
+        projectedWithoutForecast += confirmedChange;
         cumulativeInflow += dailyInflow;
         cumulativeOutflow += dailyOutflow;
       }
@@ -581,8 +584,8 @@ export const CashFlowCalendar = ({
         creditCardCredit: availableCreditForDay,
         reserve: reserveAmount,
         reserveAmount: reserveAmount,
-        // Purple dotted line: current cash balance + forecasted payout (only on forecast days)
-        forecastPayout: dayToCheck >= today && forecastedInflow > 0 ? (runningTotal + forecastedInflow) : null,
+        // Purple dotted line: projected balance without forecasts + this forecast payout (only on forecast days)
+        forecastPayout: dayToCheck >= today && forecastedInflow > 0 ? (projectedWithoutForecast + forecastedInflow) : null,
         // Projected balance line: show projected balance including forecasts
         projectedBalance: dayToCheck >= today ? projectedBalance : null,
         dailyChange,
