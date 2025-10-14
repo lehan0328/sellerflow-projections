@@ -883,8 +883,12 @@ export const CashFlowInsights = ({
                         }
                       }
                       
-                      const forecastAmount = payout.total_amount || 0;
-                      const totalProjected = projectedCash + forecastAmount;
+                      // Sum all forecasted payouts up to and including this one
+                      const cumulativePayouts = sortedPayouts
+                        .slice(0, index + 1)
+                        .reduce((sum, p) => sum + (p.total_amount || 0), 0);
+                      
+                      const totalProjected = projectedCash + cumulativePayouts;
                       
                       const payoutData = payout as any;
                       const metadata = payoutData?.raw_settlement_data?.forecast_metadata;
@@ -898,16 +902,10 @@ export const CashFlowInsights = ({
                           year: 'numeric'
                         }),
                         balance: totalProjected,
+                        payoutAmount: payout.total_amount || 0,
                         confidence
                       };
                     });
-                    
-                    // Ensure later opportunities never have lower balances than earlier ones
-                    for (let i = 1; i < projectedOpportunities.length; i++) {
-                      if (projectedOpportunities[i].balance < projectedOpportunities[i - 1].balance) {
-                        projectedOpportunities[i].balance = projectedOpportunities[i - 1].balance;
-                      }
-                    }
                     
                     return projectedOpportunities.map((opportunity, index) => {
                       const confidencePercent = Math.round(opportunity.confidence * 100);
