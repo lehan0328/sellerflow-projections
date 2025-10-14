@@ -81,28 +81,45 @@ export const ForecastSettings = () => {
           .eq('user_id', currentUser.id);
       }
 
+      console.log('✅ Forecast confidence updated to:', forecastConfidence);
       toast.success("Forecast settings updated");
 
       // Automatically regenerate forecasts with the new confidence threshold
+      console.log('🔄 Starting forecast regeneration...');
       toast.loading("Regenerating forecasts with new confidence threshold...");
       
       // Delete old forecasts
-      await supabase
+      const { error: deleteError } = await supabase
         .from('amazon_payouts')
         .delete()
         .eq('user_id', currentUser.id)
         .eq('status', 'forecasted');
 
+      if (deleteError) {
+        console.error('❌ Error deleting old forecasts:', deleteError);
+      } else {
+        console.log('✅ Old forecasts deleted');
+      }
+
       // Generate new forecasts
+      console.log('🤖 Calling forecast-amazon-payouts function...');
       const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts', {
         body: { userId: currentUser.id }
       });
 
+      console.log('📊 Forecast response:', { data, error });
+
       if (error) {
-        console.error('Forecast regeneration error:', error);
+        console.error('❌ Forecast regeneration error:', error);
         toast.error("Settings saved but forecast regeneration failed");
       } else if (data?.success) {
+        console.log('✅ Forecasts regenerated successfully');
         toast.success("Settings saved and forecasts updated!");
+        
+        // Trigger a page reload to show new forecasts
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       }
     } catch (error) {
       console.error('Error saving forecast settings:', error);
@@ -113,6 +130,7 @@ export const ForecastSettings = () => {
   };
 
   const getConfidenceLevel = (value: number) => {
+    if (value === 100) return { label: "Maximum Safety", color: "bg-emerald-500" };
     if (value >= 90) return { label: "Very Conservative", color: "bg-green-500" };
     if (value >= 85) return { label: "Balanced", color: "bg-blue-500" };
     return { label: "Aggressive", color: "bg-orange-500" };
@@ -171,7 +189,7 @@ export const ForecastSettings = () => {
             id="forecast-confidence"
             name="forecast-confidence"
             min={80}
-            max={95}
+            max={100}
             step={1}
             value={[forecastConfidence]}
             onValueChange={(value) => setForecastConfidence(value[0])}
@@ -180,7 +198,7 @@ export const ForecastSettings = () => {
 
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>80% (Aggressive)</span>
-            <span>95% (Very Conservative)</span>
+            <span>100% (Most Conservative)</span>
           </div>
         </div>
 
@@ -192,7 +210,8 @@ export const ForecastSettings = () => {
           <ul className="text-sm text-muted-foreground space-y-1 ml-6 list-disc">
             <li>Higher confidence = more predictable buying opportunities</li>
             <li>AI will adjust forecast margins based on your threshold</li>
-            <li>Amazon payouts are highly predictable (recommended: 85-92%)</li>
+            <li>Amazon payouts are highly predictable (recommended: 85-100%)</li>
+            <li>100% confidence shows only the safest predictions</li>
           </ul>
         </div>
 

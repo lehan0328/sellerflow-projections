@@ -882,7 +882,7 @@ export const CashFlowInsights = ({
                             {show100PercentOnly ? 'No 100% confidence forecasts available.' : 'No forecasted payouts yet.'}
                           </p>
                           <p className="text-xs mt-1">
-                            {show100PercentOnly ? 'Try adjusting the confidence filter.' : 'Click the refresh button to generate AI forecasts.'}
+                            <p className="text-xs text-muted-foreground">Try adjusting the confidence filter or regenerate forecasts.</p>
                           </p>
                         </div>
                       );
@@ -920,74 +920,30 @@ export const CashFlowInsights = ({
                       const confidence = metadata?.confidence || 0.88;
                       const confidencePercent = Math.round(confidence * 100);
                       
-                      // Determine confidence badge color
-                      let confidenceBadgeClass = "bg-green-100 text-green-700 dark:bg-green-900/20";
-                      if (confidencePercent < userConfidenceThreshold) {
-                        confidenceBadgeClass = "bg-amber-100 text-amber-700 dark:bg-amber-900/20";
-                      }
-                      
                       return (
-                        <div key={index} className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800 space-y-2">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-semibold text-sm">Opportunity #{index + 1}</span>
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${confidenceBadgeClass}`}>
-                                  {confidencePercent}% confident
-                                </span>
-                              </div>
-                              <p className="text-xs text-muted-foreground">Expected: {formattedDate}</p>
-                            </div>
-                            <span className="text-lg font-bold text-purple-600">
+                        <div key={index} className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800 space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="font-semibold text-sm">Opportunity #{index + 1}</span>
+                            <span className="text-lg font-bold text-blue-600">
                               ${totalProjected.toLocaleString()}
                             </span>
                           </div>
-                          
-                          {/* Breakdown */}
-                          <div className="text-xs bg-white/50 dark:bg-black/20 rounded p-2 space-y-1">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Projected Cash:</span>
-                              <span className="font-medium">${projectedCash.toLocaleString()}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Forecasted Payout:</span>
-                              <span className="font-medium text-purple-600">+${forecastAmount.toLocaleString()}</span>
-                            </div>
-                            <Separator className="my-1" />
-                            <div className="flex justify-between font-semibold">
-                              <span>Total Available:</span>
-                              <span className="text-purple-600">${totalProjected.toLocaleString()}</span>
-                            </div>
-                          </div>
-                          
-                          {/* Payout Details */}
-                          <div className="text-xs bg-white/50 dark:bg-black/20 rounded p-2 space-y-1">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Payout Type:</span>
-                              <span className="font-medium">{payout.payout_type || 'bi-weekly'}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Marketplace:</span>
-                              <span className="font-medium">{payout.marketplace_name || 'Amazon'}</span>
-                            </div>
-                            {metadata?.calculation_method && (
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Method:</span>
-                                <span className="font-medium text-[10px]">
-                                  {metadata.calculation_method.replace(/_/g, ' ')}
-                                </span>
+                          <p className="text-xs text-muted-foreground">Low point: {formattedDate}</p>
+                          {(() => {
+                            // Calculate available date (same as payout date for projected opportunities)
+                            const availableDate = formattedDate;
+                            
+                            return (
+                              <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
+                                <span className="text-xs text-muted-foreground">Earliest Purchase Date:</span>
+                                <span className="text-sm font-semibold text-green-600">{availableDate}</span>
                               </div>
-                            )}
+                            );
+                          })()}
+                          <div className="flex items-center justify-between p-1.5 bg-purple-50 dark:bg-purple-950/20 rounded border border-purple-200 dark:border-purple-800">
+                            <span className="text-xs text-muted-foreground">AI Confidence:</span>
+                            <span className="text-xs font-semibold text-purple-600">{confidencePercent}%</span>
                           </div>
-                          
-                          {confidencePercent < userConfidenceThreshold && (
-                            <div className="flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800">
-                              <AlertCircle className="h-3 w-3 text-amber-600 mt-0.5 flex-shrink-0" />
-                              <span className="text-[10px] text-amber-700 dark:text-amber-400">
-                                Below your {userConfidenceThreshold}% confidence threshold
-                              </span>
-                            </div>
-                          )}
                         </div>
                       );
                     });
