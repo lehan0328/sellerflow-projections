@@ -74,7 +74,7 @@ export const useReserveAmount = () => {
           description: `Reserve can only be changed once every 24 hours. Try again in ${Math.ceil(hoursRemaining)} hours.`,
           variant: "destructive",
         });
-        return;
+        throw new Error("24-hour restriction active");
       }
 
       console.log('[Reserve] Starting update to:', newAmount);

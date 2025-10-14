@@ -275,16 +275,8 @@ export const CashFlowInsights = ({
       try {
         await onUpdateReserveAmount(newAmount);
         setIsEditingReserve(false);
-        toast({
-          title: "Reserve amount updated",
-          description: `Your reserve is now set to $${newAmount.toLocaleString()}`
-        });
       } catch (error) {
-        toast({
-          title: "Error updating reserve",
-          description: "Please try again",
-          variant: "destructive"
-        });
+        // Error toast is already shown by the hook
       }
     }
   };
