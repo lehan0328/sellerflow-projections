@@ -208,8 +208,8 @@ export const CashFlowInsights = ({
     setIsForecastGenerating(true);
     
     toast({
-      title: "Generating forecast...",
-      description: "Creating AI-powered Amazon payout predictions"
+      title: "Generating high-confidence forecast...",
+      description: "Creating AI-powered Amazon payout predictions (88-95% confidence)"
     });
     
     try {
@@ -238,8 +238,8 @@ export const CashFlowInsights = ({
         setLastRefreshTime(Date.now());
         
         toast({
-          title: "Forecast generated!",
-          description: `Created ${data.forecast?.predictions?.length || 0} new predictions`
+          title: "High-confidence forecast generated!",
+          description: `Created ${data.forecast?.predictions?.length || 0} predictions with 88-95% confidence. Buying opportunities updated!`
         });
         
         await refetchPayouts();

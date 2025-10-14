@@ -147,6 +147,7 @@ export const ForecastSettings = () => {
 
           <Slider
             id="forecast-confidence"
+            name="forecast-confidence"
             min={80}
             max={95}
             step={1}
