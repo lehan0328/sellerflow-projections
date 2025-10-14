@@ -56,7 +56,7 @@ serve(async (req) => {
       // For manual sends, get the specific notification preference for this user
       const { data, error } = await supabaseAdmin
         .from('notification_preferences')
-        .select('*, profiles!inner(email, first_name)')
+        .select('*')
         .eq('user_id', targetUserId)
         .eq('notification_type', manualNotificationType)
         .single();
@@ -71,7 +71,7 @@ serve(async (req) => {
       // For automated sends, get all enabled preferences that should run now
       const { data, error } = await supabaseAdmin
         .from('notification_preferences')
-        .select('*, profiles!inner(email, first_name)')
+        .select('*')
         .eq('enabled', true)
         .lte('schedule_time', currentTime)
         .gte('schedule_time', `${String(parseInt(currentTime.split(':')[0]) - 1).padStart(2, '0')}:${currentTime.split(':')[1]}:00`);
