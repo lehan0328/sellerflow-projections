@@ -65,7 +65,6 @@ interface CashFlowCalendarProps {
   onVendorClick?: (vendor: Vendor) => void;
   onIncomeClick?: (income: IncomeItem) => void;
   reserveAmount?: number;
-  includeForecastPayouts?: boolean;
 }
 
 export const CashFlowCalendar = ({ 
@@ -82,7 +81,6 @@ export const CashFlowCalendar = ({
   onVendorClick,
   onIncomeClick,
   reserveAmount = 0,
-  includeForecastPayouts = false,
 }: CashFlowCalendarProps) => {
   const { totalAvailableCredit } = useCreditCards();
   const { chartPreferences, updateChartPreferences } = useUserSettings();
@@ -101,7 +99,7 @@ export const CashFlowCalendar = ({
   const [showTotalResourcesLine, setShowTotalResourcesLine] = useState(chartPreferences.showTotalResourcesLine);
   const [showCreditCardLine, setShowCreditCardLine] = useState(chartPreferences.showCreditCardLine);
   const [showReserveLine, setShowReserveLine] = useState(chartPreferences.showReserveLine);
-  const [showForecastLine, setShowForecastLine] = useState(chartPreferences.showForecastLine);
+  const [showForecastLine, setShowForecastLine] = useState(true); // Always show forecast line
   const [cashFlowColor, setCashFlowColor] = useState(chartPreferences.cashFlowColor);
   const [totalResourcesColor, setTotalResourcesColor] = useState(chartPreferences.totalResourcesColor);
   const [creditCardColor, setCreditCardColor] = useState(chartPreferences.creditCardColor);
@@ -114,13 +112,12 @@ export const CashFlowCalendar = ({
     setShowTotalResourcesLine(chartPreferences.showTotalResourcesLine);
     setShowCreditCardLine(chartPreferences.showCreditCardLine);
     setShowReserveLine(chartPreferences.showReserveLine);
-    setShowForecastLine(includeForecastPayouts); // Use prop directly for forecast line
     setCashFlowColor(chartPreferences.cashFlowColor);
     setTotalResourcesColor(chartPreferences.totalResourcesColor);
     setCreditCardColor(chartPreferences.creditCardColor);
     setReserveColor(chartPreferences.reserveColor);
     setForecastColor(chartPreferences.forecastColor);
-  }, [chartPreferences, includeForecastPayouts]);
+  }, [chartPreferences]);
   
   // Total available cash baseline comes from Overview (displayCash)
   const totalAvailableCash = totalCash;
@@ -1374,7 +1371,7 @@ export const CashFlowCalendar = ({
                       )}
                       
                       {/* Average Amazon Payout Reference Line */}
-                      {includeForecastPayouts && averageAmazonPayout > 0 && (
+                      {averageAmazonPayout > 0 && (
                         <ReferenceLine
                           y={averageAmazonPayout}
                           stroke="#a855f7"

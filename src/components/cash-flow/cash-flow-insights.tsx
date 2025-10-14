@@ -36,8 +36,6 @@ interface CashFlowInsightsProps {
   allBuyingOpportunities?: Array<{ date: string; balance: number; available_date?: string }>;
   onUpdateReserveAmount?: (amount: number) => Promise<void>;
   transactionMatchButton?: React.ReactNode;
-  includeForecastPayouts?: boolean;
-  onToggleForecastPayouts?: (value: boolean) => void;
 }
 export const CashFlowInsights = ({
   currentBalance,
@@ -57,9 +55,7 @@ export const CashFlowInsights = ({
   nextBuyingOpportunityAvailableDate,
   allBuyingOpportunities = [],
   onUpdateReserveAmount,
-  transactionMatchButton,
-  includeForecastPayouts: includeForecastPayoutsProp = false,
-  onToggleForecastPayouts
+  transactionMatchButton
 }: CashFlowInsightsProps) => {
   const {
     toast
@@ -77,10 +73,8 @@ export const CashFlowInsights = ({
   const [chatLoading, setChatLoading] = useState(false);
   const [isEditingReserve, setIsEditingReserve] = useState(false);
   const [editReserveValue, setEditReserveValue] = useState(reserveAmount.toString());
-  const [includeForecastPayouts, setIncludeForecastPayouts] = useState(includeForecastPayoutsProp);
   const [isForecastGenerating, setIsForecastGenerating] = useState(false);
   const [showTransactionHistory, setShowTransactionHistory] = useState(false);
-  const [showForecastConfirm, setShowForecastConfirm] = useState(false);
   const [lastRefreshTime, setLastRefreshTime] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<Array<{
@@ -99,10 +93,6 @@ export const CashFlowInsights = ({
     setEditReserveValue(reserveAmount.toString());
   }, [reserveAmount]);
 
-  // Sync local state with prop
-  useEffect(() => {
-    setIncludeForecastPayouts(includeForecastPayoutsProp);
-  }, [includeForecastPayoutsProp]);
 
   // Load last refresh time from user_settings
   useEffect(() => {
@@ -123,53 +113,13 @@ export const CashFlowInsights = ({
     loadLastRefreshTime();
   }, [user]);
 
-  // Handle toggle change with confirmation
-  const handleToggleRequest = (checked: boolean) => {
-    if (checked && !includeForecastPayouts) {
-      // Show confirmation when enabling
-      setShowForecastConfirm(true);
-    } else {
-      // Directly disable without confirmation
-      handleToggleForecast(false);
-    }
-  };
-
-  // Actually toggle the forecast
-  const handleToggleForecast = async (checked: boolean) => {
-    setIncludeForecastPayouts(checked);
-    onToggleForecastPayouts?.(checked);
-    
-    // If turning off, delete all forecasted payouts
-    if (!checked && user) {
-      try {
-        await supabase
-          .from('amazon_payouts')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('status', 'forecasted');
-        
-        await refetchPayouts();
-        console.log('🗑️ Deleted forecasted payouts - safe spending will auto-recalculate');
-      } catch (err) {
-        console.error('Failed to delete forecasted payouts:', err);
-      }
-    }
-  };
-
-  // Generate forecasts when toggle is enabled and no forecasts exist
+  // Auto-generate forecasts on mount if needed
   useEffect(() => {
     const generateForecasts = async () => {
-      if (!includeForecastPayouts || !user) return;
+      if (!user) return;
       
       const forecastedPayouts = amazonPayouts.filter(p => p.status === 'forecasted');
       const confirmedPayouts = amazonPayouts.filter(p => p.status !== 'forecasted');
-      
-      console.log('🔍 Forecast check:', { 
-        includeForecastPayouts,
-        confirmedCount: confirmedPayouts.length, 
-        forecastCount: forecastedPayouts.length,
-        isGenerating: isForecastGenerating 
-      });
       
       // Only generate if we have at least 1 payout but no forecasts (demo mode - reduced threshold)
       if (confirmedPayouts.length >= 1 && forecastedPayouts.length === 0 && !isForecastGenerating) {
@@ -240,10 +190,10 @@ export const CashFlowInsights = ({
     };
 
     generateForecasts();
-  }, [includeForecastPayouts, user, amazonPayouts]);
+  }, [user, amazonPayouts]);
 
   const handleRefreshForecast = async () => {
-    if (!user || !includeForecastPayouts) return;
+    if (!user) return;
     
     // Check 24-hour cooldown
     const now = Date.now();
@@ -489,65 +439,38 @@ export const CashFlowInsights = ({
             AI Insights
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950/20 dark:via-blue-950/20 dark:to-indigo-950/20 border border-purple-200 dark:border-purple-800">
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            id="forecast-payouts"
-                            checked={includeForecastPayouts}
-                            onCheckedChange={handleToggleRequest}
-                            disabled={isForecastGenerating}
-                            className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-purple-500 data-[state=checked]:to-blue-500"
-                          />
-                          <Label htmlFor="forecast-payouts" className="text-xs cursor-pointer flex items-center gap-1.5 font-semibold">
-                            <img src={aurenLogo} alt="AI" className="h-4 w-4" />
-                            Forecast Payouts (AI)
-                            {isForecastGenerating && <Loader2 className="h-3 w-3 animate-spin text-purple-600" />}
-                          </Label>
-                        </div>
-                        {includeForecastPayouts && (
-                          <div className="flex flex-col items-end gap-1">
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={handleRefreshForecast}
-                                    disabled={isRefreshing || isForecastGenerating}
-                                    className="h-7 w-7 hover:bg-white/50 dark:hover:bg-black/20"
-                                  >
-                                    <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="text-xs">Refresh forecast</p>
-                                  <p className="text-xs text-muted-foreground">Can only be refreshed once every 24 hours</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                            {lastRefreshTime && (
-                              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                                Synced {new Date(lastRefreshTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-sm">
-                    <p className="text-xs mb-2">
-                      <strong>AI Payout Forecasting:</strong> Analyzes your Amazon transaction history to predict future payouts.
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      When enabled, forecasted payouts are included in your cash flow projections, safe spending calculations, and buying opportunities.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+            <div className="flex items-center justify-between p-2 rounded-lg bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950/20 dark:via-blue-950/20 dark:to-indigo-950/20 border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center gap-2">
+                <img src={aurenLogo} alt="AI" className="h-4 w-4" />
+                <span className="text-xs font-semibold">AI Payout Forecasts</span>
+                {isForecastGenerating && <Loader2 className="h-3 w-3 animate-spin text-purple-600" />}
+              </div>
+              <div className="flex items-center gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleRefreshForecast}
+                        disabled={isRefreshing || isForecastGenerating}
+                        className="h-7 w-7 hover:bg-white/50 dark:hover:bg-black/20"
+                      >
+                        <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Refresh forecast</p>
+                      <p className="text-xs text-muted-foreground">Can only be refreshed once every 24 hours</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                {lastRefreshTime && (
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                    Synced {new Date(lastRefreshTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
+              </div>
             </div>
             <Button variant={chatMode ? "default" : "ghost"} size="sm" onClick={() => setChatMode(!chatMode)}>
               <MessageCircle className="h-4 w-4 mr-1" />
@@ -887,46 +810,6 @@ export const CashFlowInsights = ({
         open={showTransactionHistory}
         onOpenChange={setShowTransactionHistory}
       />
-
-      {/* Forecast Confirmation Dialog */}
-      <AlertDialog open={showForecastConfirm} onOpenChange={setShowForecastConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <img src={aurenLogo} alt="AI" className="h-5 w-5" />
-              Enable AI Payout Forecasting?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <p>
-                This will analyze your historical Amazon transaction data to predict future payouts and include them in your cash flow projections.
-              </p>
-              <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-                  What gets updated:
-                </p>
-                <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
-                  <li>Safe Spending Power calculation</li>
-                  <li>All Buying Opportunities</li>
-                  <li>Cash flow calendar projections</li>
-                  <li>Earliest purchase dates</li>
-                </ul>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                The AI will generate forecasts for the next 90 days based on your payout patterns.
-              </p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              handleToggleForecast(true);
-              setShowForecastConfirm(false);
-            }} className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600">
-              Generate Forecasts
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* All Credit Cards Modal */}
       <Dialog open={showAllCreditCards} onOpenChange={setShowAllCreditCards}>

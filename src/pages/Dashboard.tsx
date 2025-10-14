@@ -78,10 +78,6 @@ const Dashboard = () => {
   const [showEditIncomeForm, setShowEditIncomeForm] = useState(false);
   const { toast } = useToast();
   const [vendorTxRefresh, setVendorTxRefresh] = useState(0);
-  const [includeForecastPayouts, setIncludeForecastPayouts] = useState(() => {
-    const saved = localStorage.getItem('includeForecastPayouts');
-    return saved !== null ? JSON.parse(saved) : true; // Default to true to show forecast line
-  });
   const [matchReviewDialog, setMatchReviewDialog] = useState<{
     open: boolean;
     match: TransactionMatch | null;
@@ -200,10 +196,6 @@ const Dashboard = () => {
     cleanupOrphanedTransactions();
   }, [refetchSafeSpending]);
 
-  // Save forecast payouts toggle to localStorage
-  useEffect(() => {
-    localStorage.setItem('includeForecastPayouts', JSON.stringify(includeForecastPayouts));
-  }, [includeForecastPayouts]);
 
   const { customers, addCustomer, deleteAllCustomers } = useCustomers();
   
@@ -1163,9 +1155,8 @@ const Dashboard = () => {
     return events;
   }, [recurringExpenses]);
 
-  // Convert Amazon payouts to calendar events (filter forecasted based on toggle)
+  // Convert Amazon payouts to calendar events (always include all payouts)
   const amazonPayoutEvents: CashFlowEvent[] = amazonPayouts
-    .filter(payout => includeForecastPayouts || (payout.status as string) !== 'forecasted')
     .map(payout => ({
       id: `amazon-payout-${payout.id}`,
       type: 'inflow' as const,
@@ -1256,10 +1247,6 @@ const Dashboard = () => {
     })
     .reduce((sum, event) => sum + event.amount, 0);
 
-  const handleToggleForecastPayouts = (value: boolean) => {
-    setIncludeForecastPayouts(value);
-    refetchSafeSpending();
-  };
 
   const renderSection = () => {
     switch (activeSection) {
@@ -1297,7 +1284,6 @@ const Dashboard = () => {
                   onVendorClick={handleEditVendorOrder}
                   onIncomeClick={handleEditIncome}
                   reserveAmount={reserveAmount}
-                  includeForecastPayouts={includeForecastPayouts}
                 />
               </div>
               <div className="lg:col-span-1 h-full">
@@ -1319,8 +1305,6 @@ const Dashboard = () => {
                   nextBuyingOpportunityAvailableDate={safeSpendingData?.calculation?.next_buying_opportunity_available_date}
                   allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
                   onUpdateReserveAmount={updateReserveAmount}
-                  includeForecastPayouts={includeForecastPayouts}
-                  onToggleForecastPayouts={handleToggleForecastPayouts}
                   transactionMatchButton={
                     <TransactionMatchButton 
                       matches={matches}
@@ -1367,8 +1351,8 @@ const Dashboard = () => {
                   }
                 />
                 
-                {/* Buying Opportunities Panel - Only show when forecasts are enabled */}
-                {includeForecastPayouts && amazonPayouts && (
+                {/* Buying Opportunities Panel */}
+                {amazonPayouts && (
                   <div className="mt-6">
                     <BuyingOpportunitiesPanel
                       forecastedPayouts={amazonPayouts.filter(p => p.status === 'forecasted')}
