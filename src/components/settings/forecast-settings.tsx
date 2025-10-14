@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, TrendingUp, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,9 +42,11 @@ export const ForecastSettings = () => {
 
       // If data exists and has a valid threshold, use it; otherwise keep default of 5 (Safe)
       if (data?.forecast_confidence_threshold !== null && data?.forecast_confidence_threshold !== undefined) {
+        console.log('📊 Loaded forecast risk level from database:', data.forecast_confidence_threshold);
         setConfidenceThreshold(data.forecast_confidence_threshold);
       } else {
         // No setting exists yet, keep default of 5 (Safe)
+        console.log('📊 No existing setting, using default: 5 (Safe)');
         setConfidenceThreshold(5);
       }
     } catch (error) {
@@ -78,20 +79,24 @@ export const ForecastSettings = () => {
         .eq('user_id', currentUser.id)
         .maybeSingle();
 
+      console.log('💾 Saving forecast risk level:', confidenceThreshold);
+      
       if (!existing) {
-        await supabase.from('user_settings').insert({
+        const { error: insertError } = await supabase.from('user_settings').insert({
           user_id: currentUser.id,
           account_id: profile.account_id,
           forecast_confidence_threshold: confidenceThreshold,
         });
+        if (insertError) throw insertError;
       } else {
-        await supabase
+        const { error: updateError } = await supabase
           .from('user_settings')
           .update({ forecast_confidence_threshold: confidenceThreshold })
           .eq('user_id', currentUser.id);
+        if (updateError) throw updateError;
       }
 
-      console.log('✅ Forecast risk level updated to:', confidenceThreshold);
+      console.log('✅ Forecast risk level saved successfully:', confidenceThreshold);
       toast.success("Forecast settings updated");
 
       // Automatically regenerate forecasts with the new confidence threshold
@@ -173,6 +178,11 @@ export const ForecastSettings = () => {
         </div>
         <CardDescription>
           Adjust the conservatism of your Amazon payout forecasts
+          {!loading && (
+            <div className="mt-2 text-xs text-muted-foreground">
+              Current saved value: <span className="font-mono font-semibold">{confidenceThreshold}</span>
+            </div>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
