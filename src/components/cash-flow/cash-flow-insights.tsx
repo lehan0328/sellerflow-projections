@@ -79,7 +79,6 @@ export const CashFlowInsights = ({
   const [lastRefreshTime, setLastRefreshTime] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [userConfidenceThreshold, setUserConfidenceThreshold] = useState<number>(88);
-  const [show100PercentOnly, setShow100PercentOnly] = useState<boolean>(false);
   const [conversationHistory, setConversationHistory] = useState<Array<{
     role: 'user' | 'assistant';
     content: string;
@@ -820,21 +819,11 @@ export const CashFlowInsights = ({
             
             {/* Right Side - Projected Opportunities */}
             <div>
-              <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-purple-600" />
                   Projected Opportunities
                 </h3>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="show-100-percent" className="text-xs text-muted-foreground">
-                    100% confidence only
-                  </Label>
-                  <Switch
-                    id="show-100-percent"
-                    checked={show100PercentOnly}
-                    onCheckedChange={setShow100PercentOnly}
-                  />
-                </div>
               </div>
               <ScrollArea className="h-[500px] pr-4 border rounded-md p-2 bg-gradient-to-b from-transparent via-transparent to-muted/20">
                 <div className="space-y-3">
@@ -860,30 +849,16 @@ export const CashFlowInsights = ({
                     const forecastedPayouts = amazonPayouts?.filter(p => p.status === 'forecasted') || [];
                     
                     // Sort by payout date
-                    let sortedPayouts = [...forecastedPayouts].sort((a, b) => 
+                    const sortedPayouts = [...forecastedPayouts].sort((a, b) => 
                       new Date(a.payout_date).getTime() - new Date(b.payout_date).getTime()
                     );
-
-                    // Filter for 100% confidence if enabled
-                    if (show100PercentOnly) {
-                      sortedPayouts = sortedPayouts.filter(payout => {
-                        const payoutData = payout as any;
-                        const metadata = payoutData?.raw_settlement_data?.forecast_metadata;
-                        const confidence = metadata?.confidence || 0.88;
-                        return confidence >= 1.0;
-                      });
-                    }
                     
                     if (sortedPayouts.length === 0) {
                       return (
                         <div className="text-center py-8 text-muted-foreground">
                           <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">
-                            {show100PercentOnly ? 'No 100% confidence forecasts available.' : 'No forecasted payouts yet.'}
-                          </p>
-                          <p className="text-xs mt-1">
-                            <p className="text-xs text-muted-foreground">Try adjusting the confidence filter or regenerate forecasts.</p>
-                          </p>
+                          <p className="text-sm">No forecasted payouts yet.</p>
+                          <p className="text-xs mt-1 text-muted-foreground">Try regenerating forecasts.</p>
                         </div>
                       );
                     }
