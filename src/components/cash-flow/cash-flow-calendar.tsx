@@ -612,6 +612,14 @@ export const CashFlowCalendar = ({
       };
     });
   };
+  
+  const chartData = generateChartData();
+  
+  // Debug logging for forecast line
+  console.log('[Chart] Forecast line enabled:', showForecastLine);
+  console.log('[Chart] Include forecast payouts:', includeForecastPayouts);
+  console.log('[Chart] Sample data point:', chartData[0]);
+  console.log('[Chart] Has forecast data:', chartData.some(d => d.forecastPayout !== null && d.forecastPayout > 0));
 
   const handleChartClick = (data: any) => {
     if (data && data.activePayload && data.activePayload[0]) {
@@ -630,8 +638,6 @@ export const CashFlowCalendar = ({
       }
     }
   };
-
-  const chartData = generateChartData();
 
   const chartConfig = {
     cashBalance: {
