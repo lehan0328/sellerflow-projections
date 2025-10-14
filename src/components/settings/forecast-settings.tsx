@@ -38,12 +38,16 @@ export const ForecastSettings = () => {
         .eq('user_id', user!.id)
         .maybeSingle();
 
+      console.log('🔍 Fetched settings:', data);
+
       if (error && error.code !== 'PGRST116') throw error;
 
       // If data exists and has a valid threshold, use it; otherwise keep default of 5 (Safe)
       if (data?.forecast_confidence_threshold !== null && data?.forecast_confidence_threshold !== undefined) {
         console.log('📊 Loaded forecast risk level from database:', data.forecast_confidence_threshold);
-        setConfidenceThreshold(data.forecast_confidence_threshold);
+        const loadedValue = data.forecast_confidence_threshold;
+        setConfidenceThreshold(loadedValue);
+        console.log('📊 State set to:', loadedValue, 'Risk level:', getRiskLevel(loadedValue).label);
       } else {
         // No setting exists yet, keep default of 5 (Safe)
         console.log('📊 No existing setting, using default: 5 (Safe)');
@@ -232,15 +236,19 @@ export const ForecastSettings = () => {
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="max-w-xs">
-                      Medium uses historical averages. Safe applies a 5% buffer. Very Safe applies a 15% safety margin.
+                      Aggressive (+5%), Medium (0%), Safe (-5%), Very Safe (-10%)
                     </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <Badge className={riskLevel.color}>
-              {riskLevel.label}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Current:</span>
+              <Badge className={riskLevel.color}>
+                {riskLevel.label}
+              </Badge>
+              <span className="text-xs font-mono text-muted-foreground">({confidenceThreshold})</span>
+            </div>
           </div>
 
           <div className="grid grid-cols-4 gap-2 mb-4">
