@@ -320,6 +320,37 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
 
   const totalOverdueCount = overdueVendorCount + overdueIncomeCount;
 
+  // Calculate pending transactions for TODAY only
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  // Pending income for today
+  const todayPendingIncome = incomeItems.filter(income => {
+    const paymentDate = new Date(income.paymentDate);
+    return income.status === 'pending' && paymentDate >= todayStart && paymentDate <= todayEnd;
+  });
+  const todayIncomeAmount = todayPendingIncome.reduce((sum, income) => sum + income.amount, 0);
+
+  // Pending vendor transactions for today
+  const todayPendingExpenses = vendorTransactions.filter(tx => {
+    const dueDate = new Date(tx.dueDate);
+    return tx.status === 'pending' && dueDate >= todayStart && dueDate <= todayEnd;
+  });
+  const todayExpenseAmount = todayPendingExpenses.reduce((sum, tx) => sum + tx.amount, 0);
+
+  // Pending recurring expenses for today
+  const todayPendingRecurring = events.filter(event => {
+    const eventDate = new Date(event.date);
+    const isRecurringExpense = event.type === 'outflow' && 
+      (typeof (event as any).id === 'string' && (event as any).id.startsWith('recurring-'));
+    return isRecurringExpense && eventDate >= todayStart && eventDate <= todayEnd;
+  });
+  const todayRecurringAmount = todayPendingRecurring.reduce((sum, event) => sum + event.amount, 0);
+
+  const todayTotalPending = todayIncomeAmount + todayExpenseAmount + todayRecurringAmount;
+
   return (<>
       <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
@@ -347,16 +378,40 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               <p className="text-2xl font-bold text-blue-700">
                 {formatCurrency(bankAccountBalance)}
               </p>
-              <div className="space-y-0.5">
-                {pendingIncomeToday && pendingIncomeToday.amount > 0 && (
+              {todayTotalPending > 0 ? (
+                <div className="space-y-0.5 mt-2">
+                  <p className="text-xs font-semibold text-slate-700">Pending Today:</p>
+                  {todayIncomeAmount > 0 && (
+                    <p className="text-xs text-green-600">
+                      Income: {formatCurrency(todayIncomeAmount)}
+                    </p>
+                  )}
+                  {todayRecurringAmount > 0 && (
+                    <p className="text-xs text-amber-600">
+                      Recurring: {formatCurrency(todayRecurringAmount)}
+                    </p>
+                  )}
+                  {todayExpenseAmount > 0 && (
+                    <p className="text-xs text-red-600">
+                      Expense: {formatCurrency(todayExpenseAmount)}
+                    </p>
+                  )}
+                  <div className="pt-1 border-t border-blue-200">
+                    <p className="text-sm font-semibold text-blue-700">
+                      Total Projected: {formatCurrency(bankAccountBalance + todayIncomeAmount - todayExpenseAmount - todayRecurringAmount)}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-0.5">
                   <p className="text-sm text-slate-600">
-                    Pending: {formatCurrency(pendingIncomeToday.amount)}
+                    No pending today
                   </p>
-                )}
-                <p className="text-sm text-slate-600">
-                  Total Projected: {formatCurrency(accounts.length === 0 ? 0 : (bankAccountBalance + (pendingIncomeToday?.amount || 0)))}
-                </p>
-              </div>
+                  <p className="text-sm text-slate-600">
+                    Total Projected: {formatCurrency(bankAccountBalance)}
+                  </p>
+                </div>
+              )}
             </div>
             <DollarSign className="h-8 w-8 text-blue-500" />
           </div>
