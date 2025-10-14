@@ -47,6 +47,16 @@ serve(async (req) => {
 
     const accountId = profile.account_id;
 
+    // Get user's forecast confidence threshold
+    const { data: userSettings } = await supabase
+      .from('user_settings')
+      .select('forecast_confidence_threshold')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    const confidenceThreshold = userSettings?.forecast_confidence_threshold || 88;
+    console.log('[FORECAST] User confidence threshold:', confidenceThreshold);
+
     // Fetch Amazon payouts from last 3 months for trend analysis
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
@@ -236,7 +246,9 @@ IMPORTANT: Amazon payout forecasts should have HIGH CONFIDENCE (85-95%) because:
 - Recent 3-month trends provide reliable baseline
 - This is NOT user overspending prediction - it's data-driven Amazon settlement analysis
 
-Analyze sales velocity trends, growth patterns, and provide 6 forecasted payout amounts with HIGH CONFIDENCE.
+User's Confidence Threshold: ${confidenceThreshold}%
+Analyze sales velocity trends, growth patterns, and provide 6 forecasted payout amounts.
+Target confidence levels should be around ${confidenceThreshold}% (±3%).
 
 Return ONLY this JSON (no markdown):
 {
@@ -405,7 +417,8 @@ Return ONLY this JSON (no markdown):
           other_total: 0,
           raw_settlement_data: {
             forecast_metadata: {
-              confidence: forecast.predictions?.[forecastIndex]?.confidence || 0.88,
+              confidence: forecast.predictions?.[forecastIndex]?.confidence || (confidenceThreshold / 100),
+              confidence_threshold: confidenceThreshold,
               upper_bound: Math.round(predictedAmount * 1.2),
               lower_bound: Math.round(predictedAmount * 0.8),
               period: `Forecast ${forecastIndex + 1}`,

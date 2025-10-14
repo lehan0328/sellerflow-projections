@@ -82,6 +82,28 @@ export const ForecastSettings = () => {
       }
 
       toast.success("Forecast settings updated");
+
+      // Automatically regenerate forecasts with the new confidence threshold
+      toast.loading("Regenerating forecasts with new confidence threshold...");
+      
+      // Delete old forecasts
+      await supabase
+        .from('amazon_payouts')
+        .delete()
+        .eq('user_id', currentUser.id)
+        .eq('status', 'forecasted');
+
+      // Generate new forecasts
+      const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts', {
+        body: { userId: currentUser.id }
+      });
+
+      if (error) {
+        console.error('Forecast regeneration error:', error);
+        toast.error("Settings saved but forecast regeneration failed");
+      } else if (data?.success) {
+        toast.success("Settings saved and forecasts updated!");
+      }
     } catch (error) {
       console.error('Error saving forecast settings:', error);
       toast.error("Failed to save settings");
