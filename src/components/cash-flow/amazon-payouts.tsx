@@ -9,29 +9,33 @@ import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
 export function AmazonPayouts() {
-  const { amazonPayouts, isLoading, totalUpcoming, refetch } = useAmazonPayouts();
-  const { amazonAccounts, syncAmazonAccount } = useAmazonAccounts();
+  const {
+    amazonPayouts,
+    isLoading,
+    totalUpcoming,
+    refetch
+  } = useAmazonPayouts();
+  const {
+    amazonAccounts,
+    syncAmazonAccount
+  } = useAmazonAccounts();
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
   const [showForecasts, setShowForecasts] = useState(true);
   const [isGeneratingForecasts, setIsGeneratingForecasts] = useState(false);
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency: "USD"
     }).format(amount);
   };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
-      year: "numeric",
+      year: "numeric"
     });
   };
-
   const getDaysUntil = (dateString: string) => {
     const today = new Date();
     const payoutDate = new Date(dateString);
@@ -39,7 +43,6 @@ export function AmazonPayouts() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
   };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmed":
@@ -52,7 +55,6 @@ export function AmazonPayouts() {
         return "secondary";
     }
   };
-
   const getTypeColor = (type: string) => {
     switch (type) {
       case "bi-weekly":
@@ -65,7 +67,6 @@ export function AmazonPayouts() {
         return "default";
     }
   };
-
   const handleSyncAllAccounts = async () => {
     for (const account of amazonAccounts) {
       setIsSyncing(account.id);
@@ -73,14 +74,14 @@ export function AmazonPayouts() {
     }
     setIsSyncing(null);
   };
-
   const handleGenerateForecasts = async () => {
     setIsGeneratingForecasts(true);
     try {
-      const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts');
-      
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('forecast-amazon-payouts');
       if (error) throw error;
-      
       toast.success('AI forecasts generated successfully!');
       await refetch();
     } catch (error) {
@@ -90,10 +91,8 @@ export function AmazonPayouts() {
       setIsGeneratingForecasts(false);
     }
   };
-
   if (isLoading) {
-    return (
-      <Card className="shadow-card">
+    return <Card className="shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <ShoppingCart className="h-5 w-5 text-primary" />
@@ -103,12 +102,9 @@ export function AmazonPayouts() {
         <CardContent>
           <p className="text-muted-foreground">Loading Amazon payouts...</p>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
-  return (
-    <Card className="shadow-card">
+  return <Card className="shadow-card">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -116,31 +112,12 @@ export function AmazonPayouts() {
               <ShoppingCart className="h-5 w-5 text-primary" />
               <CardTitle>Amazon Payouts</CardTitle>
             </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="show-forecasts"
-                checked={showForecasts}
-                onCheckedChange={setShowForecasts}
-              />
-              <Label htmlFor="show-forecasts" className="flex items-center gap-1 cursor-pointer text-sm">
-                <Sparkles className="h-3 w-3 text-purple-500" />
-                AI Forecasts
-              </Label>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleGenerateForecasts}
-              disabled={isGeneratingForecasts || amazonAccounts.length === 0}
-            >
+            
+            <Button variant="outline" size="sm" onClick={handleGenerateForecasts} disabled={isGeneratingForecasts || amazonAccounts.length === 0}>
               <Sparkles className={`h-4 w-4 mr-2 ${isGeneratingForecasts ? 'animate-spin' : ''}`} />
               {isGeneratingForecasts ? 'Generating...' : 'Generate Forecasts'}
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => window.location.href = '/settings'}
-            >
+            <Button variant="outline" size="sm" onClick={() => window.location.href = '/settings'}>
               <Settings className="h-4 w-4 mr-2" />
               Manage
             </Button>
@@ -151,73 +128,46 @@ export function AmazonPayouts() {
                 {formatCurrency(totalUpcoming)}
               </span>
             </div>
-            {amazonAccounts.length > 0 && (
-              <>
+            {amazonAccounts.length > 0 && <>
                 <div className="text-xs text-muted-foreground">
-                  Last sync: {amazonAccounts[0]?.last_sync 
-                    ? new Date(amazonAccounts[0].last_sync).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit'
-                      })
-                    : 'Never'}
+                  Last sync: {amazonAccounts[0]?.last_sync ? new Date(amazonAccounts[0].last_sync).toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit'
+              }) : 'Never'}
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSyncAllAccounts}
-                  disabled={isSyncing !== null}
-                >
+                <Button variant="outline" size="sm" onClick={handleSyncAllAccounts} disabled={isSyncing !== null}>
                   <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
                   Sync
                 </Button>
-              </>
-            )}
+              </>}
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {amazonPayouts.length === 0 ? (
-          <div className="text-center py-8">
+        {amazonPayouts.length === 0 ? <div className="text-center py-8">
             <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold text-foreground mb-2">No Amazon payouts found</h3>
             <p className="text-muted-foreground mb-4">
-              {amazonAccounts.length === 0 
-                ? "Connect your Amazon seller account to see payouts"
-                : "Sync your Amazon accounts to load payout data"
-              }
+              {amazonAccounts.length === 0 ? "Connect your Amazon seller account to see payouts" : "Sync your Amazon accounts to load payout data"}
             </p>
             <Button onClick={() => window.location.href = '/settings'}>
               <Settings className="h-4 w-4 mr-2" />
               {amazonAccounts.length === 0 ? "Connect Amazon Account" : "Manage Amazon Settings"}
             </Button>
-          </div>
-        ) : (
-          amazonPayouts
-            .filter(payout => showForecasts ? true : payout.status !== 'forecasted')
-            .map((payout) => {
-            const daysUntil = getDaysUntil(payout.payout_date);
-            const isUpcoming = daysUntil <= 7;
-            const isForecasted = payout.status === 'forecasted';
-            
-            return (
-              <div
-                key={payout.id}
-                className={`rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card ${
-                  isForecasted ? 'border-purple-500/30 bg-purple-500/5' :
-                  isUpcoming ? 'border-primary/30 bg-primary/5' : ''
-                }`}
-              >
+          </div> : amazonPayouts.filter(payout => showForecasts ? true : payout.status !== 'forecasted').map(payout => {
+        const daysUntil = getDaysUntil(payout.payout_date);
+        const isUpcoming = daysUntil <= 7;
+        const isForecasted = payout.status === 'forecasted';
+        return <div key={payout.id} className={`rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card ${isForecasted ? 'border-purple-500/30 bg-purple-500/5' : isUpcoming ? 'border-primary/30 bg-primary/5' : ''}`}>
                 <div className="flex items-center justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      {isForecasted && (
-                        <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
+                      {isForecasted && <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
                           <Sparkles className="h-3 w-3 mr-1" />
                           AI Forecast
-                        </Badge>
-                      )}
+                        </Badge>}
                       <Badge variant={getStatusColor(payout.status)} className="text-xs">
                         {payout.status}
                       </Badge>
@@ -233,10 +183,7 @@ export function AmazonPayouts() {
                         <Calendar className="mr-1 h-3 w-3" />
                         {formatDate(payout.payout_date)}
                       </span>
-                      <span className={`font-medium ${
-                        daysUntil <= 0 ? 'text-finance-positive' : 
-                        daysUntil <= 3 ? 'text-warning' : 'text-muted-foreground'
-                      }`}>
+                      <span className={`font-medium ${daysUntil <= 0 ? 'text-finance-positive' : daysUntil <= 3 ? 'text-warning' : 'text-muted-foreground'}`}>
                         {daysUntil <= 0 ? 'Today' : `${daysUntil} days`}
                       </span>
                       <span className="text-xs text-muted-foreground">
@@ -248,30 +195,19 @@ export function AmazonPayouts() {
                     <p className="font-bold text-lg text-finance-positive">
                       {formatCurrency(payout.total_amount)}
                     </p>
-                    {isUpcoming && (
-                      <div className="flex items-center text-xs text-primary">
+                    {isUpcoming && <div className="flex items-center text-xs text-primary">
                         <TrendingUp className="mr-1 h-3 w-3" />
                         Upcoming
-                      </div>
-                    )}
+                      </div>}
                   </div>
                 </div>
-              </div>
-            );
-          })
-        )}
-        {amazonPayouts.length > 0 && (
-          <div className="pt-2">
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => window.location.href = '/settings'}
-            >
+              </div>;
+      })}
+        {amazonPayouts.length > 0 && <div className="pt-2">
+            <Button variant="outline" className="w-full" onClick={() => window.location.href = '/settings'}>
               View Amazon Settings & Full Schedule
             </Button>
-          </div>
-        )}
+          </div>}
       </CardContent>
-    </Card>
-  );
+    </Card>;
 }
