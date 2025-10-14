@@ -56,7 +56,7 @@ export const useReserveAmount = () => {
         setCanUpdate(true);
       }
       
-      console.log('[Reserve] Loaded:', reserve, 'Last updated:', lastUpdate);
+      console.log('[Reserve] 🔴🔴🔴 Loaded reserve amount:', reserve, 'Last updated:', lastUpdate);
     } catch (error) {
       console.error('[Reserve] Fetch error:', error);
     } finally {

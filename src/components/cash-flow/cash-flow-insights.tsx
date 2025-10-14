@@ -95,7 +95,8 @@ export const CashFlowInsights = ({
       safeSpendingLimit,
       reserveAmount,
       projectedLowestBalance,
-      calculation: `${projectedLowestBalance} - ${reserveAmount} = ${projectedLowestBalance - reserveAmount}`
+      calculation: `${projectedLowestBalance} - ${reserveAmount} = ${projectedLowestBalance - reserveAmount}`,
+      expectedSafeSpending: projectedLowestBalance - reserveAmount
     });
   }, [safeSpendingLimit, reserveAmount, projectedLowestBalance]);
 
