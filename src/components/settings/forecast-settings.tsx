@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, TrendingUp, Info } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Sparkles, TrendingUp, Info, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
@@ -14,6 +15,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const ForecastSettings = () => {
   const { user } = useAuth();
@@ -21,8 +32,20 @@ export const ForecastSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [confidenceThreshold, setConfidenceThreshold] = useState(5); // -5 = Aggressive, 0 = Medium, 5 = Safe, 10 = Very Safe
+  const [forecastsEnabled, setForecastsEnabled] = useState(true);
+  const [disabledAt, setDisabledAt] = useState<string | null>(null);
+  const [showDisableConfirm, setShowDisableConfirm] = useState(false);
+  const [togglingForecast, setTogglingForecast] = useState(false);
   
   const hasAmazonStore = amazonAccounts && amazonAccounts.length > 0;
+
+  // Calculate if 24 hours have passed since disabling
+  const canReEnable = !disabledAt || 
+    (new Date().getTime() - new Date(disabledAt).getTime()) >= 24 * 60 * 60 * 1000;
+  
+  const hoursUntilReEnable = disabledAt 
+    ? Math.max(0, 24 - Math.floor((new Date().getTime() - new Date(disabledAt).getTime()) / (60 * 60 * 1000)))
+    : 0;
 
   useEffect(() => {
     if (user) {
@@ -34,7 +57,7 @@ export const ForecastSettings = () => {
     try {
       const { data, error } = await supabase
         .from('user_settings')
-        .select('forecast_confidence_threshold')
+        .select('forecast_confidence_threshold, forecasts_enabled, forecasts_disabled_at')
         .eq('user_id', user!.id)
         .maybeSingle();
 
@@ -53,12 +76,101 @@ export const ForecastSettings = () => {
         console.log('📊 No existing setting, using default: 5 (Safe)');
         setConfidenceThreshold(5);
       }
+
+      // Set forecast enabled state
+      setForecastsEnabled(data?.forecasts_enabled ?? true);
+      setDisabledAt(data?.forecasts_disabled_at || null);
     } catch (error) {
       console.error('Error fetching forecast settings:', error);
       // On error, default to 5 (Safe)
       setConfidenceThreshold(5);
+      setForecastsEnabled(true);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleForecast = async (enabled: boolean) => {
+    if (!enabled) {
+      // Show confirmation dialog before disabling
+      setShowDisableConfirm(true);
+      return;
+    }
+
+    // Check if 24 hours have passed
+    if (!canReEnable) {
+      toast.error(`You can re-enable forecasts in ${hoursUntilReEnable} hours`);
+      return;
+    }
+
+    // Re-enable forecasts
+    setTogglingForecast(true);
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) throw new Error("Not authenticated");
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', currentUser.id)
+        .maybeSingle();
+
+      if (!profile?.account_id) throw new Error("Account not found");
+
+      const { error: updateError } = await supabase
+        .from('user_settings')
+        .upsert({
+          user_id: currentUser.id,
+          account_id: profile.account_id,
+          forecasts_enabled: true,
+          forecasts_disabled_at: null,
+          forecast_confidence_threshold: confidenceThreshold
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (updateError) throw updateError;
+
+      setForecastsEnabled(true);
+      setDisabledAt(null);
+      toast.success("AI forecasts re-enabled");
+      
+      // Regenerate forecasts
+      await handleSave();
+    } catch (error) {
+      console.error('Error enabling forecasts:', error);
+      toast.error("Failed to enable forecasts");
+    } finally {
+      setTogglingForecast(false);
+    }
+  };
+
+  const confirmDisableForecast = async () => {
+    setShowDisableConfirm(false);
+    setTogglingForecast(true);
+    
+    try {
+      console.log('[DISABLE] Calling disable-forecasts function...');
+      const { error } = await supabase.functions.invoke('disable-forecasts');
+
+      if (error) {
+        console.error('[DISABLE] Error:', error);
+        throw error;
+      }
+
+      setForecastsEnabled(false);
+      setDisabledAt(new Date().toISOString());
+      toast.success("AI forecasts disabled. All forecasted payouts removed.");
+      
+      // Reload to reflect changes
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error) {
+      console.error('Error disabling forecasts:', error);
+      toast.error("Failed to disable forecasts");
+    } finally {
+      setTogglingForecast(false);
     }
   };
 
@@ -204,28 +316,67 @@ export const ForecastSettings = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-600" />
-            <CardTitle>AI Forecast Risk Level</CardTitle>
-          </div>
-          <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/20">
-            AI-Powered
-          </Badge>
-        </div>
-        <CardDescription>
-          Adjust the conservatism of your Amazon payout forecasts
-          {!loading && (
-            <div className="mt-2 text-xs text-muted-foreground">
-              Current forecast risk: <span className="font-semibold">{riskLevel.label}</span>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-600" />
+              <CardTitle>AI Forecast Settings</CardTitle>
             </div>
-          )}
-        </CardDescription>
-      </CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="forecast-toggle" className="text-sm">
+                  AI Forecasts {forecastsEnabled ? 'Enabled' : 'Disabled'}
+                </Label>
+                <Switch
+                  id="forecast-toggle"
+                  checked={forecastsEnabled}
+                  onCheckedChange={handleToggleForecast}
+                  disabled={togglingForecast || !hasAmazonStore || (!forecastsEnabled && !canReEnable)}
+                />
+              </div>
+              <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/20">
+                AI-Powered
+              </Badge>
+            </div>
+          </div>
+          <CardDescription>
+            {forecastsEnabled ? (
+              <>
+                Adjust the conservatism of your Amazon payout forecasts
+                {!loading && (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    Current forecast risk: <span className="font-semibold">{riskLevel.label}</span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="mt-2 space-y-1">
+                <p className="text-sm text-orange-600 dark:text-orange-400 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  AI forecasts are currently disabled
+                </p>
+                {!canReEnable && (
+                  <p className="text-xs text-muted-foreground">
+                    You can re-enable forecasts in {hoursUntilReEnable} hours
+                  </p>
+                )}
+              </div>
+            )}
+          </CardDescription>
+        </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-4">
+        {!forecastsEnabled && (
+          <div className="rounded-lg border-2 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/20 p-4">
+            <p className="text-sm text-orange-800 dark:text-orange-200">
+              All AI-forecasted Amazon payouts have been removed from your cash flow projections. 
+              Only confirmed payouts will be shown.
+            </p>
+          </div>
+        )}
+        
+        <div className="space-y-4" style={{ opacity: forecastsEnabled ? 1 : 0.5, pointerEvents: forecastsEnabled ? 'auto' : 'none' }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Label htmlFor="risk-threshold">Forecast Risk Adjustment</Label>
@@ -299,7 +450,7 @@ export const ForecastSettings = () => {
               <div>
                 <Button 
                   onClick={handleSave} 
-                  disabled={saving || !hasAmazonStore}
+                  disabled={saving || !hasAmazonStore || !forecastsEnabled}
                   className="w-full"
                 >
                   {saving ? "Saving..." : "Save Forecast Settings"}
@@ -311,9 +462,48 @@ export const ForecastSettings = () => {
                 <p>Connect an Amazon store to enable forecast settings</p>
               </TooltipContent>
             )}
+            {!forecastsEnabled && (
+              <TooltipContent>
+                <p>Enable AI forecasts to adjust settings</p>
+              </TooltipContent>
+            )}
           </Tooltip>
         </TooltipProvider>
       </CardContent>
     </Card>
+
+    <AlertDialog open={showDisableConfirm} onOpenChange={setShowDisableConfirm}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-orange-500" />
+            Disable AI Forecasts?
+          </AlertDialogTitle>
+          <AlertDialogDescription className="space-y-3 text-left">
+            <p>
+              This will immediately:
+            </p>
+            <ul className="list-disc list-inside space-y-1 text-sm">
+              <li>Remove all AI-forecasted Amazon payouts from your cash flow projections</li>
+              <li>Remove forecasts from all {amazonAccounts?.length || 0} connected Amazon account(s)</li>
+              <li>Only show confirmed Amazon payouts going forward</li>
+            </ul>
+            <p className="font-semibold text-orange-600 dark:text-orange-400">
+              You will need to wait 24 hours before you can re-enable AI forecasts.
+            </p>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={confirmDisableForecast}
+            className="bg-orange-600 hover:bg-orange-700"
+          >
+            Disable Forecasts
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };

@@ -1685,6 +1685,8 @@ export type Database = {
           chart_show_resources_line: boolean | null
           created_at: string
           forecast_confidence_threshold: number | null
+          forecasts_disabled_at: string | null
+          forecasts_enabled: boolean | null
           id: string
           last_forecast_refresh: string | null
           reserve_last_updated_at: string | null
@@ -1708,6 +1710,8 @@ export type Database = {
           chart_show_resources_line?: boolean | null
           created_at?: string
           forecast_confidence_threshold?: number | null
+          forecasts_disabled_at?: string | null
+          forecasts_enabled?: boolean | null
           id?: string
           last_forecast_refresh?: string | null
           reserve_last_updated_at?: string | null
@@ -1731,6 +1735,8 @@ export type Database = {
           chart_show_resources_line?: boolean | null
           created_at?: string
           forecast_confidence_threshold?: number | null
+          forecasts_disabled_at?: string | null
+          forecasts_enabled?: boolean | null
           id?: string
           last_forecast_refresh?: string | null
           reserve_last_updated_at?: string | null

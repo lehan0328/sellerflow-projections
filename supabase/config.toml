@@ -117,6 +117,9 @@ verify_jwt = false
 [functions.forecast-amazon-payouts]
 verify_jwt = true
 
+[functions.disable-forecasts]
+verify_jwt = true
+
 [functions.get-invoices]
 verify_jwt = true
 
