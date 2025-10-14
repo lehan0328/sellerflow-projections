@@ -161,62 +161,85 @@ export function AmazonPayouts() {
               <Settings className="h-4 w-4 mr-2" />
               {amazonAccounts.length === 0 ? "Connect Amazon Account" : "Manage Amazon Settings"}
             </Button>
-          </div> : amazonPayouts.filter(payout => showForecasts ? true : payout.status !== 'forecasted').map(payout => {
-        const daysUntil = getDaysUntil(payout.payout_date);
-        const isUpcoming = daysUntil <= 7;
-        const isForecasted = payout.status === 'forecasted';
-        const confidence = isForecasted ? payout.raw_settlement_data?.forecast_metadata?.confidence : null;
-        const riskLevel = isForecasted ? payout.raw_settlement_data?.forecast_metadata?.risk_level : null;
-        
-        return <div key={payout.id} className={`rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card ${isForecasted ? 'border-purple-500/30 bg-purple-500/5' : isUpcoming ? 'border-primary/30 bg-primary/5' : ''}`}>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      {isForecasted && <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
-                          <Sparkles className="h-3 w-3 mr-1" />
-                          AI Forecast
-                        </Badge>}
-                      {isForecasted && confidence && <Badge variant="secondary" className="text-xs">
-                          {(confidence * 100).toFixed(0)}% confidence
-                        </Badge>}
-                      {isForecasted && riskLevel && <Badge variant="outline" className="text-xs capitalize">
-                          {riskLevel.replace('_', ' ')}
-                        </Badge>}
-                      <Badge variant={getStatusColor(payout.status)} className="text-xs">
-                        {payout.status}
-                      </Badge>
-                      <Badge variant={getTypeColor(payout.payout_type)} className="text-xs">
-                        {payout.payout_type.replace("-", " ")}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {payout.marketplace_name}
-                      </span>
+          </div> : (() => {
+          // Group payouts by date and aggregate amounts
+          const filteredPayouts = amazonPayouts.filter(payout => showForecasts ? true : payout.status !== 'forecasted');
+          const payoutsByDate = filteredPayouts.reduce((acc, payout) => {
+            const dateKey = payout.payout_date;
+            if (!acc[dateKey]) {
+              acc[dateKey] = {
+                ...payout,
+                total_amount: 0,
+                transaction_count: 0,
+                payouts: []
+              };
+            }
+            acc[dateKey].total_amount += payout.total_amount;
+            acc[dateKey].transaction_count += payout.transaction_count;
+            acc[dateKey].payouts.push(payout);
+            return acc;
+          }, {} as Record<string, any>);
+          
+          return Object.values(payoutsByDate).map(aggregatedPayout => {
+            const daysUntil = getDaysUntil(aggregatedPayout.payout_date);
+            const isUpcoming = daysUntil <= 7;
+            const isForecasted = aggregatedPayout.status === 'forecasted';
+            const confidence = isForecasted ? aggregatedPayout.raw_settlement_data?.forecast_metadata?.confidence : null;
+            const riskLevel = isForecasted ? aggregatedPayout.raw_settlement_data?.forecast_metadata?.risk_level : null;
+            
+            return <div key={aggregatedPayout.payout_date} className={`rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card ${isForecasted ? 'border-purple-500/30 bg-purple-500/5' : isUpcoming ? 'border-primary/30 bg-primary/5' : ''}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          {isForecasted && <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              AI Forecast
+                            </Badge>}
+                          {isForecasted && confidence && <Badge variant="secondary" className="text-xs">
+                              {(confidence * 100).toFixed(0)}% confidence
+                            </Badge>}
+                          {isForecasted && riskLevel && <Badge variant="outline" className="text-xs capitalize">
+                              {riskLevel.replace('_', ' ')}
+                            </Badge>}
+                          <Badge variant={getStatusColor(aggregatedPayout.status)} className="text-xs">
+                            {aggregatedPayout.status}
+                          </Badge>
+                          <Badge variant={getTypeColor(aggregatedPayout.payout_type)} className="text-xs">
+                            {aggregatedPayout.payout_type.replace("-", " ")}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {aggregatedPayout.marketplace_name}
+                          </span>
+                          {aggregatedPayout.payouts.length > 1 && <Badge variant="secondary" className="text-xs">
+                              {aggregatedPayout.payouts.length} accounts
+                            </Badge>}
+                        </div>
+                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                          <span className="flex items-center">
+                            <Calendar className="mr-1 h-3 w-3" />
+                            {formatDate(aggregatedPayout.payout_date)}
+                          </span>
+                          <span className={`font-medium ${daysUntil <= 0 ? 'text-finance-positive' : daysUntil <= 3 ? 'text-warning' : 'text-muted-foreground'}`}>
+                            {daysUntil <= 0 ? 'Today' : daysUntil < 0 ? `${Math.abs(daysUntil)} days ago` : `in ${daysUntil} days`}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {aggregatedPayout.transaction_count} transactions
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-lg text-finance-positive">
+                          {formatCurrency(aggregatedPayout.total_amount)}
+                        </p>
+                        {isUpcoming && <div className="flex items-center text-xs text-primary">
+                            <TrendingUp className="mr-1 h-3 w-3" />
+                            Upcoming
+                          </div>}
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                      <span className="flex items-center">
-                        <Calendar className="mr-1 h-3 w-3" />
-                        {formatDate(payout.payout_date)}
-                      </span>
-                      <span className={`font-medium ${daysUntil <= 0 ? 'text-finance-positive' : daysUntil <= 3 ? 'text-warning' : 'text-muted-foreground'}`}>
-                        {daysUntil <= 0 ? 'Today' : daysUntil < 0 ? `${Math.abs(daysUntil)} days ago` : `in ${daysUntil} days`}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {payout.transaction_count} transactions
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-lg text-finance-positive">
-                      {formatCurrency(payout.total_amount)}
-                    </p>
-                    {isUpcoming && <div className="flex items-center text-xs text-primary">
-                        <TrendingUp className="mr-1 h-3 w-3" />
-                        Upcoming
-                      </div>}
-                  </div>
-                </div>
-              </div>;
-      })}
+                  </div>;
+          });
+        })()}
         {amazonPayouts.length > 0 && <div className="pt-2">
             <Button variant="outline" className="w-full" onClick={() => window.location.href = '/settings'}>
               View Amazon Settings & Full Schedule
