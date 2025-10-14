@@ -134,6 +134,43 @@ export const CashFlowInsights = ({
     loadUserSettings();
   }, [user]);
 
+  // Calculate pending transactions for TODAY
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const todayAmazonPayouts = amazonPayouts.filter(payout => {
+    const payoutDate = new Date(payout.payout_date);
+    payoutDate.setHours(0, 0, 0, 0);
+    return payoutDate.getTime() === todayStart.getTime();
+  });
+  const todayAmazonAmount = todayAmazonPayouts.reduce((sum, payout) => sum + (payout.total_amount || 0), 0);
+
+  const todayPendingIncome = income.filter(inc => {
+    const paymentDate = new Date(inc.paymentDate);
+    paymentDate.setHours(0, 0, 0, 0);
+    return inc.status === 'pending' && paymentDate.getTime() === todayStart.getTime();
+  });
+  const todayIncomeAmount = todayPendingIncome.reduce((sum, inc) => sum + inc.amount, 0);
+
+  const todayPendingVendors = vendors.filter((v: any) => {
+    if (!v.dueDate) return false;
+    const dueDate = new Date(v.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    return v.status === 'pending' && dueDate.getTime() === todayStart.getTime();
+  });
+  const todayVendorAmount = todayPendingVendors.reduce((sum, v: any) => sum + (v.amount || 0), 0);
+
+  const todayPendingRecurring = events.filter(event => {
+    const eventDate = new Date(event.date);
+    eventDate.setHours(0, 0, 0, 0);
+    const isRecurringExpense = event.type === 'outflow' && 
+      (typeof event.id === 'string' && event.id.startsWith('recurring-'));
+    return isRecurringExpense && eventDate.getTime() === todayStart.getTime();
+  });
+  const todayRecurringAmount = todayPendingRecurring.reduce((sum, event) => sum + event.amount, 0);
+
+  const todayTotalPending = todayAmazonAmount + todayIncomeAmount + todayVendorAmount + todayRecurringAmount;
+
   // Auto-generate forecasts on mount if needed - with debouncing to prevent spam
   useEffect(() => {
     let isSubscribed = true;
@@ -536,6 +573,32 @@ export const CashFlowInsights = ({
                   <p className="text-xs text-muted-foreground mb-2">
                     This is what you can safely spend without risking shortfalls
                   </p>
+                  
+                  {todayTotalPending > 0 && (
+                    <div className="space-y-1 mb-2">
+                      <p className="text-xs font-semibold text-muted-foreground">Pending Today:</p>
+                      {todayAmazonAmount > 0 && (
+                        <p className="text-xs text-green-600">
+                          Amazon: ${todayAmazonAmount.toLocaleString()}
+                        </p>
+                      )}
+                      {todayIncomeAmount > 0 && (
+                        <p className="text-xs text-green-600">
+                          Income: ${todayIncomeAmount.toLocaleString()}
+                        </p>
+                      )}
+                      {todayRecurringAmount > 0 && (
+                        <p className="text-xs text-amber-600">
+                          Recurring: ${todayRecurringAmount.toLocaleString()}
+                        </p>
+                      )}
+                      {todayVendorAmount > 0 && (
+                        <p className="text-xs text-red-600">
+                          Expense: ${todayVendorAmount.toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   
                   {safeSpendingAvailableDate && (
                     <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800 mt-2">

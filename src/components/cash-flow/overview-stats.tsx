@@ -326,38 +326,58 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
-  // Pending Amazon payouts for today
+  // Pending Amazon payouts for today (confirmed payouts dated today that haven't settled)
   const todayAmazonPayouts = amazonPayouts.filter(payout => {
     const payoutDate = new Date(payout.payout_date);
     payoutDate.setHours(0, 0, 0, 0);
-    return payoutDate >= todayStart && payoutDate <= todayEnd;
+    const isToday = payoutDate.getTime() === todayStart.getTime();
+    return isToday;
   });
   const todayAmazonAmount = todayAmazonPayouts.reduce((sum, payout) => sum + (payout.total_amount || 0), 0);
 
   // Pending income for today
   const todayPendingIncome = incomeItems.filter(income => {
     const paymentDate = new Date(income.paymentDate);
-    return income.status === 'pending' && paymentDate >= todayStart && paymentDate <= todayEnd;
+    paymentDate.setHours(0, 0, 0, 0);
+    const isToday = paymentDate.getTime() === todayStart.getTime();
+    return income.status === 'pending' && isToday;
   });
   const todayIncomeAmount = todayPendingIncome.reduce((sum, income) => sum + income.amount, 0);
 
   // Pending vendor transactions for today
   const todayPendingExpenses = vendorTransactions.filter(tx => {
     const dueDate = new Date(tx.dueDate);
-    return tx.status === 'pending' && dueDate >= todayStart && dueDate <= todayEnd;
+    dueDate.setHours(0, 0, 0, 0);
+    const isToday = dueDate.getTime() === todayStart.getTime();
+    return tx.status === 'pending' && isToday;
   });
   const todayExpenseAmount = todayPendingExpenses.reduce((sum, tx) => sum + tx.amount, 0);
 
   // Pending recurring expenses for today
   const todayPendingRecurring = events.filter(event => {
     const eventDate = new Date(event.date);
+    eventDate.setHours(0, 0, 0, 0);
+    const isToday = eventDate.getTime() === todayStart.getTime();
     const isRecurringExpense = event.type === 'outflow' && 
       (typeof (event as any).id === 'string' && (event as any).id.startsWith('recurring-'));
-    return isRecurringExpense && eventDate >= todayStart && eventDate <= todayEnd;
+    return isRecurringExpense && isToday;
   });
   const todayRecurringAmount = todayPendingRecurring.reduce((sum, event) => sum + event.amount, 0);
 
   const todayTotalPending = todayAmazonAmount + todayIncomeAmount + todayExpenseAmount + todayRecurringAmount;
+
+  console.log('📊 Pending Today Breakdown:', {
+    todayStart: todayStart.toISOString(),
+    amazonPayouts: todayAmazonPayouts.length,
+    amazonAmount: todayAmazonAmount,
+    income: todayPendingIncome.length,
+    incomeAmount: todayIncomeAmount,
+    expenses: todayPendingExpenses.length,
+    expenseAmount: todayExpenseAmount,
+    recurring: todayPendingRecurring.length,
+    recurringAmount: todayRecurringAmount,
+    total: todayTotalPending
+  });
 
   return (<>
       <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
