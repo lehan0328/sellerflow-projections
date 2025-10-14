@@ -36,7 +36,6 @@ export function ManualBankAccountDialog({
     account_name: account?.account_name || "",
     account_type: account?.account_type || "checking",
     balance: account?.balance?.toString() || "0",
-    available_balance: account?.available_balance?.toString() || "0",
     currency_code: account?.currency_code || "USD"
   });
 
@@ -55,7 +54,7 @@ export function ManualBankAccountDialog({
         account_name: formData.account_name.trim(),
         account_type: formData.account_type,
         balance: parseFloat(formData.balance) || 0,
-        available_balance: parseFloat(formData.available_balance) || 0,
+        available_balance: parseFloat(formData.balance) || 0,
         currency_code: formData.currency_code,
         is_active: true,
         last_sync: new Date().toISOString()
@@ -89,7 +88,6 @@ export function ManualBankAccountDialog({
         account_name: "",
         account_type: "checking",
         balance: "0",
-        available_balance: "0",
         currency_code: "USD"
       });
     } catch (error: any) {
@@ -153,31 +151,17 @@ export function ManualBankAccountDialog({
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="balance">Current Balance *</Label>
-              <Input
-                id="balance"
-                type="number"
-                step="0.01"
-                value={formData.balance}
-                onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
-                placeholder="0.00"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="available_balance">Available Balance</Label>
-              <Input
-                id="available_balance"
-                type="number"
-                step="0.01"
-                value={formData.available_balance}
-                onChange={(e) => setFormData({ ...formData, available_balance: e.target.value })}
-                placeholder="0.00"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="balance">Current Balance *</Label>
+            <Input
+              id="balance"
+              type="number"
+              step="0.01"
+              value={formData.balance}
+              onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
+              placeholder="0.00"
+              required
+            />
           </div>
 
           <div className="space-y-2">
