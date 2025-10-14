@@ -1354,37 +1354,27 @@ export const CashFlowCalendar = ({
                       )}
                       {showForecastLine && (
                         <>
-                          {/* Purple dotted line - AI Forecasted Payout + Projected Balance */}
-                          <Line
-                            type="monotone"
-                            dataKey="forecastPayout"
-                            stroke="#9333ea"
-                            strokeWidth={3}
-                            strokeDasharray="5 5"
-                            dot={(props: any) => {
-                              const { cx, cy, payload } = props;
-                              if (!payload.forecastPayout || payload.forecastPayout === null) {
-                                return null;
-                              }
-                              return (
-                                <g>
-                                  <circle cx={cx} cy={cy} r={6} fill="#9333ea" stroke="#7e22ce" strokeWidth={2} />
-                                  <circle cx={cx} cy={cy} r={3} fill="#fff" />
-                                </g>
-                              );
-                            }}
-                            name="AI Forecasted Payout"
-                            connectNulls={false}
-                          />
-                          {/* Projected Balance line - Cash + Forecasts */}
+                          {/* Projected Balance line - Cash + Forecasts (Purple) - includes AI forecasted payouts */}
                           <Line
                             type="monotone"
                             dataKey="projectedBalance"
-                            stroke="#10b981"
+                            stroke="#9333ea"
                             strokeWidth={2}
                             strokeDasharray="3 3"
-                            dot={false}
-                            name="Projected Cash Balance"
+                            dot={(props: any) => {
+                              const { cx, cy, payload } = props;
+                              // Show dot on days with AI forecasted Amazon payouts
+                              if (payload.hasAmazonForecast) {
+                                return (
+                                  <g>
+                                    <circle cx={cx} cy={cy} r={6} fill="#9333ea" stroke="#7e22ce" strokeWidth={2} />
+                                    <circle cx={cx} cy={cy} r={3} fill="#fff" />
+                                  </g>
+                                );
+                              }
+                              return null;
+                            }}
+                            name="Projected Cash Balance (with AI Forecasts)"
                           />
                         </>
                       )}
