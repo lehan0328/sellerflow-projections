@@ -288,21 +288,51 @@ export const useUserSettings = () => {
         }
       });
 
-      // Ensure user still has owner role after clearing data
-      const { error: roleError } = await supabase
+      // Fetch existing user roles to preserve them
+      const { data: existingRoles } = await supabase
         .from('user_roles')
-        .upsert({
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('account_id', accountId);
+
+      console.log('📋 Existing roles to preserve:', existingRoles);
+
+      // Preserve all existing roles after clearing data
+      if (existingRoles && existingRoles.length > 0) {
+        const roleUpserts = existingRoles.map(r => ({
           user_id: user.id,
           account_id: accountId,
-          role: 'owner'
-        }, {
-          onConflict: 'user_id,account_id'
-        });
+          role: r.role
+        }));
 
-      if (roleError) {
-        console.error('Failed to ensure owner role:', roleError);
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .upsert(roleUpserts, {
+            onConflict: 'user_id,account_id,role'
+          });
+
+        if (roleError) {
+          console.error('Failed to preserve user roles:', roleError);
+        } else {
+          console.log('✅ Preserved all user roles:', existingRoles.map(r => r.role).join(', '));
+        }
       } else {
-        console.log('✅ Ensured owner role exists');
+        // No existing roles, ensure at least owner role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .upsert({
+            user_id: user.id,
+            account_id: accountId,
+            role: 'owner'
+          }, {
+            onConflict: 'user_id,account_id,role'
+          });
+
+        if (roleError) {
+          console.error('Failed to ensure owner role:', roleError);
+        } else {
+          console.log('✅ Ensured owner role exists');
+        }
       }
 
       // Reset user_settings using user_id

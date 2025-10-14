@@ -122,3 +122,9 @@ verify_jwt = true
 
 [functions.backfill-stripe-customer-ids]
 verify_jwt = true
+
+[functions.create-sample-amazon-data]
+verify_jwt = true
+
+[functions.restore-admin-access]
+verify_jwt = true

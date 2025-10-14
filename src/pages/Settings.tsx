@@ -157,6 +157,26 @@ const Settings = () => {
     // Note: resetAccount already handles page reload, no need to invalidate queries
   };
 
+  const handleRestoreAdminAccess = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('restore-admin-access');
+      
+      if (error) throw error;
+      
+      if (data?.success) {
+        toast.success("Admin access restored successfully! Refreshing...");
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        throw new Error(data?.error || "Failed to restore admin access");
+      }
+    } catch (error) {
+      console.error("Error restoring admin access:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to restore admin access");
+    }
+  };
+
   const getThemeIcon = (themeType: string) => {
     switch (themeType) {
       case 'light':
@@ -378,6 +398,28 @@ const Settings = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {isAdmin && (
+          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Restore Admin Access</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  If you lost admin access after clearing data, use this to restore your admin and owner roles.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleRestoreAdminAccess}
+                  className="border-blue-300 dark:border-blue-700"
+                >
+                  <Shield className="mr-2 h-4 w-4" />
+                  Restore Admin Access
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
           <div className="flex items-start space-x-3">
             <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
