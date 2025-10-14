@@ -672,6 +672,79 @@ export const CashFlowInsights = ({
               </div>
             </div>
 
+            {/* AI Forecasted Opportunity Tracker */}
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-purple-600" />
+                AI Forecasted Opportunity Tracker
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-muted hover:bg-muted/80 transition-colors">
+                        <Info className="h-3 w-3 text-muted-foreground" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p className="text-sm">
+                        This tracker includes AI-forecasted Amazon payouts in the cash balance projection. 
+                        These are opportunities that could become available if the forecasted payouts come through as predicted.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </h4>
+              
+              {/* Calculate projected opportunities with forecasts */}
+              {(() => {
+                // Get AI forecasted payouts
+                const forecastedPayouts = amazonPayouts?.filter(p => p.status === 'forecasted') || [];
+                const totalForecastedAmount = forecastedPayouts.reduce((sum, p) => sum + (p.total_amount || 0), 0);
+                
+                if (forecastedPayouts.length === 0) {
+                  return (
+                    <div className="p-3 bg-muted/50 rounded-lg text-center">
+                      <p className="text-xs text-muted-foreground">No AI forecasted payouts available</p>
+                      <p className="text-xs text-muted-foreground mt-1">Generate forecasts to see projected opportunities</p>
+                    </div>
+                  );
+                }
+                
+                const projectedBalance = safeSpendingLimit + totalForecastedAmount;
+                
+                return (
+                  <div className="p-4 rounded-lg border-2 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 border-purple-200 dark:border-purple-800">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-muted-foreground">Projected with AI Forecasts</span>
+                        <Sparkles className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <span className="text-2xl font-bold text-purple-600">
+                        ${projectedBalance.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="space-y-2 text-xs mt-3">
+                      <div className="flex justify-between items-center p-2 bg-white/50 dark:bg-black/20 rounded">
+                        <span className="text-muted-foreground">Confirmed Safe Spending</span>
+                        <span className="font-semibold text-primary">
+                          ${safeSpendingLimit.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-2 bg-purple-100 dark:bg-purple-900/30 rounded">
+                        <span className="text-muted-foreground">AI Forecasted Payouts</span>
+                        <span className="font-semibold text-purple-600">
+                          +${totalForecastedAmount.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-3 p-2 bg-purple-50 dark:bg-purple-900/20 rounded">
+                      💡 {forecastedPayouts.length} AI forecasted {forecastedPayouts.length === 1 ? 'payout' : 'payouts'} included. 
+                      This is a projection based on AI analysis and should be used for planning purposes only.
+                    </p>
+                  </div>
+                );
+              })()}
+            </div>
+
             {/* Upcoming Alert */}
             {upcomingExpenses > 0}
 

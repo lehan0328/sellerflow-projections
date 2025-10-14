@@ -238,6 +238,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
           }
         });
 
+        // Only include CONFIRMED Amazon payouts (exclude forecasted ones)
         amazonResult.data?.forEach((payout) => {
           const payoutDate = parseLocalDate(payout.payout_date);
           
@@ -249,10 +250,18 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
             return;
           }
           
+          // Skip AI forecasted payouts in confirmed calculations
+          if (payout.status === 'forecasted') {
+            if (isKeyDate) {
+              console.log(`  ⏭️ SKIPPING forecasted Amazon payout: $${payout.total_amount} (date: ${formatDate(payoutDate)})`);
+            }
+            return;
+          }
+          
           if (payoutDate.getTime() === targetDate.getTime()) {
             const amt = Number(payout.total_amount);
             if (isKeyDate) {
-              console.log(`  🛒 Amazon payout: +$${amt}`);
+              console.log(`  🛒 Amazon payout (confirmed): +$${amt}`);
             }
             dayChange += amt;
           }
