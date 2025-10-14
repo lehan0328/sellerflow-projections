@@ -167,21 +167,21 @@ export function BankAccounts() {
             <Building2 className="h-5 w-5 text-primary" />
             <CardTitle>Bank Accounts</CardTitle>
             <Button 
-              variant="outline" 
+              variant="default" 
               size="sm" 
-              onClick={() => setDialogOpen(true)}
+              onClick={() => navigate('/manage-accounts')}
               className="ml-4"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Manual
+              <Settings className="h-4 w-4 mr-2" />
+              Connect Bank
             </Button>
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => navigate('/manage-accounts')}
+              onClick={() => setDialogOpen(true)}
             >
-              <Settings className="h-4 w-4 mr-2" />
-              Connect Bank
+              <Plus className="h-4 w-4 mr-2" />
+              Add Manual
             </Button>
             {accounts.length > 0 && (
               <Button 
