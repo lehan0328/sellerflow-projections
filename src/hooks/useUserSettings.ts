@@ -28,15 +28,16 @@ export const useUserSettings = () => {
         .from('user_settings')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        // If no settings exist, create default settings
-        if (error.code === 'PGRST116') {
-          await createDefaultSettings(user.id);
-          return;
-        }
         throw error;
+      }
+
+      if (!data) {
+        // If no settings exist, create default settings
+        await createDefaultSettings(user.id);
+        return;
       }
 
       setTotalCash(Number(data.total_cash));
