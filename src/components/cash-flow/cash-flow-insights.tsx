@@ -913,27 +913,48 @@ export const CashFlowInsights = ({
                       const confidencePercent = Math.round(opportunity.confidence * 100);
                       
                       return (
-                        <div key={index} className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800 space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="font-semibold text-sm">Opportunity #{index + 1}</span>
-                            <span className="text-lg font-bold text-blue-600">
-                              ${opportunity.balance.toLocaleString()}
-                            </span>
+                        <div key={index} className="group relative p-4 bg-gradient-to-br from-blue-50/80 via-purple-50/50 to-blue-50/80 dark:from-blue-950/30 dark:via-purple-950/20 dark:to-blue-950/30 rounded-xl border border-blue-200/50 dark:border-blue-800/50 backdrop-blur-sm hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300 space-y-3">
+                          {/* Header with Opportunity Badge and Amount */}
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 text-white text-xs font-bold shadow-sm">
+                                #{index + 1}
+                              </div>
+                              <span className="text-sm font-medium text-muted-foreground">Opportunity</span>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-xs text-muted-foreground mb-0.5">Available</div>
+                              <div className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                ${opportunity.balance.toLocaleString()}
+                              </div>
+                            </div>
                           </div>
-                          <p className="text-xs text-muted-foreground">Low point: {opportunity.formattedDate}</p>
-                          <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
-                            <span className="text-xs text-muted-foreground">Earliest Purchase Date:</span>
-                            <span className="text-sm font-semibold text-green-600">{opportunity.formattedDate}</span>
+
+                          {/* Low Point Date */}
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                            <span>Low point: <span className="font-medium text-foreground">{opportunity.formattedDate}</span></span>
                           </div>
-                          <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-purple-500/10 to-blue-500/10 dark:from-purple-500/20 dark:to-blue-500/20 rounded-lg border border-purple-300/30 dark:border-purple-500/30">
+
+                          {/* Purchase Date Card */}
+                          <div className="relative overflow-hidden p-3 bg-gradient-to-r from-green-500/10 via-emerald-500/10 to-green-500/10 dark:from-green-500/20 dark:via-emerald-500/20 dark:to-green-500/20 rounded-lg border border-green-300/30 dark:border-green-700/30">
+                            <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <div className="relative flex items-center justify-between">
+                              <span className="text-xs font-medium text-green-700 dark:text-green-400">Earliest Purchase Date</span>
+                              <span className="text-sm font-bold text-green-600 dark:text-green-500">{opportunity.formattedDate}</span>
+                            </div>
+                          </div>
+
+                          {/* AI Badge */}
+                          <div className="flex items-center gap-2 p-2.5 bg-gradient-to-r from-purple-500/10 to-blue-500/10 dark:from-purple-500/20 dark:to-blue-500/20 rounded-lg border border-purple-300/30 dark:border-purple-500/30">
                             <div className="flex items-center gap-1.5">
                               <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
                               <span className="text-xs font-mono font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">AI FORECASTED</span>
                             </div>
                             <div className="ml-auto flex items-center gap-1">
-                              <div className="w-1 h-1 rounded-full bg-blue-400" />
-                              <div className="w-1 h-1 rounded-full bg-purple-400" />
-                              <div className="w-1 h-1 rounded-full bg-pink-400" />
+                              <div className="w-1 h-1 rounded-full bg-blue-400 animate-pulse" style={{ animationDelay: "0ms" }} />
+                              <div className="w-1 h-1 rounded-full bg-purple-400 animate-pulse" style={{ animationDelay: "150ms" }} />
+                              <div className="w-1 h-1 rounded-full bg-pink-400 animate-pulse" style={{ animationDelay: "300ms" }} />
                             </div>
                           </div>
                         </div>
