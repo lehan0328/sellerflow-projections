@@ -498,9 +498,8 @@ export const CashFlowCalendar = ({
     const chartEnd = endOfMonth(addMonths(today, monthsToShow)); // End at the end of month X months from now
     
     const days = eachDayOfInterval({ start: chartStart, end: chartEnd });
-    let runningTotal = bankAccountBalance; // Blue line: confirmed transactions only
-    let projectedBalance = bankAccountBalance; // Green line: projected balance with forecasts
-    let projectedWithoutForecast = bankAccountBalance; // Track balance without forecasts for purple line calculation
+    let runningTotal = bankAccountBalance; // Cash balance including forecasted payouts
+    let projectedBalance = bankAccountBalance; // Same as runningTotal
     let cumulativeInflow = 0;
     let cumulativeOutflow = 0;
     
@@ -513,21 +512,14 @@ export const CashFlowCalendar = ({
       const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0);
       const dailyChange = dailyInflow - dailyOutflow;
       
-      // Separate forecasted from confirmed transactions
-      const forecastedInflow = dayEvents.filter(e => e.source === 'Amazon-Forecasted' && e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
-      const confirmedChange = dailyInflow - forecastedInflow - dailyOutflow;
-      
       // Update running total from account start date onwards
       const dayToCheck = new Date(day);
       dayToCheck.setHours(0, 0, 0, 0);
       
       if (dayToCheck >= accountStartDate) {
-        // Blue line: confirmed transactions only
-        runningTotal += confirmedChange;
-        // Projected balance: confirmed + forecasted payouts
-        projectedBalance += dailyChange; // Includes both confirmed and forecasted
-        // Projected without forecasts: only confirmed transactions
-        projectedWithoutForecast += confirmedChange;
+        // Include AI forecasted payouts as actual income in the cash balance
+        runningTotal += dailyChange; // Includes both confirmed and forecasted
+        projectedBalance += dailyChange; // Same as runningTotal now
         cumulativeInflow += dailyInflow;
         cumulativeOutflow += dailyOutflow;
       }
@@ -584,9 +576,7 @@ export const CashFlowCalendar = ({
         creditCardCredit: availableCreditForDay,
         reserve: reserveAmount,
         reserveAmount: reserveAmount,
-        // Purple dotted line: projected balance without forecasts + this forecast payout (only on forecast days)
-        forecastPayout: dayToCheck >= today && forecastedInflow > 0 ? (projectedWithoutForecast + forecastedInflow) : null,
-        // Projected balance line: show projected balance including forecasts
+        // Projected balance line: show projected balance (same as cash flow now)
         projectedBalance: dayToCheck >= today ? projectedBalance : null,
         dailyChange,
         inflow: dailyInflow,
