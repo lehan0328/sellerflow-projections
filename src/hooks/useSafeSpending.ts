@@ -540,9 +540,9 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
         ).join(', '));
       }
       
-      // Safe Spending = ONLY current bank balance - reserve (no forecasting)
-      // This is what you actually have available to spend RIGHT NOW
-      const safeSpendingLimit = Math.max(0, bankBalance - reserve);
+      // Safe Spending = minimum projected balance - reserve (accounts for future obligations)
+      // This is what you can safely spend without going below minimum projected balance
+      const safeSpendingLimit = Math.max(0, minBalance - reserve);
 
       console.log('🎯🎯🎯 SAFE SPENDING & BUYING OPPORTUNITY 🎯🎯🎯');
       console.log('Current Bank Balance:', bankBalance);
