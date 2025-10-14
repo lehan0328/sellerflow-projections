@@ -60,6 +60,8 @@ export const ForecastSettings = () => {
 
   const handleSave = async () => {
     setSaving(true);
+    console.log('🔵 Starting save with value:', confidenceThreshold);
+    
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) throw new Error("Not authenticated");
@@ -75,28 +77,61 @@ export const ForecastSettings = () => {
       // Check if settings exist
       const { data: existing } = await supabase
         .from('user_settings')
-        .select('id')
+        .select('id, forecast_confidence_threshold')
         .eq('user_id', currentUser.id)
         .maybeSingle();
 
-      console.log('💾 Saving forecast risk level:', confidenceThreshold);
+      console.log('💾 Current DB value:', existing?.forecast_confidence_threshold, '| Saving:', confidenceThreshold);
       
       if (!existing) {
-        const { error: insertError } = await supabase.from('user_settings').insert({
-          user_id: currentUser.id,
-          account_id: profile.account_id,
-          forecast_confidence_threshold: confidenceThreshold,
-        });
-        if (insertError) throw insertError;
+        console.log('📝 Inserting new record');
+        const { data: insertedData, error: insertError } = await supabase
+          .from('user_settings')
+          .insert({
+            user_id: currentUser.id,
+            account_id: profile.account_id,
+            forecast_confidence_threshold: confidenceThreshold,
+          })
+          .select('forecast_confidence_threshold')
+          .single();
+        
+        if (insertError) {
+          console.error('❌ Insert error:', insertError);
+          throw insertError;
+        }
+        console.log('✅ Inserted value:', insertedData?.forecast_confidence_threshold);
       } else {
-        const { error: updateError } = await supabase
+        console.log('📝 Updating existing record');
+        const { data: updatedData, error: updateError } = await supabase
           .from('user_settings')
           .update({ forecast_confidence_threshold: confidenceThreshold })
-          .eq('user_id', currentUser.id);
-        if (updateError) throw updateError;
+          .eq('user_id', currentUser.id)
+          .select('forecast_confidence_threshold')
+          .single();
+        
+        if (updateError) {
+          console.error('❌ Update error:', updateError);
+          throw updateError;
+        }
+        console.log('✅ Updated value:', updatedData?.forecast_confidence_threshold);
       }
 
-      console.log('✅ Forecast risk level saved successfully:', confidenceThreshold);
+      // Verify the save by reading back
+      const { data: verification } = await supabase
+        .from('user_settings')
+        .select('forecast_confidence_threshold')
+        .eq('user_id', currentUser.id)
+        .single();
+      
+      console.log('🔍 Verification - Value in DB after save:', verification?.forecast_confidence_threshold);
+      
+      if (verification?.forecast_confidence_threshold !== confidenceThreshold) {
+        console.error('⚠️ WARNING: Saved value does not match! Expected:', confidenceThreshold, 'Got:', verification?.forecast_confidence_threshold);
+        toast.error("Save verification failed - value mismatch!");
+        return;
+      }
+
+      console.log('✅ Forecast risk level saved and verified:', confidenceThreshold);
       toast.success("Forecast settings updated");
 
       // Automatically regenerate forecasts with the new confidence threshold
@@ -213,7 +248,10 @@ export const ForecastSettings = () => {
               <button
                 key={tier.value}
                 type="button"
-                onClick={() => setConfidenceThreshold(tier.value)}
+                onClick={() => {
+                  console.log('🎯 Selected tier:', tier.label, 'Value:', tier.value);
+                  setConfidenceThreshold(tier.value);
+                }}
                 className={`p-3 rounded-lg border-2 transition-all relative ${
                   confidenceThreshold === tier.value
                     ? 'border-primary bg-primary/10'
