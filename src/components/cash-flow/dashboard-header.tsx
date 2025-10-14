@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { UserMenu } from "./user-menu";
 import { DemoUserMenu } from "./demo-user-menu";
 import { PendingNotificationsPanel } from "./pending-notifications-panel";
+import { NotificationsBell } from "./notifications-bell";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -105,6 +106,7 @@ export function DashboardHeader({
           onVendorClick={onVendorClick}
           onIncomeClick={onIncomeClick}
         />}
+        {!isDemo && <NotificationsBell />}
         {isDemo ? <DemoUserMenu /> : <UserMenu />}
       </div>
 
