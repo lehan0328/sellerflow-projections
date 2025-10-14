@@ -96,7 +96,7 @@ const Dashboard = () => {
   const { transactions: bankTransactionsData, isLoading: isBankTransactionsLoading } = useBankTransactions();
   const { creditCards, refetch: refetchCreditCards } = useCreditCards();
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
-  const { reserveAmount, updateReserveAmount } = useReserveAmount();
+  const { reserveAmount, updateReserveAmount, canUpdate: canUpdateReserve, lastUpdated: lastReserveUpdate } = useReserveAmount();
   const { data: safeSpendingData, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount);
   const { amazonPayouts } = useAmazonPayouts();
   
@@ -1304,6 +1304,8 @@ const Dashboard = () => {
                   nextBuyingOpportunityAvailableDate={safeSpendingData?.calculation?.next_buying_opportunity_available_date}
                   allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
                   onUpdateReserveAmount={updateReserveAmount}
+                  canUpdateReserve={canUpdateReserve}
+                  lastReserveUpdate={lastReserveUpdate}
                   transactionMatchButton={
                     <TransactionMatchButton 
                       matches={matches}
