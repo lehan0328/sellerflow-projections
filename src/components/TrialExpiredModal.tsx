@@ -77,19 +77,13 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       let calculatedRevenue = 0;
       
       if (amazonPayouts && amazonPayouts.length > 0) {
-        // Use aggregated orders_total (gross revenue) and subtract refunds
+        // Use aggregated orders_total (gross revenue BEFORE Amazon fees) and subtract refunds
+        // Note: total_amount in payouts is NET after fees, but orders_total is GROSS revenue
         calculatedRevenue = amazonPayouts.reduce((sum, p) => {
           const orders = Number(p.orders_total) || 0;
           const refunds = Math.abs(Number(p.refunds_total) || 0);
           return sum + orders - refunds;
         }, 0);
-        
-        // If orders_total is not populated, fall back to total_amount
-        if (calculatedRevenue === 0) {
-          calculatedRevenue = amazonPayouts.reduce((sum, p) => {
-            return sum + (Number(p.total_amount) || 0);
-          }, 0);
-        }
       }
       
       setCurrentRevenue(Math.max(0, calculatedRevenue));
