@@ -78,6 +78,7 @@ export const CashFlowInsights = ({
   const [showTransactionHistory, setShowTransactionHistory] = useState(false);
   const [lastRefreshTime, setLastRefreshTime] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [userConfidenceThreshold, setUserConfidenceThreshold] = useState<number>(88);
   const [conversationHistory, setConversationHistory] = useState<Array<{
     role: 'user' | 'assistant';
     content: string;
@@ -106,23 +107,27 @@ export const CashFlowInsights = ({
   }, [reserveAmount]);
 
 
-  // Load last refresh time from user_settings
+  // Load last refresh time and confidence threshold from user_settings
   useEffect(() => {
-    const loadLastRefreshTime = async () => {
+    const loadUserSettings = async () => {
       if (!user) return;
       
       const { data } = await supabase
         .from('user_settings')
-        .select('last_forecast_refresh')
+        .select('last_forecast_refresh, forecast_confidence_threshold')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
       
       if (data?.last_forecast_refresh) {
         setLastRefreshTime(new Date(data.last_forecast_refresh).getTime());
       }
+      
+      if (data?.forecast_confidence_threshold) {
+        setUserConfidenceThreshold(data.forecast_confidence_threshold);
+      }
     };
     
-    loadLastRefreshTime();
+    loadUserSettings();
   }, [user]);
 
   // Auto-generate forecasts on mount if needed - with debouncing to prevent spam
@@ -812,123 +817,98 @@ export const CashFlowInsights = ({
             {/* Vertical Divider */}
             <Separator orientation="vertical" className="h-auto" />
             
-            {/* Right Side - Projected Opportunities with AI Forecasts */}
+            {/* Right Side - AI Forecasted Amazon Payouts */}
             <div>
               <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-purple-600" />
-                Projected Opportunities (with AI Forecasts)
+                AI Forecasted Amazon Payouts
               </h3>
               <ScrollArea className="h-[500px] pr-4 border rounded-md p-2 bg-gradient-to-b from-transparent via-transparent to-muted/20">
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground mb-4">
-                    <span className="font-semibold text-purple-600">AI-Enhanced:</span> These projections include AI forecasted Amazon payouts. Use for planning purposes, but note that forecasts may vary from actual payouts.
+                    <span className="font-semibold text-purple-600">AI-Forecasted Payouts:</span> Each card represents an individual AI-forecasted Amazon payout. Your confidence threshold: <span className="font-bold">{userConfidenceThreshold}%</span>
                   </p>
                   {(() => {
-                    // Calculate projected opportunities including AI forecasted payouts
+                    // Show each forecasted payout as its own opportunity
                     const forecastedPayouts = amazonPayouts?.filter(p => p.status === 'forecasted') || [];
                     
-                    // Create a map of dates to forecasted amounts
-                    const forecastedAmountsByDate = new Map<string, number>();
-                    forecastedPayouts.forEach(payout => {
-                      const date = payout.payout_date.split('T')[0];
-                      forecastedAmountsByDate.set(date, (forecastedAmountsByDate.get(date) || 0) + (payout.total_amount || 0));
-                    });
+                    // Sort by payout date
+                    const sortedPayouts = [...forecastedPayouts].sort((a, b) => 
+                      new Date(a.payout_date).getTime() - new Date(b.payout_date).getTime()
+                    );
                     
-                    // Calculate projected opportunities by adding forecasted amounts to each opportunity
-                    return allBuyingOpportunities.map((opp, index) => {
-                      const [year, month, day] = opp.date.split('-').map(Number);
-                      const date = new Date(year, month - 1, day);
-                      const formattedDate = date.toLocaleDateString('en-US', {
+                    if (sortedPayouts.length === 0) {
+                      return (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">No forecasted payouts yet.</p>
+                          <p className="text-xs mt-1">Click the refresh button to generate AI forecasts.</p>
+                        </div>
+                      );
+                    }
+                    
+                    return sortedPayouts.map((payout, index) => {
+                      const payoutDate = new Date(payout.payout_date);
+                      const formattedDate = payoutDate.toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric'
                       });
                       
-                      // Sum all forecasted payouts up to this date and track them
-                      let forecastedBoost = 0;
-                      const contributingPayouts: Array<{ date: string; amount: number; confidence: number }> = [];
+                      const payoutData = payout as any;
+                      const metadata = payoutData?.raw_settlement_data?.forecast_metadata;
+                      const confidence = metadata?.confidence || 0.88;
+                      const confidencePercent = Math.round(confidence * 100);
                       
-                      forecastedPayouts.forEach(payout => {
-                        const payoutDate = new Date(payout.payout_date);
-                        if (payoutDate <= date) {
-                          forecastedBoost += payout.total_amount || 0;
-                          const payoutData = payout as any;
-                          const metadata = payoutData?.raw_settlement_data;
-                          contributingPayouts.push({
-                            date: payout.payout_date,
-                            amount: payout.total_amount || 0,
-                            confidence: metadata?.forecast_metadata?.confidence || 0.88
-                          });
-                        }
-                      });
-                      
-                      // Sort contributing payouts by date
-                      contributingPayouts.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-                      
-                      const projectedBalance = opp.balance + forecastedBoost;
-                      
-                      let availableDate = '';
-                      if (opp.available_date) {
-                        const [aYear, aMonth, aDay] = opp.available_date.split('-').map(Number);
-                        const aDate = new Date(aYear, aMonth - 1, aDay);
-                        availableDate = aDate.toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric'
-                        });
+                      // Determine confidence badge color
+                      let confidenceBadgeClass = "bg-green-100 text-green-700 dark:bg-green-900/20";
+                      if (confidencePercent < userConfidenceThreshold) {
+                        confidenceBadgeClass = "bg-amber-100 text-amber-700 dark:bg-amber-900/20";
                       }
                       
                       return (
                         <div key={index} className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800 space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="font-semibold text-sm">Opportunity #{index + 1}</span>
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-semibold text-sm">Forecasted Payout #{index + 1}</span>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${confidenceBadgeClass}`}>
+                                  {confidencePercent}% confident
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">Expected: {formattedDate}</p>
+                            </div>
                             <span className="text-lg font-bold text-purple-600">
-                              ${projectedBalance.toLocaleString()}
+                              ${(payout.total_amount || 0).toLocaleString()}
                             </span>
                           </div>
-                          <p className="text-xs text-muted-foreground">Low point: {formattedDate}</p>
                           
-                          {/* Breakdown */}
-                          <div className="space-y-1 text-xs bg-white/50 dark:bg-black/20 rounded p-2">
+                          {/* Forecast Details */}
+                          <div className="text-xs bg-white/50 dark:bg-black/20 rounded p-2 space-y-1">
                             <div className="flex justify-between">
-                              <span className="text-muted-foreground">Confirmed:</span>
-                              <span className="font-medium text-primary">${opp.balance.toLocaleString()}</span>
+                              <span className="text-muted-foreground">Payout Type:</span>
+                              <span className="font-medium">{payout.payout_type || 'bi-weekly'}</span>
                             </div>
-                            {forecastedBoost > 0 && (
-                              <>
-                                <div className="flex justify-between border-t pt-1">
-                                  <span className="text-muted-foreground">AI Forecast Boost:</span>
-                                  <span className="font-medium text-purple-600">+${forecastedBoost.toLocaleString()}</span>
-                                </div>
-                                {contributingPayouts.length > 0 && (
-                                  <div className="mt-2 pt-2 border-t space-y-1">
-                                    <p className="text-[10px] font-semibold text-muted-foreground uppercase">Forecasted Payouts by Date:</p>
-                                    {contributingPayouts.map((cp, cpIndex) => {
-                                      const cpDate = new Date(cp.date);
-                                      const formattedCpDate = cpDate.toLocaleDateString('en-US', {
-                                        month: 'short',
-                                        day: 'numeric'
-                                      });
-                                      return (
-                                        <div key={cpIndex} className="flex justify-between items-center">
-                                          <span className="text-[10px] text-muted-foreground">
-                                            {formattedCpDate} ({Math.round(cp.confidence * 100)}%)
-                                          </span>
-                                          <span className="text-[10px] font-medium text-purple-600">
-                                            +${cp.amount.toLocaleString()}
-                                          </span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Marketplace:</span>
+                              <span className="font-medium">{payout.marketplace_name || 'Amazon'}</span>
+                            </div>
+                            {metadata?.calculation_method && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Method:</span>
+                                <span className="font-medium text-[10px]">
+                                  {metadata.calculation_method.replace(/_/g, ' ')}
+                                </span>
+                              </div>
                             )}
                           </div>
                           
-                          {availableDate && (
-                            <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
-                              <span className="text-xs text-muted-foreground">Earliest Purchase Date:</span>
-                              <span className="text-sm font-semibold text-green-600">{availableDate}</span>
+                          {confidencePercent < userConfidenceThreshold && (
+                            <div className="flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800">
+                              <AlertCircle className="h-3 w-3 text-amber-600 mt-0.5 flex-shrink-0" />
+                              <span className="text-[10px] text-amber-700 dark:text-amber-400">
+                                Below your {userConfidenceThreshold}% confidence threshold
+                              </span>
                             </div>
                           )}
                         </div>
