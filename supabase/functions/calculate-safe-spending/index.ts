@@ -53,7 +53,7 @@ serve(async (req) => {
       .gte('next_payment_date', today.toISOString())
       .lte('next_payment_date', next180Days.toISOString());
 
-    // Fetch Amazon payouts
+    // Fetch Amazon payouts (include forecasted payouts as confirmed income)
     const { data: amazonPayouts } = await supabaseClient
       .from('amazon_payouts')
       .select('total_amount, payout_date, status')
@@ -68,14 +68,14 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .single();
 
-    // Calculate totals
+    // Calculate totals - include ALL Amazon payouts (confirmed AND forecasted)
     const totalIncome = (income || []).reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
     const totalAmazonIncome = (amazonPayouts || []).reduce((sum, p) => sum + (Number(p.total_amount) || 0), 0);
     const totalExpenses = (expenses || []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     const totalVendorPayments = (vendors || []).reduce((sum, v) => sum + (Number(v.next_payment_amount) || 0), 0);
     
     const currentBalance = Number(settings?.total_cash || 0);
-    const projectedIncome = totalIncome + totalAmazonIncome;
+    const projectedIncome = totalIncome + totalAmazonIncome; // Includes forecasted payouts
     const projectedExpenses = totalExpenses + totalVendorPayments;
     const projectedBalance = currentBalance + projectedIncome - projectedExpenses;
 

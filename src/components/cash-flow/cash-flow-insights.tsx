@@ -863,8 +863,7 @@ export const CashFlowInsights = ({
                       );
                     }
                     
-                    // Calculate projected balances using the same logic as useSafeSpending
-                    // Start from current balance and project forward with forecasted payouts
+                    // Calculate projected balances - treat forecasted payouts as confirmed cash
                     
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
@@ -888,7 +887,7 @@ export const CashFlowInsights = ({
                       
                       let dayChange = 0;
                       
-                      // ONLY add forecasted Amazon payouts (not confirmed ones)
+                      // Add forecasted Amazon payouts as CONFIRMED income
                       sortedPayouts.forEach(payout => {
                         if (payout.payout_date === targetDateStr && payout.status === 'forecasted') {
                           dayChange += payout.total_amount || 0;
