@@ -84,6 +84,22 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
           .reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
         
         calculatedRevenue = Math.max(0, calculatedRevenue - refunds);
+      } else {
+        // If no transactions, check payouts (for forecasted/demo data)
+        const { data: amazonPayouts } = await supabase
+          .from('amazon_payouts')
+          .select('total_amount, orders_total, payout_date')
+          .eq('user_id', user.id)
+          .gte('payout_date', thirtyDaysAgo.toISOString().split('T')[0])
+          .in('status', ['completed', 'forecasted']);
+
+        if (amazonPayouts && amazonPayouts.length > 0) {
+          // Use orders_total if available (revenue before fees), otherwise use total_amount
+          calculatedRevenue = amazonPayouts.reduce((sum, p) => {
+            const revenue = p.orders_total > 0 ? p.orders_total : p.total_amount;
+            return sum + (Number(revenue) || 0);
+          }, 0);
+        }
       }
       
       setCurrentRevenue(calculatedRevenue);
