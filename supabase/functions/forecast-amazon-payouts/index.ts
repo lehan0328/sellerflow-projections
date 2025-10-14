@@ -54,8 +54,8 @@ serve(async (req) => {
       .eq('user_id', userId)
       .maybeSingle();
 
-    const confidenceThreshold = userSettings?.forecast_confidence_threshold || 88;
-    console.log('[FORECAST] User confidence threshold:', confidenceThreshold);
+    const riskAdjustment = userSettings?.forecast_confidence_threshold ?? 5; // 0 = Medium, 5 = Safe, 15 = Very Safe
+    console.log('[FORECAST] User risk adjustment:', riskAdjustment, '(0=Medium, 5=Safe, 15=Very Safe)');
 
     // Fetch Amazon payouts from last 3 months for trend analysis
     const threeMonthsAgo = new Date();
@@ -240,15 +240,11 @@ ${JSON.stringify(amazonPayouts.map(p => ({
 
 3-Month Average Payout: $${avgPayoutAmount.toFixed(2)}
 
-IMPORTANT: Amazon payout forecasts should have HIGH CONFIDENCE (85-95%) because:
-- Amazon payouts are predictable based on historical sales data
-- Payouts follow consistent patterns and schedules
-- Recent 3-month trends provide reliable baseline
-- This is NOT user overspending prediction - it's data-driven Amazon settlement analysis
+IMPORTANT: Amazon payout forecasts are highly predictable based on historical data.
+User's Risk Adjustment: ${riskAdjustment}% (0=Medium/Average, 5=Safe/-5%, 15=Very Safe/-15%)
 
-User's Confidence Threshold: ${confidenceThreshold}%
 Analyze sales velocity trends, growth patterns, and provide 6 forecasted payout amounts.
-Target confidence levels should be around ${confidenceThreshold}% (±3%).
+Note: The system will apply the user's risk adjustment AFTER your predictions, so predict based on actual trends.
 
 Return ONLY this JSON (no markdown):
 {
@@ -383,21 +379,26 @@ Return ONLY this JSON (no markdown):
         if (currentDate > threeMonthsOut) break;
         
         // Use AI prediction if available, otherwise use baseline with variation
-        let predictedAmount = baselineAmount * 100; // Boost for demo (100x for impressive visualization)
+        let basePrediction = baselineAmount * 100; // Boost for demo (100x for impressive visualization)
         let calculationMethod = 'baseline_with_demo_multiplier';
         
         if (forecast.predictions && forecast.predictions[forecastIndex]) {
           const aiPrediction = forecast.predictions[forecastIndex].predicted_amount || baselineAmount;
-          predictedAmount = aiPrediction * 100;
+          basePrediction = aiPrediction * 100;
           calculationMethod = 'ai_prediction_with_demo_multiplier';
-          console.log(`[FORECAST] Period ${forecastIndex + 1} using AI prediction: ${aiPrediction} * 100 = ${predictedAmount}`);
+          console.log(`[FORECAST] Period ${forecastIndex + 1} AI base prediction: ${aiPrediction} * 100 = ${basePrediction}`);
         } else {
           // Add 5-10% variation for realism
           const variation = 0.95 + (Math.random() * 0.15); // 0.95 to 1.10
-          predictedAmount = baselineAmount * 100 * variation;
+          basePrediction = baselineAmount * 100 * variation;
           calculationMethod = 'baseline_with_variation_and_demo_multiplier';
-          console.log(`[FORECAST] Period ${forecastIndex + 1} using baseline: ${baselineAmount} * 100 * ${variation.toFixed(2)} = ${predictedAmount}`);
+          console.log(`[FORECAST] Period ${forecastIndex + 1} baseline: ${baselineAmount} * 100 * ${variation.toFixed(2)} = ${basePrediction}`);
         }
+        
+        // Apply risk adjustment: 0 = no adjustment, 5 = -5%, 15 = -15%
+        const riskMultiplier = 1 - (riskAdjustment / 100);
+        const predictedAmount = Math.round(basePrediction * riskMultiplier);
+        console.log(`[FORECAST] Period ${forecastIndex + 1} after ${riskAdjustment}% risk adjustment: ${basePrediction} * ${riskMultiplier} = ${predictedAmount}`);
         
         const forecastPayout = {
           user_id: userId,
@@ -417,8 +418,9 @@ Return ONLY this JSON (no markdown):
           other_total: 0,
           raw_settlement_data: {
             forecast_metadata: {
-              confidence: forecast.predictions?.[forecastIndex]?.confidence || (confidenceThreshold / 100),
-              confidence_threshold: confidenceThreshold,
+              confidence: forecast.predictions?.[forecastIndex]?.confidence || 0.90,
+              risk_adjustment: riskAdjustment,
+              risk_level: riskAdjustment === 0 ? 'medium' : riskAdjustment === 5 ? 'safe' : 'very_safe',
               upper_bound: Math.round(predictedAmount * 1.2),
               lower_bound: Math.round(predictedAmount * 0.8),
               period: `Forecast ${forecastIndex + 1}`,
@@ -426,7 +428,9 @@ Return ONLY this JSON (no markdown):
               frequency: payoutFrequency,
               calculation_method: calculationMethod,
               baseline_amount: baselineAmount,
-              demo_multiplier: 100
+              demo_multiplier: 100,
+              base_prediction: basePrediction,
+              risk_multiplier: 1 - (riskAdjustment / 100)
             }
           }
         };

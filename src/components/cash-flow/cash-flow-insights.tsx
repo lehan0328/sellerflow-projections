@@ -843,7 +843,7 @@ export const CashFlowInsights = ({
                   </div>
 
                   <p className="text-sm text-muted-foreground mb-4">
-                    <span className="font-semibold text-purple-600">Projected Cash + AI Forecast:</span> Shows your projected cash available on the payout date plus the forecasted payout amount. Your confidence threshold: <span className="font-bold">{userConfidenceThreshold}%</span>
+                    <span className="font-semibold text-purple-600">Projected Cash + AI Forecast:</span> Shows your projected cash available on the payout date plus the forecasted payout amount. Your risk level: <span className="font-bold">{userConfidenceThreshold === 0 ? 'Medium (Avg)' : userConfidenceThreshold === 5 ? 'Safe (-5%)' : 'Very Safe (-15%)'}</span>
                   </p>
                   {(() => {
                     const forecastedPayouts = amazonPayouts?.filter(p => p.status === 'forecasted') || [];

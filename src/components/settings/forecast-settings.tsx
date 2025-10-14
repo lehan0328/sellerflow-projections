@@ -19,7 +19,7 @@ export const ForecastSettings = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [forecastConfidence, setForecastConfidence] = useState(85);
+  const [confidenceThreshold, setConfidenceThreshold] = useState(5); // 0 = Medium, 5 = Safe, 15 = Very Safe
 
   useEffect(() => {
     if (user) {
@@ -37,8 +37,8 @@ export const ForecastSettings = () => {
 
       if (error && error.code !== 'PGRST116') throw error;
 
-      if (data?.forecast_confidence_threshold) {
-        setForecastConfidence(data.forecast_confidence_threshold);
+      if (data?.forecast_confidence_threshold !== null && data?.forecast_confidence_threshold !== undefined) {
+        setConfidenceThreshold(data.forecast_confidence_threshold);
       }
     } catch (error) {
       console.error('Error fetching forecast settings:', error);
@@ -72,16 +72,16 @@ export const ForecastSettings = () => {
         await supabase.from('user_settings').insert({
           user_id: currentUser.id,
           account_id: profile.account_id,
-          forecast_confidence_threshold: forecastConfidence,
+          forecast_confidence_threshold: confidenceThreshold,
         });
       } else {
         await supabase
           .from('user_settings')
-          .update({ forecast_confidence_threshold: forecastConfidence })
+          .update({ forecast_confidence_threshold: confidenceThreshold })
           .eq('user_id', currentUser.id);
       }
 
-      console.log('✅ Forecast confidence updated to:', forecastConfidence);
+      console.log('✅ Forecast risk level updated to:', confidenceThreshold);
       toast.success("Forecast settings updated");
 
       // Automatically regenerate forecasts with the new confidence threshold
@@ -129,14 +129,13 @@ export const ForecastSettings = () => {
     }
   };
 
-  const getConfidenceLevel = (value: number) => {
-    if (value === 100) return { label: "Maximum Safety", color: "bg-emerald-500" };
-    if (value >= 90) return { label: "Very Conservative", color: "bg-green-500" };
-    if (value >= 85) return { label: "Balanced", color: "bg-blue-500" };
-    return { label: "Aggressive", color: "bg-orange-500" };
+  const getRiskLevel = (value: number) => {
+    if (value === 15) return { label: "Very Safe", color: "bg-emerald-500" };
+    if (value === 5) return { label: "Safe", color: "bg-blue-500" };
+    return { label: "Medium (Risky)", color: "bg-orange-500" };
   };
 
-  const confidenceLevel = getConfidenceLevel(forecastConfidence);
+  const riskLevel = getRiskLevel(confidenceThreshold);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -148,21 +147,21 @@ export const ForecastSettings = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-purple-600" />
-            <CardTitle>AI Forecast Settings</CardTitle>
+            <CardTitle>AI Forecast Risk Level</CardTitle>
           </div>
           <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/20">
             AI-Powered
           </Badge>
         </div>
         <CardDescription>
-          Control how conservative or aggressive your Amazon payout forecasts should be
+          Adjust the conservatism of your Amazon payout forecasts
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Label htmlFor="forecast-confidence">Forecast Confidence Threshold</Label>
+              <Label htmlFor="risk-threshold">Forecast Risk Adjustment</Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
@@ -170,35 +169,36 @@ export const ForecastSettings = () => {
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="max-w-xs">
-                      Higher values (90-95%) mean more conservative forecasts with tighter margins.
-                      Lower values (80-85%) allow for more variation in predictions.
+                      Medium uses historical averages. Safe applies a 5% buffer. Very Safe applies a 15% safety margin.
                     </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-primary">{forecastConfidence}%</span>
-              <Badge className={confidenceLevel.color}>
-                {confidenceLevel.label}
+              <span className="text-2xl font-bold text-primary">
+                {confidenceThreshold === 0 ? "Avg" : `-${confidenceThreshold}%`}
+              </span>
+              <Badge className={riskLevel.color}>
+                {riskLevel.label}
               </Badge>
             </div>
           </div>
 
           <Slider
-            id="forecast-confidence"
-            name="forecast-confidence"
-            min={80}
-            max={100}
-            step={1}
-            value={[forecastConfidence]}
-            onValueChange={(value) => setForecastConfidence(value[0])}
+            id="risk-threshold"
+            name="risk-threshold"
+            min={0}
+            max={15}
+            step={5}
+            value={[confidenceThreshold]}
+            onValueChange={(value) => setConfidenceThreshold(value[0])}
             className="w-full"
           />
 
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>80% (Aggressive)</span>
-            <span>100% (Most Conservative)</span>
+            <span>Medium (Risky)</span>
+            <span>Very Safe</span>
           </div>
         </div>
 
@@ -208,10 +208,10 @@ export const ForecastSettings = () => {
             How this affects your forecasts:
           </div>
           <ul className="text-sm text-muted-foreground space-y-1 ml-6 list-disc">
-            <li>Higher confidence = more predictable buying opportunities</li>
-            <li>AI will adjust forecast margins based on your threshold</li>
-            <li>Amazon payouts are highly predictable (recommended: 85-100%)</li>
-            <li>100% confidence shows only the safest predictions</li>
+            <li><strong>Medium (0%):</strong> Average of previous payouts - riskier but closer to reality</li>
+            <li><strong>Safe (-5%):</strong> 5% decrease on average - conservative buffer for planning</li>
+            <li><strong>Very Safe (-15%):</strong> 15% decrease on average - maximum safety margin</li>
+            <li>Forecasts apply to safe spending limits and buying opportunities</li>
           </ul>
         </div>
 
