@@ -868,27 +868,24 @@ export const CashFlowInsights = ({
                       const payoutDate = new Date(payout.payout_date);
                       const payoutDateStr = payoutDate.toISOString().split('T')[0];
                       
-                      // Find the closest buying opportunity for this date
-                      let projectedCash = 0;
-                      const matchingOpp = allBuyingOpportunities.find(opp => opp.date === payoutDateStr);
-                      if (matchingOpp) {
-                        projectedCash = matchingOpp.balance;
-                      } else {
-                        // Find the closest date before or on the payout date
-                        const sortedOpps = [...allBuyingOpportunities]
-                          .filter(opp => opp.date <= payoutDateStr)
-                          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-                        if (sortedOpps.length > 0) {
-                          projectedCash = sortedOpps[0].balance;
+                      // For the first forecasted payout, start with the last confirmed opportunity balance
+                      let baseBalance = 0;
+                      if (index === 0) {
+                        if (allBuyingOpportunities.length > 0) {
+                          // Use the last confirmed buying opportunity's balance
+                          baseBalance = allBuyingOpportunities[allBuyingOpportunities.length - 1].balance;
+                        } else {
+                          // Fallback to current balance if no opportunities exist
+                          baseBalance = currentBalance;
                         }
                       }
                       
-                      // Sum all forecasted payouts up to and including this one
+                      // Add all forecasted payouts up to this point (treating them as income)
                       const cumulativePayouts = sortedPayouts
                         .slice(0, index + 1)
                         .reduce((sum, p) => sum + (p.total_amount || 0), 0);
                       
-                      const totalProjected = projectedCash + cumulativePayouts;
+                      const totalProjected = baseBalance + cumulativePayouts;
                       
                       const payoutData = payout as any;
                       const metadata = payoutData?.raw_settlement_data?.forecast_metadata;
