@@ -1,15 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles } from "lucide-react";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export function AmazonPayouts() {
-  const { amazonPayouts, isLoading, totalUpcoming } = useAmazonPayouts();
+  const { amazonPayouts, isLoading, totalUpcoming, refetch } = useAmazonPayouts();
   const { amazonAccounts, syncAmazonAccount } = useAmazonAccounts();
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
+  const [showForecasts, setShowForecasts] = useState(true);
+  const { toast } = useToast();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -88,17 +93,29 @@ export function AmazonPayouts() {
     <Card className="shadow-card">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <ShoppingCart className="h-5 w-5 text-primary" />
-            <CardTitle>Amazon Payouts</CardTitle>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <ShoppingCart className="h-5 w-5 text-primary" />
+              <CardTitle>Amazon Payouts</CardTitle>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="show-forecasts"
+                checked={showForecasts}
+                onCheckedChange={setShowForecasts}
+              />
+              <Label htmlFor="show-forecasts" className="flex items-center gap-1 cursor-pointer text-sm">
+                <Sparkles className="h-3 w-3 text-purple-500" />
+                AI Forecasts
+              </Label>
+            </div>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={() => window.location.href = '/settings'}
-              className="ml-4"
             >
               <Settings className="h-4 w-4 mr-2" />
-              Manage Amazon
+              Manage
             </Button>
           </div>
           <div className="flex items-center space-x-4">
@@ -150,20 +167,30 @@ export function AmazonPayouts() {
             </Button>
           </div>
         ) : (
-          amazonPayouts.map((payout) => {
+          amazonPayouts
+            .filter(payout => showForecasts ? true : payout.status !== 'forecasted')
+            .map((payout) => {
             const daysUntil = getDaysUntil(payout.payout_date);
             const isUpcoming = daysUntil <= 7;
+            const isForecasted = payout.status === 'forecasted';
             
             return (
               <div
                 key={payout.id}
                 className={`rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card ${
+                  isForecasted ? 'border-purple-500/30 bg-purple-500/5' :
                   isUpcoming ? 'border-primary/30 bg-primary/5' : ''
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
+                      {isForecasted && (
+                        <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          AI Forecast
+                        </Badge>
+                      )}
                       <Badge variant={getStatusColor(payout.status)} className="text-xs">
                         {payout.status}
                       </Badge>
