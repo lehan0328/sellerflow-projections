@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -751,14 +752,50 @@ export const CashFlowInsights = ({
           <div className="max-w-3xl mx-auto">
             {/* Confirmed Buying Opportunities (includes forecasted Amazon payouts) */}
             <div>
-              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                Confirmed Cash Opportunities
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    Forecasted Cash Opportunities
+                  </h3>
+                  <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
+                    AI Forecast
+                  </Badge>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/settings?section=forecast-settings')}
+                  className="text-xs"
+                >
+                  <Settings className="h-3 w-3 mr-1" />
+                  Manage Safety
+                </Button>
+              </div>
+              
+              {/* Forecast Disclaimer */}
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-blue-900 dark:text-blue-100">
+                      AI-Generated Forecast
+                    </p>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      This forecast is based on your current settings with a{" "}
+                      <span className="font-semibold">
+                        {userConfidenceThreshold === 15 ? "Very Safe" : userConfidenceThreshold === 5 ? "Safe" : "Medium (Risky)"}
+                      </span>{" "}
+                      risk level. Forecasts include projected Amazon payouts and assume no spending until each opportunity date.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
               <ScrollArea className="h-[500px] pr-4 border rounded-md p-2 bg-gradient-to-b from-transparent via-transparent to-muted/20">
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground mb-4">
-                    <span className="font-semibold text-amber-600">Important:</span> These opportunities include forecasted Amazon payouts and assume <span className="font-semibold">$0 spending until each date</span>. The available amounts shown are what you'll have if you don't make any purchases before then. Plan your spending timeline accordingly to preserve these opportunities.
+                    <span className="font-semibold text-amber-600">Important:</span> These opportunities assume <span className="font-semibold">$0 spending until each date</span>. The available amounts shown are what you'll have if you don't make any purchases before then. Plan your spending timeline accordingly to preserve these opportunities.
                   </p>
                   {allBuyingOpportunities.map((opp, index) => {
                     const [year, month, day] = opp.date.split('-').map(Number);
