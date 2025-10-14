@@ -925,9 +925,16 @@ export const CashFlowInsights = ({
                             <span className="text-xs text-muted-foreground">Earliest Purchase Date:</span>
                             <span className="text-sm font-semibold text-green-600">{opportunity.formattedDate}</span>
                           </div>
-                          <div className="flex items-center justify-between p-1.5 bg-purple-50 dark:bg-purple-950/20 rounded border border-purple-200 dark:border-purple-800">
-                            <span className="text-xs text-muted-foreground">AI Confidence:</span>
-                            <span className="text-xs font-semibold text-purple-600">{confidencePercent}%</span>
+                          <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-purple-500/10 to-blue-500/10 dark:from-purple-500/20 dark:to-blue-500/20 rounded-lg border border-purple-300/30 dark:border-purple-500/30">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+                              <span className="text-xs font-mono font-semibold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">AI FORECASTED</span>
+                            </div>
+                            <div className="ml-auto flex items-center gap-1">
+                              <div className="w-1 h-1 rounded-full bg-blue-400" />
+                              <div className="w-1 h-1 rounded-full bg-purple-400" />
+                              <div className="w-1 h-1 rounded-full bg-pink-400" />
+                            </div>
                           </div>
                         </div>
                       );
