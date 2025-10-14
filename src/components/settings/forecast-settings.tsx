@@ -219,7 +219,7 @@ export const ForecastSettings = () => {
           Adjust the conservatism of your Amazon payout forecasts
           {!loading && (
             <div className="mt-2 text-xs text-muted-foreground">
-              Current saved value: <span className="font-mono font-semibold">{confidenceThreshold}</span>
+              Current forecast risk: <span className="font-semibold">{riskLevel.label}</span>
             </div>
           )}
         </CardDescription>
