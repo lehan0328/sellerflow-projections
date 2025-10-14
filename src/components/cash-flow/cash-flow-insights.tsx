@@ -844,14 +844,26 @@ export const CashFlowInsights = ({
                         year: 'numeric'
                       });
                       
-                      // Sum all forecasted payouts up to this date
+                      // Sum all forecasted payouts up to this date and track them
                       let forecastedBoost = 0;
+                      const contributingPayouts: Array<{ date: string; amount: number; confidence: number }> = [];
+                      
                       forecastedPayouts.forEach(payout => {
                         const payoutDate = new Date(payout.payout_date);
                         if (payoutDate <= date) {
                           forecastedBoost += payout.total_amount || 0;
+                          const payoutData = payout as any;
+                          const metadata = payoutData?.raw_settlement_data;
+                          contributingPayouts.push({
+                            date: payout.payout_date,
+                            amount: payout.total_amount || 0,
+                            confidence: metadata?.forecast_metadata?.confidence || 0.88
+                          });
                         }
                       });
+                      
+                      // Sort contributing payouts by date
+                      contributingPayouts.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
                       
                       const projectedBalance = opp.balance + forecastedBoost;
                       
@@ -882,10 +894,34 @@ export const CashFlowInsights = ({
                               <span className="font-medium text-primary">${opp.balance.toLocaleString()}</span>
                             </div>
                             {forecastedBoost > 0 && (
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">AI Forecast Boost:</span>
-                                <span className="font-medium text-purple-600">+${forecastedBoost.toLocaleString()}</span>
-                              </div>
+                              <>
+                                <div className="flex justify-between border-t pt-1">
+                                  <span className="text-muted-foreground">AI Forecast Boost:</span>
+                                  <span className="font-medium text-purple-600">+${forecastedBoost.toLocaleString()}</span>
+                                </div>
+                                {contributingPayouts.length > 0 && (
+                                  <div className="mt-2 pt-2 border-t space-y-1">
+                                    <p className="text-[10px] font-semibold text-muted-foreground uppercase">Forecasted Payouts by Date:</p>
+                                    {contributingPayouts.map((cp, cpIndex) => {
+                                      const cpDate = new Date(cp.date);
+                                      const formattedCpDate = cpDate.toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric'
+                                      });
+                                      return (
+                                        <div key={cpIndex} className="flex justify-between items-center">
+                                          <span className="text-[10px] text-muted-foreground">
+                                            {formattedCpDate} ({Math.round(cp.confidence * 100)}%)
+                                          </span>
+                                          <span className="text-[10px] font-medium text-purple-600">
+                                            +${cp.amount.toLocaleString()}
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </>
                             )}
                           </div>
                           
