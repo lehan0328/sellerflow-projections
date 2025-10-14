@@ -1,17 +1,38 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Building2, MoreVertical, Settings, RefreshCw } from "lucide-react";
+import { Building2, MoreVertical, Settings, RefreshCw, Plus, Edit, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
+import { ManualBankAccountDialog } from "./manual-bank-account-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function BankAccounts() {
   const navigate = useNavigate();
-  const { accounts, isLoading, totalBalance } = useBankAccounts();
+  const { accounts, isLoading, totalBalance, refetch } = useBankAccounts();
   const [syncingAccounts, setSyncingAccounts] = useState<Set<string>>(new Set());
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
 
   const handleSyncTransactions = async (accountId: string, stripeAccountId: string) => {
     setSyncingAccounts(prev => new Set(prev).add(accountId));
@@ -36,6 +57,44 @@ export function BankAccounts() {
         return newSet;
       });
     }
+  };
+
+  const handleEdit = (account: any) => {
+    setEditingAccount(account);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!accountToDelete) return;
+    
+    try {
+      const { error } = await supabase
+        .from('bank_accounts')
+        .delete()
+        .eq('id', accountToDelete);
+
+      if (error) throw error;
+
+      toast.success("Bank account deleted successfully");
+      refetch();
+    } catch (error: any) {
+      console.error("Error deleting account:", error);
+      toast.error(error.message || "Failed to delete account");
+    } finally {
+      setDeleteDialogOpen(false);
+      setAccountToDelete(null);
+    }
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      setEditingAccount(null);
+    }
+  };
+
+  const isManualAccount = (account: any) => {
+    return !account.plaid_account_id || account.plaid_account_id === '';
   };
 
   const formatCurrency = (amount: number) => {
@@ -74,11 +133,19 @@ export function BankAccounts() {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => navigate('/manage-accounts')}
+              onClick={() => setDialogOpen(true)}
               className="ml-4"
             >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Manual
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/manage-accounts')}
+            >
               <Settings className="h-4 w-4 mr-2" />
-              Manage
+              Connect Bank
             </Button>
             {accounts.length > 0 && (
               <Button 
@@ -121,9 +188,16 @@ export function BankAccounts() {
               <div className="space-y-1">
                 <div className="flex items-center space-x-2">
                   <h4 className="font-semibold">{account.account_name}</h4>
-                  <Badge variant="outline" className="text-xs">
-                    {account.account_number}
-                  </Badge>
+                  {isManualAccount(account) && (
+                    <Badge variant="secondary" className="text-xs">
+                      Manual
+                    </Badge>
+                  )}
+                  {account.account_number && (
+                    <Badge variant="outline" className="text-xs">
+                      {account.account_number}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Last sync: {new Date(account.last_sync).toLocaleString()}
@@ -150,13 +224,59 @@ export function BankAccounts() {
                     {syncingAccounts.has(account.id) ? 'Syncing...' : 'Sync'}
                   </Button>
                 )}
-                <Button variant="ghost" size="sm">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {isManualAccount(account) && (
+                      <DropdownMenuItem onClick={() => handleEdit(account)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit Account
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        setAccountToDelete(account.id);
+                        setDeleteDialogOpen(true);
+                      }}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Account
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           ))
         )}
+
+        <ManualBankAccountDialog
+          open={dialogOpen}
+          onOpenChange={handleDialogClose}
+          account={editingAccount}
+          onSuccess={refetch}
+        />
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Bank Account</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this bank account? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
