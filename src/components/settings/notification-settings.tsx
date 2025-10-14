@@ -200,7 +200,18 @@ export const NotificationSettings = ({ onUpdate }: NotificationSettingsProps = {
       return;
     }
 
-    updatePreference(prefId, { notification_channels: newChannels });
+    console.log('[NOTIFICATION SETTINGS] Toggling channel:', { prefId, channel, newChannels });
+
+    // Clear email recipients when email channel is disabled
+    const updates: Partial<NotificationPreference> = { 
+      notification_channels: newChannels 
+    };
+    
+    if (channel === 'email' && !newChannels.includes('email')) {
+      updates.email_recipients = [];
+    }
+
+    updatePreference(prefId, updates);
   };
 
   const sendNotificationNow = async (notificationType: string) => {
