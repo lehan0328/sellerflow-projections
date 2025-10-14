@@ -33,6 +33,8 @@ export function BankAccounts() {
   const [editingAccount, setEditingAccount] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
+  const [editingBalanceId, setEditingBalanceId] = useState<string | null>(null);
+  const [newBalance, setNewBalance] = useState<string>("");
 
   const handleSyncTransactions = async (accountId: string, stripeAccountId: string) => {
     setSyncingAccounts(prev => new Set(prev).add(accountId));
@@ -91,6 +93,40 @@ export function BankAccounts() {
     if (!open) {
       setEditingAccount(null);
     }
+  };
+
+  const handleBalanceEdit = (accountId: string, currentBalance: number) => {
+    setEditingBalanceId(accountId);
+    setNewBalance(currentBalance.toString());
+  };
+
+  const handleBalanceUpdate = async (accountId: string) => {
+    try {
+      const balanceValue = parseFloat(newBalance);
+      if (isNaN(balanceValue)) {
+        toast.error("Please enter a valid number");
+        return;
+      }
+
+      const { error } = await supabase
+        .from('bank_accounts')
+        .update({ balance: balanceValue })
+        .eq('id', accountId);
+
+      if (error) throw error;
+
+      toast.success("Balance updated successfully");
+      setEditingBalanceId(null);
+      refetch();
+    } catch (error: any) {
+      console.error("Error updating balance:", error);
+      toast.error(error.message || "Failed to update balance");
+    }
+  };
+
+  const handleCancelBalanceEdit = () => {
+    setEditingBalanceId(null);
+    setNewBalance("");
   };
 
   const isManualAccount = (account: any) => {
@@ -205,9 +241,43 @@ export function BankAccounts() {
               </div>
               <div className="flex items-center space-x-4">
                 <div className="text-right">
-                  <p className="font-bold text-lg">
-                    {formatCurrency(account.balance)}
-                  </p>
+                  {editingBalanceId === account.id ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        value={newBalance}
+                        onChange={(e) => setNewBalance(e.target.value)}
+                        className="w-32 px-2 py-1 text-right border rounded text-sm"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleBalanceUpdate(account.id);
+                          if (e.key === 'Escape') handleCancelBalanceEdit();
+                        }}
+                      />
+                      <Button size="sm" variant="ghost" onClick={() => handleBalanceUpdate(account.id)}>
+                        ✓
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={handleCancelBalanceEdit}>
+                        ✕
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-lg">
+                        {formatCurrency(account.balance)}
+                      </p>
+                      {isManualAccount(account) && (
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => handleBalanceEdit(account.id, account.balance)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
                   <Badge variant={getBalanceVariant(account.balance)} className="text-xs">
                     {account.account_type}
                   </Badge>
