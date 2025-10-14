@@ -12,17 +12,25 @@ serve(async (req) => {
   }
 
   try {
-    const { userId } = await req.json();
-    
-    if (!userId) {
-      throw new Error('User ID is required');
-    }
-
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
-    
+
+    // Get user ID from the JWT token
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
+      throw new Error('Invalid or expired token');
+    }
+
+    const userId = user.id;
     console.log('[FORECAST] Fetching Amazon data for user:', userId);
 
     // Fetch Amazon payouts from last 3 months for trend analysis
