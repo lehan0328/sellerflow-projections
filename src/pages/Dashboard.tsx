@@ -96,7 +96,7 @@ const Dashboard = () => {
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, cleanupOrphanedVendors, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction, refetch: refetchTransactions } = useTransactions();
   const { transactions: vendorTransactions, markAsPaid } = useVendorTransactions();
-  const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
+  const { totalBalance: bankAccountBalance, accounts, refetch: refetchBankAccounts } = useBankAccounts();
   const { transactions: bankTransactionsData, isLoading: isBankTransactionsLoading } = useBankTransactions();
   const { creditCards, refetch: refetchCreditCards } = useCreditCards();
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
@@ -106,6 +106,30 @@ const Dashboard = () => {
   
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
   const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance } = useUserSettings();
+
+  // Real-time updates for bank account balance changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('bank-accounts-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'bank_accounts'
+        },
+        (payload) => {
+          console.log('Bank account updated:', payload);
+          refetchBankAccounts();
+          refetchSafeSpending();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetchBankAccounts, refetchSafeSpending]);
 
   // Map real bank transactions to BankTransaction format
   const bankTransactions: BankTransaction[] = useMemo(() => {
