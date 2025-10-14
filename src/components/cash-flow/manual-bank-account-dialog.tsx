@@ -48,8 +48,16 @@ export function ManualBankAccountDialog({
 
     setLoading(true);
     try {
+      // Get user's account_id from profiles
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .single();
+
       const accountData = {
         user_id: user.id,
+        account_id: profile?.account_id,
         institution_name: formData.institution_name.trim(),
         account_name: formData.account_name.trim(),
         account_type: formData.account_type,
