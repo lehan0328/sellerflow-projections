@@ -98,7 +98,7 @@ export const useUserSettings = () => {
       const { error } = await supabase
         .from('user_settings')
         .update(dbUpdates)
-        .eq('account_id', profile.account_id);
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -159,7 +159,7 @@ export const useUserSettings = () => {
       const { error } = await supabase
         .from('user_settings')
         .update({ total_cash: newTotal })
-        .eq('account_id', profile.account_id);
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -198,7 +198,7 @@ export const useUserSettings = () => {
       const { error } = await supabase
         .from('user_settings')
         .update({ total_cash: amount })
-        .eq('account_id', profile.account_id);
+        .eq('user_id', user.id);
 
       if (error) throw error;
 
@@ -279,7 +279,7 @@ export const useUserSettings = () => {
         throw new Error('Account not found');
       }
 
-      // Reset user_settings using account_id
+      // Reset user_settings using user_id
       const { error: upsertError } = await supabase
         .from('user_settings')
         .update({
@@ -288,7 +288,7 @@ export const useUserSettings = () => {
           safe_spending_reserve: 0,
           chart_show_forecast_line: false
         })
-        .eq('account_id', profile.account_id);
+        .eq('user_id', user.id);
 
       if (upsertError) {
         console.error('Failed to reset user settings:', upsertError);
