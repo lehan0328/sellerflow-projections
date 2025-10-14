@@ -863,46 +863,108 @@ export const CashFlowInsights = ({
                       );
                     }
                     
-                    // Calculate projected balances and ensure they're cumulative
-                    const projectedOpportunities = sortedPayouts.map((payout, index) => {
-                      const payoutDate = new Date(payout.payout_date);
-                      const payoutDateStr = payoutDate.toISOString().split('T')[0];
+                    // Calculate projected balances with ALL cash flow events + forecasted payouts
+                    // Use the same logic as confirmed opportunities
+                    const startBalance = allBuyingOpportunities.length > 0 
+                      ? allBuyingOpportunities[allBuyingOpportunities.length - 1].balance 
+                      : currentBalance;
+                    
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    // Get the furthest forecasted payout date
+                    const lastPayoutDate = new Date(sortedPayouts[sortedPayouts.length - 1].payout_date);
+                    lastPayoutDate.setHours(0, 0, 0, 0);
+                    
+                    // Calculate daily balances
+                    const dailyBalances: Array<{ date: string; balance: number }> = [];
+                    let runningBalance = startBalance;
+                    
+                    const daysDiff = Math.ceil((lastPayoutDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                    
+                    for (let i = 0; i <= daysDiff; i++) {
+                      const targetDate = new Date(today);
+                      targetDate.setDate(targetDate.getDate() + i);
+                      targetDate.setHours(0, 0, 0, 0);
+                      const targetDateStr = targetDate.toISOString().split('T')[0];
                       
-                      // For the first forecasted payout, start with the last confirmed opportunity balance
-                      let baseBalance = 0;
-                      if (index === 0) {
-                        if (allBuyingOpportunities.length > 0) {
-                          // Use the last confirmed buying opportunity's balance
-                          baseBalance = allBuyingOpportunities[allBuyingOpportunities.length - 1].balance;
-                        } else {
-                          // Fallback to current balance if no opportunities exist
-                          baseBalance = currentBalance;
+                      let dayChange = 0;
+                      
+                      // Add forecasted Amazon payouts
+                      sortedPayouts.forEach(fp => {
+                        const fpDate = new Date(fp.payout_date);
+                        fpDate.setHours(0, 0, 0, 0);
+                        if (fpDate.getTime() === targetDate.getTime()) {
+                          dayChange += fp.total_amount || 0;
+                        }
+                      });
+                      
+                      // Add other income (future only)
+                      income.forEach(inc => {
+                        const incDate = new Date(inc.payment_date);
+                        incDate.setHours(0, 0, 0, 0);
+                        if (incDate.getTime() === targetDate.getTime() && incDate >= today) {
+                          dayChange += inc.amount || 0;
+                        }
+                      });
+                      
+                      // Subtract expenses (future only)
+                      events.forEach(exp => {
+                        const expDate = new Date(exp.payment_date || exp.due_date || exp.transaction_date);
+                        expDate.setHours(0, 0, 0, 0);
+                        if (expDate.getTime() === targetDate.getTime() && expDate >= today) {
+                          if (exp.type === 'purchase_order' || exp.type === 'expense') {
+                            dayChange -= exp.amount || 0;
+                          }
+                        }
+                      });
+                      
+                      runningBalance += dayChange;
+                      dailyBalances.push({ date: targetDateStr, balance: runningBalance });
+                    }
+                    
+                    // Find buying opportunities (when balance increases from one day to next)
+                    const projectedOpps: Array<{ date: string; balance: number; formattedDate: string; payoutAmount: number; confidence: number }> = [];
+                    
+                    for (let i = 0; i < dailyBalances.length - 1; i++) {
+                      const currentDay = dailyBalances[i];
+                      const nextDay = dailyBalances[i + 1];
+                      
+                      // Check if balance increases (buying opportunity)
+                      if (nextDay.balance > currentDay.balance) {
+                        const opportunityAmount = Math.max(0, currentDay.balance - reserveAmount);
+                        
+                        if (opportunityAmount > 0) {
+                          // Find the forecasted payout that corresponds to this opportunity
+                          const correspondingPayout = sortedPayouts.find(p => {
+                            const pDate = new Date(p.payout_date);
+                            pDate.setHours(0, 0, 0, 0);
+                            const cDate = new Date(currentDay.date);
+                            cDate.setHours(0, 0, 0, 0);
+                            return pDate.getTime() === cDate.getTime() || pDate.getTime() === new Date(nextDay.date).setHours(0, 0, 0, 0);
+                          });
+                          
+                          const payoutData = correspondingPayout as any;
+                          const metadata = payoutData?.raw_settlement_data?.forecast_metadata;
+                          const confidence = metadata?.confidence || 0.88;
+                          
+                          const oppDate = new Date(currentDay.date);
+                          projectedOpps.push({
+                            date: currentDay.date,
+                            formattedDate: oppDate.toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            }),
+                            balance: opportunityAmount,
+                            payoutAmount: correspondingPayout?.total_amount || 0,
+                            confidence
+                          });
                         }
                       }
-                      
-                      // Add all forecasted payouts up to this point (treating them as income)
-                      const cumulativePayouts = sortedPayouts
-                        .slice(0, index + 1)
-                        .reduce((sum, p) => sum + (p.total_amount || 0), 0);
-                      
-                      const totalProjected = baseBalance + cumulativePayouts;
-                      
-                      const payoutData = payout as any;
-                      const metadata = payoutData?.raw_settlement_data?.forecast_metadata;
-                      const confidence = metadata?.confidence || 0.88;
-                      
-                      return {
-                        date: payoutDateStr,
-                        formattedDate: payoutDate.toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        }),
-                        balance: totalProjected,
-                        payoutAmount: payout.total_amount || 0,
-                        confidence
-                      };
-                    });
+                    }
+                    
+                    const projectedOpportunities = projectedOpps;
                     
                     return projectedOpportunities.map((opportunity, index) => {
                       const confidencePercent = Math.round(opportunity.confidence * 100);
