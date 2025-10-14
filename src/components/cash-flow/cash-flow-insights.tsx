@@ -863,14 +863,10 @@ export const CashFlowInsights = ({
                       );
                     }
                     
-                    return sortedPayouts.map((payout, index) => {
+                    // Calculate projected balances and ensure they're cumulative
+                    const projectedOpportunities = sortedPayouts.map((payout, index) => {
                       const payoutDate = new Date(payout.payout_date);
                       const payoutDateStr = payoutDate.toISOString().split('T')[0];
-                      const formattedDate = payoutDate.toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric'
-                      });
                       
                       // Find the closest buying opportunity for this date
                       let projectedCash = 0;
@@ -893,28 +889,42 @@ export const CashFlowInsights = ({
                       const payoutData = payout as any;
                       const metadata = payoutData?.raw_settlement_data?.forecast_metadata;
                       const confidence = metadata?.confidence || 0.88;
-                      const confidencePercent = Math.round(confidence * 100);
+                      
+                      return {
+                        date: payoutDateStr,
+                        formattedDate: payoutDate.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        }),
+                        balance: totalProjected,
+                        confidence
+                      };
+                    });
+                    
+                    // Ensure later opportunities never have lower balances than earlier ones
+                    for (let i = 1; i < projectedOpportunities.length; i++) {
+                      if (projectedOpportunities[i].balance < projectedOpportunities[i - 1].balance) {
+                        projectedOpportunities[i].balance = projectedOpportunities[i - 1].balance;
+                      }
+                    }
+                    
+                    return projectedOpportunities.map((opportunity, index) => {
+                      const confidencePercent = Math.round(opportunity.confidence * 100);
                       
                       return (
                         <div key={index} className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800 space-y-2">
                           <div className="flex justify-between items-center">
                             <span className="font-semibold text-sm">Opportunity #{index + 1}</span>
                             <span className="text-lg font-bold text-blue-600">
-                              ${totalProjected.toLocaleString()}
+                              ${opportunity.balance.toLocaleString()}
                             </span>
                           </div>
-                          <p className="text-xs text-muted-foreground">Low point: {formattedDate}</p>
-                          {(() => {
-                            // Calculate available date (same as payout date for projected opportunities)
-                            const availableDate = formattedDate;
-                            
-                            return (
-                              <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
-                                <span className="text-xs text-muted-foreground">Earliest Purchase Date:</span>
-                                <span className="text-sm font-semibold text-green-600">{availableDate}</span>
-                              </div>
-                            );
-                          })()}
+                          <p className="text-xs text-muted-foreground">Low point: {opportunity.formattedDate}</p>
+                          <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
+                            <span className="text-xs text-muted-foreground">Earliest Purchase Date:</span>
+                            <span className="text-sm font-semibold text-green-600">{opportunity.formattedDate}</span>
+                          </div>
                           <div className="flex items-center justify-between p-1.5 bg-purple-50 dark:bg-purple-950/20 rounded border border-purple-200 dark:border-purple-800">
                             <span className="text-xs text-muted-foreground">AI Confidence:</span>
                             <span className="text-xs font-semibold text-purple-600">{confidencePercent}%</span>
