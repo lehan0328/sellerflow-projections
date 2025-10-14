@@ -162,6 +162,18 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
         }))
       });
 
+      // Check if we have any forecast data
+      const hasForecastData = (
+        (transactionsResult.data && transactionsResult.data.length > 0) ||
+        (incomeResult.data && incomeResult.data.length > 0) ||
+        (recurringResult.data && recurringResult.data.length > 0) ||
+        (vendorsResult.data && vendorsResult.data.some(v => v.status !== 'paid' && Number(v.total_owed || 0) > 0)) ||
+        (amazonResult.data && amazonResult.data.length > 0) ||
+        (creditCardsResult.data && creditCardsResult.data.some(c => c.balance > 0 && c.payment_due_date))
+      );
+
+      console.log('📊 Has forecast data:', hasForecastData);
+
       // Simple calculation: Track Total Projected Cash for each day, find minimum, subtract reserve
       const dailyBalances: DailyBalance[] = [];
       let runningBalance = bankBalance;
@@ -505,7 +517,13 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
       
       console.log(`\n✅ After filtering: ${filteredOpportunities.length} valid buying opportunities`);
       
-      const nextBuyingOpportunity = filteredOpportunities.length > 0 ? filteredOpportunities[0] : null;
+      // If we have no forecast data, clear all buying opportunities
+      const finalOpportunities = hasForecastData ? filteredOpportunities : [];
+      if (!hasForecastData) {
+        console.log('⚠️ No forecast data - clearing all buying opportunities');
+      }
+      
+      const nextBuyingOpportunity = finalOpportunities.length > 0 ? finalOpportunities[0] : null;
       
       // Find earliest date when you can make purchases for safe spending
       // This is the first date from today UP TO the lowest point where you have enough buffer
@@ -531,9 +549,12 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
       }
       
       // Safe Spending = Min Balance - Reserve
-      const safeSpendingLimit = minBalance - reserve;
+      // BUT if we have no forecast data, safe spending should be 0 (conservative approach)
+      const calculatedLimit = minBalance - reserve;
+      const safeSpendingLimit = hasForecastData ? calculatedLimit : 0;
 
       console.log('🎯🎯🎯 SAFE SPENDING CALCULATION 🎯🎯🎯');
+      console.log('Has Forecast Data:', hasForecastData);
       console.log('Minimum Balance Found:', minBalance);
       console.log('On Date:', minDay.date);
       console.log('Reserve Amount:', reserve);
@@ -580,7 +601,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
           next_buying_opportunity_balance: nextBuyingOpportunity?.balance,
           next_buying_opportunity_date: nextBuyingOpportunity?.date,
           next_buying_opportunity_available_date: nextBuyingOpportunity?.available_date,
-          all_buying_opportunities: filteredOpportunities
+          all_buying_opportunities: finalOpportunities
         }
       });
     } catch (err) {
