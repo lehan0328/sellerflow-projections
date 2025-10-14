@@ -807,57 +807,158 @@ export const CashFlowInsights = ({
 
       {/* All Buying Opportunities Modal */}
       <Dialog open={showAllOpportunities} onOpenChange={setShowAllOpportunities}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-6xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5 text-blue-600" />
-              All Buying Opportunities (Next 3 Months)
+              Buying Opportunities Overview (Next 6 Months)
             </DialogTitle>
           </DialogHeader>
-          <ScrollArea className="max-h-[400px] pr-4">
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground mb-4">
-                <span className="font-semibold text-amber-600">Important:</span> These opportunities assume <span className="font-semibold">$0 spending until each date</span>. The available amounts shown are what you'll have if you don't make any purchases before then. Plan your spending timeline accordingly to preserve these opportunities.
-              </p>
-              {allBuyingOpportunities.map((opp, index) => {
-                const [year, month, day] = opp.date.split('-').map(Number);
-                const date = new Date(year, month - 1, day);
-                const formattedDate = date.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric'
-                });
-                
-                let availableDate = '';
-                if (opp.available_date) {
-                  const [aYear, aMonth, aDay] = opp.available_date.split('-').map(Number);
-                  const aDate = new Date(aYear, aMonth - 1, aDay);
-                  availableDate = aDate.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric'
-                  });
-                }
-                
-                return (
-                  <div key={index} className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-semibold text-sm">Opportunity #{index + 1}</span>
-                      <span className="text-lg font-bold text-blue-600">
-                        ${opp.balance.toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Low point: {formattedDate}</p>
-                    {availableDate && (
-                      <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
-                        <span className="text-xs text-muted-foreground">Earliest Purchase Date:</span>
-                        <span className="text-sm font-semibold text-green-600">{availableDate}</span>
+          
+          <div className="grid grid-cols-2 gap-6">
+            {/* Left Side - Confirmed Buying Opportunities */}
+            <div>
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                Confirmed Cash Opportunities
+              </h3>
+              <ScrollArea className="max-h-[500px] pr-4">
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    <span className="font-semibold text-amber-600">Important:</span> These opportunities assume <span className="font-semibold">$0 spending until each date</span>. The available amounts shown are what you'll have if you don't make any purchases before then. Plan your spending timeline accordingly to preserve these opportunities.
+                  </p>
+                  {allBuyingOpportunities.map((opp, index) => {
+                    const [year, month, day] = opp.date.split('-').map(Number);
+                    const date = new Date(year, month - 1, day);
+                    const formattedDate = date.toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    });
+                    
+                    let availableDate = '';
+                    if (opp.available_date) {
+                      const [aYear, aMonth, aDay] = opp.available_date.split('-').map(Number);
+                      const aDate = new Date(aYear, aMonth - 1, aDay);
+                      availableDate = aDate.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                      });
+                    }
+                    
+                    return (
+                      <div key={index} className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800 space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold text-sm">Opportunity #{index + 1}</span>
+                          <span className="text-lg font-bold text-blue-600">
+                            ${opp.balance.toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Low point: {formattedDate}</p>
+                        {availableDate && (
+                          <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
+                            <span className="text-xs text-muted-foreground">Earliest Purchase Date:</span>
+                            <span className="text-sm font-semibold text-green-600">{availableDate}</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              </ScrollArea>
             </div>
-          </ScrollArea>
+            
+            {/* Right Side - Projected Opportunities with AI Forecasts */}
+            <div>
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-purple-600" />
+                Projected Opportunities (with AI Forecasts)
+              </h3>
+              <ScrollArea className="max-h-[500px] pr-4">
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    <span className="font-semibold text-purple-600">AI-Enhanced:</span> These projections include AI forecasted Amazon payouts. Use for planning purposes, but note that forecasts may vary from actual payouts.
+                  </p>
+                  {(() => {
+                    // Calculate projected opportunities including AI forecasted payouts
+                    const forecastedPayouts = amazonPayouts?.filter(p => p.status === 'forecasted') || [];
+                    
+                    // Create a map of dates to forecasted amounts
+                    const forecastedAmountsByDate = new Map<string, number>();
+                    forecastedPayouts.forEach(payout => {
+                      const date = payout.payout_date.split('T')[0];
+                      forecastedAmountsByDate.set(date, (forecastedAmountsByDate.get(date) || 0) + (payout.total_amount || 0));
+                    });
+                    
+                    // Calculate projected opportunities by adding forecasted amounts to each opportunity
+                    return allBuyingOpportunities.map((opp, index) => {
+                      const [year, month, day] = opp.date.split('-').map(Number);
+                      const date = new Date(year, month - 1, day);
+                      const formattedDate = date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      });
+                      
+                      // Sum all forecasted payouts up to this date
+                      let forecastedBoost = 0;
+                      forecastedPayouts.forEach(payout => {
+                        const payoutDate = new Date(payout.payout_date);
+                        if (payoutDate <= date) {
+                          forecastedBoost += payout.total_amount || 0;
+                        }
+                      });
+                      
+                      const projectedBalance = opp.balance + forecastedBoost;
+                      
+                      let availableDate = '';
+                      if (opp.available_date) {
+                        const [aYear, aMonth, aDay] = opp.available_date.split('-').map(Number);
+                        const aDate = new Date(aYear, aMonth - 1, aDay);
+                        availableDate = aDate.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric'
+                        });
+                      }
+                      
+                      return (
+                        <div key={index} className="p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800 space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="font-semibold text-sm">Opportunity #{index + 1}</span>
+                            <span className="text-lg font-bold text-purple-600">
+                              ${projectedBalance.toLocaleString()}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">Low point: {formattedDate}</p>
+                          
+                          {/* Breakdown */}
+                          <div className="space-y-1 text-xs bg-white/50 dark:bg-black/20 rounded p-2">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Confirmed:</span>
+                              <span className="font-medium text-primary">${opp.balance.toLocaleString()}</span>
+                            </div>
+                            {forecastedBoost > 0 && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">AI Forecast Boost:</span>
+                                <span className="font-medium text-purple-600">+${forecastedBoost.toLocaleString()}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {availableDate && (
+                            <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
+                              <span className="text-xs text-muted-foreground">Earliest Purchase Date:</span>
+                              <span className="text-sm font-semibold text-green-600">{availableDate}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </ScrollArea>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
