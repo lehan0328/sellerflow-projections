@@ -148,6 +148,19 @@ export const PurchaseOrderForm = ({
       setVendorSearchTerm("");
     }
   }, [open]);
+
+  // Auto-update vendorId when a matching vendor is found (after adding new vendor)
+  useEffect(() => {
+    if (formData.vendor && !formData.vendorId) {
+      const matchingVendor = vendors.find(v => v.name === formData.vendor);
+      if (matchingVendor) {
+        setFormData(prev => ({
+          ...prev,
+          vendorId: matchingVendor.id
+        }));
+      }
+    }
+  }, [vendors, formData.vendor, formData.vendorId]);
   const handleVendorSelect = (vendor: Vendor) => {
     console.log('Selected vendor:', vendor);
     setFormData(prev => ({
