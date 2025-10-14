@@ -8,6 +8,7 @@ import { Sparkles, TrendingUp, Info, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
+import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { toast } from "sonner";
 import {
   Tooltip,
@@ -29,6 +30,7 @@ import {
 export const ForecastSettings = () => {
   const { user } = useAuth();
   const { amazonAccounts } = useAmazonAccounts();
+  const { refetch: refetchPayouts } = useAmazonPayouts();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [confidenceThreshold, setConfidenceThreshold] = useState(5); // -5 = Aggressive, 0 = Medium, 5 = Safe, 10 = Very Safe
@@ -137,6 +139,9 @@ export const ForecastSettings = () => {
       
       // Regenerate forecasts
       await handleSave();
+      
+      // Refresh payout data to show new forecasts
+      refetchPayouts();
     } catch (error) {
       console.error('Error enabling forecasts:', error);
       toast.error("Failed to enable forecasts");
@@ -282,10 +287,8 @@ export const ForecastSettings = () => {
         console.log('✅ Forecasts regenerated successfully');
         toast.success("Settings saved and forecasts updated!");
         
-        // Trigger a page reload to show new forecasts
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        // Refresh payout data to show new forecasts immediately
+        refetchPayouts();
       }
     } catch (error) {
       console.error('Error saving forecast settings:', error);
