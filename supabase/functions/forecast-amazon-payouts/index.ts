@@ -370,8 +370,27 @@ Return ONLY this JSON (no markdown):
         const payoutFrequency = amazonAccount.payout_frequency || 'bi-weekly';
         const lastPayoutDate = new Date(amazonPayouts[0].payout_date);
         
-        // Calculate average payout amount for baseline (already calculated above, using same logic)
-        const baselineAmount = avgPayoutAmount;
+        // Calculate baseline amount based on frequency
+        let baselineAmount;
+        if (payoutFrequency === 'daily') {
+          // For daily: calculate average payout per day from historical data
+          // Formula: total payout over set days / # of days for those payouts = payout per day
+          const oldestPayoutDate = new Date(amazonPayouts[amazonPayouts.length - 1].payout_date);
+          const newestPayoutDate = new Date(amazonPayouts[0].payout_date);
+          const daysDiff = Math.ceil((newestPayoutDate.getTime() - oldestPayoutDate.getTime()) / (1000 * 60 * 60 * 24));
+          const totalPayoutAmount = nonForecastedPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
+          baselineAmount = daysDiff > 0 ? totalPayoutAmount / daysDiff : simpleAvg;
+          
+          console.log(`[FORECAST] Daily payout calculation for ${amazonAccount.account_name}:`, {
+            totalPayoutAmount,
+            daysDiff,
+            averagePerDay: baselineAmount,
+            dateRange: `${oldestPayoutDate.toISOString().split('T')[0]} to ${newestPayoutDate.toISOString().split('T')[0]}`
+          });
+        } else {
+          // For bi-weekly: use weighted average
+          baselineAmount = avgPayoutAmount;
+        }
         
         // Generate forecasts for 3 months based on frequency
         const forecastedPayouts: any[] = [];
@@ -382,16 +401,16 @@ Return ONLY this JSON (no markdown):
         let biweeklyPeriodIndex = 0;
         let dayCount = 0;
         
-        // For daily: generate up to 84 daily payouts (6 bi-weekly periods = 84 days)
-        // For bi-weekly: generate 6 bi-weekly payouts
-        const maxForecasts = payoutFrequency === 'daily' ? 84 : 6;
+        // For daily: generate 90 daily payouts (3 months)
+        // For bi-weekly: generate 6 bi-weekly payouts (3 months)
+        const maxForecasts = payoutFrequency === 'daily' ? 90 : 6;
         
         while (currentDate <= threeMonthsOut && dayCount < maxForecasts) {
           // Move to next payout date based on frequency
           if (payoutFrequency === 'daily') {
             currentDate.setDate(currentDate.getDate() + 1);
             dayCount++;
-            // Track which bi-weekly period we're in for AI predictions
+            // For daily, we just use the daily average (no AI prediction division needed)
             biweeklyPeriodIndex = Math.floor((dayCount - 1) / 14);
           } else { // bi-weekly = every 14 days
             currentDate.setDate(currentDate.getDate() + 14);
@@ -401,32 +420,29 @@ Return ONLY this JSON (no markdown):
           
           if (currentDate > threeMonthsOut) break;
           
-          // Use AI prediction if available, otherwise use baseline with variation
-          let basePrediction = baselineAmount; // Use actual baseline amount
+          // Use baseline amount for daily (already calculated per day)
+          // For bi-weekly, use AI predictions if available
+          let basePrediction = baselineAmount;
           let calculationMethod = 'baseline';
           
-          if (forecast.predictions && forecast.predictions[biweeklyPeriodIndex]) {
+          if (payoutFrequency === 'bi-weekly' && forecast.predictions && forecast.predictions[biweeklyPeriodIndex]) {
             const aiPrediction = forecast.predictions[biweeklyPeriodIndex].predicted_amount || baselineAmount;
             basePrediction = aiPrediction;
             calculationMethod = 'ai_prediction';
             
-            if (dayCount === 1 || (payoutFrequency === 'bi-weekly')) {
-              console.log(`[FORECAST] ${amazonAccount.account_name} - Period ${biweeklyPeriodIndex + 1} AI base prediction: ${aiPrediction}`);
+            console.log(`[FORECAST] ${amazonAccount.account_name} - Period ${biweeklyPeriodIndex + 1} AI prediction: ${aiPrediction}`);
+          } else if (payoutFrequency === 'daily') {
+            // For daily payouts, use the calculated daily average
+            calculationMethod = 'daily_average';
+            
+            if (dayCount === 1) {
+              console.log(`[FORECAST] ${amazonAccount.account_name} - Daily average payout: ${basePrediction}`);
             }
           } else {
-            // Add 5-10% variation for realism
-            const variation = 0.95 + (Math.random() * 0.15); // 0.95 to 1.10
+            // Add 5-10% variation for realism on bi-weekly
+            const variation = 0.95 + (Math.random() * 0.15);
             basePrediction = baselineAmount * variation;
             calculationMethod = 'baseline_with_variation';
-            
-            if (dayCount === 1 || (payoutFrequency === 'bi-weekly')) {
-              console.log(`[FORECAST] ${amazonAccount.account_name} - Period ${biweeklyPeriodIndex + 1} baseline: ${baselineAmount} * ${variation.toFixed(2)} = ${basePrediction}`);
-            }
-          }
-          
-          // For daily payouts, divide the bi-weekly amount by 14
-          if (payoutFrequency === 'daily') {
-            basePrediction = basePrediction / 14;
           }
           
           // Apply risk adjustment: -5 = +5%, 0 = no adjustment, 5 = -5%, 10 = -10%
