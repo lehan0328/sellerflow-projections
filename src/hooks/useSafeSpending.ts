@@ -523,48 +523,67 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
         ).join(', '));
       }
       
-      // Safe Spending = Min Balance - Reserve
-      const safeSpendingLimit = minBalance - reserve;
+      // Calculate Safe Spending Limit
+      // Logic: You can spend up to (Current Balance - Reserve), BUT only if spending that amount
+      // won't cause your future balance to drop below zero at any point
+      
+      // Start with the theoretical maximum you could spend right now
+      const theoreticalMax = Math.max(0, bankBalance - reserve);
+      
+      // Now check if spending this amount would cause problems in the future
+      // We need to find how much we can actually spend without going negative
+      let actualSafeSpending = theoreticalMax;
+      
+      // If spending the theoretical max would cause the minimum balance to go negative, reduce it
+      if (minBalance - theoreticalMax < 0) {
+        // Calculate how much we need to reduce to avoid going negative
+        const reduction = Math.abs(minBalance - theoreticalMax);
+        actualSafeSpending = Math.max(0, theoreticalMax - reduction);
+      }
+      
+      const safeSpendingLimit = actualSafeSpending;
 
       console.log('🎯🎯🎯 SAFE SPENDING CALCULATION 🎯🎯🎯');
-      console.log('Minimum Balance Found:', minBalance);
-      console.log('On Date:', minDay.date);
+      console.log('Current Balance:', bankBalance);
       console.log('Reserve Amount:', reserve);
-      console.log('Safe Spending Limit:', safeSpendingLimit);
-      console.log('Formula: $' + minBalance + ' - $' + reserve + ' = $' + safeSpendingLimit);
+      console.log('Theoretical Max (Current - Reserve):', theoreticalMax);
+      console.log('Minimum Projected Balance:', minBalance);
+      console.log('On Date:', minDay.date);
+      console.log('Final Safe Spending Limit:', safeSpendingLimit);
+      console.log('Formula: Max(0, CurrentBalance - Reserve) constrained by future minimum');
       
-      // Find the FIRST day balance goes below safe spending limit (SSL)
-      const firstBelowLimitDay = dailyBalances.find(day => day.balance < safeSpendingLimit);
+      // Find the FIRST day balance would go below reserve amount if we spent the safe amount
+      const firstBelowReserveDay = dailyBalances.find(day => day.balance - safeSpendingLimit < reserve);
       
       // Find the FIRST day balance goes negative (< 0)
       const firstNegativeDay = dailyBalances.find(day => day.balance < 0);
       
       // Determine the warning state
       const willGoNegative = firstNegativeDay !== undefined;
-      const willDropBelowLimit = firstBelowLimitDay !== undefined && !willGoNegative;
+      const willDropBelowReserve = firstBelowReserveDay !== undefined && !willGoNegative;
       
       console.log('💰 Safe Spending Final Calculation:', {
         bankBalance,
         reserve,
         minBalance: minBalance.toFixed(2),
         minDate: minDay.date,
+        theoreticalMax: theoreticalMax.toFixed(2),
         safeSpendingLimit: safeSpendingLimit.toFixed(2),
         willGoNegative,
-        willDropBelowLimit,
+        willDropBelowReserve,
         firstNegativeDate: firstNegativeDay?.date || null,
         firstNegativeAmount: firstNegativeDay?.balance.toFixed(2) || null,
-        firstBelowLimitDate: firstBelowLimitDay?.date || null,
-        firstBelowLimitAmount: firstBelowLimitDay?.balance.toFixed(2) || null,
-        calculation: `${minBalance.toFixed(2)} - ${reserve.toFixed(2)} = ${safeSpendingLimit.toFixed(2)}`
+        firstBelowReserveDate: firstBelowReserveDay?.date || null,
+        firstBelowReserveAmount: firstBelowReserveDay?.balance.toFixed(2) || null,
       });
 
       setData({
-        safe_spending_limit: safeSpendingLimit, // Don't use Math.max - allow negative to show reserve is higher than minimum
+        safe_spending_limit: safeSpendingLimit,
         reserve_amount: reserve,
-        will_go_negative: willGoNegative || willDropBelowLimit,
+        will_go_negative: willGoNegative || willDropBelowReserve,
         negative_date: willGoNegative 
           ? firstNegativeDay!.date 
-          : (willDropBelowLimit ? firstBelowLimitDay!.date : null),
+          : (willDropBelowReserve ? firstBelowReserveDay!.date : null),
         calculation: {
           available_balance: bankBalance,
           lowest_projected_balance: minBalance,
