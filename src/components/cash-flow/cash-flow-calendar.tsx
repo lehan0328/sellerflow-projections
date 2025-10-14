@@ -581,8 +581,8 @@ export const CashFlowCalendar = ({
         creditCardCredit: availableCreditForDay,
         reserve: reserveAmount,
         reserveAmount: reserveAmount,
-        // Purple dotted line: show ONLY forecasted payout amount on days with forecasts
-        forecastPayout: dayToCheck >= today && forecastedInflow > 0 ? forecastedInflow : null,
+        // Purple dotted line: AI forecasted payout + projected balance (only on forecast days)
+        forecastPayout: dayToCheck >= today && forecastedInflow > 0 ? projectedBalance : null,
         // Projected balance line: show projected balance including forecasts
         projectedBalance: dayToCheck >= today ? projectedBalance : null,
         dailyChange,
@@ -1351,11 +1351,11 @@ export const CashFlowCalendar = ({
                       )}
                       {showForecastLine && (
                         <>
-                          {/* Purple dotted line - Forecasted Payout amounts only */}
+                          {/* Purple dotted line - AI Forecasted Payout + Projected Balance */}
                           <Line
                             type="monotone"
                             dataKey="forecastPayout"
-                            stroke={forecastColor}
+                            stroke="#9333ea"
                             strokeWidth={3}
                             strokeDasharray="5 5"
                             dot={(props: any) => {
@@ -1365,12 +1365,12 @@ export const CashFlowCalendar = ({
                               }
                               return (
                                 <g>
-                                  <circle cx={cx} cy={cy} r={6} fill={forecastColor} stroke="#9333ea" strokeWidth={2} />
+                                  <circle cx={cx} cy={cy} r={6} fill="#9333ea" stroke="#7e22ce" strokeWidth={2} />
                                   <circle cx={cx} cy={cy} r={3} fill="#fff" />
                                 </g>
                               );
                             }}
-                            name="Forecasted Payouts"
+                            name="AI Forecasted Payout"
                             connectNulls={false}
                           />
                           {/* Projected Balance line - Cash + Forecasts */}
