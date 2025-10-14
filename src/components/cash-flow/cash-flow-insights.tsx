@@ -79,6 +79,7 @@ export const CashFlowInsights = ({
   const [lastRefreshTime, setLastRefreshTime] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [userConfidenceThreshold, setUserConfidenceThreshold] = useState<number>(88);
+  const [show100PercentOnly, setShow100PercentOnly] = useState<boolean>(false);
   const [conversationHistory, setConversationHistory] = useState<Array<{
     role: 'user' | 'assistant';
     content: string;
@@ -819,12 +820,39 @@ export const CashFlowInsights = ({
             
             {/* Right Side - Projected Opportunities */}
             <div>
-              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-purple-600" />
-                Projected Opportunities
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-purple-600" />
+                  Projected Opportunities
+                </h3>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="show-100-percent" className="text-xs text-muted-foreground">
+                    100% confidence only
+                  </Label>
+                  <Switch
+                    id="show-100-percent"
+                    checked={show100PercentOnly}
+                    onCheckedChange={setShow100PercentOnly}
+                  />
+                </div>
+              </div>
               <ScrollArea className="h-[500px] pr-4 border rounded-md p-2 bg-gradient-to-b from-transparent via-transparent to-muted/20">
                 <div className="space-y-3">
+                  {/* Disclaimer */}
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold text-amber-900 dark:text-amber-100">
+                          Forecast Disclaimer
+                        </p>
+                        <p className="text-xs text-amber-800 dark:text-amber-200">
+                          These are AI-generated predictions based on historical data. We take no responsibility for forecast accuracy. Spend at your own risk. Always maintain adequate cash reserves.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <p className="text-sm text-muted-foreground mb-4">
                     <span className="font-semibold text-purple-600">Projected Cash + AI Forecast:</span> Shows your projected cash available on the payout date plus the forecasted payout amount. Your confidence threshold: <span className="font-bold">{userConfidenceThreshold}%</span>
                   </p>
@@ -832,16 +860,30 @@ export const CashFlowInsights = ({
                     const forecastedPayouts = amazonPayouts?.filter(p => p.status === 'forecasted') || [];
                     
                     // Sort by payout date
-                    const sortedPayouts = [...forecastedPayouts].sort((a, b) => 
+                    let sortedPayouts = [...forecastedPayouts].sort((a, b) => 
                       new Date(a.payout_date).getTime() - new Date(b.payout_date).getTime()
                     );
+
+                    // Filter for 100% confidence if enabled
+                    if (show100PercentOnly) {
+                      sortedPayouts = sortedPayouts.filter(payout => {
+                        const payoutData = payout as any;
+                        const metadata = payoutData?.raw_settlement_data?.forecast_metadata;
+                        const confidence = metadata?.confidence || 0.88;
+                        return confidence >= 1.0;
+                      });
+                    }
                     
                     if (sortedPayouts.length === 0) {
                       return (
                         <div className="text-center py-8 text-muted-foreground">
                           <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">No forecasted payouts yet.</p>
-                          <p className="text-xs mt-1">Click the refresh button to generate AI forecasts.</p>
+                          <p className="text-sm">
+                            {show100PercentOnly ? 'No 100% confidence forecasts available.' : 'No forecasted payouts yet.'}
+                          </p>
+                          <p className="text-xs mt-1">
+                            {show100PercentOnly ? 'Try adjusting the confidence filter.' : 'Click the refresh button to generate AI forecasts.'}
+                          </p>
                         </div>
                       );
                     }

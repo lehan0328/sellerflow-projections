@@ -10,7 +10,6 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { OverviewStats } from "@/components/cash-flow/overview-stats";
 import { CashFlowCalendar } from "@/components/cash-flow/cash-flow-calendar";
 import { CashFlowInsights } from "@/components/cash-flow/cash-flow-insights";
-import { BuyingOpportunitiesPanel } from "@/components/cash-flow/buying-opportunities-panel";
 import { BankAccounts } from "@/components/cash-flow/bank-accounts";
 import { CreditCards, getCreditCardDueDates } from "@/components/cash-flow/credit-cards";
 import { AmazonPayouts } from "@/components/cash-flow/amazon-payouts";
@@ -1350,18 +1349,6 @@ const Dashboard = () => {
                     />
                   }
                 />
-                
-                {/* Buying Opportunities Panel */}
-                {amazonPayouts && (
-                  <div className="mt-6">
-                    <BuyingOpportunitiesPanel
-                      forecastedPayouts={amazonPayouts.filter(p => p.status === 'forecasted')}
-                      currentBalance={bankAccountBalance}
-                      upcomingExpenses={upcomingExpenses}
-                      reserveAmount={reserveAmount}
-                    />
-                  </div>
-                )}
               </div>
             </div>
           </>
