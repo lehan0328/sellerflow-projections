@@ -498,8 +498,8 @@ export const CashFlowCalendar = ({
     const chartEnd = endOfMonth(addMonths(today, monthsToShow)); // End at the end of month X months from now
     
     const days = eachDayOfInterval({ start: chartStart, end: chartEnd });
-    let runningTotal = bankAccountBalance; // Use actual bank account balance
-    let runningForecastOnly = bankAccountBalance; // Track forecast-only balance separately
+    let runningTotal = bankAccountBalance; // Blue line: confirmed transactions only
+    let runningTotalWithForecast = bankAccountBalance; // Purple line: confirmed + forecasted payouts
     let cumulativeInflow = 0;
     let cumulativeOutflow = 0;
     
@@ -521,10 +521,10 @@ export const CashFlowCalendar = ({
       dayToCheck.setHours(0, 0, 0, 0);
       
       if (dayToCheck >= accountStartDate) {
-        // Regular cash balance only includes confirmed transactions
+        // Blue line: confirmed transactions only
         runningTotal += confirmedChange;
-        // Forecast line only shows where balance would be WITH forecasted payouts
-        runningForecastOnly += dailyChange;
+        // Purple line: confirmed + forecasted payouts
+        runningTotalWithForecast += dailyChange; // Includes both confirmed and forecasted
         cumulativeInflow += dailyInflow;
         cumulativeOutflow += dailyOutflow;
       }
@@ -581,8 +581,8 @@ export const CashFlowCalendar = ({
         creditCardCredit: availableCreditForDay,
         reserve: reserveAmount,
         reserveAmount: reserveAmount,
-        // Forecast line only shows for future dates with forecasted payouts
-        forecastPayout: dayToCheck >= today && forecastedInflow > 0 ? runningForecastOnly : null,
+        // Purple forecast line: shows projected balance WITH forecasts (only when forecasts exist)
+        forecastBalance: dayToCheck >= today && forecastedInflow > 0 ? runningTotalWithForecast : null,
         dailyChange,
         inflow: dailyInflow,
         outflow: dailyOutflow,
@@ -1350,13 +1350,13 @@ export const CashFlowCalendar = ({
                       {showForecastLine && (
                         <Line
                           type="monotone"
-                          dataKey="forecastPayout"
+                          dataKey="forecastBalance"
                           stroke={forecastColor}
                           strokeWidth={2}
-                          strokeDasharray="3 3"
+                          strokeDasharray="5 5"
                           dot={(props: any) => {
                             const { cx, cy, payload } = props;
-                            if (!payload.forecastPayout || payload.forecastPayout === 0) {
+                            if (!payload.forecastBalance || payload.forecastBalance === null) {
                               return null;
                             }
                             return (
@@ -1366,6 +1366,7 @@ export const CashFlowCalendar = ({
                               </g>
                             );
                           }}
+                          name="Projected with Forecasts"
                         />
                       )}
                       
