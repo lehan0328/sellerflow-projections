@@ -288,6 +288,23 @@ export const useUserSettings = () => {
         }
       });
 
+      // Ensure user still has owner role after clearing data
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .upsert({
+          user_id: user.id,
+          account_id: accountId,
+          role: 'owner'
+        }, {
+          onConflict: 'user_id,account_id'
+        });
+
+      if (roleError) {
+        console.error('Failed to ensure owner role:', roleError);
+      } else {
+        console.log('✅ Ensured owner role exists');
+      }
+
       // Reset user_settings using user_id
       const { error: upsertError } = await supabase
         .from('user_settings')
