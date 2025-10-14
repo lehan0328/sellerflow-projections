@@ -581,8 +581,8 @@ export const CashFlowCalendar = ({
         creditCardCredit: availableCreditForDay,
         reserve: reserveAmount,
         reserveAmount: reserveAmount,
-        // Purple forecast line: shows projected balance WITH forecasts (only when forecasts exist)
-        forecastBalance: dayToCheck >= today && forecastedInflow > 0 ? runningTotalWithForecast : null,
+        // Purple forecast line: shows projected balance WITH forecasts for all future dates
+        forecastBalance: dayToCheck >= today ? runningTotalWithForecast : null,
         dailyChange,
         inflow: dailyInflow,
         outflow: dailyOutflow,
