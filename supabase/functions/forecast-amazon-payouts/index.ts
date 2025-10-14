@@ -405,6 +405,14 @@ Return ONLY this JSON (no markdown):
         // For bi-weekly: generate 6 bi-weekly payouts (3 months)
         const maxForecasts = payoutFrequency === 'daily' ? 90 : 6;
         
+        console.log(`[FORECAST] Starting forecast generation for ${amazonAccount.account_name}:`, {
+          payoutFrequency,
+          maxForecasts,
+          lastPayoutDate: lastPayoutDate.toISOString().split('T')[0],
+          threeMonthsOut: threeMonthsOut.toISOString().split('T')[0],
+          baselineAmount
+        });
+        
         while (currentDate <= threeMonthsOut && dayCount < maxForecasts) {
           // Move to next payout date based on frequency
           if (payoutFrequency === 'daily') {
@@ -502,7 +510,15 @@ Return ONLY this JSON (no markdown):
         // Add forecasts from this account to the collection
         allForecasts.push(...forecastedPayouts);
 
-        console.log(`[FORECAST] ✅ Generated ${forecastedPayouts.length} forecasts for ${amazonAccount.account_name}`);
+        console.log(`[FORECAST] ✅ Generated ${forecastedPayouts.length} forecasts for ${amazonAccount.account_name}`, {
+          frequency: payoutFrequency,
+          expectedMax: maxForecasts,
+          actualGenerated: forecastedPayouts.length,
+          dateRange: forecastedPayouts.length > 0 ? {
+            first: forecastedPayouts[0].payout_date,
+            last: forecastedPayouts[forecastedPayouts.length - 1].payout_date
+          } : 'none'
+        });
       }
     } // End of amazon account loop
 
