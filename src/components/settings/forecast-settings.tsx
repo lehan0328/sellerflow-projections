@@ -130,10 +130,16 @@ export const ForecastSettings = () => {
   };
 
   const getRiskLevel = (value: number) => {
-    if (value === 15) return { label: "Very Safe", color: "bg-emerald-500" };
-    if (value === 5) return { label: "Safe", color: "bg-blue-500" };
-    return { label: "Medium (Risky)", color: "bg-orange-500" };
+    if (value === 15) return { label: "Very Safe", color: "bg-emerald-500", index: 2 };
+    if (value === 5) return { label: "Safe", color: "bg-blue-500", index: 1 };
+    return { label: "Medium (Risky)", color: "bg-orange-500", index: 0 };
   };
+
+  const tiers = [
+    { value: 0, label: "Medium (Risky)", color: "bg-orange-500" },
+    { value: 5, label: "Safe", color: "bg-blue-500" },
+    { value: 15, label: "Very Safe", color: "bg-emerald-500" }
+  ];
 
   const riskLevel = getRiskLevel(confidenceThreshold);
 
@@ -175,30 +181,27 @@ export const ForecastSettings = () => {
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-primary">
-                {confidenceThreshold === 0 ? "Avg" : `-${confidenceThreshold}%`}
-              </span>
-              <Badge className={riskLevel.color}>
-                {riskLevel.label}
-              </Badge>
-            </div>
+            <Badge className={riskLevel.color}>
+              {riskLevel.label}
+            </Badge>
           </div>
 
-          <Slider
-            id="risk-threshold"
-            name="risk-threshold"
-            min={0}
-            max={15}
-            step={5}
-            value={[confidenceThreshold]}
-            onValueChange={(value) => setConfidenceThreshold(value[0])}
-            className="w-full"
-          />
-
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Medium (Risky)</span>
-            <span>Very Safe</span>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            {tiers.map((tier) => (
+              <button
+                key={tier.value}
+                type="button"
+                onClick={() => setConfidenceThreshold(tier.value)}
+                className={`p-3 rounded-lg border-2 transition-all ${
+                  confidenceThreshold === tier.value
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <div className={`w-3 h-3 rounded-full ${tier.color} mx-auto mb-2`} />
+                <div className="text-sm font-medium">{tier.label}</div>
+              </button>
+            ))}
           </div>
         </div>
 
