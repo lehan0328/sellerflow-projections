@@ -10,6 +10,8 @@ interface PlanLimits {
   amazonConnections: number;
   name: string;
   price: number;
+  revenueMin: number;
+  revenueMax: number;
 }
 
 interface CurrentUsage {
@@ -23,25 +25,33 @@ const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
     bankConnections: 2,
     amazonConnections: 1,
     name: 'Starter',
-    price: PRICING_PLANS.starter.price
+    price: PRICING_PLANS.starter.price,
+    revenueMin: 0,
+    revenueMax: 20000
   },
   growing: {
     bankConnections: 3,
     amazonConnections: 1,
     name: 'Growing',
-    price: 59
+    price: 59,
+    revenueMin: 20001,
+    revenueMax: 100000
   },
   professional: {
     bankConnections: 4,
     amazonConnections: 1,
     name: 'Professional', 
-    price: PRICING_PLANS.professional.price
+    price: PRICING_PLANS.professional.price,
+    revenueMin: 100001,
+    revenueMax: 200000
   },
   enterprise: {
     bankConnections: 5,
     amazonConnections: 2,
     name: 'Enterprise',
-    price: 149 // Starting price, varies by revenue tier
+    price: 149, // Starting price, varies by revenue tier
+    revenueMin: 200001,
+    revenueMax: Infinity
   }
 };
 
