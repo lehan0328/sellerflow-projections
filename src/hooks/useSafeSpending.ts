@@ -417,11 +417,21 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
       // Find ALL buying opportunities using a simple approach:
       // An opportunity occurs when balance INCREASES from one day to the next
       // The opportunity is the amount you can spend on the LOW day (before the increase)
+      // ONLY look at FUTURE dates (exclude today and past)
       const allBuyingOpportunities: Array<{ date: string; balance: number; available_date?: string }> = [];
+      
+      const todayCheck = new Date();
+      todayCheck.setHours(0, 0, 0, 0);
       
       for (let i = 0; i < dailyBalances.length - 1; i++) {
         const currentDay = dailyBalances[i];
         const nextDay = dailyBalances[i + 1];
+        
+        // Skip today and past dates - only look at FUTURE
+        const currentDate = new Date(currentDay.date);
+        if (currentDate <= todayCheck) {
+          continue;
+        }
         
         // Check if balance increases from today to tomorrow
         // This means today is a low point (valley bottom)
@@ -461,12 +471,17 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
       }
       
       // Check the last day - if it's at a high or equal to previous day, it's an opportunity
+      // BUT only if it's a FUTURE date (not today)
       if (dailyBalances.length > 0) {
         const lastDay = dailyBalances[dailyBalances.length - 1];
         const secondLastDay = dailyBalances.length > 1 ? dailyBalances[dailyBalances.length - 2] : null;
         
+        // Check if last day is in the future
+        const lastDayDate = new Date(lastDay.date);
+        const isFuture = lastDayDate > todayCheck;
+        
         // If last day is at high or equal level and wasn't already captured
-        if (secondLastDay && lastDay.balance >= secondLastDay.balance) {
+        if (isFuture && secondLastDay && lastDay.balance >= secondLastDay.balance) {
           const opportunityAmount = Math.max(0, lastDay.balance - reserve);
           const alreadyCaptured = allBuyingOpportunities.some(opp => opp.date === lastDay.date);
           
@@ -548,18 +563,16 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
         ).join(', '));
       }
       
-      // Safe Spending = Min Balance - Reserve
-      // BUT if we have no forecast data, safe spending should be 0 (conservative approach)
-      const calculatedLimit = minBalance - reserve;
-      const safeSpendingLimit = hasForecastData ? calculatedLimit : 0;
+      // Safe Spending = ONLY current bank balance - reserve (no forecasting)
+      // This is what you actually have available to spend RIGHT NOW
+      const safeSpendingLimit = Math.max(0, bankBalance - reserve);
 
-      console.log('🎯🎯🎯 SAFE SPENDING CALCULATION 🎯🎯🎯');
-      console.log('Has Forecast Data:', hasForecastData);
-      console.log('Minimum Balance Found:', minBalance);
-      console.log('On Date:', minDay.date);
+      console.log('🎯🎯🎯 SAFE SPENDING & BUYING OPPORTUNITY 🎯🎯🎯');
+      console.log('Current Bank Balance:', bankBalance);
       console.log('Reserve Amount:', reserve);
-      console.log('Safe Spending Limit:', safeSpendingLimit);
-      console.log('Formula: $' + minBalance + ' - $' + reserve + ' = $' + safeSpendingLimit);
+      console.log('Safe Spending (Current - Reserve):', safeSpendingLimit);
+      console.log('Minimum Balance Date:', minDay.date);
+      console.log('Minimum Balance Value:', minBalance);
       
       // Find the FIRST day balance goes below safe spending limit (SSL)
       const firstBelowLimitDay = dailyBalances.find(day => day.balance < safeSpendingLimit);
