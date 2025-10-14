@@ -379,26 +379,26 @@ Return ONLY this JSON (no markdown):
         if (currentDate > threeMonthsOut) break;
         
         // Use AI prediction if available, otherwise use baseline with variation
-        let basePrediction = baselineAmount * 100; // Boost for demo (100x for impressive visualization)
-        let calculationMethod = 'baseline_with_demo_multiplier';
+        let basePrediction = baselineAmount; // Use actual baseline amount
+        let calculationMethod = 'baseline';
         
         if (forecast.predictions && forecast.predictions[forecastIndex]) {
           const aiPrediction = forecast.predictions[forecastIndex].predicted_amount || baselineAmount;
-          basePrediction = aiPrediction * 100;
-          calculationMethod = 'ai_prediction_with_demo_multiplier';
-          console.log(`[FORECAST] Period ${forecastIndex + 1} AI base prediction: ${aiPrediction} * 100 = ${basePrediction}`);
+          basePrediction = aiPrediction;
+          calculationMethod = 'ai_prediction';
+          console.log(`[FORECAST] Period ${forecastIndex + 1} AI base prediction: ${aiPrediction}`);
         } else {
           // Add 5-10% variation for realism
           const variation = 0.95 + (Math.random() * 0.15); // 0.95 to 1.10
-          basePrediction = baselineAmount * 100 * variation;
-          calculationMethod = 'baseline_with_variation_and_demo_multiplier';
-          console.log(`[FORECAST] Period ${forecastIndex + 1} baseline: ${baselineAmount} * 100 * ${variation.toFixed(2)} = ${basePrediction}`);
+          basePrediction = baselineAmount * variation;
+          calculationMethod = 'baseline_with_variation';
+          console.log(`[FORECAST] Period ${forecastIndex + 1} baseline: ${baselineAmount} * ${variation.toFixed(2)} = ${basePrediction}`);
         }
         
         // Apply risk adjustment: -5 = +5%, 0 = no adjustment, 5 = -5%, 10 = -10%
         const riskMultiplier = 1 - (riskAdjustment / 100);
         const predictedAmount = Math.round(basePrediction * riskMultiplier);
-        console.log(`[FORECAST] Period ${forecastIndex + 1} after ${riskAdjustment}% risk adjustment: ${basePrediction} * ${riskMultiplier.toFixed(2)} = ${predictedAmount}`);
+        console.log(`[FORECAST] Period ${forecastIndex + 1} after ${riskAdjustment}% risk adjustment: ${basePrediction.toFixed(2)} * ${riskMultiplier.toFixed(2)} = ${predictedAmount}`);
         
         const forecastPayout = {
           user_id: userId,
@@ -428,7 +428,7 @@ Return ONLY this JSON (no markdown):
               frequency: payoutFrequency,
               calculation_method: calculationMethod,
               baseline_amount: baselineAmount,
-              demo_multiplier: 100,
+              demo_multiplier: 1,
               base_prediction: basePrediction,
               risk_multiplier: 1 - (riskAdjustment / 100)
             }
