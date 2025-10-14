@@ -186,7 +186,7 @@ export const CashFlowInsights = ({
     };
   }, [user, amazonPayouts.length]); // Only depend on length to avoid re-running on every data change
 
-  const handleRefreshForecast = async () => {
+  const handleGenerateForecast = async () => {
     if (!user) return;
     
     // Check 24-hour cooldown
@@ -196,18 +196,19 @@ export const CashFlowInsights = ({
     if (lastRefreshTime && (now - lastRefreshTime) < twentyFourHours) {
       const hoursRemaining = Math.ceil((twentyFourHours - (now - lastRefreshTime)) / (60 * 60 * 1000));
       toast({
-        title: "Refresh limit reached",
-        description: `You can refresh the forecast again in ${hoursRemaining} hour${hoursRemaining !== 1 ? 's' : ''}`,
+        title: "Generation limit reached",
+        description: `You can generate a new forecast in ${hoursRemaining} hour${hoursRemaining !== 1 ? 's' : ''}`,
         variant: "destructive"
       });
       return;
     }
     
     setIsRefreshing(true);
+    setIsForecastGenerating(true);
     
     toast({
-      title: "Fetching data...",
-      description: "Refreshing Amazon payout forecast"
+      title: "Generating forecast...",
+      description: "Creating AI-powered Amazon payout predictions"
     });
     
     try {
@@ -236,21 +237,22 @@ export const CashFlowInsights = ({
         setLastRefreshTime(Date.now());
         
         toast({
-          title: "Forecast refreshed!",
-          description: `Generated ${data.forecast?.predictions?.length || 0} new predictions`
+          title: "Forecast generated!",
+          description: `Created ${data.forecast?.predictions?.length || 0} new predictions`
         });
         
         await refetchPayouts();
       }
     } catch (err) {
-      console.error('Failed to refresh forecast:', err);
+      console.error('Failed to generate forecast:', err);
       toast({
-        title: "Refresh failed",
+        title: "Generation failed",
         description: "Please try again later",
         variant: "destructive"
       });
     } finally {
       setIsRefreshing(false);
+      setIsForecastGenerating(false);
     }
   };
   const handleSaveReserve = async () => {
@@ -446,7 +448,7 @@ export const CashFlowInsights = ({
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={handleRefreshForecast}
+                        onClick={handleGenerateForecast}
                         disabled={isRefreshing || isForecastGenerating}
                         className="h-7 w-7 hover:bg-white/50 dark:hover:bg-black/20"
                       >
@@ -454,14 +456,14 @@ export const CashFlowInsights = ({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="text-xs">Refresh forecast</p>
-                      <p className="text-xs text-muted-foreground">Can only be refreshed once every 24 hours</p>
+                      <p className="text-xs">Generate forecast</p>
+                      <p className="text-xs text-muted-foreground">Can only be generated once every 24 hours</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
                 {lastRefreshTime && (
                   <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                    Synced {new Date(lastRefreshTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    Generated {new Date(lastRefreshTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 )}
               </div>
