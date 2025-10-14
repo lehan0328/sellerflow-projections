@@ -33,6 +33,20 @@ serve(async (req) => {
     const userId = user.id;
     console.log('[FORECAST] Fetching Amazon data for user:', userId);
 
+    // Get user's account_id
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('account_id')
+      .eq('user_id', userId)
+      .single();
+
+    if (profileError || !profile?.account_id) {
+      console.error('[FORECAST] Error fetching profile:', profileError);
+      throw new Error('User profile not found');
+    }
+
+    const accountId = profile.account_id;
+
     // Fetch Amazon payouts from last 3 months for trend analysis
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
@@ -369,6 +383,7 @@ Return ONLY this JSON (no markdown):
         
         const forecastPayout = {
           user_id: userId,
+          account_id: accountId,
           amazon_account_id: amazonPayouts[0].amazon_account_id,
           payout_date: currentDate.toISOString().split('T')[0],
           total_amount: Math.round(predictedAmount),
