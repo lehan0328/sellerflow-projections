@@ -155,6 +155,40 @@ export const useAmazonAccounts = () => {
     }
   };
 
+  const updatePayoutFrequency = async (accountId: string, frequency: 'daily' | 'bi-weekly'): Promise<boolean> => {
+    if (!user) {
+      toast.error("Please log in to update payout frequency");
+      return false;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("amazon_accounts")
+        .update({ payout_frequency: frequency })
+        .eq("id", accountId)
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Error updating payout frequency:", error);
+        toast.error("Failed to update payout frequency");
+        return false;
+      }
+
+      toast.success(`Payout frequency updated to ${frequency}!`);
+      await fetchAmazonAccounts();
+      
+      // Auto-resync to generate payouts with new frequency
+      toast.info("Re-syncing with new payout schedule...");
+      await syncAmazonAccount(accountId);
+      
+      return true;
+    } catch (error) {
+      console.error("Error updating payout frequency:", error);
+      toast.error("Failed to update payout frequency");
+      return false;
+    }
+  };
+
   const removeAmazonAccount = async (accountId: string): Promise<boolean> => {
     if (!user) {
       toast.error("Please log in to remove Amazon account");
@@ -245,6 +279,7 @@ export const useAmazonAccounts = () => {
     isLoading,
     addAmazonAccount,
     updateAmazonAccount,
+    updatePayoutFrequency,
     removeAmazonAccount,
     syncAmazonAccount,
     refetch: fetchAmazonAccounts

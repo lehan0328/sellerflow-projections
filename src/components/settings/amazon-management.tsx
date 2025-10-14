@@ -41,7 +41,7 @@ const marketplaces = [
 ];
 
 export function AmazonManagement() {
-  const { amazonAccounts, isLoading, addAmazonAccount, removeAmazonAccount, syncAmazonAccount } = useAmazonAccounts();
+  const { amazonAccounts, isLoading, addAmazonAccount, removeAmazonAccount, syncAmazonAccount, updatePayoutFrequency } = useAmazonAccounts();
   const { amazonPayouts, totalUpcoming } = useAmazonPayouts();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
@@ -338,7 +338,7 @@ export function AmazonManagement() {
                   <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
                     <ShoppingCart className="h-6 w-6 text-primary" />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <div className="flex items-center space-x-2">
                       <h4 className="font-semibold text-foreground">
                         {account.account_name}
@@ -355,9 +355,32 @@ export function AmazonManagement() {
                     <p className="text-sm text-muted-foreground">
                       Seller ID: {account.seller_id}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      Payout Schedule: {account.payout_frequency === 'daily' ? 'Daily' : 'Bi-Weekly (Every 14 days)'}
-                    </p>
+                    
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor={`frequency-${account.id}`} className="text-xs text-muted-foreground">
+                        Payout Schedule:
+                      </Label>
+                      <div className="flex items-center gap-2 p-2 rounded-md border bg-muted/30">
+                        <span className={`text-xs transition-colors ${
+                          account.payout_frequency === 'bi-weekly' ? 'text-foreground font-medium' : 'text-muted-foreground'
+                        }`}>
+                          Bi-Weekly
+                        </span>
+                        <Switch
+                          id={`frequency-${account.id}`}
+                          checked={account.payout_frequency === 'daily'}
+                          onCheckedChange={(checked) => 
+                            updatePayoutFrequency(account.id, checked ? 'daily' : 'bi-weekly')
+                          }
+                        />
+                        <span className={`text-xs transition-colors ${
+                          account.payout_frequency === 'daily' ? 'text-foreground font-medium' : 'text-muted-foreground'
+                        }`}>
+                          Daily
+                        </span>
+                      </div>
+                    </div>
+                    
                     <p className="text-xs text-muted-foreground">
                       Last sync: {new Date(account.last_sync).toLocaleString()}
                     </p>
