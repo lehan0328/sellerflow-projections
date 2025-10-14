@@ -379,14 +379,24 @@ Return ONLY this JSON (no markdown):
         threeMonthsOut.setMonth(threeMonthsOut.getMonth() + 3);
         
         let currentDate = new Date(lastPayoutDate);
-        let forecastIndex = 0;
+        let biweeklyPeriodIndex = 0;
+        let dayCount = 0;
         
-        while (currentDate <= threeMonthsOut && forecastIndex < 6) { // Limit to 6 forecasts
-          // Move to next payout date based on frequency (14 days for bi-weekly)
+        // For daily: generate up to 84 daily payouts (6 bi-weekly periods = 84 days)
+        // For bi-weekly: generate 6 bi-weekly payouts
+        const maxForecasts = payoutFrequency === 'daily' ? 84 : 6;
+        
+        while (currentDate <= threeMonthsOut && dayCount < maxForecasts) {
+          // Move to next payout date based on frequency
           if (payoutFrequency === 'daily') {
             currentDate.setDate(currentDate.getDate() + 1);
+            dayCount++;
+            // Track which bi-weekly period we're in for AI predictions
+            biweeklyPeriodIndex = Math.floor((dayCount - 1) / 14);
           } else { // bi-weekly = every 14 days
             currentDate.setDate(currentDate.getDate() + 14);
+            biweeklyPeriodIndex = dayCount;
+            dayCount++;
           }
           
           if (currentDate > threeMonthsOut) break;
@@ -395,23 +405,37 @@ Return ONLY this JSON (no markdown):
           let basePrediction = baselineAmount; // Use actual baseline amount
           let calculationMethod = 'baseline';
           
-          if (forecast.predictions && forecast.predictions[forecastIndex]) {
-            const aiPrediction = forecast.predictions[forecastIndex].predicted_amount || baselineAmount;
+          if (forecast.predictions && forecast.predictions[biweeklyPeriodIndex]) {
+            const aiPrediction = forecast.predictions[biweeklyPeriodIndex].predicted_amount || baselineAmount;
             basePrediction = aiPrediction;
             calculationMethod = 'ai_prediction';
-            console.log(`[FORECAST] ${amazonAccount.account_name} - Period ${forecastIndex + 1} AI base prediction: ${aiPrediction}`);
+            
+            if (dayCount === 1 || (payoutFrequency === 'bi-weekly')) {
+              console.log(`[FORECAST] ${amazonAccount.account_name} - Period ${biweeklyPeriodIndex + 1} AI base prediction: ${aiPrediction}`);
+            }
           } else {
             // Add 5-10% variation for realism
             const variation = 0.95 + (Math.random() * 0.15); // 0.95 to 1.10
             basePrediction = baselineAmount * variation;
             calculationMethod = 'baseline_with_variation';
-            console.log(`[FORECAST] ${amazonAccount.account_name} - Period ${forecastIndex + 1} baseline: ${baselineAmount} * ${variation.toFixed(2)} = ${basePrediction}`);
+            
+            if (dayCount === 1 || (payoutFrequency === 'bi-weekly')) {
+              console.log(`[FORECAST] ${amazonAccount.account_name} - Period ${biweeklyPeriodIndex + 1} baseline: ${baselineAmount} * ${variation.toFixed(2)} = ${basePrediction}`);
+            }
+          }
+          
+          // For daily payouts, divide the bi-weekly amount by 14
+          if (payoutFrequency === 'daily') {
+            basePrediction = basePrediction / 14;
           }
           
           // Apply risk adjustment: -5 = +5%, 0 = no adjustment, 5 = -5%, 10 = -10%
           const riskMultiplier = 1 - (riskAdjustment / 100);
           const predictedAmount = Math.round(basePrediction * riskMultiplier);
-          console.log(`[FORECAST] ${amazonAccount.account_name} - Period ${forecastIndex + 1} after ${riskAdjustment}% risk adjustment: ${basePrediction.toFixed(2)} * ${riskMultiplier.toFixed(2)} = ${predictedAmount}`);
+          
+          if (dayCount <= 3 || dayCount % 14 === 0 || (payoutFrequency === 'bi-weekly')) {
+            console.log(`[FORECAST] ${amazonAccount.account_name} - ${payoutFrequency === 'daily' ? 'Day' : 'Period'} ${dayCount} after ${riskAdjustment}% risk adjustment: ${basePrediction.toFixed(2)} * ${riskMultiplier.toFixed(2)} = ${predictedAmount}`);
+          }
           
           const forecastPayout = {
             user_id: userId,
@@ -419,7 +443,7 @@ Return ONLY this JSON (no markdown):
             amazon_account_id: amazonAccount.id,
             payout_date: currentDate.toISOString().split('T')[0],
             total_amount: Math.round(predictedAmount),
-            settlement_id: `forecast-${Date.now()}-${amazonAccount.id}-${forecastIndex}`,
+            settlement_id: `forecast-${Date.now()}-${amazonAccount.id}-${dayCount}`,
             marketplace_name: amazonAccount.marketplace_name || 'Amazon',
             status: 'forecasted',
             payout_type: payoutFrequency,
@@ -431,12 +455,12 @@ Return ONLY this JSON (no markdown):
             other_total: 0,
             raw_settlement_data: {
               forecast_metadata: {
-                confidence: forecast.predictions?.[forecastIndex]?.confidence || 0.90,
+                confidence: forecast.predictions?.[biweeklyPeriodIndex]?.confidence || 0.90,
                 risk_adjustment: riskAdjustment,
                 risk_level: riskAdjustment === -5 ? 'aggressive' : riskAdjustment === 0 ? 'medium' : riskAdjustment === 5 ? 'safe' : 'very_safe',
                 upper_bound: Math.round(predictedAmount * 1.2),
                 lower_bound: Math.round(predictedAmount * 0.8),
-                period: `Forecast ${forecastIndex + 1}`,
+                period: payoutFrequency === 'daily' ? `Day ${dayCount}` : `Forecast ${biweeklyPeriodIndex + 1}`,
                 generated_at: new Date().toISOString(),
                 frequency: payoutFrequency,
                 calculation_method: calculationMethod,
@@ -450,13 +474,13 @@ Return ONLY this JSON (no markdown):
           
           forecastedPayouts.push(forecastPayout);
           
-          console.log(`[FORECAST] ${amazonAccount.account_name} - Generated forecast ${forecastIndex + 1}:`, {
-            date: forecastPayout.payout_date,
-            amount: forecastPayout.total_amount,
-            method: calculationMethod
-          });
-          
-          forecastIndex++;
+          if (dayCount <= 3 || dayCount % 14 === 0 || (payoutFrequency === 'bi-weekly')) {
+            console.log(`[FORECAST] ${amazonAccount.account_name} - Generated forecast ${dayCount}:`, {
+              date: forecastPayout.payout_date,
+              amount: forecastPayout.total_amount,
+              method: calculationMethod
+            });
+          }
         }
 
         // Add forecasts from this account to the collection
