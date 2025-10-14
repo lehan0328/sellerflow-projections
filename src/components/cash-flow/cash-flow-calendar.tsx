@@ -11,7 +11,7 @@ import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, Calenda
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays, startOfWeek, endOfWeek, getDay, startOfDay } from "date-fns";
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Brush, ReferenceArea } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { TransactionDetailModal } from "./transaction-detail-modal";
 import { DayTransactionsModal } from "./day-transactions-modal";
@@ -105,6 +105,11 @@ export const CashFlowCalendar = ({
   const [creditCardColor, setCreditCardColor] = useState(chartPreferences.creditCardColor);
   const [reserveColor, setReserveColor] = useState(chartPreferences.reserveColor);
   const [forecastColor, setForecastColor] = useState(chartPreferences.forecastColor);
+  
+  // Zoom state
+  const [zoomState, setZoomState] = useState<{ left?: number; right?: number } | null>(null);
+  const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
+  const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
   
   // Sync local state with loaded preferences
   useEffect(() => {
@@ -599,8 +604,56 @@ export const CashFlowCalendar = ({
   };
   
   const chartData = generateChartData();
+  
+  // Get zoomed data based on zoom state
+  const getDisplayData = () => {
+    if (!zoomState) return chartData;
+    const { left = 0, right = chartData.length - 1 } = zoomState;
+    return chartData.slice(left, right + 1);
+  };
+  
+  const displayData = getDisplayData();
+  
+  // Zoom handlers
+  const handleMouseDown = (e: any) => {
+    if (e && e.activeLabel) {
+      setRefAreaLeft(e.activeLabel);
+    }
+  };
+  
+  const handleMouseMove = (e: any) => {
+    if (refAreaLeft && e && e.activeLabel) {
+      setRefAreaRight(e.activeLabel);
+    }
+  };
+  
+  const handleMouseUp = () => {
+    if (refAreaLeft && refAreaRight) {
+      const leftIndex = chartData.findIndex(d => d.date === refAreaLeft);
+      const rightIndex = chartData.findIndex(d => d.date === refAreaRight);
+      
+      if (leftIndex !== -1 && rightIndex !== -1) {
+        const left = Math.min(leftIndex, rightIndex);
+        const right = Math.max(leftIndex, rightIndex);
+        
+        if (right - left > 0) {
+          setZoomState({ left, right });
+        }
+      }
+    }
+    
+    setRefAreaLeft(null);
+    setRefAreaRight(null);
+  };
+  
+  const handleZoomOut = () => {
+    setZoomState(null);
+  };
 
   const handleChartClick = (data: any) => {
+    // Only handle chart click if we're not in zoom selection mode
+    if (refAreaLeft || refAreaRight) return;
+    
     if (data && data.activePayload && data.activePayload[0]) {
       const dayData = data.activePayload[0].payload;
       const transactions = dayData.transactions || [];
@@ -942,11 +995,35 @@ export const CashFlowCalendar = ({
                 </div>
              </div>
           ) : (
-            <div className="w-full" style={{ height: '500px' }}>
-              <ChartContainer config={chartConfig} className="h-full w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  {chartType === 'bar' ? (
-                    <BarChart data={chartData} onClick={handleChartClick}>
+             <div className="w-full" style={{ height: '500px' }}>
+               <div className="flex justify-between items-center mb-2 px-4">
+                 <p className="text-sm text-muted-foreground">
+                   {zoomState ? 'Click and drag to zoom in further • ' : 'Click and drag to zoom into a specific time period • '}
+                   <span className="text-primary font-medium">
+                     {displayData.length} days shown
+                   </span>
+                 </p>
+                 {zoomState && (
+                   <Button 
+                     variant="outline" 
+                     size="sm" 
+                     onClick={handleZoomOut}
+                     className="text-xs"
+                   >
+                     Reset Zoom
+                   </Button>
+                 )}
+               </div>
+               <ChartContainer config={chartConfig} className="h-full w-full">
+                 <ResponsiveContainer width="100%" height="100%">
+                   {chartType === 'bar' ? (
+                     <BarChart 
+                       data={displayData} 
+                       onClick={handleChartClick}
+                       onMouseDown={handleMouseDown}
+                       onMouseMove={handleMouseMove}
+                       onMouseUp={handleMouseUp}
+                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
                         dataKey="date" 
@@ -1106,10 +1183,25 @@ export const CashFlowCalendar = ({
                           strokeDasharray="5 5"
                           dot={false}
                         />
-                      )}
-                    </BarChart>
-                  ) : (
-                    <LineChart data={chartData} onClick={handleChartClick}>
+                       )}
+                       {refAreaLeft && refAreaRight && (
+                         <ReferenceArea
+                           x1={refAreaLeft}
+                           x2={refAreaRight}
+                           strokeOpacity={0.3}
+                           fill="hsl(var(--primary))"
+                           fillOpacity={0.3}
+                         />
+                       )}
+                     </BarChart>
+                   ) : (
+                     <LineChart 
+                       data={displayData} 
+                       onClick={handleChartClick}
+                       onMouseDown={handleMouseDown}
+                       onMouseMove={handleMouseMove}
+                       onMouseUp={handleMouseUp}
+                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
                         dataKey="date" 
@@ -1366,11 +1458,20 @@ export const CashFlowCalendar = ({
                             }}
                             name="Projected Cash Balance (with AI Forecasts)"
                           />
-                        </>
-                      )}
-                    </LineChart>
-                  )}
-                </ResponsiveContainer>
+                         </>
+                       )}
+                       {refAreaLeft && refAreaRight && (
+                         <ReferenceArea
+                           x1={refAreaLeft}
+                           x2={refAreaRight}
+                           strokeOpacity={0.3}
+                           fill="hsl(var(--primary))"
+                           fillOpacity={0.3}
+                         />
+                       )}
+                     </LineChart>
+                   )}
+                 </ResponsiveContainer>
               </ChartContainer>
             </div>
           )}
