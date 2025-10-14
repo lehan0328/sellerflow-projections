@@ -817,19 +817,18 @@ export const CashFlowInsights = ({
             {/* Vertical Divider */}
             <Separator orientation="vertical" className="h-auto" />
             
-            {/* Right Side - AI Forecasted Amazon Payouts */}
+            {/* Right Side - Projected Opportunities */}
             <div>
               <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-purple-600" />
-                AI Forecasted Amazon Payouts
+                Projected Opportunities
               </h3>
               <ScrollArea className="h-[500px] pr-4 border rounded-md p-2 bg-gradient-to-b from-transparent via-transparent to-muted/20">
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground mb-4">
-                    <span className="font-semibold text-purple-600">AI-Forecasted Payouts:</span> Each card represents an individual AI-forecasted Amazon payout. Your confidence threshold: <span className="font-bold">{userConfidenceThreshold}%</span>
+                    <span className="font-semibold text-purple-600">Projected Cash + AI Forecast:</span> Shows your projected cash available on the payout date plus the forecasted payout amount. Your confidence threshold: <span className="font-bold">{userConfidenceThreshold}%</span>
                   </p>
                   {(() => {
-                    // Show each forecasted payout as its own opportunity
                     const forecastedPayouts = amazonPayouts?.filter(p => p.status === 'forecasted') || [];
                     
                     // Sort by payout date
@@ -849,11 +848,30 @@ export const CashFlowInsights = ({
                     
                     return sortedPayouts.map((payout, index) => {
                       const payoutDate = new Date(payout.payout_date);
+                      const payoutDateStr = payoutDate.toISOString().split('T')[0];
                       const formattedDate = payoutDate.toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric'
                       });
+                      
+                      // Find the closest buying opportunity for this date
+                      let projectedCash = 0;
+                      const matchingOpp = allBuyingOpportunities.find(opp => opp.date === payoutDateStr);
+                      if (matchingOpp) {
+                        projectedCash = matchingOpp.balance;
+                      } else {
+                        // Find the closest date before or on the payout date
+                        const sortedOpps = [...allBuyingOpportunities]
+                          .filter(opp => opp.date <= payoutDateStr)
+                          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                        if (sortedOpps.length > 0) {
+                          projectedCash = sortedOpps[0].balance;
+                        }
+                      }
+                      
+                      const forecastAmount = payout.total_amount || 0;
+                      const totalProjected = projectedCash + forecastAmount;
                       
                       const payoutData = payout as any;
                       const metadata = payoutData?.raw_settlement_data?.forecast_metadata;
@@ -871,7 +889,7 @@ export const CashFlowInsights = ({
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="font-semibold text-sm">Forecasted Payout #{index + 1}</span>
+                                <span className="font-semibold text-sm">Opportunity #{index + 1}</span>
                                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${confidenceBadgeClass}`}>
                                   {confidencePercent}% confident
                                 </span>
@@ -879,11 +897,28 @@ export const CashFlowInsights = ({
                               <p className="text-xs text-muted-foreground">Expected: {formattedDate}</p>
                             </div>
                             <span className="text-lg font-bold text-purple-600">
-                              ${(payout.total_amount || 0).toLocaleString()}
+                              ${totalProjected.toLocaleString()}
                             </span>
                           </div>
                           
-                          {/* Forecast Details */}
+                          {/* Breakdown */}
+                          <div className="text-xs bg-white/50 dark:bg-black/20 rounded p-2 space-y-1">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Projected Cash:</span>
+                              <span className="font-medium">${projectedCash.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Forecasted Payout:</span>
+                              <span className="font-medium text-purple-600">+${forecastAmount.toLocaleString()}</span>
+                            </div>
+                            <Separator className="my-1" />
+                            <div className="flex justify-between font-semibold">
+                              <span>Total Available:</span>
+                              <span className="text-purple-600">${totalProjected.toLocaleString()}</span>
+                            </div>
+                          </div>
+                          
+                          {/* Payout Details */}
                           <div className="text-xs bg-white/50 dark:bg-black/20 rounded p-2 space-y-1">
                             <div className="flex justify-between">
                               <span className="text-muted-foreground">Payout Type:</span>
