@@ -2,6 +2,7 @@ import { Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "./user-menu";
 import { DemoUserMenu } from "./demo-user-menu";
+import { PendingNotificationsPanel } from "./pending-notifications-panel";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,12 +15,20 @@ interface DashboardHeaderProps {
   isRefreshing?: boolean;
   lastRefreshTime?: Date | null;
   isDemo?: boolean;
+  vendors?: any[];
+  incomeItems?: any[];
+  onVendorClick?: (vendor: any) => void;
+  onIncomeClick?: (income: any) => void;
 }
 export function DashboardHeader({
   onRefresh,
   isRefreshing = false,
   lastRefreshTime,
-  isDemo = false
+  isDemo = false,
+  vendors = [],
+  incomeItems = [],
+  onVendorClick,
+  onIncomeClick
 }: DashboardHeaderProps) {
   const {
     user
@@ -103,6 +112,12 @@ export function DashboardHeader({
               <span className="hidden lg:inline text-xs font-bold text-blue-600 dark:text-blue-400">• Earn $2K</span>
             </div>
           </Button>}
+        {!isDemo && <PendingNotificationsPanel 
+          vendors={vendors}
+          incomeItems={incomeItems}
+          onVendorClick={onVendorClick}
+          onIncomeClick={onIncomeClick}
+        />}
         {isDemo ? <DemoUserMenu /> : <UserMenu />}
       </div>
 
