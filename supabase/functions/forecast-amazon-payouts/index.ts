@@ -599,6 +599,20 @@ Return ONLY this JSON (no markdown):
     if (allForecasts.length > 0) {
       console.log(`[FORECAST] Inserting ${allForecasts.length} total forecasted payouts for ${amazonAccounts.length} account(s)...`);
       
+      // First, delete existing forecasted payouts for these accounts
+      const accountIds = amazonAccounts.map(acc => acc.id);
+      const { error: deleteError } = await supabase
+        .from('amazon_payouts')
+        .delete()
+        .in('amazon_account_id', accountIds)
+        .eq('status', 'forecasted');
+
+      if (deleteError) {
+        console.error('[FORECAST] Error deleting old forecasted payouts:', deleteError);
+      } else {
+        console.log(`[FORECAST] Deleted old forecasted payouts for ${accountIds.length} account(s)`);
+      }
+      
       const { error: insertError } = await supabase
         .from('amazon_payouts')
         .insert(allForecasts);
