@@ -27,14 +27,6 @@ export function BuyingOpportunitiesPanel({
   upcomingExpenses,
   reserveAmount
 }: BuyingOpportunitiesPanelProps) {
-  
-  console.log('[BuyingOpp] Inputs:', {
-    currentBalance,
-    upcomingExpenses, 
-    reserveAmount,
-    calculated: currentBalance - reserveAmount - upcomingExpenses
-  });
-  
   // Calculate buying opportunities based on forecasted payouts
   const calculateOpportunities = (): BuyingOpportunity[] => {
     const opportunities: BuyingOpportunity[] = [];

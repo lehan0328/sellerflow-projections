@@ -114,19 +114,13 @@ export const CashFlowCalendar = ({
     setShowTotalResourcesLine(chartPreferences.showTotalResourcesLine);
     setShowCreditCardLine(chartPreferences.showCreditCardLine);
     setShowReserveLine(chartPreferences.showReserveLine);
-    setShowForecastLine(chartPreferences.showForecastLine);
+    setShowForecastLine(includeForecastPayouts); // Use prop directly for forecast line
     setCashFlowColor(chartPreferences.cashFlowColor);
     setTotalResourcesColor(chartPreferences.totalResourcesColor);
     setCreditCardColor(chartPreferences.creditCardColor);
     setReserveColor(chartPreferences.reserveColor);
     setForecastColor(chartPreferences.forecastColor);
-  }, [chartPreferences]);
-
-  // Sync forecast line visibility with includeForecastPayouts prop
-  useEffect(() => {
-    setShowForecastLine(includeForecastPayouts);
-    updateChartPreferences({ showForecastLine: includeForecastPayouts });
-  }, [includeForecastPayouts, updateChartPreferences]);
+  }, [chartPreferences, includeForecastPayouts]);
   
   // Total available cash baseline comes from Overview (displayCash)
   const totalAvailableCash = totalCash;
@@ -614,12 +608,6 @@ export const CashFlowCalendar = ({
   };
   
   const chartData = generateChartData();
-  
-  // Debug logging for forecast line
-  console.log('[Chart] Forecast line enabled:', showForecastLine);
-  console.log('[Chart] Include forecast payouts:', includeForecastPayouts);
-  console.log('[Chart] Sample data point:', chartData[0]);
-  console.log('[Chart] Has forecast data:', chartData.some(d => d.forecastPayout !== null && d.forecastPayout > 0));
 
   const handleChartClick = (data: any) => {
     if (data && data.activePayload && data.activePayload[0]) {

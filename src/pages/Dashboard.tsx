@@ -80,7 +80,7 @@ const Dashboard = () => {
   const [vendorTxRefresh, setVendorTxRefresh] = useState(0);
   const [includeForecastPayouts, setIncludeForecastPayouts] = useState(() => {
     const saved = localStorage.getItem('includeForecastPayouts');
-    return saved !== null ? JSON.parse(saved) : false;
+    return saved !== null ? JSON.parse(saved) : true; // Default to true to show forecast line
   });
   const [matchReviewDialog, setMatchReviewDialog] = useState<{
     open: boolean;
