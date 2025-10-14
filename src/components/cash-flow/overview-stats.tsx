@@ -326,6 +326,14 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
 
+  // Pending Amazon payouts for today
+  const todayAmazonPayouts = amazonPayouts.filter(payout => {
+    const payoutDate = new Date(payout.payout_date);
+    payoutDate.setHours(0, 0, 0, 0);
+    return payoutDate >= todayStart && payoutDate <= todayEnd;
+  });
+  const todayAmazonAmount = todayAmazonPayouts.reduce((sum, payout) => sum + (payout.total_amount || 0), 0);
+
   // Pending income for today
   const todayPendingIncome = incomeItems.filter(income => {
     const paymentDate = new Date(income.paymentDate);
@@ -349,7 +357,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   });
   const todayRecurringAmount = todayPendingRecurring.reduce((sum, event) => sum + event.amount, 0);
 
-  const todayTotalPending = todayIncomeAmount + todayExpenseAmount + todayRecurringAmount;
+  const todayTotalPending = todayAmazonAmount + todayIncomeAmount + todayExpenseAmount + todayRecurringAmount;
 
   return (<>
       <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -381,6 +389,11 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               {todayTotalPending > 0 ? (
                 <div className="space-y-0.5 mt-2">
                   <p className="text-xs font-semibold text-slate-700">Pending Today:</p>
+                  {todayAmazonAmount > 0 && (
+                    <p className="text-xs text-green-600">
+                      Amazon: {formatCurrency(todayAmazonAmount)}
+                    </p>
+                  )}
                   {todayIncomeAmount > 0 && (
                     <p className="text-xs text-green-600">
                       Income: {formatCurrency(todayIncomeAmount)}
@@ -398,7 +411,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                   )}
                   <div className="pt-1 border-t border-blue-200">
                     <p className="text-sm font-semibold text-blue-700">
-                      Total Projected: {formatCurrency(bankAccountBalance + todayIncomeAmount - todayExpenseAmount - todayRecurringAmount)}
+                      Total Projected: {formatCurrency(bankAccountBalance + todayAmazonAmount + todayIncomeAmount - todayExpenseAmount - todayRecurringAmount)}
                     </p>
                   </div>
                 </div>
