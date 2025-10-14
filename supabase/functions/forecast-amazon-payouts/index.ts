@@ -57,47 +57,84 @@ serve(async (req) => {
     const riskAdjustment = userSettings?.forecast_confidence_threshold ?? 5; // -5 = Aggressive, 0 = Medium, 5 = Safe, 10 = Very Safe
     console.log('[FORECAST] User risk adjustment:', riskAdjustment, '(-5=Aggressive+5%, 0=Medium, 5=Safe-5%, 10=Very Safe-10%)');
 
-    // Fetch Amazon payouts from last 3 months for trend analysis
+    // Fetch all active Amazon accounts for this user
+    const { data: amazonAccounts, error: accountsError } = await supabase
+      .from('amazon_accounts')
+      .select('*')
+      .eq('account_id', accountId)
+      .eq('is_active', true);
+
+    if (accountsError) {
+      console.error('[FORECAST] Error fetching Amazon accounts:', accountsError);
+      throw new Error('Failed to fetch Amazon accounts');
+    }
+
+    if (!amazonAccounts || amazonAccounts.length === 0) {
+      throw new Error('No active Amazon accounts found');
+    }
+
+    console.log(`[FORECAST] Found ${amazonAccounts.length} active Amazon account(s)`);
+
+    // Delete all existing forecasted payouts for this user before generating new ones
+    await supabase
+      .from('amazon_payouts')
+      .delete()
+      .eq('user_id', userId)
+      .eq('status', 'forecasted');
+
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-    
-    const { data: amazonPayouts, error: payoutsError } = await supabase
-      .from('amazon_payouts')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('status', 'confirmed') // Only use confirmed payouts for baseline
-      .gte('payout_date', threeMonthsAgo.toISOString().split('T')[0])
-      .order('payout_date', { ascending: false });
 
-    if (payoutsError) {
-      console.error('[FORECAST] Error fetching payouts:', payoutsError);
-      throw new Error('Failed to fetch Amazon payout data');
-    }
+    const allForecasts: any[] = [];
 
-    // Fetch Amazon transactions from last 3 months for sales trend analysis
-    const { data: amazonTransactions, error: transactionsError } = await supabase
-      .from('amazon_transactions')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('transaction_date', threeMonthsAgo.toISOString())
-      .order('transaction_date', { ascending: false })
-      .limit(1000);
+    // Generate forecasts for each Amazon account
+    for (const amazonAccount of amazonAccounts) {
+      console.log(`\n[FORECAST] Processing account: ${amazonAccount.account_name} (${amazonAccount.marketplace_name})`);
+      console.log(`[FORECAST] Account ID: ${amazonAccount.id}`);
+      
+      // Fetch Amazon payouts for this specific account from last 3 months
+      const { data: amazonPayouts, error: payoutsError } = await supabase
+        .from('amazon_payouts')
+        .select('*')
+        .eq('amazon_account_id', amazonAccount.id)
+        .eq('status', 'confirmed') // Only use confirmed payouts for baseline
+        .gte('payout_date', threeMonthsAgo.toISOString().split('T')[0])
+        .order('payout_date', { ascending: false });
 
-    if (transactionsError) {
-      console.error('[FORECAST] Error fetching transactions:', transactionsError);
-    }
+      if (payoutsError) {
+        console.error(`[FORECAST] Error fetching payouts for account ${amazonAccount.id}:`, payoutsError);
+        continue; // Skip this account and continue with next one
+      }
 
-    // Aggregate transaction data by type for analysis
-    const transactionsByType = {
-      orders: amazonTransactions?.filter(t => t.transaction_type === 'Order' || t.transaction_type === 'Sale') || [],
-      fees: amazonTransactions?.filter(t => t.transaction_type?.includes('Fee')) || [],
-      refunds: amazonTransactions?.filter(t => t.transaction_type === 'Refund') || [],
-      returns: amazonTransactions?.filter(t => t.transaction_type === 'Return') || [],
-    };
+      if (!amazonPayouts || amazonPayouts.length === 0) {
+        console.log(`[FORECAST] No historical payouts found for account ${amazonAccount.account_name}, skipping forecast generation`);
+        continue;
+      }
 
-    // Calculate monthly transaction aggregates with recent data weighted 2x
-    const monthlyTransactions: any = {};
-    amazonTransactions?.forEach((txn: any) => {
+      // Fetch Amazon transactions for this specific account from last 3 months
+      const { data: amazonTransactions, error: transactionsError } = await supabase
+        .from('amazon_transactions')
+        .select('*')
+        .eq('amazon_account_id', amazonAccount.id)
+        .gte('transaction_date', threeMonthsAgo.toISOString())
+        .order('transaction_date', { ascending: false })
+        .limit(1000);
+
+      if (transactionsError) {
+        console.error(`[FORECAST] Error fetching transactions for account ${amazonAccount.id}:`, transactionsError);
+      }
+
+      // Aggregate transaction data by type for analysis
+      const transactionsByType = {
+        orders: amazonTransactions?.filter(t => t.transaction_type === 'Order' || t.transaction_type === 'Sale') || [],
+        fees: amazonTransactions?.filter(t => t.transaction_type?.includes('Fee')) || [],
+        refunds: amazonTransactions?.filter(t => t.transaction_type === 'Refund') || [],
+        returns: amazonTransactions?.filter(t => t.transaction_type === 'Return') || [],
+      };
+
+      // Calculate monthly transaction aggregates with recent data weighted 2x
+      const monthlyTransactions: any = {};
+      amazonTransactions?.forEach((txn: any) => {
       const monthKey = txn.transaction_date.substring(0, 7);
       if (!monthlyTransactions[monthKey]) {
         monthlyTransactions[monthKey] = {
@@ -123,12 +160,12 @@ serve(async (req) => {
         monthlyTransactions[monthKey].returns_amount += Math.abs(amount);
       }
       monthlyTransactions[monthKey].net_amount += amount;
-    });
+      });
 
-    // All transactions are already from last 3 months
-    const recentTransactions = amazonTransactions || [];
+      // All transactions are already from last 3 months
+      const recentTransactions = amazonTransactions || [];
 
-    console.log('[FORECAST] Data fetched', { 
+      console.log(`[FORECAST] Data fetched for ${amazonAccount.account_name}`, {
       payoutCount: amazonPayouts?.length || 0,
       transactionCount: amazonTransactions?.length || 0,
       recentTransactionCount: recentTransactions.length,
@@ -139,24 +176,11 @@ serve(async (req) => {
         returns: transactionsByType.returns.length
       },
       monthlyTransactions: Object.keys(monthlyTransactions).length
-    });
+      });
 
-    if (!amazonPayouts || amazonPayouts.length === 0) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'No Amazon payout data found. Please connect your Amazon account and sync data first.',
-          requiresData: true
-        }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    // Aggregate monthly data for better trend analysis
-    const monthlyData: any = {};
-    amazonPayouts.forEach((payout: any) => {
+      // Aggregate monthly data for better trend analysis
+      const monthlyData: any = {};
+      amazonPayouts.forEach((payout: any) => {
       const monthKey = payout.payout_date.substring(0, 7); // YYYY-MM
       if (!monthlyData[monthKey]) {
         monthlyData[monthKey] = {
@@ -197,32 +221,32 @@ serve(async (req) => {
       const weight = nonForecastedPayouts.length - index;
       weightedSum += Number(payout.total_amount) * weight;
       totalWeight += weight;
-    });
-    
-    const avgPayoutAmount = totalWeight > 0 ? weightedSum / totalWeight : 0;
-    
-    // Also calculate simple average for comparison
-    const simpleAvg = nonForecastedPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0) / Math.max(1, nonForecastedPayouts.length);
-    
-    console.log('[FORECAST] Historical Analysis:', { 
-      totalPayouts: amazonPayouts.length,
-      monthlyDataPoints: historicalData.length,
-      weightedAveragePayoutAmount: avgPayoutAmount,
-      simpleAveragePayoutAmount: simpleAvg,
-      historicalMonthly: historicalData,
-      dateRange: `${amazonPayouts[amazonPayouts.length - 1]?.payout_date} to ${amazonPayouts[0]?.payout_date}`,
-      note: 'Payout amounts are NET (after all Amazon fees deducted)'
-    });
+      });
+      
+      const avgPayoutAmount = totalWeight > 0 ? weightedSum / totalWeight : 0;
+      
+      // Also calculate simple average for comparison
+      const simpleAvg = nonForecastedPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0) / Math.max(1, nonForecastedPayouts.length);
+      
+      console.log(`[FORECAST] Historical Analysis for ${amazonAccount.account_name}:`, {
+        totalPayouts: amazonPayouts.length,
+        monthlyDataPoints: historicalData.length,
+        weightedAveragePayoutAmount: avgPayoutAmount,
+        simpleAveragePayoutAmount: simpleAvg,
+        historicalMonthly: historicalData,
+        dateRange: `${amazonPayouts[amazonPayouts.length - 1]?.payout_date} to ${amazonPayouts[0]?.payout_date}`,
+        note: 'Payout amounts are NET (after all Amazon fees deducted)'
+      });
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
-    }
+      const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+      if (!LOVABLE_API_KEY) {
+        throw new Error('LOVABLE_API_KEY not configured');
+      }
 
-    // Prepare a simplified data analysis prompt
-    const systemPrompt = `You are a financial analyst specializing in Amazon marketplace forecasting. Analyze payout data and provide accurate predictions.`;
+      // Prepare a simplified data analysis prompt
+      const systemPrompt = `You are a financial analyst specializing in Amazon marketplace forecasting. Analyze payout data and provide accurate predictions.`;
 
-    const analysisPrompt = `Analyze Amazon Seller data from LAST 3 MONTHS ONLY and forecast next 3 months (6 bi-weekly periods).
+      const analysisPrompt = `Analyze Amazon Seller data from LAST 3 MONTHS ONLY and forecast next 3 months (6 bi-weekly periods) for ${amazonAccount.account_name} (${amazonAccount.marketplace_name}).
 
 RECENT SALES TRENDS (Last 3 Months):
 Monthly Order Volume: ${JSON.stringify(Object.values(monthlyTransactions).map((m: any) => ({
@@ -265,228 +289,205 @@ Return ONLY this JSON (no markdown):
   }
 }`;
 
-    console.log('[FORECAST] Calling Lovable AI for analysis...');
+      console.log(`[FORECAST] Calling Lovable AI for analysis of ${amazonAccount.account_name}...`);
 
-    // Set timeout for AI call
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
+      // Set timeout for AI call
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
 
-    let aiResponse;
-    try {
-      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash', // Using flash model for faster response
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: analysisPrompt }
-          ],
-          temperature: 0.3,
-        }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[FORECAST] AI API error:', response.status, errorText);
-        
-        if (response.status === 429) {
-          throw new Error('Rate limit exceeded. Please try again in a moment.');
-        }
-        if (response.status === 402) {
-          throw new Error('AI service requires payment. Please add credits to continue.');
-        }
-        throw new Error(`AI service error: ${response.status}`);
-      }
-
-      const aiData = await response.json();
-      aiResponse = aiData.choices?.[0]?.message?.content;
-
-      if (!aiResponse) {
-        throw new Error('No response from AI service');
-      }
-
-      console.log('[FORECAST] AI response received, parsing...');
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      if (fetchError.name === 'AbortError') {
-        console.error('[FORECAST] AI request timed out');
-        throw new Error('AI analysis timed out. Please try again.');
-      }
-      throw fetchError;
-    }
-
-    // Try to extract JSON from the response
-    let forecast;
-    try {
-      // Look for JSON block in markdown code blocks
-      const jsonMatch = aiResponse.match(/```json\n([\s\S]*?)\n```/) || 
-                       aiResponse.match(/```\n([\s\S]*?)\n```/) ||
-                       [null, aiResponse];
-      
-      const jsonString = jsonMatch[1] || aiResponse;
-      forecast = JSON.parse(jsonString.trim());
-    } catch (parseError) {
-      console.error('[FORECAST] Failed to parse AI response as JSON:', parseError);
-      // Return a structured response with the raw analysis
-      forecast = {
-        analysis: aiResponse,
-        predictions: [],
-        methodology: "AI analysis completed but structured forecast unavailable. See analysis for insights.",
-        confidence_level: "See detailed analysis above"
-      };
-    }
-
-    console.log('[FORECAST] Forecast generated successfully');
-
-    // Store forecasted payouts in the database
-    if (forecast.predictions && Array.isArray(forecast.predictions)) {
-      // Get the payout frequency from the amazon account
-      const { data: amazonAccount } = await supabase
-        .from('amazon_accounts')
-        .select('payout_frequency')
-        .eq('id', amazonPayouts[0].amazon_account_id)
-        .single();
-      
-      const payoutFrequency = amazonAccount?.payout_frequency || 'bi-weekly';
-      const lastPayoutDate = new Date(amazonPayouts[0].payout_date);
-      
-      // Calculate average payout amount for baseline (already calculated above, using same logic)
-      const baselineAmount = avgPayoutAmount;
-      
-      // Generate forecasts for 3 months based on frequency
-      const forecastedPayouts: any[] = [];
-      const threeMonthsOut = new Date(lastPayoutDate);
-      threeMonthsOut.setMonth(threeMonthsOut.getMonth() + 3);
-      
-      let currentDate = new Date(lastPayoutDate);
-      let forecastIndex = 0;
-      
-      while (currentDate <= threeMonthsOut && forecastIndex < 6) { // Limit to 6 forecasts
-        // Move to next payout date based on frequency (14 days for bi-weekly)
-        if (payoutFrequency === 'daily') {
-          currentDate.setDate(currentDate.getDate() + 1);
-        } else { // bi-weekly = every 14 days
-          currentDate.setDate(currentDate.getDate() + 14);
-        }
-        
-        if (currentDate > threeMonthsOut) break;
-        
-        // Use AI prediction if available, otherwise use baseline with variation
-        let basePrediction = baselineAmount; // Use actual baseline amount
-        let calculationMethod = 'baseline';
-        
-        if (forecast.predictions && forecast.predictions[forecastIndex]) {
-          const aiPrediction = forecast.predictions[forecastIndex].predicted_amount || baselineAmount;
-          basePrediction = aiPrediction;
-          calculationMethod = 'ai_prediction';
-          console.log(`[FORECAST] Period ${forecastIndex + 1} AI base prediction: ${aiPrediction}`);
-        } else {
-          // Add 5-10% variation for realism
-          const variation = 0.95 + (Math.random() * 0.15); // 0.95 to 1.10
-          basePrediction = baselineAmount * variation;
-          calculationMethod = 'baseline_with_variation';
-          console.log(`[FORECAST] Period ${forecastIndex + 1} baseline: ${baselineAmount} * ${variation.toFixed(2)} = ${basePrediction}`);
-        }
-        
-        // Apply risk adjustment: -5 = +5%, 0 = no adjustment, 5 = -5%, 10 = -10%
-        const riskMultiplier = 1 - (riskAdjustment / 100);
-        const predictedAmount = Math.round(basePrediction * riskMultiplier);
-        console.log(`[FORECAST] Period ${forecastIndex + 1} after ${riskAdjustment}% risk adjustment: ${basePrediction.toFixed(2)} * ${riskMultiplier.toFixed(2)} = ${predictedAmount}`);
-        
-        const forecastPayout = {
-          user_id: userId,
-          account_id: accountId,
-          amazon_account_id: amazonPayouts[0].amazon_account_id,
-          payout_date: currentDate.toISOString().split('T')[0],
-          total_amount: Math.round(predictedAmount),
-          settlement_id: `forecast-${Date.now()}-${forecastIndex}`,
-          marketplace_name: amazonPayouts[0].marketplace_name || 'Amazon',
-          status: 'forecasted',
-          payout_type: payoutFrequency,
-          currency_code: amazonPayouts[0].currency_code || 'USD',
-          transaction_count: 0,
-          fees_total: 0,
-          orders_total: 0,
-          refunds_total: 0,
-          other_total: 0,
-          raw_settlement_data: {
-            forecast_metadata: {
-              confidence: forecast.predictions?.[forecastIndex]?.confidence || 0.90,
-              risk_adjustment: riskAdjustment,
-              risk_level: riskAdjustment === -5 ? 'aggressive' : riskAdjustment === 0 ? 'medium' : riskAdjustment === 5 ? 'safe' : 'very_safe',
-              upper_bound: Math.round(predictedAmount * 1.2),
-              lower_bound: Math.round(predictedAmount * 0.8),
-              period: `Forecast ${forecastIndex + 1}`,
-              generated_at: new Date().toISOString(),
-              frequency: payoutFrequency,
-              calculation_method: calculationMethod,
-              baseline_amount: baselineAmount,
-              demo_multiplier: 1,
-              base_prediction: basePrediction,
-              risk_multiplier: 1 - (riskAdjustment / 100)
-            }
-          }
-        };
-        
-        forecastedPayouts.push(forecastPayout);
-        
-        console.log(`[FORECAST] Generated forecast ${forecastIndex + 1}:`, {
-          date: forecastPayout.payout_date,
-          amount: forecastPayout.total_amount,
-          method: calculationMethod
+      let aiResponse;
+      try {
+        const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-2.5-flash', // Using flash model for faster response
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: analysisPrompt }
+            ],
+            temperature: 0.3,
+          }),
+          signal: controller.signal,
         });
-        
-        forecastIndex++;
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`[FORECAST] AI API error for ${amazonAccount.account_name}:`, response.status, errorText);
+          
+          if (response.status === 429) {
+            throw new Error('Rate limit exceeded. Please try again in a moment.');
+          }
+          if (response.status === 402) {
+            throw new Error('AI service requires payment. Please add credits to continue.');
+          }
+          throw new Error(`AI service error: ${response.status}`);
+        }
+
+        const aiData = await response.json();
+        aiResponse = aiData.choices?.[0]?.message?.content;
+
+        if (!aiResponse) {
+          throw new Error('No response from AI service');
+        }
+
+        console.log(`[FORECAST] AI response received for ${amazonAccount.account_name}, parsing...`);
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        if (fetchError.name === 'AbortError') {
+          console.error(`[FORECAST] AI request timed out for ${amazonAccount.account_name}`);
+          continue; // Skip this account
+        }
+        console.error(`[FORECAST] Error for ${amazonAccount.account_name}:`, fetchError);
+        continue; // Skip this account
       }
 
-      // Delete existing forecasted payouts for this user  
-      await supabase
-        .from('amazon_payouts')
-        .delete()
-        .eq('user_id', userId)
-        .eq('status', 'forecasted');
-
-      // Insert new forecasted payouts
-      if (forecastedPayouts.length > 0) {
-        console.log(`[FORECAST] Inserting ${forecastedPayouts.length} forecasted payouts:`, 
-          forecastedPayouts.map(p => ({ date: p.payout_date, amount: p.total_amount }))
-        );
+      // Try to extract JSON from the response
+      let forecast;
+      try {
+        // Look for JSON block in markdown code blocks
+        const jsonMatch = aiResponse.match(/```json\n([\s\S]*?)\n```/) || 
+                         aiResponse.match(/```\n([\s\S]*?)\n```/) ||
+                         [null, aiResponse];
         
-        const { error: insertError } = await supabase
-          .from('amazon_payouts')
-          .insert(forecastedPayouts);
+        const jsonString = jsonMatch[1] || aiResponse;
+        forecast = JSON.parse(jsonString.trim());
+      } catch (parseError) {
+        console.error(`[FORECAST] Failed to parse AI response as JSON for ${amazonAccount.account_name}:`, parseError);
+        // Continue to next account
+        continue;
+      }
 
-        if (insertError) {
-          console.error('[FORECAST] Error storing forecasted payouts:', insertError);
-        } else {
-          console.log(`[FORECAST] ✅ Successfully stored ${forecastedPayouts.length} forecasted ${payoutFrequency} payouts`);
-          console.log('[FORECAST] Summary:', {
-            frequency: payoutFrequency,
-            baselineAmount: baselineAmount,
-            demoMultiplier: 100,
-            totalForecasts: forecastedPayouts.length,
-            dateRange: `${forecastedPayouts[0]?.payout_date} to ${forecastedPayouts[forecastedPayouts.length - 1]?.payout_date}`
+      console.log(`[FORECAST] Forecast generated successfully for ${amazonAccount.account_name}`);
+
+      // Store forecasted payouts in the database
+      if (forecast.predictions && Array.isArray(forecast.predictions)) {
+        const payoutFrequency = amazonAccount.payout_frequency || 'bi-weekly';
+        const lastPayoutDate = new Date(amazonPayouts[0].payout_date);
+        
+        // Calculate average payout amount for baseline (already calculated above, using same logic)
+        const baselineAmount = avgPayoutAmount;
+        
+        // Generate forecasts for 3 months based on frequency
+        const forecastedPayouts: any[] = [];
+        const threeMonthsOut = new Date(lastPayoutDate);
+        threeMonthsOut.setMonth(threeMonthsOut.getMonth() + 3);
+        
+        let currentDate = new Date(lastPayoutDate);
+        let forecastIndex = 0;
+        
+        while (currentDate <= threeMonthsOut && forecastIndex < 6) { // Limit to 6 forecasts
+          // Move to next payout date based on frequency (14 days for bi-weekly)
+          if (payoutFrequency === 'daily') {
+            currentDate.setDate(currentDate.getDate() + 1);
+          } else { // bi-weekly = every 14 days
+            currentDate.setDate(currentDate.getDate() + 14);
+          }
+          
+          if (currentDate > threeMonthsOut) break;
+          
+          // Use AI prediction if available, otherwise use baseline with variation
+          let basePrediction = baselineAmount; // Use actual baseline amount
+          let calculationMethod = 'baseline';
+          
+          if (forecast.predictions && forecast.predictions[forecastIndex]) {
+            const aiPrediction = forecast.predictions[forecastIndex].predicted_amount || baselineAmount;
+            basePrediction = aiPrediction;
+            calculationMethod = 'ai_prediction';
+            console.log(`[FORECAST] ${amazonAccount.account_name} - Period ${forecastIndex + 1} AI base prediction: ${aiPrediction}`);
+          } else {
+            // Add 5-10% variation for realism
+            const variation = 0.95 + (Math.random() * 0.15); // 0.95 to 1.10
+            basePrediction = baselineAmount * variation;
+            calculationMethod = 'baseline_with_variation';
+            console.log(`[FORECAST] ${amazonAccount.account_name} - Period ${forecastIndex + 1} baseline: ${baselineAmount} * ${variation.toFixed(2)} = ${basePrediction}`);
+          }
+          
+          // Apply risk adjustment: -5 = +5%, 0 = no adjustment, 5 = -5%, 10 = -10%
+          const riskMultiplier = 1 - (riskAdjustment / 100);
+          const predictedAmount = Math.round(basePrediction * riskMultiplier);
+          console.log(`[FORECAST] ${amazonAccount.account_name} - Period ${forecastIndex + 1} after ${riskAdjustment}% risk adjustment: ${basePrediction.toFixed(2)} * ${riskMultiplier.toFixed(2)} = ${predictedAmount}`);
+          
+          const forecastPayout = {
+            user_id: userId,
+            account_id: accountId,
+            amazon_account_id: amazonAccount.id,
+            payout_date: currentDate.toISOString().split('T')[0],
+            total_amount: Math.round(predictedAmount),
+            settlement_id: `forecast-${Date.now()}-${amazonAccount.id}-${forecastIndex}`,
+            marketplace_name: amazonAccount.marketplace_name || 'Amazon',
+            status: 'forecasted',
+            payout_type: payoutFrequency,
+            currency_code: amazonPayouts[0].currency_code || 'USD',
+            transaction_count: 0,
+            fees_total: 0,
+            orders_total: 0,
+            refunds_total: 0,
+            other_total: 0,
+            raw_settlement_data: {
+              forecast_metadata: {
+                confidence: forecast.predictions?.[forecastIndex]?.confidence || 0.90,
+                risk_adjustment: riskAdjustment,
+                risk_level: riskAdjustment === -5 ? 'aggressive' : riskAdjustment === 0 ? 'medium' : riskAdjustment === 5 ? 'safe' : 'very_safe',
+                upper_bound: Math.round(predictedAmount * 1.2),
+                lower_bound: Math.round(predictedAmount * 0.8),
+                period: `Forecast ${forecastIndex + 1}`,
+                generated_at: new Date().toISOString(),
+                frequency: payoutFrequency,
+                calculation_method: calculationMethod,
+                baseline_amount: baselineAmount,
+                demo_multiplier: 1,
+                base_prediction: basePrediction,
+                risk_multiplier: 1 - (riskAdjustment / 100)
+              }
+            }
+          };
+          
+          forecastedPayouts.push(forecastPayout);
+          
+          console.log(`[FORECAST] ${amazonAccount.account_name} - Generated forecast ${forecastIndex + 1}:`, {
+            date: forecastPayout.payout_date,
+            amount: forecastPayout.total_amount,
+            method: calculationMethod
           });
+          
+          forecastIndex++;
         }
+
+        // Add forecasts from this account to the collection
+        allForecasts.push(...forecastedPayouts);
+
+        console.log(`[FORECAST] ✅ Generated ${forecastedPayouts.length} forecasts for ${amazonAccount.account_name}`);
+      }
+    } // End of amazon account loop
+
+    // Insert all forecasted payouts for all accounts
+    if (allForecasts.length > 0) {
+      console.log(`[FORECAST] Inserting ${allForecasts.length} total forecasted payouts for ${amazonAccounts.length} account(s)...`);
+      
+      const { error: insertError } = await supabase
+        .from('amazon_payouts')
+        .insert(allForecasts);
+
+      if (insertError) {
+        console.error('[FORECAST] Error storing forecasted payouts:', insertError);
+        throw new Error('Failed to store forecasted payouts');
+      } else {
+        console.log(`[FORECAST] ✅ Successfully stored ${allForecasts.length} total forecasted payouts`);
       }
     }
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        forecast: forecast,
-        dataUsed: {
-          payoutCount: amazonPayouts.length,
-          monthlyDataPoints: historicalData.length,
-          dateRange: `${amazonPayouts[amazonPayouts.length - 1]?.payout_date} to ${amazonPayouts[0]?.payout_date}`
-        }
+        message: `Generated ${allForecasts.length} forecasts for ${amazonAccounts.length} Amazon account(s)`,
+        accountsProcessed: amazonAccounts.length,
+        totalForecasts: allForecasts.length
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
