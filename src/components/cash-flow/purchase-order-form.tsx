@@ -65,7 +65,7 @@ export const PurchaseOrderForm = ({
     vendor: "",
     vendorId: "",
     amount: "",
-    poDate: new Date(),
+    poDate: new Date(new Date().setDate(new Date().getDate() + 1)),
     dueDate: undefined as Date | undefined,
     deliveryDate: undefined as Date | undefined,
     description: "",
