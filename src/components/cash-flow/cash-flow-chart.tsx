@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CalendarIcon, Plus, Calendar as CalendarIconLucide, TrendingUp } from "lucide-react";
 import { format, subDays, addDays, eachDayOfInterval } from "date-fns";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Brush } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 interface CashFlowEvent {
@@ -185,30 +185,6 @@ export const CashFlowChart = ({
           </div>
           
           <div className="flex items-center space-x-4">
-            {viewType === 'chart' && (
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor="start-date" className="text-sm">From:</Label>
-                  <Input
-                    id="start-date"
-                    type="date"
-                    value={format(dateRange.start, 'yyyy-MM-dd')}
-                    onChange={(e) => handleDateRangeChange('start', e.target.value)}
-                    className="w-40"
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Label htmlFor="end-date" className="text-sm">To:</Label>
-                  <Input
-                    id="end-date"
-                    type="date"
-                    value={format(dateRange.end, 'yyyy-MM-dd')}
-                    onChange={(e) => handleDateRangeChange('end', e.target.value)}
-                    className="w-40"
-                  />
-                </div>
-              </div>
-            )}
             <Button size="sm" onClick={onAddPurchaseOrder} className="bg-gradient-primary">
               <Plus className="h-4 w-4 mr-2" />
               Add Purchase Order
@@ -335,6 +311,13 @@ export const CashFlowChart = ({
                       name="Reserve Amount"
                     />
                   )}
+                  <Brush
+                    dataKey="date"
+                    height={40}
+                    stroke="hsl(var(--primary))"
+                    fill="hsl(var(--muted))"
+                    travellerWidth={10}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </ChartContainer>
