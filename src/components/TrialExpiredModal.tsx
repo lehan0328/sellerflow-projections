@@ -95,13 +95,13 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       const revenueNum = calculatedRevenue;
 
       // Determine appropriate plan based on revenue and get higher plans
-      if (revenueNum <= 2000) {
+      if (revenueNum <= 20000) {
         recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.starter };
         higherPlans = [
           { type: 'standard', plan: PRICING_PLANS.growing },
           { type: 'standard', plan: PRICING_PLANS.professional },
         ];
-      } else if (revenueNum <= 50000) {
+      } else if (revenueNum <= 100000) {
         recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.growing };
         higherPlans = [
           { type: 'standard', plan: PRICING_PLANS.professional },
@@ -137,7 +137,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
   // Define complete feature lists for each plan with included flag
   const planFeatures = {
     starter: [
-      { text: "Up to $2k monthly Amazon revenue", included: true },
+      { text: "Up to $20k monthly Amazon revenue", included: true },
       { text: "2 bank/credit card connections", included: true },
       { text: "1 Amazon connection", included: true },
       { text: "Advance forecasting workflow", included: true },
@@ -151,7 +151,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "Scenario planning", included: false },
     ],
     growing: [
-      { text: "Up to $50k monthly Amazon revenue", included: true },
+      { text: "Up to $100k monthly Amazon revenue", included: true },
       { text: "4 bank/credit card connections", included: true },
       { text: "1 Amazon connection", included: true },
       { text: "AI insights", included: true },

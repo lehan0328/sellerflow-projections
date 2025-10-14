@@ -60,7 +60,7 @@ export const PRICING_PLANS = {
     price_id: "price_1SEH8iB28kMY3Usem3k3vElT",
     yearly_price_id: "price_1SEHZVB28kMY3Use9bH8xPlg",
     features: [
-      "Under $50k monthly Amazon payout",
+      "Under $100k monthly Amazon payout",
       "4 bank/credit card connections",
       "1 Amazon connection",
       "AI insights",
