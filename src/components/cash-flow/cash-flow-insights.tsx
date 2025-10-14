@@ -83,7 +83,7 @@ export const CashFlowInsights = ({
   const [showTransactionHistory, setShowTransactionHistory] = useState(false);
   const [lastRefreshTime, setLastRefreshTime] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [userConfidenceThreshold, setUserConfidenceThreshold] = useState<number>(88);
+  const [userConfidenceThreshold, setUserConfidenceThreshold] = useState<number>(0);
   const [conversationHistory, setConversationHistory] = useState<Array<{
     role: 'user' | 'assistant';
     content: string;
@@ -127,7 +127,7 @@ export const CashFlowInsights = ({
         setLastRefreshTime(new Date(data.last_forecast_refresh).getTime());
       }
       
-      if (data?.forecast_confidence_threshold) {
+      if (data?.forecast_confidence_threshold !== undefined && data?.forecast_confidence_threshold !== null) {
         setUserConfidenceThreshold(data.forecast_confidence_threshold);
       }
     };
@@ -792,9 +792,9 @@ export const CashFlowInsights = ({
                 </div>
               </div>
               
-              <ScrollArea className="h-[500px] pr-4 border rounded-md p-2 bg-gradient-to-b from-transparent via-transparent to-muted/20">
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground mb-4">
+              <ScrollArea className="h-[500px] pr-4">
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground mb-4 px-1">
                     <span className="font-semibold text-amber-600">Important:</span> These opportunities assume <span className="font-semibold">$0 spending until each date</span>. The available amounts shown are what you'll have if you don't make any purchases before then. Plan your spending timeline accordingly to preserve these opportunities.
                   </p>
                   {allBuyingOpportunities.map((opp, index) => {
@@ -817,20 +817,54 @@ export const CashFlowInsights = ({
                     }
                     
                     return (
-                      <div key={index} className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800 space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="font-semibold text-sm">Opportunity #{index + 1}</span>
-                          <span className="text-lg font-bold text-blue-600">
-                            ${opp.balance.toLocaleString()}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Low point: {formattedDate}</p>
-                        {availableDate && (
-                          <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
-                            <span className="text-xs text-muted-foreground">Earliest Purchase Date:</span>
-                            <span className="text-sm font-semibold text-green-600">{availableDate}</span>
+                      <div 
+                        key={index} 
+                        className="group relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-card via-card to-muted/20 p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5"
+                      >
+                        {/* Animated gradient overlay on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        
+                        <div className="relative space-y-4">
+                          {/* Header */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <span className="text-sm font-bold text-primary">#{index + 1}</span>
+                              </div>
+                              <span className="font-semibold text-sm text-foreground">Opportunity</span>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-2xl font-bold bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-transparent">
+                                ${opp.balance.toLocaleString()}
+                              </div>
+                              <div className="text-xs text-muted-foreground">Available</div>
+                            </div>
                           </div>
-                        )}
+                          
+                          {/* Divider */}
+                          <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+                          
+                          {/* Details */}
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground">Low Point Date</span>
+                              <span className="font-medium text-foreground">{formattedDate}</span>
+                            </div>
+                            
+                            {availableDate && (
+                              <div className="rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 p-3">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-medium text-green-700 dark:text-green-400">
+                                    Earliest Purchase Date
+                                  </span>
+                                  <span className="text-sm font-bold text-green-600 dark:text-green-500">
+                                    {availableDate}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
