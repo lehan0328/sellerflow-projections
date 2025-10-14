@@ -21,7 +21,7 @@ export const ForecastSettings = () => {
   const { amazonAccounts } = useAmazonAccounts();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [confidenceThreshold, setConfidenceThreshold] = useState(5); // 0 = Medium, 5 = Safe, 15 = Very Safe
+  const [confidenceThreshold, setConfidenceThreshold] = useState(5); // -5 = Aggressive, 0 = Medium, 5 = Safe, 10 = Very Safe
   
   const hasAmazonStore = amazonAccounts && amazonAccounts.length > 0;
 
@@ -140,15 +140,17 @@ export const ForecastSettings = () => {
   };
 
   const getRiskLevel = (value: number) => {
-    if (value === 15) return { label: "Very Safe", color: "bg-emerald-500", index: 2 };
-    if (value === 5) return { label: "Safe", color: "bg-blue-500", index: 1 };
-    return { label: "Medium (Risky)", color: "bg-orange-500", index: 0 };
+    if (value === 10) return { label: "Very Safe", color: "bg-emerald-500", index: 3 };
+    if (value === 5) return { label: "Safe", color: "bg-blue-500", index: 2 };
+    if (value === 0) return { label: "Medium (Risky)", color: "bg-orange-500", index: 1 };
+    return { label: "Aggressive Growth (Super Risky)", color: "bg-red-500", index: 0 };
   };
 
   const tiers = [
-    { value: 0, label: "Medium (Risky)", color: "bg-orange-500", recommended: false },
-    { value: 5, label: "Safe", color: "bg-blue-500", recommended: true },
-    { value: 15, label: "Very Safe", color: "bg-emerald-500", recommended: false }
+    { value: -5, label: "Aggressive Growth", color: "bg-red-500", recommended: false, subtitle: "Super Risky" },
+    { value: 0, label: "Medium", color: "bg-orange-500", recommended: false, subtitle: "Risky" },
+    { value: 5, label: "Safe", color: "bg-blue-500", recommended: true, subtitle: "Recommended" },
+    { value: 10, label: "Very Safe", color: "bg-emerald-500", recommended: false, subtitle: "Conservative" }
   ];
 
   const riskLevel = getRiskLevel(confidenceThreshold);
@@ -196,7 +198,7 @@ export const ForecastSettings = () => {
             </Badge>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-4 gap-2 mb-4">
             {tiers.map((tier) => (
               <button
                 key={tier.value}
@@ -214,7 +216,8 @@ export const ForecastSettings = () => {
                   </Badge>
                 )}
                 <div className={`w-3 h-3 rounded-full ${tier.color} mx-auto mb-2`} />
-                <div className="text-sm font-medium">{tier.label}</div>
+                <div className="text-xs font-medium">{tier.label}</div>
+                <div className="text-[10px] text-muted-foreground">{tier.subtitle}</div>
               </button>
             ))}
           </div>
@@ -226,9 +229,10 @@ export const ForecastSettings = () => {
             How this affects your forecasts:
           </div>
           <ul className="text-sm text-muted-foreground space-y-1 ml-6 list-disc">
-            <li><strong>Medium (0%):</strong> Average of previous payouts - riskier but closer to reality</li>
-            <li><strong>Safe (-5%):</strong> 5% decrease on average - conservative buffer for planning</li>
-            <li><strong>Very Safe (-15%):</strong> 15% decrease on average - maximum safety margin</li>
+            <li><strong>Aggressive Growth (+5%):</strong> 5% increase on average - for rapidly growing businesses, highest risk</li>
+            <li><strong>Medium (0%):</strong> Average of previous payouts - balanced but risky</li>
+            <li><strong>Safe (-5%):</strong> 5% decrease on average - recommended conservative buffer</li>
+            <li><strong>Very Safe (-10%):</strong> 10% decrease on average - maximum safety margin</li>
             <li>Forecasts apply to safe spending limits and buying opportunities</li>
           </ul>
         </div>
