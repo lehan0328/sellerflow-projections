@@ -34,7 +34,7 @@ export const PRICING_PLANS = {
     name: "Starter",
     price: 29,
     yearlyPrice: 290,
-    product_id: "prod_TAcNnoGuq5Mr7X",
+    product_id: "prod_TAcNEuRnBTaX61",
     price_id: "price_1SEH8NB28kMY3UseBj2w9HgH",
     yearly_price_id: "price_1SEHZGB28kMY3UseCkWIlnWw",
     features: [
@@ -56,7 +56,7 @@ export const PRICING_PLANS = {
     name: "Growing",
     price: 59,
     yearlyPrice: 590,
-    product_id: "prod_TAcOHW9cOWCHUi",
+    product_id: "prod_TAcNnoGuq5Mr7X",
     price_id: "price_1SEH8iB28kMY3Usem3k3vElT",
     yearly_price_id: "price_1SEHZVB28kMY3Use9bH8xPlg",
     features: [
