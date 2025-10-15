@@ -487,7 +487,7 @@ const UpgradePlan = () => {
                                 <Button
                                   size="sm"
                                   className="w-full text-xs bg-primary text-primary-foreground hover:bg-primary/90"
-                                  onClick={() => openCustomerPortal()}
+                                  onClick={() => openCustomerPortal('subscription_update')}
                                 >
                                   <Calendar className="h-3 w-3 mr-2" />
                                   Switch to Yearly in Customer Portal
@@ -508,7 +508,7 @@ const UpgradePlan = () => {
                       size="sm" 
                       variant="outline"
                       className="w-full"
-                      onClick={openCustomerPortal}
+                      onClick={() => openCustomerPortal()}
                     >
                       <Settings className="h-4 w-4 mr-2" />
                       Manage Payment Methods
@@ -542,7 +542,7 @@ const UpgradePlan = () => {
                             size="sm"
                             variant="default"
                             className="flex-1 bg-gradient-primary"
-                            onClick={() => openCustomerPortal()}
+                            onClick={() => openCustomerPortal('subscription_update')}
                           >
                             <TrendingUp className="h-4 w-4 mr-2" />
                             Upgrade to Yearly (Save {plans.find(p => p.key === plan)?.savings})
@@ -1064,7 +1064,7 @@ const UpgradePlan = () => {
                     <Button
                       variant="outline"
                       className="text-destructive hover:text-destructive"
-                      onClick={openCustomerPortal}
+                      onClick={() => openCustomerPortal()}
                     >
                       <ArrowDown className="h-4 w-4 mr-2" />
                       Manage Plan

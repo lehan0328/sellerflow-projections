@@ -487,7 +487,7 @@ export const useSubscription = () => {
   };
 
 
-  const openCustomerPortal = async () => {
+  const openCustomerPortal = async (flowType?: 'subscription_update') => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -500,6 +500,7 @@ export const useSubscription = () => {
       }
 
       const { data, error } = await supabase.functions.invoke("customer-portal", {
+        body: flowType ? { flowType } : {},
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
