@@ -392,7 +392,7 @@ const UpgradePlan = () => {
                   <Separator />
                   <Button 
                     size="sm" 
-                    variant="outline"
+                    variant="destructive"
                     className="w-full"
                     onClick={() => setShowCancellationFlow(true)}
                   >
@@ -424,15 +424,6 @@ const UpgradePlan = () => {
                             Upgrade to Yearly (Save {plans.find(p => p.key === plan)?.savings})
                           </Button>
                         )}
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => setShowCancellationFlow(true)}
-                        >
-                          <XCircle className="h-4 w-4 mr-2" />
-                          Cancel
-                        </Button>
                       </div>
                     </div>
                   )}
