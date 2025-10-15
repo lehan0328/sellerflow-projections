@@ -173,11 +173,19 @@ export const AdminCustomers = () => {
             }
           }
 
+          // Calculate renewal date if not provided by Stripe but last paid date exists
+          let calculatedRenewalDate = renewalDate;
+          if (!calculatedRenewalDate && lastPaidDate) {
+            const lastPaid = new Date(lastPaidDate);
+            lastPaid.setMonth(lastPaid.getMonth() + 1);
+            calculatedRenewalDate = lastPaid.toISOString();
+          }
+
           return {
             ...profile,
             email: emailData?.emails?.[profile.user_id] || 'Unknown',
             amazon_revenue: revenue,
-            renewal_date: renewalDate,
+            renewal_date: calculatedRenewalDate,
             last_paid_date: lastPaidDate,
             stripe_plan_name: stripePlanName,
             stripe_subscription_status: stripeSubscriptionStatus,
@@ -388,6 +396,11 @@ export const AdminCustomers = () => {
     }
     
     // Check for active Stripe subscription first (most accurate)
+    // Active subscription status from Stripe takes priority
+    if (customer.stripe_subscription_status === 'active' || customer.stripe_subscription_status === 'trialing') {
+      return { label: 'Paid', variant: 'default' as const };
+    }
+    
     // If renewal_date is set and in the future, they have an active subscription
     if (customer.renewal_date && new Date(customer.renewal_date) > now) {
       return { label: 'Paid', variant: 'default' as const };
