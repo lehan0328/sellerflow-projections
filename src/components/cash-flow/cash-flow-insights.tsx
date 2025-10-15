@@ -649,7 +649,7 @@ export const CashFlowInsights = ({
                   <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
                     <span className="text-muted-foreground">Lowest Projected</span>
                     <span className="font-semibold text-orange-600">
-                      ${projectedLowestBalance.toLocaleString()}
+                      ${Math.max(0, projectedLowestBalance - reserveAmount).toLocaleString()}
                     </span>
                   </div>
                   {lowestBalanceDate && <p className="text-xs text-muted-foreground italic p-2">
