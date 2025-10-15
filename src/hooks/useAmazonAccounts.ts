@@ -181,6 +181,39 @@ export const useAmazonAccounts = () => {
       toast.info("Re-syncing with new payout schedule...");
       await syncAmazonAccount(accountId);
       
+      // Automatically regenerate forecasts with the new payout frequency
+      console.log('🔄 Starting forecast regeneration after payout frequency change...');
+      toast.loading("Regenerating forecasts with new payout schedule...");
+      
+      // Delete old forecasted payouts
+      const { error: deleteError } = await supabase
+        .from('amazon_payouts')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('status', 'forecasted');
+
+      if (deleteError) {
+        console.error('❌ Error deleting old forecasts:', deleteError);
+      } else {
+        console.log('✅ Old forecasts deleted');
+      }
+
+      // Generate new forecasts
+      console.log('🤖 Calling forecast-amazon-payouts function...');
+      const { data: forecastData, error: forecastError } = await supabase.functions.invoke('forecast-amazon-payouts', {
+        body: { userId: user.id }
+      });
+
+      console.log('📊 Forecast response:', { data: forecastData, error: forecastError });
+
+      if (forecastError) {
+        console.error('❌ Forecast regeneration error:', forecastError);
+        toast.error("Payout frequency updated but forecast regeneration failed");
+      } else if (forecastData?.success) {
+        console.log('✅ Forecasts regenerated successfully');
+        toast.success("Payout frequency updated and forecasts regenerated!");
+      }
+      
       return true;
     } catch (error) {
       console.error("Error updating payout frequency:", error);
