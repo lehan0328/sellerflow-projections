@@ -148,17 +148,36 @@ serve(async (req) => {
       
       // If trialing, use trial_end, otherwise use current_period_end
       if (isTrialing && subscription.trial_end) {
-        trialEnd = new Date(subscription.trial_end * 1000).toISOString();
-        subscriptionEnd = trialEnd;
-        logStep("Trial subscription found", { 
-          subscriptionId: subscription.id, 
-          trialEndDate: trialEnd 
-        });
+        try {
+          trialEnd = new Date(subscription.trial_end * 1000).toISOString();
+          subscriptionEnd = trialEnd;
+          logStep("Trial subscription found", { 
+            subscriptionId: subscription.id, 
+            trialEndDate: trialEnd 
+          });
+        } catch (error) {
+          logStep("Error parsing trial_end date", { 
+            trial_end: subscription.trial_end,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      } else if (subscription.current_period_end) {
+        try {
+          subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+          logStep("Active subscription found", { 
+            subscriptionId: subscription.id, 
+            endDate: subscriptionEnd 
+          });
+        } catch (error) {
+          logStep("Error parsing current_period_end date", { 
+            current_period_end: subscription.current_period_end,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
       } else {
-        subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-        logStep("Active subscription found", { 
-          subscriptionId: subscription.id, 
-          endDate: subscriptionEnd 
+        logStep("No end date found for subscription", { 
+          subscriptionId: subscription.id,
+          status: subscription.status 
         });
       }
       
