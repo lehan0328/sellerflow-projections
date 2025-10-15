@@ -391,7 +391,23 @@ const UpgradePlan = () => {
                           {(() => {
                             const currentMonthlyPaid = price_amount ? (price_amount / 100) : PRICING_PLANS[plan].price;
                             const yearlyPrice = PRICING_PLANS[plan].yearlyPrice;
-                            const creditApplied = currentMonthlyPaid;
+                            
+                            // Calculate credit based on remaining time in billing period
+                            let creditApplied = currentMonthlyPaid;
+                            if (current_period_start && subscription_end) {
+                              const periodStart = new Date(current_period_start);
+                              const periodEnd = new Date(subscription_end);
+                              const now = new Date();
+                              
+                              const totalDays = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
+                              const remainingDays = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                              
+                              if (totalDays > 0 && remainingDays > 0) {
+                                // Credit for unused time
+                                creditApplied = (currentMonthlyPaid * remainingDays) / totalDays;
+                              }
+                            }
+                            
                             const amountDue = yearlyPrice - creditApplied;
                             
                             return (
@@ -402,12 +418,12 @@ const UpgradePlan = () => {
                                     <span>${yearlyPrice}</span>
                                   </div>
                                   <div className="flex justify-between text-green-600">
-                                    <span>Credit Applied:</span>
-                                    <span>-${creditApplied}</span>
+                                    <span>Credit for Remaining Time:</span>
+                                    <span>-${creditApplied.toFixed(2)}</span>
                                   </div>
                                   <div className="flex justify-between font-bold pt-1 border-t">
                                     <span>Amount Due:</span>
-                                    <span>${amountDue}</span>
+                                    <span>${amountDue.toFixed(2)}</span>
                                   </div>
                                 </div>
                                 <Button
@@ -417,12 +433,12 @@ const UpgradePlan = () => {
                                   onClick={() => handleUpgrade(
                                     PRICING_PLANS[plan].yearly_price_id, 
                                     `${PRICING_PLANS[plan].name} (Yearly)`,
-                                    amountDue * 100,
+                                    Math.round(amountDue * 100),
                                     true
                                   )}
                                 >
                                   <Calendar className="h-3 w-3 mr-2" />
-                                  Switch to Yearly & Pay ${amountDue}
+                                  Switch to Yearly & Pay ${amountDue.toFixed(2)}
                                   <Badge variant="secondary" className="ml-2 text-xs">
                                     Save {plans.find(p => p.key === plan)?.savings}
                                   </Badge>
@@ -477,11 +493,28 @@ const UpgradePlan = () => {
                             onClick={() => {
                               const currentMonthlyPaid = price_amount ? (price_amount / 100) : PRICING_PLANS[plan].price;
                               const yearlyPrice = PRICING_PLANS[plan].yearlyPrice;
-                              const amountDue = yearlyPrice - currentMonthlyPaid;
+                              
+                              // Calculate credit based on remaining time
+                              let creditApplied = currentMonthlyPaid;
+                              if (current_period_start && subscription_end) {
+                                const periodStart = new Date(current_period_start);
+                                const periodEnd = new Date(subscription_end);
+                                const now = new Date();
+                                
+                                const totalDays = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
+                                const remainingDays = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                                
+                                if (totalDays > 0 && remainingDays > 0) {
+                                  creditApplied = (currentMonthlyPaid * remainingDays) / totalDays;
+                                }
+                              }
+                              
+                              const amountDue = yearlyPrice - creditApplied;
+                              
                               handleUpgrade(
                                 PRICING_PLANS[plan].yearly_price_id,
                                 `${PRICING_PLANS[plan].name} (Yearly)`,
-                                amountDue * 100,
+                                Math.round(amountDue * 100),
                                 true
                               );
                             }}
