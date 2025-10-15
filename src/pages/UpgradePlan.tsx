@@ -38,7 +38,7 @@ interface CartItem {
 const UpgradePlan = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, isLoading } = useSubscription();
+  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, isLoading } = useSubscription();
   const { calculatePostTrialCost } = useTrialAddonUsage();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
   const [isYearly, setIsYearly] = useState(true);
@@ -304,26 +304,44 @@ const UpgradePlan = () => {
                   {!discount_ever_redeemed && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Price</span>
-                        {isYearly ? (
-                          <div className="text-right">
-                            <div className="text-lg font-bold">
-                              ${PRICING_PLANS[plan].yearlyPrice}/year
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              (${(PRICING_PLANS[plan].yearlyPrice / 12).toFixed(2)}/month)
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-lg font-bold">
-                            ${PRICING_PLANS[plan].price}/mo
-                          </span>
-                        )}
+                        <span className="text-sm font-medium">Billing</span>
+                        <span className="text-sm text-muted-foreground">
+                          {billing_interval === 'year' ? 'Yearly' : 'Monthly'}
+                        </span>
                       </div>
-                      {!isYearly && (
-                        <div className="space-y-2">
+                      
+                      {price_amount && currency && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Price</span>
+                          <span className="text-lg font-bold">
+                            ${(price_amount / 100).toFixed(0)}/{billing_interval === 'year' ? 'year' : 'month'}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {current_period_start && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Last Renewed</span>
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(current_period_start).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {discount && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Discount</span>
+                          <span className="text-sm text-green-600">
+                            {discount.percent_off ? `${discount.percent_off}% off` : `$${(discount.amount_off! / 100).toFixed(2)} off`}
+                            {discount.duration === 'repeating' && discount.duration_in_months ? ` for ${discount.duration_in_months} months` : ''}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {billing_interval !== 'year' && (
+                        <div className="space-y-2 pt-2 border-t">
                           <div className="text-xs text-muted-foreground text-right">
-                            Annual total: ${PRICING_PLANS[plan].price * 12}
+                            Annual total: ${price_amount ? ((price_amount / 100) * 12).toFixed(0) : (PRICING_PLANS[plan].price * 12)}
                           </div>
                           <Button
                             size="sm"
