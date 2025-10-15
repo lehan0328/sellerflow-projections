@@ -77,7 +77,7 @@ export const useReserveAmount = () => {
         throw new Error("24-hour restriction active");
       }
 
-      console.log('[Reserve] Starting update to:', newAmount);
+      console.log('[Reserve] 🔵 Starting update to:', newAmount);
 
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       console.log('[Reserve] User:', user?.id, 'Error:', userError);
@@ -103,13 +103,13 @@ export const useReserveAmount = () => {
       console.log('[Reserve] Using account_id:', profile.account_id);
 
       // Use upsert to handle both create and update cases
-      console.log('[Reserve] Upserting settings record');
+      console.log('[Reserve] 🟢 Upserting settings with reserve:', newAmount);
       const { data: upsertData, error: upsertError } = await supabase
         .from('user_settings')
         .upsert({
           user_id: user.id,
           account_id: profile.account_id,
-          safe_spending_reserve: newAmount,
+          safe_spending_reserve: Number(newAmount), // Ensure it's a number
           reserve_last_updated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id'
@@ -119,33 +119,47 @@ export const useReserveAmount = () => {
       console.log('[Reserve] Upsert result:', upsertData, 'Error:', upsertError);
 
       if (upsertError) {
-        console.error('[Reserve] Upsert error:', upsertError);
-        throw new Error(`Upsert error: ${upsertError.message}`);
+        console.error('[Reserve] ❌ Upsert error:', upsertError);
+        throw new Error(`Failed to save reserve: ${upsertError.message}`);
       }
 
-      // Verify the update
-      const { data: verified } = await supabase
+      // Verify the update was successful
+      console.log('[Reserve] 🔍 Verifying saved value...');
+      const { data: verified, error: verifyError } = await supabase
         .from('user_settings')
         .select('safe_spending_reserve')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      console.log('[Reserve] Verified value:', verified?.safe_spending_reserve);
+      console.log('[Reserve] ✅ Verified value in DB:', verified?.safe_spending_reserve, 'Error:', verifyError);
 
-      // Update local state
+      if (verifyError || !verified) {
+        throw new Error('Failed to verify reserve was saved');
+      }
+
+      const savedValue = Number(verified.safe_spending_reserve);
+      if (savedValue !== newAmount) {
+        console.error('[Reserve] ⚠️ Saved value mismatch! Expected:', newAmount, 'Got:', savedValue);
+        throw new Error(`Reserve mismatch: saved ${savedValue} instead of ${newAmount}`);
+      }
+
+      // Update local state ONLY after verifying database update
+      console.log('[Reserve] 🎉 Update successful! Setting local state to:', newAmount);
       setReserveAmount(newAmount);
       setLastUpdated(new Date());
       setCanUpdate(false);
 
       toast({
         title: "Reserve amount updated",
-        description: `Reserve set to $${newAmount.toLocaleString()}. Can be changed again in 24 hours.`,
+        description: `Reserve set to $${newAmount.toLocaleString()}. The calendar and safe spending calculations will update automatically.`,
       });
-    } catch (error) {
-      console.error('[Reserve] Update failed:', error);
+
+      console.log('[Reserve] ✨ Reserve update complete');
+    } catch (error: any) {
+      console.error('[Reserve] ❌ Update failed:', error);
       toast({
         title: "Error updating reserve",
-        description: "Please try again",
+        description: error.message || "Please try again",
         variant: "destructive",
       });
       throw error;

@@ -98,6 +98,12 @@ const Dashboard = () => {
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
   const { reserveAmount, updateReserveAmount, canUpdate: canUpdateReserve, lastUpdated: lastReserveUpdate } = useReserveAmount();
   const { data: safeSpendingData, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount);
+
+  // Refetch safe spending whenever reserve amount changes
+  useEffect(() => {
+    console.log('💰 [DASHBOARD] Reserve amount changed to:', reserveAmount, '- refetching safe spending');
+    refetchSafeSpending();
+  }, [reserveAmount, refetchSafeSpending]);
   const { amazonPayouts } = useAmazonPayouts();
   
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);

@@ -70,8 +70,15 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
         return;
       }
 
-      // Use the reserve amount passed in
-      const reserve = reserveAmountInput;
+      // ALWAYS fetch the latest reserve from database to ensure accuracy
+      const { data: settings } = await supabase
+        .from('user_settings')
+        .select('safe_spending_reserve')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      const reserve = Number(settings?.safe_spending_reserve || 0);
+      console.log('🔄 [SAFE SPENDING] Using reserve from database:', reserve);
 
       // Get bank account balance
       const { data: bankAccounts } = await supabase
@@ -684,7 +691,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchSafeSpending]);
+  }, [fetchSafeSpending, reserveAmountInput]); // Re-subscribe when reserve input changes
 
   return { data, isLoading, error, refetch: fetchSafeSpending };
 };
