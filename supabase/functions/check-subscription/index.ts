@@ -153,9 +153,27 @@ serve(async (req) => {
     });
     
     // Filter for active, trialing, or past_due subscriptions (all count as subscribed)
-    const activeOrTrialingSub = subscriptions.data.find(
-      sub => sub.status === 'active' || sub.status === 'trialing' || sub.status === 'past_due'
-    );
+    // Also include canceled subscriptions that are still in their paid period
+    const activeOrTrialingSub = subscriptions.data.find(sub => {
+      if (sub.status === 'active' || sub.status === 'trialing' || sub.status === 'past_due') {
+        return true;
+      }
+      // Include canceled subscriptions that haven't reached their period end yet
+      if (sub.status === 'canceled' && sub.current_period_end) {
+        const periodEnd = new Date(sub.current_period_end * 1000);
+        const now = new Date();
+        const stillActive = periodEnd > now;
+        if (stillActive) {
+          logStep("Found canceled subscription still in paid period", {
+            subscriptionId: sub.id,
+            periodEnd: periodEnd.toISOString(),
+            daysRemaining: Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+          });
+        }
+        return stillActive;
+      }
+      return false;
+    });
     
     // User is considered subscribed if they have any of these statuses
     const hasActiveSub = !!activeOrTrialingSub;
