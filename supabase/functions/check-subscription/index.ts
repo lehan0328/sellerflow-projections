@@ -234,19 +234,19 @@ serve(async (req) => {
       priceAmount = price.unit_amount || null;
       currency = price.currency || 'usd';
       
-      // Get current period start (last payment date)
-      if (subscription.current_period_start) {
+      // Get current period start (use billing_cycle_anchor as it's the actual field Stripe provides)
+      if (subscription.billing_cycle_anchor) {
         try {
-          currentPeriodStart = new Date(subscription.current_period_start * 1000).toISOString();
-          logStep("Current period start set", { currentPeriodStart });
+          currentPeriodStart = new Date(subscription.billing_cycle_anchor * 1000).toISOString();
+          logStep("Current period start set from billing_cycle_anchor", { currentPeriodStart });
         } catch (error) {
-          logStep("Error parsing current_period_start", { 
-            current_period_start: subscription.current_period_start,
+          logStep("Error parsing billing_cycle_anchor for current period", { 
+            billing_cycle_anchor: subscription.billing_cycle_anchor,
             error: error instanceof Error ? error.message : String(error)
           });
         }
       } else {
-        logStep("No current_period_start found", { subscriptionId: subscription.id });
+        logStep("No billing_cycle_anchor found", { subscriptionId: subscription.id });
       }
       
       logStep("Billing details extracted", { 
@@ -254,8 +254,7 @@ serve(async (req) => {
         priceAmount,
         currency,
         currentPeriodStart,
-        hasCurrentPeriodStart: !!subscription.current_period_start,
-        rawCurrentPeriodStart: subscription.current_period_start
+        hasBillingCycleAnchor: !!subscription.billing_cycle_anchor
       });
       
       // Check for discount on subscription first
