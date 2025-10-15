@@ -39,7 +39,38 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Handle payment failed events
+    // Handle checkout session completion failures
+    if (event.type === "checkout.session.async_payment_failed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const customerEmail = session.customer_email || session.customer_details?.email;
+
+      console.log("Checkout payment failed for:", customerEmail);
+      
+      // Payment declined during upgrade - subscription should NOT be created
+      // Stripe automatically handles this, but we log it for monitoring
+      if (customerEmail) {
+        const { data: user } = await supabaseAdmin.auth.admin.listUsers();
+        const targetUser = user?.users.find(u => u.email === customerEmail);
+        
+        if (targetUser) {
+          // Log the failed attempt
+          await supabaseAdmin
+            .from('support_tickets')
+            .insert({
+              user_id: targetUser.id,
+              subject: 'Payment Failed During Upgrade',
+              message: `Payment was declined during checkout. No changes were made to your subscription. Please update your payment method and try again.`,
+              category: 'Billing',
+              status: 'open',
+              priority: 'high'
+            });
+          
+          console.log("Created support ticket for failed payment:", targetUser.id);
+        }
+      }
+    }
+
+    // Handle payment failed events for existing subscriptions
     if (event.type === "invoice.payment_failed") {
       const invoice = event.data.object as Stripe.Invoice;
       const customerEmail = invoice.customer_email;

@@ -435,15 +435,26 @@ const UpgradePlan = () => {
                     </div>
                   )}
                   <Separator />
-                  <Button 
-                    size="sm" 
-                    variant="destructive"
-                    className="w-full"
-                    onClick={() => setShowCancellationFlow(true)}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Cancel Subscription
-                  </Button>
+                  <div className="space-y-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="w-full"
+                      onClick={openCustomerPortal}
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Manage Payment Methods
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="destructive"
+                      className="w-full"
+                      onClick={() => setShowCancellationFlow(true)}
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Cancel Subscription
+                    </Button>
+                  </div>
                   {subscribed && subscription_end && (
                     <div className="space-y-3">
                       {is_trialing && !isYearly && plan && (
