@@ -9,6 +9,7 @@ import { useSafeSpending } from "@/hooks/useSafeSpending";
 import { useVendors } from "@/hooks/useVendors";
 import { useIncome } from "@/hooks/useIncome";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useExcludeToday } from "@/contexts/ExcludeTodayContext";
 import { addDays, isWithinInterval, startOfDay } from "date-fns";
 import aurenLogo from "@/assets/auren-full-logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -76,9 +77,10 @@ const FlexReport = () => {
     totalAvailableCredit,
     creditCards
   } = useCreditCards();
+  const { excludeToday } = useExcludeToday();
   const {
     data: safeSpendingData
-  } = useSafeSpending();
+  } = useSafeSpending(0, excludeToday);
   const {
     vendors
   } = useVendors();

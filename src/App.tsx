@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ExcludeTodayProvider } from "@/contexts/ExcludeTodayContext";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
@@ -61,10 +62,11 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <PaymentAccessControl>
+      <ExcludeTodayProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <PaymentAccessControl>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/demo" element={<Demo />} />
@@ -189,6 +191,7 @@ const App = () => (
         </Routes>
         </PaymentAccessControl>
       </TooltipProvider>
+      </ExcludeTodayProvider>
     </BrowserRouter>
   </QueryClientProvider>
 );

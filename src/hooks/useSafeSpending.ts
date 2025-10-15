@@ -28,7 +28,7 @@ interface DailyBalance {
   balance: number;
 }
 
-export const useSafeSpending = (reserveAmountInput: number = 0) => {
+export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTransactions: boolean = false) => {
   const [data, setData] = useState<SafeSpendingData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -223,6 +223,14 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
             return;
           }
           
+          // Skip today's transactions if excludeTodayTransactions is true
+          if (excludeTodayTransactions && txDate.getTime() === today.getTime()) {
+            if (isKeyDate) {
+              console.log(`  🚫 EXCLUDING today's transaction: ${tx.type} $${tx.amount} (excluded by user)`);
+            }
+            return;
+          }
+          
           if (txDate.getTime() === targetDate.getTime() && tx.status !== 'partially_paid') {
             if (tx.type === 'sales_order' || tx.type === 'customer_payment') {
               // Only count completed sales orders, not pending ones (they should be in income table)
@@ -264,6 +272,14 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
             return;
           }
           
+          // Skip today's income if excludeTodayTransactions is true
+          if (excludeTodayTransactions && incomeDate.getTime() === today.getTime()) {
+            if (isKeyDate) {
+              console.log(`  🚫 EXCLUDING today's income: ${income.description} $${income.amount} (excluded by user)`);
+            }
+            return;
+          }
+          
           if (income.status !== 'received') {
             if (incomeDate.getTime() === targetDate.getTime()) {
               const amt = Number(income.amount);
@@ -283,6 +299,14 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
           if (payoutDate.getTime() < today.getTime()) {
             if (isKeyDate) {
               console.log(`  ⏭️ SKIPPING past Amazon payout: $${payout.total_amount} (date: ${formatDate(payoutDate)})`);
+            }
+            return;
+          }
+          
+          // Skip today's Amazon payouts if excludeTodayTransactions is true
+          if (excludeTodayTransactions && payoutDate.getTime() === today.getTime()) {
+            if (isKeyDate) {
+              console.log(`  🚫 EXCLUDING today's Amazon payout: $${payout.total_amount} (excluded by user)`);
             }
             return;
           }

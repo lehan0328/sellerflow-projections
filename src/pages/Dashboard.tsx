@@ -20,6 +20,7 @@ import { RecurringExpensesOverview } from "@/components/cash-flow/recurring-expe
 import { ReferralDashboardContent } from "@/components/ReferralDashboardContent";
 import { TransactionsView } from "@/components/TransactionsView";
 import { useIncome } from "@/hooks/useIncome";
+import { useExcludeToday } from "@/contexts/ExcludeTodayContext";
 import ScenarioPlanner from "@/pages/ScenarioPlanner";
 import Analytics from "@/pages/Analytics";
 import DocumentStorage from "@/pages/DocumentStorage";
@@ -97,13 +98,20 @@ const Dashboard = () => {
   const { creditCards, refetch: refetchCreditCards } = useCreditCards();
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
   const { reserveAmount, updateReserveAmount, canUpdate: canUpdateReserve, lastUpdated: lastReserveUpdate } = useReserveAmount();
-  const { data: safeSpendingData, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount);
+  const { excludeToday } = useExcludeToday();
+  const { data: safeSpendingData, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount, excludeToday);
 
   // Refetch safe spending whenever reserve amount changes
   useEffect(() => {
     console.log('💰 [DASHBOARD] Reserve amount changed to:', reserveAmount, '- refetching safe spending');
     refetchSafeSpending();
   }, [reserveAmount, refetchSafeSpending]);
+  
+  // Refetch safe spending whenever exclude today changes
+  useEffect(() => {
+    console.log('🔄 [DASHBOARD] Exclude today changed to:', excludeToday, '- refetching safe spending');
+    refetchSafeSpending();
+  }, [excludeToday, refetchSafeSpending]);
   const { amazonPayouts } = useAmazonPayouts();
   
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);

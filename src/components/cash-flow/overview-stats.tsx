@@ -14,6 +14,7 @@ import { useReserveAmount } from "@/hooks/useReserveAmount";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 import { useIncome } from "@/hooks/useIncome";
+import { useExcludeToday } from "@/contexts/ExcludeTodayContext";
 import { OverdueTransactionsModal } from "./overdue-transactions-modal";
 
 interface OverviewStatsProps {
@@ -78,7 +79,8 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
   const { reserveAmount, updateReserveAmount: updateReserve, canUpdate, lastUpdated } = useReserveAmount();
-  const { data: safeSpendingData, isLoading: isLoadingSafeSpending, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount);
+  const { excludeToday } = useExcludeToday();
+  const { data: safeSpendingData, isLoading: isLoadingSafeSpending, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount, excludeToday);
   const { amazonPayouts, monthlyOrdersTotal } = useAmazonPayouts();
   const { transactions: vendorTransactions } = useVendorTransactions();
   const { incomeItems } = useIncome();
@@ -111,6 +113,12 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
     console.log('🔄 OverviewStats mounted - fetching safe spending data');
     refetchSafeSpending();
   }, []);
+  
+  // Refetch when exclude today changes
+  useEffect(() => {
+    console.log('🔄 Exclude today changed to:', excludeToday, '- refetching safe spending');
+    refetchSafeSpending();
+  }, [excludeToday, refetchSafeSpending]);
   
   // Calculate dynamic values based on events
   const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
