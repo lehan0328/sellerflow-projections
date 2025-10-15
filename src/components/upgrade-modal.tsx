@@ -71,7 +71,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature = "connections", curr
                       <p className="text-sm text-muted-foreground">Unlock all premium features</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-primary">${nextPlans[0][1].price}</div>
+                      <div className="text-2xl font-bold text-primary">$89</div>
                       <div className="text-xs text-muted-foreground">/month</div>
                     </div>
                   </div>
