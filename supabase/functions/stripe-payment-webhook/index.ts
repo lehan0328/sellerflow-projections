@@ -113,12 +113,28 @@ serve(async (req) => {
         const targetUser = user?.users.find(u => u.email === customerEmail);
 
         if (targetUser) {
+          // Check if user has referred_user_discount that hasn't been redeemed
+          const { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select('plan_override, discount_redeemed_at')
+            .eq('user_id', targetUser.id)
+            .single();
+
+          const updateData: any = {
+            account_status: 'active',
+            payment_failure_date: null
+          };
+
+          // If user had referred_user_discount and hasn't redeemed it yet, mark as redeemed
+          if (profile?.plan_override === 'referred_user_discount' && !profile?.discount_redeemed_at) {
+            updateData.discount_redeemed_at = new Date().toISOString();
+            updateData.plan_override = null;
+            console.log("Marking referred user discount as redeemed for:", targetUser.id);
+          }
+
           const { error } = await supabaseAdmin
             .from('profiles')
-            .update({
-              account_status: 'active',
-              payment_failure_date: null
-            })
+            .update(updateData)
             .eq('user_id', targetUser.id);
 
           if (error) {

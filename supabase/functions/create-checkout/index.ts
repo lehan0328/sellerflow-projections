@@ -321,17 +321,13 @@ serve(async (req) => {
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
-    // Mark discount as redeemed ONLY after successful checkout session creation
-    if (discountCouponId) {
-      await supabaseClient
-        .from('profiles')
-        .update({ 
-          discount_redeemed_at: new Date().toISOString(),
-          plan_override: null // Remove override once discount is applied
-        })
-        .eq('user_id', user.id);
-      logStep("Marked discount as redeemed in profile after successful checkout creation");
-    }
+    // NOTE: We do NOT mark the discount as redeemed here
+    // The discount will be marked as redeemed by the stripe-payment-webhook
+    // when the user actually completes payment. This allows users to:
+    // 1. Cancel checkout and try different plans
+    // 2. Only lose their discount when they actually subscribe
+    // The webhook will check for the referred_user_discount plan_override
+    // and mark it as redeemed upon successful payment
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
