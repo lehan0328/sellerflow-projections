@@ -10,6 +10,7 @@ import aurenIcon from "@/assets/auren-icon-blue.png";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useSubscription } from "@/hooks/useSubscription";
 import { UpgradeModal } from "@/components/upgrade-modal";
+import { hasPlanAccess } from "@/lib/planUtils";
 interface AppSidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
@@ -113,6 +114,10 @@ export function AppSidebar({
       setShowUpgradeModal(true);
       return;
     }
+    if (sectionId === 'document-storage' && !hasPlanAccess(subscription.plan, 'growing')) {
+      setShowUpgradeModal(true);
+      return;
+    }
     onSectionChange(sectionId);
   };
   return <Sidebar className={isCollapsed ? "w-16" : "w-64"} collapsible="icon">
@@ -139,6 +144,8 @@ export function AppSidebar({
               const isActive = activeSection === section.id;
               const isRestricted = restrictedSections.includes(section.id);
               const showLock = isRestricted && !isProfessionalPlan;
+              const isDocumentStorage = section.id === 'document-storage';
+              const showDocumentLock = isDocumentStorage && !hasPlanAccess(subscription.plan, 'growing');
               
               return <SidebarMenuItem key={section.id}>
                     <SidebarMenuButton onClick={() => handleSectionClick(section.id)} className={`
@@ -156,7 +163,7 @@ export function AppSidebar({
                             {'showBadge' in section && section.showBadge && unreadCount > 0 && <Badge variant="destructive" className="text-[10px] font-bold px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center">
                                 {unreadCount}
                               </Badge>}
-                            {showLock && <Lock className="h-4 w-4 text-muted-foreground" />}
+                            {(showLock || showDocumentLock) && <Lock className="h-4 w-4 text-muted-foreground" />}
                           </span>
                         </span>}
                       {isCollapsed && 'showBadge' in section && section.showBadge && unreadCount > 0 && <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
@@ -165,7 +172,7 @@ export function AppSidebar({
                       {isCollapsed && 'showMatchCount' in section && section.showMatchCount && matchCount > 0 && <div className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
                           {matchCount}
                         </div>}
-                      {isCollapsed && showLock && <div className="absolute -top-1 -right-1">
+                      {isCollapsed && (showLock || showDocumentLock) && <div className="absolute -top-1 -right-1">
                           <Lock className="h-3 w-3 text-muted-foreground" />
                         </div>}
                     </SidebarMenuButton>
@@ -225,6 +232,10 @@ export function AppSidebar({
               }
               return <SidebarMenuItem key={section.id}>
                     <SidebarMenuButton onClick={() => {
+                  if (section.id === 'document-storage' && !hasPlanAccess(subscription.plan, 'growing')) {
+                    setShowUpgradeModal(true);
+                    return;
+                  }
                   if (isFlexReport && onFlexReportClick) {
                     onFlexReportClick();
                   } else if (isRoute && 'url' in section) {
@@ -247,10 +258,14 @@ export function AppSidebar({
                                 {unreadSupportCount}
                               </Badge>}
                             {section.id === "referrals" && <Badge variant="secondary" className="ml-auto text-[10px] bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30 font-bold px-1.5 py-0">Earn $2k</Badge>}
+                            {section.id === "document-storage" && !hasPlanAccess(subscription.plan, 'growing') && <Lock className="h-4 w-4 text-muted-foreground" />}
                           </span>
                         </span>}
                       {isCollapsed && 'showSupportBadge' in section && section.showSupportBadge && unreadSupportCount > 0 && <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
                           {unreadSupportCount}
+                        </div>}
+                      {isCollapsed && section.id === "document-storage" && !hasPlanAccess(subscription.plan, 'growing') && <div className="absolute -top-1 -right-1">
+                          <Lock className="h-3 w-3 text-muted-foreground" />
                         </div>}
                     </SidebarMenuButton>
                   </SidebarMenuItem>;

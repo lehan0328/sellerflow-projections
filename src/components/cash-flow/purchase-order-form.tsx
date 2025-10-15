@@ -21,6 +21,8 @@ import { VendorForm } from "./vendor-form";
 import { supabase } from "@/integrations/supabase/client";
 import { useCategories } from "@/hooks/useCategories";
 import { AddCategoryDialog } from "./add-category-dialog";
+import { hasPlanAccess } from "@/lib/planUtils";
+import { UpgradeModal } from "@/components/upgrade-modal";
 interface Vendor {
   id: string;
   name: string;
@@ -97,6 +99,7 @@ export const PurchaseOrderForm = ({
   const [showVendorForm, setShowVendorForm] = useState(false);
   const [extractedVendorName, setExtractedVendorName] = useState<string>("");
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [saveToStorage, setSaveToStorage] = useState(() => {
     const saved = localStorage.getItem('po-save-to-storage');
     return saved !== null ? saved === 'true' : true;
@@ -384,10 +387,10 @@ export const PurchaseOrderForm = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Check if user has access to PDF extractor (growing, professional plans or subscribed)
-    const hasAccess = subscription.subscribed && (subscription.plan === 'growing' || subscription.plan === 'professional');
+    // Check if user has access to PDF extractor (growing, professional plans)
+    const hasAccess = hasPlanAccess(subscription.plan, 'growing');
     if (!hasAccess) {
-      toast.error('PDF Extractor is available on Growing and Professional plans. Please upgrade to access this feature.');
+      setShowUpgradeModal(true);
       return;
     }
 
@@ -521,7 +524,19 @@ export const PurchaseOrderForm = ({
                     </p>
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/webp" onChange={handleFileUpload} className="hidden" />
-                  <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isProcessingDocument} className="w-full">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      if (!hasPlanAccess(subscription.plan, 'growing')) {
+                        setShowUpgradeModal(true);
+                        return;
+                      }
+                      fileInputRef.current?.click();
+                    }} 
+                    disabled={isProcessingDocument} 
+                    className="w-full"
+                  >
                     {isProcessingDocument ? <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         Processing {uploadedFileName}...
@@ -1121,6 +1136,12 @@ export const PurchaseOrderForm = ({
       name: v.name,
       id: v.id
     }))} initialVendorName={extractedVendorName} />
+
+    <UpgradeModal 
+      open={showUpgradeModal} 
+      onOpenChange={setShowUpgradeModal}
+      feature="AI PDF extractor"
+    />
 
     </>;
 };
