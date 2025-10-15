@@ -10,7 +10,7 @@ import { useRecurringExpenses, RecurringExpense } from "@/hooks/useRecurringExpe
 import { Plus, Pencil, Trash2, Repeat } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+import { format, addMonths } from "date-fns";
 
 export const RecurringExpenseManagement = () => {
   const { recurringExpenses, isLoading, createRecurringExpense, updateRecurringExpense, deleteRecurringExpense } = useRecurringExpenses();
@@ -56,8 +56,15 @@ export const RecurringExpenseManagement = () => {
     setEditingExpense(null);
   };
 
+  const maxEndDate = format(addMonths(new Date(), 3), 'yyyy-MM-dd');
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate end date is within 3 months
+    if (formData.end_date && formData.end_date > maxEndDate) {
+      return; // Prevent submission
+    }
     
     const expenseData = {
       name: formData.name,
@@ -208,10 +215,11 @@ export const RecurringExpenseManagement = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="end_date">End Date (Optional)</Label>
+                  <Label htmlFor="end_date">End Date (Optional, max 3 months)</Label>
                   <Input
                     id="end_date"
                     type="date"
+                    max={maxEndDate}
                     value={formData.end_date}
                     onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
                   />
@@ -248,7 +256,11 @@ export const RecurringExpenseManagement = () => {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button type="submit" className="flex-1">
+                  <Button 
+                    type="submit" 
+                    className="flex-1"
+                    disabled={formData.end_date ? formData.end_date > maxEndDate : false}
+                  >
                     {editingExpense ? "Update" : "Add"} Transaction
                   </Button>
                   <Button

@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Search, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { format, addMonths } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { CustomerForm } from "./customer-form";
@@ -150,8 +150,15 @@ export const IncomeForm = ({
   };
 
 
+  const maxEndDate = addMonths(new Date(), 3);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate end date is within 3 months for recurring
+    if (formData.isRecurring && formData.endDate && formData.endDate > maxEndDate) {
+      return; // Prevent submission
+    }
     
     const data = {
       id: editingIncome?.id || Date.now().toString(),
@@ -412,7 +419,7 @@ export const IncomeForm = ({
               {/* End Date - only for recurring, right under start date */}
               {(formData.isRecurring || isRecurring) && (
                 <div className="space-y-2">
-                  <Label>End Date (Optional)</Label>
+                  <Label>End Date (Optional, max 3 months)</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -431,6 +438,7 @@ export const IncomeForm = ({
                         mode="single"
                         selected={formData.endDate}
                         onSelect={(date) => handleInputChange("endDate", date || undefined)}
+                        disabled={(date) => date > maxEndDate}
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
                       />
@@ -538,7 +546,11 @@ export const IncomeForm = ({
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
                   Cancel
                 </Button>
-                <Button type="submit" className="flex-1 bg-gradient-primary">
+                <Button 
+                  type="submit" 
+                  className="flex-1 bg-gradient-primary"
+                  disabled={formData.isRecurring && formData.endDate ? formData.endDate > maxEndDate : false}
+                >
                   {editingIncome ? 'Update' : 'Add'} {isRecurring ? 'Recurring ' : ''}{formData.isRecurring ? (formData.type === "expense" ? "Expense" : "Income") : "Income"}
                 </Button>
               </div>

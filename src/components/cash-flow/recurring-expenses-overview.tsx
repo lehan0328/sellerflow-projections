@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format } from "date-fns";
+import { format, addMonths } from "date-fns";
 
 export const RecurringExpensesOverview = () => {
   const { recurringExpenses, isLoading, updateRecurringExpense, deleteRecurringExpense } = useRecurringExpenses();
@@ -88,6 +88,8 @@ export const RecurringExpensesOverview = () => {
   const totalMonthlyExpense = activeExpenses
     .reduce((sum, item) => sum + getMonthlyAmount(Number(item.amount), item.frequency), 0);
 
+  const maxEndDate = format(addMonths(new Date(), 3), 'yyyy-MM-dd');
+
   const handleEdit = (expense: RecurringExpense) => {
     setEditingExpense(expense);
     setFormData({
@@ -121,6 +123,11 @@ export const RecurringExpensesOverview = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingExpense) return;
+
+    // Validate end date is within 3 months
+    if (formData.end_date && formData.end_date > maxEndDate) {
+      return; // Prevent submission
+    }
 
     const expenseData = {
       id: editingExpense.id,
@@ -381,10 +388,11 @@ export const RecurringExpensesOverview = () => {
           </div>
 
           <div>
-            <Label htmlFor="end_date">End Date (Optional)</Label>
+            <Label htmlFor="end_date">End Date (Optional, max 3 months)</Label>
             <Input
               id="end_date"
               type="date"
+              max={maxEndDate}
               value={formData.end_date}
               onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
             />
@@ -421,7 +429,11 @@ export const RecurringExpensesOverview = () => {
           </div>
 
           <div className="flex gap-2">
-            <Button type="submit" className="flex-1">
+            <Button 
+              type="submit" 
+              className="flex-1"
+              disabled={formData.end_date ? formData.end_date > maxEndDate : false}
+            >
               Update Transaction
             </Button>
             <Button
