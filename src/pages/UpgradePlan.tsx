@@ -54,7 +54,7 @@ interface PendingUpgrade {
 const UpgradePlan = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, upgradeSubscription, paymentMethod, isLoading, payment_failed, ...subscriptionData } = useSubscription();
+  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, paymentMethod, isLoading, payment_failed, ...subscriptionData } = useSubscription();
   const { calculatePostTrialCost } = useTrialAddonUsage();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
   const [isYearly, setIsYearly] = useState(true);
@@ -175,33 +175,11 @@ const UpgradePlan = () => {
   const confirmUpgrade = async () => {
     if (pendingUpgrade) {
       setIsUpgrading(true);
-      try {
-        // Use direct upgrade for existing subscriptions
-        const result = await upgradeSubscription(pendingUpgrade.priceId);
-        if (result === true) {
-          setPendingUpgrade(null);
-          setIsUpgrading(false);
-          // Force refresh subscription to get updated data
-          await checkSubscription(true);
-        } else if (result && typeof result === 'object' && result.useCheckout) {
-          // Interval change - redirect to checkout
-          setPendingUpgrade(null);
-          setIsUpgrading(false);
-          createCheckout(result.newPriceId);
-        } else {
-          // Upgrade failed (payment declined)
-          setIsUpgrading(false);
-          setPendingUpgrade(null);
-          setUpgradeDeclineMessage('Your payment was declined. Your plan has not been changed and remains active.');
-          setUpgradeDeclined(true);
-        }
-      } catch (error) {
-        console.error('Error during upgrade:', error);
-        setIsUpgrading(false);
-        setPendingUpgrade(null);
-        setUpgradeDeclineMessage('An error occurred during the upgrade. Your plan has not been changed.');
-        setUpgradeDeclined(true);
-      }
+      setPendingUpgrade(null);
+      // Always use Stripe customer portal for plan changes
+      // This leverages Stripe's built-in plan switching with prorations
+      await openCustomerPortal();
+      setIsUpgrading(false);
     }
   };
 
