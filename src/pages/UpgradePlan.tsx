@@ -583,13 +583,42 @@ const UpgradePlan = () => {
                 </>
               ) : (
                 <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">Plan</span>
-                    <Badge variant="secondary">No Active Plan</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Choose a plan below to get started
-                  </p>
+                  {is_trialing && profile?.trial_end ? (
+                    <>
+                      <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/30 space-y-3">
+                        <div className="flex items-center justify-center gap-2">
+                          <Star className="h-5 w-5 text-blue-600" />
+                          <span className="text-sm font-semibold text-blue-600">
+                            Professional Plan Trial
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Trial Ends</span>
+                            <span className="text-sm font-medium">
+                              {new Date(profile.trial_end).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <p className="text-xs text-center text-muted-foreground pt-2 border-t border-blue-500/20">
+                            You're on a 7-day free trial of the Professional plan
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground text-center">
+                        Choose a plan below to continue after your trial
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Plan</span>
+                        <Badge variant="secondary">No Active Plan</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Choose a plan below to get started
+                      </p>
+                    </>
+                  )}
                 </>
               )}
             </CardContent>
