@@ -524,11 +524,18 @@ export const useSubscription = () => {
     // Check subscription on auth state change only (cache will handle the rest)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       // Only refresh on significant auth events
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         clearCache();
-        setTimeout(() => {
-          checkSubscription(true);
-        }, 0);
+        checkSubscription(true);
+      } else if (event === 'SIGNED_OUT') {
+        clearCache();
+        setSubscriptionState({
+          subscribed: false,
+          product_id: null,
+          subscription_end: null,
+          plan: null,
+          isLoading: false,
+        });
       }
     });
 

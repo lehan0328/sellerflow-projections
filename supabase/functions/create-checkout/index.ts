@@ -260,26 +260,11 @@ serve(async (req) => {
         };
         sessionConfig.payment_method_collection = "if_required";
       } else {
-        // Same interval - can update in place
-        await stripe.subscriptions.update(currentSubscription.id, {
-          items: [{
-            id: currentSubscription.items.data[0].id,
-            price: newPriceId,
-          }],
-          proration_behavior: 'always_invoice',
-          billing_cycle_anchor: 'unchanged',
-        });
+        // Same interval - redirect to checkout instead of auto-updating
+        logStep("Redirecting to checkout for upgrade (same interval)");
         
-        logStep("Subscription updated with proration");
-        
-        // Redirect to success page without checkout
-        return new Response(JSON.stringify({ 
-          url: `${req.headers.get("origin")}/dashboard?subscription=success`,
-          upgraded: true 
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
+        // Don't auto-update, let user go through checkout
+        // This gives them visibility and control over the charge
       }
     }
     
