@@ -63,7 +63,10 @@ export const UpgradeModal = ({ open, onOpenChange, feature = "connections", curr
             </div>
             
             {nextPlans.length > 0 && (
-              <Card className="p-4 border-2 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer" onClick={handleUpgrade}>
+              <Card className="p-4 border-2 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer" onClick={() => {
+                onOpenChange(false);
+                navigate('/settings?tab=subscription');
+              }}>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
