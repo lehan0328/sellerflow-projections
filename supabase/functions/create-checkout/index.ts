@@ -255,7 +255,7 @@ serve(async (req) => {
           trial_end: currentPeriodEnd,
           metadata: {
             upgraded_from: currentSubscription.id,
-            prorated_amount: proratedAmount.toString()
+            ...(proratedAmount !== undefined && { prorated_amount: proratedAmount.toString() })
           }
         };
         sessionConfig.payment_method_collection = "if_required";
