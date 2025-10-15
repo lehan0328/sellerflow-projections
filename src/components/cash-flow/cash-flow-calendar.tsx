@@ -705,7 +705,7 @@ export const CashFlowCalendar = ({
               <div className="flex items-center gap-2 bg-muted rounded-lg p-2 border">
                 <XCircle className="h-4 w-4 text-muted-foreground" />
                 <Label htmlFor="exclude-today" className="text-sm cursor-pointer whitespace-nowrap">
-                  Exclude Today's Transactions
+                  Exclude Today
                 </Label>
                 <Switch
                   id="exclude-today"

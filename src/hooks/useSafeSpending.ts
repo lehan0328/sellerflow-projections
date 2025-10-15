@@ -343,6 +343,14 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
               targetDate
             );
             if (occurrences.length > 0) {
+              // Skip today's recurring transactions if excludeTodayTransactions is true
+              if (excludeTodayTransactions && targetDate.getTime() === today.getTime()) {
+                if (isKeyDate) {
+                  console.log(`  🚫 EXCLUDING today's recurring: ${recurring.name} $${recurring.amount} (excluded by user)`);
+                }
+                return;
+              }
+              
               const amt = Number(recurring.amount);
               if (isKeyDate) {
                 console.log(`  🔄 Recurring ${recurring.type}: ${recurring.name} ${recurring.type === 'income' ? '+' : '-'}$${amt}`);
