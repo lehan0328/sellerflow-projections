@@ -15,6 +15,8 @@ import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 import { useIncome } from "@/hooks/useIncome";
 import { useExcludeToday } from "@/contexts/ExcludeTodayContext";
+import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
+import { generateRecurringDates } from "@/lib/recurringDates";
 import { OverdueTransactionsModal } from "./overdue-transactions-modal";
 
 interface OverviewStatsProps {
@@ -84,24 +86,73 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const { amazonPayouts, monthlyOrdersTotal } = useAmazonPayouts();
   const { transactions: vendorTransactions } = useVendorTransactions();
   const { incomeItems } = useIncome();
+  const { recurringExpenses } = useRecurringExpenses();
   const [reserveInput, setReserveInput] = useState<string>("");
   
-  // Calculate today's income and expenses
+  // Calculate today's income and expenses (including recurring)
   const todayDate = new Date();
   todayDate.setHours(0, 0, 0, 0);
   const todayStr = todayDate.toDateString();
   
-  const todaysIncome = incomeItems.filter(item => {
+  // Regular income
+  const regularIncome = incomeItems.filter(item => {
     const itemDate = new Date(item.paymentDate);
     itemDate.setHours(0, 0, 0, 0);
     return itemDate.toDateString() === todayStr && item.status !== 'received';
   }).reduce((sum, item) => sum + item.amount, 0);
   
-  const todaysExpenses = vendorTransactions.filter(tx => {
+  // Recurring income that occurs today
+  const recurringIncome = recurringExpenses
+    .filter(exp => exp.type === 'income' && exp.is_active)
+    .reduce((sum, exp) => {
+      const dates = generateRecurringDates(
+        {
+          id: exp.id,
+          transaction_name: exp.transaction_name || exp.name,
+          amount: exp.amount,
+          frequency: exp.frequency,
+          start_date: exp.start_date,
+          end_date: exp.end_date,
+          is_active: exp.is_active,
+          type: exp.type
+        },
+        todayDate,
+        todayDate
+      );
+      return dates.length > 0 ? sum + exp.amount : sum;
+    }, 0);
+  
+  const todaysIncome = regularIncome + recurringIncome;
+  
+  // Regular expenses (vendor transactions)
+  const regularExpenses = vendorTransactions.filter(tx => {
     const txDate = new Date(tx.transactionDate);
     txDate.setHours(0, 0, 0, 0);
     return txDate.toDateString() === todayStr && tx.status === 'pending';
   }).reduce((sum, tx) => sum + tx.amount, 0);
+  
+  // Recurring expenses that occur today
+  const recurringExpensesToday = recurringExpenses
+    .filter(exp => exp.type === 'expense' && exp.is_active)
+    .reduce((sum, exp) => {
+      const dates = generateRecurringDates(
+        {
+          id: exp.id,
+          transaction_name: exp.transaction_name || exp.name,
+          amount: exp.amount,
+          frequency: exp.frequency,
+          start_date: exp.start_date,
+          end_date: exp.end_date,
+          is_active: exp.is_active,
+          type: exp.type
+        },
+        todayDate,
+        todayDate
+      );
+      return dates.length > 0 ? sum + exp.amount : sum;
+    }, 0);
+  
+  const todaysExpenses = regularExpenses + recurringExpensesToday;
   
   // Calculate hours until next update is allowed
   const hoursUntilNextUpdate = lastUpdated && !canUpdate 
@@ -346,7 +397,39 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const totalOverdueCount = overdueVendorCount + overdueIncomeCount;
 
   return (<>
-      <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-slate-600">Cash</p>
+                {!balanceMatches && accounts.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSyncRequest}
+                    disabled={isSyncing}
+                    className="h-6 w-6 p-0 text-orange-400 hover:text-orange-600 hover:bg-orange-50"
+                    title={`Bank balance differs by ${formatCurrency(balanceDifference)}. Click to sync.`}
+                  >
+                    {isSyncing ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <AlertTriangle className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
+              </div>
+              <p className="text-2xl font-bold text-green-700">
+                {formatCurrency(bankAccountBalance)}
+              </p>
+              <p className="text-sm text-slate-600">
+                {accounts.length === 0 ? 'No accounts connected' : 'Current balance'}
+              </p>
+            </div>
+            <DollarSign className="h-8 w-8 text-green-500" />
+          </div>
+        </div>
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
