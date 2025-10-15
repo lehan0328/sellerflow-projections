@@ -170,33 +170,69 @@ serve(async (req) => {
       const currentPrice = currentSubscription.items.data[0].price.id;
       const newPriceId = finalLineItems[0].price;
       
+      // Get pricing details to check if we're changing intervals
+      const currentPriceDetails = await stripe.prices.retrieve(currentPrice);
+      const newPriceDetails = await stripe.prices.retrieve(newPriceId);
+      
+      const currentInterval = currentPriceDetails.recurring?.interval;
+      const newInterval = newPriceDetails.recurring?.interval;
+      const isChangingInterval = currentInterval !== newInterval;
+      
       logStep("Processing prorated upgrade", {
         currentPrice,
         newPriceId,
         proratedAmount,
+        currentInterval,
+        newInterval,
+        isChangingInterval,
         currentPeriodEnd: currentSubscription.current_period_end
       });
       
-      // Update subscription immediately with prorated billing
-      await stripe.subscriptions.update(currentSubscription.id, {
-        items: [{
-          id: currentSubscription.items.data[0].id,
-          price: newPriceId,
-        }],
-        proration_behavior: 'always_invoice', // Create prorated invoice immediately
-        billing_cycle_anchor: 'unchanged', // Keep the same renewal date
-      });
-      
-      logStep("Subscription updated with proration");
-      
-      // Redirect to success page without checkout
-      return new Response(JSON.stringify({ 
-        url: `${req.headers.get("origin")}/dashboard?subscription=success`,
-        upgraded: true 
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+      if (isChangingInterval) {
+        // Can't keep billing anchor when changing intervals
+        // Cancel current subscription at period end and create new one with trial
+        await stripe.subscriptions.update(currentSubscription.id, {
+          cancel_at_period_end: true,
+        });
+        
+        const currentPeriodEnd = currentSubscription.current_period_end;
+        
+        logStep("Cancelled current subscription, creating new one", { 
+          trialEnd: currentPeriodEnd,
+          trialEndDate: new Date(currentPeriodEnd * 1000).toISOString()
+        });
+        
+        // Create checkout for new subscription starting after current period
+        sessionConfig.subscription_data = {
+          trial_end: currentPeriodEnd,
+          metadata: {
+            upgraded_from: currentSubscription.id,
+            prorated_amount: proratedAmount.toString()
+          }
+        };
+        sessionConfig.payment_method_collection = "if_required";
+      } else {
+        // Same interval - can update in place
+        await stripe.subscriptions.update(currentSubscription.id, {
+          items: [{
+            id: currentSubscription.items.data[0].id,
+            price: newPriceId,
+          }],
+          proration_behavior: 'always_invoice',
+          billing_cycle_anchor: 'unchanged',
+        });
+        
+        logStep("Subscription updated with proration");
+        
+        // Redirect to success page without checkout
+        return new Response(JSON.stringify({ 
+          url: `${req.headers.get("origin")}/dashboard?subscription=success`,
+          upgraded: true 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
     }
     
     // If upgrading from existing subscription to yearly, schedule new subscription 
