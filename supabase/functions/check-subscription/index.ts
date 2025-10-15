@@ -50,8 +50,25 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .single();
 
+    // Check if trial has expired
+    const trialEnd = profile?.trial_end ? new Date(profile.trial_end) : null;
+    const isTrialExpired = trialEnd ? trialEnd < new Date() : false;
+
     if (profile?.plan_override) {
-      logStep("Plan override found", { plan: profile.plan_override });
+      logStep("Plan override found", { plan: profile.plan_override, trialEnd: profile?.trial_end, isTrialExpired });
+      
+      // If trial is expired, return trial_expired status even with plan override
+      if (isTrialExpired) {
+        return new Response(JSON.stringify({ 
+          subscribed: false,
+          trial_expired: true,
+          trial_end: profile.trial_end,
+          discount_ever_redeemed: !!profile.discount_redeemed_at
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
       
       // Map special plan overrides to valid plan tiers
       let mappedPlan = profile.plan_override;
