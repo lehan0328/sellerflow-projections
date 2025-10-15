@@ -56,6 +56,15 @@ export function UpgradeConfirmDialog({
                   </div>
                 </div>
               )}
+              {cardLast4 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-foreground">Payment Method:</span>
+                  <div className="flex items-center gap-1 text-sm font-semibold text-foreground">
+                    <CreditCard className="h-3 w-3" />
+                    {cardBrand?.toUpperCase()} •••• {cardLast4}
+                  </div>
+                </div>
+              )}
               <div className="flex justify-between items-center pt-2 border-t">
                 <span className="text-sm font-medium text-foreground">Amount Due:</span>
                 <span className="text-lg font-bold text-primary">
@@ -88,7 +97,7 @@ export function UpgradeConfirmDialog({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} className="bg-primary">
-            {cardLast4 ? 'Charge Card & Upgrade' : 'Continue to Checkout'}
+            {cardLast4 ? 'Pay Now' : 'Continue to Checkout'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
