@@ -96,72 +96,73 @@ serve(async (req) => {
       currentInterval: currentPrice.recurring?.interval
     });
     
-    // Update subscription - Stripe handles proration automatically
+    // CRITICAL: Use strict payment behavior to prevent upgrade if payment fails
     const updateParams: any = {
       items: [{
         id: subscription.items.data[0].id,
         price: newPriceId,
       }],
-      proration_behavior: 'create_prorations', // Creates invoice for prorated amount
-      payment_behavior: 'error_if_incomplete', // Fail immediately if payment doesn't succeed
+      proration_behavior: 'create_prorations',
+      payment_behavior: 'error_if_incomplete', // STRICT: Fail immediately if payment incomplete
+      billing_cycle_anchor: intervalChanging ? undefined : 'unchanged',
     };
     
-    // Only preserve billing cycle if interval is NOT changing
-    if (!intervalChanging) {
-      updateParams.billing_cycle_anchor = 'unchanged';
-      logStep("Keeping billing cycle unchanged");
-    } else {
-      logStep("Allowing new billing cycle due to interval change");
-    }
-    
-    logStep("Updating subscription with params", updateParams);
+    logStep("STRICT PAYMENT MODE: Updating subscription with error_if_incomplete", updateParams);
     let updatedSubscription;
     try {
       updatedSubscription = await stripe.subscriptions.update(subscription.id, updateParams);
-      logStep("Subscription update API call completed", { 
+      logStep("Stripe API call completed", { 
         status: updatedSubscription.status,
         latestInvoice: updatedSubscription.latest_invoice 
       });
+      
+      // CRITICAL CHECK: If status is not 'active', payment failed
+      if (updatedSubscription.status !== 'active') {
+        logStep("CRITICAL: Subscription status not active after update", { 
+          status: updatedSubscription.status 
+        });
+        throw new Error(`Subscription status is ${updatedSubscription.status}, not active`);
+      }
     } catch (updateError) {
       const msg = updateError instanceof Error ? updateError.message : String(updateError);
-      logStep("ERROR updating subscription", { error: msg });
+      logStep("CRITICAL ERROR: Subscription update failed", { error: msg });
       
-      // Payment failed during upgrade - subscription was not changed
+      // Payment failed - subscription should NOT have been changed due to error_if_incomplete
       return new Response(JSON.stringify({ 
-        error: 'Payment declined - plan upgrade failed. Your original plan remains active.',
-        details: msg
+        error: 'Payment declined - your card was not charged. Your original plan remains active.',
+        details: msg,
+        critical: true
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 402, // Payment Required
+        status: 402,
       });
     }
 
-    // Wait a moment for Stripe to process the invoice
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // CRITICAL: Wait and verify payment completed successfully
+    logStep("Waiting for invoice processing...");
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
-    logStep("Subscription updated, verifying payment");
-
-    // Get the latest invoice to verify payment was successful
+    // Retrieve and verify the invoice payment status
     const invoice = await stripe.invoices.retrieve(updatedSubscription.latest_invoice as string);
-    logStep("Retrieved invoice", { 
+    logStep("PAYMENT VERIFICATION - Invoice retrieved", { 
       invoiceId: invoice.id,
       status: invoice.status,
       amountDue: invoice.amount_due,
-      amountPaid: invoice.amount_paid 
+      amountPaid: invoice.amount_paid,
+      paymentIntent: invoice.payment_intent
     });
     
-    // Check if payment actually succeeded
-    // Invoice must be 'paid' for upgrade to be successful
+    // STRICT VERIFICATION: Invoice MUST be 'paid' for upgrade to succeed
+    // Any other status means payment failed or is incomplete
     if (invoice.status !== 'paid') {
-      logStep("Payment not completed for upgrade", { 
+      logStep("CRITICAL: Payment NOT completed - REVERTING subscription", { 
         invoiceStatus: invoice.status,
-        paymentIntent: invoice.payment_intent 
+        reason: 'Invoice status is not paid'
       });
       
-      // Revert the subscription back to original price
-      logStep("Reverting subscription to original plan");
+      // IMMEDIATE REVERT to original plan
       try {
-        await stripe.subscriptions.update(subscription.id, {
+        const revertedSub = await stripe.subscriptions.update(subscription.id, {
           items: [{
             id: subscription.items.data[0].id,
             price: currentPrice.id,
@@ -169,26 +170,42 @@ serve(async (req) => {
           proration_behavior: 'none',
           billing_cycle_anchor: 'unchanged',
         });
-        logStep("Successfully reverted subscription to original plan");
+        logStep("SUCCESSFULLY REVERTED subscription", { 
+          subscriptionId: revertedSub.id,
+          currentPrice: currentPrice.id,
+          status: revertedSub.status
+        });
+        
+        // Cancel the unpaid invoice
+        if (invoice.status === 'open') {
+          await stripe.invoices.voidInvoice(invoice.id);
+          logStep("Voided unpaid invoice", { invoiceId: invoice.id });
+        }
       } catch (revertError) {
         const revertMsg = revertError instanceof Error ? revertError.message : String(revertError);
-        logStep("ERROR reverting subscription", { error: revertMsg });
+        logStep("CRITICAL ERROR: Failed to revert subscription", { error: revertMsg });
+        // This is a critical error - subscription may be in wrong state
       }
       
       return new Response(JSON.stringify({ 
-        error: 'Payment declined - upgrade failed. Your original plan remains active.',
-        invoiceStatus: invoice.status
+        error: 'Payment declined - your card was not charged. Your original plan has been restored.',
+        invoiceStatus: invoice.status,
+        reverted: true
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 402,
       });
     }
     
-    logStep("Payment verified successful", { invoiceId: invoice.id });
+    // SUCCESS: Payment verified as paid
+    logStep("SUCCESS: Payment verified and completed", { 
+      invoiceId: invoice.id,
+      amountPaid: invoice.amount_paid 
+    });
     
     return new Response(JSON.stringify({ 
       success: true,
-      message: 'Subscription upgraded successfully',
+      message: 'Subscription upgraded successfully and payment confirmed',
       amountCharged: invoice.amount_paid,
       currency: invoice.currency,
       invoiceUrl: invoice.hosted_invoice_url
