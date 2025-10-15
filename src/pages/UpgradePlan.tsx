@@ -27,12 +27,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { UpgradeConfirmDialog } from "@/components/UpgradeConfirmDialog";
 
 interface CartItem {
   priceId: string;
   name: string;
   price: number;
   quantity: number;
+}
+
+interface PendingUpgrade {
+  priceId: string;
+  planName: string;
+  amount: number;
+  isYearly: boolean;
 }
 
 const UpgradePlan = () => {
@@ -48,6 +56,7 @@ const UpgradePlan = () => {
     amazon_account: 0,
     user: 0
   });
+  const [pendingUpgrade, setPendingUpgrade] = useState<PendingUpgrade | null>(null);
 
   // Fetch profile to get trial dates
   const { data: profile } = useQuery({
@@ -120,19 +129,25 @@ const UpgradePlan = () => {
     }
   ];
 
-  const handleUpgrade = (priceId: string, proratedAmount?: number) => {
+  const handleUpgrade = (priceId: string, planName: string, proratedAmount?: number, isYearlyPlan?: boolean) => {
     // Show confirmation dialog for existing subscribers
     if (subscribed && !is_trialing) {
-      const confirmed = window.confirm(
-        "⚠️ BILLING NOTICE\n\n" +
-        "Your card on file will be charged immediately for the upgraded plan.\n\n" +
-        (proratedAmount ? `Prorated amount: $${(proratedAmount / 100).toFixed(2)}\n\n` : "") +
-        "Do you want to proceed with the upgrade?"
-      );
-      if (!confirmed) return;
+      setPendingUpgrade({
+        priceId,
+        planName,
+        amount: proratedAmount || 0,
+        isYearly: isYearlyPlan || false,
+      });
+    } else {
+      createCheckout(priceId, undefined, proratedAmount);
     }
-    
-    createCheckout(priceId, undefined, proratedAmount);
+  };
+
+  const confirmUpgrade = () => {
+    if (pendingUpgrade) {
+      createCheckout(pendingUpgrade.priceId, undefined, pendingUpgrade.amount);
+      setPendingUpgrade(null);
+    }
   };
 
   const handlePurchaseAddon = (priceId: string) => {
@@ -399,7 +414,12 @@ const UpgradePlan = () => {
                                   size="sm"
                                   variant="outline"
                                   className="w-full text-xs"
-                                  onClick={() => handleUpgrade(PRICING_PLANS[plan].yearly_price_id, amountDue)}
+                                  onClick={() => handleUpgrade(
+                                    PRICING_PLANS[plan].yearly_price_id, 
+                                    `${PRICING_PLANS[plan].name} (Yearly)`,
+                                    amountDue * 100,
+                                    true
+                                  )}
                                 >
                                   <Calendar className="h-3 w-3 mr-2" />
                                   Switch to Yearly & Pay ${amountDue}
@@ -443,7 +463,17 @@ const UpgradePlan = () => {
                             size="sm"
                             variant="default"
                             className="flex-1 bg-gradient-primary"
-                            onClick={() => handleUpgrade(PRICING_PLANS[plan].yearly_price_id)}
+                            onClick={() => {
+                              const currentMonthlyPaid = price_amount ? (price_amount / 100) : PRICING_PLANS[plan].price;
+                              const yearlyPrice = PRICING_PLANS[plan].yearlyPrice;
+                              const amountDue = yearlyPrice - currentMonthlyPaid;
+                              handleUpgrade(
+                                PRICING_PLANS[plan].yearly_price_id,
+                                `${PRICING_PLANS[plan].name} (Yearly)`,
+                                amountDue * 100,
+                                true
+                              );
+                            }}
                           >
                             <TrendingUp className="h-4 w-4 mr-2" />
                             Upgrade to Yearly (Save {plans.find(p => p.key === plan)?.savings})
@@ -676,7 +706,12 @@ const UpgradePlan = () => {
                               )}
                               <Button 
                                 className="w-full bg-gradient-primary" 
-                                onClick={() => handleUpgrade(getCurrentPriceId(growingPlan), isYearly || !subscribed ? undefined : proratedAmount)}
+                                onClick={() => handleUpgrade(
+                                  getCurrentPriceId(growingPlan), 
+                                  `${growingPlan.name}${isYearly ? ' (Yearly)' : ''}`,
+                                  isYearly || !subscribed ? undefined : proratedAmount * 100,
+                                  isYearly
+                                )}
                                 disabled={isLoading}
                               >
                                 <TrendingUp className="h-4 w-4 mr-2" />
@@ -767,7 +802,12 @@ const UpgradePlan = () => {
                               )}
                               <Button 
                                 className="w-full bg-gradient-primary" 
-                                onClick={() => handleUpgrade(getCurrentPriceId(professionalPlan), isYearly || !subscribed ? undefined : proratedAmount)}
+                                onClick={() => handleUpgrade(
+                                  getCurrentPriceId(professionalPlan),
+                                  `${professionalPlan.name}${isYearly ? ' (Yearly)' : ''}`,
+                                  isYearly || !subscribed ? undefined : proratedAmount * 100,
+                                  isYearly
+                                )}
                                 disabled={isLoading}
                               >
                                 <TrendingUp className="h-4 w-4 mr-2" />
@@ -860,7 +900,12 @@ const UpgradePlan = () => {
                           )}
                           <Button 
                             className="w-full bg-gradient-primary" 
-                            onClick={() => handleUpgrade(getCurrentPriceId(nextTier), isYearly || !subscribed ? undefined : proratedAmount)}
+                            onClick={() => handleUpgrade(
+                              getCurrentPriceId(nextTier),
+                              `${nextTier.name}${isYearly ? ' (Yearly)' : ''}`,
+                              isYearly || !subscribed ? undefined : proratedAmount * 100,
+                              isYearly
+                            )}
                             disabled={isLoading}
                           >
                             <TrendingUp className="h-4 w-4 mr-2" />
@@ -1247,6 +1292,16 @@ const UpgradePlan = () => {
             </CardContent>
         </Card>
       </div>
+
+      {/* Upgrade Confirmation Dialog */}
+      <UpgradeConfirmDialog
+        open={!!pendingUpgrade}
+        onOpenChange={(open) => !open && setPendingUpgrade(null)}
+        onConfirm={confirmUpgrade}
+        planName={pendingUpgrade?.planName || ''}
+        amount={pendingUpgrade?.amount || 0}
+        isYearly={pendingUpgrade?.isYearly || false}
+      />
 
       {/* Cancellation Flow Modal */}
       <CancellationFlow 
