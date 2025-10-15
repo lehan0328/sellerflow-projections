@@ -102,12 +102,14 @@ serve(async (req) => {
       
       logStep("Trial status", { 
         trialEnd: profileData?.trial_end,
-        isTrialExpired 
+        isTrialExpired,
+        isTrialing: !isTrialExpired && !!trialEnd
       });
       
       return new Response(JSON.stringify({ 
         subscribed: false,
         trial_expired: isTrialExpired,
+        is_trialing: !isTrialExpired && !!trialEnd,
         trial_end: profileData?.trial_end,
         discount_ever_redeemed: !!profileData?.discount_redeemed_at
       }), {

@@ -109,25 +109,11 @@ export function AppSidebar({
   const restrictedSections = ['scenario-planning', 'notifications'];
   // Professional plan includes trial users and paid professional subscribers
   const isProfessionalPlan = subscription.plan === 'professional' || subscription.is_trialing;
-  
-  console.log('[SIDEBAR] Subscription state:', {
-    plan: subscription.plan,
-    is_trialing: subscription.is_trialing,
-    isProfessionalPlan,
-    fullSubscription: subscription
-  });
 
   const handleSectionClick = (sectionId: string) => {
-    console.log('[SIDEBAR] Section clicked:', sectionId, 'isProfessionalPlan:', isProfessionalPlan);
-    
-    if (restrictedSections.includes(sectionId)) {
-      console.log('[SIDEBAR] Section is restricted, checking access...');
-      if (!isProfessionalPlan) {
-        console.log('[SIDEBAR] Access DENIED - showing upgrade modal');
-        setShowUpgradeModal(true);
-        return;
-      }
-      console.log('[SIDEBAR] Access GRANTED - proceeding to section');
+    if (restrictedSections.includes(sectionId) && !isProfessionalPlan) {
+      setShowUpgradeModal(true);
+      return;
     }
     if (sectionId === 'document-storage' && !hasPlanAccess(subscription.plan, 'growing')) {
       setShowUpgradeModal(true);
