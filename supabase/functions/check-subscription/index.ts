@@ -43,10 +43,10 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Check for plan override first (lifetime access, special cases)
+    // Check for plan override and trial status
     const { data: profile } = await supabaseClient
       .from('profiles')
-      .select('plan_override, discount_redeemed_at')
+      .select('plan_override, discount_redeemed_at, trial_end')
       .eq('user_id', user.id)
       .single();
 
@@ -76,18 +76,28 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
     if (customers.data.length === 0) {
-      logStep("No customer found, updating unsubscribed state");
+      logStep("No customer found - checking trial status");
       
-      // Still check if user ever redeemed a discount
-      const { data: profile } = await supabaseClient
+      // Check if trial has expired
+      const { data: profileData } = await supabaseClient
         .from('profiles')
-        .select('discount_redeemed_at')
+        .select('discount_redeemed_at, trial_end')
         .eq('user_id', user.id)
         .single();
       
+      const trialEnd = profileData?.trial_end ? new Date(profileData.trial_end) : null;
+      const isTrialExpired = trialEnd ? trialEnd < new Date() : false;
+      
+      logStep("Trial status", { 
+        trialEnd: profileData?.trial_end,
+        isTrialExpired 
+      });
+      
       return new Response(JSON.stringify({ 
         subscribed: false,
-        discount_ever_redeemed: !!profile?.discount_redeemed_at
+        trial_expired: isTrialExpired,
+        trial_end: profileData?.trial_end,
+        discount_ever_redeemed: !!profileData?.discount_redeemed_at
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,

@@ -54,7 +54,7 @@ interface PendingUpgrade {
 const UpgradePlan = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, upgradeSubscription, paymentMethod, isLoading, payment_failed } = useSubscription();
+  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, upgradeSubscription, paymentMethod, isLoading, payment_failed, ...subscriptionData } = useSubscription();
   const { calculatePostTrialCost } = useTrialAddonUsage();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
   const [isYearly, setIsYearly] = useState(true);
@@ -71,14 +71,17 @@ const UpgradePlan = () => {
   const [upgradeDeclined, setUpgradeDeclined] = useState(false);
   const [upgradeDeclineMessage, setUpgradeDeclineMessage] = useState('');
 
-  // Show payment failed dialog only when subscription is expired and payment failed
+  // Show payment/trial expired dialog when access should be blocked
   useEffect(() => {
-    // Check if subscription is expired (subscription_end is in the past) AND payment failed
-    const isExpired = subscription_end ? new Date(subscription_end) < new Date() : false;
-    if (payment_failed && isExpired) {
+    // Show modal if trial expired OR if subscription expired with payment failure
+    const trialExpired = subscriptionData?.trial_expired || false;
+    const subscriptionExpired = subscription_end ? new Date(subscription_end) < new Date() : false;
+    const shouldBlock = trialExpired || (payment_failed && subscriptionExpired);
+    
+    if (shouldBlock) {
       setShowPaymentFailedDialog(true);
     }
-  }, [payment_failed, subscription_end]);
+  }, [subscriptionData?.trial_expired, payment_failed, subscription_end]);
 
   // Fetch profile to get trial dates
   const { data: profile } = useQuery({
@@ -1391,12 +1394,22 @@ const UpgradePlan = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <XCircle className="h-5 w-5" />
-              Subscription Expired - Payment Required
+              {subscriptionData?.trial_expired ? 'Trial Expired - Subscription Required' : 'Subscription Expired - Payment Required'}
             </DialogTitle>
             <DialogDescription>
-              Your subscription has expired and the renewal payment was declined. You must update your payment method to continue using the application.
-              <br /><br />
-              <span className="font-semibold">You cannot access the application until payment is updated.</span>
+              {subscriptionData?.trial_expired ? (
+                <>
+                  Your free trial has expired. Please subscribe to a plan to continue using the application.
+                  <br /><br />
+                  <span className="font-semibold">Choose a plan below to get started.</span>
+                </>
+              ) : (
+                <>
+                  Your subscription has expired and the renewal payment was declined. You must update your payment method to continue using the application.
+                  <br /><br />
+                  <span className="font-semibold">You cannot access the application until payment is updated.</span>
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -1408,32 +1421,46 @@ const UpgradePlan = () => {
             )}
           </div>
           <DialogFooter>
-            <Button 
-              variant="destructive"
-              className="w-full"
-              disabled={isVerifyingPayment}
-              onClick={async () => {
-                setIsVerifyingPayment(true);
-                try {
-                  await openCustomerPortal();
-                  // After returning from portal, verify payment
-                  setTimeout(async () => {
-                    await checkSubscription(true);
+            {subscriptionData?.trial_expired ? (
+              <Button 
+                variant="default"
+                className="w-full"
+                onClick={() => {
+                  setShowPaymentFailedDialog(false);
+                  // Scroll to plans section
+                  window.scrollTo({ top: 400, behavior: 'smooth' });
+                }}
+              >
+                View Plans & Subscribe
+              </Button>
+            ) : (
+              <Button 
+                variant="destructive"
+                className="w-full"
+                disabled={isVerifyingPayment}
+                onClick={async () => {
+                  setIsVerifyingPayment(true);
+                  try {
+                    await openCustomerPortal();
+                    // After returning from portal, verify payment
+                    setTimeout(async () => {
+                      await checkSubscription(true);
+                      setIsVerifyingPayment(false);
+                      // Check if still expired
+                      const isExpired = subscription_end ? new Date(subscription_end) < new Date() : false;
+                      if (!payment_failed || !isExpired) {
+                        setShowPaymentFailedDialog(false);
+                      }
+                    }, 3000);
+                  } catch (error) {
+                    console.error('Error opening customer portal:', error);
                     setIsVerifyingPayment(false);
-                    // Check if subscription is still expired
-                    const isExpired = subscription_end ? new Date(subscription_end) < new Date() : false;
-                    if (!payment_failed || !isExpired) {
-                      setShowPaymentFailedDialog(false);
-                    }
-                  }, 3000);
-                } catch (error) {
-                  console.error('Error opening customer portal:', error);
-                  setIsVerifyingPayment(false);
-                }
-              }}
-            >
-              Update Payment Method Now
-            </Button>
+                  }
+                }}
+              >
+                Update Payment Method Now
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

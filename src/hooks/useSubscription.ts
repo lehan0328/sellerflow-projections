@@ -164,6 +164,7 @@ export interface SubscriptionState {
   isLoading: boolean;
   is_trialing?: boolean;
   trial_end?: string | null;
+  trial_expired?: boolean;
   billing_interval?: string | null;
   current_period_start?: string | null;
   price_amount?: number | null;
@@ -307,6 +308,9 @@ export const useSubscription = () => {
       const paymentFailed = data.subscriptionStatus === 'past_due' || data.subscriptionStatus === 'unpaid';
       const isExpired = data.subscription_end ? new Date(data.subscription_end) < new Date() : false;
       const shouldBlockAccess = paymentFailed && isExpired;
+      
+      // Also check if trial expired (for users without payment method)
+      const trialExpired = data.trial_expired || false;
 
       const state = {
         subscribed: data.subscribed || false,
@@ -316,6 +320,7 @@ export const useSubscription = () => {
         isLoading: false,
         is_trialing: data.is_trialing || false,
         trial_end: data.trial_end || null,
+        trial_expired: trialExpired,
         billing_interval: data.billing_interval || null,
         current_period_start: data.current_period_start || null,
         price_amount: data.price_amount || null,
@@ -323,7 +328,7 @@ export const useSubscription = () => {
         discount: data.discount || null,
         discount_ever_redeemed: data.discount_ever_redeemed || false,
         payment_failed: data.payment_failed || false,
-        is_expired: shouldBlockAccess,
+        is_expired: shouldBlockAccess || trialExpired,
       };
       
       setSubscriptionState(state);
