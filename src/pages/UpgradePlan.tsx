@@ -121,7 +121,17 @@ const UpgradePlan = () => {
   ];
 
   const handleUpgrade = (priceId: string, proratedAmount?: number) => {
-    // Allow trial users and subscribed users to upgrade
+    // Show confirmation dialog for existing subscribers
+    if (subscribed && !is_trialing) {
+      const confirmed = window.confirm(
+        "⚠️ BILLING NOTICE\n\n" +
+        "Your card on file will be charged immediately for the upgraded plan.\n\n" +
+        (proratedAmount ? `Prorated amount: $${(proratedAmount / 100).toFixed(2)}\n\n` : "") +
+        "Do you want to proceed with the upgrade?"
+      );
+      if (!confirmed) return;
+    }
+    
     createCheckout(priceId, undefined, proratedAmount);
   };
 
@@ -657,6 +667,13 @@ const UpgradePlan = () => {
                                   </div>
                                 </div>
                               )}
+                              {subscribed && !is_trialing && !isYearly && (
+                                <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800 mb-3">
+                                  <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+                                    ⚠️ Your card on file will be charged immediately
+                                  </p>
+                                </div>
+                              )}
                               <Button 
                                 className="w-full bg-gradient-primary" 
                                 onClick={() => handleUpgrade(getCurrentPriceId(growingPlan), isYearly || !subscribed ? undefined : proratedAmount)}
@@ -739,6 +756,13 @@ const UpgradePlan = () => {
                                     <span>Amount Due Now:</span>
                                     <span>${proratedAmount}</span>
                                   </div>
+                                </div>
+                              )}
+                              {subscribed && !is_trialing && !isYearly && (
+                                <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800 mb-3">
+                                  <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+                                    ⚠️ Your card on file will be charged immediately
+                                  </p>
                                 </div>
                               )}
                               <Button 
@@ -825,6 +849,13 @@ const UpgradePlan = () => {
                                 <span>Amount Due Now:</span>
                                 <span>${proratedAmount}</span>
                               </div>
+                            </div>
+                          )}
+                          {subscribed && !is_trialing && !isYearly && (
+                            <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800 mb-3">
+                              <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+                                ⚠️ Your card on file will be charged immediately
+                              </p>
                             </div>
                           )}
                           <Button 

@@ -282,11 +282,21 @@ export const useSubscription = () => {
         plan = data.plan as PlanTier;
       } else if (data.product_id) {
         // Map product_id to plan tier for regular Stripe subscriptions
+        // Log available product IDs to help debug mismatches
+        const availableProducts = Object.entries(PRICING_PLANS).map(([planName, planData]) => ({
+          plan: planName,
+          product_id: planData.product_id
+        }));
+        console.log('[SUBSCRIPTION] Matching product_id:', data.product_id, 'against available:', availableProducts);
+        
         const planEntry = Object.entries(PRICING_PLANS).find(
           ([, planData]) => planData.product_id === data.product_id
         );
         if (planEntry) {
           plan = planEntry[0] as PlanTier;
+          console.log('[SUBSCRIPTION] Match found:', plan);
+        } else {
+          console.warn('[SUBSCRIPTION] No matching plan found for product_id:', data.product_id, 'Available products:', availableProducts);
         }
       }
 
