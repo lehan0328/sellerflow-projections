@@ -394,10 +394,10 @@ const UpgradePlan = () => {
                     size="sm" 
                     variant="outline"
                     className="w-full"
-                    onClick={openCustomerPortal}
+                    onClick={() => setShowCancellationFlow(true)}
                   >
-                    <Settings className="h-4 w-4 mr-2" />
-                    Manage Subscription
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Cancel Subscription
                   </Button>
                   {subscribed && subscription_end && (
                     <div className="space-y-3">
