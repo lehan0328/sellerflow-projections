@@ -122,7 +122,7 @@ export const PurchaseOrderForm = ({
         vendor: "",
         vendorId: "",
         amount: "",
-        poDate: new Date(),
+        poDate: new Date(new Date().setDate(new Date().getDate() + 1)),
         dueDate: undefined,
         deliveryDate: undefined,
         description: "",
@@ -651,10 +651,10 @@ export const PurchaseOrderForm = ({
                   <Calendar mode="single" selected={formData.poDate} onSelect={date => {
                   setFormData(prev => ({
                     ...prev,
-                    poDate: date || new Date()
+                    poDate: date || new Date(new Date().setDate(new Date().getDate() + 1))
                   }));
                   setIsPODatePickerOpen(false);
-                }} initialFocus />
+                }} disabled={(date) => date <= new Date(new Date().setHours(0, 0, 0, 0))} initialFocus />
                 </PopoverContent>
               </Popover>
             </div>
