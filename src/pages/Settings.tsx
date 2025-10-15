@@ -108,11 +108,14 @@ const Settings = () => {
 
   // Set currency from profile data
   useEffect(() => {
+    console.log('[Settings] Profile data loaded:', profile);
     if (profile?.currency) {
       setSelectedCurrency(profile.currency);
     }
     if (profile?.company) {
       setCompanyName(profile.company);
+    } else {
+      console.log('[Settings] No company field in profile');
     }
   }, [profile]);
 
