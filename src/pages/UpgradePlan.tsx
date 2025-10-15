@@ -487,15 +487,10 @@ const UpgradePlan = () => {
                                 <Button
                                   size="sm"
                                   className="w-full text-xs bg-primary text-primary-foreground hover:bg-primary/90"
-                                  onClick={() => handleUpgrade(
-                                    PRICING_PLANS[plan].yearly_price_id, 
-                                    `${PRICING_PLANS[plan].name} (Yearly)`,
-                                    Math.round(amountDue * 100),
-                                    true
-                                  )}
+                                  onClick={() => openCustomerPortal()}
                                 >
                                   <Calendar className="h-3 w-3 mr-2" />
-                                  Switch to Yearly & Pay ${amountDue.toFixed(2)}
+                                  Switch to Yearly in Customer Portal
                                   <Badge variant="secondary" className="ml-2 text-xs">
                                     Save {plans.find(p => p.key === plan)?.savings}
                                   </Badge>
@@ -547,34 +542,7 @@ const UpgradePlan = () => {
                             size="sm"
                             variant="default"
                             className="flex-1 bg-gradient-primary"
-                            onClick={() => {
-                              const currentMonthlyPaid = price_amount ? (price_amount / 100) : PRICING_PLANS[plan].price;
-                              const yearlyPrice = PRICING_PLANS[plan].yearlyPrice;
-                              
-                              // Calculate credit based on remaining time
-                              let creditApplied = currentMonthlyPaid;
-                              if (current_period_start && subscription_end) {
-                                const periodStart = new Date(current_period_start);
-                                const periodEnd = new Date(subscription_end);
-                                const now = new Date();
-                                
-                                const totalDays = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
-                                const remainingDays = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                                
-                                if (totalDays > 0 && remainingDays > 0) {
-                                  creditApplied = (currentMonthlyPaid * remainingDays) / totalDays;
-                                }
-                              }
-                              
-                              const amountDue = yearlyPrice - creditApplied;
-                              
-                              handleUpgrade(
-                                PRICING_PLANS[plan].yearly_price_id,
-                                `${PRICING_PLANS[plan].name} (Yearly)`,
-                                Math.round(amountDue * 100),
-                                true
-                              );
-                            }}
+                            onClick={() => openCustomerPortal()}
                           >
                             <TrendingUp className="h-4 w-4 mr-2" />
                             Upgrade to Yearly (Save {plans.find(p => p.key === plan)?.savings})
