@@ -114,15 +114,57 @@ serve(async (req) => {
     }
     
     logStep("Updating subscription with params", updateParams);
-    const updatedSubscription = await stripe.subscriptions.update(subscription.id, updateParams);
+    let updatedSubscription;
+    try {
+      updatedSubscription = await stripe.subscriptions.update(subscription.id, updateParams);
+    } catch (updateError) {
+      const msg = updateError instanceof Error ? updateError.message : String(updateError);
+      logStep("ERROR updating subscription", { error: msg });
+      
+      // If upgrade fails, return error without changing the plan
+      return new Response(JSON.stringify({ 
+        error: 'Payment declined - plan upgrade failed. Your original plan remains active.',
+        details: msg
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 402, // Payment Required
+      });
+    }
 
     logStep("Subscription updated successfully", { 
       subscriptionId: updatedSubscription.id,
       newPriceId 
     });
 
-    // Get the latest invoice to find the amount charged
+    // Get the latest invoice to verify payment was successful
     const invoice = await stripe.invoices.retrieve(updatedSubscription.latest_invoice as string);
+    
+    // Check if payment actually succeeded
+    if (invoice.status === 'open' || invoice.status === 'uncollectible') {
+      logStep("Payment failed for upgrade", { invoiceStatus: invoice.status });
+      
+      // Revert the subscription back to original price
+      try {
+        await stripe.subscriptions.update(subscription.id, {
+          items: [{
+            id: subscription.items.data[0].id,
+            price: currentPrice.id,
+          }],
+          proration_behavior: 'none',
+        });
+        logStep("Reverted subscription to original plan");
+      } catch (revertError) {
+        logStep("ERROR reverting subscription", { error: revertError });
+      }
+      
+      return new Response(JSON.stringify({ 
+        error: 'Payment declined - upgrade failed. Your original plan remains active.',
+        invoiceStatus: invoice.status
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 402,
+      });
+    }
     
     return new Response(JSON.stringify({ 
       success: true,

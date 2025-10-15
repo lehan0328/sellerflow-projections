@@ -66,10 +66,11 @@ const UpgradePlan = () => {
   });
   const [pendingUpgrade, setPendingUpgrade] = useState<PendingUpgrade | null>(null);
   const [showPaymentFailedDialog, setShowPaymentFailedDialog] = useState(false);
+  const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
 
-  // Show payment failed dialog when payment_failed becomes true
+  // Show payment failed dialog when payment_failed becomes true - cannot be dismissed
   useEffect(() => {
-    if (payment_failed && !showPaymentFailedDialog) {
+    if (payment_failed) {
       setShowPaymentFailedDialog(true);
     }
   }, [payment_failed]);
@@ -162,10 +163,20 @@ const UpgradePlan = () => {
 
   const confirmUpgrade = async () => {
     if (pendingUpgrade) {
-      // Use direct upgrade for existing subscriptions
-      const success = await upgradeSubscription(pendingUpgrade.priceId);
-      if (success) {
-        setPendingUpgrade(null);
+      try {
+        // Use direct upgrade for existing subscriptions
+        const success = await upgradeSubscription(pendingUpgrade.priceId);
+        if (success) {
+          setPendingUpgrade(null);
+          // Force refresh subscription to get updated data
+          await checkSubscription(true);
+        } else {
+          // Upgrade failed (payment declined) - show error message
+          console.error('Upgrade failed - payment declined');
+        }
+      } catch (error) {
+        console.error('Error during upgrade:', error);
+        // Keep the modal open so user knows upgrade failed
       }
     }
   };
@@ -1356,30 +1367,56 @@ const UpgradePlan = () => {
         </Card>
       </div>
 
-      {/* Payment Failed Dialog */}
-      <Dialog open={showPaymentFailedDialog} onOpenChange={setShowPaymentFailedDialog}>
-        <DialogContent>
+      {/* Payment Failed Dialog - Blocking, cannot be dismissed */}
+      <Dialog open={showPaymentFailedDialog} onOpenChange={() => {}}>
+        <DialogContent 
+          className="sm:max-w-md"
+          onEscapeKeyDown={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <XCircle className="h-5 w-5" />
-              Payment Declined
+              Payment Required
             </DialogTitle>
             <DialogDescription>
-              Your last payment was declined. Please update your payment method to continue your {plan ? PRICING_PLANS[plan].name : ''} plan without interruption.
+              Your payment has been declined. You must update your payment method to continue using your {plan ? PRICING_PLANS[plan].name : ''} plan.
+              <br /><br />
+              <span className="font-semibold">You cannot access the application until payment is updated.</span>
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-4">
+            {isVerifyingPayment && (
+              <div className="text-center py-4">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p className="text-sm text-muted-foreground mt-2">Verifying payment...</p>
+              </div>
+            )}
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPaymentFailedDialog(false)}>
-              Remind Me Later
-            </Button>
             <Button 
               variant="destructive"
-              onClick={() => {
-                setShowPaymentFailedDialog(false);
-                openCustomerPortal();
+              className="w-full"
+              disabled={isVerifyingPayment}
+              onClick={async () => {
+                setIsVerifyingPayment(true);
+                try {
+                  await openCustomerPortal();
+                  // After returning from portal, verify payment
+                  setTimeout(async () => {
+                    await checkSubscription(true);
+                    // If payment is still failed, keep modal open
+                    // If payment is successful, modal will close automatically via useEffect
+                    setIsVerifyingPayment(false);
+                  }, 3000);
+                } catch (error) {
+                  console.error('Error opening customer portal:', error);
+                  setIsVerifyingPayment(false);
+                }
               }}
             >
-              Update Card on File
+              Update Payment Method Now
             </Button>
           </DialogFooter>
         </DialogContent>

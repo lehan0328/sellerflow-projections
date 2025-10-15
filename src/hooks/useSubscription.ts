@@ -527,7 +527,19 @@ export const useSubscription = () => {
         },
       });
 
-      if (error) throw error;
+      // Check for payment failure (402 status or error with payment declined message)
+      if (error) {
+        const errorMsg = error.message || String(error);
+        if (errorMsg.includes('Payment declined') || errorMsg.includes('upgrade failed')) {
+          toast({
+            title: "Payment Declined",
+            description: "Your payment was declined. Your original plan remains active. Please update your payment method.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        throw error;
+      }
 
       if (data?.success) {
         toast({
@@ -543,8 +555,8 @@ export const useSubscription = () => {
     } catch (error) {
       console.error("Error upgrading subscription:", error);
       toast({
-        title: "Error",
-        description: "Failed to upgrade subscription. Please try again.",
+        title: "Payment Failed",
+        description: "Failed to upgrade subscription. Your original plan remains active.",
         variant: "destructive",
       });
       return false;
