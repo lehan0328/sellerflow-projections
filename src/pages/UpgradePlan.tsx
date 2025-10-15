@@ -176,9 +176,19 @@ const UpgradePlan = () => {
     if (pendingUpgrade) {
       setIsUpgrading(true);
       setPendingUpgrade(null);
-      // Redirect to Stripe customer portal for plan upgrades
-      // Stripe handles prorations and plan switching natively
-      await openCustomerPortal();
+      
+      // Get the annual plan price ID for the current plan tier
+      let annualPriceId = '';
+      if (plan === 'starter') {
+        annualPriceId = PRICING_PLANS.starter.yearly_price_id;
+      } else if (plan === 'growing') {
+        annualPriceId = PRICING_PLANS.growing.yearly_price_id;
+      } else if (plan === 'professional') {
+        annualPriceId = PRICING_PLANS.professional.yearly_price_id;
+      }
+      
+      // Redirect to checkout with annual plan - Stripe handles proration automatically
+      createCheckout(annualPriceId);
       setIsUpgrading(false);
     }
   };
