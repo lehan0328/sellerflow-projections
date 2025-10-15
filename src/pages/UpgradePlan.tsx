@@ -4,6 +4,14 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useState, useEffect } from "react";
 import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { 
   ArrowLeft,
   Shield,
   Check,
@@ -57,6 +65,14 @@ const UpgradePlan = () => {
     user: 0
   });
   const [pendingUpgrade, setPendingUpgrade] = useState<PendingUpgrade | null>(null);
+  const [showPaymentFailedDialog, setShowPaymentFailedDialog] = useState(false);
+
+  // Show payment failed dialog when payment_failed becomes true
+  useEffect(() => {
+    if (payment_failed && !showPaymentFailedDialog) {
+      setShowPaymentFailedDialog(true);
+    }
+  }, [payment_failed]);
 
   // Fetch profile to get trial dates
   const { data: profile } = useQuery({
@@ -302,54 +318,8 @@ const UpgradePlan = () => {
             <CardContent className="space-y-4">
               {isLoading ? (
                 <p className="text-sm text-muted-foreground text-center">Loading...</p>
-              ) : payment_failed ? (
-                <div className="space-y-4">
-                  <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                    <h3 className="text-lg font-semibold mb-2 text-destructive flex items-center gap-2">
-                      <XCircle className="h-5 w-5" />
-                      Payment Failed
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Your last payment was declined. Please update your payment method to continue your {plan ? PRICING_PLANS[plan].name : ''} plan.
-                    </p>
-                    <Button 
-                      onClick={openCustomerPortal}
-                      variant="destructive"
-                      className="w-full"
-                    >
-                      Update Payment Method
-                    </Button>
-                  </div>
-                  
-                  {plan && (
-                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded">
-                      <span className="text-sm font-medium">Current Plan</span>
-                      <Badge variant="outline">{PRICING_PLANS[plan].name}</Badge>
-                    </div>
-                  )}
-                </div>
               ) : subscribed && plan ? (
                 <>
-                  {payment_failed && (
-                    <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-lg space-y-3">
-                      <div className="flex items-center gap-2">
-                        <XCircle className="h-5 w-5 text-destructive" />
-                        <h3 className="text-sm font-semibold text-destructive">Payment Declined</h3>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Your last payment was declined. Please update your payment method to avoid service interruption.
-                      </p>
-                      <Button 
-                        onClick={openCustomerPortal}
-                        variant="destructive"
-                        size="sm"
-                        className="w-full"
-                      >
-                        Update Card on File
-                      </Button>
-                    </div>
-                  )}
-                  
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Plan</span>
                     <Badge className="bg-gradient-primary">
@@ -1385,6 +1355,35 @@ const UpgradePlan = () => {
             </CardContent>
         </Card>
       </div>
+
+      {/* Payment Failed Dialog */}
+      <Dialog open={showPaymentFailedDialog} onOpenChange={setShowPaymentFailedDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <XCircle className="h-5 w-5" />
+              Payment Declined
+            </DialogTitle>
+            <DialogDescription>
+              Your last payment was declined. Please update your payment method to continue your {plan ? PRICING_PLANS[plan].name : ''} plan without interruption.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPaymentFailedDialog(false)}>
+              Remind Me Later
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => {
+                setShowPaymentFailedDialog(false);
+                openCustomerPortal();
+              }}
+            >
+              Update Card on File
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Upgrade Confirmation Dialog */}
       <UpgradeConfirmDialog
