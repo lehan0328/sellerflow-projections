@@ -139,17 +139,24 @@ serve(async (req) => {
       customerDiscountType: typeof (customer as any).discount 
     });
 
-    // Check for active or trialing subscriptions with full discount expansion
-    logStep("Fetching subscriptions with discount data");
+    // Check for ALL subscriptions (including canceled) with full discount expansion
+    logStep("Fetching ALL subscriptions for customer");
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
-      limit: 10,
+      limit: 100, // Increased limit to catch all
       expand: ['data.discount.coupon', 'data.latest_invoice', 'data.default_payment_method', 'data.items.data.price'],
     });
     
     logStep("Raw subscriptions data", { 
       count: subscriptions.data.length,
-      statuses: subscriptions.data.map(s => s.status)
+      statuses: subscriptions.data.map(s => s.status),
+      subscriptionDetails: subscriptions.data.map(s => ({
+        id: s.id,
+        status: s.status,
+        current_period_end: s.current_period_end ? new Date(s.current_period_end * 1000).toISOString() : null,
+        cancel_at: s.cancel_at ? new Date(s.cancel_at * 1000).toISOString() : null,
+        canceled_at: s.canceled_at ? new Date(s.canceled_at * 1000).toISOString() : null
+      }))
     });
     
     // Filter for active, trialing, or past_due subscriptions (all count as subscribed)
