@@ -87,7 +87,7 @@ export function UpgradeConfirmDialog({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} className="bg-primary">
-            {cardLast4 ? 'Pay Now' : 'Continue to Checkout'}
+            Pay Now
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
