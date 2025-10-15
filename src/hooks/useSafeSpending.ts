@@ -153,6 +153,9 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
         status: p.status,
         marketplace: p.marketplace_name
       })) || 'No payouts fetched');
+      
+      console.log('🛒 Total forecasted Amazon revenue (next 180 days):', 
+        (amazonResult.data || []).reduce((sum, p) => sum + Number(p.total_amount || 0), 0).toLocaleString());
 
       console.log('🔍 VENDOR DATA:', vendorsResult.data?.map(v => ({
         name: v.name,
