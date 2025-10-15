@@ -203,14 +203,26 @@ serve(async (req) => {
       
       // Get current period start (last payment date)
       if (subscription.current_period_start) {
-        currentPeriodStart = new Date(subscription.current_period_start * 1000).toISOString();
+        try {
+          currentPeriodStart = new Date(subscription.current_period_start * 1000).toISOString();
+          logStep("Current period start set", { currentPeriodStart });
+        } catch (error) {
+          logStep("Error parsing current_period_start", { 
+            current_period_start: subscription.current_period_start,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      } else {
+        logStep("No current_period_start found", { subscriptionId: subscription.id });
       }
       
       logStep("Billing details extracted", { 
         billingInterval,
         priceAmount,
         currency,
-        currentPeriodStart
+        currentPeriodStart,
+        hasCurrentPeriodStart: !!subscription.current_period_start,
+        rawCurrentPeriodStart: subscription.current_period_start
       });
       
       // Check for discount on subscription first
