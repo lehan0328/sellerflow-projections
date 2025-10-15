@@ -18,7 +18,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature = "connections", curr
 
   const handleUpgrade = () => {
     onOpenChange(false);
-    navigate('/#pricing');
+    navigate('/settings?tab=subscription');
   };
 
   const handlePurchaseAddons = () => {

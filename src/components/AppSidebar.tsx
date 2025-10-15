@@ -1,5 +1,5 @@
-import React from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import React, { useState } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -8,6 +8,8 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 import { Badge } from "@/components/ui/badge";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import { useAdmin } from "@/hooks/useAdmin";
+import { useSubscription } from "@/hooks/useSubscription";
+import { UpgradeModal } from "@/components/upgrade-modal";
 interface AppSidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
@@ -99,6 +101,20 @@ export function AppSidebar({
   const {
     userRole
   } = useAdmin();
+  const subscription = useSubscription();
+  const navigate = useNavigate();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  const restrictedSections = ['scenario-planning', 'notifications'];
+  const isProfessionalPlan = subscription.plan === 'professional';
+
+  const handleSectionClick = (sectionId: string) => {
+    if (restrictedSections.includes(sectionId) && !isProfessionalPlan) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    onSectionChange(sectionId);
+  };
   return <Sidebar className={isCollapsed ? "w-16" : "w-64"} collapsible="icon">
       <SidebarHeader className="border-b border-border/50 py-4">
         {!isCollapsed && <div className="flex items-center justify-center gap-2 px-2">
@@ -122,7 +138,7 @@ export function AppSidebar({
               const Icon = section.icon;
               const isActive = activeSection === section.id;
               return <SidebarMenuItem key={section.id}>
-                    <SidebarMenuButton onClick={() => onSectionChange(section.id)} className={`
+                    <SidebarMenuButton onClick={() => handleSectionClick(section.id)} className={`
                         relative rounded-lg transition-all duration-200
                         ${isCollapsed ? "justify-center h-12 w-12" : ""}
                         ${isActive ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" : "hover:bg-accent/50 hover:translate-x-1"}
@@ -236,5 +252,16 @@ export function AppSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      
+      <UpgradeModal 
+        open={showUpgradeModal} 
+        onOpenChange={(open) => {
+          setShowUpgradeModal(open);
+          if (!open) {
+            navigate('/settings?tab=subscription');
+          }
+        }}
+        feature="premium features"
+      />
     </Sidebar>;
 }
