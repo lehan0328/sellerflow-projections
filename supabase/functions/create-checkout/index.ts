@@ -233,16 +233,25 @@ serve(async (req) => {
         });
         
         if (proratedAmount !== undefined && proratedAmount > 0) {
-          // Cancel current subscription immediately and create new one that charges immediately
+          // Cancel current subscription immediately
           await stripe.subscriptions.cancel(currentSubscription.id);
           
-          logStep("Cancelled current subscription, creating new with immediate charge");
+          logStep("Cancelled current subscription, will apply credit", { creditAmount: proratedAmount });
           
-          // Don't use trial - charge immediately for the prorated amount
+          // Apply the proration credit as a discount on the customer account
+          // This creates a negative balance that will be applied to the next invoice
+          await stripe.customers.createBalanceTransaction(customerId, {
+            amount: Math.round(-proratedAmount * 100), // Negative for credit (convert to cents)
+            currency: 'usd',
+            description: `Proration credit for unused time on ${currentInterval} plan`
+          });
+          
+          logStep("Applied customer credit balance", { amount: -proratedAmount });
+          
           sessionConfig.subscription_data = {
             metadata: {
               upgraded_from: currentSubscription.id,
-              prorated_amount: proratedAmount.toString()
+              prorated_credit: proratedAmount.toString()
             }
           };
           sessionConfig.mode = "subscription";
