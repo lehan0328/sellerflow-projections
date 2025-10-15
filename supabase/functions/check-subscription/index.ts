@@ -197,7 +197,10 @@ serve(async (req) => {
         trial_start: subscription.trial_start,
         trial_end: subscription.trial_end,
         hasDiscount: !!subscription.discount,
-        discountObject: subscription.discount
+        discountObject: subscription.discount,
+        cancel_at_period_end: subscription.cancel_at_period_end,
+        cancel_at: subscription.cancel_at,
+        canceled_at: subscription.canceled_at
       });
       
       // If trialing, use trial_end, otherwise use billing_cycle_anchor
@@ -378,7 +381,9 @@ serve(async (req) => {
       currency: currency,
       discount: discountInfo,
       discount_ever_redeemed: !!profileData?.discount_redeemed_at,
-      payment_failed: isPastDue
+      payment_failed: isPastDue,
+      cancel_at_period_end: activeOrTrialingSub?.cancel_at_period_end || false,
+      cancel_at: activeOrTrialingSub?.cancel_at ? new Date(activeOrTrialingSub.cancel_at * 1000).toISOString() : null
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
