@@ -229,27 +229,51 @@ serve(async (req) => {
       
       if (isChangingInterval) {
         // Can't keep billing anchor when changing intervals
-        // Cancel current subscription at period end and create new one with trial
-        await stripe.subscriptions.update(currentSubscription.id, {
-          cancel_at_period_end: true,
+        // For interval changes with prorated amounts, we need to charge immediately
+        logStep("Changing billing interval", { 
+          from: currentInterval,
+          to: newInterval,
+          hasProratedAmount: proratedAmount !== undefined
         });
         
-        const currentPeriodEnd = currentSubscription.current_period_end;
-        
-        logStep("Cancelled current subscription, creating new one", { 
-          trialEnd: currentPeriodEnd,
-          trialEndDate: new Date(currentPeriodEnd * 1000).toISOString()
-        });
-        
-        // Create checkout for new subscription starting after current period
-        sessionConfig.subscription_data = {
-          trial_end: currentPeriodEnd,
-          metadata: {
-            upgraded_from: currentSubscription.id,
-            ...(proratedAmount !== undefined && { prorated_amount: proratedAmount.toString() })
-          }
-        };
-        sessionConfig.payment_method_collection = "if_required";
+        if (proratedAmount !== undefined && proratedAmount > 0) {
+          // Cancel current subscription and create new one that charges immediately
+          await stripe.subscriptions.update(currentSubscription.id, {
+            cancel_at_period_end: true,
+          });
+          
+          logStep("Cancelled current subscription, creating new with immediate charge");
+          
+          // Don't use trial - charge immediately for the prorated amount
+          sessionConfig.subscription_data = {
+            metadata: {
+              upgraded_from: currentSubscription.id,
+              prorated_amount: proratedAmount.toString()
+            }
+          };
+          sessionConfig.mode = "subscription";
+        } else {
+          // No proration - use trial to avoid double charging
+          const currentPeriodEnd = currentSubscription.current_period_end;
+          
+          await stripe.subscriptions.update(currentSubscription.id, {
+            cancel_at_period_end: true,
+          });
+          
+          logStep("Cancelled current subscription, creating new one with trial", { 
+            trialEnd: currentPeriodEnd,
+            trialEndDate: new Date(currentPeriodEnd * 1000).toISOString()
+          });
+          
+          // Create checkout for new subscription starting after current period
+          sessionConfig.subscription_data = {
+            trial_end: currentPeriodEnd,
+            metadata: {
+              upgraded_from: currentSubscription.id
+            }
+          };
+          sessionConfig.payment_method_collection = "if_required";
+        }
       } else {
         // Same interval - update subscription directly with proration
         // Stripe Checkout doesn't support prorated upgrades, so we handle it server-side
