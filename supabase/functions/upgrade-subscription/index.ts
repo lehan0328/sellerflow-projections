@@ -96,6 +96,21 @@ serve(async (req) => {
       currentInterval: currentPrice.recurring?.interval
     });
     
+    // CRITICAL: Stripe doesn't allow interval changes without flexible billing mode
+    // Return error to frontend so it can redirect to checkout instead
+    if (intervalChanging) {
+      logStep("Interval change detected - must use checkout");
+      return new Response(JSON.stringify({ 
+        error: 'interval_change_required',
+        message: 'Billing interval changes require checkout',
+        useCheckout: true,
+        newPriceId
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+    
     // CRITICAL: Use strict payment behavior to prevent upgrade if payment fails
     // For interval changes, we need to reset the billing cycle
     const updateParams: any = {

@@ -520,7 +520,7 @@ export const useSubscription = () => {
     }
   };
 
-  const upgradeSubscription = async (newPriceId: string) => {
+  const upgradeSubscription = async (newPriceId: string): Promise<boolean | { useCheckout: boolean; newPriceId: string }> => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -538,6 +538,11 @@ export const useSubscription = () => {
           Authorization: `Bearer ${session.access_token}`,
         },
       });
+
+      // Check if this is an interval change that requires checkout
+      if (data?.useCheckout) {
+        return { useCheckout: true, newPriceId: data.newPriceId };
+      }
 
       // Check for payment failure (402 status or error with payment declined message)
       if (error) {

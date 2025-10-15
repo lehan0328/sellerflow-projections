@@ -177,12 +177,17 @@ const UpgradePlan = () => {
       setIsUpgrading(true);
       try {
         // Use direct upgrade for existing subscriptions
-        const success = await upgradeSubscription(pendingUpgrade.priceId);
-        if (success) {
+        const result = await upgradeSubscription(pendingUpgrade.priceId);
+        if (result === true) {
           setPendingUpgrade(null);
           setIsUpgrading(false);
           // Force refresh subscription to get updated data
           await checkSubscription(true);
+        } else if (result && typeof result === 'object' && result.useCheckout) {
+          // Interval change - redirect to checkout
+          setPendingUpgrade(null);
+          setIsUpgrading(false);
+          createCheckout(result.newPriceId);
         } else {
           // Upgrade failed (payment declined)
           setIsUpgrading(false);
