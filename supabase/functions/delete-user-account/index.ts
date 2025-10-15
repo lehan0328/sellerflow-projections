@@ -26,7 +26,7 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Verify admin authentication
+    // Verify admin authentication - website admin or account owner
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
 
@@ -34,22 +34,28 @@ serve(async (req) => {
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
     
-    const adminUserId = userData.user?.id;
-    if (!adminUserId) throw new Error("User not authenticated");
+    const adminUser = userData.user;
+    if (!adminUser) throw new Error("User not authenticated");
 
-    // Check if user has admin or owner role
-    const { data: adminRole } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', adminUserId)
-      .in('role', ['admin', 'owner'])
-      .maybeSingle();
+    // Check if user is the website admin
+    const WEBSITE_ADMIN_EMAIL = 'chuandy914@gmail.com';
+    const isWebsiteAdmin = adminUser.email === WEBSITE_ADMIN_EMAIL;
+    
+    if (!isWebsiteAdmin) {
+      // If not website admin, check if they're an account owner trying to delete team member
+      const { data: adminRole } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', adminUser.id)
+        .in('role', ['admin', 'owner'])
+        .maybeSingle();
 
-    if (!adminRole) {
-      throw new Error("User does not have admin privileges");
+      if (!adminRole) {
+        throw new Error("User does not have admin privileges");
+      }
     }
 
-    logStep("Admin verified", { adminUserId });
+    logStep("Admin verified", { userId: adminUser.id, isWebsiteAdmin });
 
     // Get userId to delete from request body
     const { userId } = await req.json();

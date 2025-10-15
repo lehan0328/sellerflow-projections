@@ -19,7 +19,7 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Verify admin access
+    // Verify admin access - only website admin chuandy914@gmail.com
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header");
     
@@ -27,15 +27,13 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError || !user) throw new Error("Unauthorized");
 
-    // Check if user is admin
-    const { data: roles } = await supabaseClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .maybeSingle();
-
-    if (!roles) throw new Error("Admin access required");
+    // Check if user is the website admin
+    const WEBSITE_ADMIN_EMAIL = 'chuandy914@gmail.com';
+    if (user.email !== WEBSITE_ADMIN_EMAIL) {
+      throw new Error("Admin access required");
+    }
+    
+    console.log("Website admin verified:", user.email);
 
     console.log("Starting backfill of Stripe customer IDs");
 

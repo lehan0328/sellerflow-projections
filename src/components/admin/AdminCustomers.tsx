@@ -211,12 +211,34 @@ export const AdminCustomers = () => {
 
       // Calculate metrics
       const now = new Date();
+      
+      // Trial: users with trial_end in the future
       const trial = profiles?.filter(c => 
         c.trial_end && new Date(c.trial_end) > now
       ).length || 0;
-      const paid = profiles?.filter(c => 
-        c.plan_override && !c.trial_end && ['starter', 'growing', 'professional'].includes(c.plan_override) && c.plan_override !== 'admin'
-      ).length || 0;
+      
+      // Paid: users with Stripe customer ID and valid subscription
+      // (We'll fetch this from Stripe for accuracy)
+      let paid = 0;
+      const paidUserIds = new Set<string>();
+      
+      for (const profile of profiles || []) {
+        if (profile.stripe_customer_id) {
+          try {
+            const { data: stripeData } = await supabase.functions.invoke('get-customer-subscription-details', {
+              body: { customerId: profile.stripe_customer_id }
+            });
+            
+            if (stripeData?.has_active_subscription) {
+              paid++;
+              paidUserIds.add(profile.user_id);
+            }
+          } catch (error) {
+            console.error('Error checking subscription for', profile.user_id, error);
+          }
+        }
+      }
+      
       const expired = (profiles?.length || 0) - trial - paid;
       const conversionRate = profiles?.length ? (paid / profiles.length) * 100 : 0;
 
@@ -342,7 +364,7 @@ export const AdminCustomers = () => {
   const getAccountStatus = (customer: Customer) => {
     const now = new Date();
     
-    // Check for admin status
+    // Check for admin status (website admin, not company admin)
     if (customer.plan_override === 'admin') {
       return { label: 'Admin', variant: 'default' as const };
     }
@@ -352,8 +374,9 @@ export const AdminCustomers = () => {
       return { label: 'Trial', variant: 'secondary' as const };
     }
     
-    // Check for actual paid plans (not discounts or trial-related overrides)
-    if (customer.plan_override && ['starter', 'growing', 'professional'].includes(customer.plan_override)) {
+    // Check for active Stripe subscription (most accurate)
+    // If renewal_date is set and in the future, they have an active subscription
+    if (customer.renewal_date && new Date(customer.renewal_date) > now) {
       return { label: 'Paid', variant: 'default' as const };
     }
     

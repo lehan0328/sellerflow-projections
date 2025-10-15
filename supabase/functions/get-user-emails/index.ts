@@ -17,7 +17,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Authenticate the requesting user
+    // Authenticate the requesting user - website admin only
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header");
 
@@ -25,15 +25,9 @@ serve(async (req) => {
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
     if (userError) throw userError;
 
-    // Check if user is admin
-    const { data: adminCheck } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userData.user.id)
-      .eq('role', 'admin')
-      .maybeSingle();
-
-    if (!adminCheck) {
+    // Check if user is the website admin
+    const WEBSITE_ADMIN_EMAIL = 'chuandy914@gmail.com';
+    if (userData.user.email !== WEBSITE_ADMIN_EMAIL) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
