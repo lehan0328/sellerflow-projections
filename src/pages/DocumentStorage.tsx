@@ -127,7 +127,7 @@ export default function DocumentStorage() {
           id: meta.id,
           name: meta.file_name,
           created_at: meta.created_at,
-          metadata: {},
+          metadata: storageFile?.metadata || {},
           vendor_id: meta.vendor_id,
           vendor_name: (meta as any).vendor?.name,
           notes: meta.notes,
@@ -138,12 +138,19 @@ export default function DocumentStorage() {
           document_type: meta.document_type,
           file_path: meta.file_path,
           storage_exists: !!storageFile,
-          storage_file: storageFile
-        } as StoredDocument & { storage_exists: boolean; storage_file?: any };
+          storage_file: storageFile,
+          file_size: storageFile?.metadata?.size || 0
+        } as StoredDocument & { storage_exists: boolean; storage_file?: any; file_size: number };
       }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
     enabled: !!profile?.account_id,
   });
+
+  // Calculate total storage used
+  const totalStorageUsed = useMemo(() => {
+    if (!documents) return 0;
+    return documents.reduce((total, doc) => total + ((doc as any).file_size || 0), 0);
+  }, [documents]);
 
   // Upload mutation
   const uploadMutation = useMutation({
@@ -272,19 +279,45 @@ export default function DocumentStorage() {
 
     setUploading(true);
     try {
-      const fileName = await uploadMutation.mutateAsync(uploadFile);
-      
-      // Add metadata with vendor and date
-      await updateMetadataMutation.mutateAsync({
-        fileName,
-        vendorId: uploadVendorId,
-        documentDate: uploadDocumentDate.toISOString().split('T')[0]
-      });
+      if (!user?.id || !profile?.account_id) {
+        throw new Error('Not authenticated');
+      }
+
+      // Create filename first
+      const fileName = `${Date.now()}_${uploadFile.name}`;
+      const filePath = `${profile.account_id}/${fileName}`;
+
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('purchase-orders')
+        .upload(filePath, uploadFile);
+
+      if (uploadError) throw uploadError;
+
+      // Create metadata immediately after successful upload
+      const { error: metadataError } = await supabase
+        .from('documents_metadata')
+        .insert({
+          user_id: user.id,
+          account_id: profile.account_id,
+          file_name: fileName,
+          file_path: filePath,
+          vendor_id: uploadVendorId,
+          document_date: uploadDocumentDate.toISOString().split('T')[0]
+        });
+
+      if (metadataError) throw metadataError;
+
+      queryClient.invalidateQueries({ queryKey: ['documents', profile.account_id] });
+      toast.success('Document uploaded successfully');
       
       // Reset form
       setUploadFile(null);
       setUploadVendorId("");
       setUploadDocumentDate(new Date());
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error(`Upload failed: ${error.message}`);
     } finally {
       setUploading(false);
     }
@@ -581,7 +614,7 @@ export default function DocumentStorage() {
                 Document Storage
               </h1>
               <p className="text-muted-foreground mt-1">
-                Manage your business documents and files
+                Manage your business documents and files • {formatFileSize(totalStorageUsed)} used
               </p>
             </div>
           </div>
@@ -799,7 +832,7 @@ export default function DocumentStorage() {
                       <TableCell className="text-sm">
                         {doc.document_date ? format(new Date(doc.document_date), "MMM dd, yyyy") : <span className="text-muted-foreground">-</span>}
                       </TableCell>
-                      <TableCell>{formatFileSize(doc.metadata?.size || doc.metadata?.eTag?.length || 0)}</TableCell>
+                      <TableCell>{formatFileSize((doc as any).file_size || 0)}</TableCell>
                       <TableCell>{formatDate(doc.created_at)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
