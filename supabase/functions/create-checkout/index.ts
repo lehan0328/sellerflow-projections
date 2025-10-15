@@ -187,15 +187,6 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/upgrade-plan?subscription=canceled`,
       allow_promotion_codes: true,
       payment_method_collection: "always", // Always require payment method
-      invoice_creation: {
-        enabled: true,
-        invoice_data: {
-          description: 'Subscription Invoice',
-          metadata: {
-            user_id: user.id
-          }
-        }
-      },
       subscription_data: {
         metadata: {
           user_id: user.id,
