@@ -51,10 +51,14 @@ export const UpgradeModal = ({ open, onOpenChange, feature = "connections", curr
                 Professional Plan Features
               </h3>
               <ul className="space-y-2 text-sm text-muted-foreground ml-7">
-                <li>• Scenario Planning</li>
-                <li>• Automated Notifications</li>
-                <li>• AI-Powered Insights</li>
-                <li>• Unlimited Connections</li>
+                <li>• 7 bank/credit card connections</li>
+                <li>• Automated notifications</li>
+                <li>• Scenario planning</li>
+                <li>• AI insights</li>
+                <li>• AI PDF extractor</li>
+                <li>• 5 additional users</li>
+                <li>• Advanced analytics</li>
+                <li>• Priority support</li>
               </ul>
             </div>
             
