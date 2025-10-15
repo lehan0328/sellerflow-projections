@@ -103,6 +103,7 @@ serve(async (req) => {
         price: newPriceId,
       }],
       proration_behavior: 'create_prorations', // Creates invoice for prorated amount
+      payment_behavior: 'error_if_incomplete', // Fail immediately if payment doesn't succeed
     };
     
     // Only preserve billing cycle if interval is NOT changing
@@ -117,11 +118,15 @@ serve(async (req) => {
     let updatedSubscription;
     try {
       updatedSubscription = await stripe.subscriptions.update(subscription.id, updateParams);
+      logStep("Subscription update API call completed", { 
+        status: updatedSubscription.status,
+        latestInvoice: updatedSubscription.latest_invoice 
+      });
     } catch (updateError) {
       const msg = updateError instanceof Error ? updateError.message : String(updateError);
       logStep("ERROR updating subscription", { error: msg });
       
-      // If upgrade fails, return error without changing the plan
+      // Payment failed during upgrade - subscription was not changed
       return new Response(JSON.stringify({ 
         error: 'Payment declined - plan upgrade failed. Your original plan remains active.',
         details: msg
@@ -131,19 +136,30 @@ serve(async (req) => {
       });
     }
 
-    logStep("Subscription updated successfully", { 
-      subscriptionId: updatedSubscription.id,
-      newPriceId 
-    });
+    // Wait a moment for Stripe to process the invoice
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    logStep("Subscription updated, verifying payment");
 
     // Get the latest invoice to verify payment was successful
     const invoice = await stripe.invoices.retrieve(updatedSubscription.latest_invoice as string);
+    logStep("Retrieved invoice", { 
+      invoiceId: invoice.id,
+      status: invoice.status,
+      amountDue: invoice.amount_due,
+      amountPaid: invoice.amount_paid 
+    });
     
     // Check if payment actually succeeded
-    if (invoice.status === 'open' || invoice.status === 'uncollectible') {
-      logStep("Payment failed for upgrade", { invoiceStatus: invoice.status });
+    // Invoice must be 'paid' for upgrade to be successful
+    if (invoice.status !== 'paid') {
+      logStep("Payment not completed for upgrade", { 
+        invoiceStatus: invoice.status,
+        paymentIntent: invoice.payment_intent 
+      });
       
       // Revert the subscription back to original price
+      logStep("Reverting subscription to original plan");
       try {
         await stripe.subscriptions.update(subscription.id, {
           items: [{
@@ -151,10 +167,12 @@ serve(async (req) => {
             price: currentPrice.id,
           }],
           proration_behavior: 'none',
+          billing_cycle_anchor: 'unchanged',
         });
-        logStep("Reverted subscription to original plan");
+        logStep("Successfully reverted subscription to original plan");
       } catch (revertError) {
-        logStep("ERROR reverting subscription", { error: revertError });
+        const revertMsg = revertError instanceof Error ? revertError.message : String(revertError);
+        logStep("ERROR reverting subscription", { error: revertMsg });
       }
       
       return new Response(JSON.stringify({ 
@@ -165,6 +183,8 @@ serve(async (req) => {
         status: 402,
       });
     }
+    
+    logStep("Payment verified successful", { invoiceId: invoice.id });
     
     return new Response(JSON.stringify({ 
       success: true,
