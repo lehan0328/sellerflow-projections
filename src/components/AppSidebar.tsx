@@ -263,7 +263,9 @@ export function AppSidebar({
       <UpgradeModal 
         open={showUpgradeModal} 
         onOpenChange={setShowUpgradeModal}
-        onUpgradeClick={() => navigate('/settings?tab=subscription')}
+        onUpgradeClick={async () => {
+          await subscription.openCustomerPortal();
+        }}
         feature="premium features"
       />
     </Sidebar>;

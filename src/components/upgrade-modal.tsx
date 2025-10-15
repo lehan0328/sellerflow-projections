@@ -17,12 +17,13 @@ export const UpgradeModal = ({ open, onOpenChange, feature = "connections", curr
   const navigate = useNavigate();
   const subscription = useSubscription();
 
-  const handleUpgrade = () => {
+  const handleUpgrade = async () => {
     onOpenChange(false);
     if (onUpgradeClick) {
       onUpgradeClick();
     } else {
-      navigate('/settings?tab=subscription');
+      // Open Stripe customer portal
+      await subscription.openCustomerPortal();
     }
   };
 
