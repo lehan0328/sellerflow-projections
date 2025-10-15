@@ -19,6 +19,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [isYearly, setIsYearly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasReferredDiscount, setHasReferredDiscount] = useState(false);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -56,9 +57,13 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('monthly_revenue')
+        .select('monthly_revenue, plan_override, discount_redeemed_at')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      // Check if user has referred discount available
+      const hasDiscount = profile?.plan_override === 'referred_user_discount' && !profile?.discount_redeemed_at;
+      setHasReferredDiscount(hasDiscount);
 
       // Calculate revenue from last 30 days using aggregated payout data
       // This is much more efficient than summing individual transactions (which can be 10k-100k rows)
@@ -276,6 +281,35 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
         </DialogHeader>
 
         <div className="py-4">
+          {/* Referral Discount Notice */}
+          {hasReferredDiscount && (
+            <div className="mb-6 p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+              <div className="flex items-start gap-3">
+                <Badge className="bg-green-500/20 text-green-700 dark:text-green-300 hover:bg-green-500/30 shrink-0">
+                  🎉 Referral Discount
+                </Badge>
+                <div className="flex-1 space-y-2">
+                  <p className="text-sm font-semibold text-green-900 dark:text-green-100">
+                    You have a 10% discount waiting!
+                  </p>
+                  <div className="text-xs text-green-800 dark:text-green-200 space-y-1">
+                    <p className="flex items-center gap-1">
+                      <Check className="h-3.5 w-3.5" />
+                      <strong>Monthly plans:</strong> 10% off for 6 months
+                    </p>
+                    <p className="flex items-center gap-1">
+                      <Check className="h-3.5 w-3.5" />
+                      <strong>Yearly plans:</strong> 10% off total price (on top of the 17% yearly savings!)
+                    </p>
+                  </div>
+                  <p className="text-xs text-green-700 dark:text-green-300 italic">
+                    Discount will be applied automatically at checkout
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Billing Period Toggle */}
           <div className="flex justify-center mb-6">
             <div className="inline-flex rounded-lg border p-1 bg-muted/50">
