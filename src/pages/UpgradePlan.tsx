@@ -176,9 +176,10 @@ const UpgradePlan = () => {
     if (pendingUpgrade) {
       setIsUpgrading(true);
       setPendingUpgrade(null);
+      // Redirect to Stripe customer portal for plan upgrades
+      // Stripe handles prorations and plan switching natively
+      await openCustomerPortal();
       setIsUpgrading(false);
-      // Use create-checkout which handles both same-interval and cross-interval upgrades
-      createCheckout(pendingUpgrade.priceId);
     }
   };
 
