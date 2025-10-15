@@ -233,13 +233,18 @@ serve(async (req) => {
         });
         
         if (proratedAmount !== undefined && proratedAmount > 0) {
+          // Fetch customer with discount info to check for existing coupon
+          const customerWithDiscount = await stripe.customers.retrieve(customerId, {
+            expand: ['discount.coupon']
+          });
+          
           // Check if current subscription has a discount/coupon to preserve
           let existingCouponId = null;
           if (currentSubscription.discount?.coupon) {
             existingCouponId = currentSubscription.discount.coupon.id;
             logStep("Found existing coupon on subscription", { couponId: existingCouponId });
-          } else if (customer.discount?.coupon) {
-            existingCouponId = customer.discount.coupon.id;
+          } else if ((customerWithDiscount as any).discount?.coupon) {
+            existingCouponId = (customerWithDiscount as any).discount.coupon.id;
             logStep("Found existing coupon on customer", { couponId: existingCouponId });
           }
           
