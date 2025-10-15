@@ -32,6 +32,9 @@ interface Customer {
   renewal_date?: string;
   last_paid_date?: string;
   stripe_customer_id?: string;
+  stripe_plan_name?: string;
+  stripe_subscription_status?: string;
+  stripe_customer_exists?: boolean;
   role?: string;
   account_owner_company?: string;
   referral_code?: string;
@@ -148,6 +151,9 @@ export const AdminCustomers = () => {
           // Fetch Stripe subscription data if customer has stripe_customer_id
           let renewalDate = null;
           let lastPaidDate = null;
+          let stripePlanName = null;
+          let stripeSubscriptionStatus = null;
+          let stripeCustomerExists = false;
           
           if (profile.stripe_customer_id) {
             try {
@@ -158,6 +164,9 @@ export const AdminCustomers = () => {
               if (stripeData) {
                 renewalDate = stripeData.renewal_date;
                 lastPaidDate = stripeData.last_paid_date;
+                stripePlanName = stripeData.plan_name;
+                stripeSubscriptionStatus = stripeData.subscription_status;
+                stripeCustomerExists = stripeData.customer_exists;
               }
             } catch (error) {
               console.error('Error fetching Stripe data for customer:', profile.user_id, error);
@@ -170,6 +179,9 @@ export const AdminCustomers = () => {
             amazon_revenue: revenue,
             renewal_date: renewalDate,
             last_paid_date: lastPaidDate,
+            stripe_plan_name: stripePlanName,
+            stripe_subscription_status: stripeSubscriptionStatus,
+            stripe_customer_exists: stripeCustomerExists,
             role: userRole?.role,
             account_owner_company: accountOwnerCompany,
             referral_code: referralData?.referral_code,
@@ -640,17 +652,32 @@ export const AdminCustomers = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {customer.plan_override && ['starter', 'growing', 'professional', 'admin'].includes(customer.plan_override) ? (
-                          <Badge variant="outline" className="text-xs capitalize">
-                            {formatPlanName(customer.plan_override)}
-                          </Badge>
-                        ) : customer.role && customer.role !== 'owner' ? (
-                          <Badge variant="outline" className="text-xs">
-                            Team
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">No Plan</span>
-                        )}
+                        <div className="flex flex-col gap-1">
+                          {customer.stripe_plan_name ? (
+                            <>
+                              <Badge variant="default" className="text-xs w-fit">
+                                {customer.stripe_plan_name}
+                              </Badge>
+                              {customer.stripe_subscription_status && customer.stripe_subscription_status !== 'active' && (
+                                <span className="text-xs text-yellow-600">
+                                  {customer.stripe_subscription_status}
+                                </span>
+                              )}
+                            </>
+                          ) : customer.plan_override && ['starter', 'growing', 'professional', 'admin'].includes(customer.plan_override) ? (
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {formatPlanName(customer.plan_override)}
+                            </Badge>
+                          ) : customer.role && customer.role !== 'owner' ? (
+                            <Badge variant="outline" className="text-xs">
+                              Team
+                            </Badge>
+                          ) : customer.stripe_customer_id && !customer.stripe_customer_exists ? (
+                            <span className="text-xs text-destructive">Stripe Error</span>
+                          ) : (
+                            <span className="text-muted-foreground">No Plan</span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {customer.referral_code || customer.affiliate_code ? (

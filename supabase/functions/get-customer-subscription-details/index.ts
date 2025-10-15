@@ -40,22 +40,67 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Get active subscriptions
+    // Check if customer exists in Stripe
+    let customerExists = false;
+    try {
+      await stripe.customers.retrieve(customerId);
+      customerExists = true;
+    } catch (error) {
+      console.error("Customer not found in Stripe:", customerId);
+      return new Response(
+        JSON.stringify({
+          renewal_date: null,
+          last_paid_date: null,
+          has_active_subscription: false,
+          plan_name: null,
+          subscription_status: null,
+          customer_exists: false,
+          error: "Customer not found in Stripe"
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
+
+    // Get all subscriptions (active, past_due, trialing)
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
-      status: "active",
-      limit: 1,
+      limit: 10,
     });
 
     let renewalDate = null;
     let lastPaidDate = null;
     let hasActiveSubscription = false;
+    let planName = null;
+    let subscriptionStatus = null;
 
-    if (subscriptions.data.length > 0) {
-      const subscription = subscriptions.data[0];
-      hasActiveSubscription = true;
+    // Check for any active, trialing, or past_due subscription
+    const activeSubscription = subscriptions.data.find(sub => 
+      ['active', 'trialing', 'past_due'].includes(sub.status)
+    );
+
+    if (activeSubscription) {
+      hasActiveSubscription = activeSubscription.status === 'active';
+      subscriptionStatus = activeSubscription.status;
+      
       // Renewal date is the current period end
-      renewalDate = new Date(subscription.current_period_end * 1000).toISOString();
+      renewalDate = new Date(activeSubscription.current_period_end * 1000).toISOString();
+
+      // Get plan name from the subscription items
+      if (activeSubscription.items.data.length > 0) {
+        const priceId = activeSubscription.items.data[0].price.id;
+        // Fetch price details to get the product name
+        try {
+          const price = await stripe.prices.retrieve(priceId, { expand: ['product'] });
+          if (price.product && typeof price.product === 'object') {
+            planName = price.product.name;
+          }
+        } catch (error) {
+          console.error("Error fetching price/product:", error);
+        }
+      }
 
       // Get the most recent paid invoice for this customer
       const invoices = await stripe.invoices.list({
@@ -74,6 +119,9 @@ serve(async (req) => {
         renewal_date: renewalDate,
         last_paid_date: lastPaidDate,
         has_active_subscription: hasActiveSubscription,
+        plan_name: planName,
+        subscription_status: subscriptionStatus,
+        customer_exists: customerExists,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
