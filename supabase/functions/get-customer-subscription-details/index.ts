@@ -86,7 +86,9 @@ serve(async (req) => {
       subscriptionStatus = activeSubscription.status;
       
       // Renewal date is the current period end
-      renewalDate = new Date(activeSubscription.current_period_end * 1000).toISOString();
+      if (activeSubscription.current_period_end) {
+        renewalDate = new Date(activeSubscription.current_period_end * 1000).toISOString();
+      }
 
       // Get plan name from the subscription items
       if (activeSubscription.items.data.length > 0) {
@@ -109,8 +111,8 @@ serve(async (req) => {
         limit: 1,
       });
 
-      if (invoices.data.length > 0) {
-        lastPaidDate = new Date(invoices.data[0].status_transitions.paid_at! * 1000).toISOString();
+      if (invoices.data.length > 0 && invoices.data[0].status_transitions.paid_at) {
+        lastPaidDate = new Date(invoices.data[0].status_transitions.paid_at * 1000).toISOString();
       }
     }
 
