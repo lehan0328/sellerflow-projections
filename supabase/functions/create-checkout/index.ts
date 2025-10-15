@@ -160,7 +160,7 @@ serve(async (req) => {
           name: 'Referred User Discount - 10% Off',
           percent_off: 10,
           duration: 'repeating',
-          duration_in_months: 12,
+          duration_in_months: 6,
         });
         discountCouponId = couponId;
       }
