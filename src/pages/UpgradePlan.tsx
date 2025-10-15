@@ -158,8 +158,8 @@ const UpgradePlan = () => {
   ];
 
   const handleUpgrade = (priceId: string, planName: string, proratedAmount?: number, isYearlyPlan?: boolean) => {
-    // For yearly switches with existing subscription, show confirmation with card details
-    if (subscribed && !is_trialing && isYearlyPlan) {
+    // For existing subscriptions (both monthly and yearly), show confirmation with card details
+    if (subscribed && !is_trialing) {
       setPendingUpgrade({
         priceId,
         planName,
@@ -167,7 +167,7 @@ const UpgradePlan = () => {
         isYearly: isYearlyPlan || false,
       });
     } else {
-      // For new subscriptions or plan upgrades, use checkout
+      // For new subscriptions during trial, use checkout
       createCheckout(priceId, undefined, proratedAmount);
     }
   };
