@@ -33,6 +33,7 @@ export const useNotifications = () => {
       const { data, error } = await supabase
         .from('notification_history')
         .select('*')
+        .eq('user_id', user.id)
         .order('sent_at', { ascending: false })
         .limit(50);
 
@@ -113,6 +114,7 @@ export const useNotifications = () => {
       const { error } = await supabase
         .from('notification_history')
         .update({ read: true })
+        .eq('user_id', user.id)
         .eq('read', false);
 
       if (error) throw error;
