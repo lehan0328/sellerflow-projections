@@ -536,14 +536,19 @@ const UpgradePlan = () => {
                     <CardTitle>{currentTierData.name}</CardTitle>
                     <div className="text-3xl font-bold">
                       {isYearly ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <span className="text-lg line-through text-muted-foreground font-normal">
-                            ${currentTierData.price * 12}
-                          </span>
-                          <span>
-                            ${currentTierData.yearlyPrice}
-                            <span className="text-sm font-normal text-muted-foreground">/year</span>
-                          </span>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-lg line-through text-muted-foreground font-normal">
+                              ${currentTierData.price * 12}
+                            </span>
+                            <span>
+                              ${currentTierData.yearlyPrice}
+                              <span className="text-sm font-normal text-muted-foreground">/year</span>
+                            </span>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            ${(currentTierData.yearlyPrice / 12).toFixed(0)}/month billed annually
+                          </div>
                         </div>
                       ) : (
                         <>
@@ -591,14 +596,19 @@ const UpgradePlan = () => {
                         <CardTitle>{plans.find(p => p.key === 'growing')?.name}</CardTitle>
                         <div className="text-3xl font-bold">
                           {isYearly ? (
-                            <div className="flex items-center justify-center gap-2">
-                              <span className="text-lg line-through text-muted-foreground font-normal">
-                                ${plans.find(p => p.key === 'growing')!.price * 12}
-                              </span>
-                              <span>
-                                ${plans.find(p => p.key === 'growing')?.yearlyPrice}
-                                <span className="text-sm font-normal text-muted-foreground">/year</span>
-                              </span>
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-center gap-2">
+                                <span className="text-lg line-through text-muted-foreground font-normal">
+                                  ${plans.find(p => p.key === 'growing')!.price * 12}
+                                </span>
+                                <span>
+                                  ${plans.find(p => p.key === 'growing')?.yearlyPrice}
+                                  <span className="text-sm font-normal text-muted-foreground">/year</span>
+                                </span>
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                ${(plans.find(p => p.key === 'growing')!.yearlyPrice / 12).toFixed(0)}/month billed annually
+                              </div>
                             </div>
                           ) : (
                             <>
@@ -677,14 +687,19 @@ const UpgradePlan = () => {
                         <CardTitle>{plans.find(p => p.key === 'professional')?.name}</CardTitle>
                         <div className="text-3xl font-bold">
                           {isYearly ? (
-                            <div className="flex items-center justify-center gap-2">
-                              <span className="text-lg line-through text-muted-foreground font-normal">
-                                ${plans.find(p => p.key === 'professional')!.price * 12}
-                              </span>
-                              <span>
-                                ${plans.find(p => p.key === 'professional')?.yearlyPrice}
-                                <span className="text-sm font-normal text-muted-foreground">/year</span>
-                              </span>
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-center gap-2">
+                                <span className="text-lg line-through text-muted-foreground font-normal">
+                                  ${plans.find(p => p.key === 'professional')!.price * 12}
+                                </span>
+                                <span>
+                                  ${plans.find(p => p.key === 'professional')?.yearlyPrice}
+                                  <span className="text-sm font-normal text-muted-foreground">/year</span>
+                                </span>
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                ${(plans.find(p => p.key === 'professional')!.yearlyPrice / 12).toFixed(0)}/month billed annually
+                              </div>
                             </div>
                           ) : (
                             <>
@@ -762,14 +777,19 @@ const UpgradePlan = () => {
                     <CardTitle>{nextTier.name}</CardTitle>
                     <div className="text-3xl font-bold">
                       {isYearly ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <span className="text-lg line-through text-muted-foreground font-normal">
-                            ${nextTier.price * 12}
-                          </span>
-                          <span>
-                            ${nextTier.yearlyPrice}
-                            <span className="text-sm font-normal text-muted-foreground">/year</span>
-                          </span>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-lg line-through text-muted-foreground font-normal">
+                              ${nextTier.price * 12}
+                            </span>
+                            <span>
+                              ${nextTier.yearlyPrice}
+                              <span className="text-sm font-normal text-muted-foreground">/year</span>
+                            </span>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            ${(nextTier.yearlyPrice / 12).toFixed(0)}/month billed annually
+                          </div>
                         </div>
                       ) : (
                         <>
@@ -946,14 +966,19 @@ const UpgradePlan = () => {
                       <CardTitle>{planItem.name}</CardTitle>
                       <div className="text-3xl font-bold">
                         {isYearly ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="text-lg line-through text-muted-foreground font-normal">
-                              ${planItem.price * 12}
-                            </span>
-                            <span>
-                              ${planItem.yearlyPrice}
-                              <span className="text-sm font-normal text-muted-foreground">/year</span>
-                            </span>
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="text-lg line-through text-muted-foreground font-normal">
+                                ${planItem.price * 12}
+                              </span>
+                              <span>
+                                ${planItem.yearlyPrice}
+                                <span className="text-sm font-normal text-muted-foreground">/year</span>
+                              </span>
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              ${(planItem.yearlyPrice / 12).toFixed(0)}/month billed annually
+                            </div>
                           </div>
                         ) : (
                           <>
