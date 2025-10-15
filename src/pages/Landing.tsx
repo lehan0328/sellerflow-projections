@@ -126,29 +126,29 @@ const Landing = () => {
     }
   };
   const features = [{
-    icon: <Zap className="h-6 w-6" />,
-    title: "Daily AI Financial Insights",
-    description: "Get personalized daily recommendations powered by AI. Chat with your financial advisor anytime to ask questions about your cash flow."
-  }, {
-    icon: <ShoppingCart className="h-6 w-6" />,
-    title: "Amazon Payout Forecasting",
-    description: "Predict your bi-weekly payouts, reserve releases, and fee adjustments with 95% accuracy."
+    icon: <TrendingUp className="h-6 w-6" />,
+    title: "Automated Cash Flow Forecasting",
+    description: "Predict sales trends, payouts, and expenses based on real-time marketplace data."
   }, {
     icon: <CreditCard className="h-6 w-6" />,
-    title: "Credit Optimization for Sellers",
-    description: "Maximize your credit utilization across cards while maintaining cash flow for inventory purchases."
+    title: "Payout Tracking & Reconciliation",
+    description: "See every Amazon disbursement, track fees, and reconcile transactions automatically."
   }, {
-    icon: <Calendar className="h-6 w-6" />,
-    title: "Seasonal Planning",
-    description: "Plan for Q4 inventory builds, promotional periods, and seasonal cash flow fluctuations."
+    icon: <BadgeCheck className="h-6 w-6" />,
+    title: "Financial Insights Dashboard",
+    description: "View profit margins, cash balances, and historical trends across SKUs and marketplaces."
   }, {
-    icon: <TrendingUp className="h-6 w-6" />,
-    title: "Multi-Marketplace Support",
-    description: "Track payouts from Amazon US, UK, EU, and other marketplaces in one unified dashboard."
+    icon: <BookOpen className="h-6 w-6" />,
+    title: "Accounting-Ready Exports",
+    description: "Generate clean financial summaries or export data directly for your bookkeeping software."
   }, {
-    icon: <Shield className="h-6 w-6" />,
-    title: "Inventory Financing Tracking",
-    description: "Monitor loan payments, credit lines, and inventory-backed financing all in one place."
+    icon: <Calculator className="h-6 w-6" />,
+    title: "Performance Analytics",
+    description: "Analyze your growth trajectory and plan smarter inventory or funding decisions."
+  }, {
+    icon: <Sparkles className="h-6 w-6" />,
+    title: "AI-Powered Insights",
+    description: "Get personalized daily recommendations powered by AI to optimize your cash flow and inventory decisions."
   }];
   const pricingPlans = [{
     name: "Starter",
@@ -523,11 +523,11 @@ const Landing = () => {
             }}>
                 <div className="flex items-start gap-4">
                   <h1 className="text-4xl lg:text-5xl xl:text-6xl font-display font-bold leading-relaxed tracking-tight flex-1">
-                    <span className="block text-foreground pb-2">Amazon Cashflow</span>
+                    <span className="block text-foreground pb-2">Smarter</span>
                     <span className="block bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%] pb-2">
-                      Management Software
+                      Cash Flow Forecasting
                     </span>
-                    <span className="block text-foreground pb-2">for Sellers</span>
+                    <span className="block text-foreground pb-2">for Amazon Sellers</span>
                   </h1>
                   <Badge variant="secondary" className="text-base px-4 py-2 whitespace-nowrap mt-2 font-semibold">
                     Starting at only $24/mo
@@ -538,7 +538,13 @@ const Landing = () => {
               <p className="text-xl text-muted-foreground max-w-xl animate-fade-in leading-relaxed" style={{
               animationDelay: '400ms'
             }}>
-                Forecast payouts, manage expenses, and optimize marketplace cash flow in real time. Auren is the all-in-one Amazon cash flow management software that helps sellers stay ahead of cash shortages with automated cashflow management tools built to simplify e-commerce finances.
+                Gain total visibility into your Amazon payouts, upcoming expenses, and expected deposits. Auren's forecasting engine helps sellers plan ahead, avoid cash gaps, and make data-driven growth decisions.
+              </p>
+              
+              <p className="text-base text-muted-foreground/90 max-w-xl animate-fade-in leading-relaxed" style={{
+              animationDelay: '500ms'
+            }}>
+                Auren combines analytics, accounting precision, and real-time Amazon data to give you the clearest picture of your business finances. From forecasting payouts to reconciling deposits, Auren simplifies financial planning for marketplace sellers.
               </p>
               
               <div className="flex flex-col sm:flex-row items-start gap-4 animate-fade-in" style={{
@@ -1220,11 +1226,10 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
-              Built Specifically for Amazon Sellers
+              Smarter Cash Flow Forecasting with Built-In Financial Accuracy
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Generic cash flow tools don't understand Amazon's unique challenges. 
-              We're built specifically for your business model.
+              Auren helps Amazon sellers predict upcoming payouts, manage expenses, and stay in control of cash flow — all without spreadsheets. Our forecasting engine combines analytics, accounting precision, and real-time Amazon data to give you the clearest picture of your business finances.
             </p>
           </div>
           
