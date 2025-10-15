@@ -69,8 +69,10 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     fetchTrialStatus();
   }, [user]);
 
-  // Check if trial has expired or user has no plan
-  const isTrialExpired = !subscribed && (!trialEnd || new Date(trialEnd) < new Date());
+  // Check if trial has expired AND user has no active subscription
+  // If subscribed is true (has active Stripe subscription), never block access
+  // Only check trial if they don't have an active subscription
+  const isTrialExpired = !subscribed && trialEnd && new Date(trialEnd) < new Date();
 
   if (loading || subLoading || checkingTrial) {
     return <LoadingScreen message="Verifying your session..." />;
