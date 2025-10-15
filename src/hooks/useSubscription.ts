@@ -677,6 +677,143 @@ export const useSubscription = () => {
     }
   };
 
+  /**
+   * Smart upgrade that handles ANY combination of tier/interval changes:
+   * - Same tier, different interval (monthly → yearly)
+   * - Different tier, same interval (starter → professional, both monthly)
+   * - Different tier AND interval (starter monthly → professional yearly)
+   */
+  const smartUpgrade = async (targetPriceId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to upgrade your plan.",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // Get current subscription details
+      if (!subscriptionState.product_id || !subscriptionState.billing_interval) {
+        // No active subscription - just create checkout for target plan
+        createCheckout(targetPriceId);
+        return true;
+      }
+
+      // Find target plan details
+      const allPlans = { ...PRICING_PLANS, ...ENTERPRISE_TIERS };
+      let targetPlan: any = null;
+      let targetInterval: 'month' | 'year' = 'month';
+      
+      for (const plan of Object.values(allPlans)) {
+        // Handle both naming conventions (price_id vs priceId)
+        const monthlyPriceId = (plan as any).price_id || (plan as any).priceId;
+        const yearlyPriceId = (plan as any).yearly_price_id || (plan as any).yearlyPriceId;
+        
+        if (monthlyPriceId === targetPriceId) {
+          targetPlan = plan;
+          targetInterval = 'month';
+          break;
+        } else if (yearlyPriceId === targetPriceId) {
+          targetPlan = plan;
+          targetInterval = 'year';
+          break;
+        }
+      }
+
+      if (!targetPlan) {
+        console.error('Target plan not found for price ID:', targetPriceId);
+        createCheckout(targetPriceId);
+        return true;
+      }
+
+      const currentInterval = subscriptionState.billing_interval;
+      const currentProductId = subscriptionState.product_id;
+      // Handle both naming conventions
+      const targetProductId = (targetPlan as any).product_id || (targetPlan as any).productId;
+      
+      const isTierChange = currentProductId !== targetProductId;
+      const isIntervalChange = currentInterval !== targetInterval;
+
+      console.log('Smart upgrade analysis:', {
+        currentInterval,
+        targetInterval,
+        currentProductId,
+        targetProductId,
+        isTierChange,
+        isIntervalChange
+      });
+
+      // Case 1: Only interval change (same tier, monthly → yearly)
+      if (!isTierChange && isIntervalChange) {
+        console.log('Interval-only change detected');
+        return await upgradeToAnnual(targetPriceId);
+      }
+
+      // Case 2: Only tier change (same interval)
+      if (isTierChange && !isIntervalChange) {
+        console.log('Tier-only change detected');
+        return await upgradeSubscription(targetPriceId);
+      }
+
+      // Case 3: Both tier AND interval change (e.g., Starter Monthly → Professional Yearly)
+      if (isTierChange && isIntervalChange) {
+        console.log('Combined tier + interval change detected');
+        
+        // Calculate proration for unused time on current plan
+        let proratedAmount = 0;
+        if (subscriptionState.current_period_start && subscriptionState.price_amount) {
+          const now = new Date();
+          const periodStart = new Date(subscriptionState.current_period_start);
+          const daysInPeriod = currentInterval === 'month' ? 30 : 365;
+          const periodEnd = new Date(periodStart);
+          
+          if (currentInterval === 'month') {
+            periodEnd.setDate(periodEnd.getDate() + daysInPeriod);
+          } else {
+            periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+          }
+          
+          const totalPeriodDays = daysInPeriod;
+          const daysUsed = Math.floor((now.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
+          const daysRemaining = Math.max(0, totalPeriodDays - daysUsed);
+          
+          const dailyRate = (subscriptionState.price_amount / 100) / totalPeriodDays;
+          proratedAmount = dailyRate * daysRemaining;
+          
+          console.log('Combined upgrade proration:', {
+            currentPrice: subscriptionState.price_amount / 100,
+            currentInterval,
+            daysUsed,
+            daysRemaining,
+            dailyRate,
+            proratedAmount
+          });
+        }
+
+        // Use checkout with proration - this handles tier + interval change
+        createCheckout(targetPriceId, undefined, proratedAmount);
+        return true;
+      }
+
+      // Fallback - shouldn't reach here
+      console.log('No change detected, creating direct checkout');
+      createCheckout(targetPriceId);
+      return true;
+
+    } catch (error) {
+      console.error("Error in smart upgrade:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upgrade plan. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   useEffect(() => {
     checkSubscription();
 
@@ -713,6 +850,7 @@ export const useSubscription = () => {
     removePlanOverride,
     upgradeSubscription,
     upgradeToAnnual,
+    smartUpgrade, // New unified upgrade function
     paymentMethod,
     clearCache,
   };
