@@ -618,6 +618,47 @@ export const useSubscription = () => {
     }
   };
 
+  const upgradeToAnnual = async (annualPriceId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to upgrade your plan.",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      const { data, error } = await supabase.functions.invoke("upgrade-to-annual", {
+        body: { annualPriceId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Your plan has been upgraded to annual billing. An invoice has been sent for the prorated amount.",
+      });
+
+      // Clear cache and refresh subscription status
+      clearCache();
+      await checkSubscription(true);
+      return true;
+    } catch (error) {
+      console.error("Error upgrading to annual:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upgrade to annual billing. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   useEffect(() => {
     checkSubscription();
 
@@ -653,6 +694,7 @@ export const useSubscription = () => {
     openCustomerPortal,
     removePlanOverride,
     upgradeSubscription,
+    upgradeToAnnual,
     paymentMethod,
     clearCache,
   };

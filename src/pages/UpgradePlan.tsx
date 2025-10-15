@@ -54,7 +54,7 @@ interface PendingUpgrade {
 const UpgradePlan = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, paymentMethod, isLoading, payment_failed, ...subscriptionData } = useSubscription();
+  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, paymentMethod, isLoading, payment_failed, upgradeToAnnual, ...subscriptionData } = useSubscription();
   const { calculatePostTrialCost } = useTrialAddonUsage();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
   const [isYearly, setIsYearly] = useState(true);
@@ -175,7 +175,6 @@ const UpgradePlan = () => {
   const confirmUpgrade = async () => {
     if (pendingUpgrade) {
       setIsUpgrading(true);
-      setPendingUpgrade(null);
       
       // Get the annual plan price ID for the current plan tier
       let annualPriceId = '';
@@ -187,8 +186,10 @@ const UpgradePlan = () => {
         annualPriceId = PRICING_PLANS.professional.yearly_price_id;
       }
       
-      // Redirect to checkout with annual plan - Stripe handles proration automatically
-      createCheckout(annualPriceId);
+      // Use the new upgrade function that handles proration automatically
+      const success = await upgradeToAnnual(annualPriceId);
+      
+      setPendingUpgrade(null);
       setIsUpgrading(false);
     }
   };

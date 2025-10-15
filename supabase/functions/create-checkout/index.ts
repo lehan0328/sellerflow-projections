@@ -258,8 +258,9 @@ serve(async (req) => {
           });
           
           // Create checkout for new subscription starting after current period
+          // trial_end must be a Unix timestamp
           sessionConfig.subscription_data = {
-            trial_end: currentPeriodEnd,
+            trial_end: currentPeriodEnd, // Already a Unix timestamp from Stripe
             metadata: {
               upgraded_from: currentSubscription.id
             }
