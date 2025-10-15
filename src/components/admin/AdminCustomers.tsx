@@ -195,26 +195,32 @@ export const AdminCustomers = () => {
       const groupedCustomers: Customer[] = [];
       const accountOwnersMap = new Map<string, Customer>();
       
-      // First pass: identify account owners
+      // First pass: identify account owners (or users with account_id set)
       customersWithData.forEach(customer => {
-        if (customer.is_account_owner) {
-          accountOwnersMap.set(customer.account_id!, customer);
+        if (customer.is_account_owner && customer.account_id) {
+          accountOwnersMap.set(customer.account_id, customer);
           groupedCustomers.push(customer);
         }
       });
       
-      // Second pass: attach team members to their owners
+      // Second pass: attach team members to their owners OR add as standalone
       customersWithData.forEach(customer => {
-        if (!customer.is_account_owner && customer.account_id) {
+        // Skip if already added as account owner
+        if (customer.is_account_owner && customer.account_id) {
+          return;
+        }
+        
+        // Try to attach to owner if account_id exists
+        if (customer.account_id) {
           const owner = accountOwnersMap.get(customer.account_id);
-          if (owner) {
+          if (owner && !customer.is_account_owner) {
             owner.team_members!.push(customer);
-          } else {
-            // If no owner found, add as standalone
+          } else if (!owner) {
+            // No owner found but has account_id, add as standalone
             groupedCustomers.push(customer);
           }
-        } else if (!customer.is_account_owner) {
-          // No account_id, add as standalone
+        } else {
+          // No account_id at all, add as standalone
           groupedCustomers.push(customer);
         }
       });
@@ -381,15 +387,15 @@ export const AdminCustomers = () => {
       return { label: 'Admin', variant: 'default' as const };
     }
     
-    // Check trial status first (active trial period)
-    if (customer.trial_end && new Date(customer.trial_end) > now) {
-      return { label: 'Trial', variant: 'secondary' as const };
-    }
-    
-    // Check for active Stripe subscription (most accurate)
+    // Check for active Stripe subscription first (most accurate)
     // If renewal_date is set and in the future, they have an active subscription
     if (customer.renewal_date && new Date(customer.renewal_date) > now) {
       return { label: 'Paid', variant: 'default' as const };
+    }
+    
+    // Check trial status (active trial period)
+    if (customer.trial_end && new Date(customer.trial_end) > now) {
+      return { label: 'Trial', variant: 'secondary' as const };
     }
     
     // Check if suspended
@@ -397,6 +403,12 @@ export const AdminCustomers = () => {
       return { label: 'Suspended', variant: 'destructive' as const };
     }
     
+    // Check if they ever had a subscription but it expired
+    if (customer.stripe_customer_id || customer.last_paid_date) {
+      return { label: 'Expired', variant: 'destructive' as const };
+    }
+    
+    // Trial expired or never had trial
     return { label: 'Expired', variant: 'destructive' as const };
   };
 
@@ -425,7 +437,7 @@ export const AdminCustomers = () => {
 
   const churnedCustomers = filteredCustomers.filter(customer => {
     const status = getAccountStatus(customer);
-    return status.label === 'Expired';
+    return status.label === 'Expired' || status.label === 'Suspended';
   });
 
   const displayedCustomers = viewMode === 'trial' 
