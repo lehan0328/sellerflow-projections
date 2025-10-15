@@ -66,7 +66,7 @@ serve(async (req) => {
       planOverride: profile?.plan_override 
     });
 
-    // Check for existing customer
+    // Check for existing customer or create new one
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId;
     let hasExistingSubscription = false;
@@ -74,7 +74,21 @@ serve(async (req) => {
     
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-      logStep("Existing customer found", { customerId });
+      const customer = customers.data[0];
+      
+      logStep("Existing customer found", { 
+        customerId,
+        customerEmail: customer.email,
+        hasEmail: !!customer.email
+      });
+      
+      // Update customer email if missing or different
+      if (!customer.email || customer.email !== user.email) {
+        await stripe.customers.update(customerId, {
+          email: user.email,
+        });
+        logStep("Updated customer email", { email: user.email });
+      }
       
       // Save stripe_customer_id to profile if not already saved
       const { error: updateError } = await supabaseClient
@@ -107,7 +121,26 @@ serve(async (req) => {
         totalSubscriptions: allSubscriptions.data.length
       });
     } else {
-      logStep("New customer");
+      // Create new customer with email
+      const newCustomer = await stripe.customers.create({
+        email: user.email,
+        metadata: {
+          user_id: user.id
+        }
+      });
+      customerId = newCustomer.id;
+      
+      logStep("New customer created", { 
+        customerId,
+        email: user.email
+      });
+      
+      // Save stripe_customer_id to profile
+      await supabaseClient
+        .from('profiles')
+        .update({ stripe_customer_id: customerId })
+        .eq('user_id', user.id);
+      logStep("Stripe customer ID saved to profile");
     }
 
     // Create or get the referred user discount coupon if applicable
