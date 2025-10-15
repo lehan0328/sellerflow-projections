@@ -46,7 +46,7 @@ interface PendingUpgrade {
 const UpgradePlan = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, upgradeSubscription, paymentMethod, isLoading } = useSubscription();
+  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, upgradeSubscription, paymentMethod, isLoading, payment_failed } = useSubscription();
   const { calculatePostTrialCost } = useTrialAddonUsage();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
   const [isYearly, setIsYearly] = useState(true);
@@ -302,6 +302,32 @@ const UpgradePlan = () => {
             <CardContent className="space-y-4">
               {isLoading ? (
                 <p className="text-sm text-muted-foreground text-center">Loading...</p>
+              ) : payment_failed ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-2 text-destructive flex items-center gap-2">
+                      <XCircle className="h-5 w-5" />
+                      Payment Failed
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Your last payment was declined. Please update your payment method to continue your {plan ? PRICING_PLANS[plan].name : ''} plan.
+                    </p>
+                    <Button 
+                      onClick={openCustomerPortal}
+                      variant="destructive"
+                      className="w-full"
+                    >
+                      Update Payment Method
+                    </Button>
+                  </div>
+                  
+                  {plan && (
+                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded">
+                      <span className="text-sm font-medium">Current Plan</span>
+                      <Badge variant="outline">{PRICING_PLANS[plan].name}</Badge>
+                    </div>
+                  )}
+                </div>
               ) : subscribed && plan ? (
                 <>
                   <div className="flex items-center justify-between">

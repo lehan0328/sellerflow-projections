@@ -130,12 +130,13 @@ serve(async (req) => {
       statuses: subscriptions.data.map(s => s.status)
     });
     
-    // Filter for active or trialing subscriptions
+    // Filter for active, trialing, or past_due subscriptions
     const activeOrTrialingSub = subscriptions.data.find(
-      sub => sub.status === 'active' || sub.status === 'trialing'
+      sub => sub.status === 'active' || sub.status === 'trialing' || sub.status === 'past_due'
     );
     
     const hasActiveSub = !!activeOrTrialingSub;
+    const isPastDue = activeOrTrialingSub?.status === 'past_due';
     let productId = null;
     let subscriptionEnd = null;
     let isTrialing = false;
@@ -346,7 +347,8 @@ serve(async (req) => {
       price_amount: priceAmount,
       currency: currency,
       discount: discountInfo,
-      discount_ever_redeemed: !!profileData?.discount_redeemed_at
+      discount_ever_redeemed: !!profileData?.discount_redeemed_at,
+      payment_failed: isPastDue
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

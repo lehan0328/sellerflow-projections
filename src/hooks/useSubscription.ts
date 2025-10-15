@@ -176,6 +176,7 @@ export interface SubscriptionState {
     duration_in_months: number | null;
   } | null;
   discount_ever_redeemed?: boolean;
+  payment_failed?: boolean;
 }
 
 // Cache configuration
@@ -315,6 +316,7 @@ export const useSubscription = () => {
         currency: data.currency || null,
         discount: data.discount || null,
         discount_ever_redeemed: data.discount_ever_redeemed || false,
+        payment_failed: data.payment_failed || false,
       };
       
       setSubscriptionState(state);
