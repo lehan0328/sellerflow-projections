@@ -52,9 +52,17 @@ serve(async (req) => {
 
     if (profile?.plan_override) {
       logStep("Plan override found", { plan: profile.plan_override });
+      
+      // Map special plan overrides to valid plan tiers
+      let mappedPlan = profile.plan_override;
+      if (profile.plan_override === 'referred_user_discount') {
+        // Referred users get starter plan
+        mappedPlan = 'starter';
+      }
+      
       return new Response(JSON.stringify({
         subscribed: true,
-        plan: profile.plan_override,
+        plan: mappedPlan,
         subscription_end: null,
         is_override: true,
         discount_ever_redeemed: !!profile.discount_redeemed_at
