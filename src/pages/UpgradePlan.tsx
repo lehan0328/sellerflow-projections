@@ -611,11 +611,21 @@ const UpgradePlan = () => {
                   ) : (
                     <>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm">Plan</span>
-                        <Badge variant="secondary">No Active Plan</Badge>
+                        <span className="text-sm">Current Plan</span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                            Professional Plan Trial
+                          </Badge>
+                        </div>
                       </div>
+                      {trial_end && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          <span>Trial ends {new Date(trial_end).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                        </div>
+                      )}
                       <p className="text-sm text-muted-foreground">
-                        Choose a plan below to get started
+                        You're currently on a 7-day free trial with full Professional plan access
                       </p>
                     </>
                   )}
