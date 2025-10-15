@@ -54,12 +54,6 @@ serve(async (req) => {
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${origin}/settings`,
-      flow_data: {
-        type: 'subscription_update_confirm',
-        subscription_update_confirm: {
-          subscription: (await stripe.subscriptions.list({ customer: customerId, status: 'active', limit: 1 })).data[0]?.id,
-        },
-      },
     });
     logStep("Customer portal session created", { sessionId: portalSession.id, url: portalSession.url });
 
