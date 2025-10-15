@@ -630,8 +630,9 @@ export const useSubscription = () => {
         return false;
       }
 
-      const { data, error } = await supabase.functions.invoke("upgrade-to-annual", {
-        body: { annualPriceId },
+      // Use the existing upgrade-subscription function which now handles interval changes
+      const { data, error } = await supabase.functions.invoke("upgrade-subscription", {
+        body: { newPriceId: annualPriceId },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },

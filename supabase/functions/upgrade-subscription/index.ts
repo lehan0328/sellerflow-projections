@@ -96,29 +96,17 @@ serve(async (req) => {
       currentInterval: currentPrice.recurring?.interval
     });
     
-    // CRITICAL: Stripe doesn't allow interval changes without flexible billing mode
-    // Return error to frontend so it can redirect to checkout instead
-    if (intervalChanging) {
-      logStep("Interval change detected - must use checkout");
-      return new Response(JSON.stringify({ 
-        error: 'interval_change_required',
-        message: 'Billing interval changes require checkout',
-        useCheckout: true,
-        newPriceId
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
-    }
+    
+    // Allow interval changes with proration - Stripe will handle the credit/charge calculation
+    logStep("Processing upgrade", { intervalChanging });
     
     // CRITICAL: Use strict payment behavior to prevent upgrade if payment fails
-    // For interval changes, we need to reset the billing cycle
     const updateParams: any = {
       items: [{
         id: subscription.items.data[0].id,
         price: newPriceId,
       }],
-      proration_behavior: 'create_prorations',
+      proration_behavior: 'always_invoice', // Creates invoice with proration credit
       payment_behavior: 'error_if_incomplete', // STRICT: Fail immediately if payment incomplete
     };
     
@@ -126,7 +114,7 @@ serve(async (req) => {
     if (!intervalChanging) {
       updateParams.billing_cycle_anchor = 'unchanged';
     }
-    // If changing intervals, omit billing_cycle_anchor to reset it
+    // If changing intervals, omit billing_cycle_anchor to let Stripe reset it
     
     logStep("STRICT PAYMENT MODE: Updating subscription with error_if_incomplete", updateParams);
     let updatedSubscription;
