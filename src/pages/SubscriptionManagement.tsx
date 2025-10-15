@@ -58,14 +58,16 @@ export default function SubscriptionManagement() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <CardTitle>Current Plan: {planLimits.name}</CardTitle>
+                <CardTitle>
+                  {is_trialing ? 'Professional Plan (Trial)' : `Current Plan: ${planLimits.name}`}
+                </CardTitle>
                 {subscribed && subscription_end ? (
                   <div className="space-y-1">
                     {is_trialing ? (
                       <CardDescription className="flex items-center gap-2">
                         <Star className="h-4 w-4 text-blue-500" />
                         <span className="font-semibold text-blue-600 dark:text-blue-400">
-                          Free Trial - Ends {new Date(subscription_end).toLocaleDateString()}
+                          Trial Ends {new Date(subscription_end).toLocaleDateString()}
                         </span>
                       </CardDescription>
                     ) : (

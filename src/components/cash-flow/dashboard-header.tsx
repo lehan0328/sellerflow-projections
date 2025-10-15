@@ -1,11 +1,13 @@
 import { Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { UserMenu } from "./user-menu";
 import { DemoUserMenu } from "./demo-user-menu";
 import { PendingNotificationsPanel } from "./pending-notifications-panel";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -34,6 +36,7 @@ export function DashboardHeader({
     user
   } = useAuth();
   const navigate = useNavigate();
+  const { is_trialing, trial_end } = useSubscription();
   const {
     state
   } = useSidebar();
@@ -91,6 +94,11 @@ export function DashboardHeader({
 
       {/* Navigation and User Menu - Top Right */}
       <div className="absolute top-6 right-6 z-40 flex items-center space-x-3">
+        {!isDemo && is_trialing && trial_end && (
+          <Badge variant="outline" className="bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 px-3 py-1">
+            Professional Plan Trial - Ends {new Date(trial_end).toLocaleDateString()}
+          </Badge>
+        )}
         {!isDemo && <Button variant="outline" size="sm" onClick={() => navigate('/referral-dashboard')} className="relative h-10 px-4 bg-blue-500/20 backdrop-blur-sm border-blue-500/50 hover:border-blue-500 hover:bg-blue-500/30 hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 group overflow-hidden" title="Referral Rewards - Earn up to $3,000">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="relative flex items-center gap-2">
