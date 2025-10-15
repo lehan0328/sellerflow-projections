@@ -432,8 +432,7 @@ const UpgradePlan = () => {
                                 </div>
                                 <Button
                                   size="sm"
-                                  variant="outline"
-                                  className="w-full text-xs"
+                                  className="w-full text-xs bg-primary text-primary-foreground hover:bg-primary/90"
                                   onClick={() => handleUpgrade(
                                     PRICING_PLANS[plan].yearly_price_id, 
                                     `${PRICING_PLANS[plan].name} (Yearly)`,
