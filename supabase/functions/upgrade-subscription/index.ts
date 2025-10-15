@@ -68,15 +68,28 @@ serve(async (req) => {
     const subscription = subscriptions.data[0];
     logStep("Found active subscription", { subscriptionId: subscription.id });
 
+    // Get the new price to check billing interval
+    const newPrice = await stripe.prices.retrieve(newPriceId);
+    const currentPrice = subscription.items.data[0].price;
+    
+    // Check if billing interval is changing
+    const intervalChanging = newPrice.recurring?.interval !== currentPrice.recurring?.interval;
+    
     // Update subscription - Stripe handles proration automatically
-    const updatedSubscription = await stripe.subscriptions.update(subscription.id, {
+    const updateParams: any = {
       items: [{
         id: subscription.items.data[0].id,
         price: newPriceId,
       }],
       proration_behavior: 'create_prorations', // Creates invoice for prorated amount
-      billing_cycle_anchor: 'unchanged', // Keep same billing date
-    });
+    };
+    
+    // Only preserve billing cycle if interval is NOT changing
+    if (!intervalChanging) {
+      updateParams.billing_cycle_anchor = 'unchanged';
+    }
+    
+    const updatedSubscription = await stripe.subscriptions.update(subscription.id, updateParams);
 
     logStep("Subscription updated successfully", { 
       subscriptionId: updatedSubscription.id,
