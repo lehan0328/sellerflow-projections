@@ -163,7 +163,7 @@ serve(async (req) => {
     let productId = null;
     let subscriptionEnd = null;
     let isTrialing = false;
-    let trialEnd = null;
+    let subscriptionTrialEnd = null;
     let billingInterval = null;
     let currentPeriodStart = null;
     let priceAmount = null;
@@ -203,11 +203,11 @@ serve(async (req) => {
       // If trialing, use trial_end, otherwise use billing_cycle_anchor
       if (isTrialing && subscription.trial_end) {
         try {
-          trialEnd = new Date(subscription.trial_end * 1000).toISOString();
-          subscriptionEnd = trialEnd;
+          subscriptionTrialEnd = new Date(subscription.trial_end * 1000).toISOString();
+          subscriptionEnd = subscriptionTrialEnd;
           logStep("Trial subscription found", { 
             subscriptionId: subscription.id, 
-            trialEndDate: trialEnd 
+            trialEndDate: subscriptionTrialEnd 
           });
         } catch (error) {
           logStep("Error parsing trial_end date", { 
@@ -371,7 +371,7 @@ serve(async (req) => {
       subscription_end: subscriptionEnd,
       is_override: false,
       is_trialing: isTrialing,
-      trial_end: trialEnd,
+      trial_end: subscriptionTrialEnd,
       billing_interval: billingInterval,
       current_period_start: currentPeriodStart,
       price_amount: priceAmount,

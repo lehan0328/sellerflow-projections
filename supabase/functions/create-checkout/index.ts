@@ -166,16 +166,6 @@ serve(async (req) => {
         discountCouponId = couponId;
       }
       logStep("Will apply referred user discount", { couponId: discountCouponId });
-      
-      // Mark discount as redeemed in profile
-      await supabaseClient
-        .from('profiles')
-        .update({ 
-          discount_redeemed_at: new Date().toISOString(),
-          plan_override: null // Remove override once discount is applied
-        })
-        .eq('user_id', user.id);
-      logStep("Marked discount as redeemed in profile");
     }
 
     // Create checkout session - simplified without trial logic
@@ -186,7 +176,6 @@ serve(async (req) => {
       mode: "subscription",
       success_url: `${req.headers.get("origin")}/dashboard?subscription=success`,
       cancel_url: `${req.headers.get("origin")}/upgrade-plan?subscription=canceled`,
-      allow_promotion_codes: true,
       payment_method_collection: "always", // Always require payment method
       subscription_data: {
         metadata: {
@@ -202,6 +191,12 @@ serve(async (req) => {
         coupon: discountCouponId
       }];
       logStep("Added discount to checkout session");
+      
+      // Mark discount as redeemed in profile ONLY after successfully creating checkout
+      // This will happen in the try block below after session creation succeeds
+    } else {
+      // Only allow promotion codes if no automatic discount is being applied
+      sessionConfig.allow_promotion_codes = true;
     }
     
     // Handle prorated upgrades - apply credit and keep same renewal date
@@ -325,6 +320,18 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
+
+    // Mark discount as redeemed ONLY after successful checkout session creation
+    if (discountCouponId) {
+      await supabaseClient
+        .from('profiles')
+        .update({ 
+          discount_redeemed_at: new Date().toISOString(),
+          plan_override: null // Remove override once discount is applied
+        })
+        .eq('user_id', user.id);
+      logStep("Marked discount as redeemed in profile after successful checkout creation");
+    }
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
