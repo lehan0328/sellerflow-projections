@@ -1956,6 +1956,10 @@ export type Database = {
         Args: { _account_id: string; _user_id: string }
         Returns: boolean
       }
+      is_website_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       update_secure_amazon_account: {
         Args: {
           p_access_token?: string
