@@ -105,9 +105,9 @@ const UpgradePlan = () => {
     }
   ];
 
-  const handleUpgrade = (priceId: string) => {
+  const handleUpgrade = (priceId: string, proratedAmount?: number) => {
     // Allow trial users and subscribed users to upgrade
-    createCheckout(priceId);
+    createCheckout(priceId, undefined, proratedAmount);
   };
 
   const handlePurchaseAddon = (priceId: string) => {
@@ -328,6 +328,15 @@ const UpgradePlan = () => {
                         </div>
                       )}
                       
+                      {subscription_end && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Next Due Date</span>
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(subscription_end).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+                      
                       {discount && (
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">Discount</span>
@@ -339,22 +348,47 @@ const UpgradePlan = () => {
                       )}
                       
                       {billing_interval !== 'year' && (
-                        <div className="space-y-2 pt-2 border-t">
+                          <div className="space-y-2 pt-2 border-t">
                           <div className="text-xs text-muted-foreground text-right">
                             Annual total: ${price_amount ? ((price_amount / 100) * 12).toFixed(0) : (PRICING_PLANS[plan].price * 12)}
                           </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full text-xs"
-                            onClick={() => handleUpgrade(PRICING_PLANS[plan].yearly_price_id)}
-                          >
-                            <Calendar className="h-3 w-3 mr-2" />
-                            Switch to Yearly & Pay ${PRICING_PLANS[plan].yearlyPrice}
-                            <Badge variant="secondary" className="ml-2 text-xs">
-                              Save {plans.find(p => p.key === plan)?.savings}
-                            </Badge>
-                          </Button>
+                          {(() => {
+                            const currentMonthlyPaid = price_amount ? (price_amount / 100) : PRICING_PLANS[plan].price;
+                            const yearlyPrice = PRICING_PLANS[plan].yearlyPrice;
+                            const creditApplied = currentMonthlyPaid;
+                            const amountDue = yearlyPrice - creditApplied;
+                            
+                            return (
+                              <div className="space-y-2">
+                                <div className="p-2 bg-primary/5 rounded-lg text-xs space-y-1">
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Yearly Price:</span>
+                                    <span>${yearlyPrice}</span>
+                                  </div>
+                                  <div className="flex justify-between text-green-600">
+                                    <span>Credit Applied:</span>
+                                    <span>-${creditApplied}</span>
+                                  </div>
+                                  <div className="flex justify-between font-bold pt-1 border-t">
+                                    <span>Amount Due:</span>
+                                    <span>${amountDue}</span>
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full text-xs"
+                                  onClick={() => handleUpgrade(PRICING_PLANS[plan].yearly_price_id, amountDue)}
+                                >
+                                  <Calendar className="h-3 w-3 mr-2" />
+                                  Switch to Yearly & Pay ${amountDue}
+                                  <Badge variant="secondary" className="ml-2 text-xs">
+                                    Save {plans.find(p => p.key === plan)?.savings}
+                                  </Badge>
+                                </Button>
+                              </div>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>
@@ -620,14 +654,41 @@ const UpgradePlan = () => {
                               </li>
                             ))}
                         </ul>
-                        <Button 
-                          className="w-full bg-gradient-primary" 
-                          onClick={() => handleUpgrade(getCurrentPriceId(plans.find(p => p.key === 'growing')!))}
-                          disabled={isLoading}
-                        >
-                          <TrendingUp className="h-4 w-4 mr-2" />
-                          Upgrade to Growing
-                        </Button>
+                        {(() => {
+                          const currentMonthlyPaid = price_amount ? (price_amount / 100) : PRICING_PLANS.starter.price;
+                          const growingPlan = plans.find(p => p.key === 'growing')!;
+                          const newPlanPrice = isYearly ? growingPlan.yearlyPrice : growingPlan.price;
+                          const proratedAmount = isYearly ? newPlanPrice : (newPlanPrice - currentMonthlyPaid);
+                          
+                          return (
+                            <>
+                              {!isYearly && subscribed && (
+                                <div className="p-3 bg-primary/5 rounded-lg text-sm space-y-1 mb-3">
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">New Plan Price:</span>
+                                    <span className="font-semibold">${newPlanPrice}/month</span>
+                                  </div>
+                                  <div className="flex justify-between text-green-600">
+                                    <span>Credit Applied:</span>
+                                    <span>-${currentMonthlyPaid}</span>
+                                  </div>
+                                  <div className="flex justify-between font-bold pt-1 border-t">
+                                    <span>Amount Due Now:</span>
+                                    <span>${proratedAmount}</span>
+                                  </div>
+                                </div>
+                              )}
+                              <Button 
+                                className="w-full bg-gradient-primary" 
+                                onClick={() => handleUpgrade(getCurrentPriceId(growingPlan), isYearly || !subscribed ? undefined : proratedAmount)}
+                                disabled={isLoading}
+                              >
+                                <TrendingUp className="h-4 w-4 mr-2" />
+                                {subscribed && !isYearly ? `Pay $${proratedAmount} & Upgrade` : 'Upgrade to Growing'}
+                              </Button>
+                            </>
+                          );
+                        })()}
                       </CardContent>
                     </Card>
                   )}
@@ -679,14 +740,41 @@ const UpgradePlan = () => {
                               </li>
                             ))}
                         </ul>
-                        <Button 
-                          className="w-full bg-gradient-primary" 
-                          onClick={() => handleUpgrade(getCurrentPriceId(plans.find(p => p.key === 'professional')!))}
-                          disabled={isLoading}
-                        >
-                          <TrendingUp className="h-4 w-4 mr-2" />
-                          Upgrade to Professional
-                        </Button>
+                        {(() => {
+                          const currentMonthlyPaid = price_amount ? (price_amount / 100) : PRICING_PLANS.starter.price;
+                          const professionalPlan = plans.find(p => p.key === 'professional')!;
+                          const newPlanPrice = isYearly ? professionalPlan.yearlyPrice : professionalPlan.price;
+                          const proratedAmount = isYearly ? newPlanPrice : (newPlanPrice - currentMonthlyPaid);
+                          
+                          return (
+                            <>
+                              {!isYearly && subscribed && (
+                                <div className="p-3 bg-primary/5 rounded-lg text-sm space-y-1 mb-3">
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">New Plan Price:</span>
+                                    <span className="font-semibold">${newPlanPrice}/month</span>
+                                  </div>
+                                  <div className="flex justify-between text-green-600">
+                                    <span>Credit Applied:</span>
+                                    <span>-${currentMonthlyPaid}</span>
+                                  </div>
+                                  <div className="flex justify-between font-bold pt-1 border-t">
+                                    <span>Amount Due Now:</span>
+                                    <span>${proratedAmount}</span>
+                                  </div>
+                                </div>
+                              )}
+                              <Button 
+                                className="w-full bg-gradient-primary" 
+                                onClick={() => handleUpgrade(getCurrentPriceId(professionalPlan), isYearly || !subscribed ? undefined : proratedAmount)}
+                                disabled={isLoading}
+                              >
+                                <TrendingUp className="h-4 w-4 mr-2" />
+                                {subscribed && !isYearly ? `Pay $${proratedAmount} & Upgrade` : 'Upgrade to Professional'}
+                              </Button>
+                            </>
+                          );
+                        })()}
                       </CardContent>
                     </Card>
                   )}
@@ -741,14 +829,40 @@ const UpgradePlan = () => {
                           );
                         })}
                     </ul>
-                    <Button 
-                      className="w-full bg-gradient-primary" 
-                      onClick={() => handleUpgrade(getCurrentPriceId(nextTier))}
-                      disabled={isLoading}
-                    >
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      Upgrade to {nextTier.name}
-                    </Button>
+                    {(() => {
+                      const currentMonthlyPaid = price_amount ? (price_amount / 100) : (plan === 'growing' ? PRICING_PLANS.growing.price : PRICING_PLANS.professional.price);
+                      const newPlanPrice = isYearly ? nextTier.yearlyPrice : nextTier.price;
+                      const proratedAmount = isYearly ? newPlanPrice : (newPlanPrice - currentMonthlyPaid);
+                      
+                      return (
+                        <>
+                          {!isYearly && subscribed && (
+                            <div className="p-3 bg-primary/5 rounded-lg text-sm space-y-1 mb-3">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">New Plan Price:</span>
+                                <span className="font-semibold">${newPlanPrice}/month</span>
+                              </div>
+                              <div className="flex justify-between text-green-600">
+                                <span>Credit Applied:</span>
+                                <span>-${currentMonthlyPaid}</span>
+                              </div>
+                              <div className="flex justify-between font-bold pt-1 border-t">
+                                <span>Amount Due Now:</span>
+                                <span>${proratedAmount}</span>
+                              </div>
+                            </div>
+                          )}
+                          <Button 
+                            className="w-full bg-gradient-primary" 
+                            onClick={() => handleUpgrade(getCurrentPriceId(nextTier), isYearly || !subscribed ? undefined : proratedAmount)}
+                            disabled={isLoading}
+                          >
+                            <TrendingUp className="h-4 w-4 mr-2" />
+                            {subscribed && !isYearly ? `Pay $${proratedAmount} & Upgrade` : `Upgrade to ${nextTier.name}`}
+                          </Button>
+                        </>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
               ) : (

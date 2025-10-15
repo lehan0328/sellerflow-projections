@@ -324,7 +324,7 @@ export const useSubscription = () => {
     }
   };
 
-  const createCheckout = async (priceId?: string, lineItems?: Array<{ price: string; quantity: number }>) => {
+  const createCheckout = async (priceId?: string, lineItems?: Array<{ price: string; quantity: number }>, proratedAmount?: number) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -336,7 +336,7 @@ export const useSubscription = () => {
         return;
       }
 
-      const body = lineItems ? { lineItems } : { priceId };
+      const body = lineItems ? { lineItems } : { priceId, proratedAmount };
 
       const { data, error } = await supabase.functions.invoke("create-checkout", {
         body,

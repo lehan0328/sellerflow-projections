@@ -26,7 +26,7 @@ serve(async (req) => {
     logStep("Function started");
 
     const body = await req.json();
-    const { priceId, lineItems } = body;
+    const { priceId, lineItems, proratedAmount } = body;
     
     // Support both single priceId and multiple lineItems
     let finalLineItems;
@@ -35,7 +35,7 @@ serve(async (req) => {
       logStep("Received line items", { lineItems });
     } else if (priceId) {
       finalLineItems = [{ price: priceId, quantity: 1 }];
-      logStep("Received price ID", { priceId });
+      logStep("Received price ID", { priceId, proratedAmount });
     } else {
       throw new Error("Either priceId or lineItems is required");
     }
@@ -164,9 +164,44 @@ serve(async (req) => {
       logStep("Added discount to checkout session");
     }
     
-    // If upgrading from existing subscription, schedule new subscription 
+    // Handle prorated upgrades - apply credit and keep same renewal date
+    if (hasExistingSubscription && currentSubscription && proratedAmount !== undefined) {
+      // For mid-cycle upgrades, update the existing subscription instead
+      const currentPrice = currentSubscription.items.data[0].price.id;
+      const newPriceId = finalLineItems[0].price;
+      
+      logStep("Processing prorated upgrade", {
+        currentPrice,
+        newPriceId,
+        proratedAmount,
+        currentPeriodEnd: currentSubscription.current_period_end
+      });
+      
+      // Update subscription immediately with prorated billing
+      await stripe.subscriptions.update(currentSubscription.id, {
+        items: [{
+          id: currentSubscription.items.data[0].id,
+          price: newPriceId,
+        }],
+        proration_behavior: 'always_invoice', // Create prorated invoice immediately
+        billing_cycle_anchor: 'unchanged', // Keep the same renewal date
+      });
+      
+      logStep("Subscription updated with proration");
+      
+      // Redirect to success page without checkout
+      return new Response(JSON.stringify({ 
+        url: `${req.headers.get("origin")}/dashboard?subscription=success`,
+        upgraded: true 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+    
+    // If upgrading from existing subscription to yearly, schedule new subscription 
     // to start when current period ends (no immediate charge)
-    if (hasExistingSubscription && currentSubscription) {
+    if (hasExistingSubscription && currentSubscription && !proratedAmount) {
       const currentPeriodEnd = currentSubscription.current_period_end;
       sessionConfig.subscription_data = {
         trial_end: currentPeriodEnd, // New subscription starts after current one
@@ -179,7 +214,7 @@ serve(async (req) => {
         currentPeriodEnd,
         currentPeriodEndDate: new Date(currentPeriodEnd * 1000).toISOString()
       });
-    } else {
+    } else if (!hasExistingSubscription) {
       logStep("Creating standard subscription checkout - payment required");
     }
     
