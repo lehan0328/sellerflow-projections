@@ -169,7 +169,7 @@ serve(async (req) => {
         discountObject: subscription.discount
       });
       
-      // If trialing, use trial_end, otherwise use current_period_end
+      // If trialing, use trial_end, otherwise use billing_cycle_anchor
       if (isTrialing && subscription.trial_end) {
         try {
           trialEnd = new Date(subscription.trial_end * 1000).toISOString();
@@ -184,21 +184,43 @@ serve(async (req) => {
             error: error instanceof Error ? error.message : String(error)
           });
         }
-      } else if (subscription.current_period_end) {
+      }
+      
+      // Use billing_cycle_anchor for the current period start
+      if (subscription.billing_cycle_anchor) {
         try {
-          subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-          logStep("Active subscription found", { 
-            subscriptionId: subscription.id, 
-            endDate: subscriptionEnd 
-          });
+          currentPeriodStart = new Date(subscription.billing_cycle_anchor * 1000).toISOString();
+          logStep("Billing cycle anchor found", { currentPeriodStart });
+          
+          // Calculate next billing date based on interval
+          const price = subscription.items.data[0].price;
+          billingInterval = price.recurring?.interval || null;
+          
+          if (!isTrialing && billingInterval) {
+            const anchorDate = new Date(subscription.billing_cycle_anchor * 1000);
+            let nextBillingDate = new Date(anchorDate);
+            
+            if (billingInterval === 'month') {
+              nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+            } else if (billingInterval === 'year') {
+              nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
+            }
+            
+            subscriptionEnd = nextBillingDate.toISOString();
+            logStep("Calculated next billing date", { 
+              subscriptionId: subscription.id, 
+              billingInterval,
+              nextBillingDate: subscriptionEnd 
+            });
+          }
         } catch (error) {
-          logStep("Error parsing current_period_end date", { 
-            current_period_end: subscription.current_period_end,
+          logStep("Error processing billing_cycle_anchor", { 
+            billing_cycle_anchor: subscription.billing_cycle_anchor,
             error: error instanceof Error ? error.message : String(error)
           });
         }
       } else {
-        logStep("No end date found for subscription", { 
+        logStep("No billing_cycle_anchor found", { 
           subscriptionId: subscription.id,
           status: subscription.status 
         });
