@@ -435,11 +435,16 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
           // Only add if there's actually money to spend
           if (opportunityAmount > 0) {
             // Work backward to find the EARLIEST date when balance first reached this level
+            // BUT stop once projected cash available < opportunity available to spend
             // Start from beginning (today) and find first date where balance >= lowPointBalance
             let earliestAvailableDate = currentDay.date; // Default to low point date
             
             for (let j = 0; j <= i; j++) {
-              if (dailyBalances[j].balance >= lowPointBalance) {
+              const dayBalance = dailyBalances[j].balance;
+              const projectedCashAvailable = dayBalance - reserve;
+              
+              // Check if balance reached the low point AND projected cash is still >= opportunity amount
+              if (dayBalance >= lowPointBalance && projectedCashAvailable >= opportunityAmount) {
                 earliestAvailableDate = dailyBalances[j].date;
                 break; // Found the earliest date
               }
