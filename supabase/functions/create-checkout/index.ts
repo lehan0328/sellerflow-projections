@@ -233,6 +233,16 @@ serve(async (req) => {
         });
         
         if (proratedAmount !== undefined && proratedAmount > 0) {
+          // Check if current subscription has a discount/coupon to preserve
+          let existingCouponId = null;
+          if (currentSubscription.discount?.coupon) {
+            existingCouponId = currentSubscription.discount.coupon.id;
+            logStep("Found existing coupon on subscription", { couponId: existingCouponId });
+          } else if (customer.discount?.coupon) {
+            existingCouponId = customer.discount.coupon.id;
+            logStep("Found existing coupon on customer", { couponId: existingCouponId });
+          }
+          
           // Cancel current subscription immediately
           await stripe.subscriptions.cancel(currentSubscription.id);
           
@@ -248,10 +258,19 @@ serve(async (req) => {
           
           logStep("Applied customer credit balance", { amount: -proratedAmount });
           
+          // Preserve the existing discount by applying it to the new checkout
+          if (existingCouponId) {
+            sessionConfig.discounts = [{
+              coupon: existingCouponId
+            }];
+            logStep("Preserved existing discount on new checkout", { couponId: existingCouponId });
+          }
+          
           sessionConfig.subscription_data = {
             metadata: {
               upgraded_from: currentSubscription.id,
-              prorated_credit: proratedAmount.toString()
+              prorated_credit: proratedAmount.toString(),
+              preserved_coupon: existingCouponId || 'none'
             }
           };
           sessionConfig.mode = "subscription";
