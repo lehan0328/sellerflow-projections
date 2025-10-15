@@ -520,7 +520,7 @@ const UpgradePlan = () => {
               </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 max-w-5xl mx-auto">
+            <div className="grid gap-6 md:grid-cols-3 max-w-6xl mx-auto">
               {/* Current Plan */}
               {currentTierData && (
                 <Card className="relative ring-2 ring-primary">
@@ -570,8 +570,128 @@ const UpgradePlan = () => {
                 </Card>
               )}
 
-              {/* Additional Benefits when upgrading */}
-              {nextTier && currentTierData ? (
+              {/* Show upgrade options based on current plan */}
+              {plan === 'starter' ? (
+                <>
+                  {/* Growing Plan for Starter users */}
+                  {plans.find(p => p.key === 'growing') && (
+                    <Card className="relative ring-2 ring-accent">
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <Badge className="bg-gradient-primary">
+                          <Star className="h-3 w-3 mr-1" />
+                          Upgrade Option
+                        </Badge>
+                      </div>
+                      <CardHeader className="text-center">
+                        <CardTitle>{plans.find(p => p.key === 'growing')?.name}</CardTitle>
+                        <div className="text-3xl font-bold">
+                          {isYearly ? (
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="text-lg line-through text-muted-foreground font-normal">
+                                ${plans.find(p => p.key === 'growing')!.price * 12}
+                              </span>
+                              <span>
+                                ${plans.find(p => p.key === 'growing')?.yearlyPrice}
+                                <span className="text-sm font-normal text-muted-foreground">/year</span>
+                              </span>
+                            </div>
+                          ) : (
+                            <>
+                              ${plans.find(p => p.key === 'growing')?.price}
+                              <span className="text-sm font-normal text-muted-foreground">/month</span>
+                            </>
+                          )}
+                        </div>
+                        {isYearly && (
+                          <Badge variant="secondary" className="text-xs mx-auto">
+                            Save {plans.find(p => p.key === 'growing')?.savings}/year
+                          </Badge>
+                        )}
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <p className="text-sm text-green-600 font-medium text-center">Additional benefits:</p>
+                        <ul className="space-y-3">
+                          {plans.find(p => p.key === 'growing')?.features
+                            .filter((feature: string) => !currentTierData?.features.some((cf: string) => cf === feature))
+                            .map((feature, index) => (
+                              <li key={index} className="flex items-start text-sm">
+                                <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                                <span className="font-medium">{feature.startsWith('❌') ? feature.substring(2) : feature}</span>
+                              </li>
+                            ))}
+                        </ul>
+                        <Button 
+                          className="w-full bg-gradient-primary" 
+                          onClick={() => handleUpgrade(getCurrentPriceId(plans.find(p => p.key === 'growing')!))}
+                          disabled={isLoading}
+                        >
+                          <TrendingUp className="h-4 w-4 mr-2" />
+                          Upgrade to Growing
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                  
+                  {/* Professional Plan for Starter users */}
+                  {plans.find(p => p.key === 'professional') && (
+                    <Card className="relative ring-2 ring-accent">
+                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <Badge className="bg-gradient-primary">
+                          <Star className="h-3 w-3 mr-1" />
+                          Upgrade Option
+                        </Badge>
+                      </div>
+                      <CardHeader className="text-center">
+                        <CardTitle>{plans.find(p => p.key === 'professional')?.name}</CardTitle>
+                        <div className="text-3xl font-bold">
+                          {isYearly ? (
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="text-lg line-through text-muted-foreground font-normal">
+                                ${plans.find(p => p.key === 'professional')!.price * 12}
+                              </span>
+                              <span>
+                                ${plans.find(p => p.key === 'professional')?.yearlyPrice}
+                                <span className="text-sm font-normal text-muted-foreground">/year</span>
+                              </span>
+                            </div>
+                          ) : (
+                            <>
+                              ${plans.find(p => p.key === 'professional')?.price}
+                              <span className="text-sm font-normal text-muted-foreground">/month</span>
+                            </>
+                          )}
+                        </div>
+                        {isYearly && (
+                          <Badge variant="secondary" className="text-xs mx-auto">
+                            Save {plans.find(p => p.key === 'professional')?.savings}/year
+                          </Badge>
+                        )}
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <p className="text-sm text-green-600 font-medium text-center">Additional benefits:</p>
+                        <ul className="space-y-3">
+                          {plans.find(p => p.key === 'professional')?.features
+                            .filter((feature: string) => !currentTierData?.features.some((cf: string) => cf === feature))
+                            .map((feature, index) => (
+                              <li key={index} className="flex items-start text-sm">
+                                <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                                <span className="font-medium">{feature.startsWith('❌') ? feature.substring(2) : feature}</span>
+                              </li>
+                            ))}
+                        </ul>
+                        <Button 
+                          className="w-full bg-gradient-primary" 
+                          onClick={() => handleUpgrade(getCurrentPriceId(plans.find(p => p.key === 'professional')!))}
+                          disabled={isLoading}
+                        >
+                          <TrendingUp className="h-4 w-4 mr-2" />
+                          Upgrade to Professional
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
+              ) : nextTier && currentTierData ? (
                 <Card className="relative ring-2 ring-accent">
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     <Badge className="bg-gradient-primary">
