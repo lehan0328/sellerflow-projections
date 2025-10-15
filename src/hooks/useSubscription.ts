@@ -630,41 +630,8 @@ export const useSubscription = () => {
         return false;
       }
 
-      // Calculate proration credit for unused time on current monthly plan
-      if (!subscriptionState.current_period_start || !subscriptionState.price_amount) {
-        toast({
-          title: "Error",
-          description: "Unable to calculate proration. Please try again.",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      const now = new Date();
-      const periodStart = new Date(subscriptionState.current_period_start);
-      const daysInMonth = 30; // Average days in a month
-      const periodEnd = new Date(periodStart);
-      periodEnd.setDate(periodEnd.getDate() + daysInMonth);
-      
-      const totalPeriodDays = daysInMonth;
-      const daysUsed = Math.floor((now.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
-      const daysRemaining = totalPeriodDays - daysUsed;
-      
-      // Calculate credit for unused portion of monthly subscription
-      const dailyRate = (subscriptionState.price_amount / 100) / totalPeriodDays;
-      const unusedCredit = dailyRate * daysRemaining;
-      
-      console.log('Proration calculation:', {
-        currentMonthlyPrice: subscriptionState.price_amount / 100,
-        daysUsed,
-        daysRemaining,
-        dailyRate,
-        unusedCredit
-      });
-
-      // Use createCheckout with proration amount
-      // This will apply the credit and create proper invoice
-      createCheckout(annualPriceId, undefined, unusedCredit);
+      // Schedule upgrade at end of billing cycle - no proration
+      createCheckout(annualPriceId);
       return true;
     } catch (error) {
       console.error("Error upgrading to annual:", error);
