@@ -393,45 +393,16 @@ const UpgradePlan = () => {
                       )}
                     </div>
                   )}
-                  {subscription_end ? (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">{is_trialing ? 'Trial Ends' : 'Renews'}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {new Date(subscription_end).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <Separator />
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="w-full"
-                        onClick={openCustomerPortal}
-                      >
-                        <Settings className="h-4 w-4 mr-2" />
-                        Manage Subscription
-                      </Button>
-                    </>
-                   ) : (
-                    <>
-                      <Separator />
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-center gap-2 p-4 bg-primary/5 rounded-lg">
-                          <Shield className="h-5 w-5 text-primary" />
-                          <span className="text-sm font-semibold text-primary">Lifetime Access - No billing required</span>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="w-full"
-                          onClick={removePlanOverride}
-                        >
-                          <Settings className="h-4 w-4 mr-2" />
-                          Switch to Monthly Subscription
-                        </Button>
-                      </div>
-                    </>
-                  )}
+                  <Separator />
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="w-full"
+                    onClick={openCustomerPortal}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Manage Subscription
+                  </Button>
                   {subscribed && subscription_end && (
                     <div className="space-y-3">
                       {is_trialing && !isYearly && plan && (
