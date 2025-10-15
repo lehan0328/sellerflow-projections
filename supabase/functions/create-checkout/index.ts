@@ -251,11 +251,30 @@ serve(async (req) => {
         };
         sessionConfig.payment_method_collection = "if_required";
       } else {
-        // Same interval - redirect to checkout instead of auto-updating
-        logStep("Redirecting to checkout for upgrade (same interval)");
+        // Same interval - update subscription directly with proration
+        // Stripe Checkout doesn't support prorated upgrades, so we handle it server-side
+        logStep("Updating subscription with proration (same interval)");
         
-        // Don't auto-update, let user go through checkout
-        // This gives them visibility and control over the charge
+        await stripe.subscriptions.update(currentSubscription.id, {
+          items: [{
+            id: currentSubscription.items.data[0].id,
+            price: newPriceId,
+          }],
+          proration_behavior: 'always_invoice', // Creates invoice for prorated amount
+          billing_cycle_anchor: 'unchanged',
+        });
+        
+        logStep("Subscription upgraded successfully");
+        
+        // Return success without checkout since upgrade is complete
+        return new Response(JSON.stringify({ 
+          url: `${req.headers.get("origin")}/dashboard?subscription=upgraded`,
+          upgraded: true,
+          message: 'Subscription upgraded successfully. You will receive an invoice for the prorated amount.'
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
       }
     }
     
