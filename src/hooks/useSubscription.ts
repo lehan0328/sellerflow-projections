@@ -34,7 +34,7 @@ export const PRICING_PLANS = {
     name: "Starter",
     price: 29,
     yearlyPrice: 290,
-    product_id: "prod_TAcNEuRnBTaX61",
+    product_id: "prod_TAcNnoGuq5Mr7X",
     price_id: "price_1SEH8NB28kMY3UseBj2w9HgH",
     yearly_price_id: "price_1SEHZGB28kMY3UseCkWIlnWw",
     features: [
