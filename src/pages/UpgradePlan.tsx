@@ -267,6 +267,24 @@ const UpgradePlan = () => {
                     </Badge>
                   </div>
                   
+                  {current_period_start && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Paid On</span>
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(current_period_start).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {subscription_end && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Next Renewal</span>
+                      <span className="text-sm text-muted-foreground">
+                        {new Date(subscription_end).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                  
                   {discount_ever_redeemed && (
                     <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20 space-y-2">
                       <div className="flex items-center justify-center gap-2 mb-2">
