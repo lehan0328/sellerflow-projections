@@ -434,19 +434,29 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
           
           // Only add if there's actually money to spend
           if (opportunityAmount > 0) {
-            // Work backward to find the EARLIEST date when balance first reached this level
-            // BUT stop once projected cash available < opportunity available to spend
-            // Start from beginning (today) and find first date where balance >= lowPointBalance
+            // Work backward to find the EARLIEST date when you can spend this amount
+            // Check that spending it won't cause negative balance on ANY day between that date and the low point
             let earliestAvailableDate = currentDay.date; // Default to low point date
             
             for (let j = 0; j <= i; j++) {
-              const dayBalance = dailyBalances[j].balance;
-              const projectedCashAvailable = dayBalance - reserve;
+              // Check if spending the opportunity amount on day j would cause any day
+              // between j and i to go negative
+              let canSpendOnDayJ = true;
               
-              // Check if balance reached the low point AND projected cash is still >= opportunity amount
-              if (dayBalance >= lowPointBalance && projectedCashAvailable >= opportunityAmount) {
+              for (let k = j; k <= i; k++) {
+                // If we spend opportunityAmount on day j, what would the balance be on day k?
+                // We need to subtract it from all days >= j
+                const balanceAfterSpending = dailyBalances[k].balance - opportunityAmount;
+                
+                if (balanceAfterSpending < 0) {
+                  canSpendOnDayJ = false;
+                  break;
+                }
+              }
+              
+              if (canSpendOnDayJ) {
                 earliestAvailableDate = dailyBalances[j].date;
-                break; // Found the earliest date
+                break; // Found the earliest safe date
               }
             }
             
