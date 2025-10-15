@@ -233,10 +233,8 @@ serve(async (req) => {
         });
         
         if (proratedAmount !== undefined && proratedAmount > 0) {
-          // Cancel current subscription and create new one that charges immediately
-          await stripe.subscriptions.update(currentSubscription.id, {
-            cancel_at_period_end: true,
-          });
+          // Cancel current subscription immediately and create new one that charges immediately
+          await stripe.subscriptions.cancel(currentSubscription.id);
           
           logStep("Cancelled current subscription, creating new with immediate charge");
           
@@ -252,9 +250,7 @@ serve(async (req) => {
           // No proration - use trial to avoid double charging
           const currentPeriodEnd = currentSubscription.current_period_end;
           
-          await stripe.subscriptions.update(currentSubscription.id, {
-            cancel_at_period_end: true,
-          });
+          await stripe.subscriptions.cancel(currentSubscription.id);
           
           logStep("Cancelled current subscription, creating new one with trial", { 
             trialEnd: currentPeriodEnd,
