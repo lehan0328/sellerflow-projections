@@ -22,8 +22,8 @@ export const UpgradeModal = ({ open, onOpenChange, feature = "connections", curr
     if (onUpgradeClick) {
       onUpgradeClick();
     } else {
-      // Open Stripe customer portal
-      await subscription.openCustomerPortal();
+      // Navigate to upgrade plan page
+      navigate('/upgrade-plan');
     }
   };
 
