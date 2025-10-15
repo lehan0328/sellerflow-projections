@@ -107,7 +107,8 @@ export function AppSidebar({
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const restrictedSections = ['scenario-planning', 'notifications'];
-  const isProfessionalPlan = subscription.plan === 'professional';
+  // Professional plan includes trial users and paid professional subscribers
+  const isProfessionalPlan = subscription.plan === 'professional' || subscription.is_trialing;
 
   const handleSectionClick = (sectionId: string) => {
     if (restrictedSections.includes(sectionId) && !isProfessionalPlan) {
