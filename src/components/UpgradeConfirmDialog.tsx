@@ -66,7 +66,7 @@ export function UpgradeConfirmDialog({
                 </div>
               )}
               <div className="flex justify-between items-center pt-2 border-t">
-                <span className="text-sm font-medium text-foreground">Amount Due:</span>
+                <span className="text-sm font-medium text-foreground">Next Billing Amount:</span>
                 <span className="text-lg font-bold text-primary">
                   ${(amount / 100).toFixed(2)}
                 </span>
@@ -74,11 +74,11 @@ export function UpgradeConfirmDialog({
             </div>
             
             <div className="space-y-2">
-              <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                <div className="text-amber-600 dark:text-amber-400 mt-0.5">⚠️</div>
-                <div className="text-xs text-amber-700 dark:text-amber-300">
-                  <div className="font-semibold mb-1">Your card will be charged immediately</div>
-                  <div>Stripe will create an invoice and charge the prorated amount to your card on file.</div>
+              <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="text-blue-600 dark:text-blue-400 mt-0.5">ℹ️</div>
+                <div className="text-xs text-blue-700 dark:text-blue-300">
+                  <div className="font-semibold mb-1">Upgrade scheduled at billing cycle end</div>
+                  <div>Your new plan will start when your current subscription renews. You'll be charged the full amount at that time.</div>
                 </div>
               </div>
             </div>
@@ -87,7 +87,7 @@ export function UpgradeConfirmDialog({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} className="bg-primary">
-            Pay Now
+            Confirm Upgrade
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
