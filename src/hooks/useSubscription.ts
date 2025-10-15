@@ -164,6 +164,10 @@ export interface SubscriptionState {
   isLoading: boolean;
   is_trialing?: boolean;
   trial_end?: string | null;
+  billing_interval?: string | null;
+  current_period_start?: string | null;
+  price_amount?: number | null;
+  currency?: string | null;
   discount?: {
     coupon_id: string;
     percent_off: number | null;
@@ -294,6 +298,10 @@ export const useSubscription = () => {
         isLoading: false,
         is_trialing: data.is_trialing || false,
         trial_end: data.trial_end || null,
+        billing_interval: data.billing_interval || null,
+        current_period_start: data.current_period_start || null,
+        price_amount: data.price_amount || null,
+        currency: data.currency || null,
         discount: data.discount || null,
         discount_ever_redeemed: data.discount_ever_redeemed || false,
       };

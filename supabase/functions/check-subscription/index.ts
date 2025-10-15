@@ -140,6 +140,10 @@ serve(async (req) => {
     let subscriptionEnd = null;
     let isTrialing = false;
     let trialEnd = null;
+    let billingInterval = null;
+    let currentPeriodStart = null;
+    let priceAmount = null;
+    let currency = null;
 
     let discountInfo = null;
 
@@ -190,6 +194,24 @@ serve(async (req) => {
       }
       
       productId = subscription.items.data[0].price.product as string;
+      
+      // Get billing details
+      const price = subscription.items.data[0].price;
+      billingInterval = price.recurring?.interval || null;
+      priceAmount = price.unit_amount || null;
+      currency = price.currency || 'usd';
+      
+      // Get current period start (last payment date)
+      if (subscription.current_period_start) {
+        currentPeriodStart = new Date(subscription.current_period_start * 1000).toISOString();
+      }
+      
+      logStep("Billing details extracted", { 
+        billingInterval,
+        priceAmount,
+        currency,
+        currentPeriodStart
+      });
       
       // Check for discount on subscription first
       logStep("Checking for discount", { 
@@ -275,6 +297,10 @@ serve(async (req) => {
       is_override: false,
       is_trialing: isTrialing,
       trial_end: trialEnd,
+      billing_interval: billingInterval,
+      current_period_start: currentPeriodStart,
+      price_amount: priceAmount,
+      currency: currency,
       discount: discountInfo,
       discount_ever_redeemed: !!profileData?.discount_redeemed_at
     }), {

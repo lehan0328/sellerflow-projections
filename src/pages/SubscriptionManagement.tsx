@@ -9,7 +9,20 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CancellationFlow } from "@/components/subscription/CancellationFlow";
 
 export default function SubscriptionManagement() {
-  const { subscribed, plan, subscription_end, is_trialing, isLoading, createCheckout, openCustomerPortal } = useSubscription();
+  const { 
+    subscribed, 
+    plan, 
+    subscription_end, 
+    is_trialing, 
+    isLoading, 
+    createCheckout, 
+    openCustomerPortal,
+    billing_interval,
+    current_period_start,
+    price_amount,
+    currency,
+    discount
+  } = useSubscription();
   const { currentPlan, planLimits, currentUsage } = usePlanLimits();
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
@@ -44,21 +57,42 @@ export default function SubscriptionManagement() {
         <Card className="border-primary/30 max-w-2xl mx-auto">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <div>
+              <div className="space-y-1">
                 <CardTitle>Current Plan: {planLimits.name}</CardTitle>
                 {subscribed && subscription_end ? (
-                  <CardDescription>
+                  <div className="space-y-1">
                     {is_trialing ? (
-                      <span className="flex items-center gap-2">
+                      <CardDescription className="flex items-center gap-2">
                         <Star className="h-4 w-4 text-blue-500" />
                         <span className="font-semibold text-blue-600 dark:text-blue-400">
                           Free Trial - Ends {new Date(subscription_end).toLocaleDateString()}
                         </span>
-                      </span>
+                      </CardDescription>
                     ) : (
-                      <span>Renews on {new Date(subscription_end).toLocaleDateString()}</span>
+                      <>
+                        <CardDescription>
+                          <span className="font-medium">Billing:</span> {billing_interval === 'year' ? 'Yearly' : 'Monthly'}
+                        </CardDescription>
+                        {current_period_start && (
+                          <CardDescription>
+                            <span className="font-medium">Last Renewed:</span> {new Date(current_period_start).toLocaleDateString()}
+                          </CardDescription>
+                        )}
+                        <CardDescription>
+                          <span className="font-medium">Next Due Date:</span> {new Date(subscription_end).toLocaleDateString()}
+                        </CardDescription>
+                        {discount && (
+                          <CardDescription className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                            <Check className="h-4 w-4" />
+                            <span className="font-medium">
+                              {discount.percent_off ? `${discount.percent_off}% discount` : `$${(discount.amount_off! / 100).toFixed(2)} discount`} applied
+                              {discount.duration === 'repeating' && discount.duration_in_months ? ` for ${discount.duration_in_months} months` : ''}
+                            </span>
+                          </CardDescription>
+                        )}
+                      </>
                     )}
-                  </CardDescription>
+                  </div>
                 ) : subscribed && !subscription_end ? (
                   <CardDescription className="flex items-center gap-2">
                     <Crown className="h-4 w-4 text-primary" />
@@ -66,7 +100,13 @@ export default function SubscriptionManagement() {
                   </CardDescription>
                 ) : null}
               </div>
-              <Badge variant="secondary">${planLimits.price}/month</Badge>
+              {price_amount && currency ? (
+                <Badge variant="secondary" className="text-lg px-3 py-1">
+                  ${(price_amount / 100).toFixed(0)}/{billing_interval === 'year' ? 'year' : 'month'}
+                </Badge>
+              ) : (
+                <Badge variant="secondary">${planLimits.price}/month</Badge>
+              )}
             </div>
           </CardHeader>
         <CardContent className="space-y-4">
