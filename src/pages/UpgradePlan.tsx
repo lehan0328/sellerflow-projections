@@ -800,16 +800,11 @@ const UpgradePlan = () => {
                               )}
                               <Button 
                                 className="w-full bg-gradient-primary" 
-                                onClick={() => handleUpgrade(
-                                  getCurrentPriceId(growingPlan), 
-                                  `${growingPlan.name}${isYearly ? ' (Yearly)' : ''}`,
-                                  !isYearly && subscribed ? proratedAmount * 100 : undefined,
-                                  isYearly
-                                )}
+                                onClick={() => openCustomerPortal('subscription_update')}
                                 disabled={isLoading}
                               >
                                 <TrendingUp className="h-4 w-4 mr-2" />
-                                {subscribed && !isYearly ? `Pay $${proratedAmount} & Upgrade` : 'Upgrade to Growing'}
+                                Upgrade to Growing
                               </Button>
                             </>
                           );
@@ -896,16 +891,11 @@ const UpgradePlan = () => {
                               )}
                               <Button 
                                 className="w-full bg-gradient-primary" 
-                                onClick={() => handleUpgrade(
-                                  getCurrentPriceId(professionalPlan),
-                                  `${professionalPlan.name}${isYearly ? ' (Yearly)' : ''}`,
-                                  !isYearly && subscribed ? proratedAmount * 100 : undefined,
-                                  isYearly
-                                )}
+                                onClick={() => openCustomerPortal('subscription_update')}
                                 disabled={isLoading}
                               >
                                 <TrendingUp className="h-4 w-4 mr-2" />
-                                {subscribed && !isYearly ? `Pay $${proratedAmount} & Upgrade` : 'Upgrade to Professional'}
+                                Upgrade to Professional
                               </Button>
                             </>
                           );
@@ -994,16 +984,11 @@ const UpgradePlan = () => {
                           )}
                           <Button 
                             className="w-full bg-gradient-primary" 
-                            onClick={() => handleUpgrade(
-                              getCurrentPriceId(nextTier),
-                              `${nextTier.name}${isYearly ? ' (Yearly)' : ''}`,
-                              !isYearly && subscribed ? proratedAmount * 100 : undefined,
-                              isYearly
-                            )}
+                            onClick={() => openCustomerPortal('subscription_update')}
                             disabled={isLoading}
                           >
                             <TrendingUp className="h-4 w-4 mr-2" />
-                            {subscribed && !isYearly ? `Pay $${proratedAmount} & Upgrade` : `Upgrade to ${nextTier.name}`}
+                            Upgrade to {nextTier.name}
                           </Button>
                         </>
                       );
