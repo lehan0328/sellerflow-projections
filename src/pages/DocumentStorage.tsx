@@ -599,24 +599,13 @@ export default function DocumentStorage() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/dashboard')}
-              className="hover:bg-primary/10"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                Document Storage
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Manage your business documents and files • {formatFileSize(totalStorageUsed)} used
-              </p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              Document Storage
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your business documents and files • {formatFileSize(totalStorageUsed)} used
+            </p>
           </div>
           <Button
             variant="outline"
