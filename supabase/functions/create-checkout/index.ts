@@ -51,6 +51,21 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
+    // Check user's profile for referred user discount
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('plan_override, discount_redeemed_at')
+      .eq('user_id', user.id)
+      .single();
+    
+    const hasReferredUserDiscount = profile?.plan_override === 'referred_user_discount';
+    const hasEverRedeemedDiscount = !!profile?.discount_redeemed_at;
+    logStep("Checked user profile", { 
+      hasReferredUserDiscount, 
+      hasEverRedeemedDiscount,
+      planOverride: profile?.plan_override 
+    });
+
     // Check for existing customer
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId;
@@ -95,6 +110,40 @@ serve(async (req) => {
       logStep("New customer");
     }
 
+    // Create or get the referred user discount coupon if applicable
+    let discountCouponId = null;
+    if (hasReferredUserDiscount && !hasEverRedeemedDiscount) {
+      const couponId = 'referred_user_discount_10pct';
+      try {
+        // Try to retrieve existing coupon
+        await stripe.coupons.retrieve(couponId);
+        discountCouponId = couponId;
+        logStep("Found existing referred user discount coupon");
+      } catch (error) {
+        // Create coupon if it doesn't exist (10% off for 12 months)
+        logStep("Creating referred user discount coupon");
+        await stripe.coupons.create({
+          id: couponId,
+          name: 'Referred User Discount - 10% Off',
+          percent_off: 10,
+          duration: 'repeating',
+          duration_in_months: 12,
+        });
+        discountCouponId = couponId;
+      }
+      logStep("Will apply referred user discount", { couponId: discountCouponId });
+      
+      // Mark discount as redeemed in profile
+      await supabaseClient
+        .from('profiles')
+        .update({ 
+          discount_redeemed_at: new Date().toISOString(),
+          plan_override: null // Remove override once discount is applied
+        })
+        .eq('user_id', user.id);
+      logStep("Marked discount as redeemed in profile");
+    }
+
     // Create checkout session - simplified without trial logic
     const sessionConfig: any = {
       customer: customerId,
@@ -106,6 +155,14 @@ serve(async (req) => {
       allow_promotion_codes: true,
       payment_method_collection: "always", // Always require payment method
     };
+    
+    // Apply referred user discount if applicable
+    if (discountCouponId) {
+      sessionConfig.discounts = [{
+        coupon: discountCouponId
+      }];
+      logStep("Added discount to checkout session");
+    }
     
     // If upgrading from existing subscription, schedule new subscription 
     // to start when current period ends (no immediate charge)
