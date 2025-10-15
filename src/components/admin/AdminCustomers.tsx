@@ -62,7 +62,7 @@ export const AdminCustomers = () => {
   const [metrics, setMetrics] = useState<ConversionMetrics | null>(null);
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<'trial' | 'active' | 'churned'>('trial');
+  const [viewMode, setViewMode] = useState<'all' | 'trial' | 'active' | 'churned'>('all');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -440,7 +440,9 @@ export const AdminCustomers = () => {
     return status.label === 'Expired' || status.label === 'Suspended';
   });
 
-  const displayedCustomers = viewMode === 'trial' 
+  const displayedCustomers = viewMode === 'all'
+    ? filteredCustomers
+    : viewMode === 'trial' 
     ? trialCustomers 
     : viewMode === 'active' 
     ? activeCustomers 
@@ -460,7 +462,7 @@ export const AdminCustomers = () => {
     setCurrentPage(1);
   };
 
-  const handleViewModeChange = (mode: 'trial' | 'active' | 'churned') => {
+  const handleViewModeChange = (mode: 'all' | 'trial' | 'active' | 'churned') => {
     setViewMode(mode);
     setCurrentPage(1);
   };
@@ -512,14 +514,22 @@ export const AdminCustomers = () => {
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <CardTitle>
-                {viewMode === 'trial' ? 'Trial' : viewMode === 'active' ? 'Active (Paid)' : 'Churned'} Customers ({displayedCustomers.length})
+                {viewMode === 'all' ? 'All' : viewMode === 'trial' ? 'Trial' : viewMode === 'active' ? 'Active (Paid)' : 'Churned'} Customers ({displayedCustomers.length})
               </CardTitle>
               <div className="flex gap-0 border rounded-md">
+                <Button
+                  variant={viewMode === 'all' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleViewModeChange('all')}
+                  className="rounded-r-none border-r"
+                >
+                  All ({filteredCustomers.length})
+                </Button>
                 <Button
                   variant={viewMode === 'trial' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => handleViewModeChange('trial')}
-                  className="rounded-r-none border-r"
+                  className="rounded-none border-r"
                 >
                   Trial ({trialCustomers.length})
                 </Button>
