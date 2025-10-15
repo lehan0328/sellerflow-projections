@@ -68,12 +68,14 @@ const UpgradePlan = () => {
   const [showPaymentFailedDialog, setShowPaymentFailedDialog] = useState(false);
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
 
-  // Show payment failed dialog when payment_failed becomes true - cannot be dismissed
+  // Show payment failed dialog only when subscription is expired and payment failed
   useEffect(() => {
-    if (payment_failed) {
+    // Check if subscription is expired (subscription_end is in the past) AND payment failed
+    const isExpired = subscription_end ? new Date(subscription_end) < new Date() : false;
+    if (payment_failed && isExpired) {
       setShowPaymentFailedDialog(true);
     }
-  }, [payment_failed]);
+  }, [payment_failed, subscription_end]);
 
   // Fetch profile to get trial dates
   const { data: profile } = useQuery({
@@ -1378,10 +1380,10 @@ const UpgradePlan = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <XCircle className="h-5 w-5" />
-              Payment Required
+              Subscription Expired - Payment Required
             </DialogTitle>
             <DialogDescription>
-              Your payment has been declined. You must update your payment method to continue using your {plan ? PRICING_PLANS[plan].name : ''} plan.
+              Your subscription has expired and the renewal payment was declined. You must update your payment method to continue using the application.
               <br /><br />
               <span className="font-semibold">You cannot access the application until payment is updated.</span>
             </DialogDescription>
@@ -1406,9 +1408,12 @@ const UpgradePlan = () => {
                   // After returning from portal, verify payment
                   setTimeout(async () => {
                     await checkSubscription(true);
-                    // If payment is still failed, keep modal open
-                    // If payment is successful, modal will close automatically via useEffect
                     setIsVerifyingPayment(false);
+                    // Check if subscription is still expired
+                    const isExpired = subscription_end ? new Date(subscription_end) < new Date() : false;
+                    if (!payment_failed || !isExpired) {
+                      setShowPaymentFailedDialog(false);
+                    }
                   }, 3000);
                 } catch (error) {
                   console.error('Error opening customer portal:', error);

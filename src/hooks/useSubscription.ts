@@ -177,6 +177,7 @@ export interface SubscriptionState {
   } | null;
   discount_ever_redeemed?: boolean;
   payment_failed?: boolean;
+  is_expired?: boolean;
 }
 
 // Cache configuration
@@ -302,6 +303,11 @@ export const useSubscription = () => {
         }
       }
 
+      // Determine if payment failed AND subscription is expired
+      const paymentFailed = data.subscriptionStatus === 'past_due' || data.subscriptionStatus === 'unpaid';
+      const isExpired = data.subscription_end ? new Date(data.subscription_end) < new Date() : false;
+      const shouldBlockAccess = paymentFailed && isExpired;
+
       const state = {
         subscribed: data.subscribed || false,
         product_id: data.product_id,
@@ -317,6 +323,7 @@ export const useSubscription = () => {
         discount: data.discount || null,
         discount_ever_redeemed: data.discount_ever_redeemed || false,
         payment_failed: data.payment_failed || false,
+        is_expired: shouldBlockAccess,
       };
       
       setSubscriptionState(state);
