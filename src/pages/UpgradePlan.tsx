@@ -67,6 +67,9 @@ const UpgradePlan = () => {
   const [pendingUpgrade, setPendingUpgrade] = useState<PendingUpgrade | null>(null);
   const [showPaymentFailedDialog, setShowPaymentFailedDialog] = useState(false);
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const [upgradeDeclined, setUpgradeDeclined] = useState(false);
+  const [upgradeDeclineMessage, setUpgradeDeclineMessage] = useState('');
 
   // Show payment failed dialog only when subscription is expired and payment failed
   useEffect(() => {
@@ -165,20 +168,28 @@ const UpgradePlan = () => {
 
   const confirmUpgrade = async () => {
     if (pendingUpgrade) {
+      setIsUpgrading(true);
       try {
         // Use direct upgrade for existing subscriptions
         const success = await upgradeSubscription(pendingUpgrade.priceId);
         if (success) {
           setPendingUpgrade(null);
+          setIsUpgrading(false);
           // Force refresh subscription to get updated data
           await checkSubscription(true);
         } else {
-          // Upgrade failed (payment declined) - show error message
-          console.error('Upgrade failed - payment declined');
+          // Upgrade failed (payment declined)
+          setIsUpgrading(false);
+          setPendingUpgrade(null);
+          setUpgradeDeclineMessage('Your payment was declined. Your plan has not been changed and remains active.');
+          setUpgradeDeclined(true);
         }
       } catch (error) {
         console.error('Error during upgrade:', error);
-        // Keep the modal open so user knows upgrade failed
+        setIsUpgrading(false);
+        setPendingUpgrade(null);
+        setUpgradeDeclineMessage('An error occurred during the upgrade. Your plan has not been changed.');
+        setUpgradeDeclined(true);
       }
     }
   };
@@ -1422,6 +1433,73 @@ const UpgradePlan = () => {
               }}
             >
               Update Payment Method Now
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upgrade Processing Loading Screen */}
+      <Dialog open={isUpgrading} onOpenChange={() => {}}>
+        <DialogContent 
+          className="sm:max-w-md"
+          onEscapeKeyDown={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-center">Processing Upgrade</DialogTitle>
+            <DialogDescription className="text-center">
+              Please wait while we confirm your payment and upgrade your plan...
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+            <p className="text-sm text-muted-foreground">Verifying payment with Stripe...</p>
+            <p className="text-xs text-muted-foreground">This may take a few moments</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upgrade Declined Modal */}
+      <Dialog open={upgradeDeclined} onOpenChange={setUpgradeDeclined}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <XCircle className="h-5 w-5" />
+              Upgrade Payment Declined
+            </DialogTitle>
+            <DialogDescription>
+              {upgradeDeclineMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm">
+                Your current plan is still active and has not been changed. You can:
+              </p>
+              <ul className="list-disc list-inside text-sm mt-2 space-y-1">
+                <li>Update your payment method and try again</li>
+                <li>Contact your bank to authorize the payment</li>
+                <li>Contact support for assistance</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => setUpgradeDeclined(false)}
+              className="w-full sm:w-auto"
+            >
+              Close
+            </Button>
+            <Button 
+              onClick={async () => {
+                setUpgradeDeclined(false);
+                await openCustomerPortal();
+              }}
+              className="w-full sm:w-auto"
+            >
+              Update Payment Method
             </Button>
           </DialogFooter>
         </DialogContent>
