@@ -41,11 +41,6 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Parse request body for optional flow type
-    const body = req.method === "POST" ? await req.json().catch(() => ({})) : {};
-    const flowType = body.flowType; // e.g., 'subscription_update'
-    logStep("Request details", { flowType });
-
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     if (customers.data.length === 0) {
@@ -56,21 +51,11 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "http://localhost:3000";
     
-    // Build portal session config
-    const portalConfig: any = {
+    // Create portal session - users can navigate to subscriptions once inside
+    const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${origin}/settings`,
-    };
-    
-    // Add flow_data if flowType is specified
-    if (flowType === 'subscription_update') {
-      portalConfig.flow_data = {
-        type: 'subscription_update',
-      };
-      logStep("Adding subscription update flow");
-    }
-    
-    const portalSession = await stripe.billingPortal.sessions.create(portalConfig);
+    });
     logStep("Customer portal session created", { sessionId: portalSession.id, url: portalSession.url });
 
     return new Response(JSON.stringify({ url: portalSession.url }), {

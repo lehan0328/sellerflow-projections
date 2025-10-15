@@ -487,7 +487,7 @@ const UpgradePlan = () => {
                                 <Button
                                   size="sm"
                                   className="w-full text-xs bg-primary text-primary-foreground hover:bg-primary/90"
-                                  onClick={() => openCustomerPortal('subscription_update')}
+                                  onClick={() => openCustomerPortal()}
                                 >
                                   <Calendar className="h-3 w-3 mr-2" />
                                   Switch to Yearly in Customer Portal
@@ -542,7 +542,7 @@ const UpgradePlan = () => {
                             size="sm"
                             variant="default"
                             className="flex-1 bg-gradient-primary"
-                            onClick={() => openCustomerPortal('subscription_update')}
+                            onClick={() => openCustomerPortal()}
                           >
                             <TrendingUp className="h-4 w-4 mr-2" />
                             Upgrade to Yearly (Save {plans.find(p => p.key === plan)?.savings})
@@ -800,7 +800,7 @@ const UpgradePlan = () => {
                               )}
                               <Button 
                                 className="w-full bg-gradient-primary" 
-                                onClick={() => openCustomerPortal('subscription_update')}
+                                onClick={() => openCustomerPortal()}
                                 disabled={isLoading}
                               >
                                 <TrendingUp className="h-4 w-4 mr-2" />
@@ -891,7 +891,7 @@ const UpgradePlan = () => {
                               )}
                               <Button 
                                 className="w-full bg-gradient-primary" 
-                                onClick={() => openCustomerPortal('subscription_update')}
+                                onClick={() => openCustomerPortal()}
                                 disabled={isLoading}
                               >
                                 <TrendingUp className="h-4 w-4 mr-2" />
@@ -984,7 +984,7 @@ const UpgradePlan = () => {
                           )}
                           <Button 
                             className="w-full bg-gradient-primary" 
-                            onClick={() => openCustomerPortal('subscription_update')}
+                            onClick={() => openCustomerPortal()}
                             disabled={isLoading}
                           >
                             <TrendingUp className="h-4 w-4 mr-2" />
