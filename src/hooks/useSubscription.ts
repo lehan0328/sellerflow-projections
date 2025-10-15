@@ -630,24 +630,41 @@ export const useSubscription = () => {
         return false;
       }
 
-      // Use the existing upgrade-subscription function which now handles interval changes
-      const { data, error } = await supabase.functions.invoke("upgrade-subscription", {
-        body: { newPriceId: annualPriceId },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+      // Calculate proration credit for unused time on current monthly plan
+      if (!subscriptionState.current_period_start || !subscriptionState.price_amount) {
+        toast({
+          title: "Error",
+          description: "Unable to calculate proration. Please try again.",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      const now = new Date();
+      const periodStart = new Date(subscriptionState.current_period_start);
+      const daysInMonth = 30; // Average days in a month
+      const periodEnd = new Date(periodStart);
+      periodEnd.setDate(periodEnd.getDate() + daysInMonth);
+      
+      const totalPeriodDays = daysInMonth;
+      const daysUsed = Math.floor((now.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
+      const daysRemaining = totalPeriodDays - daysUsed;
+      
+      // Calculate credit for unused portion of monthly subscription
+      const dailyRate = (subscriptionState.price_amount / 100) / totalPeriodDays;
+      const unusedCredit = dailyRate * daysRemaining;
+      
+      console.log('Proration calculation:', {
+        currentMonthlyPrice: subscriptionState.price_amount / 100,
+        daysUsed,
+        daysRemaining,
+        dailyRate,
+        unusedCredit
       });
 
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Your plan has been upgraded to annual billing. An invoice has been sent for the prorated amount.",
-      });
-
-      // Clear cache and refresh subscription status
-      clearCache();
-      await checkSubscription(true);
+      // Use createCheckout with proration amount
+      // This will apply the credit and create proper invoice
+      createCheckout(annualPriceId, undefined, unusedCredit);
       return true;
     } catch (error) {
       console.error("Error upgrading to annual:", error);
