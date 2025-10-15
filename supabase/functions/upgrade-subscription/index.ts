@@ -69,11 +69,32 @@ serve(async (req) => {
     logStep("Found active subscription", { subscriptionId: subscription.id });
 
     // Get the new price to check billing interval
-    const newPrice = await stripe.prices.retrieve(newPriceId);
+    let newPrice;
+    try {
+      newPrice = await stripe.prices.retrieve(newPriceId);
+      logStep("Retrieved new price", { 
+        interval: newPrice.recurring?.interval,
+        priceId: newPriceId 
+      });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logStep("ERROR retrieving price", { error: msg });
+      throw new Error(`Failed to retrieve price: ${msg}`);
+    }
+    
     const currentPrice = subscription.items.data[0].price;
+    logStep("Current price details", { 
+      interval: currentPrice.recurring?.interval,
+      priceId: currentPrice.id 
+    });
     
     // Check if billing interval is changing
     const intervalChanging = newPrice.recurring?.interval !== currentPrice.recurring?.interval;
+    logStep("Interval comparison", { 
+      intervalChanging,
+      newInterval: newPrice.recurring?.interval,
+      currentInterval: currentPrice.recurring?.interval
+    });
     
     // Update subscription - Stripe handles proration automatically
     const updateParams: any = {
@@ -87,8 +108,12 @@ serve(async (req) => {
     // Only preserve billing cycle if interval is NOT changing
     if (!intervalChanging) {
       updateParams.billing_cycle_anchor = 'unchanged';
+      logStep("Keeping billing cycle unchanged");
+    } else {
+      logStep("Allowing new billing cycle due to interval change");
     }
     
+    logStep("Updating subscription with params", updateParams);
     const updatedSubscription = await stripe.subscriptions.update(subscription.id, updateParams);
 
     logStep("Subscription updated successfully", { 
