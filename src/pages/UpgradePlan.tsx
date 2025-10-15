@@ -83,14 +83,14 @@ const UpgradePlan = () => {
     }
   }, [subscriptionData?.trial_expired, payment_failed, subscription_end]);
 
-  // Fetch profile to get trial dates
+  // Fetch profile to get trial dates and discount status
   const { data: profile } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
       const { data, error } = await supabase
         .from('profiles')
-        .select('trial_start, trial_end')
+        .select('trial_start, trial_end, plan_override, discount_redeemed_at')
         .eq('user_id', user.id)
         .maybeSingle();
       
@@ -102,6 +102,9 @@ const UpgradePlan = () => {
     },
     enabled: !!user?.id,
   });
+
+  // Check if user has referred user discount waiting to be applied
+  const hasReferredDiscount = profile?.plan_override === 'referred_user_discount' && !profile?.discount_redeemed_at;
 
   // Check for upgraded query parameter and refresh subscription
   useEffect(() => {
@@ -616,6 +619,31 @@ const UpgradePlan = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Referral Discount Notice */}
+        {hasReferredDiscount && !subscribed && (
+          <div className="max-w-4xl mx-auto">
+            <Card className="border-green-500/50 bg-green-500/5">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0">
+                    <Badge className="bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20">
+                      🎉 Referral Discount
+                    </Badge>
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <p className="font-semibold text-green-900 dark:text-green-100">
+                      You have a 10% discount waiting!
+                    </p>
+                    <p className="text-sm text-green-800 dark:text-green-200">
+                      As a referred user, you'll automatically receive <strong>10% off for 6 months</strong> when you subscribe to any plan below.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Trial Add-on Usage Notice */}
         {is_trialing && (
