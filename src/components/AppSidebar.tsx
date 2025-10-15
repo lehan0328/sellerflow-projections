@@ -19,6 +19,11 @@ const overviewSections = [{
   title: "Overview",
   icon: Home
 }, {
+  id: "match-transactions",
+  title: "Match Transactions",
+  icon: Link2,
+  showMatchCount: true
+}, {
   id: "analytics",
   title: "Analytics",
   icon: BarChart3
@@ -31,11 +36,6 @@ const overviewSections = [{
   title: "Automated Notifications",
   icon: Clock,
   showBadge: true
-}, {
-  id: "match-transactions",
-  title: "Match Transactions",
-  icon: Link2,
-  showMatchCount: true
 }];
 const transactionSections = [{
   id: "transactions",
