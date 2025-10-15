@@ -99,6 +99,8 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       futureDate.setDate(futureDate.getDate() + 180); // Next 6 months
       const futureDateStr = formatDate(futureDate);
 
+      console.log('🎯 EXCLUDE TODAY SETTING:', excludeTodayTransactions ? 'ENABLED ✅' : 'DISABLED ❌');
+      
       // Get ALL events that affect cash flow (matching calendar logic)
       const [transactionsResult, incomeResult, recurringResult, vendorsResult, amazonResult, creditCardsResult] = await Promise.all([
         supabase
@@ -205,10 +207,11 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
 
         let dayChange = 0;
 
-        // Log key dates
+        // Log key dates and today
+        const isToday = i === 0;
         const isKeyDate = i <= 3 || targetDateStr === '2025-10-20' || targetDateStr === '2025-10-10' || targetDateStr === '2025-10-17';
         if (isKeyDate) {
-          console.log(`\n📅 Processing ${targetDateStr} (day ${i})`);
+          console.log(`\n📅 Processing ${targetDateStr} (day ${i})${isToday ? ' [TODAY]' : ''}`);
         }
 
         // Add all inflows for this day (skip sales_orders without status=completed as they're pending)
@@ -641,6 +644,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       const willDropBelowLimit = firstBelowLimitDay !== undefined && !willGoNegative;
       
       console.log('💰 Safe Spending Final Calculation:', {
+        excludeTodayEnabled: excludeTodayTransactions,
         bankBalance,
         reserve,
         minBalance: minBalance.toFixed(2),

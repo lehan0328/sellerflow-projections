@@ -168,9 +168,9 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   
   // Refetch when exclude today changes
   useEffect(() => {
-    console.log('🔄 Exclude today changed to:', excludeToday, '- refetching safe spending');
+    console.log('🔄 [OVERVIEW STATS] Exclude today changed to:', excludeToday, '- refetching safe spending');
     refetchSafeSpending();
-  }, [excludeToday, refetchSafeSpending]);
+  }, [excludeToday]);
   
   // Calculate dynamic values based on events
   const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
