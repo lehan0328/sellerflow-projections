@@ -284,6 +284,9 @@ export const useSubscription = () => {
       let plan: PlanTier | null = null;
       if (data.is_override && data.plan) {
         plan = data.plan as PlanTier;
+      } else if (data.is_trialing) {
+        // All trial users are on the Professional plan
+        plan = 'professional';
       } else if (data.product_id) {
         // Map product_id to plan tier for regular Stripe subscriptions
         // Log available product IDs to help debug mismatches
