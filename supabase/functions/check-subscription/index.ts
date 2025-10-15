@@ -151,9 +151,20 @@ serve(async (req) => {
       const subscription = activeOrTrialingSub;
       isTrialing = subscription.status === 'trialing';
       
+      // Log all top-level keys to debug missing fields
+      logStep("Subscription object keys", { 
+        keys: Object.keys(subscription),
+        id: subscription.id,
+        status: subscription.status
+      });
+      
       logStep("Full subscription object", { 
         id: subscription.id,
         status: subscription.status,
+        current_period_start: subscription.current_period_start,
+        current_period_end: subscription.current_period_end,
+        trial_start: subscription.trial_start,
+        trial_end: subscription.trial_end,
         hasDiscount: !!subscription.discount,
         discountObject: subscription.discount
       });
