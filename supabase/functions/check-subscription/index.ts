@@ -122,7 +122,7 @@ serve(async (req) => {
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       limit: 10,
-      expand: ['data.discount.coupon'],
+      expand: ['data.discount.coupon', 'data.latest_invoice', 'data.default_payment_method', 'data.items.data.price'],
     });
     
     logStep("Raw subscriptions data", { 
