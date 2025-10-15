@@ -274,23 +274,19 @@ const UpgradePlan = () => {
                     </span>
                   </div>
                   
-                  {current_period_start && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Paid On</span>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(current_period_start).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Paid On</span>
+                    <span className="text-sm text-muted-foreground">
+                      {current_period_start ? new Date(current_period_start).toLocaleDateString() : 'Not Available'}
+                    </span>
+                  </div>
                   
-                  {subscription_end && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Next Renewal</span>
-                      <span className="text-sm text-muted-foreground">
-                        {new Date(subscription_end).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Next Renewal</span>
+                    <span className="text-sm text-muted-foreground">
+                      {subscription_end ? new Date(subscription_end).toLocaleDateString() : 'Not Available'}
+                    </span>
+                  </div>
                   
                   {price_amount && currency && (
                     <div className="flex items-center justify-between">
