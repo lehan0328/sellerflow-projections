@@ -5,12 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp, ShoppingBag, AlertTriangle, XCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Wallet, CreditCard, Building2, CalendarIcon, TrendingUp, ShoppingBag, AlertTriangle } from "lucide-react";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useUserSettings } from "@/hooks/useUserSettings";
-import { useExcludeToday } from "@/contexts/ExcludeTodayContext";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, addMonths, subMonths, subDays, addDays, startOfWeek, endOfWeek, getDay, startOfDay } from "date-fns";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Brush, ReferenceArea } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -85,7 +82,6 @@ export const CashFlowCalendar = ({
 }: CashFlowCalendarProps) => {
   const { totalAvailableCredit } = useCreditCards();
   const { chartPreferences, updateChartPreferences } = useUserSettings();
-  const { excludeToday, setExcludeToday } = useExcludeToday();
   
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'calendar' | 'chart'>('chart');
@@ -701,19 +697,6 @@ export const CashFlowCalendar = ({
       <div className="relative flex-shrink-0">        
         <CardHeader className="pb-4 flex-shrink-0">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-            <div className="flex items-center gap-3 mb-3 lg:mb-0">
-              <div className="flex items-center gap-2 bg-muted rounded-lg p-2 border">
-                <XCircle className="h-4 w-4 text-muted-foreground" />
-                <Label htmlFor="exclude-today" className="text-sm cursor-pointer whitespace-nowrap">
-                  Exclude Today
-                </Label>
-                <Switch
-                  id="exclude-today"
-                  checked={excludeToday}
-                  onCheckedChange={setExcludeToday}
-                />
-              </div>
-            </div>
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center space-x-4">
                 <CardTitle className="text-lg">Cash Flow Visualization</CardTitle>

@@ -1,10 +1,11 @@
-import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw, CheckCircle, ShoppingCart, AlertCircle } from "lucide-react";
+import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw, CheckCircle, ShoppingCart, AlertCircle, XCircle } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
@@ -81,7 +82,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
   const { totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
   const { reserveAmount, updateReserveAmount: updateReserve, canUpdate, lastUpdated } = useReserveAmount();
-  const { excludeToday } = useExcludeToday();
+  const { excludeToday, setExcludeToday } = useExcludeToday();
   const { data: safeSpendingData, isLoading: isLoadingSafeSpending, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount, excludeToday);
   const { amazonPayouts, monthlyOrdersTotal } = useAmazonPayouts();
   const { transactions: vendorTransactions } = useVendorTransactions();
@@ -431,10 +432,25 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
           </div>
         </div>
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
+          <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between mb-2">
               <p className="text-sm text-slate-600">Today's Activity</p>
-              <div className="mt-2 space-y-1">
+              <Calendar className="h-8 w-8 text-blue-500" />
+            </div>
+            <div className="flex items-center gap-2 bg-white/60 rounded-lg p-1.5 border border-blue-200 mb-2">
+              <XCircle className="h-3.5 w-3.5 text-blue-600" />
+              <Label htmlFor="exclude-today-stats" className="text-xs cursor-pointer whitespace-nowrap text-slate-700">
+                Exclude Today
+              </Label>
+              <Switch
+                id="exclude-today-stats"
+                checked={excludeToday}
+                onCheckedChange={setExcludeToday}
+                className="scale-75"
+              />
+            </div>
+            <div className="flex-1">
+              <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-green-600">Income:</span>
                   <span className="text-lg font-semibold text-green-700">
@@ -457,7 +473,6 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 </div>
               </div>
             </div>
-            <Calendar className="h-8 w-8 text-blue-500" />
           </div>
         </div>
         <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
