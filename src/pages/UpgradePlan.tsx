@@ -330,6 +330,26 @@ const UpgradePlan = () => {
                 </div>
               ) : subscribed && plan ? (
                 <>
+                  {payment_failed && (
+                    <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-lg space-y-3">
+                      <div className="flex items-center gap-2">
+                        <XCircle className="h-5 w-5 text-destructive" />
+                        <h3 className="text-sm font-semibold text-destructive">Payment Declined</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Your last payment was declined. Please update your payment method to avoid service interruption.
+                      </p>
+                      <Button 
+                        onClick={openCustomerPortal}
+                        variant="destructive"
+                        size="sm"
+                        className="w-full"
+                      >
+                        Update Card on File
+                      </Button>
+                    </div>
+                  )}
+                  
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Plan</span>
                     <Badge className="bg-gradient-primary">

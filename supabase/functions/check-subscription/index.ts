@@ -130,11 +130,12 @@ serve(async (req) => {
       statuses: subscriptions.data.map(s => s.status)
     });
     
-    // Filter for active, trialing, or past_due subscriptions
+    // Filter for active, trialing, or past_due subscriptions (all count as subscribed)
     const activeOrTrialingSub = subscriptions.data.find(
       sub => sub.status === 'active' || sub.status === 'trialing' || sub.status === 'past_due'
     );
     
+    // User is considered subscribed if they have any of these statuses
     const hasActiveSub = !!activeOrTrialingSub;
     const isPastDue = activeOrTrialingSub?.status === 'past_due';
     let productId = null;
@@ -147,6 +148,13 @@ serve(async (req) => {
     let currency = null;
 
     let discountInfo = null;
+    
+    // Log status for debugging
+    if (isPastDue) {
+      logStep("Subscription past due - maintaining access with warning", { 
+        subscriptionId: activeOrTrialingSub?.id 
+      });
+    }
 
     if (hasActiveSub && activeOrTrialingSub) {
       const subscription = activeOrTrialingSub;
