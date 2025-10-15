@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2 } from "lucide-react";
+import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2, Lock } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useSupportMessageCount } from "@/hooks/useSupportMessageCount";
@@ -137,6 +137,9 @@ export function AppSidebar({
               {overviewSections.map(section => {
               const Icon = section.icon;
               const isActive = activeSection === section.id;
+              const isRestricted = restrictedSections.includes(section.id);
+              const showLock = isRestricted && !isProfessionalPlan;
+              
               return <SidebarMenuItem key={section.id}>
                     <SidebarMenuButton onClick={() => handleSectionClick(section.id)} className={`
                         relative rounded-lg transition-all duration-200
@@ -153,6 +156,7 @@ export function AppSidebar({
                             {'showBadge' in section && section.showBadge && unreadCount > 0 && <Badge variant="destructive" className="text-[10px] font-bold px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center">
                                 {unreadCount}
                               </Badge>}
+                            {showLock && <Lock className="h-4 w-4 text-muted-foreground" />}
                           </span>
                         </span>}
                       {isCollapsed && 'showBadge' in section && section.showBadge && unreadCount > 0 && <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
@@ -160,6 +164,9 @@ export function AppSidebar({
                         </div>}
                       {isCollapsed && 'showMatchCount' in section && section.showMatchCount && matchCount > 0 && <div className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
                           {matchCount}
+                        </div>}
+                      {isCollapsed && showLock && <div className="absolute -top-1 -right-1">
+                          <Lock className="h-3 w-3 text-muted-foreground" />
                         </div>}
                     </SidebarMenuButton>
                   </SidebarMenuItem>;
