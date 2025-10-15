@@ -147,6 +147,13 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
         creditCards: creditCardsResult.data?.length || 0
       });
 
+      console.log('🛒 Amazon Payouts Details:', amazonResult.data?.map(p => ({
+        date: p.payout_date,
+        amount: p.total_amount,
+        status: p.status,
+        marketplace: p.marketplace_name
+      })) || 'No payouts fetched');
+
       console.log('🔍 VENDOR DATA:', vendorsResult.data?.map(v => ({
         name: v.name,
         total_owed: v.total_owed,
