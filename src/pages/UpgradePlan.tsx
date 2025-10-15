@@ -46,7 +46,7 @@ interface PendingUpgrade {
 const UpgradePlan = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, isLoading } = useSubscription();
+  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, upgradeSubscription, paymentMethod, isLoading } = useSubscription();
   const { calculatePostTrialCost } = useTrialAddonUsage();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
   const [isYearly, setIsYearly] = useState(true);
@@ -130,8 +130,8 @@ const UpgradePlan = () => {
   ];
 
   const handleUpgrade = (priceId: string, planName: string, proratedAmount?: number, isYearlyPlan?: boolean) => {
-    // Show confirmation dialog for existing subscribers
-    if (subscribed && !is_trialing) {
+    // For yearly switches with existing subscription, show confirmation with card details
+    if (subscribed && !is_trialing && isYearlyPlan) {
       setPendingUpgrade({
         priceId,
         planName,
@@ -139,14 +139,18 @@ const UpgradePlan = () => {
         isYearly: isYearlyPlan || false,
       });
     } else {
+      // For new subscriptions or plan upgrades, use checkout
       createCheckout(priceId, undefined, proratedAmount);
     }
   };
 
-  const confirmUpgrade = () => {
+  const confirmUpgrade = async () => {
     if (pendingUpgrade) {
-      createCheckout(pendingUpgrade.priceId, undefined, pendingUpgrade.amount);
-      setPendingUpgrade(null);
+      // Use direct upgrade for existing subscriptions
+      const success = await upgradeSubscription(pendingUpgrade.priceId);
+      if (success) {
+        setPendingUpgrade(null);
+      }
     }
   };
 
@@ -1345,6 +1349,8 @@ const UpgradePlan = () => {
         planName={pendingUpgrade?.planName || ''}
         amount={pendingUpgrade?.amount || 0}
         isYearly={pendingUpgrade?.isYearly || false}
+        cardLast4={paymentMethod?.last4}
+        cardBrand={paymentMethod?.brand}
       />
 
       {/* Cancellation Flow Modal */}

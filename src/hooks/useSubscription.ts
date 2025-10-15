@@ -197,6 +197,7 @@ export const useSubscription = () => {
     is_trialing: false,
     trial_end: null,
   });
+  const [paymentMethod, setPaymentMethod] = useState<{ brand: string; last4: string } | null>(null);
 
   // Load from cache
   const loadFromCache = (): CachedSubscription | null => {
@@ -318,6 +319,20 @@ export const useSubscription = () => {
       
       setSubscriptionState(state);
       saveToCache(state);
+
+      // Fetch payment method if subscribed
+      if (data.subscribed && session) {
+        try {
+          const { data: pmData } = await supabase.functions.invoke("get-payment-method", {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          });
+          if (pmData?.brand && pmData?.last4) {
+            setPaymentMethod({ brand: pmData.brand, last4: pmData.last4 });
+          }
+        } catch (error) {
+          console.error("Failed to fetch payment method:", error);
+        }
+      }
     } catch (error) {
       console.error("Error checking subscription:", error);
       const state = {
@@ -457,6 +472,7 @@ export const useSubscription = () => {
     }
   };
 
+
   const openCustomerPortal = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -487,6 +503,49 @@ export const useSubscription = () => {
         description: "Failed to open customer portal. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  const upgradeSubscription = async (newPriceId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to upgrade your plan.",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      const { data, error } = await supabase.functions.invoke("upgrade-subscription", {
+        body: { newPriceId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast({
+          title: "Success!",
+          description: `Subscription upgraded successfully. ${data.amountCharged ? `Charged $${(data.amountCharged / 100).toFixed(2)}` : ''}`,
+        });
+        // Clear cache and refresh subscription
+        clearCache();
+        await checkSubscription(true);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error upgrading subscription:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upgrade subscription. Please try again.",
+        variant: "destructive",
+      });
+      return false;
     }
   };
 
@@ -562,6 +621,8 @@ export const useSubscription = () => {
     purchaseAddons,
     openCustomerPortal,
     removePlanOverride,
+    upgradeSubscription,
+    paymentMethod,
     clearCache,
   };
 };
