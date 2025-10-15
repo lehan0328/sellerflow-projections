@@ -104,10 +104,10 @@ const navigationItems = [
 interface SidebarNavigationProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
-  isAdmin: boolean;
+  isAdmin: boolean; // This represents isAccountAdmin (owner or admin role)
 }
 
-// Sections that require admin access (owner or admin role)
+// Sections that require account admin access (owner or admin role)
 const adminOnlySections = [
   'team',
   'bank-accounts',

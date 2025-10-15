@@ -7,6 +7,7 @@ const WEBSITE_ADMIN_EMAIL = 'chuandy914@gmail.com';
 
 export const useAdmin = () => {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAccountAdmin, setIsAccountAdmin] = useState(false);
   const [userRole, setUserRole] = useState<'owner' | 'admin' | 'staff' | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -21,6 +22,7 @@ export const useAdmin = () => {
       
       if (!session) {
         setIsAdmin(false);
+        setIsAccountAdmin(false);
         setUserRole(null);
         setIsLoading(false);
         return;
@@ -30,7 +32,7 @@ export const useAdmin = () => {
       const isWebsiteAdmin = session.user.email === WEBSITE_ADMIN_EMAIL;
       setIsAdmin(isWebsiteAdmin);
 
-      // Still check user's company role for other purposes
+      // Check user's company role
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -40,17 +42,21 @@ export const useAdmin = () => {
       if (!error && data) {
         const role = data.role as 'owner' | 'admin' | 'staff' | null;
         setUserRole(role);
+        // Account admins are owners or admins
+        setIsAccountAdmin(role === 'owner' || role === 'admin');
       } else {
         setUserRole(null);
+        setIsAccountAdmin(false);
       }
     } catch (error) {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
+      setIsAccountAdmin(false);
       setUserRole(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  return { isAdmin, userRole, isLoading, checkAdminStatus };
+  return { isAdmin, isAccountAdmin, userRole, isLoading, checkAdminStatus };
 };

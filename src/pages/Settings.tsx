@@ -61,7 +61,7 @@ const Settings = () => {
   const queryClient = useQueryClient();
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   const { resetAccount } = useUserSettings();
-  const { isAdmin, isLoading: adminLoading } = useAdmin();
+  const { isAdmin, isAccountAdmin, isLoading: adminLoading } = useAdmin();
   const [companyName, setCompanyName] = useState('');
 
   // Fetch user profile
@@ -570,7 +570,7 @@ const Settings = () => {
     ];
 
     // If user is staff and trying to access admin-only section, show access denied
-    if (!isAdmin && adminOnlySections.includes(activeSection)) {
+    if (!isAccountAdmin && adminOnlySections.includes(activeSection)) {
       return (
         <Card>
           <CardHeader>
@@ -673,7 +673,7 @@ const Settings = () => {
                 <SidebarNavigation 
                   activeSection={activeSection}
                   onSectionChange={setActiveSection}
-                  isAdmin={isAdmin}
+                  isAdmin={isAccountAdmin}
                 />
               </CardContent>
             </Card>
