@@ -84,6 +84,23 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const { incomeItems } = useIncome();
   const [reserveInput, setReserveInput] = useState<string>("");
   
+  // Calculate today's income and expenses
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+  const todayStr = todayDate.toDateString();
+  
+  const todaysIncome = incomeItems.filter(item => {
+    const itemDate = new Date(item.paymentDate);
+    itemDate.setHours(0, 0, 0, 0);
+    return itemDate.toDateString() === todayStr && item.status !== 'received';
+  }).reduce((sum, item) => sum + item.amount, 0);
+  
+  const todaysExpenses = vendorTransactions.filter(tx => {
+    const txDate = new Date(tx.transactionDate);
+    txDate.setHours(0, 0, 0, 0);
+    return txDate.toDateString() === todayStr && tx.status === 'pending';
+  }).reduce((sum, tx) => sum + tx.amount, 0);
+  
   // Calculate hours until next update is allowed
   const hoursUntilNextUpdate = lastUpdated && !canUpdate 
     ? Math.ceil(24 - ((Date.now() - lastUpdated.getTime()) / (1000 * 60 * 60)))
@@ -325,33 +342,31 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <p className="text-sm text-slate-600">Cash</p>
-                {!balanceMatches && accounts.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSyncRequest}
-                    disabled={isSyncing}
-                    className="h-6 w-6 p-0 text-orange-400 hover:text-orange-600 hover:bg-orange-50"
-                    title={`Bank balance differs by ${formatCurrency(balanceDifference)}. Click to sync.`}
-                  >
-                    {isSyncing ? (
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <AlertTriangle className="h-4 w-4" />
-                    )}
-                  </Button>
-                )}
+              <p className="text-sm text-slate-600">Today's Activity</p>
+              <div className="mt-2 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-green-600">Income:</span>
+                  <span className="text-lg font-semibold text-green-700">
+                    {formatCurrency(todaysIncome)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-red-600">Expenses:</span>
+                  <span className="text-lg font-semibold text-red-700">
+                    {formatCurrency(todaysExpenses)}
+                  </span>
+                </div>
               </div>
-              <p className="text-2xl font-bold text-blue-700">
-                {formatCurrency(bankAccountBalance)}
-              </p>
-              <p className="text-sm text-slate-600">
-                {accounts.length === 0 ? 'No accounts connected' : 'Current balance'}
-              </p>
+              <div className="mt-2 pt-2 border-t border-blue-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-700">Net:</span>
+                  <span className={`text-xl font-bold ${todaysIncome - todaysExpenses >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                    {formatCurrency(todaysIncome - todaysExpenses)}
+                  </span>
+                </div>
+              </div>
             </div>
-            <DollarSign className="h-8 w-8 text-blue-500" />
+            <Calendar className="h-8 w-8 text-blue-500" />
           </div>
         </div>
         <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">

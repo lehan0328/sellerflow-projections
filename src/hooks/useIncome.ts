@@ -195,9 +195,14 @@ export const useIncome = () => {
       if (updates.source !== undefined) updateData.source = updates.source;
       if (updates.status !== undefined) {
         updateData.status = updates.status;
-        // Automatically archive when status is set to 'received'
+        // Automatically archive only when status is 'received' AND payment date is in the past (overdue)
         if (updates.status === 'received') {
-          updateData.archived = true;
+          const income = incomeItems.find(item => item.id === id);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (income && income.paymentDate < today) {
+            updateData.archived = true;
+          }
         }
       }
       if (updates.category !== undefined) updateData.category = updates.category;
