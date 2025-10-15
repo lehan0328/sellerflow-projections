@@ -154,8 +154,9 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
         marketplace: p.marketplace_name
       })) || 'No payouts fetched');
       
+      const totalAmazonRevenue = (amazonResult.data || []).reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
       console.log('🛒 Total forecasted Amazon revenue (next 180 days):', 
-        (amazonResult.data || []).reduce((sum, p) => sum + Number(p.total_amount || 0), 0).toLocaleString());
+        '$' + totalAmazonRevenue.toLocaleString());
 
       console.log('🔍 VENDOR DATA:', vendorsResult.data?.map(v => ({
         name: v.name,
@@ -288,10 +289,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0) => {
           
           if (payoutDate.getTime() === targetDate.getTime()) {
             const amt = Number(payout.total_amount);
-            if (isKeyDate) {
-              const statusLabel = payout.status === 'forecasted' ? 'AI forecasted' : 'confirmed';
-              console.log(`  🛒 Amazon payout (${statusLabel}): +$${amt}`);
-            }
+            console.log(`  🛒 Amazon payout (${payout.status}): +$${amt} on ${targetDateStr}`);
             dayChange += amt;
           }
         });
