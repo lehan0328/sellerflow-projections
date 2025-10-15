@@ -160,10 +160,24 @@ const UpgradePlan = () => {
   const handleUpgrade = (priceId: string, planName: string, proratedAmount?: number, isYearlyPlan?: boolean) => {
     // For existing subscriptions, show confirmation with card details
     if (subscribed && !is_trialing) {
+      // Get the plan price for display
+      const displayAmount = proratedAmount || (() => {
+        // Find the plan price from PRICING_PLANS or ENTERPRISE_TIERS
+        for (const planData of Object.values(PRICING_PLANS)) {
+          if (planData.price_id === priceId) return planData.price * 100;
+          if (planData.yearly_price_id === priceId) return planData.yearlyPrice * 100;
+        }
+        for (const tierData of Object.values(ENTERPRISE_TIERS)) {
+          if (tierData.priceId === priceId) return tierData.price * 100;
+          if (tierData.yearlyPriceId === priceId) return tierData.yearlyPrice * 100;
+        }
+        return 0;
+      })();
+
       setPendingUpgrade({
         priceId,
         planName,
-        amount: proratedAmount || 0,
+        amount: displayAmount,
         isYearly: isYearlyPlan || false,
       });
     } else {
@@ -789,7 +803,7 @@ const UpgradePlan = () => {
                           const currentMonthlyPaid = price_amount ? (price_amount / 100) : PRICING_PLANS.starter.price;
                           const growingPlan = plans.find(p => p.key === 'growing')!;
                           const newPlanPrice = isYearly ? growingPlan.yearlyPrice : growingPlan.price;
-                          const proratedAmount = isYearly ? newPlanPrice : (newPlanPrice - currentMonthlyPaid);
+                          const proratedAmount = !isYearly ? (newPlanPrice - currentMonthlyPaid) : 0;
                           
                           return (
                             <>
@@ -821,7 +835,7 @@ const UpgradePlan = () => {
                                 onClick={() => handleUpgrade(
                                   getCurrentPriceId(growingPlan), 
                                   `${growingPlan.name}${isYearly ? ' (Yearly)' : ''}`,
-                                  isYearly || !subscribed ? undefined : proratedAmount * 100,
+                                  !isYearly && subscribed ? proratedAmount * 100 : undefined,
                                   isYearly
                                 )}
                                 disabled={isLoading}
@@ -885,7 +899,7 @@ const UpgradePlan = () => {
                           const currentMonthlyPaid = price_amount ? (price_amount / 100) : PRICING_PLANS.starter.price;
                           const professionalPlan = plans.find(p => p.key === 'professional')!;
                           const newPlanPrice = isYearly ? professionalPlan.yearlyPrice : professionalPlan.price;
-                          const proratedAmount = isYearly ? newPlanPrice : (newPlanPrice - currentMonthlyPaid);
+                          const proratedAmount = !isYearly ? (newPlanPrice - currentMonthlyPaid) : 0;
                           
                           return (
                             <>
@@ -917,7 +931,7 @@ const UpgradePlan = () => {
                                 onClick={() => handleUpgrade(
                                   getCurrentPriceId(professionalPlan),
                                   `${professionalPlan.name}${isYearly ? ' (Yearly)' : ''}`,
-                                  isYearly || !subscribed ? undefined : proratedAmount * 100,
+                                  !isYearly && subscribed ? proratedAmount * 100 : undefined,
                                   isYearly
                                 )}
                                 disabled={isLoading}
@@ -983,7 +997,7 @@ const UpgradePlan = () => {
                     {(() => {
                       const currentMonthlyPaid = price_amount ? (price_amount / 100) : (plan === 'growing' ? PRICING_PLANS.growing.price : PRICING_PLANS.professional.price);
                       const newPlanPrice = isYearly ? nextTier.yearlyPrice : nextTier.price;
-                      const proratedAmount = isYearly ? newPlanPrice : (newPlanPrice - currentMonthlyPaid);
+                      const proratedAmount = !isYearly ? (newPlanPrice - currentMonthlyPaid) : 0;
                       
                       return (
                         <>
@@ -1015,7 +1029,7 @@ const UpgradePlan = () => {
                             onClick={() => handleUpgrade(
                               getCurrentPriceId(nextTier),
                               `${nextTier.name}${isYearly ? ' (Yearly)' : ''}`,
-                              isYearly || !subscribed ? undefined : proratedAmount * 100,
+                              !isYearly && subscribed ? proratedAmount * 100 : undefined,
                               isYearly
                             )}
                             disabled={isLoading}
