@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   ArrowLeft,
   Shield,
@@ -38,7 +38,7 @@ interface CartItem {
 const UpgradePlan = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, isLoading } = useSubscription();
+  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, isLoading } = useSubscription();
   const { calculatePostTrialCost } = useTrialAddonUsage();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
   const [isYearly, setIsYearly] = useState(true);
@@ -68,6 +68,21 @@ const UpgradePlan = () => {
     },
     enabled: !!user?.id,
   });
+
+  // Check for upgraded query parameter and refresh subscription
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('subscription') === 'upgraded') {
+      // Force refresh subscription status after upgrade
+      setTimeout(() => {
+        checkSubscription(true);
+      }, 1000);
+      
+      // Clean up URL
+      window.history.replaceState({}, '', '/upgrade-plan');
+    }
+  }, [checkSubscription]);
+
 
   const plans = [
     {
