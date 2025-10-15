@@ -77,8 +77,8 @@ export function UpgradeConfirmDialog({
               <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
                 <div className="text-amber-600 dark:text-amber-400 mt-0.5">⚠️</div>
                 <div className="text-xs text-amber-700 dark:text-amber-300">
-                  <p className="font-semibold mb-1">Your card will be charged immediately</p>
-                  <p>Stripe will create an invoice and charge the prorated amount to your card on file.</p>
+                  <div className="font-semibold mb-1">Your card will be charged immediately</div>
+                  <div>Stripe will create an invoice and charge the prorated amount to your card on file.</div>
                 </div>
               </div>
             </div>
