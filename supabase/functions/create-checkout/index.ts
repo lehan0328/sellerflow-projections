@@ -200,19 +200,26 @@ serve(async (req) => {
     }
     
     // Handle subscription upgrades - schedule at end of billing cycle
+    // Ignore proratedAmount parameter - all upgrades happen at cycle end
     if (hasExistingSubscription && currentSubscription) {
       const currentPeriodEnd = currentSubscription.current_period_end;
-      sessionConfig.subscription_data = {
-        trial_end: currentPeriodEnd, // New subscription starts after current one
-        metadata: {
-          upgraded_from: currentSubscription.id
-        }
-      };
-      sessionConfig.payment_method_collection = "if_required";
-      logStep("Scheduling new subscription after current period", { 
-        currentPeriodEnd,
-        currentPeriodEndDate: new Date(currentPeriodEnd * 1000).toISOString()
-      });
+      
+      // Validate currentPeriodEnd is a valid timestamp
+      if (!currentPeriodEnd || typeof currentPeriodEnd !== 'number') {
+        logStep("WARNING: Invalid current_period_end, creating direct checkout", { currentPeriodEnd });
+      } else {
+        sessionConfig.subscription_data = {
+          trial_end: currentPeriodEnd, // New subscription starts after current one
+          metadata: {
+            upgraded_from: currentSubscription.id
+          }
+        };
+        sessionConfig.payment_method_collection = "if_required";
+        logStep("Scheduling new subscription after current period", { 
+          currentPeriodEnd,
+          currentPeriodEndDate: new Date(currentPeriodEnd * 1000).toISOString()
+        });
+      }
     } else if (!hasExistingSubscription) {
       logStep("Creating standard subscription checkout - payment required");
     }
