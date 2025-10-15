@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// Website admin email - only this user can access the admin dashboard
+const WEBSITE_ADMIN_EMAIL = 'chuandy914@gmail.com';
+
 export const useAdmin = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userRole, setUserRole] = useState<'owner' | 'admin' | 'staff' | null>(null);
@@ -23,19 +26,23 @@ export const useAdmin = () => {
         return;
       }
 
-      // Check user's role in user_roles table
+      // Check if user is the website admin (superuser)
+      const isWebsiteAdmin = session.user.email === WEBSITE_ADMIN_EMAIL;
+      setIsAdmin(isWebsiteAdmin);
+
+      // Still check user's company role for other purposes
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', session.user.id)
         .single();
 
-      if (error) throw error;
-
-      const role = data?.role as 'owner' | 'admin' | 'staff' | null;
-      setUserRole(role);
-      // Owner and Admin can access company settings
-      setIsAdmin(role === 'owner' || role === 'admin');
+      if (!error && data) {
+        const role = data.role as 'owner' | 'admin' | 'staff' | null;
+        setUserRole(role);
+      } else {
+        setUserRole(null);
+      }
     } catch (error) {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
