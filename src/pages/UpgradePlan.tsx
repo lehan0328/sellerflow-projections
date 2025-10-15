@@ -531,27 +531,25 @@ const UpgradePlan = () => {
                   </div>
                   <CardHeader className="text-center">
                     <CardTitle>{currentTierData.name}</CardTitle>
-                    <div className="text-3xl font-bold">
+                    <div className="space-y-2">
                       {isYearly ? (
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="text-lg line-through text-muted-foreground font-normal">
-                              ${currentTierData.price * 12}
-                            </span>
-                            <span>
-                              ${currentTierData.yearlyPrice}
-                              <span className="text-sm font-normal text-muted-foreground">/year</span>
-                            </span>
+                        <>
+                          <div className="text-3xl font-bold">
+                            ${(currentTierData.yearlyPrice / 12).toFixed(0)}
+                            <span className="text-sm font-normal text-muted-foreground">/month</span>
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            ${(currentTierData.yearlyPrice / 12).toFixed(0)}/month billed annually
+                            Billed annually at ${currentTierData.yearlyPrice}/yr
                           </div>
-                        </div>
+                          <div className="text-sm text-green-600 font-medium">
+                            Save {currentTierData.savings}/year
+                          </div>
+                        </>
                       ) : (
-                        <>
+                        <div className="text-3xl font-bold">
                           ${currentTierData.price}
                           <span className="text-sm font-normal text-muted-foreground">/month</span>
-                        </>
+                        </div>
                       )}
                     </div>
                   </CardHeader>
@@ -591,27 +589,25 @@ const UpgradePlan = () => {
                       </div>
                       <CardHeader className="text-center">
                         <CardTitle>{plans.find(p => p.key === 'growing')?.name}</CardTitle>
-                        <div className="text-3xl font-bold">
+                        <div className="space-y-2">
                           {isYearly ? (
-                            <div className="space-y-1">
-                              <div className="flex items-center justify-center gap-2">
-                                <span className="text-lg line-through text-muted-foreground font-normal">
-                                  ${plans.find(p => p.key === 'growing')!.price * 12}
-                                </span>
-                                <span>
-                                  ${plans.find(p => p.key === 'growing')?.yearlyPrice}
-                                  <span className="text-sm font-normal text-muted-foreground">/year</span>
-                                </span>
+                            <>
+                              <div className="text-3xl font-bold">
+                                ${(plans.find(p => p.key === 'growing')!.yearlyPrice / 12).toFixed(0)}
+                                <span className="text-sm font-normal text-muted-foreground">/month</span>
                               </div>
                               <div className="text-sm text-muted-foreground">
-                                ${(plans.find(p => p.key === 'growing')!.yearlyPrice / 12).toFixed(0)}/month billed annually
+                                Billed annually at ${plans.find(p => p.key === 'growing')?.yearlyPrice}/yr
                               </div>
-                            </div>
+                              <div className="text-sm text-green-600 font-medium">
+                                Save {plans.find(p => p.key === 'growing')?.savings}/year
+                              </div>
+                            </>
                           ) : (
-                            <>
+                            <div className="text-3xl font-bold">
                               ${plans.find(p => p.key === 'growing')?.price}
                               <span className="text-sm font-normal text-muted-foreground">/month</span>
-                            </>
+                            </div>
                           )}
                         </div>
                         {isYearly && (
@@ -682,34 +678,27 @@ const UpgradePlan = () => {
                       </div>
                       <CardHeader className="text-center">
                         <CardTitle>{plans.find(p => p.key === 'professional')?.name}</CardTitle>
-                        <div className="text-3xl font-bold">
+                        <div className="space-y-2">
                           {isYearly ? (
-                            <div className="space-y-1">
-                              <div className="flex items-center justify-center gap-2">
-                                <span className="text-lg line-through text-muted-foreground font-normal">
-                                  ${plans.find(p => p.key === 'professional')!.price * 12}
-                                </span>
-                                <span>
-                                  ${plans.find(p => p.key === 'professional')?.yearlyPrice}
-                                  <span className="text-sm font-normal text-muted-foreground">/year</span>
-                                </span>
+                            <>
+                              <div className="text-3xl font-bold">
+                                ${(plans.find(p => p.key === 'professional')!.yearlyPrice / 12).toFixed(0)}
+                                <span className="text-sm font-normal text-muted-foreground">/month</span>
                               </div>
                               <div className="text-sm text-muted-foreground">
-                                ${(plans.find(p => p.key === 'professional')!.yearlyPrice / 12).toFixed(0)}/month billed annually
+                                Billed annually at ${plans.find(p => p.key === 'professional')?.yearlyPrice}/yr
                               </div>
-                            </div>
+                              <div className="text-sm text-green-600 font-medium">
+                                Save {plans.find(p => p.key === 'professional')?.savings}/year
+                              </div>
+                            </>
                           ) : (
-                            <>
+                            <div className="text-3xl font-bold">
                               ${plans.find(p => p.key === 'professional')?.price}
                               <span className="text-sm font-normal text-muted-foreground">/month</span>
-                            </>
+                            </div>
                           )}
                         </div>
-                        {isYearly && (
-                          <Badge variant="secondary" className="text-xs mx-auto">
-                            Save {plans.find(p => p.key === 'professional')?.savings}/year
-                          </Badge>
-                        )}
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <p className="text-sm text-green-600 font-medium text-center">Additional benefits:</p>
@@ -772,34 +761,27 @@ const UpgradePlan = () => {
                   </div>
                   <CardHeader className="text-center">
                     <CardTitle>{nextTier.name}</CardTitle>
-                    <div className="text-3xl font-bold">
+                    <div className="space-y-2">
                       {isYearly ? (
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="text-lg line-through text-muted-foreground font-normal">
-                              ${nextTier.price * 12}
-                            </span>
-                            <span>
-                              ${nextTier.yearlyPrice}
-                              <span className="text-sm font-normal text-muted-foreground">/year</span>
-                            </span>
+                        <>
+                          <div className="text-3xl font-bold">
+                            ${(nextTier.yearlyPrice / 12).toFixed(0)}
+                            <span className="text-sm font-normal text-muted-foreground">/month</span>
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            ${(nextTier.yearlyPrice / 12).toFixed(0)}/month billed annually
+                            Billed annually at ${nextTier.yearlyPrice}/yr
                           </div>
-                        </div>
+                          <div className="text-sm text-green-600 font-medium">
+                            Save {nextTier.savings}/year
+                          </div>
+                        </>
                       ) : (
-                        <>
+                        <div className="text-3xl font-bold">
                           ${nextTier.price}
                           <span className="text-sm font-normal text-muted-foreground">/month</span>
-                        </>
+                        </div>
                       )}
                     </div>
-                    {isYearly && (
-                      <Badge variant="secondary" className="text-xs mx-auto">
-                        Save {nextTier.savings}/year
-                      </Badge>
-                    )}
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <p className="text-sm text-green-600 font-medium text-center">You'll gain these benefits:</p>
@@ -961,34 +943,27 @@ const UpgradePlan = () => {
                     )}
                     <CardHeader className="text-center">
                       <CardTitle>{planItem.name}</CardTitle>
-                      <div className="text-3xl font-bold">
+                      <div className="space-y-2">
                         {isYearly ? (
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-center gap-2">
-                              <span className="text-lg line-through text-muted-foreground font-normal">
-                                ${planItem.price * 12}
-                              </span>
-                              <span>
-                                ${planItem.yearlyPrice}
-                                <span className="text-sm font-normal text-muted-foreground">/year</span>
-                              </span>
+                          <>
+                            <div className="text-3xl font-bold">
+                              ${(planItem.yearlyPrice / 12).toFixed(0)}
+                              <span className="text-sm font-normal text-muted-foreground">/month</span>
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              ${(planItem.yearlyPrice / 12).toFixed(0)}/month billed annually
+                              Billed annually at ${planItem.yearlyPrice}/yr
                             </div>
-                          </div>
+                            <div className="text-sm text-green-600 font-medium">
+                              Save {planItem.savings}/year
+                            </div>
+                          </>
                         ) : (
-                          <>
+                          <div className="text-3xl font-bold">
                             ${planItem.price}
                             <span className="text-sm font-normal text-muted-foreground">/month</span>
-                          </>
+                          </div>
                         )}
                       </div>
-                      {isYearly && (
-                        <Badge variant="secondary" className="text-xs mx-auto">
-                          Save {planItem.savings}/year
-                        </Badge>
-                      )}
                     </CardHeader>
                     <CardContent className="space-y-4">
                     <ul className="space-y-2">
