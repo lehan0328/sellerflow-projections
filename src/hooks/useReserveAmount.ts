@@ -102,15 +102,34 @@ export const useReserveAmount = () => {
 
       console.log('[Reserve] Using account_id:', profile.account_id);
 
-      // Use upsert to handle both create and update cases
+      // First, get existing settings to preserve other fields
+      const { data: existingSettings } = await supabase
+        .from('user_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      console.log('[Reserve] Existing settings:', existingSettings);
+
+      // Use upsert with all fields to avoid constraint violations
       console.log('[Reserve] 🟢 Upserting settings with reserve:', newAmount);
       const { data: upsertData, error: upsertError } = await supabase
         .from('user_settings')
         .upsert({
           user_id: user.id,
           account_id: profile.account_id,
-          safe_spending_reserve: Number(newAmount), // Ensure it's a number
-          reserve_last_updated_at: new Date().toISOString()
+          safe_spending_reserve: Number(newAmount),
+          reserve_last_updated_at: new Date().toISOString(),
+          // Preserve existing fields to avoid constraint violations
+          forecast_confidence_threshold: existingSettings?.forecast_confidence_threshold ?? 88,
+          forecasts_enabled: existingSettings?.forecasts_enabled ?? true,
+          safe_spending_percentage: existingSettings?.safe_spending_percentage ?? 20,
+          // Preserve chart settings
+          chart_show_cashflow_line: existingSettings?.chart_show_cashflow_line ?? true,
+          chart_show_resources_line: existingSettings?.chart_show_resources_line ?? true,
+          chart_show_credit_line: existingSettings?.chart_show_credit_line ?? true,
+          chart_show_reserve_line: existingSettings?.chart_show_reserve_line ?? true,
+          chart_show_forecast_line: existingSettings?.chart_show_forecast_line ?? false,
         }, {
           onConflict: 'user_id'
         })
