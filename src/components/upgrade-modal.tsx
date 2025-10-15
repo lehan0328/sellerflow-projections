@@ -10,15 +10,20 @@ interface UpgradeModalProps {
   onOpenChange: (open: boolean) => void;
   feature?: string;
   currentLimit?: string;
+  onUpgradeClick?: () => void;
 }
 
-export const UpgradeModal = ({ open, onOpenChange, feature = "connections", currentLimit }: UpgradeModalProps) => {
+export const UpgradeModal = ({ open, onOpenChange, feature = "connections", currentLimit, onUpgradeClick }: UpgradeModalProps) => {
   const navigate = useNavigate();
   const subscription = useSubscription();
 
   const handleUpgrade = () => {
     onOpenChange(false);
-    navigate('/settings?tab=subscription');
+    if (onUpgradeClick) {
+      onUpgradeClick();
+    } else {
+      navigate('/settings?tab=subscription');
+    }
   };
 
   const handlePurchaseAddons = () => {
@@ -63,10 +68,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature = "connections", curr
             </div>
             
             {nextPlans.length > 0 && (
-              <Card className="p-4 border-2 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer" onClick={() => {
-                onOpenChange(false);
-                navigate('/settings?tab=subscription');
-              }}>
+              <Card className="p-4 border-2 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer" onClick={handleUpgrade}>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>

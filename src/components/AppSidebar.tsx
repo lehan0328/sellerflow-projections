@@ -255,12 +255,8 @@ export function AppSidebar({
       
       <UpgradeModal 
         open={showUpgradeModal} 
-        onOpenChange={(open) => {
-          setShowUpgradeModal(open);
-          if (!open) {
-            navigate('/settings?tab=subscription');
-          }
-        }}
+        onOpenChange={setShowUpgradeModal}
+        onUpgradeClick={() => navigate('/settings?tab=subscription')}
         feature="premium features"
       />
     </Sidebar>;
