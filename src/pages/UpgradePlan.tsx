@@ -158,15 +158,8 @@ const UpgradePlan = () => {
   ];
 
   const handleUpgrade = (priceId: string, planName: string, proratedAmount?: number, isYearlyPlan?: boolean) => {
-    // Check if this is a billing interval change (monthly <-> yearly)
-    const currentIsYearly = billing_interval === 'year';
-    const isIntervalChange = subscribed && !is_trialing && (isYearlyPlan !== currentIsYearly);
-    
-    if (isIntervalChange) {
-      // For interval changes, use checkout (Stripe doesn't allow direct interval changes)
-      createCheckout(priceId, undefined, proratedAmount);
-    } else if (subscribed && !is_trialing) {
-      // For same-interval upgrades/downgrades, show confirmation with card details
+    // For existing subscriptions, show confirmation with card details
+    if (subscribed && !is_trialing) {
       setPendingUpgrade({
         priceId,
         planName,

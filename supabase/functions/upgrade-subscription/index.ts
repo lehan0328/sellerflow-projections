@@ -97,6 +97,7 @@ serve(async (req) => {
     });
     
     // CRITICAL: Use strict payment behavior to prevent upgrade if payment fails
+    // For interval changes, we need to reset the billing cycle
     const updateParams: any = {
       items: [{
         id: subscription.items.data[0].id,
@@ -104,8 +105,13 @@ serve(async (req) => {
       }],
       proration_behavior: 'create_prorations',
       payment_behavior: 'error_if_incomplete', // STRICT: Fail immediately if payment incomplete
-      billing_cycle_anchor: intervalChanging ? undefined : 'unchanged',
     };
+    
+    // Only preserve billing cycle anchor if NOT changing intervals
+    if (!intervalChanging) {
+      updateParams.billing_cycle_anchor = 'unchanged';
+    }
+    // If changing intervals, omit billing_cycle_anchor to reset it
     
     logStep("STRICT PAYMENT MODE: Updating subscription with error_if_incomplete", updateParams);
     let updatedSubscription;
