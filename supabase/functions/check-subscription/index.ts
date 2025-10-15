@@ -361,6 +361,25 @@ serve(async (req) => {
       logStep("No active or trialing subscription found");
     }
 
+    // Clear trial fields from profile if user has an active paid subscription
+    if (hasActiveSub && !isTrialing) {
+      const { error: updateError } = await supabaseClient
+        .from('profiles')
+        .update({ 
+          trial_start: null, 
+          trial_end: null,
+          plan_override: null
+        })
+        .eq('user_id', user.id)
+        .is('trial_end', 'not.null');  // Only update if trial_end exists
+      
+      if (updateError) {
+        logStep("Error clearing trial fields", { error: updateError.message });
+      } else {
+        logStep("Cleared trial fields from profile for paid subscriber");
+      }
+    }
+
     // Check if user ever redeemed a discount
     const { data: profileData } = await supabaseClient
       .from('profiles')
