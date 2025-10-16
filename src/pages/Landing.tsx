@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun, ExternalLink, Lock, AlertCircle, BookOpen, Calculator, BadgeCheck } from "lucide-react";
+import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun, ExternalLink, Lock, AlertCircle, BookOpen, Calculator, BadgeCheck, Lightbulb, Wallet } from "lucide-react";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import aurenFullLogo from "@/assets/auren-full-logo.png";
 import avatar1 from "@/assets/avatar-1.jpg";
@@ -641,7 +641,7 @@ const Landing = () => {
                 <div className="grid grid-cols-1 gap-3">
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-lg">🧠</span>
+                      <Lightbulb className="h-4 w-4 text-primary" />
                     </div>
                     <div>
                       <div className="font-semibold text-sm">Smart Purchase Planning</div>
@@ -650,7 +650,7 @@ const Landing = () => {
                   </div>
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-lg">💰</span>
+                      <Shield className="h-4 w-4 text-accent" />
                     </div>
                     <div>
                       <div className="font-semibold text-sm">Safe Spending Power</div>
@@ -659,7 +659,7 @@ const Landing = () => {
                   </div>
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-lg">🎯</span>
+                      <TrendingUp className="h-4 w-4 text-success" />
                     </div>
                     <div>
                       <div className="font-semibold text-sm">Buying Opportunity Projection</div>
@@ -668,7 +668,7 @@ const Landing = () => {
                   </div>
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-info/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-lg">📊</span>
+                      <Wallet className="h-4 w-4 text-info" />
                     </div>
                     <div>
                       <div className="font-semibold text-sm">Payout Forecasting</div>
