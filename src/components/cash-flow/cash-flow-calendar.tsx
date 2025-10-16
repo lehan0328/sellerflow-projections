@@ -85,6 +85,7 @@ export const CashFlowCalendar = ({
   
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'calendar' | 'chart'>('chart');
+  useEffect(() => { console.log('[Calendar] currentDate changed:', currentDate); }, [currentDate]);
   const [chartTimeRange, setChartTimeRange] = useState<'1' | '3' | '6' | '12'>('3');
   const [chartType, setChartType] = useState<'bar' | 'line'>('line');
   const [selectedTransaction, setSelectedTransaction] = useState<CashFlowEvent | null>(null);
@@ -439,7 +440,11 @@ export const CashFlowCalendar = ({
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentDate(prev => direction === 'prev' ? subMonths(prev, 1) : addMonths(prev, 1));
+    setCurrentDate(prev => {
+      const next = direction === 'prev' ? subMonths(prev, 1) : addMonths(prev, 1);
+      console.log('[Calendar] navigateMonth', direction, 'from', prev, 'to', next);
+      return next;
+    });
   };
 
   const handleDragStart = (e: React.DragEvent, transaction: CashFlowEvent) => {
