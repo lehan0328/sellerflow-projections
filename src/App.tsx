@@ -28,6 +28,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import { Auth } from "./pages/Auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { PlanProtectedRoute } from "./components/PlanProtectedRoute";
 import Admin from "./pages/Admin";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 import { PaymentAccessControl } from "./components/PaymentAccessControl";
@@ -156,7 +157,9 @@ const App = () => (
             } />
             <Route path="/scenario-planner" element={
               <ProtectedRoute>
-                <ScenarioPlanner />
+                <PlanProtectedRoute minimumPlan="professional">
+                  <ScenarioPlanner />
+                </PlanProtectedRoute>
               </ProtectedRoute>
             } />
             <Route path="/ai-forecast" element={
@@ -176,7 +179,9 @@ const App = () => (
             } />
             <Route path="/document-storage" element={
               <ProtectedRoute>
-                <DocumentStorage />
+                <PlanProtectedRoute minimumPlan="growing">
+                  <DocumentStorage />
+                </PlanProtectedRoute>
               </ProtectedRoute>
             } />
             <Route path="/flex-report" element={
