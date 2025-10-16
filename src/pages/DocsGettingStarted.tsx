@@ -348,8 +348,8 @@ const DocsGettingStarted = () => {
                 <Button className="bg-gradient-primary" onClick={() => navigate('/auth')}>
                   Start Setup Now
                 </Button>
-                <Button variant="outline" onClick={() => navigate('/demo')}>
-                  Try Demo First
+                <Button variant="outline" onClick={() => navigate('/schedule-demo')}>
+                  Schedule a Demo
                 </Button>
               </div>
             </CardContent>

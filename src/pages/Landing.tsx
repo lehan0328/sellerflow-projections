@@ -581,10 +581,6 @@ const Landing = () => {
                   <span>✓ No credit card required</span>
                   <span>✓ Cancel anytime</span>
                 </div>
-                <Button size="lg" variant="outline" className="text-base px-8 py-7 text-lg font-semibold border-2 hover-scale transition-all duration-300 hover:border-primary/50 hover:bg-primary/5" onClick={() => navigate('/demo')}>
-                  <ExternalLink className="mr-2 h-5 w-5" />
-                  Try Live Demo
-                </Button>
               </div>
               
               {/* Trust Indicators */}
@@ -1774,7 +1770,6 @@ const Landing = () => {
               <ul className="space-y-2 text-muted-foreground">
                 <li><Link to="/features" className="hover:text-foreground transition-colors">Features</Link></li>
                 <li><Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
-                <li><Link to="/demo" className="hover:text-foreground transition-colors">Live Demo</Link></li>
                 <li><Link to="/features" className="hover:text-foreground transition-colors">All Features</Link></li>
               </ul>
             </div>

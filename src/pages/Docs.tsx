@@ -376,8 +376,8 @@ const Docs = () => {
                     <HelpCircle className="mr-2 h-4 w-4" />
                     Get Support
                   </Button>
-                  <Button className="bg-gradient-primary" onClick={() => navigate('/demo')}>
-                    Try Demo
+                  <Button className="bg-gradient-primary" onClick={() => navigate('/auth')}>
+                    Get Started
                   </Button>
                 </div>
               </CardContent>

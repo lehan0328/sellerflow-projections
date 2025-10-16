@@ -53,7 +53,6 @@ import AffiliateDashboard from "./pages/AffiliateDashboard";
 import Pricing from "./pages/Pricing";
 import FlexReport from "./pages/FlexReport";
 import AmazonOAuthCallback from "./pages/AmazonOAuthCallback";
-import Demo from "./pages/Demo";
 import SampleDataGenerator from "./pages/SampleDataGenerator";
 import MatchTransactions from "./pages/MatchTransactions";
 import Notifications from "./pages/Notifications";
@@ -70,7 +69,6 @@ const App = () => (
           <PaymentAccessControl>
           <Routes>
             <Route path="/" element={<Landing />} />
-            <Route path="/demo" element={<Demo />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/features" element={<Features />} />
             <Route path="/features/:slug" element={<FeatureDetail />} />

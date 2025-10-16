@@ -646,8 +646,8 @@ const FeatureDetail = () => {
                 Start Free Trial
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate("/demo")}>
-                See Demo
+              <Button size="lg" variant="outline" onClick={() => navigate("/schedule-demo")}>
+                Schedule a Demo
               </Button>
             </div>
           </div>

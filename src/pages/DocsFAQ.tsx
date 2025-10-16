@@ -367,8 +367,8 @@ const DocsFAQ = () => {
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Get Support
                   </Button>
-                  <Button variant="outline" onClick={() => navigate('/demo')}>
-                    Try Demo
+                  <Button variant="outline" onClick={() => navigate('/auth')}>
+                    Get Started
                   </Button>
                 </div>
               </div>
@@ -394,10 +394,10 @@ const DocsFAQ = () => {
                     <div className="text-sm text-muted-foreground">Connect your seller account</div>
                   </div>
                 </Button>
-                <Button variant="outline" className="justify-start h-auto p-4" onClick={() => navigate('/demo')}>
+                <Button variant="outline" className="justify-start h-auto p-4" onClick={() => navigate('/schedule-demo')}>
                   <div className="text-left">
-                    <div className="font-medium">Live Demo</div>
-                    <div className="text-sm text-muted-foreground">See Auren in action</div>
+                    <div className="font-medium">Schedule a Demo</div>
+                    <div className="text-sm text-muted-foreground">Talk with our team</div>
                   </div>
                 </Button>
                 <Button variant="outline" className="justify-start h-auto p-4">

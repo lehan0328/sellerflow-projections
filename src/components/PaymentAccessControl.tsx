@@ -30,7 +30,6 @@ export const PaymentAccessControl = ({ children }: PaymentAccessControlProps) =>
       '/terms',
       '/blog',
       '/partners',
-      '/demo',
       '/oauth-redirect',
       '/amazon-oauth-callback'
     ];
