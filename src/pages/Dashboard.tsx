@@ -228,6 +228,7 @@ const Dashboard = () => {
         id: v.id, 
         name: v.name, 
         paymentType: v.paymentType || 'total',
+        paymentMethod: v.paymentMethod || 'bank-transfer',
         netTermsDays: (v.netTermsDays ?? '30') as any,
         category: v.category || "",
         source: v.source || 'management'

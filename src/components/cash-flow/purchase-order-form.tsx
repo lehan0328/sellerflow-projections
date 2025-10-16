@@ -152,14 +152,19 @@ export const PurchaseOrderForm = ({
     }
   }, [open]);
 
-  // Auto-update vendorId when a matching vendor is found (after adding new vendor)
+  // Auto-update vendorId and category when a matching vendor is found (after adding new vendor)
   useEffect(() => {
     if (formData.vendor && !formData.vendorId) {
       const matchingVendor = vendors.find(v => v.name === formData.vendor);
       if (matchingVendor) {
         setFormData(prev => ({
           ...prev,
-          vendorId: matchingVendor.id
+          vendorId: matchingVendor.id,
+          category: matchingVendor.category || "",
+          paymentType: mapVendorPaymentType(matchingVendor.paymentType),
+          paymentMethod: matchingVendor.paymentMethod === "credit-card" ? "credit-card" : "bank-transfer",
+          netTermsDays: mapNetTermsDays(matchingVendor.netTermsDays),
+          customDays: isCustomNetTerms(matchingVendor.netTermsDays) ? matchingVendor.netTermsDays?.toString() || "" : ""
         }));
       }
     }
