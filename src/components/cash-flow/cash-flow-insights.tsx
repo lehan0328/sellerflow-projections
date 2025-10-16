@@ -828,6 +828,82 @@ export const CashFlowInsights = ({
             Search by Amount or Date
           </Button>
           
+          {adjustedOpportunities.length !== allBuyingOpportunities.length && tempProjections.length > 0 && (
+            <div className="p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+              <p className="text-xs font-semibold text-orange-700 dark:text-orange-400 mb-2">
+                🔮 Projection Active - Showing adjusted opportunities
+              </p>
+              <div className="text-xs text-muted-foreground">
+                {tempProjections.map((proj, idx) => (
+                  <div key={idx} className="flex justify-between">
+                    <span>${proj.amount.toLocaleString()}</span>
+                    <span>{new Date(proj.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* PO Projections Section */}
+          <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <ShoppingCart className="h-4 w-4 text-orange-600" />
+                Project Purchase Orders
+              </h4>
+              {tempProjections.length > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleClearProjections}
+                  className="text-xs text-destructive hover:text-destructive"
+                >
+                  Clear All ({tempProjections.length})
+                </Button>
+              )}
+            </div>
+            
+            <p className="text-xs text-muted-foreground">
+              Simulate purchase orders to see how they affect opportunities above
+            </p>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="projection-amount" className="text-xs">Amount</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                  <Input
+                    id="projection-amount"
+                    type="number"
+                    placeholder="0.00"
+                    value={projectionAmount}
+                    onChange={(e) => setProjectionAmount(e.target.value)}
+                    className="pl-7"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="projection-date" className="text-xs">Date</Label>
+                <Input
+                  id="projection-date"
+                  type="date"
+                  value={projectionDate}
+                  onChange={(e) => setProjectionDate(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <Button 
+              onClick={handleAddProjection}
+              disabled={!projectionAmount || !projectionDate || parseFloat(projectionAmount) <= 0}
+              className="w-full"
+              variant="outline"
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Add Projection
+            </Button>
+          </div>
+          
           <ScrollArea className="max-h-[500px] pr-4">
             <div className="space-y-3">
               {adjustedOpportunities.map((opp, index) => {
@@ -1128,84 +1204,6 @@ export const CashFlowInsights = ({
               </ScrollArea>
             </TabsContent>
           </Tabs>
-          
-          {/* PO Projections Section */}
-          <Separator className="my-4" />
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-semibold flex items-center gap-2">
-                <ShoppingCart className="h-4 w-4 text-orange-600" />
-                Project Purchase Orders (Display Only)
-              </h4>
-              {tempProjections.length > 0 && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleClearProjections}
-                  className="text-xs text-destructive hover:text-destructive"
-                >
-                  Clear All ({tempProjections.length})
-                </Button>
-              )}
-            </div>
-            
-            <p className="text-xs text-muted-foreground">
-              Simulate purchase orders to see how they affect your buying opportunities. These projections are temporary and won't be saved.
-            </p>
-            
-            {tempProjections.length > 0 && (
-              <div className="space-y-2 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                <h5 className="text-xs font-semibold text-orange-700 dark:text-orange-400">Active Projections:</h5>
-                <div className="space-y-2">
-                  {tempProjections.map((proj, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-sm p-2 bg-white dark:bg-slate-900 rounded">
-                      <span className="font-medium">${proj.amount.toLocaleString()}</span>
-                      <span className="text-muted-foreground text-xs">
-                        {new Date(proj.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="projection-amount" className="text-xs">Amount</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
-                  <Input
-                    id="projection-amount"
-                    type="number"
-                    placeholder="0.00"
-                    value={projectionAmount}
-                    onChange={(e) => setProjectionAmount(e.target.value)}
-                    className="pl-7"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="projection-date" className="text-xs">Date</Label>
-                <Input
-                  id="projection-date"
-                  type="date"
-                  value={projectionDate}
-                  onChange={(e) => setProjectionDate(e.target.value)}
-                />
-              </div>
-            </div>
-            
-            <Button 
-              onClick={handleAddProjection}
-              disabled={!projectionAmount || !projectionDate || parseFloat(projectionAmount) <= 0}
-              className="w-full"
-              variant="outline"
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Add Projection
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
 
