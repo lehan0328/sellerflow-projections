@@ -457,16 +457,35 @@ const UpgradePlan = () => {
                         </div>
                       )}
                       
-                      {billing_interval !== 'year' && (
-                        <Button
-                          size="sm"
-                          variant="default"
-                          className="w-full bg-gradient-primary mt-2"
-                          onClick={() => openCustomerPortal()}
-                        >
-                          <TrendingUp className="h-4 w-4 mr-2" />
-                          Upgrade to Yearly (Save {plans.find(p => p.key === plan)?.savings})
-                        </Button>
+                      {billing_interval !== 'year' && subscription_end && current_period_start && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="w-full bg-gradient-primary mt-2"
+                            onClick={() => openCustomerPortal()}
+                          >
+                            <TrendingUp className="h-4 w-4 mr-2" />
+                            Upgrade to Yearly (Save {plans.find(p => p.key === plan)?.savings})
+                          </Button>
+                          
+                          {(() => {
+                            const now = new Date();
+                            const periodEnd = new Date(subscription_end);
+                            const periodStart = new Date(current_period_start);
+                            const daysInPeriod = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
+                            const daysRemaining = Math.max(0, Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+                            const creditAmount = price_amount ? ((daysRemaining / daysInPeriod) * (price_amount / 100)) : 0;
+                            
+                            return daysRemaining > 0 && creditAmount > 0 ? (
+                              <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+                                <p className="text-xs text-muted-foreground text-center">
+                                  <strong className="text-primary">${creditAmount.toFixed(2)} credit</strong> will be applied from your {daysRemaining} remaining day{daysRemaining !== 1 ? 's' : ''}
+                                </p>
+                              </div>
+                            ) : null;
+                          })()}
+                        </>
                       )}
                     </div>
                   )}
