@@ -48,7 +48,6 @@ export const PRICING_PLANS = {
       "❌ Additional users",
       "❌ AI insights",
       "❌ AI PDF extractor",
-      "❌ Automated notifications",
       "❌ Scenario planning"
     ]
   },
@@ -71,7 +70,6 @@ export const PRICING_PLANS = {
       "Bank transaction matching",
       "Basic analytics",
       "Priority support",
-      "❌ Automated notifications",
       "❌ Scenario planning"
     ]
   },
@@ -89,7 +87,6 @@ export const PRICING_PLANS = {
       "AI insights",
       "AI PDF extractor",
       "5 additional users",
-      "Automated notifications",
       "Advanced forecasting workflow",
       "365-day cashflow projection",
       "Bank transaction matching",
