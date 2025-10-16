@@ -32,11 +32,14 @@ export const LiveDashboardShowcase = () => {
         {/* Dashboard Preview */}
         <div className="relative p-4">
           <div className="aspect-video bg-background rounded-lg overflow-hidden border-2 border-primary/20">
-            <iframe 
-              src="/demo" 
-              className="w-full h-full"
-              title="Live Dashboard Demo"
-              sandbox="allow-same-origin allow-scripts"
+            <video 
+              src="/Budget_Planning_and_Spending_Projections.mp4" 
+              className="w-full h-full object-cover"
+              title="Dashboard Demo Video"
+              controls
+              autoPlay
+              muted
+              loop
             />
           </div>
         </div>
