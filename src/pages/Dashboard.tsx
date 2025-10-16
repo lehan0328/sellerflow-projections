@@ -1704,9 +1704,6 @@ const Dashboard = () => {
         />
         
         <div className="flex-1 overflow-y-auto relative">
-          {/* Subtle gradient orbs */}
-          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tl from-accent/5 to-transparent rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }} />
-          
           {/* Header with sidebar trigger */}
           <div className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
             <div className="flex items-center min-h-[120px] px-6">
@@ -1862,6 +1859,9 @@ const Dashboard = () => {
             }))}
             onMatch={handleManualMatchConfirm}
           />
+          
+          {/* Subtle gradient orbs */}
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-gradient-to-tl from-accent/5 to-transparent rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }} />
         </div>
       </div>
     </SidebarProvider>
