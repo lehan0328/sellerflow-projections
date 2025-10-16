@@ -871,63 +871,69 @@ export const CashFlowInsights = ({
               <ScrollArea className="h-[400px] pr-4">
                 {searchAmount && parseFloat(searchAmount) > 0 ? (
                   <div className="space-y-3">
-                    {allBuyingOpportunities
-                      .filter(opp => opp.balance >= parseFloat(searchAmount))
-                      .map((opp, index) => {
-                        const [year, month, day] = opp.date.split('-').map(Number);
-                        const date = new Date(year, month - 1, day);
-                        const formattedDate = date.toLocaleDateString('en-US', {
+                    {(() => {
+                      const amount = parseFloat(searchAmount);
+                      // Find the earliest opportunity where balance >= amount
+                      const matchingOpp = allBuyingOpportunities.find(opp => opp.balance >= amount);
+                      
+                      if (!matchingOpp) {
+                        return (
+                          <div className="text-center p-8 text-muted-foreground">
+                            <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                            <p className="font-medium">No opportunities found for ${searchAmount}</p>
+                            <p className="text-sm mt-2">Try a lower amount or check back later</p>
+                          </div>
+                        );
+                      }
+                      
+                      const [year, month, day] = matchingOpp.date.split('-').map(Number);
+                      const date = new Date(year, month - 1, day);
+                      const formattedDate = date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      });
+                      
+                      let availableDate = '';
+                      if (matchingOpp.available_date) {
+                        const [aYear, aMonth, aDay] = matchingOpp.available_date.split('-').map(Number);
+                        const aDate = new Date(aYear, aMonth - 1, aDay);
+                        availableDate = aDate.toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric'
                         });
-                        
-                        let availableDate = '';
-                        if (opp.available_date) {
-                          const [aYear, aMonth, aDay] = opp.available_date.split('-').map(Number);
-                          const aDate = new Date(aYear, aMonth - 1, aDay);
-                          availableDate = aDate.toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          });
-                        }
-                        
-                        return (
-                          <div key={index} className="p-4 rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-800">
-                            <div className="flex items-center justify-between mb-3">
-                              <div>
-                                <div className="text-2xl font-bold text-green-600">
-                                  ${opp.balance.toLocaleString()}
-                                </div>
-                                <div className="text-xs text-muted-foreground">Available</div>
+                      }
+                      
+                      return (
+                        <div className="p-4 rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-800">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <div className="text-2xl font-bold text-green-600">
+                                ${matchingOpp.balance.toLocaleString()}
                               </div>
-                              <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
-                                Can afford ${searchAmount}
-                              </Badge>
+                              <div className="text-xs text-muted-foreground">Available</div>
                             </div>
-                            <Separator className="my-2" />
-                            <div className="space-y-2 text-sm">
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Low Point Date:</span>
-                                <span className="font-medium">{formattedDate}</span>
-                              </div>
-                              {availableDate && (
-                                <div className="flex justify-between p-2 bg-green-100 dark:bg-green-900/30 rounded">
-                                  <span className="text-green-700 dark:text-green-400 font-medium">Earliest Purchase:</span>
-                                  <span className="font-bold text-green-600">{availableDate}</span>
-                                </div>
-                              )}
-                            </div>
+                            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
+                              Can afford ${searchAmount}
+                            </Badge>
                           </div>
-                        );
-                      }).length > 0 ? null : (
-                        <div className="text-center p-8 text-muted-foreground">
-                          <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                          <p className="font-medium">No opportunities found for ${searchAmount}</p>
-                          <p className="text-sm mt-2">Try a lower amount or check back later</p>
+                          <Separator className="my-2" />
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Low Point Date:</span>
+                              <span className="font-medium">{formattedDate}</span>
+                            </div>
+                            {availableDate && (
+                              <div className="flex justify-between p-2 bg-green-100 dark:bg-green-900/30 rounded">
+                                <span className="text-green-700 dark:text-green-400 font-medium">Earliest Purchase:</span>
+                                <span className="font-bold text-green-600">{availableDate}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
+                      );
+                    })()}
                   </div>
                 ) : (
                   <div className="text-center p-8 text-muted-foreground">
