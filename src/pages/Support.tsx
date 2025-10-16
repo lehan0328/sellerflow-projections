@@ -191,7 +191,7 @@ const Support = () => {
           message: formData.message,
           priority: formData.priority,
           category: formData.category || null,
-          status: 'open'
+          status: 'needs_response'
         });
       
       if (error) throw error;
