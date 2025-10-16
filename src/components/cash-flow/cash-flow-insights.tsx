@@ -955,17 +955,34 @@ export const CashFlowInsights = ({
                     {(() => {
                       const searchDateObj = new Date(searchDate + 'T00:00:00');
                       
-                      // Find the relevant opportunity for the selected date
-                      let relevantOpp = allBuyingOpportunities[0];
+                      // Find the opportunity where the selected date falls within the range [earliest_purchase_date, low_point_date]
+                      let relevantOpp = null;
                       for (const opp of allBuyingOpportunities) {
                         const [year, month, day] = opp.date.split('-').map(Number);
-                        const oppDate = new Date(year, month - 1, day);
+                        const lowPointDate = new Date(year, month - 1, day);
                         
-                        if (oppDate <= searchDateObj) {
+                        let earliestPurchaseDate = lowPointDate;
+                        if (opp.available_date) {
+                          const [aYear, aMonth, aDay] = opp.available_date.split('-').map(Number);
+                          earliestPurchaseDate = new Date(aYear, aMonth - 1, aDay);
+                        }
+                        
+                        // Check if selected date is within the opportunity range
+                        if (searchDateObj >= earliestPurchaseDate && searchDateObj <= lowPointDate) {
                           relevantOpp = opp;
-                        } else {
                           break;
                         }
+                      }
+                      
+                      // If no opportunity matches, show a message
+                      if (!relevantOpp) {
+                        return (
+                          <div className="text-center p-8 text-muted-foreground">
+                            <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                            <p className="font-medium">No buying opportunity available for this date</p>
+                            <p className="text-sm mt-2">The selected date doesn't fall within any opportunity range</p>
+                          </div>
+                        );
                       }
                       
                       const [year, month, day] = relevantOpp.date.split('-').map(Number);
@@ -977,17 +994,18 @@ export const CashFlowInsights = ({
                       });
                       
                       let availableDate = '';
+                      let earliestPurchaseDate = lowDate;
                       if (relevantOpp.available_date) {
                         const [aYear, aMonth, aDay] = relevantOpp.available_date.split('-').map(Number);
-                        const aDate = new Date(aYear, aMonth - 1, aDay);
-                        availableDate = aDate.toLocaleDateString('en-US', {
+                        earliestPurchaseDate = new Date(aYear, aMonth - 1, aDay);
+                        availableDate = earliestPurchaseDate.toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric'
                         });
                       }
                       
-                      const canPurchase = !availableDate || new Date(availableDate) <= searchDateObj;
+                      const canPurchase = searchDateObj >= earliestPurchaseDate;
                       
                       return (
                         <div className="p-6 rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
