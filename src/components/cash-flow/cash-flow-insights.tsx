@@ -907,7 +907,7 @@ export const CashFlowInsights = ({
                 Add Projection
               </Button>
               
-              {adjustedOpportunities.length !== allBuyingOpportunities.length && tempProjections.length > 0 && (
+              {tempProjections.length > 0 && (
                 <div className="p-2 bg-orange-50 dark:bg-orange-950/20 rounded border border-orange-200 dark:border-orange-800 mt-2">
                   <p className="text-xs font-semibold text-orange-700 dark:text-orange-400 mb-1.5">
                     🔮 Active Projections
