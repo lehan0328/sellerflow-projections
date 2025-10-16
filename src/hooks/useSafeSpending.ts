@@ -20,6 +20,7 @@ interface SafeSpendingData {
       balance: number;
       available_date?: string;
     }>;
+    daily_balances?: Array<{ date: string; balance: number }>;
   };
 }
 
@@ -674,7 +675,8 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           next_buying_opportunity_balance: nextBuyingOpportunity?.balance,
           next_buying_opportunity_date: nextBuyingOpportunity?.date,
           next_buying_opportunity_available_date: nextBuyingOpportunity?.available_date,
-          all_buying_opportunities: finalOpportunities
+          all_buying_opportunities: finalOpportunities,
+          daily_balances: dailyBalances
         }
       });
     } catch (err) {

@@ -575,33 +575,61 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
             <Calendar className="h-8 w-8 text-amber-500" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-4">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm text-slate-600">Amazon Revenue</p>
-                <Select value={amazonTimeRange} onValueChange={setAmazonTimeRange}>
-                  <SelectTrigger className="w-32 h-6 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {amazonTimeRangeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <p className="text-2xl font-bold text-orange-700">{formatCurrency(filteredAmazonRevenue)}</p>
-              <p className="text-sm text-slate-600">
-                Orders total
+              <p className="text-sm text-slate-600 mb-2">Weekly Cash Change</p>
+              <p className="text-2xl font-bold">
+                {(() => {
+                  // Calculate lowest balance for this week (days 0-7) vs next week (days 8-14)
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  const thisWeekEnd = new Date(today);
+                  thisWeekEnd.setDate(thisWeekEnd.getDate() + 7);
+                  const nextWeekEnd = new Date(today);
+                  nextWeekEnd.setDate(nextWeekEnd.getDate() + 14);
+                  
+                  // Get projected balances from safe spending calculation
+                  const dailyBalances = safeSpendingData?.calculation?.daily_balances || [];
+                  
+                  // Find lowest balance this week (next 7 days)
+                  const thisWeekBalances = dailyBalances.filter((day: any) => {
+                    const dayDate = new Date(day.date + 'T00:00:00');
+                    return dayDate >= today && dayDate < thisWeekEnd;
+                  });
+                  
+                  // Find lowest balance next week (days 8-14)
+                  const nextWeekBalances = dailyBalances.filter((day: any) => {
+                    const dayDate = new Date(day.date + 'T00:00:00');
+                    return dayDate >= thisWeekEnd && dayDate < nextWeekEnd;
+                  });
+                  
+                  const thisWeekLowest = thisWeekBalances.length > 0 
+                    ? Math.min(...thisWeekBalances.map((d: any) => d.balance))
+                    : bankAccountBalance;
+                    
+                  const nextWeekLowest = nextWeekBalances.length > 0
+                    ? Math.min(...nextWeekBalances.map((d: any) => d.balance))
+                    : thisWeekLowest;
+                  
+                  const weeklyChange = nextWeekLowest - thisWeekLowest;
+                  const isPositive = weeklyChange >= 0;
+                  
+                  return (
+                    <span className={isPositive ? "text-emerald-700" : "text-rose-700"}>
+                      {isPositive ? "+" : ""}{formatCurrency(weeklyChange)}
+                    </span>
+                  );
+                })()}
               </p>
-              <p className="text-xs text-orange-600">
-                {amazonTimeRangeOptions.find(opt => opt.value === amazonTimeRange)?.label}
+              <p className="text-sm text-slate-600">
+                Next week vs. this week
+              </p>
+              <p className="text-xs text-blue-600">
+                Projected change in lowest balance
               </p>
             </div>
-            <ShoppingCart className="h-8 w-8 text-orange-500" />
+            <TrendingUp className="h-8 w-8 text-blue-500" />
           </div>
         </div>
       </div>
