@@ -669,7 +669,7 @@ const Landing = () => {
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-info/10 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
                       <Calendar className="h-4 w-4 text-info" />
                     </div>
                     <div>
