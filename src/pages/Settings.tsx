@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Settings as SettingsIcon, 
   User, 
@@ -57,7 +58,7 @@ const Settings = () => {
   const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [activeSection, setActiveSection] = useState('profile');
-  const [clearDataConfirmation, setClearDataConfirmation] = useState('');
+  const [clearDataConfirmation, setClearDataConfirmation] = useState(false);
   const queryClient = useQueryClient();
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   const { resetAccount } = useUserSettings();
@@ -516,29 +517,30 @@ const Settings = () => {
                           </ul>
                           <p className="font-semibold">You will start from zero balance with no records.</p>
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="confirm-text" className="text-foreground">
-                            Type <span className="font-mono font-bold">CLEAR ALL DATA</span> to confirm:
-                          </Label>
-                          <Input
-                            id="confirm-text"
-                            value={clearDataConfirmation}
-                            onChange={(e) => setClearDataConfirmation(e.target.value)}
-                            placeholder="Type here to confirm"
-                            className="font-mono"
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="confirm-clear"
+                            checked={clearDataConfirmation}
+                            onCheckedChange={(checked) => setClearDataConfirmation(checked === true)}
                           />
+                          <Label
+                            htmlFor="confirm-clear"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                          >
+                            I understand this action cannot be undone and will delete all my data
+                          </Label>
                         </div>
                       </div>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setClearDataConfirmation('')}>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel onClick={() => setClearDataConfirmation(false)}>Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={() => {
                         handleClearAllData();
-                        setClearDataConfirmation('');
+                        setClearDataConfirmation(false);
                       }}
-                      disabled={clearDataConfirmation !== 'CLEAR ALL DATA'}
+                      disabled={!clearDataConfirmation}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Yes, Clear All Data
