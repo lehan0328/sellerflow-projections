@@ -272,6 +272,12 @@ const Landing = () => {
     professional: true,
     enterprise: true
   }, {
+    feature: "Document Storage",
+    starter: false,
+    growing: true,
+    professional: true,
+    enterprise: true
+  }, {
     feature: "Scenario Planning",
     starter: false,
     growing: false,
