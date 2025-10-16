@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +70,12 @@ const DocsAmazonIntegration = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Amazon Integration - Connect Your Seller Account | Auren</title>
+        <meta name="description" content="Connect your Amazon Seller Central account to Auren for automatic payout forecasting and marketplace cashflow management. Secure SP-API integration guide." />
+        <meta name="keywords" content="amazon seller integration, amazon sp-api connection, marketplace payout sync" />
+        <link rel="canonical" href="https://aurenapp.com/docs/amazon-integration" />
+      </Helmet>
       {/* Header */}
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">

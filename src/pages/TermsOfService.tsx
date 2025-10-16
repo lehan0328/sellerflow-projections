@@ -19,6 +19,7 @@ const TermsOfService = () => {
         <title>Terms of Service | Auren</title>
         <meta name="description" content="Terms of Service for Auren cash flow management platform for Amazon sellers." />
         <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://aurenapp.com/terms-of-service" />
       </Helmet>
 
       <div className="min-h-screen py-20 px-4">

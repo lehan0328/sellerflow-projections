@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -128,6 +129,14 @@ const BlogTag = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>{tagName} Articles - Amazon Cashflow Management | Auren Blog</title>
+        <meta name="description" content={`Explore ${tagName} articles on Auren's blog. Learn about amazon cashflow management, marketplace cash flow forecasting, and seller finance strategies.`} />
+        <link rel="canonical" href={`https://aurenapp.com/blog/tag/${tag}`} />
+        <meta property="og:title" content={`${tagName} Articles | Auren Blog`} />
+        <meta property="og:description" content={`All articles about ${tagName} from Auren's blog.`} />
+        <meta property="og:url" content={`https://aurenapp.com/blog/tag/${tag}`} />
+      </Helmet>
       {/* Schema.org Structured Data */}
       <script type="application/ld+json">{JSON.stringify(schema)}</script>
 

@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -144,6 +145,18 @@ export const BlogTemplate = ({
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>{title} | Auren Blog</title>
+        <meta name="description" content={description} />
+        <link rel="canonical" href={`https://aurenapp.com/blog/${slug}`} />
+        <meta property="og:title" content={`${title} | Auren Blog`} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={`https://aurenapp.com/blog/${slug}`} />
+        <meta property="og:type" content="article" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${title} | Auren Blog`} />
+        <meta name="twitter:description" content={description} />
+      </Helmet>
       {/* Schema.org Structured Data */}
       <script type="application/ld+json">{JSON.stringify(schema)}</script>
 

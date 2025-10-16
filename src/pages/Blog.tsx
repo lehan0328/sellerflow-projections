@@ -94,7 +94,7 @@ const Blog = () => {
       <Helmet>
         <title>Amazon Cashflow Management Tips | Auren Blog</title>
         <meta name="description" content="Expert tips for Amazon cash flow management and e-commerce cashflow forecasting. Learn strategies to optimize marketplace finances." />
-        <link rel="canonical" content="https://aurenapp.com/blog" />
+        <link rel="canonical" href="https://aurenapp.com/blog" />
       </Helmet>
 
       {/* Hero Section */}

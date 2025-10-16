@@ -1,9 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Lock, Database, Eye, UserCheck, Globe } from "lucide-react";
+import { Helmet } from "react-helmet";
 
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Privacy Policy | Auren</title>
+        <meta name="description" content="Privacy Policy for Auren cash flow management platform. Learn how we protect your financial data and Amazon seller information." />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://aurenapp.com/privacy-policy" />
+      </Helmet>
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-12">

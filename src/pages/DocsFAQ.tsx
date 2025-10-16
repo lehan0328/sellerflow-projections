@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -184,6 +185,12 @@ const DocsFAQ = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>FAQ - Amazon Cashflow Management Questions | Auren</title>
+        <meta name="description" content="Frequently asked questions about Auren's amazon cashflow management software. Get answers about marketplace cash flow forecasting, integrations, and billing." />
+        <meta name="keywords" content="amazon cashflow faq, marketplace cash flow questions, cashflow management help" />
+        <link rel="canonical" href="https://aurenapp.com/docs/faq" />
+      </Helmet>
       {/* Header */}
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
