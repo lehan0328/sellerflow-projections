@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
+import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -44,8 +45,6 @@ import {
 } from "recharts";
 import { useMemo, useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -125,6 +124,7 @@ export default function Analytics() {
   const { creditCards } = useCreditCards();
   const { amazonPayouts } = useAmazonPayouts();
   const { accounts } = useBankAccounts();
+  const { recurringExpenses } = useRecurringExpenses();
   const now = new Date();
   const defaultStartDate = new Date(now.getFullYear(), now.getMonth() - 9, 1);
   const defaultEndDate = new Date(now.getFullYear(), now.getMonth() + 3, 0);
@@ -748,7 +748,7 @@ export default function Analytics() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Pending Income</CardTitle>
-                <Calendar className="h-4 w-4 text-amber-600" />
+                <CalendarIcon className="h-4 w-4 text-amber-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">${metrics.pendingIncome.toLocaleString()}</div>
@@ -877,45 +877,70 @@ export default function Analytics() {
           <div className="grid gap-4 md:grid-cols-3 mb-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Next Payout Prediction</CardTitle>
-                <Calendar className="h-4 w-4 text-primary" />
+                <CardTitle className="text-sm font-medium">Monthly Amazon Projected Income</CardTitle>
+                <TrendingUp className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {amazonPayouts.length > 0 ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString() : 'N/A'}
+                <div className="text-2xl font-bold text-green-600">
+                  ${(() => {
+                    // Calculate average Amazon payout from recent payouts
+                    const recentPayouts = amazonPayouts.slice(0, 6); // Last 6 payouts
+                    const avgPayout = recentPayouts.length > 0 
+                      ? recentPayouts.reduce((sum, p) => sum + (p.total_amount || 0), 0) / recentPayouts.length 
+                      : 0;
+                    // Estimate monthly (assuming bi-weekly = 2 payouts per month)
+                    return (avgPayout * 2).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                  })()}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Estimated: ${(metrics.amazonRevenue / Math.max(amazonPayouts.length, 1)).toLocaleString()}
+                  Based on recent payouts
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Obligations</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <CardTitle className="text-sm font-medium">Total Recurring (Monthly)</CardTitle>
+                <Activity className="h-4 w-4 text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  ${metrics.totalExpenses.toLocaleString()}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Income:</span>
+                    <span className="text-sm font-semibold text-green-600">
+                      +${recurringExpenses
+                        .filter(r => r.type === 'income' && r.is_active && r.frequency === 'monthly')
+                        .reduce((sum, r) => sum + r.amount, 0)
+                        .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Expenses:</span>
+                    <span className="text-sm font-semibold text-red-600">
+                      -${recurringExpenses
+                        .filter(r => r.type === 'expense' && r.is_active && r.frequency === 'monthly')
+                        .reduce((sum, r) => sum + r.amount, 0)
+                        .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Owed to vendors
-                </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Available Credit</CardTitle>
-                <CreditCardIcon className="h-4 w-4 text-primary" />
+                <CardTitle className="text-sm font-medium">Total Purchase Orders</CardTitle>
+                <ShoppingCart className="h-4 w-4 text-amber-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  ${creditCards.reduce((sum, c) => sum + (c.available_credit || 0), 0).toLocaleString()}
+                <div className="text-2xl font-bold text-amber-600">
+                  ${dbTransactions
+                    .filter(tx => tx.type === 'purchase_order' && tx.status === 'pending')
+                    .reduce((sum, tx) => sum + tx.amount, 0)
+                    .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {metrics.creditUtilization.toFixed(1)}% utilized
+                  {dbTransactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending').length} pending orders
                 </p>
               </CardContent>
             </Card>
@@ -967,7 +992,7 @@ export default function Analytics() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Pending Income</CardTitle>
-                <Calendar className="h-4 w-4 text-amber-600" />
+                <CalendarIcon className="h-4 w-4 text-amber-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">${metrics.pendingIncome.toLocaleString()}</div>
