@@ -711,10 +711,13 @@ export const PurchaseOrderForm = ({
               {formData.paymentType !== "net-terms" && (() => {
               const calculatedDueDate = calculateDueDate();
               if (calculatedDueDate) {
-                return <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Payment Due Date:</span>
-                        <span className="text-sm font-semibold text-accent-foreground">
+                return <div className="p-4 bg-primary/10 border-2 border-primary/30 rounded-lg shadow-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <CalendarIcon className="h-5 w-5 text-primary" />
+                          <span className="text-base font-semibold text-foreground">Payment Due Date:</span>
+                        </div>
+                        <span className="text-lg font-bold text-primary">
                           {format(calculatedDueDate, "PPP")}
                         </span>
                       </div>
