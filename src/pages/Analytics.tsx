@@ -588,37 +588,6 @@ export default function Analytics() {
                 <div className="flex items-center justify-between gap-4 flex-wrap">
                   <CardTitle>Income Breakdown by Source</CardTitle>
                   <div className="flex gap-2 items-center">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-auto">
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {format(customStartDate, "MMM d, yyyy")} - {format(customEndDate, "MMM d, yyyy")}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-50 bg-background" align="start">
-                        <div className="p-4 space-y-4">
-                          <div>
-                            <label className="text-sm font-medium mb-2 block">Start Date</label>
-                            <Calendar
-                              mode="single"
-                              selected={customStartDate}
-                              onSelect={(date) => date && setCustomStartDate(date)}
-                              initialFocus
-                              className={cn("pointer-events-auto")}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium mb-2 block">End Date</label>
-                            <Calendar
-                              mode="single"
-                              selected={customEndDate}
-                              onSelect={(date) => date && setCustomEndDate(date)}
-                              className={cn("pointer-events-auto")}
-                            />
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
                     <Select value={incomeDateRange} onValueChange={setIncomeDateRange}>
                       <SelectTrigger className="w-40">
                         <SelectValue />
