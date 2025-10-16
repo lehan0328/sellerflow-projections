@@ -72,7 +72,7 @@ export const AdminFeatureRequests = () => {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority: string): "destructive" | "default" | "secondary" => {
     switch (priority) {
       case 'high': return 'destructive';
       case 'medium': return 'default';
