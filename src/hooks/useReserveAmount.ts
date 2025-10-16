@@ -121,7 +121,7 @@ export const useReserveAmount = () => {
           safe_spending_reserve: Number(newAmount),
           reserve_last_updated_at: new Date().toISOString(),
           // Preserve existing fields to avoid constraint violations
-          forecast_confidence_threshold: existingSettings?.forecast_confidence_threshold ?? 88,
+          forecast_confidence_threshold: existingSettings?.forecast_confidence_threshold ?? 5,
           forecasts_enabled: existingSettings?.forecasts_enabled ?? true,
           safe_spending_percentage: existingSettings?.safe_spending_percentage ?? 20,
           // Preserve chart settings
