@@ -11,7 +11,7 @@ import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
 import avatar4 from "@/assets/avatar-4.jpg";
 import { useNavigate, Link } from "react-router-dom";
-import { LiveDashboardShowcase } from "@/components/LiveDashboardShowcase";
+
 import { FloatingChatWidget } from "@/components/floating-chat-widget";
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { useAuth } from "@/hooks/useAuth";
@@ -528,9 +528,9 @@ const Landing = () => {
         <div className="absolute inset-0 backdrop-blur-[1px]" />
         
         <div className="container relative mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            {/* Left Content */}
-            <div className="space-y-8 z-10">
+          <div className="max-w-4xl mx-auto">
+            {/* Content */}
+            <div className="space-y-8 z-10 text-center">
               {/* Floating Badge */}
               <div className="animate-fade-in">
                 <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm hover-scale">
@@ -625,144 +625,6 @@ const Landing = () => {
                   <span>Read-only access</span>
                   <span className="text-border">•</span>
                   <span>SOC 2 compliant</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Dashboard Preview */}
-            <div className="relative animate-fade-in space-y-6" style={{
-            animationDelay: '400ms'
-          }}>
-              {/* Signature Features Highlights */}
-              <div className="bg-card/50 backdrop-blur-sm border border-primary/10 rounded-2xl p-6 mb-6">
-                <div className="text-center mb-4">
-                  <span className="text-sm font-semibold text-primary">✨ Signature Features</span>
-                </div>
-                <div className="grid grid-cols-1 gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Lightbulb className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-sm">Smart Purchase Planning</div>
-                      <div className="text-xs text-muted-foreground">Intelligent recommendations for optimal inventory purchases</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
-                      <Shield className="h-4 w-4 text-accent" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-sm">Safe Spending Power</div>
-                      <div className="text-xs text-muted-foreground">Know exactly how much you can safely spend</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center flex-shrink-0">
-                      <TrendingUp className="h-4 w-4 text-success" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-sm">Buying Opportunity Projection</div>
-                      <div className="text-xs text-muted-foreground">Forecast future purchasing windows and opportunities</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-info/10 flex items-center justify-center flex-shrink-0">
-                      <Wallet className="h-4 w-4 text-info" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-sm">Payout Forecasting</div>
-                      <div className="text-xs text-muted-foreground">Predict Amazon payouts with accuracy</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Try Interactive Demo Button - Above Dashboard */}
-              <div className="flex justify-center">
-                <Button size="default" onClick={() => navigate('/demo')} className="bg-gradient-primary px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 relative overflow-hidden group">
-                  <span className="relative z-10 flex items-center gap-2">
-                    <ExternalLink className="h-4 w-4" />
-                    Try Interactive Demo
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                </Button>
-              </div>
-
-              {/* Floating Card Effect */}
-              <div className="relative animate-float">
-                {/* Glow effect */}
-                <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-3xl blur-3xl animate-glow-pulse" />
-                
-                {/* Dashboard preview card */}
-                <div className="relative rounded-3xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden group hover:border-primary/40 transition-all duration-500">
-                  {/* Browser chrome */}
-                  <div className="p-3 border-b border-border/50 bg-muted/30 flex items-center justify-between">
-                    <div className="flex gap-2">
-                      <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                      <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                      <div className="w-3 h-3 rounded-full bg-green-500/80" />
-                    </div>
-                    <div className="flex-1 mx-4 px-4 py-1 bg-background/50 rounded-lg">
-                      <div className="text-xs text-muted-foreground font-mono">aurenapp.com/dashboard</div>
-                    </div>
-                    <div className="flex gap-2">
-                      <div className="w-6 h-6 rounded bg-muted/50" />
-                      <div className="w-6 h-6 rounded bg-muted/50" />
-                    </div>
-                  </div>
-                  
-                  {/* Dashboard screenshot/iframe */}
-                  <div className="relative overflow-hidden flex items-center justify-center bg-background/50" style={{
-                  aspectRatio: '16/10'
-                }}>
-                    <div className="w-full h-full flex items-center justify-center">
-                      <iframe src="/demo" className="w-full h-full border-0 cursor-pointer" style={{
-                      transform: 'scale(0.35)',
-                      transformOrigin: 'center center',
-                      width: '285.71%',
-                      height: '285.71%',
-                      minWidth: '1920px'
-                    }} title="Demo Dashboard Preview" onClick={() => navigate('/demo')} />
-                    </div>
-                    
-                    {/* Fade gradient */}
-                    <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-card/80 via-card/40 to-transparent pointer-events-none" />
-                  </div>
-                </div>
-
-                {/* Floating stats */}
-                <div className="absolute -bottom-6 -right-6 p-4 rounded-2xl bg-card/80 backdrop-blur-xl border border-primary/20 shadow-lg animate-float" style={{
-                animationDelay: '1s'
-              }}>
-                  <div className="text-sm text-muted-foreground">Next Payout</div>
-                  <div className="text-2xl font-bold text-success">$12,847</div>
-                  <div className="text-xs text-muted-foreground">in 3 days</div>
-                </div>
-
-                <div className="absolute -top-6 -right-6 p-4 rounded-2xl bg-card/80 backdrop-blur-xl border border-accent/20 shadow-lg animate-float" style={{
-                animationDelay: '2s',
-                animationDuration: '7s'
-              }}>
-                  <div className="text-xs text-success font-medium mb-1">🟢 Live Sync</div>
-                  <div className="text-lg font-bold text-foreground mb-1">Real-Time Updates</div>
-                  <div className="text-xs text-muted-foreground">Connected to 3 accounts</div>
-                </div>
-              </div>
-              
-              {/* Dashboard Stats - Outside the card */}
-              <div className="grid grid-cols-3 gap-4 mt-6">
-                <div className="text-center">
-                  <div className="text-lg font-bold text-primary">Real-time</div>
-                  <div className="text-xs text-muted-foreground">Data Updates</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-primary">Interactive</div>
-                  <div className="text-xs text-muted-foreground">Interface</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold text-primary">Responsive</div>
-                  <div className="text-xs text-muted-foreground">Design</div>
                 </div>
               </div>
             </div>
