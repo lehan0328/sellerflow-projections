@@ -784,22 +784,34 @@ const UpgradePlan = () => {
                           
                           return (
                             <>
-                              {!isYearly && subscribed && (
-                                <div className="p-3 bg-primary/5 rounded-lg text-sm space-y-1 mb-3">
-                                  <div className="flex justify-between">
-                                    <span className="text-muted-foreground">New Plan Price:</span>
-                                    <span className="font-semibold">${newPlanPrice}/month</span>
+                              {!isYearly && subscribed && subscription_end && current_period_start && (() => {
+                                const now = new Date();
+                                const periodEnd = new Date(subscription_end);
+                                const periodStart = new Date(current_period_start);
+                                const daysInPeriod = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
+                                const daysRemaining = Math.max(0, Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+                                const creditAmount = price_amount ? ((daysRemaining / daysInPeriod) * (price_amount / 100)) : 0;
+                                
+                                return (
+                                  <div className="p-3 bg-primary/5 rounded-lg text-sm space-y-1 mb-3">
+                                    <div className="flex justify-between">
+                                      <span className="text-muted-foreground">New Plan Price:</span>
+                                      <span className="font-semibold">${newPlanPrice}/month</span>
+                                    </div>
+                                    <div className="flex justify-between text-green-600">
+                                      <span>Credit Applied:</span>
+                                      <span>-${creditAmount.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between font-bold pt-1 border-t">
+                                      <span>Amount Due Now:</span>
+                                      <span>${(newPlanPrice - creditAmount).toFixed(2)}</span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground pt-1">
+                                      Credit from {daysRemaining} remaining day{daysRemaining !== 1 ? 's' : ''}
+                                    </div>
                                   </div>
-                                  <div className="flex justify-between text-green-600">
-                                    <span>Credit Applied:</span>
-                                    <span>-${currentMonthlyPaid}</span>
-                                  </div>
-                                  <div className="flex justify-between font-bold pt-1 border-t">
-                                    <span>Amount Due Now:</span>
-                                    <span>${proratedAmount}</span>
-                                  </div>
-                                </div>
-                              )}
+                                );
+                              })()}
                               {subscribed && !is_trialing && !isYearly && (
                                 <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800 mb-3">
                                   <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
@@ -875,22 +887,34 @@ const UpgradePlan = () => {
                           
                           return (
                             <>
-                              {!isYearly && subscribed && (
-                                <div className="p-3 bg-primary/5 rounded-lg text-sm space-y-1 mb-3">
-                                  <div className="flex justify-between">
-                                    <span className="text-muted-foreground">New Plan Price:</span>
-                                    <span className="font-semibold">${newPlanPrice}/month</span>
+                              {!isYearly && subscribed && subscription_end && current_period_start && (() => {
+                                const now = new Date();
+                                const periodEnd = new Date(subscription_end);
+                                const periodStart = new Date(current_period_start);
+                                const daysInPeriod = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
+                                const daysRemaining = Math.max(0, Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+                                const creditAmount = price_amount ? ((daysRemaining / daysInPeriod) * (price_amount / 100)) : 0;
+                                
+                                return (
+                                  <div className="p-3 bg-primary/5 rounded-lg text-sm space-y-1 mb-3">
+                                    <div className="flex justify-between">
+                                      <span className="text-muted-foreground">New Plan Price:</span>
+                                      <span className="font-semibold">${newPlanPrice}/month</span>
+                                    </div>
+                                    <div className="flex justify-between text-green-600">
+                                      <span>Credit Applied:</span>
+                                      <span>-${creditAmount.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between font-bold pt-1 border-t">
+                                      <span>Amount Due Now:</span>
+                                      <span>${(newPlanPrice - creditAmount).toFixed(2)}</span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground pt-1">
+                                      Credit from {daysRemaining} remaining day{daysRemaining !== 1 ? 's' : ''}
+                                    </div>
                                   </div>
-                                  <div className="flex justify-between text-green-600">
-                                    <span>Credit Applied:</span>
-                                    <span>-${currentMonthlyPaid}</span>
-                                  </div>
-                                  <div className="flex justify-between font-bold pt-1 border-t">
-                                    <span>Amount Due Now:</span>
-                                    <span>${proratedAmount}</span>
-                                  </div>
-                                </div>
-                              )}
+                                );
+                              })()}
                               {subscribed && !is_trialing && !isYearly && (
                                 <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800 mb-3">
                                   <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
