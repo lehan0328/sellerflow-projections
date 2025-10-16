@@ -34,11 +34,6 @@ const overviewSections = [{
   id: "scenario-planning",
   title: "Scenario Planning",
   icon: Calculator
-}, {
-  id: "notifications",
-  title: "Automated Notifications",
-  icon: Clock,
-  showBadge: true
 }];
 const transactionSections = [{
   id: "transactions",
@@ -107,8 +102,8 @@ export function AppSidebar({
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleSectionClick = (sectionId: string) => {
-    // Scenario Planning & Notifications: Professional + Trial only
-    if ((sectionId === 'scenario-planning' || sectionId === 'notifications') && 
+    // Scenario Planning: Professional + Trial only
+    if (sectionId === 'scenario-planning' && 
         !hasPlanAccess(subscription.plan, 'professional') && !subscription.is_trialing) {
       setShowUpgradeModal(true);
       return;
@@ -147,8 +142,7 @@ export function AppSidebar({
               const isActive = activeSection === section.id;
               
               // Check locks based on plan requirements
-              const isScenarioOrNotifications = section.id === 'scenario-planning' || section.id === 'notifications';
-              const showProfessionalLock = isScenarioOrNotifications && 
+              const showProfessionalLock = section.id === 'scenario-planning' && 
                 !hasPlanAccess(subscription.plan, 'professional') && !subscription.is_trialing;
               
               return <SidebarMenuItem key={section.id}>
