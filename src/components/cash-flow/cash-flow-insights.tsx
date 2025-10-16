@@ -448,9 +448,13 @@ export const CashFlowInsights = ({
     setProjectionAmount('');
     setProjectionDate('');
     
+    // Parse date locally to avoid timezone shift
+    const [year, month, day] = projectionDate.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day);
+    
     toast({
       title: "Projection Added",
-      description: `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on ${new Date(projectionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+      description: `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on ${localDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
     });
   };
 
