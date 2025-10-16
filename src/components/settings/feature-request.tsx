@@ -113,17 +113,26 @@ export const FeatureRequest = () => {
     setIsSubmitting(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('send-feature-request', {
-        body: formData
-      });
+      const { error } = await supabase
+        .from('feature_requests')
+        .insert({
+          user_id: user?.id,
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+          priority: formData.priority,
+          category: formData.category,
+          status: 'open'
+        });
 
       if (error) {
-        console.error("Error sending feature request:", error);
-        toast.error("Failed to send feature request. Please try again.");
+        console.error("Error submitting feature request:", error);
+        toast.error("Failed to submit feature request. Please try again.");
         return;
       }
 
-      toast.success("Feature request sent successfully! We'll review it and get back to you.");
+      toast.success("Feature request submitted successfully! Check the admin dashboard to review.");
       
       // Reset form (keep name and email)
       setFormData(prev => ({
@@ -136,7 +145,7 @@ export const FeatureRequest = () => {
       
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Failed to send feature request. Please try again.");
+      toast.error("Failed to submit feature request. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
