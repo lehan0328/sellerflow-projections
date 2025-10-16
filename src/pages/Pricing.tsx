@@ -166,6 +166,7 @@ export default function Pricing() {
     { feature: "Bank Transaction Matching", starter: true, growing: true, professional: true, enterprise: true },
     { feature: "Ai Insights", signature: true, starter: false, growing: true, professional: true, enterprise: true },
     { feature: "Ai PDF Extractor", signature: true, starter: false, growing: true, professional: true, enterprise: true },
+    { feature: "Document Storage", starter: false, growing: true, professional: true, enterprise: true },
     { feature: "Scenario Planning", starter: false, growing: false, professional: true, enterprise: true },
     { feature: "Analytics", starter: false, growing: "Basic", professional: "Advanced", enterprise: "Custom" },
     { feature: "1:1 Hands-on Setup", starter: false, growing: false, professional: false, enterprise: true },
