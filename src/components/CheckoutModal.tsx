@@ -1,5 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmbeddedCheckout } from "./EmbeddedCheckout";
+import { useNavigate } from "react-router-dom";
 
 interface CheckoutModalProps {
   open: boolean;
@@ -8,8 +9,10 @@ interface CheckoutModalProps {
 }
 
 export function CheckoutModal({ open, onOpenChange, priceId }: CheckoutModalProps) {
+  const navigate = useNavigate();
+  
   const handleSuccess = () => {
-    window.location.href = "/dashboard?payment=success";
+    navigate("/dashboard?payment=success");
   };
 
   const handleCancel = () => {

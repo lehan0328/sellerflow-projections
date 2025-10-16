@@ -477,7 +477,7 @@ const Settings = () => {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => window.location.href = '/sample-data'}
+                onClick={() => navigate('/sample-data')}
                 className="border-blue-300 dark:border-blue-700"
               >
                 <ShoppingCart className="mr-2 h-4 w-4" />

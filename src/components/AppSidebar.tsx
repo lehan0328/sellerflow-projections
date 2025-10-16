@@ -244,7 +244,7 @@ export function AppSidebar({
                   if (isFlexReport && onFlexReportClick) {
                     onFlexReportClick();
                   } else if (isRoute && 'url' in section) {
-                    window.location.href = section.url;
+                    navigate(section.url);
                   } else if (isExternal && 'url' in section) {
                     window.open(section.url, '_blank', 'noopener,noreferrer');
                   } else {

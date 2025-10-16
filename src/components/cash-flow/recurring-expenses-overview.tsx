@@ -14,8 +14,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, addMonths } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 export const RecurringExpensesOverview = () => {
+  const navigate = useNavigate();
   const { recurringExpenses, isLoading, updateRecurringExpense, deleteRecurringExpense } = useRecurringExpenses();
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [showInactive, setShowInactive] = useState(false);
@@ -182,7 +184,7 @@ export const RecurringExpensesOverview = () => {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => window.location.href = '/settings?section=recurring-expenses'}
+                onClick={() => navigate('/settings?section=recurring-expenses')}
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Add New

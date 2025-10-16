@@ -23,6 +23,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { AddCategoryDialog } from "./add-category-dialog";
 import { hasPlanAccess } from "@/lib/planUtils";
 import { UpgradeModal } from "@/components/upgrade-modal";
+import { useNavigate } from "react-router-dom";
 interface Vendor {
   id: string;
   name: string;
@@ -53,6 +54,7 @@ export const PurchaseOrderForm = ({
   onDeleteAllVendors,
   onAddVendor
 }: PurchaseOrderFormProps) => {
+  const navigate = useNavigate();
   const { categories, addCategory, refetch: refetchCategories } = useCategories('expense');
   const {
     creditCards
@@ -408,7 +410,7 @@ export const PurchaseOrderForm = ({
   const handleGoToVendorManagement = () => {
     onOpenChange(false);
     // Navigate to Settings page where vendor management is located
-    window.location.href = '/settings';
+    navigate('/settings');
   };
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

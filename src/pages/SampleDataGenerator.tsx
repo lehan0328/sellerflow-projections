@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Loader2, Database } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function SampleDataGenerator() {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
   const generateSampleData = async () => {
@@ -20,7 +22,7 @@ export default function SampleDataGenerator() {
         
         // Redirect to dashboard after 2 seconds
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          navigate('/dashboard');
         }, 2000);
       } else {
         throw new Error(data?.error || "Failed to create sample data");

@@ -66,7 +66,7 @@ export function CreditCards() {
 
   const handleAddCard = async () => {
     // Redirect to manage credit cards page for Plaid integration
-    window.location.href = '/manage-credit-cards';
+    navigate('/manage-credit-cards');
   };
 
   const handleEditCard = (card: any) => {

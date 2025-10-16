@@ -9,7 +9,9 @@ import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 export function AmazonPayouts() {
+  const navigate = useNavigate();
   const {
     amazonPayouts,
     isLoading,
@@ -122,7 +124,7 @@ export function AmazonPayouts() {
               <Sparkles className={`h-4 w-4 mr-2 ${isGeneratingForecasts ? 'animate-spin' : ''}`} />
               {isGeneratingForecasts ? 'Generating...' : 'Generate Forecasts'}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => window.location.href = '/settings'}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/settings')}>
               <Settings className="h-4 w-4 mr-2" />
               Manage
             </Button>
@@ -157,7 +159,7 @@ export function AmazonPayouts() {
             <p className="text-muted-foreground mb-4">
               {amazonAccounts.length === 0 ? "Connect your Amazon seller account to see payouts" : "Sync your Amazon accounts to load payout data"}
             </p>
-            <Button onClick={() => window.location.href = '/settings'}>
+            <Button onClick={() => navigate('/settings')}>
               <Settings className="h-4 w-4 mr-2" />
               {amazonAccounts.length === 0 ? "Connect Amazon Account" : "Manage Amazon Settings"}
             </Button>
@@ -241,7 +243,7 @@ export function AmazonPayouts() {
           });
         })()}
         {amazonPayouts.length > 0 && <div className="pt-2">
-            <Button variant="outline" className="w-full" onClick={() => window.location.href = '/settings'}>
+            <Button variant="outline" className="w-full" onClick={() => navigate('/settings')}>
               View Amazon Settings & Full Schedule
             </Button>
           </div>}
