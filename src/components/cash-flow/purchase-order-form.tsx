@@ -53,7 +53,7 @@ export const PurchaseOrderForm = ({
   onDeleteAllVendors,
   onAddVendor
 }: PurchaseOrderFormProps) => {
-  const { categories, addCategory } = useCategories('expense');
+  const { categories, addCategory, refetch: refetchCategories } = useCategories('expense');
   const {
     creditCards
   } = useCreditCards();
@@ -1075,6 +1075,7 @@ export const PurchaseOrderForm = ({
               onOpenChange={setShowAddCategory}
               onAddCategory={async (name) => {
                 await addCategory(name);
+                await refetchCategories();
                 setFormData(prev => ({
                   ...prev,
                   category: name
