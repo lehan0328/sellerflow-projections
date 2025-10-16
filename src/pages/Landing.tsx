@@ -636,7 +636,7 @@ const Landing = () => {
               {/* Signature Features Highlights */}
               <div className="bg-card/50 backdrop-blur-sm border border-primary/10 rounded-2xl p-6 mb-6">
                 <div className="text-center mb-4">
-                  <span className="text-sm font-semibold text-primary">✨ Signature Features</span>
+                  <span className="text-sm font-semibold text-primary">✨ See Signature Features in Video Below</span>
                 </div>
                 <div className="grid grid-cols-1 gap-3">
                   <div className="flex items-start gap-3">
