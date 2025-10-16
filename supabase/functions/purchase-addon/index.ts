@@ -38,7 +38,7 @@ serve(async (req) => {
     console.log("[PURCHASE-ADDON] User authenticated", { userId: user.id, email: user.email });
 
     // Get request body
-    const { addon_type, quantity } = await req.json();
+    const { addon_type, quantity, return_url } = await req.json();
     
     if (!addon_type || !quantity) {
       throw new Error("Missing addon_type or quantity");
@@ -102,8 +102,12 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/settings?addon_success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/settings?addon_canceled=true`,
+      success_url: return_url 
+        ? `${req.headers.get("origin")}${return_url}?addon_success=true&session_id={CHECKOUT_SESSION_ID}`
+        : `${req.headers.get("origin")}/settings?addon_success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: return_url
+        ? `${req.headers.get("origin")}${return_url}?addon_canceled=true`
+        : `${req.headers.get("origin")}/settings?addon_canceled=true`,
       metadata: {
         user_id: user.id,
         addon_type: addon_type,

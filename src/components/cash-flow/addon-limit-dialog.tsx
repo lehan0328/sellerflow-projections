@@ -66,14 +66,18 @@ export function AddonLimitDialog({
     setIsProcessing(true);
     try {
       const { data, error } = await supabase.functions.invoke('purchase-addon', {
-        body: { addon_type: addonType, quantity },
+        body: { 
+          addon_type: addonType, 
+          quantity,
+          return_url: window.location.pathname // Pass current page for return
+        },
       });
 
       if (error) throw error;
 
       if (data?.url) {
-        // Open Stripe checkout in a new tab
-        window.open(data.url, '_blank');
+        // Open Stripe checkout in same tab so we can handle the return
+        window.location.href = data.url;
         toast.success('Redirecting to checkout...');
         onOpenChange(false);
       }

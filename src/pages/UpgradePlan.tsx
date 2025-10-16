@@ -33,10 +33,12 @@ import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { TrialAddonNotice } from "@/components/TrialAddonNotice";
 import { CancellationFlow } from "@/components/subscription/CancellationFlow";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { UpgradeConfirmDialog } from "@/components/UpgradeConfirmDialog";
+import { toast } from "sonner";
+import { useLocation } from "react-router-dom";
 
 interface CartItem {
   priceId: string;
@@ -54,6 +56,8 @@ interface PendingUpgrade {
 
 const UpgradePlan = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, paymentMethod, isLoading, payment_failed, upgradeToAnnual, ...subscriptionData } = useSubscription();
   const { calculatePostTrialCost } = useTrialAddonUsage();
@@ -72,6 +76,42 @@ const UpgradePlan = () => {
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [upgradeDeclined, setUpgradeDeclined] = useState(false);
   const [upgradeDeclineMessage, setUpgradeDeclineMessage] = useState('');
+
+  // Handle addon purchase success
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const addonSuccess = params.get('addon_success');
+    const sessionId = params.get('session_id');
+    
+    if (addonSuccess === 'true' && sessionId) {
+      // Record the addon purchase
+      const recordPurchase = async () => {
+        try {
+          const { error } = await supabase.functions.invoke('record-addon-purchase', {
+            body: { session_id: sessionId }
+          });
+          
+          if (error) throw error;
+          
+          toast.success('Add-on purchased successfully! Your limits have been increased.');
+          
+          // Refresh addons and plan limits
+          queryClient.invalidateQueries({ queryKey: ['purchased-addons'] });
+          queryClient.invalidateQueries({ queryKey: ['plan-limits'] });
+          checkSubscription(); // Refresh subscription data
+          
+          // Clean up URL
+          const cleanUrl = window.location.pathname;
+          window.history.replaceState({}, '', cleanUrl);
+        } catch (error) {
+          console.error('Error recording addon purchase:', error);
+          toast.error('Failed to record purchase. Please contact support.');
+        }
+      };
+      
+      recordPurchase();
+    }
+  }, [location.search, queryClient, checkSubscription]);
 
   // Show payment/trial expired dialog when access should be blocked
   useEffect(() => {
