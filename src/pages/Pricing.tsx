@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, ArrowLeft, Moon, Sun, Lock, Shield } from "lucide-react";
+import { Check, X, ArrowLeft, Moon, Sun, Lock, Shield, Star } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -154,18 +154,18 @@ export default function Pricing() {
   ];
 
   const featureComparison = [
-    { feature: "✨ Smart Purchase Planning", starter: true, growing: true, professional: true, enterprise: true },
-    { feature: "✨ Safe Spending Power", starter: true, growing: true, professional: true, enterprise: true },
-    { feature: "✨ Buying Opportunity Projection", starter: true, growing: true, professional: true, enterprise: true },
-    { feature: "✨ Payout Forecasting", starter: true, growing: true, professional: true, enterprise: true },
+    { feature: "Smart Purchase Planning", signature: true, starter: true, growing: true, professional: true, enterprise: true },
+    { feature: "Safe Spending Power", signature: true, starter: true, growing: true, professional: true, enterprise: true },
+    { feature: "Buying Opportunity Projection", signature: true, starter: true, growing: true, professional: true, enterprise: true },
+    { feature: "Payout Forecasting", signature: true, starter: true, growing: true, professional: true, enterprise: true },
     { feature: "Bank/Credit Card Connections", starter: "2", growing: "3", professional: "4", enterprise: "5 + add-ons" },
     { feature: "Amazon Connections", starter: "1", growing: "1", professional: "1", enterprise: "2 + add-ons" },
     { feature: "Additional Users", starter: false, growing: "2", professional: "5", enterprise: "7 + add-ons" },
     { feature: "Advanced Forecasting Workflow", starter: true, growing: true, professional: true, enterprise: true },
     { feature: "365-Day Cash Flow Projection", starter: true, growing: true, professional: true, enterprise: true },
     { feature: "Bank Transaction Matching", starter: true, growing: true, professional: true, enterprise: true },
-    { feature: "✨ Ai Insights", starter: false, growing: true, professional: true, enterprise: true },
-    { feature: "✨ Ai PDF Extractor", starter: false, growing: true, professional: true, enterprise: true },
+    { feature: "Ai Insights", signature: true, starter: false, growing: true, professional: true, enterprise: true },
+    { feature: "Ai PDF Extractor", signature: true, starter: false, growing: true, professional: true, enterprise: true },
     { feature: "Scenario Planning", starter: false, growing: false, professional: true, enterprise: true },
     { feature: "Analytics", starter: false, growing: "Basic", professional: "Advanced", enterprise: "Custom" },
     { feature: "1:1 Hands-on Setup", starter: false, growing: false, professional: false, enterprise: true },
@@ -342,7 +342,10 @@ export default function Pricing() {
                 <div className="divide-y">
                   {featureComparison.map((row, index) => (
                     <div key={index} className="grid grid-cols-5 gap-0 hover:bg-muted/30 transition-colors">
-                      <div className="p-3 font-medium text-sm bg-muted/30 flex items-center">{row.feature}</div>
+                      <div className="p-3 font-medium text-sm bg-muted/30 flex items-center gap-2">
+                        {row.signature && <Star className="h-4 w-4 fill-primary text-primary" />}
+                        {row.feature}
+                      </div>
                       <div className={`p-3 border-l flex items-center justify-center ${pricingPlans[0].popular ? 'bg-primary/5' : ''}`}>
                         {row.starter === true ? (
                           <Check className="h-4 w-4 text-success" />
