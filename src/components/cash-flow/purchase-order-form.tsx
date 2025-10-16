@@ -566,13 +566,7 @@ export const PurchaseOrderForm = ({
               </div>
               
               <div className="space-y-2">
-                <div className="flex items-center justify-between mb-2">
-                  <Label htmlFor="vendor">Vendor *</Label>
-                  {vendors.length > 0 && <Button type="button" variant="destructive" size="sm" onClick={() => setShowDeleteAllDialog(true)} className="text-xs px-2 py-1 h-auto">
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      Delete All
-                    </Button>}
-                </div>
+                <Label htmlFor="vendor">Vendor *</Label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <div className="relative">
