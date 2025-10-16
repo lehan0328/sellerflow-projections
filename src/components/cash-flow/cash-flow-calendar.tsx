@@ -1360,14 +1360,14 @@ export const CashFlowCalendar = ({
                           dot={(props: any) => {
                             const { cx, cy, payload } = props;
                             
-                            // Only show dot if there are transactions on this date
+                            // Always render an invisible dot to enable hovering on all dates
                             if (!payload.transactions || payload.transactions.length === 0) {
-                              return null;
+                              return <circle cx={cx} cy={cy} r={4} fill="transparent" cursor="pointer" />;
                             }
                             
                             // Don't show dots for forecasted Amazon payouts
                             if (payload.hasAmazonForecast) {
-                              return null;
+                              return <circle cx={cx} cy={cy} r={4} fill="transparent" cursor="pointer" />;
                             }
                             
                             if (payload.hasAmazonPayout) {
