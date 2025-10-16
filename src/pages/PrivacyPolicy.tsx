@@ -9,7 +9,7 @@ export default function PrivacyPolicy() {
         <title>Privacy Policy | Auren</title>
         <meta name="description" content="Privacy Policy for Auren cash flow management platform. Learn how we protect your financial data and Amazon seller information." />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://aurenapp.com/privacy-policy" />
+        <link rel="canonical" href="https://aurenapp.com/privacy" />
       </Helmet>
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Header */}
