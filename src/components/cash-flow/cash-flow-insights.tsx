@@ -80,6 +80,9 @@ export const CashFlowInsights = ({
   const [searchType, setSearchType] = useState<'amount' | 'date'>('amount');
   const [searchAmount, setSearchAmount] = useState('');
   const [searchDate, setSearchDate] = useState('');
+  const [tempProjections, setTempProjections] = useState<Array<{ amount: number; date: string }>>([]);
+  const [projectionAmount, setProjectionAmount] = useState('');
+  const [projectionDate, setProjectionDate] = useState('');
   const [chatQuestion, setChatQuestion] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [isEditingReserve, setIsEditingReserve] = useState(false);
@@ -434,6 +437,62 @@ export const CashFlowInsights = ({
     }
   };
 
+  // Handle adding a temporary PO projection
+  const handleAddProjection = () => {
+    if (!projectionAmount || !projectionDate) return;
+    
+    const amount = parseFloat(projectionAmount);
+    if (amount <= 0) return;
+
+    setTempProjections(prev => [...prev, { amount, date: projectionDate }]);
+    setProjectionAmount('');
+    setProjectionDate('');
+    
+    toast({
+      title: "Projection Added",
+      description: `$${amount.toLocaleString()} on ${new Date(projectionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+    });
+  };
+
+  // Handle clearing all projections
+  const handleClearProjections = () => {
+    setTempProjections([]);
+    toast({
+      title: "Projections Cleared",
+      description: "All temporary projections have been removed",
+    });
+  };
+
+  // Calculate adjusted opportunities with temporary projections
+  const getAdjustedOpportunities = () => {
+    if (tempProjections.length === 0) return allBuyingOpportunities;
+
+    // Create a map of dates to projected expenses
+    const projectionsByDate = tempProjections.reduce((acc, proj) => {
+      acc[proj.date] = (acc[proj.date] || 0) + proj.amount;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Adjust each opportunity by subtracting cumulative projections up to that date
+    return allBuyingOpportunities.map(opp => {
+      let totalProjectionsBeforeDate = 0;
+      
+      // Sum all projections that occur before or on this opportunity date
+      for (const [projDate, projAmount] of Object.entries(projectionsByDate)) {
+        if (projDate <= opp.date) {
+          totalProjectionsBeforeDate += projAmount;
+        }
+      }
+
+      return {
+        ...opp,
+        balance: opp.balance - totalProjectionsBeforeDate
+      };
+    }).filter(opp => opp.balance > 0); // Only show opportunities with positive balance
+  };
+
+  const adjustedOpportunities = getAdjustedOpportunities();
+
 
   return <Card className="shadow-card h-full flex flex-col">
       <CardHeader>
@@ -771,7 +830,7 @@ export const CashFlowInsights = ({
           
           <ScrollArea className="max-h-[500px] pr-4">
             <div className="space-y-3">
-              {allBuyingOpportunities.map((opp, index) => {
+              {adjustedOpportunities.map((opp, index) => {
                 const [year, month, day] = opp.date.split('-').map(Number);
                 const date = new Date(year, month - 1, day);
                 const formattedDate = date.toLocaleDateString('en-US', {
@@ -874,7 +933,7 @@ export const CashFlowInsights = ({
                     {(() => {
                       const amount = parseFloat(searchAmount);
                       // Find the earliest opportunity where balance >= amount
-                      const matchingOpp = allBuyingOpportunities.find(opp => opp.balance >= amount);
+                      const matchingOpp = adjustedOpportunities.find(opp => opp.balance >= amount);
                       
                       if (!matchingOpp) {
                         return (
@@ -963,7 +1022,7 @@ export const CashFlowInsights = ({
                       
                       // Find the opportunity where the selected date falls within the range [earliest_purchase_date, low_point_date]
                       let relevantOpp = null;
-                      for (const opp of allBuyingOpportunities) {
+                      for (const opp of adjustedOpportunities) {
                         const [year, month, day] = opp.date.split('-').map(Number);
                         const lowPointDate = new Date(year, month - 1, day);
                         
@@ -1069,6 +1128,84 @@ export const CashFlowInsights = ({
               </ScrollArea>
             </TabsContent>
           </Tabs>
+          
+          {/* PO Projections Section */}
+          <Separator className="my-4" />
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <ShoppingCart className="h-4 w-4 text-orange-600" />
+                Project Purchase Orders (Display Only)
+              </h4>
+              {tempProjections.length > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleClearProjections}
+                  className="text-xs text-destructive hover:text-destructive"
+                >
+                  Clear All ({tempProjections.length})
+                </Button>
+              )}
+            </div>
+            
+            <p className="text-xs text-muted-foreground">
+              Simulate purchase orders to see how they affect your buying opportunities. These projections are temporary and won't be saved.
+            </p>
+            
+            {tempProjections.length > 0 && (
+              <div className="space-y-2 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <h5 className="text-xs font-semibold text-orange-700 dark:text-orange-400">Active Projections:</h5>
+                <div className="space-y-2">
+                  {tempProjections.map((proj, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-sm p-2 bg-white dark:bg-slate-900 rounded">
+                      <span className="font-medium">${proj.amount.toLocaleString()}</span>
+                      <span className="text-muted-foreground text-xs">
+                        {new Date(proj.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="projection-amount" className="text-xs">Amount</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                  <Input
+                    id="projection-amount"
+                    type="number"
+                    placeholder="0.00"
+                    value={projectionAmount}
+                    onChange={(e) => setProjectionAmount(e.target.value)}
+                    className="pl-7"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="projection-date" className="text-xs">Date</Label>
+                <Input
+                  id="projection-date"
+                  type="date"
+                  value={projectionDate}
+                  onChange={(e) => setProjectionDate(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <Button 
+              onClick={handleAddProjection}
+              disabled={!projectionAmount || !projectionDate || parseFloat(projectionAmount) <= 0}
+              className="w-full"
+              variant="outline"
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Add Projection
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
