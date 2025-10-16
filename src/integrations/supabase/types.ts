@@ -1262,6 +1262,51 @@ export type Database = {
         }
         Relationships: []
       }
+      purchased_addons: {
+        Row: {
+          account_id: string | null
+          addon_type: string
+          created_at: string
+          currency: string
+          id: string
+          price_paid: number
+          purchased_at: string
+          quantity: number
+          stripe_charge_id: string | null
+          stripe_payment_intent_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          addon_type: string
+          created_at?: string
+          currency?: string
+          id?: string
+          price_paid: number
+          purchased_at?: string
+          quantity?: number
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          addon_type?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          price_paid?: number
+          purchased_at?: string
+          quantity?: number
+          stripe_charge_id?: string | null
+          stripe_payment_intent_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       recurring_expenses: {
         Row: {
           account_id: string | null

@@ -134,6 +134,49 @@ const Settings = () => {
     }
   }, [location]);
 
+  // Handle addon purchase success
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const addonSuccess = params.get('addon_success');
+    const sessionId = params.get('session_id');
+    
+    if (addonSuccess === 'true' && sessionId) {
+      // Record the addon purchase
+      const recordPurchase = async () => {
+        try {
+          const { error } = await supabase.functions.invoke('record-addon-purchase', {
+            body: { session_id: sessionId }
+          });
+          
+          if (error) throw error;
+          
+          toast.success('Add-on purchased successfully! Your limit has been increased.');
+          
+          // Refresh addons and plan limits
+          queryClient.invalidateQueries({ queryKey: ['purchased-addons'] });
+          queryClient.invalidateQueries({ queryKey: ['plan-limits'] });
+          
+          // Clean up URL
+          const cleanUrl = window.location.pathname + window.location.search.split('&').filter(param => 
+            !param.includes('addon_success') && !param.includes('session_id')
+          ).join('&');
+          window.history.replaceState({}, '', cleanUrl || window.location.pathname);
+        } catch (error) {
+          console.error('Error recording addon purchase:', error);
+          toast.error('Failed to record purchase. Please contact support.');
+        }
+      };
+      
+      recordPurchase();
+    } else if (params.get('addon_canceled') === 'true') {
+      toast.info('Add-on purchase was canceled');
+      
+      // Clean up URL
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+  }, [location.search, queryClient]);
+
   const handleProfileChange = (field: string, value: string) => {
     // Trim and validate input
     const trimmedValue = value.trim();

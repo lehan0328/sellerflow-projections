@@ -15,6 +15,7 @@ import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { UpgradeModal } from "@/components/upgrade-modal";
+import { AddonLimitDialog } from "./addon-limit-dialog";
 
 interface AddAccountModalProps {
   open: boolean;
@@ -26,6 +27,8 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
   const [isLoading, setIsLoading] = useState(false);
   const [connectionMethod, setConnectionMethod] = useState<'stripe' | 'plaid' | 'amazon'>('stripe');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showAddonDialog, setShowAddonDialog] = useState(false);
+  const [addonType, setAddonType] = useState<'bank_connection' | 'amazon_connection'>('bank_connection');
   const [formData, setFormData] = useState({
     accountName: "",
     marketplace: "",
@@ -38,7 +41,8 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
   // Stripe Financial Connections handler
   const handleStripeConnect = async () => {
     if (!canAddBankConnection) {
-      setShowUpgradeModal(true);
+      setAddonType('bank_connection');
+      setShowAddonDialog(true);
       return;
     }
 
@@ -89,7 +93,8 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
   // Plaid link token creation
   const handlePlaidConnect = async () => {
     if (!canAddBankConnection) {
-      setShowUpgradeModal(true);
+      setAddonType('bank_connection');
+      setShowAddonDialog(true);
       return;
     }
 
@@ -144,7 +149,8 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
   // Amazon handler
   const handleAmazonConnect = () => {
     if (!canAddAmazonConnection) {
-      setShowUpgradeModal(true);
+      setAddonType('amazon_connection');
+      setShowAddonDialog(true);
       return;
     }
 
@@ -332,6 +338,14 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
         onOpenChange={setShowUpgradeModal}
         feature={connectionMethod === 'amazon' ? 'Amazon connections' : 'bank/credit card connections'}
         currentLimit={`${currentUsage.bankConnections}/${planLimits.bankConnections}`}
+      />
+
+      <AddonLimitDialog
+        open={showAddonDialog}
+        onOpenChange={setShowAddonDialog}
+        addonType={addonType}
+        currentUsage={addonType === 'bank_connection' ? currentUsage.bankConnections : currentUsage.amazonConnections}
+        currentLimit={addonType === 'bank_connection' ? planLimits.bankConnections : planLimits.amazonConnections}
       />
     </Dialog>
   );

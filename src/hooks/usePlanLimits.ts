@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSubscription, PRICING_PLANS } from './useSubscription';
 import { useTrialAddonUsage } from './useTrialAddonUsage';
+import { usePurchasedAddons } from './usePurchasedAddons';
 import { supabase } from '@/integrations/supabase/client';
 
 export type PlanType = 'starter' | 'growing' | 'professional' | 'enterprise';
@@ -58,6 +59,7 @@ const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
 export const usePlanLimits = () => {
   const subscription = useSubscription();
   const { updateTrialUsage } = useTrialAddonUsage();
+  const { purchasedAddons } = usePurchasedAddons();
   const [currentUsage, setCurrentUsage] = useState<CurrentUsage>({
     bankConnections: 0,
     amazonConnections: 0
@@ -74,7 +76,14 @@ export const usePlanLimits = () => {
   };
   
   const currentPlan: PlanType = mapPlanTier(subscription.plan);
-  const planLimits = PLAN_LIMITS[currentPlan];
+  const basePlanLimits = PLAN_LIMITS[currentPlan];
+  
+  // Add purchased addons to plan limits
+  const planLimits = {
+    ...basePlanLimits,
+    bankConnections: basePlanLimits.bankConnections + purchasedAddons.bank_connections,
+    amazonConnections: basePlanLimits.amazonConnections + purchasedAddons.amazon_connections,
+  };
 
   // Fetch actual usage from database (bank accounts + credit cards counted together)
   useEffect(() => {
