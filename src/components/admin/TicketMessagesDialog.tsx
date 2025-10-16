@@ -94,13 +94,11 @@ export function TicketMessagesDialog({ ticket, open, onOpenChange }: TicketMessa
       <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{ticket.subject}</DialogTitle>
-          <DialogDescription>
-            <div className="flex items-center gap-2 mt-2">
-              <Badge variant="outline">{ticket.status.replace('_', ' ')}</Badge>
-              <Badge variant="outline">{ticket.priority}</Badge>
-              {ticket.category && <Badge variant="outline">{ticket.category}</Badge>}
-            </div>
-          </DialogDescription>
+          <div className="flex items-center gap-2 mt-2">
+            <Badge variant="outline">{ticket.status.replace('_', ' ')}</Badge>
+            <Badge variant="outline">{ticket.priority}</Badge>
+            {ticket.category && <Badge variant="outline">{ticket.category}</Badge>}
+          </div>
         </DialogHeader>
 
         <div className="flex-1 flex flex-col min-h-0">
