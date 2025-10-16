@@ -74,6 +74,7 @@ export const CashFlowInsights = ({
   const [pendingOrdersByCard, setPendingOrdersByCard] = useState<Record<string, number>>({});
   const [cardOpportunities, setCardOpportunities] = useState<Record<string, Array<{ date: string; availableCredit: number }>>>({});
   const [showAllOpportunities, setShowAllOpportunities] = useState(false);
+  const [showSearchOpportunities, setShowSearchOpportunities] = useState(false);
   const [showAllCreditCards, setShowAllCreditCards] = useState(false);
   const [chatMode, setChatMode] = useState(false);
   const [searchType, setSearchType] = useState<'amount' | 'date'>('amount');
@@ -743,8 +744,89 @@ export const CashFlowInsights = ({
           </>}
       </CardContent>
 
-      {/* All Buying Opportunities Modal - Search Interface */}
+      {/* All Buying Opportunities Modal - List View */}
       <Dialog open={showAllOpportunities} onOpenChange={setShowAllOpportunities}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-blue-600" />
+              All Buying Opportunities
+            </DialogTitle>
+            <DialogDescription>
+              View all your upcoming buying opportunities based on projected cash flow
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Button 
+            onClick={() => {
+              setShowAllOpportunities(false);
+              setShowSearchOpportunities(true);
+            }}
+            className="w-full"
+            variant="outline"
+          >
+            <DollarSign className="h-4 w-4 mr-2" />
+            Search by Amount or Date
+          </Button>
+          
+          <ScrollArea className="max-h-[500px] pr-4">
+            <div className="space-y-3">
+              {allBuyingOpportunities.map((opp, index) => {
+                const [year, month, day] = opp.date.split('-').map(Number);
+                const date = new Date(year, month - 1, day);
+                const formattedDate = date.toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                });
+                
+                let availableDate = '';
+                if (opp.available_date) {
+                  const [aYear, aMonth, aDay] = opp.available_date.split('-').map(Number);
+                  const aDate = new Date(aYear, aMonth - 1, aDay);
+                  availableDate = aDate.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  });
+                }
+                
+                return (
+                  <div key={index} className="p-4 rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <div className="text-2xl font-bold text-blue-600">
+                          ${opp.balance.toLocaleString()}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Safe to spend</div>
+                      </div>
+                      <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30">
+                        Opportunity #{index + 1}
+                      </Badge>
+                    </div>
+                    <Separator className="my-2" />
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Low Point Date:</span>
+                        <span className="font-medium">{formattedDate}</span>
+                      </div>
+                      {availableDate && (
+                        <div className="flex justify-between p-2 bg-green-100 dark:bg-green-900/30 rounded">
+                          <span className="text-green-700 dark:text-green-400 font-medium">Earliest Purchase:</span>
+                          <span className="font-bold text-green-600">{availableDate}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Search Opportunities Modal */}
+      <Dialog open={showSearchOpportunities} onOpenChange={setShowSearchOpportunities}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
