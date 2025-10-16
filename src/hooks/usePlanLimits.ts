@@ -9,6 +9,7 @@ export type PlanType = 'starter' | 'growing' | 'professional' | 'enterprise';
 interface PlanLimits {
   bankConnections: number;
   amazonConnections: number;
+  teamMembers: number;
   name: string;
   price: number;
   revenueMin: number;
@@ -18,6 +19,7 @@ interface PlanLimits {
 interface CurrentUsage {
   bankConnections: number;
   amazonConnections: number;
+  teamMembers: number;
 }
 
 // Map subscription tiers to plan limits
@@ -25,6 +27,7 @@ const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
   starter: {
     bankConnections: 2,
     amazonConnections: 1,
+    teamMembers: 0,
     name: 'Starter',
     price: PRICING_PLANS.starter.price,
     revenueMin: 0,
@@ -33,6 +36,7 @@ const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
   growing: {
     bankConnections: 3,
     amazonConnections: 1,
+    teamMembers: 2,
     name: 'Growing',
     price: 59,
     revenueMin: 20001,
@@ -41,6 +45,7 @@ const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
   professional: {
     bankConnections: 4,
     amazonConnections: 1,
+    teamMembers: 5,
     name: 'Professional', 
     price: PRICING_PLANS.professional.price,
     revenueMin: 100001,
@@ -49,6 +54,7 @@ const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
   enterprise: {
     bankConnections: 5,
     amazonConnections: 2,
+    teamMembers: 7,
     name: 'Enterprise',
     price: 149, // Starting price, varies by revenue tier
     revenueMin: 200001,
@@ -62,7 +68,8 @@ export const usePlanLimits = () => {
   const { purchasedAddons } = usePurchasedAddons();
   const [currentUsage, setCurrentUsage] = useState<CurrentUsage>({
     bankConnections: 0,
-    amazonConnections: 0
+    amazonConnections: 0,
+    teamMembers: 0
   });
 
   // Map subscription plan to plan type - default to starter for free users
@@ -83,6 +90,7 @@ export const usePlanLimits = () => {
     ...basePlanLimits,
     bankConnections: basePlanLimits.bankConnections + purchasedAddons.bank_connections,
     amazonConnections: basePlanLimits.amazonConnections + purchasedAddons.amazon_connections,
+    teamMembers: basePlanLimits.teamMembers + purchasedAddons.team_members,
   };
 
   // Fetch actual usage from database (bank accounts + credit cards counted together)
@@ -91,19 +99,23 @@ export const usePlanLimits = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const [bankAccounts, creditCards, amazonAccounts] = await Promise.all([
+      const [bankAccounts, creditCards, amazonAccounts, userRoles] = await Promise.all([
         supabase.from('bank_accounts').select('id', { count: 'exact' }),
         supabase.from('credit_cards').select('id', { count: 'exact' }),
-        supabase.from('amazon_accounts').select('id', { count: 'exact' })
+        supabase.from('amazon_accounts').select('id', { count: 'exact' }),
+        supabase.from('user_roles').select('user_id', { count: 'exact' }).neq('user_id', user.id)
       ]);
 
       // Financial connections = bank accounts + credit cards
       const financialConnections = (bankAccounts.count || 0) + (creditCards.count || 0);
       const amazonCount = amazonAccounts.count || 0;
+      // Team members = user_roles count excluding the current user (account owner)
+      const teamMemberCount = userRoles.count || 0;
 
       setCurrentUsage({
         bankConnections: financialConnections, // Note: property name kept for compatibility
-        amazonConnections: amazonCount
+        amazonConnections: amazonCount,
+        teamMembers: teamMemberCount
       });
 
       // If in trial, track addon usage beyond plan limits
@@ -111,12 +123,16 @@ export const usePlanLimits = () => {
         // Calculate how many beyond the limit
         const bankExcess = Math.max(0, financialConnections - planLimits.bankConnections);
         const amazonExcess = Math.max(0, amazonCount - planLimits.amazonConnections);
+        const teamExcess = Math.max(0, teamMemberCount - planLimits.teamMembers);
 
         if (bankExcess > 0) {
           updateTrialUsage({ addonType: 'bank_account', quantity: bankExcess });
         }
         if (amazonExcess > 0) {
           updateTrialUsage({ addonType: 'amazon_account', quantity: amazonExcess });
+        }
+        if (teamExcess > 0) {
+          updateTrialUsage({ addonType: 'user', quantity: teamExcess });
         }
       }
     };
@@ -127,6 +143,7 @@ export const usePlanLimits = () => {
   // During trial, allow unlimited connections
   const canAddBankConnection = subscription.is_trialing ? true : currentUsage.bankConnections < planLimits.bankConnections;
   const canAddAmazonConnection = subscription.is_trialing ? true : currentUsage.amazonConnections < planLimits.amazonConnections;
+  const canAddTeamMember = subscription.is_trialing ? true : currentUsage.teamMembers < planLimits.teamMembers;
 
   return {
     currentPlan,
@@ -134,6 +151,7 @@ export const usePlanLimits = () => {
     currentUsage,
     canAddBankConnection,
     canAddAmazonConnection,
+    canAddTeamMember,
     PLAN_LIMITS,
     isInTrial: subscription.is_trialing || false,
   };

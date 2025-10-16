@@ -6,7 +6,7 @@ export const usePurchasedAddons = () => {
     queryKey: ['purchased-addons'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return { bank_connections: 0, amazon_connections: 0 };
+      if (!user) return { bank_connections: 0, amazon_connections: 0, team_members: 0 };
 
       const { data, error } = await supabase
         .from('purchased_addons')
@@ -21,16 +21,18 @@ export const usePurchasedAddons = () => {
           acc.bank_connections += addon.quantity;
         } else if (addon.addon_type === 'amazon_connection') {
           acc.amazon_connections += addon.quantity;
+        } else if (addon.addon_type === 'user') {
+          acc.team_members += addon.quantity;
         }
         return acc;
-      }, { bank_connections: 0, amazon_connections: 0 });
+      }, { bank_connections: 0, amazon_connections: 0, team_members: 0 });
 
       return totals;
     },
   });
 
   return {
-    purchasedAddons: addons || { bank_connections: 0, amazon_connections: 0 },
+    purchasedAddons: addons || { bank_connections: 0, amazon_connections: 0, team_members: 0 },
     isLoading,
     refetch,
   };

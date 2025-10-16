@@ -404,6 +404,13 @@ const UpgradePlan = () => {
                   </Badge>
                 </div>
                 
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Team Members</span>
+                  <Badge variant="secondary">
+                    {currentUsage.teamMembers}/{planLimits.teamMembers === 999 ? '∞' : planLimits.teamMembers}
+                  </Badge>
+                </div>
+                
                 {discount_ever_redeemed && (
                     <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20 space-y-2">
                       <div className="flex items-center justify-center gap-2 mb-2">

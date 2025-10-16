@@ -43,6 +43,8 @@ import { DialogFooter } from "@/components/ui/dialog";
 import { UserPlus, Trash2, Shield, Users, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { AddonLimitDialog } from "@/components/cash-flow/addon-limit-dialog";
 
 interface TeamMember {
   id: string;
@@ -67,8 +69,10 @@ interface PendingInvite {
 export function TeamManagement() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { canAddTeamMember, currentUsage, planLimits } = usePlanLimits();
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showAddonDialog, setShowAddonDialog] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<'admin' | 'staff'>('staff');
   const [createForm, setCreateForm] = useState({
@@ -196,8 +200,8 @@ export function TeamManagement() {
   // Send invitation mutation
   const sendInviteMutation = useMutation({
     mutationFn: async () => {
-      if (availableSeats <= 0) {
-        throw new Error('No available seats. Please upgrade your plan.');
+      if (!canAddTeamMember) {
+        throw new Error('Team member limit reached');
       }
 
       const { data, error } = await supabase.functions.invoke('send-team-invitation', {
@@ -215,7 +219,11 @@ export function TeamManagement() {
       queryClient.invalidateQueries({ queryKey: ['pending-invites'] });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to send invitation');
+      if (error.message === 'Team member limit reached') {
+        setShowAddonDialog(true);
+      } else {
+        toast.error(error.message || 'Failed to send invitation');
+      }
     },
   });
 
@@ -234,8 +242,8 @@ export function TeamManagement() {
         throw new Error('Password must be at least 6 characters');
       }
 
-      if (availableSeats <= 0) {
-        throw new Error('No available seats. Please upgrade your plan.');
+      if (!canAddTeamMember) {
+        throw new Error('Team member limit reached');
       }
 
       // Create the user account
@@ -291,7 +299,11 @@ export function TeamManagement() {
       queryClient.invalidateQueries({ queryKey: ['team-members'] });
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to create account');
+      if (error.message === 'Team member limit reached') {
+        setShowAddonDialog(true);
+      } else {
+        toast.error(error.message || 'Failed to create account');
+      }
     },
   });
 
@@ -374,15 +386,22 @@ export function TeamManagement() {
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             <Users className="inline h-3 w-3 mr-1" />
-            {usedSeats} / {totalSeats} seats used
-            {availableSeats <= 0 && <span className="ml-2 text-amber-600">• Upgrade for more seats</span>}
+            {currentUsage.teamMembers} / {planLimits.teamMembers} seats used
+            {!canAddTeamMember && <span className="ml-2 text-amber-600">• Purchase add-ons for more seats</span>}
           </p>
         </div>
         {isAdmin && (
           <div className="flex gap-2">
             <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
               <DialogTrigger asChild>
-                <Button variant="outline" disabled={availableSeats <= 0}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    if (!canAddTeamMember) {
+                      setShowAddonDialog(true);
+                    }
+                  }}
+                >
                   <Mail className="mr-2 h-4 w-4" />
                   Send Invite Email
                 </Button>
@@ -434,7 +453,13 @@ export function TeamManagement() {
           
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
-              <Button disabled={availableSeats <= 0}>
+              <Button 
+                onClick={() => {
+                  if (!canAddTeamMember) {
+                    setShowAddonDialog(true);
+                  }
+                }}
+              >
                 <UserPlus className="mr-2 h-4 w-4" />
                 Create Account
               </Button>
@@ -636,6 +661,14 @@ export function TeamManagement() {
           </div>
         </div>
       )}
+      
+      <AddonLimitDialog
+        open={showAddonDialog}
+        onOpenChange={setShowAddonDialog}
+        addonType="user"
+        currentUsage={currentUsage.teamMembers}
+        currentLimit={planLimits.teamMembers}
+      />
     </div>
   );
 }

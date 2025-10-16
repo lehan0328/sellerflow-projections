@@ -10,6 +10,7 @@ const corsHeaders = {
 const ADDON_PRICES = {
   bank_connection: 10, // $10 per bank/credit card connection
   amazon_connection: 50, // $50 per Amazon connection
+  user: 15, // $15 per additional team member
 };
 
 serve(async (req) => {
@@ -43,7 +44,7 @@ serve(async (req) => {
       throw new Error("Missing addon_type or quantity");
     }
 
-    if (!['bank_connection', 'amazon_connection'].includes(addon_type)) {
+    if (!['bank_connection', 'amazon_connection', 'user'].includes(addon_type)) {
       throw new Error("Invalid addon_type");
     }
 
@@ -85,8 +86,16 @@ serve(async (req) => {
             product_data: {
               name: addon_type === 'bank_connection' 
                 ? 'Additional Financial Connection' 
-                : 'Additional Amazon Connection',
-              description: `Add ${quantity} additional ${addon_type === 'bank_connection' ? 'bank/credit card' : 'Amazon'} connection${quantity > 1 ? 's' : ''} to your account`,
+                : addon_type === 'amazon_connection'
+                ? 'Additional Amazon Connection'
+                : 'Additional Team Member',
+              description: `Add ${quantity} additional ${
+                addon_type === 'bank_connection' 
+                  ? 'bank/credit card' 
+                  : addon_type === 'amazon_connection'
+                  ? 'Amazon'
+                  : 'team member'
+              } ${quantity > 1 ? 's' : ''} to your account`,
             },
           },
           quantity: quantity,

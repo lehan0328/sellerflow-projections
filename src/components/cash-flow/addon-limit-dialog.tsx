@@ -8,14 +8,14 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Minus, CreditCard, Building2, ShoppingBag, Loader2 } from "lucide-react";
+import { Plus, Minus, CreditCard, Building2, ShoppingBag, Loader2, Users } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface AddonLimitDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  addonType: 'bank_connection' | 'amazon_connection';
+  addonType: 'bank_connection' | 'amazon_connection' | 'user';
   currentUsage: number;
   currentLimit: number;
 }
@@ -23,6 +23,7 @@ interface AddonLimitDialogProps {
 const ADDON_PRICES = {
   bank_connection: 10,
   amazon_connection: 50,
+  user: 15,
 };
 
 export function AddonLimitDialog({
@@ -50,6 +51,12 @@ export function AddonLimitDialog({
       description: 'Connect more Amazon seller accounts',
       icon: <ShoppingBag className="h-5 w-5" />,
       label: 'Amazon Connection',
+    },
+    user: {
+      title: 'Additional Team Members',
+      description: 'Add more users to your account',
+      icon: <Users className="h-5 w-5" />,
+      label: 'Team Member',
     },
   };
 
