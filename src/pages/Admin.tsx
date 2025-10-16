@@ -1,21 +1,21 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Users, 
   LifeBuoy, 
   CreditCard, 
-  Settings,
   ArrowLeft,
   Shield,
-  Gift
+  Gift,
+  MessageSquare
 } from "lucide-react";
 import { AdminCustomers } from "@/components/admin/AdminCustomers";
 import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
 import { AdminSubscriptions } from "@/components/admin/AdminSubscriptions";
 import AdminReferrals from "@/components/admin/AdminReferrals";
+import { AdminFeatureRequests } from "@/components/admin/AdminFeatureRequests";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -47,7 +47,7 @@ const Admin = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 max-w-3xl">
+          <TabsList className="grid w-full grid-cols-5 max-w-4xl">
             <TabsTrigger value="customers" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Customers
@@ -63,6 +63,10 @@ const Admin = () => {
             <TabsTrigger value="referrals" className="flex items-center gap-2">
               <Gift className="h-4 w-4" />
               Referrals
+            </TabsTrigger>
+            <TabsTrigger value="features" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Features
             </TabsTrigger>
           </TabsList>
 
@@ -80,6 +84,10 @@ const Admin = () => {
 
           <TabsContent value="referrals" className="mt-6">
             <AdminReferrals />
+          </TabsContent>
+
+          <TabsContent value="features" className="mt-6">
+            <AdminFeatureRequests />
           </TabsContent>
         </Tabs>
       </div>

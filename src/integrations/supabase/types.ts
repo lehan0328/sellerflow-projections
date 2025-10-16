@@ -903,6 +903,51 @@ export type Database = {
           },
         ]
       }
+      feature_requests: {
+        Row: {
+          admin_notes: string | null
+          category: string
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          priority: string
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          category: string
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          priority: string
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          category?: string
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          priority?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       income: {
         Row: {
           account_id: string | null

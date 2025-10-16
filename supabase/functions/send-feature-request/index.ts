@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 
 const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
@@ -45,6 +46,39 @@ const handler = async (req: Request): Promise<Response> => {
           },
         }
       );
+    }
+
+    // Initialize Supabase client
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
+    );
+
+    // Get authenticated user
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    // Save feature request to database
+    const { error: dbError } = await supabaseClient
+      .from('feature_requests')
+      .insert({
+        user_id: user?.id,
+        name,
+        email,
+        subject,
+        message,
+        priority: priority || 'medium',
+        category: category || 'feature',
+        status: 'open'
+      });
+
+    if (dbError) {
+      console.error("Database error:", dbError);
+      // Continue with email even if database save fails
     }
 
     const emailResponse = await fetch("https://api.resend.com/emails", {
