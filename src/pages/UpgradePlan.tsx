@@ -1397,18 +1397,6 @@ const UpgradePlan = () => {
                 )}
             </CardContent>
         </Card>
-        
-        <Card className="mt-6 max-w-6xl mx-auto">
-            <CardHeader>
-              <CardTitle className="text-center">Need help choosing?</CardTitle>
-              <CardDescription className="text-center">
-                Not sure which plan is right for you? Our team can help you find the perfect fit for your business needs.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex justify-center">
-              <Button variant="outline">Contact Sales</Button>
-            </CardContent>
-        </Card>
       </div>
 
       {/* Payment Failed Dialog - Blocking, cannot be dismissed */}
