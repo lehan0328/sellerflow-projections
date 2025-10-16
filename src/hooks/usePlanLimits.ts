@@ -76,7 +76,7 @@ export const usePlanLimits = () => {
   const currentPlan: PlanType = mapPlanTier(subscription.plan);
   const planLimits = PLAN_LIMITS[currentPlan];
 
-  // Fetch actual usage from database (including credit cards)
+  // Fetch actual usage from database (bank accounts + credit cards counted together)
   useEffect(() => {
     const fetchUsage = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -88,18 +88,19 @@ export const usePlanLimits = () => {
         supabase.from('amazon_accounts').select('id', { count: 'exact' })
       ]);
 
-      const bankCount = (bankAccounts.count || 0) + (creditCards.count || 0);
+      // Financial connections = bank accounts + credit cards
+      const financialConnections = (bankAccounts.count || 0) + (creditCards.count || 0);
       const amazonCount = amazonAccounts.count || 0;
 
       setCurrentUsage({
-        bankConnections: bankCount,
+        bankConnections: financialConnections, // Note: property name kept for compatibility
         amazonConnections: amazonCount
       });
 
       // If in trial, track addon usage beyond plan limits
       if (subscription.is_trialing) {
         // Calculate how many beyond the limit
-        const bankExcess = Math.max(0, bankCount - planLimits.bankConnections);
+        const bankExcess = Math.max(0, financialConnections - planLimits.bankConnections);
         const amazonExcess = Math.max(0, amazonCount - planLimits.amazonConnections);
 
         if (bankExcess > 0) {

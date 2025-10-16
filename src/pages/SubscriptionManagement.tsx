@@ -115,11 +115,12 @@ export default function SubscriptionManagement() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Bank Connections</span>
+                <span className="text-sm font-medium">Financial Connections</span>
                 <span className="text-sm text-muted-foreground">
                   {currentUsage.bankConnections}/{planLimits.bankConnections === 999 ? '∞' : planLimits.bankConnections}
                 </span>
               </div>
+              <div className="text-xs text-muted-foreground mb-1">Banks + Credit Cards</div>
               <div className="w-full bg-secondary rounded-full h-2">
                 <div 
                   className="bg-primary h-2 rounded-full transition-all"
@@ -236,7 +237,7 @@ export default function SubscriptionManagement() {
         {/* Info Alert */}
         <Alert className="max-w-2xl mx-auto">
         <AlertDescription>
-          <strong>Need more connections?</strong> Visit the Add Account section to purchase additional add-ons for bank accounts and Amazon connections.
+          <strong>Need more connections?</strong> Visit the Add Account section to purchase additional add-ons for financial connections (banks & credit cards) and Amazon connections.
         </AlertDescription>
       </Alert>
 
