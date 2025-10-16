@@ -11,6 +11,7 @@ interface ReferralData {
   user_id: string;
   user_email: string;
   referral_code: string;
+  code_created_at: string;
   total_referrals: number;
   active_referrals: number;
   tier_level: number;
@@ -43,7 +44,7 @@ export default function AdminReferrals() {
       // Fetch all referral codes with user info
       const { data: codes, error: codesError } = await supabase
         .from("referral_codes")
-        .select("user_id, code");
+        .select("user_id, code, created_at");
 
       if (codesError) throw codesError;
 
@@ -89,6 +90,7 @@ export default function AdminReferrals() {
           user_id: code.user_id,
           user_email: fullName || code.user_id.slice(0, 8) + "...",
           referral_code: code.code,
+          code_created_at: code.created_at,
           total_referrals: refCount.total,
           active_referrals: refCount.active,
           tier_level: reward?.tier_level || 0,
@@ -194,6 +196,7 @@ export default function AdminReferrals() {
               <TableRow>
                 <TableHead>User Email</TableHead>
                 <TableHead>Referral Code</TableHead>
+                <TableHead>Code Created</TableHead>
                 <TableHead className="text-center">Total</TableHead>
                 <TableHead className="text-center">Active</TableHead>
                 <TableHead>Tier</TableHead>
@@ -206,7 +209,7 @@ export default function AdminReferrals() {
             <TableBody>
               {referrals.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                     No referral data available
                   </TableCell>
                 </TableRow>
@@ -215,6 +218,9 @@ export default function AdminReferrals() {
                   <TableRow key={ref.user_id}>
                     <TableCell className="font-medium">{ref.user_email}</TableCell>
                     <TableCell className="font-mono text-sm">{ref.referral_code}</TableCell>
+                    <TableCell className="text-sm">
+                      {new Date(ref.code_created_at).toLocaleDateString()}
+                    </TableCell>
                     <TableCell className="text-center">{ref.total_referrals}</TableCell>
                     <TableCell className="text-center">
                       <Badge variant={ref.active_referrals > 0 ? "default" : "secondary"}>
