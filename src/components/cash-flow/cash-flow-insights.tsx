@@ -7,7 +7,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw, Settings } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw, Settings, DollarSign, Calendar } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -75,6 +76,9 @@ export const CashFlowInsights = ({
   const [showAllOpportunities, setShowAllOpportunities] = useState(false);
   const [showAllCreditCards, setShowAllCreditCards] = useState(false);
   const [chatMode, setChatMode] = useState(false);
+  const [searchType, setSearchType] = useState<'amount' | 'date'>('amount');
+  const [searchAmount, setSearchAmount] = useState('');
+  const [searchDate, setSearchDate] = useState('');
   const [chatQuestion, setChatQuestion] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [isEditingReserve, setIsEditingReserve] = useState(false);
@@ -739,139 +743,226 @@ export const CashFlowInsights = ({
           </>}
       </CardContent>
 
-      {/* All Buying Opportunities Modal */}
+      {/* All Buying Opportunities Modal - Search Interface */}
       <Dialog open={showAllOpportunities} onOpenChange={setShowAllOpportunities}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5 text-blue-600" />
-              Buying Opportunities Overview (Next 6 Months)
+              Search Buying Opportunities
             </DialogTitle>
+            <DialogDescription>
+              Search by amount to find when you can spend it, or by date to see how much you can spend on that day
+            </DialogDescription>
           </DialogHeader>
           
-          <div className="max-w-3xl mx-auto">
-            {/* Confirmed Buying Opportunities (includes forecasted Amazon payouts) */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    Forecasted Cash Opportunities
-                  </h3>
-                  <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
-                    AI Forecast
-                  </Badge>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/settings?section=forecast-settings')}
-                  className="text-xs"
-                >
-                  <Settings className="h-3 w-3 mr-1" />
-                  Manage Safety
-                </Button>
-              </div>
-              
-              {/* Forecast Disclaimer */}
-              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <div className="flex items-start gap-2">
-                  <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-blue-900 dark:text-blue-100">
-                      AI-Generated Forecast
-                    </p>
-                    <p className="text-xs text-blue-700 dark:text-blue-300">
-                      This forecast is based on your current settings with a{" "}
-                      <span className="font-semibold">
-                        {userConfidenceThreshold === 15 ? "Very Safe" : userConfidenceThreshold === 5 ? "Safe" : "Medium (Risky)"}
-                      </span>{" "}
-                      risk level. Forecasts include projected Amazon payouts and assume no spending until each opportunity date.
-                    </p>
+          <Tabs value={searchType} onValueChange={(v) => setSearchType(v as 'amount' | 'date')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="amount" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Search by Amount
+              </TabsTrigger>
+              <TabsTrigger value="date" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Search by Date
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="amount" className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="search-amount">Enter amount you want to spend</Label>
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <Input
+                      id="search-amount"
+                      type="number"
+                      placeholder="0.00"
+                      value={searchAmount}
+                      onChange={(e) => setSearchAmount(e.target.value)}
+                      className="pl-7"
+                    />
                   </div>
                 </div>
               </div>
               
-              <ScrollArea className="h-[500px] pr-4">
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground mb-4 px-1">
-                    <span className="font-semibold text-amber-600">Important:</span> These opportunities assume <span className="font-semibold">$0 spending until each date</span>. The available amounts shown are what you'll have if you don't make any purchases before then. Plan your spending timeline accordingly to preserve these opportunities.
-                  </p>
-                  {allBuyingOpportunities.map((opp, index) => {
-                    const [year, month, day] = opp.date.split('-').map(Number);
-                    const date = new Date(year, month - 1, day);
-                    const formattedDate = date.toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    });
-                    
-                    let availableDate = '';
-                    if (opp.available_date) {
-                      const [aYear, aMonth, aDay] = opp.available_date.split('-').map(Number);
-                      const aDate = new Date(aYear, aMonth - 1, aDay);
-                      availableDate = aDate.toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric'
-                      });
-                    }
-                    
-                    return (
-                      <div 
-                        key={index} 
-                        className="group relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-card via-card to-muted/20 p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5"
-                      >
-                        {/* Animated gradient overlay on hover */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <ScrollArea className="h-[400px] pr-4">
+                {searchAmount && parseFloat(searchAmount) > 0 ? (
+                  <div className="space-y-3">
+                    {allBuyingOpportunities
+                      .filter(opp => opp.balance >= parseFloat(searchAmount))
+                      .map((opp, index) => {
+                        const [year, month, day] = opp.date.split('-').map(Number);
+                        const date = new Date(year, month - 1, day);
+                        const formattedDate = date.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        });
                         
-                        <div className="relative space-y-4">
-                          {/* Header */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                <span className="text-sm font-bold text-primary">#{index + 1}</span>
+                        let availableDate = '';
+                        if (opp.available_date) {
+                          const [aYear, aMonth, aDay] = opp.available_date.split('-').map(Number);
+                          const aDate = new Date(aYear, aMonth - 1, aDay);
+                          availableDate = aDate.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          });
+                        }
+                        
+                        return (
+                          <div key={index} className="p-4 rounded-lg border bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-800">
+                            <div className="flex items-center justify-between mb-3">
+                              <div>
+                                <div className="text-2xl font-bold text-green-600">
+                                  ${opp.balance.toLocaleString()}
+                                </div>
+                                <div className="text-xs text-muted-foreground">Available</div>
                               </div>
-                              <span className="font-semibold text-sm text-foreground">Opportunity</span>
+                              <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
+                                Can afford ${searchAmount}
+                              </Badge>
                             </div>
-                            <div className="text-right">
-                              <div className="text-2xl font-bold bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-transparent">
-                                ${opp.balance.toLocaleString()}
+                            <Separator className="my-2" />
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Low Point Date:</span>
+                                <span className="font-medium">{formattedDate}</span>
                               </div>
-                              <div className="text-xs text-muted-foreground">Available</div>
+                              {availableDate && (
+                                <div className="flex justify-between p-2 bg-green-100 dark:bg-green-900/30 rounded">
+                                  <span className="text-green-700 dark:text-green-400 font-medium">Earliest Purchase:</span>
+                                  <span className="font-bold text-green-600">{availableDate}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
+                        );
+                      }).length > 0 ? null : (
+                        <div className="text-center p-8 text-muted-foreground">
+                          <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                          <p className="font-medium">No opportunities found for ${searchAmount}</p>
+                          <p className="text-sm mt-2">Try a lower amount or check back later</p>
+                        </div>
+                      )}
+                  </div>
+                ) : (
+                  <div className="text-center p-8 text-muted-foreground">
+                    <DollarSign className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Enter an amount to see when you can spend it</p>
+                  </div>
+                )}
+              </ScrollArea>
+            </TabsContent>
+            
+            <TabsContent value="date" className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="search-date">Select a date</Label>
+                <Input
+                  id="search-date"
+                  type="date"
+                  value={searchDate}
+                  onChange={(e) => setSearchDate(e.target.value)}
+                />
+              </div>
+              
+              <ScrollArea className="h-[400px] pr-4">
+                {searchDate ? (
+                  <div className="space-y-3">
+                    {(() => {
+                      const searchDateObj = new Date(searchDate + 'T00:00:00');
+                      
+                      // Find the relevant opportunity for the selected date
+                      let relevantOpp = allBuyingOpportunities[0];
+                      for (const opp of allBuyingOpportunities) {
+                        const [year, month, day] = opp.date.split('-').map(Number);
+                        const oppDate = new Date(year, month - 1, day);
+                        
+                        if (oppDate <= searchDateObj) {
+                          relevantOpp = opp;
+                        } else {
+                          break;
+                        }
+                      }
+                      
+                      const [year, month, day] = relevantOpp.date.split('-').map(Number);
+                      const lowDate = new Date(year, month - 1, day);
+                      const formattedLowDate = lowDate.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      });
+                      
+                      let availableDate = '';
+                      if (relevantOpp.available_date) {
+                        const [aYear, aMonth, aDay] = relevantOpp.available_date.split('-').map(Number);
+                        const aDate = new Date(aYear, aMonth - 1, aDay);
+                        availableDate = aDate.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        });
+                      }
+                      
+                      const canPurchase = !availableDate || new Date(availableDate) <= searchDateObj;
+                      
+                      return (
+                        <div className="p-6 rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200 dark:border-blue-800">
+                          <div className="text-center mb-4">
+                            <div className="text-xs text-muted-foreground mb-2">
+                              On {new Date(searchDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                            </div>
+                            <div className="text-4xl font-bold text-blue-600">
+                              ${relevantOpp.balance.toLocaleString()}
+                            </div>
+                            <div className="text-sm text-muted-foreground mt-1">Available to spend</div>
+                          </div>
                           
-                          {/* Divider */}
-                          <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+                          <Separator className="my-4" />
                           
-                          {/* Details */}
                           <div className="space-y-3">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">Low Point Date</span>
-                              <span className="font-medium text-foreground">{formattedDate}</span>
+                            <div className={`p-3 rounded-lg ${canPurchase ? 'bg-green-100 dark:bg-green-900/30' : 'bg-amber-100 dark:bg-amber-900/30'}`}>
+                              <div className="flex items-center gap-2 mb-2">
+                                {canPurchase ? (
+                                  <Check className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                                )}
+                                <span className={`text-sm font-semibold ${canPurchase ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                                  {canPurchase ? 'Ready to Purchase' : 'Not Yet Available'}
+                                </span>
+                              </div>
+                              {!canPurchase && availableDate && (
+                                <p className="text-xs text-amber-700 dark:text-amber-400">
+                                  Earliest purchase date: {availableDate}
+                                </p>
+                              )}
                             </div>
                             
-                            {availableDate && (
-                              <div className="rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 p-3">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs font-medium text-green-700 dark:text-green-400">
-                                    Earliest Purchase Date
-                                  </span>
-                                  <span className="text-sm font-bold text-green-600 dark:text-green-500">
-                                    {availableDate}
-                                  </span>
-                                </div>
+                            <div className="text-xs space-y-2 p-3 bg-muted/50 rounded-lg">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Based on low point:</span>
+                                <span className="font-medium">{formattedLowDate}</span>
                               </div>
-                            )}
+                              <p className="text-muted-foreground italic">
+                                Assumes $0 spending between now and the selected date
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <div className="text-center p-8 text-muted-foreground">
+                    <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>Select a date to see available spending amount</p>
+                  </div>
+                )}
               </ScrollArea>
-            </div>
-          </div>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
