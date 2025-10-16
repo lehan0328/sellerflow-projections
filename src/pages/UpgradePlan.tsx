@@ -405,6 +405,13 @@ const UpgradePlan = () => {
                 </div>
                 
                 <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Amazon Connections</span>
+                  <Badge variant="secondary">
+                    {currentUsage.amazonConnections}/{planLimits.amazonConnections === 999 ? '∞' : planLimits.amazonConnections}
+                  </Badge>
+                </div>
+                
+                <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Team Members</span>
                   <Badge variant="secondary">
                     {currentUsage.teamMembers}/{planLimits.teamMembers === 999 ? '∞' : planLimits.teamMembers}
