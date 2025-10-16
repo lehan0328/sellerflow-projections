@@ -486,12 +486,12 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           // Only add if there's actually money to spend
           if (opportunityAmount > 0) {
             // Work backward to find the EARLIEST date when you can spend this amount
-            // Check that spending it won't cause negative balance on ANY day between that date and the low point
+            // Check that spending it won't cause balance to drop below reserve on ANY day between that date and the low point
             let earliestAvailableDate = currentDay.date; // Default to low point date
             
             for (let j = 0; j <= i; j++) {
               // Check if spending the opportunity amount on day j would cause any day
-              // between j and i to go negative
+              // between j and i to drop below reserve
               let canSpendOnDayJ = true;
               
               for (let k = j; k <= i; k++) {
@@ -499,7 +499,8 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
                 // We need to subtract it from all days >= j
                 const balanceAfterSpending = dailyBalances[k].balance - opportunityAmount;
                 
-                if (balanceAfterSpending < 0) {
+                // Must stay above reserve, not just above 0
+                if (balanceAfterSpending < reserve) {
                   canSpendOnDayJ = false;
                   break;
                 }
@@ -546,11 +547,13 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           
           if (!alreadyCaptured && opportunityAmount > 0) {
             // Work backward to find the EARLIEST date when balance first reached this level
+            // while maintaining reserve buffer
             let earliestAvailableDate = lastDay.date; // Default to last day
             const terminalBalance = lastDay.balance;
             
             for (let j = 0; j < dailyBalances.length - 1; j++) {
-              if (dailyBalances[j].balance >= terminalBalance) {
+              // Check if balance at day j is high enough to spend this amount while keeping reserve
+              if (dailyBalances[j].balance >= (opportunityAmount + reserve)) {
                 earliestAvailableDate = dailyBalances[j].date;
                 break; // Found the earliest date
               }
