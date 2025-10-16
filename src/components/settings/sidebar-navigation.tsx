@@ -6,7 +6,6 @@ import {
   Palette, 
   CreditCard, 
   Building2,
-  Bell,
   Settings,
   ShoppingCart,
   MessageSquare,
@@ -68,11 +67,6 @@ const navigationItems = [
     id: 'appearance',
     label: 'Appearance',
     icon: Palette,
-  },
-  {
-    id: 'notifications',
-    label: 'Notifications',
-    icon: Bell,
   },
   {
     id: 'forecast-settings',
