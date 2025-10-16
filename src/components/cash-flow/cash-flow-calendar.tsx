@@ -440,8 +440,10 @@ export const CashFlowCalendar = ({
   };
 
   const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentDate(prev => {
-      const next = direction === 'prev' ? subMonths(prev, 1) : addMonths(prev, 1);
+    setCurrentDate((prev) => {
+      const tentative = direction === 'prev' ? subMonths(prev, 1) : addMonths(prev, 1);
+      const minMonth = startOfMonth(accountStartDate);
+      const next = tentative < minMonth ? minMonth : tentative;
       console.log('[Calendar] navigateMonth', direction, 'from', prev, 'to', next);
       return next;
     });
@@ -778,11 +780,11 @@ export const CashFlowCalendar = ({
         <div className="flex items-center justify-center px-6 pb-4">
           <div className="flex items-center space-x-4">
             <Button 
+              type="button"
               variant="outline" 
               size="sm" 
+              disabled={startOfMonth(currentDate) <= startOfMonth(accountStartDate)}
               onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
                 console.log('[Calendar] Prev button clicked');
                 navigateMonth('prev');
               }}
