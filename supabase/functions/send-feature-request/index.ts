@@ -89,7 +89,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: "Feature Request <onboarding@resend.dev>",
-        to: ["kevin@imarand.com"],
+        to: ["orders@imarand.com"],
         reply_to: email,
         subject: `[${category}] ${subject} - Priority: ${priority}`,
         html: `
