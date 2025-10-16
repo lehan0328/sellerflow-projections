@@ -531,27 +531,25 @@ const Landing = () => {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left Content */}
             <div className="space-y-8 z-10">
-              {/* Floating Badge */}
-              <div className="animate-fade-in">
-                <Badge variant="secondary" className="text-base px-4 py-2 whitespace-nowrap font-semibold">
-                  Starting at only $24/mo
-                </Badge>
-              </div>
-              
               <div className="animate-fade-in space-y-6" style={{
               animationDelay: '200ms'
             }}>
                 <div className="flex items-start gap-4">
                   <h1 className="text-4xl lg:text-5xl xl:text-6xl font-display font-bold leading-relaxed tracking-tight flex-1">
-                    <span className="block text-foreground pb-2">Smarter</span>
                     <div className="flex items-center gap-4 pb-2">
-                      <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
-                        Cash Flow Forecasting
-                      </span>
+                      <span className="text-foreground">Smarter</span>
                       <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm hover-scale whitespace-nowrap">
                         <Sparkles className="h-3 w-3 animate-pulse" />
                         <span className="font-display">AI-Powered Forecasting</span>
                         <span className="ml-1 px-2 py-0.5 bg-primary/20 rounded-full text-xs">New</span>
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-4 pb-2">
+                      <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+                        Cash Flow Forecasting
+                      </span>
+                      <Badge variant="secondary" className="text-base px-4 py-2 whitespace-nowrap font-semibold">
+                        Starting at only $24/mo
                       </Badge>
                     </div>
                     <span className="block text-foreground pb-2">for Amazon Sellers</span>
