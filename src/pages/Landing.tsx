@@ -644,46 +644,22 @@ const Landing = () => {
                 </Button>
               </div>
 
-              {/* Floating Card Effect */}
+              {/* Video Frame */}
               <div className="relative animate-float">
                 {/* Glow effect */}
                 <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-3xl blur-3xl animate-glow-pulse" />
                 
-                {/* Video preview card */}
-                <div className="relative rounded-3xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden group hover:border-primary/40 transition-all duration-500">
-                  {/* Browser chrome */}
-                  <div className="p-3 border-b border-border/50 bg-muted/30 flex items-center justify-between">
-                    <div className="flex gap-2">
-                      <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                      <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                      <div className="w-3 h-3 rounded-full bg-green-500/80" />
-                    </div>
-                    <div className="flex-1 mx-4 px-4 py-1 bg-background/50 rounded-lg">
-                      <div className="text-xs text-muted-foreground font-mono">aurenapp.com/dashboard</div>
-                    </div>
-                    <div className="flex gap-2">
-                      <div className="w-6 h-6 rounded bg-muted/50" />
-                      <div className="w-6 h-6 rounded bg-muted/50" />
-                    </div>
-                  </div>
-                  
-                  {/* Video */}
-                  <div className="relative overflow-hidden bg-background/50" style={{
-                  aspectRatio: '16/10'
-                }}>
-                    <video 
-                      src="/Budget_Planning_and_Spending_Projections.mp4" 
-                      className="w-full h-full object-cover"
-                      title="Dashboard Demo Video"
-                      controls
-                      autoPlay
-                      muted
-                      loop
-                    />
-                    
-                    {/* Fade gradient */}
-                    <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-card/80 via-card/40 to-transparent pointer-events-none" />
-                  </div>
+                {/* Video card */}
+                <div className="relative rounded-2xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden">
+                  <video 
+                    src="/Budget_Planning_and_Spending_Projections.mp4" 
+                    className="w-full h-auto"
+                    title="Dashboard Demo Video"
+                    controls
+                    autoPlay
+                    muted
+                    loop
+                  />
                 </div>
 
                 {/* Floating stats */}
