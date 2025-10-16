@@ -430,23 +430,50 @@ const Dashboard = () => {
       }
     }
 
-    // Create transaction for this PO (individual record)
-    const transactionData = {
-      type: 'purchase_order' as const,
-      amount: amount,
-      description: orderData.poName || `PO - ${orderData.vendor}`,
-      vendorId: vendorId,
-      transactionDate: orderData.poDate || new Date(),
-      dueDate: dueDate,
-      status: (dueDateStartOfDay <= today ? 'completed' : 'pending') as 'completed' | 'pending',
-      creditCardId: orderData.paymentMethod === 'credit-card' ? orderData.selectedCreditCard : null
-    };
-    
-    console.info("🔍 Creating transaction:", transactionData);
-    const newTransaction = await addTransaction(transactionData);
-    console.info("🔍 Transaction created:", newTransaction);
+    // Handle preorder payment schedule - create multiple transactions
+    if (orderData.paymentType === 'preorder' && orderData.paymentSchedule && orderData.paymentSchedule.length > 0) {
+      console.info("Creating preorder transactions with payment schedule:", orderData.paymentSchedule);
+      
+      // Create a transaction for each payment in the schedule
+      for (let i = 0; i < orderData.paymentSchedule.length; i++) {
+        const payment = orderData.paymentSchedule[i];
+        const paymentAmount = typeof payment.amount === 'string' ? parseFloat(payment.amount) : payment.amount;
+        const paymentDueDate = payment.dueDate || new Date();
+        const paymentDueDateStartOfDay = startOfDay(paymentDueDate);
+        
+        const transactionData = {
+          type: 'purchase_order' as const,
+          amount: paymentAmount,
+          description: `${orderData.poName || `PO - ${orderData.vendor}`} - ${payment.description || `Payment ${i + 1}`}`,
+          vendorId: vendorId,
+          transactionDate: orderData.poDate || new Date(),
+          dueDate: paymentDueDate,
+          status: (paymentDueDateStartOfDay <= today ? 'completed' : 'pending') as 'completed' | 'pending',
+          creditCardId: orderData.paymentMethod === 'credit-card' ? orderData.selectedCreditCard : null
+        };
+        
+        console.info(`🔍 Creating preorder transaction ${i + 1}/${orderData.paymentSchedule.length}:`, transactionData);
+        await addTransaction(transactionData);
+      }
+    } else {
+      // Create single transaction for non-preorder POs
+      const transactionData = {
+        type: 'purchase_order' as const,
+        amount: amount,
+        description: orderData.poName || `PO - ${orderData.vendor}`,
+        vendorId: vendorId,
+        transactionDate: orderData.poDate || new Date(),
+        dueDate: dueDate,
+        status: (dueDateStartOfDay <= today ? 'completed' : 'pending') as 'completed' | 'pending',
+        creditCardId: orderData.paymentMethod === 'credit-card' ? orderData.selectedCreditCard : null
+      };
+      
+      console.info("🔍 Creating transaction:", transactionData);
+      const newTransaction = await addTransaction(transactionData);
+      console.info("🔍 Transaction created:", newTransaction);
+    }
 
-    console.info("Transaction created, refreshing data");
+    console.info("Transaction(s) created, refreshing data");
     await Promise.all([refetchVendors(), refetchTransactions()]);
     
     setShowPurchaseOrderForm(false);
