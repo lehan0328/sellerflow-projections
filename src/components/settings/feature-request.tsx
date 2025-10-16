@@ -132,7 +132,7 @@ export const FeatureRequest = () => {
         return;
       }
 
-      toast.success("Feature request submitted successfully! Check the admin dashboard to review.");
+      toast.success("Feature request submitted successfully!");
       
       // Reset form (keep name and email)
       setFormData(prev => ({
