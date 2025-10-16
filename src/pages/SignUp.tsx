@@ -24,8 +24,7 @@ export const SignUp = () => {
     email: searchParams.get('email') || '',
     password: '',
     confirmPassword: '',
-    firstName: '',
-    lastName: '',
+    fullName: '',
     company: '',
     monthlyRevenue: '',
     marketplaces: [] as string[],
@@ -92,7 +91,7 @@ export const SignUp = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signUpData.email || !signUpData.password || !signUpData.firstName || !signUpData.lastName) {
+    if (!signUpData.email || !signUpData.password || !signUpData.fullName) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -109,6 +108,11 @@ export const SignUp = () => {
 
     setLoading(true);
     try {
+      // Parse full name into first and last name
+      const nameParts = signUpData.fullName.trim().split(/\s+/);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+      
       const redirectUrl = `${window.location.origin}/`;
       
       const { error } = await supabase.auth.signUp({
@@ -117,8 +121,8 @@ export const SignUp = () => {
         options: {
           emailRedirectTo: redirectUrl,
           data: {
-            first_name: signUpData.firstName,
-            last_name: signUpData.lastName,
+            first_name: firstName,
+            last_name: lastName,
             company: signUpData.company,
             monthly_revenue: signUpData.monthlyRevenue,
             ecommerce_marketplaces: signUpData.marketplaces,
@@ -169,29 +173,19 @@ export const SignUp = () => {
         <Card className="shadow-elevated border-2 backdrop-blur-sm bg-card/95">
           <CardContent className="p-8">
             <form onSubmit={handleSignUp} className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName" className="text-sm font-medium">First Name *</Label>
-                  <Input
-                    id="firstName"
-                    placeholder="John"
-                    value={signUpData.firstName}
-                    onChange={(e) => setSignUpData(prev => ({ ...prev, firstName: e.target.value }))}
-                    required
-                    className="h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName" className="text-sm font-medium">Last Name *</Label>
-                  <Input
-                    id="lastName"
-                    placeholder="Doe"
-                    value={signUpData.lastName}
-                    onChange={(e) => setSignUpData(prev => ({ ...prev, lastName: e.target.value }))}
-                    required
-                    className="h-11"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="fullName" className="text-sm font-medium">Full Name *</Label>
+                <Input
+                  id="fullName"
+                  placeholder="John Doe"
+                  value={signUpData.fullName}
+                  onChange={(e) => setSignUpData(prev => ({ ...prev, fullName: e.target.value }))}
+                  required
+                  className="h-11"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter your first and last name
+                </p>
               </div>
 
               <div className="space-y-2">

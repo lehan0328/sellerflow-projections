@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,15 +25,55 @@ type FeatureRequestForm = z.infer<typeof featureRequestSchema>;
 export const FeatureRequest = () => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [formData, setFormData] = useState<FeatureRequestForm>({
     name: "",
-    email: user?.email || "",
+    email: "",
     subject: "",
     message: "",
     priority: "medium",
     category: "feature"
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FeatureRequestForm, string>>>({});
+
+  // Fetch user profile and auto-populate form
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) {
+        setIsLoadingProfile(false);
+        return;
+      }
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching profile:', error);
+        }
+
+        // Combine first and last name, or use email as fallback
+        const fullName = profile?.first_name && profile?.last_name
+          ? `${profile.first_name} ${profile.last_name}`.trim()
+          : profile?.first_name || profile?.last_name || user.email?.split('@')[0] || "";
+
+        setFormData(prev => ({
+          ...prev,
+          name: fullName,
+          email: user.email || ""
+        }));
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user]);
 
   const handleInputChange = (field: keyof FeatureRequestForm, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -85,15 +125,14 @@ export const FeatureRequest = () => {
 
       toast.success("Feature request sent successfully! We'll review it and get back to you.");
       
-      // Reset form
-      setFormData({
-        name: "",
-        email: user?.email || "",
+      // Reset form (keep name and email)
+      setFormData(prev => ({
+        ...prev,
         subject: "",
         message: "",
         priority: "medium",
         category: "feature"
-      });
+      }));
       
     } catch (error) {
       console.error("Error:", error);
@@ -141,11 +180,11 @@ export const FeatureRequest = () => {
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="Enter your full name"
-                className={errors.name ? "border-destructive" : ""}
+                placeholder="Loading..."
+                disabled
+                className="bg-muted"
               />
-              {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
+              <p className="text-xs text-muted-foreground mt-1">Auto-filled from your profile</p>
             </div>
             <div>
               <Label htmlFor="email">Email Address *</Label>
@@ -153,11 +192,11 @@ export const FeatureRequest = () => {
                 id="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder="your.email@example.com"
-                className={errors.email ? "border-destructive" : ""}
+                placeholder="Loading..."
+                disabled
+                className="bg-muted"
               />
-              {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
+              <p className="text-xs text-muted-foreground mt-1">Auto-filled from your account</p>
             </div>
           </div>
 
