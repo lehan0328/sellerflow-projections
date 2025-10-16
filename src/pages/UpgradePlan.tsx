@@ -457,36 +457,49 @@ const UpgradePlan = () => {
                         </div>
                       )}
                       
-                      {billing_interval !== 'year' && subscription_end && current_period_start && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="default"
-                            className="w-full bg-gradient-primary mt-2"
-                            onClick={() => openCustomerPortal()}
-                          >
-                            <TrendingUp className="h-4 w-4 mr-2" />
-                            Upgrade to Yearly (Save {plans.find(p => p.key === plan)?.savings})
-                          </Button>
-                          
-                          {(() => {
-                            const now = new Date();
-                            const periodEnd = new Date(subscription_end);
-                            const periodStart = new Date(current_period_start);
-                            const daysInPeriod = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
-                            const daysRemaining = Math.max(0, Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-                            const creditAmount = price_amount ? ((daysRemaining / daysInPeriod) * (price_amount / 100)) : 0;
-                            
-                            return daysRemaining > 0 && creditAmount > 0 ? (
-                              <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
-                                <p className="text-xs text-muted-foreground text-center">
-                                  <strong className="text-primary">${creditAmount.toFixed(2)} credit</strong> will be applied from your {daysRemaining} remaining day{daysRemaining !== 1 ? 's' : ''}
-                                </p>
+                      {billing_interval !== 'year' && subscription_end && current_period_start && plan && (() => {
+                        const now = new Date();
+                        const periodEnd = new Date(subscription_end);
+                        const periodStart = new Date(current_period_start);
+                        const daysInPeriod = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
+                        const daysRemaining = Math.max(0, Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+                        const creditAmount = price_amount ? ((daysRemaining / daysInPeriod) * (price_amount / 100)) : 0;
+                        const currentPlanData = plans.find(p => p.key === plan);
+                        const yearlyPrice = currentPlanData?.yearlyPrice || 0;
+                        const amountDue = yearlyPrice - creditAmount;
+                        const savings = currentPlanData?.savings || '';
+                        
+                        return daysRemaining > 0 && creditAmount > 0 ? (
+                          <div className="space-y-3 mt-3">
+                            <div className="space-y-2 p-3 bg-muted/30 rounded-lg">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">Yearly Price:</span>
+                                <span className="font-medium">${yearlyPrice}</span>
                               </div>
-                            ) : null;
-                          })()}
-                        </>
-                      )}
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-green-600">Credit for Remaining Time:</span>
+                                <span className="text-green-600 font-medium">-${creditAmount.toFixed(2)}</span>
+                              </div>
+                              <Separator className="my-2" />
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold">Amount Due:</span>
+                                <span className="text-xl font-bold">${amountDue.toFixed(2)}</span>
+                              </div>
+                            </div>
+                            <Button
+                              size="lg"
+                              className="w-full bg-blue-500 hover:bg-blue-600 text-white relative"
+                              onClick={() => openCustomerPortal()}
+                            >
+                              <Calendar className="h-4 w-4 mr-2" />
+                              Switch to Yearly in Customer Portal
+                              <Badge className="ml-2 bg-white text-blue-600 hover:bg-white">
+                                Save {savings}
+                              </Badge>
+                            </Button>
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                   )}
                   <Separator />
