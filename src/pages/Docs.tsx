@@ -34,7 +34,7 @@ const Docs = () => {
       icon: <BookOpen className="h-6 w-6" />,
       path: "/docs/getting-started",
       articles: [
-        "Quick Setup Guide",
+        "Quick Setup Guide (5 minutes)",
         "Account Configuration", 
         "First Time Setup",
         "Understanding Your Dashboard"
@@ -48,8 +48,8 @@ const Docs = () => {
       articles: [
         "Connecting Amazon Seller Central",
         "Multi-Marketplace Setup",
-        "Payout Forecasting",
-        "Settlement Reports"
+        "95%+ Accurate Payout Forecasting",
+        "Settlement Reports & History"
       ]
     },
     {
@@ -58,58 +58,82 @@ const Docs = () => {
       icon: <CreditCard className="h-6 w-6" />,
       path: "/docs/bank-connections",
       articles: [
-        "Adding Bank Accounts",
-        "Plaid Integration",
-        "Security & Encryption",
-        "Troubleshooting Connections"
+        "Adding Bank Accounts via Plaid",
+        "Credit Card Tracking",
+        "Transaction Importing",
+        "Security & Encryption"
+      ]
+    },
+    {
+      title: "AI Transaction Matching",
+      description: "Automatically match and reconcile bank transactions",
+      icon: <LinkIcon className="h-6 w-6" />,
+      path: "/docs/transaction-matching",
+      articles: [
+        "How AI Matching Works",
+        "Reviewing Match Suggestions",
+        "Manual Matching",
+        "Match Accuracy Tips"
+      ]
+    },
+    {
+      title: "AI Features & Insights",
+      description: "Leverage AI for smarter cash flow decisions",
+      icon: <TrendingUp className="h-6 w-6" />,
+      path: "/docs/ai-features",
+      articles: [
+        "Daily AI Financial Insights",
+        "Buying Opportunities Analysis",
+        "AI PDF Data Extractor",
+        "24/7 AI Support Chat"
       ]
     },
     {
       title: "Cash Flow Management",
       description: "Master your cash flow forecasting and planning",
-      icon: <TrendingUp className="h-6 w-6" />,
+      icon: <BarChart3 className="h-6 w-6" />,
       path: "/docs/cash-flow",
       articles: [
-        "Cash Flow Forecasting",
-        "Seasonal Planning",
-        "Working Capital Management",
+        "365-Day Cash Flow Forecasting",
+        "Seasonal Planning for Q4",
+        "Safe Spending Calculator",
         "Credit Optimization"
       ]
     },
     {
       title: "Vendor Management",
-      description: "Track and manage your supplier relationships",
+      description: "Track unlimited suppliers and purchase orders",
       icon: <Users className="h-6 w-6" />,
       path: "/docs/vendors",
       articles: [
-        "Adding Vendors",
-        "Payment Terms",
-        "Purchase Orders",
-        "Vendor Performance"
+        "Adding Unlimited Vendors",
+        "Payment Terms & Due Dates",
+        "Purchase Orders & Tracking",
+        "Partial Payments"
       ]
     },
     {
-      title: "Income Tracking",
+      title: "Income & Customers",
       description: "Monitor and forecast your income streams",
       icon: <DollarSign className="h-6 w-6" />,
       path: "/docs/income",
       articles: [
         "Customer Management",
+        "Sales Orders",
         "Recurring Income",
-        "Payment Collection",
-        "Income Categories"
+        "Payment Collection"
       ]
     },
     {
-      title: "Reports & Analytics",
-      description: "Generate insights from your financial data",
-      icon: <BarChart3 className="h-6 w-6" />,
-      path: "/docs/reports",
+      title: "Advanced Features",
+      description: "Scenario planning, notifications, and analytics",
+      icon: <Settings className="h-6 w-6" />,
+      path: "/docs/advanced-features",
       articles: [
-        "Financial Reports",
-        "Cash Flow Analysis",
-        "Performance Metrics",
-        "Export Options"
+        "Scenario Planning (Professional)",
+        "Automated Notifications (Professional)",
+        "Document Storage",
+        "Team Management & Permissions"
       ]
     },
     {
@@ -119,8 +143,8 @@ const Docs = () => {
       path: "/docs/faq",
       articles: [
         "Common Issues",
-        "Error Messages",
-        "Account Problems",
+        "Pricing & Plans",
+        "Security Questions",
         "Contact Support"
       ]
     }
@@ -201,7 +225,8 @@ const Docs = () => {
               Auren Documentation
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Everything you need to master your Amazon business cash flow with unlimited vendors, AI-powered insights, and real-time bank integrations
+              Everything you need to master your Amazon business cash flow with 95%+ accurate forecasting, 
+              AI transaction matching, buying opportunities analysis, and unlimited vendor tracking
             </p>
             <Badge variant="secondary" className="text-sm">
               Last Updated: January 2025
@@ -219,7 +244,7 @@ const Docs = () => {
                   <h3 className="font-semibold">Quick Start</h3>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Get up and running in under 10 minutes
+                  Get up and running in 5 minutes
                 </p>
                 <Link to="/docs/getting-started">
                   <Button size="sm" variant="outline" className="w-full">
@@ -239,7 +264,7 @@ const Docs = () => {
                   <h3 className="font-semibold">Amazon Setup</h3>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Connect your Amazon seller accounts
+                  95%+ accurate payout forecasting
                 </p>
                 <Link to="/docs/amazon-integration">
                   <Button size="sm" variant="outline" className="w-full">

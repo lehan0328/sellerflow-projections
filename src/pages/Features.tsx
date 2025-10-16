@@ -132,11 +132,19 @@ const Features = () => {
     },
     {
       icon: Zap,
-      title: "Smart Transaction Matching",
-      description: "AI-powered matching between bank transactions and purchase orders. One-click reconciliation.",
+      title: "AI Transaction Matching",
+      description: "AI automatically matches bank transactions to vendors, invoices, and purchase orders. Review and approve with one click to save hours of reconciliation.",
       category: "AI",
       badge: "AI",
-      slug: "smart-transaction-matching"
+      slug: "ai-transaction-matching"
+    },
+    {
+      icon: TrendingUp,
+      title: "AI Buying Opportunities",
+      description: "AI analyzes your cash flow patterns and tells you the optimal timing for major purchases when you have available funds.",
+      category: "AI",
+      badge: "AI",
+      slug: "ai-buying-opportunities"
     },
     {
       icon: Wallet,
@@ -147,11 +155,11 @@ const Features = () => {
       slug: "safe-spending-calculator"
     },
     {
-      icon: TrendingUp,
+      icon: BarChart3,
       title: "Revenue Forecasting",
-      description: "Predict future revenue based on historical patterns and Amazon payout schedules.",
+      description: "Predict future revenue based on historical patterns and Amazon payout schedules with 95%+ accuracy.",
       category: "Analytics",
-      badge: null,
+      badge: "Popular",
       slug: "revenue-forecasting"
     },
     {

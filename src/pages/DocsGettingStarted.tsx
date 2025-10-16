@@ -57,24 +57,24 @@ const DocsGettingStarted = () => {
 
   const keyFeatures = [
     {
-      title: "Amazon Payout Forecasting",
-      description: "See exactly when your next Amazon payments will arrive with 95%+ accuracy",
-      icon: <DollarSign className="h-6 w-6 text-success" />
-    },
-    {
-      title: "Real-time Cash Flow",
-      description: "Monitor your cash position across all bank accounts and credit cards",
+      title: "✨ AI Transaction Matching",
+      description: "Automatically match bank transactions to vendors and purchase orders. Review and approve matches with one click, saving hours of manual work.",
       icon: <Zap className="h-6 w-6 text-primary" />
     },
     {
-      title: "Unlimited Vendors",
-      description: "Track unlimited suppliers and purchase orders on all plans",
-      icon: <Users className="h-6 w-6 text-accent" />
+      title: "Amazon Payout Forecasting",
+      description: "See exactly when your next Amazon payments will arrive with 95%+ accuracy. Plan inventory purchases with confidence.",
+      icon: <DollarSign className="h-6 w-6 text-success" />
     },
     {
-      title: "AI Support & Insights",
-      description: "Get instant help and personalized financial advice with AI",
-      icon: <Shield className="h-6 w-6 text-muted-foreground" />
+      title: "✨ Buying Opportunities",
+      description: "AI analyzes your cash flow and tells you the optimal time for major purchases when you have available funds (Growing+ plans).",
+      icon: <Shield className="h-6 w-6 text-accent" />
+    },
+    {
+      title: "Unlimited Vendors & Transactions",
+      description: "Track unlimited suppliers and purchase orders on all plans. No per-transaction fees or vendor limits.",
+      icon: <Users className="h-6 w-6 text-muted-foreground" />
     }
   ];
 
@@ -123,12 +123,13 @@ const DocsGettingStarted = () => {
           <div className="space-y-4">
             <Badge variant="secondary" className="mb-4">
               <Clock className="h-3 w-3 mr-1" />
-              10 minutes setup
+              5 minutes setup
             </Badge>
             <h2 className="text-3xl font-bold">Welcome to Auren</h2>
             <p className="text-xl text-muted-foreground">
-              Get your Amazon business cash flow under control in just a few simple steps. 
-              This guide will walk you through everything you need to know to get started.
+              Get your Amazon business cash flow under control in just 5 minutes. 
+              Connect your accounts and start getting 95%+ accurate forecasts, automatic transaction matching, 
+              and AI-powered buying opportunity recommendations immediately.
             </p>
           </div>
 
@@ -136,7 +137,9 @@ const DocsGettingStarted = () => {
           <Alert className="border-success/20 bg-success/10">
             <CheckCircle className="h-4 w-4 text-success" />
             <AlertDescription className="text-success-foreground">
-              <strong>Why Auren?</strong> Unlimited vendors and transactions on all plans. Amazon sellers using our platform get 95%+ accurate payout forecasting, AI-powered insights, and complete cash flow visibility across all accounts.
+              <strong>Why Auren?</strong> Starting at only $24/mo with unlimited vendors and transactions on all plans. 
+              Get 95%+ accurate Amazon payout forecasting, AI transaction matching, buying opportunities analysis, 
+              and complete cash flow visibility. Setup takes just 5 minutes.
             </AlertDescription>
           </Alert>
 

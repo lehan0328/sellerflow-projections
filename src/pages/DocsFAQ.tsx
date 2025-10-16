@@ -100,7 +100,7 @@ const DocsFAQ = () => {
       questions: [
         {
           question: "What are the pricing plans?",
-          answer: "We have three plans: Starter ($29/mo or $290/year) for under $20k monthly Amazon payout, Growing ($59/mo or $590/year) for under $100k, and Professional ($89/mo or $890/year) for under $200k. All plans include unlimited vendors and unlimited transactions. Yearly plans save you ~17%."
+          answer: "Starter ($24/mo or $240/year) for under $20k monthly Amazon payout, Growing ($59/mo or $590/year) for under $100k, and Professional ($89/mo or $890/year) for under $200k. All plans include unlimited vendors, unlimited transactions, AI forecasting, and transaction matching. Growing adds AI insights and buying opportunities. Professional adds automated notifications and scenario planning. Yearly plans save ~17%."
         },
         {
           question: "Do you limit the number of vendors or transactions?",
@@ -108,7 +108,7 @@ const DocsFAQ = () => {
         },
         {
           question: "Can I add more bank accounts or Amazon accounts?",
-          answer: "Yes! Each plan includes a certain number of bank/credit card connections and Amazon accounts. You can purchase add-ons: Additional Bank Account ($7/mo), Additional Amazon Account ($50/mo), or Additional User ($5/mo)."
+          answer: "Yes! Starter includes 2 bank connections and 1 Amazon account. Growing includes 4 bank connections, Professional includes 6. You can purchase add-ons anytime: Additional Bank/Credit Card ($7/mo), Additional Amazon Account ($50/mo), or Additional Team Member ($5/mo). Enterprise plans get unlimited everything."
         },
         {
           question: "Can I change plans anytime?",
@@ -141,8 +141,16 @@ const DocsFAQ = () => {
           answer: "Yes, you can export all your data including transactions, forecasts, and reports in CSV, Excel, or PDF formats. Go to Settings > Data Export for all available options. No vendor lock-in - your data is always accessible."
         },
         {
-          question: "Do you have AI features?",
-          answer: "Yes! Growing and Professional plans include AI insights for personalized financial advice and AI PDF extractor to automatically extract data from purchase orders and invoices. The AI support assistant is available to all users to help answer questions about the platform."
+          question: "What AI features are included?",
+          answer: "All plans include AI-powered Amazon payout forecasting (95%+ accuracy), AI transaction matching, AI PDF extractor (Starter+), and 24/7 AI support chat. Growing and Professional plans add AI financial insights (daily personalized advice), buying opportunities analysis, and AI-powered scenario planning for strategic decision-making."
+        },
+        {
+          question: "What is transaction matching and how does it work?",
+          answer: "Our AI automatically matches bank transactions to vendors, purchase orders, and invoices by analyzing amounts, dates, names, and patterns. You simply review suggested matches and approve with one click. This saves hours of manual reconciliation work and keeps your books accurate."
+        },
+        {
+          question: "What are buying opportunities?",
+          answer: "Available on Growing and Professional plans, our AI analyzes your cash flow patterns and upcoming obligations to identify optimal windows for large purchases. It tells you exactly when you have available cash for inventory orders, equipment purchases, or other investments without risking cash flow problems."
         },
         {
           question: "Can team members access my account?",
