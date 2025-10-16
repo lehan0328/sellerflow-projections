@@ -695,8 +695,9 @@ const Landing = () => {
                 <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-3xl blur-3xl animate-glow-pulse" />
                 
                 {/* Video card */}
-                <div className="relative rounded-2xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden">
+                <div className="relative rounded-2xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden group">
                   <video 
+                    id="demo-video"
                     src="/Budget_Planning_and_Spending_Projections.mp4" 
                     className="w-full h-auto"
                     title="Dashboard Demo Video"
@@ -704,25 +705,26 @@ const Landing = () => {
                     muted
                     loop
                     onLoadedMetadata={(e) => { e.currentTarget.playbackRate = 1.5; }}
+                    onPlay={(e) => {
+                      const playBtn = e.currentTarget.parentElement?.querySelector('.play-overlay');
+                      if (playBtn) playBtn.classList.add('hidden');
+                    }}
                   />
-                </div>
-
-                {/* Floating stats */}
-                <div className="absolute -bottom-6 -right-6 p-4 rounded-2xl bg-card/80 backdrop-blur-xl border border-primary/20 shadow-lg animate-float" style={{
-                animationDelay: '1s'
-              }}>
-                  <div className="text-sm text-muted-foreground">Next Payout</div>
-                  <div className="text-2xl font-bold text-success">$12,847</div>
-                  <div className="text-xs text-muted-foreground">in 3 days</div>
-                </div>
-
-                <div className="absolute -top-6 -right-6 p-4 rounded-2xl bg-card/80 backdrop-blur-xl border border-accent/20 shadow-lg animate-float" style={{
-                animationDelay: '2s',
-                animationDuration: '7s'
-              }}>
-                  <div className="text-xs text-success font-medium mb-1">🟢 Live Sync</div>
-                  <div className="text-lg font-bold text-foreground mb-1">Real-Time Updates</div>
-                  <div className="text-xs text-muted-foreground">Connected to 3 accounts</div>
+                  
+                  {/* Large Play Button Overlay */}
+                  <div 
+                    className="play-overlay absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm cursor-pointer transition-opacity hover:bg-black/40"
+                    onClick={() => {
+                      const video = document.getElementById('demo-video') as HTMLVideoElement;
+                      if (video) {
+                        video.play();
+                      }
+                    }}
+                  >
+                    <div className="w-24 h-24 rounded-full bg-primary/90 flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
+                      <div className="w-0 h-0 border-t-[16px] border-t-transparent border-l-[28px] border-l-white border-b-[16px] border-b-transparent ml-2" />
+                    </div>
+                  </div>
                 </div>
               </div>
               
