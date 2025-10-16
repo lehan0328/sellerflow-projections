@@ -633,6 +633,51 @@ const Landing = () => {
             <div className="relative animate-fade-in space-y-6" style={{
             animationDelay: '400ms'
           }}>
+              {/* Signature Features Highlights */}
+              <div className="bg-card/50 backdrop-blur-sm border border-primary/10 rounded-2xl p-6 mb-6">
+                <div className="text-center mb-4">
+                  <span className="text-sm font-semibold text-primary">✨ Signature Features</span>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Lightbulb className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Smart Purchase Planning</div>
+                      <div className="text-xs text-muted-foreground">Intelligent recommendations for optimal inventory purchases</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+                      <Shield className="h-4 w-4 text-accent" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Safe Spending Power</div>
+                      <div className="text-xs text-muted-foreground">Know exactly how much you can safely spend</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center flex-shrink-0">
+                      <TrendingUp className="h-4 w-4 text-success" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Buying Opportunity Projection</div>
+                      <div className="text-xs text-muted-foreground">Forecast future purchasing windows and opportunities</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-info/10 flex items-center justify-center flex-shrink-0">
+                      <Calendar className="h-4 w-4 text-info" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Amazon Payout Forecasting</div>
+                      <div className="text-xs text-muted-foreground">Predict upcoming Amazon payouts with precision</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Try Interactive Demo Button - Above Video */}
               <div className="flex justify-center">
                 <Button size="default" onClick={() => navigate('/demo')} className="bg-gradient-primary px-6 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 relative overflow-hidden group">
@@ -656,7 +701,6 @@ const Landing = () => {
                     className="w-full h-auto"
                     title="Dashboard Demo Video"
                     controls
-                    autoPlay
                     muted
                     loop
                   />
