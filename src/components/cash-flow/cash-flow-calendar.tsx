@@ -777,7 +777,16 @@ export const CashFlowCalendar = ({
       {viewType === 'calendar' && (
         <div className="flex items-center justify-center px-6 pb-4">
           <div className="flex items-center space-x-4">
-            <Button variant="outline" size="sm" onClick={() => navigateMonth('prev')}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[Calendar] Prev button clicked');
+                navigateMonth('prev');
+              }}
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <h3 className="text-xl font-semibold min-w-[200px] text-center">
