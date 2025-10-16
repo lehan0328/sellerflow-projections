@@ -134,6 +134,10 @@ const Landing = () => {
     title: "Payout Tracking & Reconciliation",
     description: "See every Amazon disbursement, track fees, and reconcile transactions automatically."
   }, {
+    icon: <ShoppingCart className="h-6 w-6" />,
+    title: "Smart Purchase Planning",
+    description: "Add projections and search by amount or date to find the perfect buying opportunities based on your cash flow."
+  }, {
     icon: <BadgeCheck className="h-6 w-6" />,
     title: "Financial Insights Dashboard",
     description: "View profit margins, cash balances, and historical trends across SKUs and marketplaces."
@@ -241,12 +245,6 @@ const Landing = () => {
     feature: "✨ Ai PDF Extractor",
     starter: false,
     growing: true,
-    professional: true,
-    enterprise: true
-  }, {
-    feature: "Automated Notifications",
-    starter: false,
-    growing: false,
     professional: true,
     enterprise: true
   }, {

@@ -260,7 +260,7 @@ const Features = () => {
                   </div>
                   <CardTitle className="text-2xl text-center">🎯 Calculated Buying Opportunities</CardTitle>
                   <CardDescription className="text-base text-center">
-                    Smart purchase planning recommendations based on expenses + payouts. Never miss a growth opportunity or over-commit funds.
+                    Add projections and search by amount or date to find perfect buying opportunities. Smart purchase planning based on your projected cash flow.
                   </CardDescription>
                 </CardHeader>
               </Card>
