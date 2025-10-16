@@ -20,7 +20,7 @@ interface VendorFormProps {
 }
 
 export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = [], initialVendorName }: VendorFormProps) => {
-  const { categories, addCategory } = useCategories('expense');
+  const { categories, addCategory, refetch: refetchCategories } = useCategories('expense');
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -164,6 +164,7 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
             onOpenChange={setShowAddCategory}
             onAddCategory={async (name) => {
               await addCategory(name);
+              await refetchCategories();
               handleInputChange("category", name);
             }}
             type="expense"
