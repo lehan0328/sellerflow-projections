@@ -473,8 +473,8 @@ export const CashFlowInsights = ({
       return acc;
     }, {} as Record<string, number>);
 
-    // Adjust each opportunity by subtracting cumulative projections up to that date
-    return allBuyingOpportunities.map(opp => {
+    // First pass: Calculate adjusted balance for each opportunity
+    const adjustedOpps = allBuyingOpportunities.map(opp => {
       let totalProjectionsBeforeDate = 0;
       
       // Sum all projections that occur before or on this opportunity date
@@ -489,6 +489,19 @@ export const CashFlowInsights = ({
         balance: opp.balance - totalProjectionsBeforeDate
       };
     }).filter(opp => opp.balance > 0); // Only show opportunities with positive balance
+
+    // Second pass: Hide opportunities where future dates have lower safe spending
+    // This prevents showing high spending today when a future PO will cause overdraft
+    return adjustedOpps.filter((opp, index) => {
+      // Find the minimum balance from this opportunity forward
+      const minFutureBalance = Math.min(
+        opp.balance,
+        ...adjustedOpps.slice(index + 1).map(futureOpp => futureOpp.balance)
+      );
+      
+      // Only show this opportunity if it doesn't exceed the minimum future balance
+      return opp.balance <= minFutureBalance || adjustedOpps.slice(index + 1).length === 0;
+    });
   };
 
   const adjustedOpportunities = getAdjustedOpportunities();
