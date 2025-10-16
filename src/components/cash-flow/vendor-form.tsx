@@ -44,8 +44,9 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
 
   const paymentTypeOptions = [
     { value: 'total', label: 'Due Upon Order' },
-    { value: 'net-terms', label: 'Net Terms (30, 60, 90 days)' },
-    { value: 'preorder', label: 'Pre-order with Deposit' }
+    { value: 'net-terms', label: 'Net Terms' },
+    { value: 'preorder', label: 'Preorder' },
+    { value: 'delivery', label: 'Due Upon Delivery' }
   ];
 
   const netTermsOptions = [
