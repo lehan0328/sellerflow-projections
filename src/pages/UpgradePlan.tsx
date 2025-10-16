@@ -367,6 +367,15 @@ const UpgradePlan = () => {
                     </Badge>
                   </div>
                   
+                  {price_amount && currency && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Price</span>
+                    <span className="text-lg font-bold">
+                      ${(price_amount / 100).toFixed(0)}/{billing_interval === 'year' ? 'year' : 'month'}
+                    </span>
+                  </div>
+                )}
+                  
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Billing</span>
                     <span className="text-sm text-muted-foreground">
@@ -387,15 +396,6 @@ const UpgradePlan = () => {
                       {subscription_end ? new Date(subscription_end).toLocaleDateString() : 'Not Available'}
                     </span>
                   </div>
-                  
-                  {price_amount && currency && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Price</span>
-                    <span className="text-lg font-bold">
-                      ${(price_amount / 100).toFixed(0)}/{billing_interval === 'year' ? 'year' : 'month'}
-                    </span>
-                  </div>
-                )}
                 
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Financial Connections</span>
