@@ -450,7 +450,7 @@ export const CashFlowInsights = ({
     
     toast({
       title: "Projection Added",
-      description: `$${amount.toLocaleString()} on ${new Date(projectionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+      description: `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} on ${new Date(projectionDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
     });
   };
 
@@ -608,7 +608,7 @@ export const CashFlowInsights = ({
                       {safeSpendingLimit < 0 && <AlertCircle className="h-4 w-4 text-red-600" />}
                     </div>
                     <span className={`text-2xl font-bold ${safeSpendingLimit < 0 ? 'text-red-600' : 'text-primary'}`}>
-                      ${safeSpendingLimit.toLocaleString()}
+                      ${safeSpendingLimit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mb-2">
@@ -651,7 +651,7 @@ export const CashFlowInsights = ({
                         <h5 className="font-semibold text-xs">Opportunity #2</h5>
                       </div>
                       <span className="text-lg font-bold text-blue-600">
-                        ${allBuyingOpportunities[1].balance.toLocaleString()}
+                        ${allBuyingOpportunities[1].balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
                     <div className="space-y-1.5 text-xs">
@@ -701,7 +701,7 @@ export const CashFlowInsights = ({
                       </Button>
                     </div> : <div className="flex items-center gap-2">
                       <span className="font-semibold text-amber-600">
-                        -${reserveAmount.toLocaleString()}
+                        -${reserveAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                       <Button 
                         size="icon" 
@@ -726,7 +726,7 @@ export const CashFlowInsights = ({
                   <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
                     <span className="text-muted-foreground">Lowest Projected</span>
                     <span className="font-semibold text-orange-600">
-                      ${projectedLowestBalance.toLocaleString()}
+                      ${projectedLowestBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                   {lowestBalanceDate && <p className="text-xs text-muted-foreground italic p-2">
@@ -783,7 +783,7 @@ export const CashFlowInsights = ({
                     </div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-bold text-green-600">
-                        ${creditCards.reduce((sum, card) => sum + card.available_credit, 0).toLocaleString()}
+                        ${creditCards.reduce((sum, card) => sum + card.available_credit, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         across {creditCards.length} {creditCards.length === 1 ? 'card' : 'cards'}
@@ -911,7 +911,7 @@ export const CashFlowInsights = ({
                   <div className="text-xs text-muted-foreground space-y-0.5">
                     {tempProjections.map((proj, idx) => (
                       <div key={idx} className="flex justify-between">
-                        <span>${proj.amount.toLocaleString()}</span>
+                        <span>${proj.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         <span>{new Date(proj.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                       </div>
                     ))}
@@ -946,7 +946,7 @@ export const CashFlowInsights = ({
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <div className="text-2xl font-bold text-blue-600">
-                          ${opp.balance.toLocaleString()}
+                          ${opp.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                         <div className="text-xs text-muted-foreground">Safe to spend</div>
                       </div>
@@ -1060,7 +1060,7 @@ export const CashFlowInsights = ({
                           <div className="flex items-center justify-between mb-3">
                             <div>
                               <div className="text-2xl font-bold text-green-600">
-                                ${matchingOpp.balance.toLocaleString()}
+                                ${matchingOpp.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </div>
                               <div className="text-xs text-muted-foreground">Available</div>
                             </div>
@@ -1170,7 +1170,7 @@ export const CashFlowInsights = ({
                               On {new Date(searchDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                             </div>
                             <div className="text-4xl font-bold text-blue-600">
-                              ${relevantOpp.balance.toLocaleString()}
+                              ${relevantOpp.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </div>
                             <div className="text-sm text-muted-foreground mt-1">Available to spend</div>
                           </div>
@@ -1243,7 +1243,7 @@ export const CashFlowInsights = ({
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-muted-foreground">Total Available</span>
                   <span className="text-2xl font-bold text-green-600">
-                    ${creditCards.reduce((sum, card) => sum + card.available_credit, 0).toLocaleString()}
+                    ${creditCards.reduce((sum, card) => sum + card.available_credit, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>
@@ -1272,7 +1272,7 @@ export const CashFlowInsights = ({
                         <p className="text-xs text-muted-foreground truncate">{card.institution_name}</p>
                       </div>
                       <span className={`text-xl font-bold flex-shrink-0 ${isOverLimit ? 'text-red-600' : 'text-green-600'}`}>
-                        ${card.available_credit.toLocaleString()}
+                        ${card.available_credit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
                     
@@ -1280,7 +1280,7 @@ export const CashFlowInsights = ({
                       <div className="flex items-start gap-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs">
                         <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
                         <p className="text-red-700 dark:text-red-400">
-                          Over limit by ${Math.abs(currentAvailableSpend).toLocaleString()}
+                          Over limit by ${Math.abs(currentAvailableSpend).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                       </div>
                     )}
@@ -1290,11 +1290,11 @@ export const CashFlowInsights = ({
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-medium text-muted-foreground">Available to Spend</span>
                         <span className={`text-lg font-bold ${currentAvailableSpend < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                          ${Math.max(0, currentAvailableSpend).toLocaleString()}
+                          ${Math.max(0, currentAvailableSpend).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        After pending orders: ${pendingOrders.toLocaleString()}
+                        After pending orders: ${pendingOrders.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                     </div>
                     
@@ -1317,7 +1317,7 @@ export const CashFlowInsights = ({
                                 {new Date(opp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                               </span>
                               <span className="font-semibold text-blue-600">
-                                ${opp.availableCredit.toLocaleString()}
+                                ${opp.availableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                             </div>
                           ))}
@@ -1333,12 +1333,12 @@ export const CashFlowInsights = ({
                     <div className="space-y-2 text-xs">
                       <div className="flex justify-between items-center p-2 bg-background/50 rounded">
                         <span className="text-muted-foreground">Credit Limit</span>
-                        <span className="font-medium">${card.credit_limit.toLocaleString()}</span>
+                        <span className="font-medium">${card.credit_limit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                       {pendingOrders > 0 && (
                         <div className="flex justify-between items-center p-2 bg-orange-50 dark:bg-orange-950/20 rounded">
                           <span className="text-muted-foreground">Pending Orders</span>
-                          <span className="font-medium text-orange-600">-${pendingOrders.toLocaleString()}</span>
+                          <span className="font-medium text-orange-600">-${pendingOrders.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                       )}
                     </div>
