@@ -154,6 +154,10 @@ export default function Pricing() {
   ];
 
   const featureComparison = [
+    { feature: "✨ Smart Purchase Planning", starter: true, growing: true, professional: true, enterprise: true },
+    { feature: "✨ Safe Spending Power", starter: true, growing: true, professional: true, enterprise: true },
+    { feature: "✨ Buying Opportunity Projection", starter: true, growing: true, professional: true, enterprise: true },
+    { feature: "✨ Payout Forecasting", starter: true, growing: true, professional: true, enterprise: true },
     { feature: "Bank/Credit Card Connections", starter: "2", growing: "3", professional: "4", enterprise: "5 + add-ons" },
     { feature: "Amazon Connections", starter: "1", growing: "1", professional: "1", enterprise: "2 + add-ons" },
     { feature: "Additional Users", starter: false, growing: "2", professional: "5", enterprise: "7 + add-ons" },

@@ -200,6 +200,30 @@ const Landing = () => {
     savings: ""
   }];
   const featureComparison = [{
+    feature: "✨ Smart Purchase Planning",
+    starter: true,
+    growing: true,
+    professional: true,
+    enterprise: true
+  }, {
+    feature: "✨ Safe Spending Power",
+    starter: true,
+    growing: true,
+    professional: true,
+    enterprise: true
+  }, {
+    feature: "✨ Buying Opportunity Projection",
+    starter: true,
+    growing: true,
+    professional: true,
+    enterprise: true
+  }, {
+    feature: "✨ Payout Forecasting",
+    starter: true,
+    growing: true,
+    professional: true,
+    enterprise: true
+  }, {
     feature: "Bank/Credit Card Connections",
     starter: "2",
     growing: "3",
