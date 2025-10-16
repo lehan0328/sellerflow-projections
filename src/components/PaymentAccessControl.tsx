@@ -16,8 +16,32 @@ export const PaymentAccessControl = ({ children }: PaymentAccessControlProps) =>
   const [accountStatus, setAccountStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    // Skip check for public routes
-    if (location.pathname === '/auth' || location.pathname === '/payment-required') {
+    // List of public routes that don't need account status check
+    const publicRoutes = [
+      '/',
+      '/auth',
+      '/signup',
+      '/payment-required',
+      '/pricing',
+      '/features',
+      '/contact',
+      '/docs',
+      '/privacy',
+      '/terms',
+      '/blog',
+      '/partners',
+      '/demo',
+      '/oauth-redirect',
+      '/amazon-oauth-callback'
+    ];
+    
+    // Skip check for public routes (including dynamic routes like /blog/*, /features/*, /docs/*)
+    const isPublicRoute = publicRoutes.some(route => 
+      location.pathname === route || 
+      location.pathname.startsWith(`${route}/`)
+    );
+    
+    if (isPublicRoute) {
       setIsChecking(false);
       return;
     }
