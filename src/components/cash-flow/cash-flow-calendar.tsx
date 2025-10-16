@@ -1361,13 +1361,14 @@ export const CashFlowCalendar = ({
                             const { cx, cy, payload } = props;
                             
                             // Always render an invisible dot to enable hovering on all dates
+                            // Larger radius (12px) for better hover detection when zoomed out
                             if (!payload.transactions || payload.transactions.length === 0) {
-                              return <circle cx={cx} cy={cy} r={4} fill="transparent" cursor="pointer" />;
+                              return <circle cx={cx} cy={cy} r={12} fill="transparent" cursor="pointer" />;
                             }
                             
                             // Don't show dots for forecasted Amazon payouts
                             if (payload.hasAmazonForecast) {
-                              return <circle cx={cx} cy={cy} r={4} fill="transparent" cursor="pointer" />;
+                              return <circle cx={cx} cy={cy} r={12} fill="transparent" cursor="pointer" />;
                             }
                             
                             if (payload.hasAmazonPayout) {
