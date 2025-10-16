@@ -29,6 +29,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useSubscription, PRICING_PLANS, ADDON_PRODUCTS, ENTERPRISE_TIERS } from "@/hooks/useSubscription";
 import { useTrialAddonUsage } from "@/hooks/useTrialAddonUsage";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 import { TrialAddonNotice } from "@/components/TrialAddonNotice";
 import { CancellationFlow } from "@/components/subscription/CancellationFlow";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -56,6 +57,7 @@ const UpgradePlan = () => {
   const { user } = useAuth();
   const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, paymentMethod, isLoading, payment_failed, upgradeToAnnual, ...subscriptionData } = useSubscription();
   const { calculatePostTrialCost } = useTrialAddonUsage();
+  const { planLimits, currentUsage } = usePlanLimits();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
   const [isYearly, setIsYearly] = useState(false);
   const [selectedEnterpriseTier, setSelectedEnterpriseTier] = useState<keyof typeof ENTERPRISE_TIERS>("tier1");
@@ -387,15 +389,22 @@ const UpgradePlan = () => {
                   </div>
                   
                   {price_amount && currency && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Price</span>
-                      <span className="text-lg font-bold">
-                        ${(price_amount / 100).toFixed(0)}/{billing_interval === 'year' ? 'year' : 'month'}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {discount_ever_redeemed && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Price</span>
+                    <span className="text-lg font-bold">
+                      ${(price_amount / 100).toFixed(0)}/{billing_interval === 'year' ? 'year' : 'month'}
+                    </span>
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Financial Connections</span>
+                  <Badge variant="secondary">
+                    {currentUsage.bankConnections}/{planLimits.bankConnections === 999 ? '∞' : planLimits.bankConnections}
+                  </Badge>
+                </div>
+                
+                {discount_ever_redeemed && (
                     <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20 space-y-2">
                       <div className="flex items-center justify-center gap-2 mb-2">
                         <Star className="h-5 w-5 text-green-600" />
@@ -442,63 +451,15 @@ const UpgradePlan = () => {
                       )}
                       
                       {billing_interval !== 'year' && (
-                          <div className="space-y-2 pt-2 border-t">
-                          <div className="text-xs text-muted-foreground text-right">
-                            Annual total: ${price_amount ? ((price_amount / 100) * 12).toFixed(0) : (PRICING_PLANS[plan].price * 12)}
-                          </div>
-                          {(() => {
-                            const currentMonthlyPaid = price_amount ? (price_amount / 100) : PRICING_PLANS[plan].price;
-                            const yearlyPrice = PRICING_PLANS[plan].yearlyPrice;
-                            
-                            // Calculate credit based on remaining time in billing period
-                            let creditApplied = currentMonthlyPaid;
-                            if (current_period_start && subscription_end) {
-                              const periodStart = new Date(current_period_start);
-                              const periodEnd = new Date(subscription_end);
-                              const now = new Date();
-                              
-                              const totalDays = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24));
-                              const remainingDays = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                              
-                              if (totalDays > 0 && remainingDays > 0) {
-                                // Credit for unused time
-                                creditApplied = (currentMonthlyPaid * remainingDays) / totalDays;
-                              }
-                            }
-                            
-                            const amountDue = yearlyPrice - creditApplied;
-                            
-                            return (
-                              <div className="space-y-2">
-                                <div className="p-2 bg-primary/5 rounded-lg text-xs space-y-1">
-                                  <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Yearly Price:</span>
-                                    <span>${yearlyPrice}</span>
-                                  </div>
-                                  <div className="flex justify-between text-green-600">
-                                    <span>Credit for Remaining Time:</span>
-                                    <span>-${creditApplied.toFixed(2)}</span>
-                                  </div>
-                                  <div className="flex justify-between font-bold pt-1 border-t">
-                                    <span>Amount Due:</span>
-                                    <span>${amountDue.toFixed(2)}</span>
-                                  </div>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  className="w-full text-xs bg-primary text-primary-foreground hover:bg-primary/90"
-                                  onClick={() => openCustomerPortal()}
-                                >
-                                  <Calendar className="h-3 w-3 mr-2" />
-                                  Switch to Yearly in Customer Portal
-                                  <Badge variant="secondary" className="ml-2 text-xs">
-                                    Save {plans.find(p => p.key === plan)?.savings}
-                                  </Badge>
-                                </Button>
-                              </div>
-                            );
-                          })()}
-                        </div>
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="w-full bg-gradient-primary mt-2"
+                          onClick={() => openCustomerPortal()}
+                        >
+                          <TrendingUp className="h-4 w-4 mr-2" />
+                          Upgrade to Yearly (Save {plans.find(p => p.key === plan)?.savings})
+                        </Button>
                       )}
                     </div>
                   )}
@@ -523,31 +484,14 @@ const UpgradePlan = () => {
                       Cancel Subscription
                     </Button>
                   </div>
-                  {subscribed && subscription_end && (
-                    <div className="space-y-3">
-                      {is_trialing && !isYearly && plan && (
-                        <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                          <div className="flex items-start gap-2">
-                            <Calendar className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                            <div className="text-xs text-blue-700 dark:text-blue-300">
-                              <p className="font-medium mb-1">Trial Period Note</p>
-                              <p>If you upgrade to a yearly plan now, your yearly subscription will start after your trial ends on {new Date(subscription_end).toLocaleDateString()}. You won't receive a new trial period.</p>
-                            </div>
-                          </div>
+                  {subscribed && subscription_end && is_trialing && !isYearly && plan && (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-start gap-2">
+                        <Calendar className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-xs text-blue-700 dark:text-blue-300">
+                          <p className="font-medium mb-1">Trial Period Note</p>
+                          <p>If you upgrade to a yearly plan now, your yearly subscription will start after your trial ends on {new Date(subscription_end).toLocaleDateString()}. You won't receive a new trial period.</p>
                         </div>
-                      )}
-                      <div className="flex gap-2">
-                        {!isYearly && plan && (
-                          <Button
-                            size="sm"
-                            variant="default"
-                            className="flex-1 bg-gradient-primary"
-                            onClick={() => openCustomerPortal()}
-                          >
-                            <TrendingUp className="h-4 w-4 mr-2" />
-                            Upgrade to Yearly (Save {plans.find(p => p.key === plan)?.savings})
-                          </Button>
-                        )}
                       </div>
                     </div>
                   )}
