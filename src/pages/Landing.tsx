@@ -641,20 +641,20 @@ const Landing = () => {
                 <div className="grid grid-cols-1 gap-3">
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-lg">💰</span>
+                      <span className="text-lg">🧠</span>
                     </div>
                     <div>
-                      <div className="font-semibold text-sm">Safe Spending Power</div>
-                      <div className="text-xs text-muted-foreground">Know exactly how much you can spend for the next 180 days</div>
+                      <div className="font-semibold text-sm">Smart Purchase Planning</div>
+                      <div className="text-xs text-muted-foreground">Intelligent recommendations for optimal inventory purchases</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-lg">📊</span>
+                      <span className="text-lg">💰</span>
                     </div>
                     <div>
-                      <div className="font-semibold text-sm">100% Accurate Data</div>
-                      <div className="text-xs text-muted-foreground">Don't guess, safely connect direct with your bank and amazon payout</div>
+                      <div className="font-semibold text-sm">Safe Spending Power</div>
+                      <div className="text-xs text-muted-foreground">Know exactly how much you can safely spend</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -662,8 +662,17 @@ const Landing = () => {
                       <span className="text-lg">🎯</span>
                     </div>
                     <div>
-                      <div className="font-semibold text-sm">Calculated Buying Opportunities</div>
-                      <div className="text-xs text-muted-foreground">Smart purchase planning recommendations based on expenses + payouts</div>
+                      <div className="font-semibold text-sm">Buying Opportunity Projection</div>
+                      <div className="text-xs text-muted-foreground">Forecast future purchasing windows and opportunities</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-info/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-lg">📊</span>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Payout Forecasting</div>
+                      <div className="text-xs text-muted-foreground">Predict Amazon payouts with accuracy</div>
                     </div>
                   </div>
                 </div>
