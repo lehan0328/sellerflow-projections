@@ -224,11 +224,16 @@ export const PurchaseOrderForm = ({
     }
   };
   const addPayment = () => {
+    // Calculate remaining balance
+    const totalAmount = parseFloat(formData.amount) || 0;
+    const paidAmount = paymentSchedule.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+    const remainingBalance = Math.max(0, totalAmount - paidAmount);
+
     const newPayment: PaymentSchedule = {
       id: Date.now().toString(),
-      amount: "",
+      amount: remainingBalance > 0 ? remainingBalance.toFixed(2) : "",
       dueDate: undefined,
-      description: ""
+      description: "Remaining Balance"
     };
     setPaymentSchedule([...paymentSchedule, newPayment]);
   };
@@ -238,10 +243,27 @@ export const PurchaseOrderForm = ({
     }
   };
   const updatePayment = (id: string, field: keyof PaymentSchedule, value: any) => {
-    setPaymentSchedule(paymentSchedule.map(p => p.id === id ? {
+    const updatedSchedule = paymentSchedule.map(p => p.id === id ? {
       ...p,
       [field]: value
-    } : p));
+    } : p);
+    
+    // If amount was updated, recalculate the last payment's remaining balance
+    if (field === "amount") {
+      const totalAmount = parseFloat(formData.amount) || 0;
+      const lastPaymentIndex = updatedSchedule.length - 1;
+      
+      // Calculate sum of all payments except the last one
+      const paidAmountExceptLast = updatedSchedule.slice(0, -1).reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+      const remainingBalance = Math.max(0, totalAmount - paidAmountExceptLast);
+      
+      // Update the last payment if it has "Remaining Balance" description
+      if (updatedSchedule[lastPaymentIndex]?.description === "Remaining Balance") {
+        updatedSchedule[lastPaymentIndex].amount = remainingBalance > 0 ? remainingBalance.toFixed(2) : "";
+      }
+    }
+    
+    setPaymentSchedule(updatedSchedule);
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
