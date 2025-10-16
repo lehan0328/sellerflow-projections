@@ -703,6 +703,7 @@ const Landing = () => {
                     controls
                     muted
                     loop
+                    onLoadedMetadata={(e) => { e.currentTarget.playbackRate = 1.5; }}
                   />
                 </div>
 
