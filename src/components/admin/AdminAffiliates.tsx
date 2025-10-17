@@ -5,8 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, UserPlus, Award, TrendingUp, DollarSign } from "lucide-react";
@@ -42,11 +40,6 @@ export default function AdminAffiliates() {
   const [formData, setFormData] = useState({
     email: "",
     affiliateCode: "",
-    companyName: "",
-    website: "",
-    followerCount: "",
-    tier: "starter",
-    commissionRate: "20",
   });
 
   useEffect(() => {
@@ -148,17 +141,14 @@ export default function AdminAffiliates() {
         throw new Error("User not found. Please enter their full name or user ID.");
       }
 
-      // Create affiliate
+      // Create affiliate with default tier that will be updated based on referrals
       const { error: affiliateError } = await supabase
         .from("affiliates")
         .insert({
           user_id: matchingProfile.user_id,
           affiliate_code: formData.affiliateCode.toUpperCase(),
-          company_name: formData.companyName || null,
-          website: formData.website || null,
-          follower_count: formData.followerCount ? parseInt(formData.followerCount) : null,
-          tier: formData.tier,
-          commission_rate: parseInt(formData.commissionRate),
+          tier: "starter",
+          commission_rate: 20,
           status: "approved",
           approved_at: new Date().toISOString(),
         });
@@ -174,11 +164,6 @@ export default function AdminAffiliates() {
       setFormData({
         email: "",
         affiliateCode: "",
-        companyName: "",
-        website: "",
-        followerCount: "",
-        tier: "starter",
-        commissionRate: "20",
       });
       fetchAffiliates();
     } catch (error: any) {
@@ -298,89 +283,37 @@ export default function AdminAffiliates() {
                   Create Affiliate
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>Create New Affiliate</DialogTitle>
                   <DialogDescription>
-                    Create a new affiliate partner with a custom code
+                    Link a user account to an affiliate code. Tier will be automatically tracked based on referrals.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">User Name or ID *</Label>
-                      <Input
-                        id="email"
-                        placeholder="John Doe or user_id"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="code">Affiliate Code *</Label>
-                      <Input
-                        id="code"
-                        placeholder="PARTNERCODE"
-                        value={formData.affiliateCode}
-                        onChange={(e) => setFormData({ ...formData, affiliateCode: e.target.value.toUpperCase() })}
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">User Name or ID *</Label>
+                    <Input
+                      id="email"
+                      placeholder="John Doe or user_id"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Enter the user's full name or their user ID
+                    </p>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="company">Company Name</Label>
-                      <Input
-                        id="company"
-                        placeholder="Company Inc."
-                        value={formData.companyName}
-                        onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="website">Website</Label>
-                      <Input
-                        id="website"
-                        placeholder="https://example.com"
-                        value={formData.website}
-                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="followers">Follower Count</Label>
-                      <Input
-                        id="followers"
-                        type="number"
-                        placeholder="10000"
-                        value={formData.followerCount}
-                        onChange={(e) => setFormData({ ...formData, followerCount: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="tier">Tier</Label>
-                      <Select value={formData.tier} onValueChange={(value) => setFormData({ ...formData, tier: value })}>
-                        <SelectTrigger id="tier">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="starter">Starter</SelectItem>
-                          <SelectItem value="growth">Growth</SelectItem>
-                          <SelectItem value="pro">Pro</SelectItem>
-                          <SelectItem value="elite">Elite</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="commission">Commission %</Label>
-                      <Input
-                        id="commission"
-                        type="number"
-                        placeholder="20"
-                        value={formData.commissionRate}
-                        onChange={(e) => setFormData({ ...formData, commissionRate: e.target.value })}
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="code">Affiliate Code *</Label>
+                    <Input
+                      id="code"
+                      placeholder="PARTNERCODE"
+                      value={formData.affiliateCode}
+                      onChange={(e) => setFormData({ ...formData, affiliateCode: e.target.value.toUpperCase() })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Unique code for tracking referrals
+                    </p>
                   </div>
                   <div className="flex justify-end gap-2 pt-4">
                     <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
