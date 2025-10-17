@@ -122,12 +122,14 @@ export type Database = {
           follower_count: number | null
           id: string
           monthly_referrals: number | null
+          paid_referrals: number | null
           pending_commission: number | null
           promotional_methods: string | null
           status: string
           tier: string
           total_commission_earned: number | null
           total_referrals: number | null
+          trial_referrals: number | null
           updated_at: string
           user_id: string
           website: string | null
@@ -142,12 +144,14 @@ export type Database = {
           follower_count?: number | null
           id?: string
           monthly_referrals?: number | null
+          paid_referrals?: number | null
           pending_commission?: number | null
           promotional_methods?: string | null
           status?: string
           tier?: string
           total_commission_earned?: number | null
           total_referrals?: number | null
+          trial_referrals?: number | null
           updated_at?: string
           user_id: string
           website?: string | null
@@ -162,12 +166,14 @@ export type Database = {
           follower_count?: number | null
           id?: string
           monthly_referrals?: number | null
+          paid_referrals?: number | null
           pending_commission?: number | null
           promotional_methods?: string | null
           status?: string
           tier?: string
           total_commission_earned?: number | null
           total_referrals?: number | null
+          trial_referrals?: number | null
           updated_at?: string
           user_id?: string
           website?: string | null

@@ -19,6 +19,8 @@ interface Affiliate {
   status: string;
   commission_rate: number;
   total_referrals: number;
+  trial_referrals: number;
+  paid_referrals: number;
   monthly_referrals: number;
   total_commission_earned: number;
   pending_commission: number;
@@ -95,6 +97,8 @@ export default function AdminAffiliates() {
           status: affiliate.status,
           commission_rate: affiliate.commission_rate,
           total_referrals: refCount.total,
+          trial_referrals: affiliate.trial_referrals || 0,
+          paid_referrals: affiliate.paid_referrals || 0,
           monthly_referrals: affiliate.monthly_referrals || 0,
           total_commission_earned: affiliate.total_commission_earned || 0,
           pending_commission: affiliate.pending_commission || 0,
@@ -141,14 +145,14 @@ export default function AdminAffiliates() {
         throw new Error("User not found. Please enter their full name or user ID.");
       }
 
-      // Create affiliate with default tier that will be updated based on referrals
+      // Create affiliate with starter tier (15% commission)
       const { error: affiliateError } = await supabase
         .from("affiliates")
         .insert({
           user_id: matchingProfile.user_id,
           affiliate_code: formData.affiliateCode.toUpperCase(),
           tier: "starter",
-          commission_rate: 20,
+          commission_rate: 15,
           status: "approved",
           approved_at: new Date().toISOString(),
         });
@@ -338,7 +342,9 @@ export default function AdminAffiliates() {
                 <TableHead>Tier</TableHead>
                 <TableHead className="text-center">Status</TableHead>
                 <TableHead className="text-center">Commission</TableHead>
-                <TableHead className="text-center">Referrals</TableHead>
+                <TableHead className="text-center">Trial</TableHead>
+                <TableHead className="text-center">Paid</TableHead>
+                <TableHead className="text-center">Total</TableHead>
                 <TableHead className="text-right">Earned</TableHead>
                 <TableHead className="text-right">Pending</TableHead>
                 <TableHead>Actions</TableHead>
@@ -376,6 +382,12 @@ export default function AdminAffiliates() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">{affiliate.commission_rate}%</TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="secondary">{affiliate.trial_referrals}</Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="default">{affiliate.paid_referrals}</Badge>
+                    </TableCell>
                     <TableCell className="text-center">{affiliate.total_referrals}</TableCell>
                     <TableCell className="text-right font-semibold text-green-600">
                       ${affiliate.total_commission_earned.toLocaleString()}
