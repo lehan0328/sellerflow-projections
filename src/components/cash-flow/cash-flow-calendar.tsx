@@ -1048,7 +1048,11 @@ export const CashFlowCalendar = ({
                         tick={{ fontSize: 12 }}
                         tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                       />
-                      <ChartTooltip 
+                       <ChartTooltip 
+                        trigger="hover"
+                        isAnimationActive={false}
+                        allowEscapeViewBox={{ x: true, y: true }}
+                        cursor={{ strokeDasharray: '3 3' }}
                         content={
                           <ChartTooltipContent 
                             formatter={(value: number, name: string) => {
@@ -1226,7 +1230,11 @@ export const CashFlowCalendar = ({
                         tick={{ fontSize: 12 }}
                         tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                       />
-                      <ChartTooltip 
+                       <ChartTooltip 
+                        trigger="hover"
+                        isAnimationActive={false}
+                        allowEscapeViewBox={{ x: true, y: true }}
+                        cursor={{ strokeDasharray: '3 3' }}
                         content={
                           <ChartTooltipContent 
                             formatter={(value: number, name: string) => {
