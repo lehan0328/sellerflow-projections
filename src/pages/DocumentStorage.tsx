@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, FileText, Download, Trash2, Search, Calendar as CalendarIcon, Plus, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Download, Trash2, Search, Calendar as CalendarIcon, Plus, Loader2, RefreshCw } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -716,7 +716,18 @@ export default function DocumentStorage() {
         <Card>
           <CardHeader>
             <div className="flex flex-col space-y-4">
-              <CardTitle className="text-lg">Your Documents</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Your Documents</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => queryClient.invalidateQueries({ queryKey: ['documents', profile?.account_id] })}
+                  disabled={isLoading}
+                >
+                  <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
+                  Refresh
+                </Button>
+              </div>
               
               {/* Filters */}
               <div className="flex items-center space-x-3 flex-wrap gap-2">
