@@ -33,65 +33,28 @@ export const useSupportTickets = (adminView = false) => {
     try {
       setIsLoading(true);
       
-      // Fetch tickets with user profile and role information
-      const { data: ticketsData, error: ticketsError } = await supabase
-        .from('support_tickets')
-        .select('*')
-        .order('created_at', { ascending: false });
+      if (adminView) {
+        // For admin view, use edge function with service role access
+        const { data, error } = await supabase.functions.invoke('get-admin-support-tickets');
+        
+        if (error) throw error;
+        
+        setTickets(data.tickets as SupportTicket[]);
+      } else {
+        // For user view, fetch only their own tickets
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('Not authenticated');
 
-      if (ticketsError) throw ticketsError;
+        const { data: ticketsData, error: ticketsError } = await supabase
+          .from('support_tickets')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false });
 
-      // Fetch user emails from auth.users via admin API
-      const { data: authData, error: usersError } = await supabase.auth.admin.listUsers();
-      const users = authData?.users || [];
-      
-      // Fetch profiles for company info - get all profiles to map account companies
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('user_id, company, account_id');
-      
-      // Fetch user roles
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('user_id, role');
+        if (ticketsError) throw ticketsError;
 
-      // Map user data
-      const userEmailMap = new Map<string, string>();
-      users.forEach((u: any) => {
-        if (u.id && u.email) userEmailMap.set(u.id, u.email);
-      });
-      
-      // Create account to company mapping (from account owners)
-      const accountCompanyMap = new Map<string, string>();
-      profiles?.forEach((p: any) => {
-        if (p.account_id && p.company) {
-          accountCompanyMap.set(p.account_id, p.company);
-        }
-      });
-      
-      // Map user to company via their account_id
-      const userCompanyMap = new Map<string, string>();
-      profiles?.forEach((p: any) => {
-        if (p.user_id && p.account_id) {
-          const company = accountCompanyMap.get(p.account_id);
-          if (company) userCompanyMap.set(p.user_id, company);
-        }
-      });
-      
-      const userRoleMap = new Map<string, string>();
-      userRoles?.forEach((r: any) => {
-        if (r.user_id && r.role) userRoleMap.set(r.user_id, r.role);
-      });
-
-      // Enrich tickets with user info
-      const enrichedTickets = (ticketsData || []).map(ticket => ({
-        ...ticket,
-        user_email: userEmailMap.get(ticket.user_id),
-        user_company: userCompanyMap.get(ticket.user_id),
-        user_role: userRoleMap.get(ticket.user_id)
-      }));
-
-      setTickets(enrichedTickets as SupportTicket[]);
+        setTickets(ticketsData as SupportTicket[]);
+      }
     } catch (error) {
       console.error('Error fetching tickets:', error);
       toast({
