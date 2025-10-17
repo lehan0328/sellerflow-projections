@@ -111,12 +111,10 @@ export const useSupportTickets = (adminView = false) => {
     updates: Partial<SupportTicket>
   ) => {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('support_tickets')
         .update(updates)
-        .eq('id', ticketId)
-        .select()
-        .single();
+        .eq('id', ticketId);
 
       if (error) throw error;
 
@@ -126,7 +124,7 @@ export const useSupportTickets = (adminView = false) => {
       });
 
       await fetchTickets();
-      return { data, error: null };
+      return { data: null, error: null };
     } catch (error: any) {
       console.error('Error updating ticket:', error);
       toast({
