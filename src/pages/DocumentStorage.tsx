@@ -530,6 +530,10 @@ export default function DocumentStorage() {
   };
 
   const filteredDocuments = documents?.filter(doc => {
+    // Only show documents that have storage files
+    const hasStorageFile = (doc as any).storage_exists !== false;
+    if (!hasStorageFile) return false;
+    
     // Search in file name, display name, notes, and description
     const searchLower = searchQuery.toLowerCase();
     const nameMatch = doc.name.toLowerCase().includes(searchLower);
