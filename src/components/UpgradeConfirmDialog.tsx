@@ -74,11 +74,11 @@ export function UpgradeConfirmDialog({
             </div>
             
             <div className="space-y-2">
-              <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="text-blue-600 dark:text-blue-400 mt-0.5">ℹ️</div>
-                <div className="text-xs text-blue-700 dark:text-blue-300">
-                  <div className="font-semibold mb-1">Upgrade scheduled at billing cycle end</div>
-                  <div>Your new plan will start when your current subscription renews. You'll be charged the full amount at that time.</div>
+              <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <div className="text-amber-600 dark:text-amber-400 mt-0.5">⚡</div>
+                <div className="text-xs text-amber-700 dark:text-amber-300">
+                  <div className="font-semibold mb-1">Immediate upgrade with automatic billing</div>
+                  <div>Your card will be charged ${(amount / 100).toFixed(2)} immediately. You'll receive credit for unused time on your current plan, and your new plan starts right away.</div>
                 </div>
               </div>
             </div>
