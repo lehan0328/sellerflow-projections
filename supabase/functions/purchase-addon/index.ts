@@ -7,10 +7,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const ADDON_PRICES = {
-  bank_connection: 10, // $10 per bank/credit card connection
-  amazon_connection: 50, // $50 per Amazon connection
-  user: 15, // $15 per additional team member
+// Stripe price IDs for add-on subscriptions (monthly recurring)
+const ADDON_STRIPE_PRICES = {
+  bank_connection: "price_1SF2J6B28kMY3UseQW6ATKt1", // $10/month
+  amazon_connection: "price_1SEHQLB28kMY3UseBmY7IIjx", // $50/month
+  user: "price_1SEHQoB28kMY3UsedGTbBbmA", // $15/month
 };
 
 serve(async (req) => {
@@ -54,11 +55,13 @@ serve(async (req) => {
 
     console.log("[PURCHASE-ADDON] Processing request", { addon_type, quantity });
 
-    // Calculate price
-    const unitPrice = ADDON_PRICES[addon_type as keyof typeof ADDON_PRICES];
-    const totalAmount = unitPrice * quantity;
+    // Get Stripe price ID for the add-on
+    const priceId = ADDON_STRIPE_PRICES[addon_type as keyof typeof ADDON_STRIPE_PRICES];
+    if (!priceId) {
+      throw new Error("Invalid addon type - no price configured");
+    }
 
-    console.log("[PURCHASE-ADDON] Price calculated", { unitPrice, totalAmount });
+    console.log("[PURCHASE-ADDON] Using Stripe price", { priceId });
 
     // Initialize Stripe
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
@@ -74,44 +77,34 @@ serve(async (req) => {
       console.log("[PURCHASE-ADDON] Existing customer found", { customerId });
     }
 
-    // Create Stripe Checkout session
+    // Create Stripe Checkout session for recurring subscription
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
         {
-          price_data: {
-            currency: 'usd',
-            unit_amount: unitPrice * 100, // Convert to cents
-            product_data: {
-              name: addon_type === 'bank_connection' 
-                ? 'Additional Financial Connection' 
-                : addon_type === 'amazon_connection'
-                ? 'Additional Amazon Connection'
-                : 'Additional Team Member',
-              description: `Add ${quantity} additional ${
-                addon_type === 'bank_connection' 
-                  ? 'bank/credit card' 
-                  : addon_type === 'amazon_connection'
-                  ? 'Amazon'
-                  : 'team member'
-              } ${quantity > 1 ? 's' : ''} to your account`,
-            },
-          },
+          price: priceId,
           quantity: quantity,
         },
       ],
-      mode: "payment",
+      mode: "subscription",
       success_url: return_url 
         ? `${req.headers.get("origin")}${return_url}?addon_success=true&session_id={CHECKOUT_SESSION_ID}`
         : `${req.headers.get("origin")}/settings?addon_success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: return_url
         ? `${req.headers.get("origin")}${return_url}?addon_canceled=true`
         : `${req.headers.get("origin")}/settings?addon_canceled=true`,
+      subscription_data: {
+        metadata: {
+          is_addon: "true",
+          addon_type: addon_type,
+          user_id: user.id,
+        },
+      },
       metadata: {
-        user_id: user.id,
+        is_addon: "true",
         addon_type: addon_type,
-        quantity: quantity.toString(),
+        user_id: user.id,
       },
     });
 

@@ -127,9 +127,9 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                   </p>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold">$10 one-time per connection</span>
+                      <span className="font-semibold">$10/month per connection</span>
                     </div>
-                    <p className="text-xs text-green-600 font-medium">One-time payment, lifetime access</p>
+                    <p className="text-xs text-blue-600 font-medium">Monthly subscription</p>
                   </div>
                   <div className="space-y-2">
                     <Button 
@@ -137,7 +137,7 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                       size="sm"
                       onClick={() => handlePurchaseAddon('bank')}
                     >
-                      Purchase Now - $10 (one-time)
+                      Subscribe - $10/month
                     </Button>
                   </div>
                 </CardContent>
@@ -156,9 +156,9 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                   </p>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold">$50 one-time per connection</span>
+                      <span className="font-semibold">$50/month per connection</span>
                     </div>
-                    <p className="text-xs text-green-600 font-medium">One-time payment, lifetime access</p>
+                    <p className="text-xs text-blue-600 font-medium">Monthly subscription</p>
                   </div>
                   <div className="space-y-2">
                     <Button 
@@ -166,7 +166,7 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                       size="sm"
                       onClick={() => handlePurchaseAddon('amazon')}
                     >
-                      Purchase Now - $50 (one-time)
+                      Subscribe - $50/month
                     </Button>
                   </div>
                 </CardContent>
@@ -185,9 +185,9 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                   </p>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold">$15 one-time per user</span>
+                      <span className="font-semibold">$15/month per user</span>
                     </div>
-                    <p className="text-xs text-green-600 font-medium">One-time payment, lifetime access</p>
+                    <p className="text-xs text-blue-600 font-medium">Monthly subscription</p>
                   </div>
                   <div className="space-y-2">
                     <Button 
@@ -195,7 +195,7 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                       size="sm"
                       onClick={() => handlePurchaseAddon('user')}
                     >
-                      Purchase Now - $15 (one-time)
+                      Subscribe - $15/month
                     </Button>
                   </div>
                 </CardContent>

@@ -54,19 +54,27 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found customer", { customerId });
 
-    // Get active subscription
-    const subscriptions = await stripe.subscriptions.list({
+    // Get active MAIN subscription (exclude addon subscriptions)
+    const allSubscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
-      limit: 1,
+      limit: 10,
     });
 
-    if (subscriptions.data.length === 0) {
-      throw new Error("No active subscription found");
+    // Filter out addon subscriptions
+    const mainSubscription = allSubscriptions.data.find(sub => 
+      !sub.metadata?.is_addon || sub.metadata.is_addon !== "true"
+    );
+
+    if (!mainSubscription) {
+      throw new Error("No active main subscription found");
     }
 
-    const subscription = subscriptions.data[0];
-    logStep("Found active subscription", { subscriptionId: subscription.id });
+    const subscription = mainSubscription;
+    logStep("Found active main subscription (excluding addons)", { 
+      subscriptionId: subscription.id,
+      totalSubs: allSubscriptions.data.length
+    });
 
     // Get the new price to check billing interval
     let newPrice;

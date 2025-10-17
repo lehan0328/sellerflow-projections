@@ -143,16 +143,37 @@ serve(async (req) => {
 
     // Check for ALL subscriptions (including canceled) with full discount expansion
     logStep("Fetching ALL subscriptions for customer");
-    const subscriptions = await stripe.subscriptions.list({
+    const allSubscriptions = await stripe.subscriptions.list({
       customer: customerId,
       limit: 100, // Increased limit to catch all
       expand: ['data.discount.coupon', 'data.latest_invoice', 'data.default_payment_method', 'data.items.data.price'],
     });
     
-    logStep("Raw subscriptions data", { 
-      count: subscriptions.data.length,
-      statuses: subscriptions.data.map(s => s.status),
-      subscriptionDetails: subscriptions.data.map(s => ({
+    // Separate main subscription from addon subscriptions
+    const mainSubscriptions = allSubscriptions.data.filter(sub => 
+      !sub.metadata?.is_addon || sub.metadata.is_addon !== "true"
+    );
+    
+    const addonSubscriptions = allSubscriptions.data.filter(sub => 
+      sub.metadata?.is_addon === "true" &&
+      (sub.status === "active" || sub.status === "trialing")
+    );
+    
+    logStep("Subscriptions separated", { 
+      total: allSubscriptions.data.length,
+      main: mainSubscriptions.length,
+      addons: addonSubscriptions.length,
+      addonDetails: addonSubscriptions.map(sub => ({
+        id: sub.id,
+        type: sub.metadata?.addon_type,
+        status: sub.status
+      }))
+    });
+    
+    logStep("Main subscription data", { 
+      count: mainSubscriptions.length,
+      statuses: mainSubscriptions.map(s => s.status),
+      subscriptionDetails: mainSubscriptions.map(s => ({
         id: s.id,
         status: s.status,
         current_period_end: s.current_period_end ? new Date(s.current_period_end * 1000).toISOString() : null,
@@ -161,9 +182,9 @@ serve(async (req) => {
       }))
     });
     
-    // Filter for active, trialing, or past_due subscriptions (all count as subscribed)
+    // Filter for active, trialing, or past_due MAIN subscriptions (all count as subscribed)
     // Also include canceled subscriptions that are still in their paid period
-    const activeOrTrialingSub = subscriptions.data.find(sub => {
+    const activeOrTrialingSub = mainSubscriptions.find(sub => {
       if (sub.status === 'active' || sub.status === 'trialing' || sub.status === 'past_due') {
         return true;
       }
