@@ -206,12 +206,13 @@ export default function DocumentStorage() {
 
   // Update metadata mutation
   const updateMetadataMutation = useMutation({
-    mutationFn: async ({ fileName, vendorId, notes, documentDate, displayName }: { 
+    mutationFn: async ({ fileName, vendorId, notes, documentDate, displayName, description }: { 
       fileName: string; 
       vendorId?: string;
       notes?: string;
       documentDate?: string;
       displayName?: string;
+      description?: string;
     }) => {
       if (!user?.id || !profile?.account_id) throw new Error('Not authenticated');
 
@@ -225,7 +226,8 @@ export default function DocumentStorage() {
           vendor_id: vendorId || null,
           notes: notes || null,
           document_date: documentDate || null,
-          display_name: displayName || null
+          display_name: displayName || null,
+          description: description || null
         }, {
           onConflict: 'user_id,file_path'
         });
@@ -978,6 +980,19 @@ export default function DocumentStorage() {
             </div>
 
             <div className="space-y-2">
+              <Label>Description</Label>
+              <Input
+                placeholder="Add description..."
+                value={editingDoc?.description || ""}
+                onChange={(e) => {
+                  if (editingDoc) {
+                    setEditingDoc({...editingDoc, description: e.target.value});
+                  }
+                }}
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label>Notes</Label>
               <Input
                 placeholder="Add notes about this document..."
@@ -1002,7 +1017,8 @@ export default function DocumentStorage() {
                     vendorId: editingDoc.vendor_id,
                     notes: editingDoc.notes,
                     documentDate: editingDoc.document_date,
-                    displayName: editingDoc.display_name
+                    displayName: editingDoc.display_name,
+                    description: editingDoc.description
                   });
                 }
               }}
