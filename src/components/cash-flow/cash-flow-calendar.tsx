@@ -1177,13 +1177,14 @@ export const CashFlowCalendar = ({
                         radius={[4, 4, 0, 0]}
                         cursor="pointer"
                       />
-                      {showTotalResourcesLine && (
+                       {showTotalResourcesLine && (
                         <Line
                           type="monotone"
                           dataKey="availableCredit"
                           stroke={totalResourcesColor}
                           strokeWidth={2}
                           dot={false}
+                          activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                         />
                       )}
                       {showCreditCardLine && (
@@ -1196,18 +1197,22 @@ export const CashFlowCalendar = ({
                             const { cx, cy, payload } = props;
                             if (payload.hasCreditCardTransaction) {
                               return (
-                                <circle 
-                                  cx={cx} 
-                                  cy={cy} 
-                                  r={4} 
-                                  fill={creditCardColor}
-                                  stroke="white"
-                                  strokeWidth={2}
-                                />
+                                <g>
+                                  <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />
+                                  <circle 
+                                    cx={cx} 
+                                    cy={cy} 
+                                    r={4} 
+                                    fill={creditCardColor}
+                                    stroke="white"
+                                    strokeWidth={2}
+                                  />
+                                </g>
                               );
                             }
-                            return null;
+                            return <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
                           }}
+                          activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                         />
                       )}
                       {showReserveLine && (
@@ -1218,6 +1223,7 @@ export const CashFlowCalendar = ({
                           strokeWidth={2}
                           strokeDasharray="5 5"
                           dot={false}
+                          activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                         />
                        )}
                        {refAreaLeft && refAreaRight && (
@@ -1395,7 +1401,7 @@ export const CashFlowCalendar = ({
                           return label;
                         }}
                       />
-                      {showCashFlowLine && (
+                       {showCashFlowLine && (
                         <Line 
                           type="monotone" 
                           dataKey="cashBalance" 
@@ -1405,38 +1411,45 @@ export const CashFlowCalendar = ({
                             const { cx, cy, payload } = props;
                             
                             // Always render an invisible dot to enable hovering on all dates
-                            // Larger radius (12px) for better hover detection when zoomed out
+                            // Larger radius (16px) for better hover detection
                             if (!payload.transactions || payload.transactions.length === 0) {
-                              return <circle cx={cx} cy={cy} r={12} fill="transparent" cursor="pointer" />;
+                              return <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
                             }
                             
-                            // Don't show dots for forecasted Amazon payouts
+                            // Don't show dots for forecasted Amazon payouts but keep hover area
                             if (payload.hasAmazonForecast) {
-                              return <circle cx={cx} cy={cy} r={12} fill="transparent" cursor="pointer" />;
+                              return <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
                             }
                             
                             if (payload.hasAmazonPayout) {
-                              // Confirmed payout - orange
+                              // Confirmed payout - orange with large hover area
                               return (
                                 <g>
+                                  <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />
                                   <circle cx={cx} cy={cy} r={6} fill="#f97316" stroke="#ea580c" strokeWidth={2} />
                                   <circle cx={cx} cy={cy} r={3} fill="#fff" />
                                 </g>
                               );
                             }
                             const fillColor = cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor;
-                            return <circle cx={cx} cy={cy} r={4} fill={fillColor} cursor="pointer" />;
+                            return (
+                              <g>
+                                <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />
+                                <circle cx={cx} cy={cy} r={4} fill={fillColor} cursor="pointer" />
+                              </g>
+                            );
                           }}
-                          activeDot={{ r: 6, cursor: 'pointer' }}
+                          activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                         />
                       )}
-                      {showTotalResourcesLine && (
+                       {showTotalResourcesLine && (
                         <Line
                           type="monotone"
                           dataKey="totalResources"
                           stroke={totalResourcesColor}
                           strokeWidth={2}
                           dot={false}
+                          activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                         />
                       )}
                       {showCreditCardLine && (
@@ -1449,18 +1462,22 @@ export const CashFlowCalendar = ({
                             const { cx, cy, payload } = props;
                             if (payload.hasCreditCardTransaction) {
                               return (
-                                <circle 
-                                  cx={cx} 
-                                  cy={cy} 
-                                  r={4} 
-                                  fill={creditCardColor}
-                                  stroke="white"
-                                  strokeWidth={2}
-                                />
+                                <g>
+                                  <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />
+                                  <circle 
+                                    cx={cx} 
+                                    cy={cy} 
+                                    r={4} 
+                                    fill={creditCardColor}
+                                    stroke="white"
+                                    strokeWidth={2}
+                                  />
+                                </g>
                               );
                             }
-                            return null;
+                            return <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
                           }}
+                          activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                         />
                       )}
                       {showReserveLine && (
@@ -1471,9 +1488,10 @@ export const CashFlowCalendar = ({
                           strokeWidth={2}
                           strokeDasharray="5 5"
                           dot={false}
+                          activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                         />
                       )}
-                      {showForecastLine && (
+                       {showForecastLine && (
                         <>
                           {/* Projected Balance line - Cash + Forecasts (Purple) - includes AI forecasted payouts */}
                           <Line
@@ -1483,10 +1501,11 @@ export const CashFlowCalendar = ({
                             strokeWidth={2}
                             strokeDasharray="3 3"
                             dot={(props: any) => {
-                              const { cx, cy, payload } = props;
-                              // Don't show dots for AI forecasted Amazon payouts
-                              return null;
+                              const { cx, cy } = props;
+                              // Invisible hover area for forecast line
+                              return <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
                             }}
+                            activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                             name="Projected Cash Balance (with AI Forecasts)"
                           />
                          </>
