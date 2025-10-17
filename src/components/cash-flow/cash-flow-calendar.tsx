@@ -685,23 +685,31 @@ export const CashFlowCalendar = ({
   const handleMouseMove = (e: any) => {
     if (!e) return;
     let idx: number | null = null;
+    
+    // Primary: use activeTooltipIndex from Recharts
     if (typeof e.activeTooltipIndex === 'number') {
       idx = e.activeTooltipIndex;
-    } else if (e.activeLabel) {
+    } 
+    // Secondary: use activeLabel to find index
+    else if (e.activeLabel) {
       const i = displayData.findIndex((d: any) => d.date === e.activeLabel);
       if (i !== -1) idx = i;
     }
-
-    // Fallback: map cursor position across the plot area to the nearest index
-    if (idx === null && typeof e.chartX === 'number' && chartWidth) {
-      const usableWidth = Math.max(1, chartWidth - (chartMargin.left + chartMargin.right));
-      const relX = Math.min(Math.max(e.chartX - chartMargin.left, 0), usableWidth);
-      const t = relX / usableWidth;
-      const approx = Math.round(t * (displayData.length - 1));
-      idx = Math.max(0, Math.min(displayData.length - 1, approx));
+    // Tertiary fallback: calculate from chartX position
+    else if (typeof e.chartX === 'number' && chartWidth > 0) {
+      const plotAreaWidth = chartWidth - chartMargin.left - chartMargin.right;
+      const relativeX = e.chartX - chartMargin.left;
+      
+      if (relativeX >= 0 && relativeX <= plotAreaWidth) {
+        const fraction = relativeX / plotAreaWidth;
+        const calculatedIndex = Math.round(fraction * (displayData.length - 1));
+        idx = Math.max(0, Math.min(displayData.length - 1, calculatedIndex));
+      }
     }
 
-    if (idx !== null) setActiveTooltipIndex(idx);
+    if (idx !== null && idx >= 0 && idx < displayData.length) {
+      setActiveTooltipIndex(idx);
+    }
 
     if (refAreaLeft && e.activeLabel) {
       setRefAreaRight(e.activeLabel);
@@ -1115,6 +1123,7 @@ export const CashFlowCalendar = ({
                         onMouseUp={handleMouseUp}
                         onMouseLeave={() => setActiveTooltipIndex(null)}
                         margin={chartMargin}
+                        syncMethod="index"
                       >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
@@ -1319,14 +1328,16 @@ export const CashFlowCalendar = ({
                        )}
                      </BarChart>
                    ) : (
-                     <LineChart 
-                       data={displayData} 
-                       onClick={handleChartClick}
-                       onMouseDown={handleMouseDown}
-                       onMouseMove={handleMouseMove}
-                       onMouseUp={handleMouseUp}
-                       onMouseLeave={() => setActiveTooltipIndex(null)}
-                     >
+                      <LineChart 
+                        data={displayData} 
+                        onClick={handleChartClick}
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={() => setActiveTooltipIndex(null)}
+                        margin={chartMargin}
+                        syncMethod="index"
+                      >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
                         dataKey="date" 
