@@ -59,7 +59,7 @@ const UpgradePlan = () => {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, paymentMethod, isLoading, payment_failed, upgradeToAnnual, ...subscriptionData } = useSubscription();
+  const { subscribed, plan, subscription_end, is_trialing, trial_end, discount, discount_ever_redeemed, billing_interval, current_period_start, price_amount, currency, createCheckout, purchaseAddon, purchaseAddons, openCustomerPortal, removePlanOverride, checkSubscription, paymentMethod, isLoading, payment_failed, upgradeSubscription, ...subscriptionData } = useSubscription();
   const { calculatePostTrialCost } = useTrialAddonUsage();
   const { planLimits, currentUsage } = usePlanLimits();
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
@@ -232,18 +232,22 @@ const UpgradePlan = () => {
     if (pendingUpgrade) {
       setIsUpgrading(true);
       
-      // Get the annual plan price ID for the current plan tier
-      let annualPriceId = '';
-      if (plan === 'starter') {
-        annualPriceId = PRICING_PLANS.starter.yearly_price_id;
-      } else if (plan === 'growing') {
-        annualPriceId = PRICING_PLANS.growing.yearly_price_id;
-      } else if (plan === 'professional') {
-        annualPriceId = PRICING_PLANS.professional.yearly_price_id;
-      }
+      // Use the upgrade function with the already-determined price ID
+      // This works for both monthly and yearly upgrades
+      const result = await upgradeSubscription(pendingUpgrade.priceId);
       
-      // Use the new upgrade function that handles proration automatically
-      const success = await upgradeToAnnual(annualPriceId);
+      // Check if we need to redirect to checkout (for interval changes)
+      if (result && typeof result === 'object' && result.useCheckout) {
+        // Redirect to checkout for interval changes
+        await createCheckout(result.newPriceId);
+      } else if (result === true) {
+        // Success - upgrade completed
+        toast.success(`Successfully upgraded to ${pendingUpgrade.planName}!`);
+        await checkSubscription(true);
+      } else {
+        // Failed - error was already shown by upgradeSubscription
+        console.log('Upgrade failed');
+      }
       
       setPendingUpgrade(null);
       setIsUpgrading(false);
