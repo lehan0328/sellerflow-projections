@@ -635,6 +635,33 @@ export const CashFlowCalendar = ({
   const yPadding = Math.max(1000, Math.round(yRange * 0.05));
   const yDomain: [number, number] = [yMin - yPadding, yMax + yPadding];
   
+  // Controlled tooltip index to ensure tooltip shows anywhere vertically
+  const [activeTooltipIndex, setActiveTooltipIndex] = useState<number | null>(null);
+
+  const buildTooltipPayload = (index: number) => {
+    const d = displayData[index as number];
+    if (!d) return [];
+    const items: any[] = [];
+    const safePush = (key: string, color: string) => {
+      const v = (d as any)[key];
+      if (typeof v === 'number') items.push({ dataKey: key, name: key, value: v, color, payload: d });
+    };
+    const cashColor = cashFlowColor?.startsWith?.('hsl') ? '#3b82f6' : cashFlowColor;
+    safePush('totalResources', totalResourcesColor);
+    safePush('cashBalance', cashColor);
+    safePush('creditCardBalance', creditCardColor);
+    safePush('reserveAmount', reserveColor);
+    safePush('projectedBalance', '#9333ea');
+
+    // Include bar chart keys for completeness
+    safePush('cashFlow', cashColor);
+    safePush('availableCredit', totalResourcesColor);
+    safePush('creditCardCredit', creditCardColor);
+    safePush('reserve', reserveColor);
+
+    return items;
+  };
+  
   // Zoom handlers
   const handleMouseDown = (e: any) => {
     if (e && e.activeLabel) {
@@ -643,7 +670,14 @@ export const CashFlowCalendar = ({
   };
   
   const handleMouseMove = (e: any) => {
-    if (refAreaLeft && e && e.activeLabel) {
+    if (!e) return;
+    if (typeof e.activeTooltipIndex === 'number') {
+      setActiveTooltipIndex(e.activeTooltipIndex);
+    } else if (e.activeLabel) {
+      const idx = displayData.findIndex((d: any) => d.date === e.activeLabel);
+      if (idx !== -1) setActiveTooltipIndex(idx);
+    }
+    if (refAreaLeft && e.activeLabel) {
       setRefAreaRight(e.activeLabel);
     }
   };
@@ -1047,13 +1081,15 @@ export const CashFlowCalendar = ({
                <ChartContainer config={chartConfig} className="h-full w-full">
                  <ResponsiveContainer width="100%" height="100%">
                    {chartType === 'bar' ? (
-                     <BarChart 
-                       data={displayData} 
-                       onClick={handleChartClick}
-                       onMouseDown={handleMouseDown}
-                       onMouseMove={handleMouseMove}
-                       onMouseUp={handleMouseUp}
-                     >
+                      <BarChart 
+                        data={displayData} 
+                        onClick={handleChartClick}
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={() => setActiveTooltipIndex(null)}
+                        margin={{ top: 32, right: 16, left: 8, bottom: 16 }}
+                      >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
                         dataKey="date" 
@@ -1071,6 +1107,9 @@ export const CashFlowCalendar = ({
                         isAnimationActive={false}
                         allowEscapeViewBox={{ x: true, y: true }}
                         cursor={{ strokeDasharray: '3 3' }}
+                        active={activeTooltipIndex !== null}
+                        label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined}
+                        payload={activeTooltipIndex !== null ? buildTooltipPayload(activeTooltipIndex) : undefined}
                         content={
                           <ChartTooltipContent 
                             formatter={(value: number, name: string) => {
@@ -1079,12 +1118,28 @@ export const CashFlowCalendar = ({
                                 cashBalance: "Cash Flow:",
                                 creditCardBalance: "Available Credit:",
                                 reserveAmount: "Reserve Amount:",
-                                forecastPayout: "Forecast Payout:"
+                                forecastPayout: "Forecast Payout:",
+                                projectedBalance: "Projected Balance:",
+                                cashFlow: "Cash Flow:",
+                                availableCredit: "Total Resources:",
+                                creditCardCredit: "Available Credit:",
+                                reserve: "Reserve Amount:",
                               };
                               return [labels[name] || name, `$${value.toLocaleString()}`];
                             }}
                             itemSorter={(item) => {
-                              const order = ["totalResources", "cashBalance", "creditCardBalance", "reserveAmount", "forecastPayout"];
+                              const order = [
+                                "totalResources",
+                                "cashBalance",
+                                "creditCardBalance",
+                                "reserveAmount",
+                                "forecastPayout",
+                                "projectedBalance",
+                                "cashFlow",
+                                "availableCredit",
+                                "creditCardCredit",
+                                "reserve",
+                              ];
                               return order.indexOf(item.dataKey as string);
                             }}
                           />
@@ -1261,6 +1316,9 @@ export const CashFlowCalendar = ({
                         isAnimationActive={false}
                         allowEscapeViewBox={{ x: true, y: true }}
                         cursor={{ strokeDasharray: '3 3' }}
+                        active={activeTooltipIndex !== null}
+                        label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined}
+                        payload={activeTooltipIndex !== null ? buildTooltipPayload(activeTooltipIndex) : undefined}
                         content={
                           <ChartTooltipContent 
                             formatter={(value: number, name: string) => {
@@ -1269,12 +1327,28 @@ export const CashFlowCalendar = ({
                                 cashBalance: "Cash Flow:",
                                 creditCardBalance: "Available Credit:",
                                 reserveAmount: "Reserve Amount:",
-                                forecastPayout: "Forecast Payout:"
+                                forecastPayout: "Forecast Payout:",
+                                projectedBalance: "Projected Balance:",
+                                cashFlow: "Cash Flow:",
+                                availableCredit: "Total Resources:",
+                                creditCardCredit: "Available Credit:",
+                                reserve: "Reserve Amount:",
                               };
                               return [labels[name] || name, `$${value.toLocaleString()}`];
                             }}
                             itemSorter={(item) => {
-                              const order = ["totalResources", "cashBalance", "creditCardBalance", "reserveAmount", "forecastPayout"];
+                              const order = [
+                                "totalResources",
+                                "cashBalance",
+                                "creditCardBalance",
+                                "reserveAmount",
+                                "forecastPayout",
+                                "projectedBalance",
+                                "cashFlow",
+                                "availableCredit",
+                                "creditCardCredit",
+                                "reserve",
+                              ];
                               return order.indexOf(item.dataKey as string);
                             }}
                           />
