@@ -655,6 +655,41 @@ export const CashFlowCalendar = ({
     const svg = chartWrapperRef.current?.querySelector('svg.recharts-surface') as SVGElement | null;
     return svg?.clientWidth || chartWidth || 0;
   };
+
+  // Compute data index from a clientX position relative to the inner plot area
+  const computeIndexFromClientX = (clientX: number) => {
+    const svg = chartWrapperRef.current?.querySelector('svg.recharts-surface') as SVGElement | null;
+    const grid = chartWrapperRef.current?.querySelector('.recharts-cartesian-grid') as SVGGElement | null;
+
+    if (svg && grid) {
+      const svgRect = svg.getBoundingClientRect();
+      const gridRect = grid.getBoundingClientRect();
+      const innerLeft = gridRect.left - svgRect.left; // inner plot offset from svg left
+      const plotW = Math.max(1, gridRect.width);
+      const relX = Math.min(Math.max(clientX - svgRect.left - innerLeft, 0), plotW);
+      const fraction = relX / plotW;
+      const idx = Math.round(fraction * (displayData.length - 1));
+      return Math.max(0, Math.min(displayData.length - 1, idx));
+    }
+
+    // Fallback using wrapper + margins
+    const wrapperLeft = chartWrapperRef.current?.getBoundingClientRect().left ?? 0;
+    const innerW = getChartInnerWidth();
+    const plotW = Math.max(1, innerW - (chartMargin.left + chartMargin.right));
+    const relX = Math.min(Math.max(clientX - wrapperLeft - chartMargin.left, 0), plotW);
+    const fraction = relX / plotW;
+    const idx = Math.round(fraction * (displayData.length - 1));
+    return Math.max(0, Math.min(displayData.length - 1, idx));
+  };
+
+  // Wrapper-level handlers to keep tooltip active across the whole chart area (including left margins)
+  const handleWrapperMouseMove = (ev: any) => {
+    const idx = computeIndexFromClientX(ev.clientX);
+    setActiveTooltipIndex(idx);
+  };
+  const handleWrapperMouseLeave = () => {
+    setActiveTooltipIndex(null);
+  };
   const buildTooltipPayload = (index: number) => {
     const d = displayData[index as number];
     if (!d) return [];
@@ -699,28 +734,26 @@ export const CashFlowCalendar = ({
       const i = displayData.findIndex((d: any) => d.date === e.activeLabel);
       if (i !== -1) idx = i;
     }
-    // Fallback: compute from cursor X and actual inner plot width
-    else if (typeof e.chartX === 'number') {
+    // Tertiary: use activeCoordinate if available (relative to inner plot)
+    else if (e.activeCoordinate && typeof e.activeCoordinate.x === 'number') {
       const svg = chartWrapperRef.current?.querySelector('svg.recharts-surface') as SVGElement | null;
       const grid = chartWrapperRef.current?.querySelector('.recharts-cartesian-grid') as SVGGElement | null;
-
       if (svg && grid) {
-        const svgRect = svg.getBoundingClientRect();
         const gridRect = grid.getBoundingClientRect();
-        const leftOffset = gridRect.left - svgRect.left; // actual inner plot left
         const plotW = Math.max(1, gridRect.width);
-        const relX = Math.min(Math.max(e.chartX - leftOffset, 0), plotW);
+        const relX = Math.min(Math.max(e.activeCoordinate.x, 0), plotW);
         const fraction = relX / plotW;
         const calculatedIndex = Math.round(fraction * (displayData.length - 1));
         idx = Math.max(0, Math.min(displayData.length - 1, calculatedIndex));
       } else {
-        const innerW = getChartInnerWidth();
-        const plotW = Math.max(1, innerW - (chartMargin.left + chartMargin.right));
-        const relX = Math.min(Math.max(e.chartX - chartMargin.left, 0), plotW);
-        const fraction = relX / plotW;
-        const calculatedIndex = Math.round(fraction * (displayData.length - 1));
-        idx = Math.max(0, Math.min(displayData.length - 1, calculatedIndex));
+        // Fall back to chartX mapping via helper when grid isn't found
+        idx = computeIndexFromClientX((e as any).clientX ?? 0);
       }
+    }
+    // Ultimate fallback: compute from cursor X using document coordinates
+    else if (typeof e.chartX === 'number' || typeof (e as any).clientX === 'number') {
+      const clientX = (e as any).clientX ?? 0;
+      idx = computeIndexFromClientX(clientX);
     }
 
     if (idx !== null) setActiveTooltipIndex(idx);
@@ -1111,7 +1144,14 @@ export const CashFlowCalendar = ({
                 </div>
              </div>
              ) : (
-               <div className="relative w-full" style={{ height: '500px' }} ref={chartWrapperRef}>
+               <div
+                 className="relative w-full"
+                 style={{ height: '500px' }}
+                 ref={chartWrapperRef}
+                 onMouseEnter={handleWrapperMouseMove}
+                 onMouseMove={handleWrapperMouseMove}
+                 onMouseLeave={handleWrapperMouseLeave}
+               >
                  <div className="flex justify-between items-center mb-2 px-4">
                  <p className="text-sm text-muted-foreground">
                    {zoomState ? 'Click and drag to zoom in further • ' : 'Click and drag to zoom into a specific time period • '}
@@ -1140,7 +1180,7 @@ export const CashFlowCalendar = ({
                         onMouseEnter={handleMouseEnter}
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
-                        onMouseLeave={() => setActiveTooltipIndex(null)}
+                         onMouseLeave={() => {}}
                         margin={chartMargin}
                         syncMethod="index"
                       >
@@ -1354,7 +1394,7 @@ export const CashFlowCalendar = ({
                          onMouseEnter={handleMouseEnter}
                          onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
-                        onMouseLeave={() => setActiveTooltipIndex(null)}
+                        onMouseLeave={() => {}}
                         margin={chartMargin}
                         syncMethod="index"
                       >
