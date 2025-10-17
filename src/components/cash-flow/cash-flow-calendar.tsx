@@ -619,6 +619,22 @@ export const CashFlowCalendar = ({
   
   const displayData = getDisplayData();
   
+  // Dynamic Y-axis domain with padding to ensure hover works near chart extremes
+  const yValues = displayData.flatMap((d: any) => [
+    d.cashBalance,
+    d.totalResources,
+    d.creditCardBalance,
+    d.reserveAmount,
+    d.projectedBalance,
+    d.cashFlow,
+  ].filter((v: any) => typeof v === 'number')) as number[];
+
+  const yMin = yValues.length ? Math.min(...yValues) : 0;
+  const yMax = yValues.length ? Math.max(...yValues) : 0;
+  const yRange = Math.max(1, yMax - yMin);
+  const yPadding = Math.max(1000, Math.round(yRange * 0.05));
+  const yDomain: [number, number] = [yMin - yPadding, yMax + yPadding];
+  
   // Zoom handlers
   const handleMouseDown = (e: any) => {
     if (e && e.activeLabel) {
@@ -1044,9 +1060,11 @@ export const CashFlowCalendar = ({
                         tick={{ fontSize: 12 }}
                         interval="preserveStartEnd"
                       />
-                      <YAxis 
+                       <YAxis 
                         tick={{ fontSize: 12 }}
                         tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                        domain={yDomain}
+                        allowDataOverflow
                       />
                        <ChartTooltip 
                         trigger="hover"
@@ -1226,9 +1244,11 @@ export const CashFlowCalendar = ({
                         tick={{ fontSize: 12 }}
                         interval="preserveStartEnd"
                       />
-                      <YAxis 
+                       <YAxis 
                         tick={{ fontSize: 12 }}
                         tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                        domain={yDomain}
+                        allowDataOverflow
                       />
                        <ChartTooltip 
                         trigger="hover"
