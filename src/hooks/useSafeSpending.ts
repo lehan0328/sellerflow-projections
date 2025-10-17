@@ -394,6 +394,14 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
                   return;
                 }
                 
+                // Skip today's vendor payments if excludeTodayTransactions is true
+                if (excludeTodayTransactions && paymentDate.getTime() === today.getTime()) {
+                  if (isKeyDate) {
+                    console.log(`  🚫 EXCLUDING today's vendor payment: ${vendor.name} $${payment.amount} (excluded by user)`);
+                  }
+                  return;
+                }
+                
                 if (paymentDate.getTime() === targetDate.getTime()) {
                   const amt = Number(payment.amount || 0);
                   if (isKeyDate) {
@@ -413,6 +421,14 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
                 return;
               }
               
+              // Skip today's vendor payments if excludeTodayTransactions is true
+              if (excludeTodayTransactions && vendorDate.getTime() === today.getTime()) {
+                if (isKeyDate) {
+                  console.log(`  🚫 EXCLUDING today's vendor payment: ${vendor.name} (excluded by user)`);
+                }
+                return;
+              }
+              
               if (vendorDate.getTime() === targetDate.getTime()) {
                 const amt = Number(vendor.next_payment_amount || 0);
                 if (isKeyDate) {
@@ -428,6 +444,23 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         creditCardsResult.data?.forEach((card) => {
           if (card.payment_due_date && card.balance > 0) {
             const dueDate = parseLocalDate(card.payment_due_date);
+            
+            // Skip ALL past credit card payments
+            if (dueDate.getTime() < today.getTime()) {
+              if (isKeyDate) {
+                console.log(`  ⏭️ SKIPPING past credit card payment: ${card.institution_name} (date: ${formatDate(dueDate)})`);
+              }
+              return;
+            }
+            
+            // Skip today's credit card payments if excludeTodayTransactions is true
+            if (excludeTodayTransactions && dueDate.getTime() === today.getTime()) {
+              if (isKeyDate) {
+                console.log(`  🚫 EXCLUDING today's credit card payment: ${card.institution_name} (excluded by user)`);
+              }
+              return;
+            }
+            
             if (dueDate.getTime() === targetDate.getTime()) {
               const amt = Number(card.balance);
               if (isKeyDate) {
