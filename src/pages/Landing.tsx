@@ -554,7 +554,7 @@ const Landing = () => {
                       <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
                         Cash Flow Forecasting
                       </span>
-                      <Badge variant="secondary" className="text-base px-4 py-2 whitespace-nowrap font-semibold">
+                      <Badge variant="secondary" className="text-base px-4 py-2 whitespace-nowrap font-semibold tracking-wide">
                         Starting at only $24/mo
                       </Badge>
                     </div>
