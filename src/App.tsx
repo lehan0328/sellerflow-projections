@@ -74,6 +74,7 @@ const App = () => (
             <Route path="/features/:slug" element={<FeatureDetail />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/sign-up" element={<SignUp />} />
             <Route path="/payment-required" element={<PaymentRequired />} />
             <Route path="/contact" element={<Contact />} />
           <Route path="/docs" element={<Docs />} />
