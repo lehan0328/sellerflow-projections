@@ -119,6 +119,7 @@ export type Database = {
           commission_rate: number
           company_name: string | null
           created_at: string
+          follower_count: number | null
           id: string
           monthly_referrals: number | null
           pending_commission: number | null
@@ -138,6 +139,7 @@ export type Database = {
           commission_rate?: number
           company_name?: string | null
           created_at?: string
+          follower_count?: number | null
           id?: string
           monthly_referrals?: number | null
           pending_commission?: number | null
@@ -157,6 +159,7 @@ export type Database = {
           commission_rate?: number
           company_name?: string | null
           created_at?: string
+          follower_count?: number | null
           id?: string
           monthly_referrals?: number | null
           pending_commission?: number | null

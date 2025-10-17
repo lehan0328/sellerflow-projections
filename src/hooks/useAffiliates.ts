@@ -61,6 +61,7 @@ export const useAffiliates = () => {
   const applyAsAffiliate = async (data: {
     company_name?: string;
     website?: string;
+    follower_count?: string;
     audience_description: string;
     promotional_methods: string;
   }) => {
@@ -75,7 +76,11 @@ export const useAffiliates = () => {
         .insert({
           user_id: user.id,
           affiliate_code: code,
-          ...data,
+          company_name: data.company_name,
+          website: data.website,
+          follower_count: data.follower_count ? parseInt(data.follower_count) : null,
+          audience_description: data.audience_description,
+          promotional_methods: data.promotional_methods,
         });
 
       if (error) throw error;

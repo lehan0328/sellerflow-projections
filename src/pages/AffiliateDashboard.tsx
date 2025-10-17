@@ -13,6 +13,7 @@ export default function AffiliateDashboard() {
   const [formData, setFormData] = useState({
     company_name: '',
     website: '',
+    follower_count: '',
     audience_description: '',
     promotional_methods: '',
   });
@@ -53,6 +54,19 @@ export default function AffiliateDashboard() {
                     type="url"
                     value={formData.website}
                     onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="follower_count">Follower Count *</Label>
+                  <Input
+                    id="follower_count"
+                    type="number"
+                    required
+                    min="0"
+                    value={formData.follower_count}
+                    onChange={(e) => setFormData({ ...formData, follower_count: e.target.value })}
+                    placeholder="e.g., 10000"
                   />
                 </div>
                 
