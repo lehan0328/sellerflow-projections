@@ -651,6 +651,10 @@ export const CashFlowCalendar = ({
     return () => ro.disconnect();
   }, []);
 
+  const getChartInnerWidth = () => {
+    const svg = chartWrapperRef.current?.querySelector('svg.recharts-surface') as SVGElement | null;
+    return svg?.clientWidth || chartWidth || 0;
+  };
   const buildTooltipPayload = (index: number) => {
     const d = displayData[index as number];
     if (!d) return [];
@@ -685,37 +689,51 @@ export const CashFlowCalendar = ({
   const handleMouseMove = (e: any) => {
     if (!e) return;
     let idx: number | null = null;
-    
-    // Primary: use activeTooltipIndex from Recharts
+
+    // Primary: use Recharts' computed index
     if (typeof e.activeTooltipIndex === 'number') {
       idx = e.activeTooltipIndex;
-    } 
-    // Secondary: use activeLabel to find index
+    }
+    // Secondary: find by label
     else if (e.activeLabel) {
       const i = displayData.findIndex((d: any) => d.date === e.activeLabel);
       if (i !== -1) idx = i;
     }
-    // Tertiary fallback: calculate from chartX position
-    else if (typeof e.chartX === 'number' && chartWidth > 0) {
-      const plotAreaWidth = chartWidth - chartMargin.left - chartMargin.right;
-      const relativeX = e.chartX - chartMargin.left;
-      
-      if (relativeX >= 0 && relativeX <= plotAreaWidth) {
-        const fraction = relativeX / plotAreaWidth;
+    // Fallback: compute from cursor X and actual inner plot width
+    else if (typeof e.chartX === 'number') {
+      const svg = chartWrapperRef.current?.querySelector('svg.recharts-surface') as SVGElement | null;
+      const grid = chartWrapperRef.current?.querySelector('.recharts-cartesian-grid') as SVGGElement | null;
+
+      if (svg && grid) {
+        const svgRect = svg.getBoundingClientRect();
+        const gridRect = grid.getBoundingClientRect();
+        const leftOffset = gridRect.left - svgRect.left; // actual inner plot left
+        const plotW = Math.max(1, gridRect.width);
+        const relX = Math.min(Math.max(e.chartX - leftOffset, 0), plotW);
+        const fraction = relX / plotW;
+        const calculatedIndex = Math.round(fraction * (displayData.length - 1));
+        idx = Math.max(0, Math.min(displayData.length - 1, calculatedIndex));
+      } else {
+        const innerW = getChartInnerWidth();
+        const plotW = Math.max(1, innerW - (chartMargin.left + chartMargin.right));
+        const relX = Math.min(Math.max(e.chartX - chartMargin.left, 0), plotW);
+        const fraction = relX / plotW;
         const calculatedIndex = Math.round(fraction * (displayData.length - 1));
         idx = Math.max(0, Math.min(displayData.length - 1, calculatedIndex));
       }
     }
 
-    if (idx !== null && idx >= 0 && idx < displayData.length) {
-      setActiveTooltipIndex(idx);
-    }
+    if (idx !== null) setActiveTooltipIndex(idx);
 
     if (refAreaLeft && e.activeLabel) {
       setRefAreaRight(e.activeLabel);
     }
   };
-  
+
+  const handleMouseEnter = (e: any) => {
+    // Ensure tooltip appears immediately anywhere in plot area
+    handleMouseMove(e);
+  };
   const handleMouseUp = () => {
     if (refAreaLeft && refAreaRight) {
       const leftIndex = chartData.findIndex(d => d.date === refAreaLeft);
@@ -1119,6 +1137,7 @@ export const CashFlowCalendar = ({
                         data={displayData} 
                         onClick={handleChartClick}
                         onMouseDown={handleMouseDown}
+                        onMouseEnter={handleMouseEnter}
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
                         onMouseLeave={() => setActiveTooltipIndex(null)}
@@ -1331,8 +1350,9 @@ export const CashFlowCalendar = ({
                       <LineChart 
                         data={displayData} 
                         onClick={handleChartClick}
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
+                         onMouseDown={handleMouseDown}
+                         onMouseEnter={handleMouseEnter}
+                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
                         onMouseLeave={() => setActiveTooltipIndex(null)}
                         margin={chartMargin}
