@@ -322,10 +322,21 @@ export const PurchaseOrderForm = ({
         } = await supabase.auth.getUser();
         if (!user) throw new Error('User not authenticated');
 
+        // Get user's account_id
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('account_id')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (profileError || !profile?.account_id) {
+          throw new Error('Could not fetch user account');
+        }
+
         // Create a safe filename using PO name
         const fileExtension = uploadedFile.name.split('.').pop();
         const safeFileName = `${formData.poName.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.${fileExtension}`;
-        const filePath = `${user.id}/${safeFileName}`;
+        const filePath = `${profile.account_id}/${safeFileName}`;
 
         // Upload to storage
         const {
@@ -338,6 +349,7 @@ export const PurchaseOrderForm = ({
           error: metadataError
         } = await supabase.from('documents_metadata').insert({
           user_id: user.id,
+          account_id: profile.account_id,
           file_name: safeFileName,
           file_path: filePath,
           display_name: formData.poName,
