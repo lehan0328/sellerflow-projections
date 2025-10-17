@@ -881,7 +881,7 @@ const UpgradePlan = () => {
                               )}
                               <Button 
                                 className="w-full bg-gradient-primary" 
-                                onClick={() => openCustomerPortal()}
+                                onClick={() => createCheckout(isYearly ? growingPlan.yearlyPriceId : growingPlan.priceId)}
                                 disabled={isLoading}
                               >
                                 <TrendingUp className="h-4 w-4 mr-2" />

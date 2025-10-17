@@ -398,7 +398,7 @@ serve(async (req) => {
           plan_override: null
         })
         .eq('user_id', user.id)
-        .is('trial_end', 'not.null');  // Only update if trial_end exists
+        .not('trial_end', 'is', null);  // Only update if trial_end exists
       
       if (updateError) {
         logStep("Error clearing trial fields", { error: updateError.message });
