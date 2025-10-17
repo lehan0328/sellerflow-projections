@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -637,6 +637,19 @@ export const CashFlowCalendar = ({
   
   // Controlled tooltip index to ensure tooltip shows anywhere vertically
   const [activeTooltipIndex, setActiveTooltipIndex] = useState<number | null>(null);
+  const chartWrapperRef = useRef<HTMLDivElement | null>(null);
+  const [chartWidth, setChartWidth] = useState<number>(0);
+  const chartMargin = { top: 32, right: 16, left: 8, bottom: 16 };
+
+  useEffect(() => {
+    if (!chartWrapperRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect?.width;
+      if (typeof w === 'number') setChartWidth(w);
+    });
+    ro.observe(chartWrapperRef.current);
+    return () => ro.disconnect();
+  }, []);
 
   const buildTooltipPayload = (index: number) => {
     const d = displayData[index as number];
@@ -671,12 +684,25 @@ export const CashFlowCalendar = ({
   
   const handleMouseMove = (e: any) => {
     if (!e) return;
+    let idx: number | null = null;
     if (typeof e.activeTooltipIndex === 'number') {
-      setActiveTooltipIndex(e.activeTooltipIndex);
+      idx = e.activeTooltipIndex;
     } else if (e.activeLabel) {
-      const idx = displayData.findIndex((d: any) => d.date === e.activeLabel);
-      if (idx !== -1) setActiveTooltipIndex(idx);
+      const i = displayData.findIndex((d: any) => d.date === e.activeLabel);
+      if (i !== -1) idx = i;
     }
+
+    // Fallback: map cursor position across the plot area to the nearest index
+    if (idx === null && typeof e.chartX === 'number' && chartWidth) {
+      const usableWidth = Math.max(1, chartWidth - (chartMargin.left + chartMargin.right));
+      const relX = Math.min(Math.max(e.chartX - chartMargin.left, 0), usableWidth);
+      const t = relX / usableWidth;
+      const approx = Math.round(t * (displayData.length - 1));
+      idx = Math.max(0, Math.min(displayData.length - 1, approx));
+    }
+
+    if (idx !== null) setActiveTooltipIndex(idx);
+
     if (refAreaLeft && e.activeLabel) {
       setRefAreaRight(e.activeLabel);
     }
@@ -1058,9 +1084,9 @@ export const CashFlowCalendar = ({
                 })}
                 </div>
              </div>
-          ) : (
-             <div className="w-full" style={{ height: '500px' }}>
-               <div className="flex justify-between items-center mb-2 px-4">
+             ) : (
+               <div className="relative w-full" style={{ height: '500px' }} ref={chartWrapperRef}>
+                 <div className="flex justify-between items-center mb-2 px-4">
                  <p className="text-sm text-muted-foreground">
                    {zoomState ? 'Click and drag to zoom in further • ' : 'Click and drag to zoom into a specific time period • '}
                    <span className="text-primary font-medium">
@@ -1088,7 +1114,7 @@ export const CashFlowCalendar = ({
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
                         onMouseLeave={() => setActiveTooltipIndex(null)}
-                        margin={{ top: 32, right: 16, left: 8, bottom: 16 }}
+                        margin={chartMargin}
                       >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
