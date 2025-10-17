@@ -1106,6 +1106,11 @@ export const CashFlowCalendar = ({
                         isAnimationActive={false}
                         allowEscapeViewBox={{ x: true, y: true }}
                         cursor={{ strokeDasharray: '3 3' }}
+                        position={{ x: 12, y: 12 }}
+                        wrapperStyle={{ pointerEvents: 'none' }}
+                        active={activeTooltipIndex !== null}
+                        payload={activeTooltipIndex !== null ? buildTooltipPayload(activeTooltipIndex) : []}
+                        label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined}
                         content={
                           <ChartTooltipContent 
                             formatter={(value: number, name: string) => {
@@ -1294,6 +1299,7 @@ export const CashFlowCalendar = ({
                        onMouseDown={handleMouseDown}
                        onMouseMove={handleMouseMove}
                        onMouseUp={handleMouseUp}
+                       onMouseLeave={() => setActiveTooltipIndex(null)}
                      >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
@@ -1311,6 +1317,11 @@ export const CashFlowCalendar = ({
                         isAnimationActive={false}
                         allowEscapeViewBox={{ x: true, y: true }}
                         cursor={{ strokeDasharray: '3 3' }}
+                        position={{ x: 12, y: 12 }}
+                        wrapperStyle={{ pointerEvents: 'none' }}
+                        active={activeTooltipIndex !== null}
+                        payload={activeTooltipIndex !== null ? buildTooltipPayload(activeTooltipIndex) : []}
+                        label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined}
                         content={
                           <ChartTooltipContent 
                             formatter={(value: number, name: string) => {
