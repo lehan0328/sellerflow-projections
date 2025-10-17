@@ -7,7 +7,7 @@ import { ExcludeTodayProvider } from "@/contexts/ExcludeTodayContext";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
-import { SignUp } from "./pages/SignUp";
+import { SignUpsClosed } from "./pages/SignUpsClosed";
 import UpgradePlan from "./pages/UpgradePlan";
 import SubscriptionManagement from "./pages/SubscriptionManagement";
 import TransactionLog from "./pages/TransactionLog";
@@ -73,8 +73,8 @@ const App = () => (
             <Route path="/features" element={<Features />} />
             <Route path="/features/:slug" element={<FeatureDetail />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/sign-up" element={<SignUp />} />
+            <Route path="/signup" element={<SignUpsClosed />} />
+            <Route path="/sign-up" element={<SignUpsClosed />} />
             <Route path="/payment-required" element={<PaymentRequired />} />
             <Route path="/contact" element={<Contact />} />
           <Route path="/docs" element={<Docs />} />

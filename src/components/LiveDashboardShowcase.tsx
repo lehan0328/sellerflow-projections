@@ -20,11 +20,11 @@ export const LiveDashboardShowcase = () => {
         </p>
         <Button 
           variant="outline" 
-          onClick={() => navigate('/signup')}
+          onClick={() => navigate('/contact')}
           className="inline-flex items-center space-x-2"
         >
           <ExternalLink className="h-4 w-4" />
-          <span>Get Started</span>
+          <span>Join Waitlist</span>
         </Button>
       </div>
 
