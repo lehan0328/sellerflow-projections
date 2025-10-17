@@ -1103,13 +1103,9 @@ export const CashFlowCalendar = ({
                         allowDataOverflow
                       />
                        <ChartTooltip 
-                        trigger="hover"
                         isAnimationActive={false}
                         allowEscapeViewBox={{ x: true, y: true }}
                         cursor={{ strokeDasharray: '3 3' }}
-                        active={activeTooltipIndex !== null}
-                        label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined}
-                        payload={activeTooltipIndex !== null ? buildTooltipPayload(activeTooltipIndex) : undefined}
                         content={
                           <ChartTooltipContent 
                             formatter={(value: number, name: string) => {
@@ -1312,13 +1308,9 @@ export const CashFlowCalendar = ({
                         allowDataOverflow
                       />
                        <ChartTooltip 
-                        trigger="hover"
                         isAnimationActive={false}
                         allowEscapeViewBox={{ x: true, y: true }}
                         cursor={{ strokeDasharray: '3 3' }}
-                        active={activeTooltipIndex !== null}
-                        label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined}
-                        payload={activeTooltipIndex !== null ? buildTooltipPayload(activeTooltipIndex) : undefined}
                         content={
                           <ChartTooltipContent 
                             formatter={(value: number, name: string) => {
