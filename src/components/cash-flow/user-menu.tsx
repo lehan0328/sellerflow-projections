@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Settings, CreditCard, LogOut, History, Lightbulb, Shield, Users } from "lucide-react";
+import { Settings, CreditCard, LogOut, History, Lightbulb, Shield, Users, Award } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -41,6 +41,28 @@ export function UserMenu() {
     },
     enabled: !!user?.id,
   });
+
+  // Check if user has affiliate access
+  const { data: affiliateStatus } = useQuery({
+    queryKey: ['affiliate-status', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('affiliates')
+        .select('status')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching affiliate status:', error);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const hasAffiliateAccess = affiliateStatus?.status === 'approved';
   
   // Get user display name
   const getUserName = () => {
@@ -92,6 +114,15 @@ export function UserMenu() {
             <DropdownMenuItem onClick={() => navigate('/admin')}>
               <Shield className="mr-2 h-4 w-4" />
               <span>Admin Dashboard</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        {hasAffiliateAccess && (
+          <>
+            <DropdownMenuItem onClick={() => navigate('/affiliate-dashboard')}>
+              <Award className="mr-2 h-4 w-4" />
+              <span>Affiliate Dashboard</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
