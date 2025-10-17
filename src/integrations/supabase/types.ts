@@ -116,6 +116,7 @@ export type Database = {
           affiliate_code: string
           approved_at: string | null
           audience_description: string | null
+          churned_referrals: number | null
           commission_rate: number
           company_name: string | null
           created_at: string
@@ -138,6 +139,7 @@ export type Database = {
           affiliate_code: string
           approved_at?: string | null
           audience_description?: string | null
+          churned_referrals?: number | null
           commission_rate?: number
           company_name?: string | null
           created_at?: string
@@ -160,6 +162,7 @@ export type Database = {
           affiliate_code?: string
           approved_at?: string | null
           audience_description?: string | null
+          churned_referrals?: number | null
           commission_rate?: number
           company_name?: string | null
           created_at?: string

@@ -21,6 +21,7 @@ interface Affiliate {
   total_referrals: number;
   trial_referrals: number;
   paid_referrals: number;
+  churned_referrals: number;
   monthly_referrals: number;
   total_commission_earned: number;
   pending_commission: number;
@@ -99,6 +100,7 @@ export default function AdminAffiliates() {
           total_referrals: refCount.total,
           trial_referrals: affiliate.trial_referrals || 0,
           paid_referrals: affiliate.paid_referrals || 0,
+          churned_referrals: affiliate.churned_referrals || 0,
           monthly_referrals: affiliate.monthly_referrals || 0,
           total_commission_earned: affiliate.total_commission_earned || 0,
           pending_commission: affiliate.pending_commission || 0,
@@ -344,6 +346,7 @@ export default function AdminAffiliates() {
                 <TableHead className="text-center">Commission</TableHead>
                 <TableHead className="text-center">Trial</TableHead>
                 <TableHead className="text-center">Paid</TableHead>
+                <TableHead className="text-center">Churned</TableHead>
                 <TableHead className="text-center">Total</TableHead>
                 <TableHead className="text-right">Earned</TableHead>
                 <TableHead className="text-right">Pending</TableHead>
@@ -387,6 +390,9 @@ export default function AdminAffiliates() {
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge variant="default">{affiliate.paid_referrals}</Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="destructive">{affiliate.churned_referrals}</Badge>
                     </TableCell>
                     <TableCell className="text-center">{affiliate.total_referrals}</TableCell>
                     <TableCell className="text-right font-semibold text-green-600">
