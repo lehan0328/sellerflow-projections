@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Building, ShoppingCart, Check, Zap, Crown, UserPlus } from "lucide-react";
 import { usePlanLimits, PlanType } from "@/hooks/usePlanLimits";
-import { useSubscription, ADDON_PRODUCTS, PRICING_PLANS } from "@/hooks/useSubscription";
+import { useSubscription, PRICING_PLANS } from "@/hooks/useSubscription";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PurchaseAddonsModalProps {
   open: boolean;
@@ -14,16 +15,34 @@ interface PurchaseAddonsModalProps {
 
 export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalProps) => {
   const { currentPlan, planLimits, currentUsage, PLAN_LIMITS } = usePlanLimits();
-  const { purchaseAddon, createCheckout } = useSubscription();
+  const { createCheckout } = useSubscription();
 
   const handlePurchaseAddon = async (type: 'bank' | 'amazon' | 'user') => {
-    let priceId = '';
-    if (type === 'bank') priceId = ADDON_PRODUCTS.bank_account.price_id;
-    else if (type === 'amazon') priceId = ADDON_PRODUCTS.amazon_account.price_id;
-    else if (type === 'user') priceId = ADDON_PRODUCTS.user.price_id;
-    
-    await purchaseAddon(priceId);
-    onOpenChange(false);
+    try {
+      let addon_type: 'bank_connection' | 'amazon_connection' | 'user' = 'bank_connection';
+      if (type === 'bank') addon_type = 'bank_connection';
+      else if (type === 'amazon') addon_type = 'amazon_connection';
+      else if (type === 'user') addon_type = 'user';
+      
+      const { data, error } = await supabase.functions.invoke('purchase-addon', {
+        body: { 
+          addon_type, 
+          quantity: 1,
+          return_url: window.location.pathname
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.location.href = data.url;
+        toast.success('Redirecting to checkout...');
+        onOpenChange(false);
+      }
+    } catch (error) {
+      console.error('Error purchasing addon:', error);
+      toast.error('Failed to start purchase process. Please try again.');
+    }
   };
 
   const handleUpgradePlan = async (planKey: string) => {
@@ -32,12 +51,6 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
       await createCheckout(planData.price_id);
       onOpenChange(false);
     }
-  };
-
-  const addOnPrice = {
-    bank: ADDON_PRODUCTS.bank_account.price,
-    amazon: ADDON_PRODUCTS.amazon_account.price,
-    user: ADDON_PRODUCTS.user.price
   };
 
   return (
@@ -114,9 +127,9 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                   </p>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold">${addOnPrice.bank}/month per connection</span>
+                      <span className="font-semibold">$10 one-time per connection</span>
                     </div>
-                    <p className="text-xs text-orange-600 font-medium">Billed immediately, no trial period</p>
+                    <p className="text-xs text-green-600 font-medium">One-time payment, lifetime access</p>
                   </div>
                   <div className="space-y-2">
                     <Button 
@@ -124,7 +137,7 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                       size="sm"
                       onClick={() => handlePurchaseAddon('bank')}
                     >
-                      Purchase Now - ${addOnPrice.bank}/mo
+                      Purchase Now - $10 (one-time)
                     </Button>
                   </div>
                 </CardContent>
@@ -143,9 +156,9 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                   </p>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold">${addOnPrice.amazon}/month per connection</span>
+                      <span className="font-semibold">$50 one-time per connection</span>
                     </div>
-                    <p className="text-xs text-orange-600 font-medium">Billed immediately, no trial period</p>
+                    <p className="text-xs text-green-600 font-medium">One-time payment, lifetime access</p>
                   </div>
                   <div className="space-y-2">
                     <Button 
@@ -153,7 +166,7 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                       size="sm"
                       onClick={() => handlePurchaseAddon('amazon')}
                     >
-                      Purchase Now - ${addOnPrice.amazon}/mo
+                      Purchase Now - $50 (one-time)
                     </Button>
                   </div>
                 </CardContent>
@@ -172,9 +185,9 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                   </p>
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold">${addOnPrice.user}/month per user</span>
+                      <span className="font-semibold">$15 one-time per user</span>
                     </div>
-                    <p className="text-xs text-orange-600 font-medium">Billed immediately, no trial period</p>
+                    <p className="text-xs text-green-600 font-medium">One-time payment, lifetime access</p>
                   </div>
                   <div className="space-y-2">
                     <Button 
@@ -182,7 +195,7 @@ export const PurchaseAddonsModal = ({ open, onOpenChange }: PurchaseAddonsModalP
                       size="sm"
                       onClick={() => handlePurchaseAddon('user')}
                     >
-                      Purchase Now - ${addOnPrice.user}/mo
+                      Purchase Now - $15 (one-time)
                     </Button>
                   </div>
                 </CardContent>

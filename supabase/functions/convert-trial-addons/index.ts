@@ -12,11 +12,11 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CONVERT-TRIAL-ADDONS] ${step}${detailsStr}`);
 };
 
-// Mapping of addon types to Stripe price IDs
-const ADDON_PRICE_IDS = {
-  bank_account: "price_1SF2J6B28kMY3UseQW6ATKt1",
-  amazon_account: "price_1SEHQLB28kMY3UseBmY7IIjx",
-  user: "price_1SEHQoB28kMY3UsedGTbBbmA"
+// Pricing for add-ons (converted to purchased_addons)
+const ADDON_PRICES = {
+  bank_account: 10,
+  amazon_account: 50,
+  user: 15
 };
 
 serve(async (req) => {
@@ -78,57 +78,59 @@ serve(async (req) => {
 
     logStep("Found trial usage", { count: trialUsage.length });
 
-    // Find user's Stripe customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    // Get user's account_id
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('account_id')
+      .eq('user_id', user.id)
+      .single();
+
+    const account_id = profile?.account_id;
+    logStep("Found account", { account_id });
     
-    if (customers.data.length === 0) {
-      throw new Error("No Stripe customer found");
-    }
-    
-    const customerId = customers.data[0].id;
-    logStep("Found customer", { customerId });
-    
-    // Find active subscription
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
-      limit: 1,
-    });
-    
-    if (subscriptions.data.length === 0) {
-      throw new Error("No active subscription found");
-    }
-    
-    const subscription = subscriptions.data[0];
-    logStep("Found active subscription", { subscriptionId: subscription.id });
-    
-    // Add each trial usage item to the subscription
-    const addedItems = [];
+    // Convert trial usage to purchased add-ons (database only, no Stripe subscription items)
+    const convertedItems = [];
     for (const usage of trialUsage) {
       if (usage.quantity > 0) {
-        const priceId = ADDON_PRICE_IDS[usage.addon_type as keyof typeof ADDON_PRICE_IDS];
+        const unitPrice = ADDON_PRICES[usage.addon_type as keyof typeof ADDON_PRICES];
         
-        logStep("Adding subscription item", { 
+        logStep("Converting to purchased addon", { 
           type: usage.addon_type, 
-          priceId, 
-          quantity: usage.quantity 
-        });
-        
-        const subscriptionItem = await stripe.subscriptionItems.create({
-          subscription: subscription.id,
-          price: priceId,
           quantity: usage.quantity,
-          proration_behavior: 'create_prorations',
+          price: unitPrice
         });
         
-        addedItems.push({
+        // Insert as purchased addon (database record only)
+        const { data: purchase, error: insertError } = await supabaseClient
+          .from('purchased_addons')
+          .insert({
+            user_id: user.id,
+            account_id: account_id,
+            addon_type: usage.addon_type === 'bank_account' ? 'bank_connection' : 
+                        usage.addon_type === 'amazon_account' ? 'amazon_connection' : 'user',
+            quantity: usage.quantity,
+            price_paid: unitPrice * usage.quantity,
+            currency: 'usd',
+            stripe_payment_intent_id: null, // No payment for trial conversion
+            stripe_charge_id: null,
+            purchased_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+        
+        if (insertError) {
+          logStep("Error inserting purchased addon", { error: insertError });
+          throw insertError;
+        }
+        
+        convertedItems.push({
           type: usage.addon_type,
-          itemId: subscriptionItem.id,
+          purchaseId: purchase.id,
           quantity: usage.quantity
         });
         
-        logStep("Added subscription item", { 
-          itemId: subscriptionItem.id,
+        logStep("Converted to purchased addon", { 
+          purchaseId: purchase.id,
           type: usage.addon_type
         });
       }
@@ -146,12 +148,12 @@ serve(async (req) => {
       logStep("Deleted trial usage records");
     }
 
-    logStep("Conversion completed", { addedCount: addedItems.length });
+    logStep("Conversion completed", { convertedCount: convertedItems.length });
 
     return new Response(JSON.stringify({ 
       success: true,
-      addedItems,
-      message: `Successfully converted ${addedItems.length} trial add-ons to paid subscription`
+      convertedItems,
+      message: `Successfully converted ${convertedItems.length} trial add-ons to purchased add-ons`
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
