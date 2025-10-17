@@ -539,15 +539,28 @@ const UpgradePlan = () => {
                             </div>
                             <Button
                               size="lg"
-                              className="w-full bg-blue-500 hover:bg-blue-600 text-white relative"
-                              onClick={() => openCustomerPortal()}
+                              className="w-full"
+                              onClick={() => {
+                                const yearlyPriceId = currentPlanData?.yearlyPriceId;
+                                if (yearlyPriceId) {
+                                  handleUpgrade(
+                                    yearlyPriceId,
+                                    `${currentPlanData.name} (Yearly)`,
+                                    amountDue * 100, // Convert to cents
+                                    true
+                                  );
+                                }
+                              }}
                             >
                               <Calendar className="h-4 w-4 mr-2" />
-                              Switch to Yearly in Customer Portal
-                              <Badge className="ml-2 bg-white text-blue-600 hover:bg-white">
+                              Upgrade to Yearly Billing
+                              <Badge className="ml-2 bg-primary/10">
                                 Save {savings}
                               </Badge>
                             </Button>
+                            <p className="text-xs text-center text-muted-foreground">
+                              You'll be asked to confirm before charging ${amountDue.toFixed(2)}
+                            </p>
                           </div>
                         ) : null;
                       })()}
