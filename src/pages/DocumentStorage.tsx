@@ -85,7 +85,7 @@ export default function DocumentStorage() {
   });
 
   // Fetch documents with metadata
-  const { data: documents, isLoading } = useQuery({
+  const { data: documents, isLoading, refetch } = useQuery({
     queryKey: ['documents', profile?.account_id],
     queryFn: async () => {
       if (!profile?.account_id) return [];
@@ -144,6 +144,7 @@ export default function DocumentStorage() {
       }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
     enabled: !!profile?.account_id,
+    staleTime: 0, // Always refetch when query is invalidated
   });
 
   // Calculate total storage used
@@ -532,9 +533,8 @@ export default function DocumentStorage() {
   };
 
   const filteredDocuments = documents?.filter(doc => {
-    // Only show documents that have storage files
-    const hasStorageFile = (doc as any).storage_exists !== false;
-    if (!hasStorageFile) return false;
+    // Show ALL documents, even if storage file is missing
+    // The UI will indicate when a file is missing
     
     // Search in file name, display name, notes, and description
     const searchLower = searchQuery.toLowerCase();
@@ -721,7 +721,10 @@ export default function DocumentStorage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => queryClient.invalidateQueries({ queryKey: ['documents', profile?.account_id] })}
+                  onClick={() => {
+                    toast.info('Refreshing documents...');
+                    refetch();
+                  }}
                   disabled={isLoading}
                 >
                   <RefreshCw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
