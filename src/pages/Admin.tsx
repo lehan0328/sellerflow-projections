@@ -9,12 +9,14 @@ import {
   ArrowLeft,
   Shield,
   Gift,
-  MessageSquare
+  MessageSquare,
+  UserCog
 } from "lucide-react";
 import { AdminCustomers } from "@/components/admin/AdminCustomers";
 import { AdminSupportTickets } from "@/components/admin/AdminSupportTickets";
 import { AdminSubscriptions } from "@/components/admin/AdminSubscriptions";
 import AdminReferrals from "@/components/admin/AdminReferrals";
+import AdminAffiliates from "@/components/admin/AdminAffiliates";
 import { AdminFeatureRequests } from "@/components/admin/AdminFeatureRequests";
 
 const Admin = () => {
@@ -47,7 +49,7 @@ const Admin = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 max-w-4xl">
+          <TabsList className="grid w-full grid-cols-6 max-w-5xl">
             <TabsTrigger value="customers" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Customers
@@ -63,6 +65,10 @@ const Admin = () => {
             <TabsTrigger value="referrals" className="flex items-center gap-2">
               <Gift className="h-4 w-4" />
               Referrals
+            </TabsTrigger>
+            <TabsTrigger value="affiliates" className="flex items-center gap-2">
+              <UserCog className="h-4 w-4" />
+              Affiliates
             </TabsTrigger>
             <TabsTrigger value="features" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
@@ -84,6 +90,10 @@ const Admin = () => {
 
           <TabsContent value="referrals" className="mt-6">
             <AdminReferrals />
+          </TabsContent>
+
+          <TabsContent value="affiliates" className="mt-6">
+            <AdminAffiliates />
           </TabsContent>
 
           <TabsContent value="features" className="mt-6">
