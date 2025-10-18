@@ -1623,7 +1623,7 @@ const Landing = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground leading-relaxed">
-                  You can continue with your chosen plan. There are no hidden fees or surprise charges, and you can cancel anytime.
+                  A plan will be recommended based on your revenue. There are no hidden fees or surprise charges, and you can cancel anytime.
                 </p>
               </CardContent>
             </Card>
