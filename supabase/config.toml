@@ -120,6 +120,9 @@ verify_jwt = true
 [functions.forecast-amazon-payouts-math]
 verify_jwt = true
 
+[functions.calculate-forecast-accuracy]
+verify_jwt = true
+
 [functions.disable-forecasts]
 verify_jwt = true
 
