@@ -61,11 +61,16 @@ serve(async (req) => {
       .eq('user_id', userId)
       .maybeSingle();
 
-    const riskAdjustment = userSettings?.forecast_confidence_threshold ?? 5;
+    const riskAdjustment = userSettings?.forecast_confidence_threshold ?? 8; // Default 8% (Moderate)
     const defaultReserveLag = userSettings?.default_reserve_lag_days ?? 7;
     const minReserveFloor = userSettings?.min_reserve_floor ?? 1000;
 
-    console.log('[MATH-FORECAST] Settings:', { riskAdjustment, defaultReserveLag, minReserveFloor });
+    console.log('[MATH-FORECAST] Safety Net Level:', { 
+      riskAdjustment, 
+      level: riskAdjustment === 3 ? 'Aggressive (-3%)' : riskAdjustment === 8 ? 'Moderate (-8%)' : 'Conservative (-15%)',
+      defaultReserveLag, 
+      minReserveFloor 
+    });
 
     // Fetch active Amazon accounts
     const { data: amazonAccounts } = await supabase

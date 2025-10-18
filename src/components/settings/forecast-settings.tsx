@@ -35,7 +35,7 @@ export const ForecastSettings = () => {
   const { amazonPayouts, refetch: refetchPayouts } = useAmazonPayouts();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [confidenceThreshold, setConfidenceThreshold] = useState(5); // -5 = Aggressive, 0 = Medium, 5 = Safe, 10 = Very Safe
+  const [confidenceThreshold, setConfidenceThreshold] = useState(8); // 3 = Aggressive, 8 = Moderate, 15 = Conservative
   const [forecastsEnabled, setForecastsEnabled] = useState(true);
   const [disabledAt, setDisabledAt] = useState<string | null>(null);
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
@@ -81,16 +81,16 @@ export const ForecastSettings = () => {
 
       if (error && error.code !== 'PGRST116') throw error;
 
-      // If data exists and has a valid threshold, use it; otherwise keep default of 5 (Safe)
+      // If data exists and has a valid threshold, use it; otherwise keep default of 8 (Moderate)
       if (data?.forecast_confidence_threshold !== null && data?.forecast_confidence_threshold !== undefined) {
         console.log('📊 Loaded forecast risk level from database:', data.forecast_confidence_threshold);
         const loadedValue = data.forecast_confidence_threshold;
         setConfidenceThreshold(loadedValue);
-        console.log('📊 State set to:', loadedValue, 'Risk level:', getRiskLevel(loadedValue).label);
+        console.log('📊 State set to:', loadedValue, 'Safety Net:', getSafetyLevel(loadedValue).label);
       } else {
-        // No setting exists yet, keep default of 5 (Safe)
-        console.log('📊 No existing setting, using default: 5 (Safe)');
-        setConfidenceThreshold(5);
+        // No setting exists yet, keep default of 8 (Moderate - Balanced)
+        console.log('📊 No existing setting, using default: 8 (Moderate)');
+        setConfidenceThreshold(8);
       }
 
       // Set forecast enabled state
@@ -99,8 +99,8 @@ export const ForecastSettings = () => {
       setAdvancedModelingEnabled(data?.advanced_modeling_enabled ?? false);
     } catch (error) {
       console.error('Error fetching forecast settings:', error);
-      // On error, default to 5 (Safe)
-      setConfidenceThreshold(5);
+      // On error, default to 8 (Moderate)
+      setConfidenceThreshold(8);
       setForecastsEnabled(true);
     } finally {
       setLoading(false);
@@ -327,21 +327,40 @@ export const ForecastSettings = () => {
     }
   };
 
-  const getRiskLevel = (value: number) => {
-    if (value === 10) return { label: "Very Safe", color: "bg-emerald-500", index: 3 };
-    if (value === 5) return { label: "Safe", color: "bg-blue-500", index: 2 };
-    if (value === 0) return { label: "Medium (Risky)", color: "bg-orange-500", index: 1 };
-    return { label: "Aggressive Growth (Super Risky)", color: "bg-red-500", index: 0 };
+  const getSafetyLevel = (value: number) => {
+    if (value === 15) return { label: "Conservative (Safe)", color: "bg-emerald-500", index: 2, discount: "−15%" };
+    if (value === 8) return { label: "Moderate (Balanced)", color: "bg-blue-500", index: 1, discount: "−8%" };
+    return { label: "Aggressive (Fast Cycle)", color: "bg-orange-500", index: 0, discount: "−3%" };
   };
 
   const tiers = [
-    { value: -5, label: "Aggressive Growth", color: "bg-red-500", recommended: false, subtitle: "Super Risky" },
-    { value: 0, label: "Medium", color: "bg-orange-500", recommended: false, subtitle: "Risky" },
-    { value: 5, label: "Safe", color: "bg-blue-500", recommended: true, subtitle: "Recommended" },
-    { value: 10, label: "Very Safe", color: "bg-emerald-500", recommended: false, subtitle: "Conservative" }
+    { 
+      value: 3, 
+      label: "Aggressive", 
+      color: "bg-orange-500", 
+      recommended: false, 
+      subtitle: "Fast Cycle (−3%)",
+      hint: "Use when settlement cycles are 1–1.5 days and returns are low."
+    },
+    { 
+      value: 8, 
+      label: "Moderate", 
+      color: "bg-blue-500", 
+      recommended: true, 
+      subtitle: "Balanced (−8%)",
+      hint: "Use when settlement cycles are ~2 days and payouts are steady."
+    },
+    { 
+      value: 15, 
+      label: "Conservative", 
+      color: "bg-emerald-500", 
+      recommended: false, 
+      subtitle: "Safe (−15%)",
+      hint: "Use when settlement cycles are 3+ days or payouts are volatile."
+    }
   ];
 
-  const riskLevel = getRiskLevel(confidenceThreshold);
+  const safetyLevel = getSafetyLevel(confidenceThreshold);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -388,7 +407,7 @@ export const ForecastSettings = () => {
                 Adjust the conservatism of your Amazon payout forecasts
                 {!loading && (
                   <div className="mt-2 text-xs text-muted-foreground">
-                    Current forecast risk: <span className="font-semibold">{riskLevel.label}</span>
+                    Current safety net: <span className="font-semibold">{safetyLevel.label} {safetyLevel.discount}</span>
                   </div>
                 )}
               </>
@@ -494,7 +513,7 @@ export const ForecastSettings = () => {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Label htmlFor="risk-threshold">Forecast Risk Adjustment</Label>
+              <Label htmlFor="safety-net">Safety Net Level</Label>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
@@ -502,7 +521,8 @@ export const ForecastSettings = () => {
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="max-w-xs">
-                      Aggressive (+5%), Medium (0%), Safe (-5%), Very Safe (-10%)
+                      Amazon payouts fluctuate due to reserves, returns, and settlement delays. 
+                      Choose a safety level to discount forecasted payouts by a buffer so your available cash stays conservative.
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -510,14 +530,14 @@ export const ForecastSettings = () => {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Current:</span>
-              <Badge className={riskLevel.color}>
-                {riskLevel.label}
+              <Badge className={safetyLevel.color}>
+                {safetyLevel.label}
               </Badge>
-              <span className="text-xs font-mono text-muted-foreground">({confidenceThreshold})</span>
+              <span className="text-xs font-mono text-muted-foreground">{safetyLevel.discount}</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-2 mb-4">
+          <div className="grid grid-cols-3 gap-2 mb-4">
             {tiers.map((tier) => (
               <button
                 key={tier.value}
@@ -526,7 +546,7 @@ export const ForecastSettings = () => {
                   console.log('🎯 Selected tier:', tier.label, 'Value:', tier.value);
                   setConfidenceThreshold(tier.value);
                 }}
-                className={`p-3 rounded-lg border-2 transition-all relative ${
+                className={`p-4 rounded-lg border-2 transition-all relative ${
                   confidenceThreshold === tier.value
                     ? 'border-primary bg-primary/10'
                     : 'border-border hover:border-primary/50'
@@ -538,8 +558,9 @@ export const ForecastSettings = () => {
                   </Badge>
                 )}
                 <div className={`w-3 h-3 rounded-full ${tier.color} mx-auto mb-2`} />
-                <div className="text-xs font-medium">{tier.label}</div>
-                <div className="text-[10px] text-muted-foreground">{tier.subtitle}</div>
+                <div className="text-sm font-medium mb-1">{tier.label}</div>
+                <div className="text-[10px] text-muted-foreground mb-2">{tier.subtitle}</div>
+                <div className="text-[9px] text-muted-foreground italic line-clamp-2">{tier.hint}</div>
               </button>
             ))}
           </div>
@@ -548,14 +569,13 @@ export const ForecastSettings = () => {
         <div className="rounded-lg bg-muted/50 p-4 space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium">
             <TrendingUp className="h-4 w-4" />
-            How this affects your forecasts:
+            Safety Net Impact on Forecasts:
           </div>
           <ul className="text-sm text-muted-foreground space-y-1 ml-6 list-disc">
-            <li><strong>Aggressive Growth (+5%):</strong> 5% increase on average - for rapidly growing businesses, highest risk</li>
-            <li><strong>Medium (0%):</strong> Average of previous payouts - balanced but risky</li>
-            <li><strong>Safe (-5%):</strong> 5% decrease on average - recommended conservative buffer</li>
-            <li><strong>Very Safe (-10%):</strong> 10% decrease on average - maximum safety margin</li>
-            <li>Forecasts apply to safe spending limits and buying opportunities</li>
+            <li><strong>Aggressive (−3%):</strong> Use when settlement cycles are 1–1.5 days and returns are low</li>
+            <li><strong>Moderate (−8%):</strong> Use when settlement cycles are ~2 days and payouts are steady (Recommended)</li>
+            <li><strong>Conservative (−15%):</strong> Use when settlement cycles are 3+ days or payouts are volatile</li>
+            <li>Safety buffer is applied to raw forecasts: Adjusted Payout = Raw Forecast × (1 − discount%)</li>
           </ul>
         </div>
 

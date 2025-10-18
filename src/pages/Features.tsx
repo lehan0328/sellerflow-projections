@@ -8,6 +8,7 @@ import { PublicLayout } from "@/components/PublicLayout";
 import {
   Calendar,
   TrendingUp,
+  TrendingDown,
   Brain,
   FileText,
   CreditCard,
@@ -24,6 +25,7 @@ import {
   Globe,
   DollarSign,
   ArrowRight,
+  Shield,
 } from "lucide-react";
 
 const Features = () => {
@@ -156,11 +158,11 @@ const Features = () => {
     },
     {
       icon: BarChart3,
-      title: "Revenue Forecasting",
-      description: "Predict future revenue based on historical patterns and Amazon payout schedules with 95%+ accuracy.",
+      title: "Mathematical Payout Forecasting",
+      description: "DD+7 reserve modeling with per-order net cash calculations. Accounts for fees, returns, chargebacks, and Amazon's settlement mechanics with adjustable safety buffers (−3% to −15%).",
       category: "Analytics",
       badge: "Popular",
-      slug: "revenue-forecasting"
+      slug: "amazon-payout-forecasting"
     },
     {
       icon: Lock,
@@ -298,6 +300,137 @@ const Features = () => {
                   </CardDescription>
                 </CardHeader>
               </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* Mathematical Forecasting Deep Dive */}
+        <section className="py-20 px-4 bg-gradient-to-br from-blue-50 via-purple-50 to-background dark:from-blue-950/20 dark:via-purple-950/20 dark:to-background">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-12">
+              <Badge className="mb-4 bg-gradient-to-r from-blue-600 to-purple-600">🎯 Industry-Leading Accuracy</Badge>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Mathematical Amazon Payout Forecasting
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                The most accurate Amazon payout forecasting engine on the market. Built on Amazon's actual settlement mechanics, not guesswork.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8 mb-8">
+              {/* How It Works */}
+              <Card className="border-2 border-blue-200 dark:border-blue-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="h-5 w-5 text-blue-600" />
+                    The Formula
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="bg-muted/50 rounded-lg p-4 border">
+                    <p className="text-xs font-semibold mb-2">Net Cash per Order:</p>
+                    <p className="text-xs font-mono">Net = (Gross − Fees − Shipping − Ads) × (1 − Return%) × (1 − Chargeback%)</p>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-4 border">
+                    <p className="text-xs font-semibold mb-2">Reserve Policy (DD+7):</p>
+                    <p className="text-xs font-mono">Unlock Date = Delivery Date + 7 days</p>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-4 border">
+                    <p className="text-xs font-semibold mb-2">Settlement Payout:</p>
+                    <p className="text-xs font-mono">Payout = [Eligible Cash + Prior Balance + Adjustments] − Reserve</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Safety Net Levels */}
+              <Card className="border-2 border-purple-200 dark:border-purple-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-purple-600" />
+                    Adjustable Safety Buffers
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-start gap-3 p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <div className="w-2 h-2 rounded-full bg-orange-500 mt-1.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold">Aggressive (−3%)</p>
+                      <p className="text-xs text-muted-foreground">For 1–1.5 day settlement cycles, low returns</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold">Moderate (−8%)</p>
+                      <p className="text-xs text-muted-foreground">For ~2 day cycles, steady payouts (Recommended)</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold">Conservative (−15%)</p>
+                      <p className="text-xs text-muted-foreground">For 3+ day cycles, volatile payouts</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* What We Model */}
+            <Card>
+              <CardHeader>
+                <CardTitle>What Auren Models</CardTitle>
+                <CardDescription>Unlike basic forecasters, we account for Amazon's actual settlement mechanics</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded">
+                      <Calendar className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">DD+7 Reserve Policy</p>
+                      <p className="text-xs text-muted-foreground">Tracks delivery date + 7 day hold period</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded">
+                      <DollarSign className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">Order-Level Net Cash</p>
+                      <p className="text-xs text-muted-foreground">Per-order calculations with all fees included</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded">
+                      <TrendingDown className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">Return & Chargeback Rates</p>
+                      <p className="text-xs text-muted-foreground">Historical patterns by product category</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-emerald-100 dark:bg-emerald-900/20 rounded">
+                      <BarChart3 className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">Account Reserves</p>
+                      <p className="text-xs text-muted-foreground">Recent deliveries within reserve window</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="mt-8 text-center">
+              <p className="text-sm text-muted-foreground mb-4">
+                <strong>Accuracy Disclaimer:</strong> Forecasts assume DD+7 reserve policy. Accuracy may vary during account reviews or high-risk status.
+              </p>
+              <Button size="lg" onClick={() => navigate('/signup')}>
+                Start Forecasting Your Payouts
+              </Button>
             </div>
           </div>
         </section>
