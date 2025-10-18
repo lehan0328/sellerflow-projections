@@ -546,8 +546,8 @@ const Landing = () => {
                       <span className="text-foreground">Smarter</span>
                       <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm hover-scale whitespace-nowrap">
                         <Sparkles className="h-4 w-4 animate-pulse" />
-                        <span className="font-display">AI-Powered Forecasting</span>
-                        <span className="ml-2 px-2.5 py-0.5 bg-primary/20 rounded-full text-xs">New</span>
+                        <span className="font-display">Mathematical Rule-Based</span>
+                        <span className="ml-2 px-2.5 py-0.5 bg-primary/20 rounded-full text-xs">Accurate</span>
                       </Badge>
                     </div>
                     <div className="flex items-center gap-4 pb-2">
