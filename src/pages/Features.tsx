@@ -513,7 +513,7 @@ const Features = () => {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground mt-4">
-              No credit card required • 14-day free trial • Cancel anytime
+              No credit card required • 7-day free trial • Cancel anytime
             </p>
           </div>
         </section>
