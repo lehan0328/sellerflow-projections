@@ -32,6 +32,7 @@ import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AmazonForecastAccuracy } from "@/components/cash-flow/amazon-forecast-accuracy";
+import { ForecastSettings } from "@/components/settings/forecast-settings";
 
 export default function AmazonForecast() {
   const navigate = useNavigate();
@@ -160,6 +161,9 @@ export default function AmazonForecast() {
         </div>
         <p className="text-muted-foreground">Advanced mathematical modeling powered by AI to predict future Amazon payouts</p>
       </div>
+
+      {/* Forecast Settings */}
+      <ForecastSettings />
 
       {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-4">
