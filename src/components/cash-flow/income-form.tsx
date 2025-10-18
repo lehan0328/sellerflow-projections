@@ -8,10 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useCategories } from "@/hooks/useCategories";
 import { AddCategoryDialog } from "./add-category-dialog";
 import { Plus } from "lucide-react";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Search, Trash2 } from "lucide-react";
+import { CalendarIcon, Search } from "lucide-react";
 import { format, addMonths } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -263,49 +262,16 @@ export const IncomeForm = ({
                   )}
                 </div>
                 
-                <div className="flex gap-2">
-                  {onAddCustomer && (
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => setShowCustomerForm(true)}
-                      className="px-3"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  )}
-                  
-                  {onDeleteAllCustomers && customers.length > 0 && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          className="px-3 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete All Customers</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete all {customers.length} customers? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={onDeleteAllCustomers}
-                            className="bg-destructive hover:bg-destructive/90"
-                          >
-                            Delete All
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </div>
+                {onAddCustomer && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setShowCustomerForm(true)}
+                    className="px-3"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
             
