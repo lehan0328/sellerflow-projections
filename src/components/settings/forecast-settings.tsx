@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -48,6 +48,35 @@ export const ForecastSettings = () => {
   // Check if user has 3+ confirmed payouts for advanced modeling
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
   const hasEnoughDataForAdvanced = confirmedPayouts.length >= 3;
+  
+  // Auto-detect payout model from settlement history
+  const detectedPayoutModel = useMemo(() => {
+    if (confirmedPayouts.length < 2) return null; // Need at least 2 payouts to detect pattern
+    
+    // Sort by date
+    const sorted = [...confirmedPayouts].sort((a, b) => 
+      new Date(a.payout_date).getTime() - new Date(b.payout_date).getTime()
+    );
+    
+    // Calculate average days between settlements
+    let totalDays = 0;
+    let count = 0;
+    
+    for (let i = 1; i < sorted.length; i++) {
+      const daysBetween = Math.abs(
+        (new Date(sorted[i].payout_date).getTime() - new Date(sorted[i-1].payout_date).getTime()) / (1000 * 60 * 60 * 24)
+      );
+      totalDays += daysBetween;
+      count++;
+    }
+    
+    const avgDays = totalDays / count;
+    
+    // If average is 12-16 days, it's bi-weekly. If less than 12, it's daily
+    if (avgDays >= 12 && avgDays <= 16) return 'bi-weekly';
+    if (avgDays < 12) return 'daily';
+    return 'bi-weekly'; // Default to bi-weekly if unclear
+  }, [confirmedPayouts]);
 
   // Calculate if 24 hours have passed since disabling
   const canReEnable = !disabledAt || 
@@ -73,10 +102,18 @@ export const ForecastSettings = () => {
 
       console.log('🔍 Fetched settings:', data);
       
-      // Load Amazon account payout model
+      // Auto-detect payout model from history or load from account
       if (amazonAccounts && amazonAccounts.length > 0) {
         const firstAccount = amazonAccounts[0] as any;
-        setPayoutModel(firstAccount.payout_model || 'bi-weekly');
+        const currentModel = firstAccount.payout_model || 'bi-weekly';
+        
+        // If we have detected a model from history, use that
+        if (detectedPayoutModel && detectedPayoutModel !== currentModel) {
+          console.log('🔍 Auto-detected payout model:', detectedPayoutModel, '(was:', currentModel, ')');
+          setPayoutModel(detectedPayoutModel);
+        } else {
+          setPayoutModel(currentModel);
+        }
       }
 
       if (error && error.code !== 'PGRST116') throw error;
@@ -452,34 +489,46 @@ export const ForecastSettings = () => {
                 </p>
                 
                 <div className="space-y-3">
+                  {detectedPayoutModel && (
+                    <div className="p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                      <p className="text-xs text-green-800 dark:text-green-200 flex items-center gap-1.5">
+                        <AlertCircle className="h-3.5 w-3.5" />
+                        Auto-detected from your settlement history: <span className="font-semibold">{detectedPayoutModel === 'bi-weekly' ? '14-Day Settlements' : 'Daily Available'}</span>
+                      </p>
+                    </div>
+                  )}
+                  
                   <div>
                     <Label className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-2 block">
-                      Forecast Model
+                      Forecast Model {detectedPayoutModel ? '(Auto-Detected)' : ''}
                     </Label>
                     <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => setPayoutModel('bi-weekly')}
+                      <div
                         className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                           payoutModel === 'bi-weekly'
                             ? 'bg-blue-600 text-white shadow-md'
-                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 opacity-50'
                         }`}
                       >
                         <div className="font-semibold">14-Day Settlements</div>
                         <div className="text-[10px] opacity-80">Standard bi-weekly</div>
-                      </button>
-                      <button
-                        onClick={() => setPayoutModel('daily')}
+                      </div>
+                      <div
                         className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                           payoutModel === 'daily'
                             ? 'bg-purple-600 text-white shadow-md'
-                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 opacity-50'
                         }`}
                       >
                         <div className="font-semibold">Daily Available</div>
                         <div className="text-[10px] opacity-80">Withdrawable funds</div>
-                      </button>
+                      </div>
                     </div>
+                    {!detectedPayoutModel && confirmedPayouts.length < 2 && (
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-2">
+                        Need at least 2 confirmed settlements to auto-detect your payout model
+                      </p>
+                    )}
                   </div>
 
                   <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
