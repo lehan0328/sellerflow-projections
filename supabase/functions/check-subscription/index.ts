@@ -57,7 +57,9 @@ serve(async (req) => {
     // referred_user_discount is NOT a subscription - it's just a discount flag
     // Only check plan_override if it's NOT referred_user_discount
     if (profile?.plan_override && profile.plan_override !== 'referred_user_discount') {
-      logStep("Plan override found", { plan: profile.plan_override, trialEnd: profile?.trial_end, isTrialExpired });
+      // Normalize plan_override to lowercase to handle case sensitivity issues
+      const normalizedPlan = profile.plan_override.toLowerCase();
+      logStep("Plan override found", { plan: normalizedPlan, trialEnd: profile?.trial_end, isTrialExpired });
       
       // If trial is expired, return trial_expired status even with plan override
       if (isTrialExpired) {
@@ -74,7 +76,7 @@ serve(async (req) => {
       
       return new Response(JSON.stringify({
         subscribed: true,
-        plan: profile.plan_override.toLowerCase(),
+        plan: normalizedPlan,
         subscription_end: null,
         is_override: true,
         discount_ever_redeemed: !!profile.discount_redeemed_at
