@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2, Lock } from "lucide-react";
+import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2, Lock, Sparkles } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useSupportMessageCount } from "@/hooks/useSupportMessageCount";
@@ -30,6 +30,12 @@ const overviewSections = [{
   id: "analytics",
   title: "Analytics",
   icon: BarChart3
+}, {
+  id: "ai-forecast",
+  title: "AI Forecast",
+  icon: Sparkles,
+  isRoute: true,
+  url: "/ai-forecast"
 }, {
   id: "scenario-planning",
   title: "Scenario Planning",
@@ -101,7 +107,13 @@ export function AppSidebar({
   const navigate = useNavigate();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  const handleSectionClick = (sectionId: string) => {
+  const handleSectionClick = (sectionId: string, section?: any) => {
+    // Handle route navigation for AI Forecast
+    if (section?.isRoute && section?.url) {
+      navigate(section.url);
+      return;
+    }
+    
     // Scenario Planning: Professional + Trial only
     if (sectionId === 'scenario-planning' && 
         !hasPlanAccess(subscription.plan, 'professional') && !subscription.is_trialing) {
@@ -146,7 +158,7 @@ export function AppSidebar({
                 !hasPlanAccess(subscription.plan, 'professional') && !subscription.is_trialing;
               
               return <SidebarMenuItem key={section.id}>
-                    <SidebarMenuButton onClick={() => handleSectionClick(section.id)} className={`
+                    <SidebarMenuButton onClick={() => handleSectionClick(section.id, section)} className={`
                         relative rounded-lg transition-all duration-200
                         ${isCollapsed ? "justify-center h-12 w-12" : ""}
                         ${isActive ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" : "hover:bg-accent/50 hover:translate-x-1"}
