@@ -1781,6 +1781,8 @@ export type Database = {
       user_settings: {
         Row: {
           account_id: string | null
+          advanced_modeling_enabled: boolean | null
+          advanced_modeling_notified: boolean | null
           chart_cashflow_color: string | null
           chart_credit_color: string | null
           chart_forecast_color: string | null
@@ -1806,6 +1808,8 @@ export type Database = {
         }
         Insert: {
           account_id?: string | null
+          advanced_modeling_enabled?: boolean | null
+          advanced_modeling_notified?: boolean | null
           chart_cashflow_color?: string | null
           chart_credit_color?: string | null
           chart_forecast_color?: string | null
@@ -1831,6 +1835,8 @@ export type Database = {
         }
         Update: {
           account_id?: string | null
+          advanced_modeling_enabled?: boolean | null
+          advanced_modeling_notified?: boolean | null
           chart_cashflow_color?: string | null
           chart_credit_color?: string | null
           chart_forecast_color?: string | null

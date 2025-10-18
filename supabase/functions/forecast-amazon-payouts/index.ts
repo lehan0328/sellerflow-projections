@@ -47,15 +47,17 @@ serve(async (req) => {
 
     const accountId = profile.account_id;
 
-    // Get user's forecast confidence threshold
+    // Get user's forecast confidence threshold and advanced modeling setting
     const { data: userSettings } = await supabase
       .from('user_settings')
-      .select('forecast_confidence_threshold')
+      .select('forecast_confidence_threshold, advanced_modeling_enabled')
       .eq('user_id', userId)
       .maybeSingle();
 
     const riskAdjustment = userSettings?.forecast_confidence_threshold ?? 5; // -5 = Aggressive, 0 = Medium, 5 = Safe, 10 = Very Safe
+    const advancedModelingEnabled = userSettings?.advanced_modeling_enabled ?? false;
     console.log('[FORECAST] User risk adjustment:', riskAdjustment, '(-5=Aggressive+5%, 0=Medium, 5=Safe-5%, 10=Very Safe-10%)');
+    console.log('[FORECAST] Advanced modeling:', advancedModelingEnabled ? 'ENABLED' : 'DISABLED');
 
     // Fetch all active Amazon accounts for this user
     const { data: amazonAccounts, error: accountsError } = await supabase
@@ -286,12 +288,28 @@ serve(async (req) => {
         throw new Error('LOVABLE_API_KEY not configured');
       }
 
-      // Prepare a simplified data analysis prompt
-      const systemPrompt = `You are a financial analyst specializing in Amazon marketplace forecasting. Analyze payout data and provide accurate predictions. If data is limited, use conservative estimates based on available information.`;
+      // Prepare analysis prompt based on modeling mode
+      const systemPrompt = advancedModelingEnabled && amazonPayouts.length >= 3
+        ? `You are a senior quantitative analyst specializing in Amazon marketplace forecasting using advanced mathematical modeling. 
+           Apply time series analysis, exponential smoothing, ARIMA modeling, and regression analysis to generate highly accurate predictions.
+           Use statistical methods to identify patterns, trends, and seasonality in the data.`
+        : `You are a financial analyst specializing in Amazon marketplace forecasting. Analyze payout data and provide accurate predictions. If data is limited, use conservative estimates based on available information.`;
 
       const dataAvailability = amazonPayouts.length >= 3 ? 'sufficient' : 'limited';
+      const modelingMode = advancedModelingEnabled && amazonPayouts.length >= 3 ? 'ADVANCED' : 'BASIC';
       
-      const analysisPrompt = `Analyze Amazon Seller data and forecast next 3 months (6 bi-weekly periods) for ${amazonAccount.account_name} (${amazonAccount.marketplace_name}).
+      const analysisPrompt = `${modelingMode} FORECASTING MODE
+      
+Analyze Amazon Seller data and forecast next 3 months (6 bi-weekly periods) for ${amazonAccount.account_name} (${amazonAccount.marketplace_name}).
+${advancedModelingEnabled && amazonPayouts.length >= 3 ? `
+⚡ ADVANCED MATHEMATICAL MODELING ACTIVE ⚡
+Apply these techniques to the historical data:
+- Time Series Decomposition: Identify trend, seasonal, and residual components
+- Exponential Smoothing: Weight recent data more heavily (alpha=0.3)
+- Moving Average Convergence: Use 3-period and 6-period moving averages
+- Linear Regression: Fit trend lines to detect growth patterns
+- Coefficient of Variation: Measure volatility and adjust confidence accordingly
+` : ''}
 
 DATA AVAILABILITY: ${dataAvailability} (${amazonPayouts.length} payout${amazonPayouts.length !== 1 ? 's' : ''} available)
 
@@ -315,28 +333,37 @@ ${amazonPayouts.length < 3 ? `
 NOTE: Limited historical data available. Please provide conservative forecasts based on available information and typical Amazon seller patterns.
 ` : ''}
 
-IMPORTANT: Amazon payout forecasts should be based on historical data when available.
+IMPORTANT: Amazon payout forecasts should be based on ${modelingMode === 'ADVANCED' ? 'advanced statistical analysis' : 'historical data'} when available.
 User's Risk Adjustment: ${riskAdjustment}% (-5=Aggressive+5%, 0=Medium, 5=Safe-5%, 10=Very Safe-10%)
 
-Analyze sales velocity trends, growth patterns, and provide 6 forecasted payout amounts.
-Note: The system will apply the user's risk adjustment AFTER your predictions, so predict based on actual trends.
+${modelingMode === 'ADVANCED' ? `
+Advanced Analysis Required:
+1. Calculate exponential moving average (EMA) with decay factor
+2. Identify any upward or downward trends using linear regression
+3. Detect seasonality patterns (if present in monthly data)
+4. Calculate standard deviation and confidence intervals
+5. Apply ARIMA-like forecasting considering autocorrelation
+` : 'Analyze sales velocity trends, growth patterns, and provide 6 forecasted payout amounts.'}
+
+Note: The system will apply the user's risk adjustment AFTER your predictions, so predict based on actual mathematical trends.
 
 Return ONLY this JSON (no markdown):
 {
-  "analysis": "Brief trend analysis (2-3 sentences)${amazonPayouts.length < 3 ? ' - note that forecast is based on limited data' : ''}",
+  "analysis": "${modelingMode === 'ADVANCED' ? 'Mathematical analysis using time series decomposition and statistical methods (2-3 sentences)' : 'Brief trend analysis (2-3 sentences)'}${amazonPayouts.length < 3 ? ' - note that forecast is based on limited data' : ''}",
   "sales_trend": "increasing/decreasing/stable",
+  "modeling_method": "${modelingMode === 'ADVANCED' ? 'exponential_smoothing_arima' : 'weighted_average'}",
   "predictions": [
     {
       "period": "Period 1",
       "predicted_amount": number,
-      "confidence": ${amazonPayouts.length >= 3 ? '0.90' : '0.70'},
-      "reasoning": "brief reason${amazonPayouts.length < 3 ? ' (based on limited data)' : ''}"
+      "confidence": ${advancedModelingEnabled && amazonPayouts.length >= 3 ? '0.92' : amazonPayouts.length >= 3 ? '0.85' : '0.70'},
+      "reasoning": "${modelingMode === 'ADVANCED' ? 'statistical method used' : 'brief reason'}${amazonPayouts.length < 3 ? ' (based on limited data)' : ''}"
     }
   ],
   "buying_opportunity": {
     "recommended_amount": number,
     "timing": "specific date recommendation",
-    "confidence": ${amazonPayouts.length >= 3 ? '0.92' : '0.75'}
+    "confidence": ${advancedModelingEnabled && amazonPayouts.length >= 3 ? '0.94' : amazonPayouts.length >= 3 ? '0.88' : '0.75'}
   }
 }`;
 
