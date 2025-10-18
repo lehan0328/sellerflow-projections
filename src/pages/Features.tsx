@@ -281,15 +281,15 @@ const Features = () => {
                 </CardHeader>
               </Card>
 
-              {/* Cash Flow Calendar */}
-              <Card className="bg-gradient-to-br from-orange-500/10 via-background to-background border-orange-500/20 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              {/* AI Purchase Order Projection */}
+              <Card className="bg-gradient-to-br from-blue-500/10 via-background to-background border-blue-500/20 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                 <CardHeader className="pb-3">
-                  <div className="mb-2 p-2 rounded-lg bg-orange-500/20 w-fit mx-auto">
-                    <Calendar className="h-6 w-6 text-orange-600" />
+                  <div className="mb-2 p-2 rounded-lg bg-blue-500/20 w-fit mx-auto">
+                    <FileText className="h-6 w-6 text-blue-600" />
                   </div>
-                  <CardTitle className="text-lg text-center">Cash Flow Calendar</CardTitle>
+                  <CardTitle className="text-lg text-center">📦 Project Purchase Orders</CardTitle>
                   <CardDescription className="text-sm text-center">
-                    Visualize your financial future on an interactive calendar. See exactly when money comes in and goes out, with 90-day forecasting.
+                    Upload purchase orders and AI automatically projects payment dates on your calendar. Track vendor commitments and plan cash flow with precision.
                   </CardDescription>
                 </CardHeader>
               </Card>
