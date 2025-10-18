@@ -114,18 +114,36 @@ export function AppSidebar({
       return;
     }
     
+    // Debug logging
+    console.log('[SIDEBAR CLICK]', {
+      sectionId,
+      plan: subscription.plan,
+      is_trialing: subscription.is_trialing,
+      subscribed: subscription.subscribed
+    });
+    
     // Scenario Planning: Professional + Trial only
-    if (sectionId === 'scenario-planning' && 
-        !hasPlanAccess(subscription.plan, 'professional') && !subscription.is_trialing) {
-      setShowUpgradeModal(true);
-      return;
+    // Allow access if: professional or higher plan, OR trialing, OR subscribed (to handle mapping issues)
+    if (sectionId === 'scenario-planning') {
+      const hasAccess = hasPlanAccess(subscription.plan, 'professional') || 
+                       subscription.is_trialing || 
+                       (subscription.subscribed && subscription.plan);
+      if (!hasAccess) {
+        setShowUpgradeModal(true);
+        return;
+      }
     }
     
     // Document Storage: Growing, Professional + Trial
-    if (sectionId === 'document-storage' && 
-        !hasPlanAccess(subscription.plan, 'growing') && !subscription.is_trialing) {
-      setShowUpgradeModal(true);
-      return;
+    // Allow access if: growing or higher plan, OR trialing, OR subscribed (to handle mapping issues)
+    if (sectionId === 'document-storage') {
+      const hasAccess = hasPlanAccess(subscription.plan, 'growing') || 
+                       subscription.is_trialing || 
+                       (subscription.subscribed && subscription.plan);
+      if (!hasAccess) {
+        setShowUpgradeModal(true);
+        return;
+      }
     }
     
     onSectionChange(sectionId);
@@ -154,8 +172,10 @@ export function AppSidebar({
               const isActive = activeSection === section.id;
               
               // Check locks based on plan requirements
-              const showProfessionalLock = section.id === 'scenario-planning' && 
-                !hasPlanAccess(subscription.plan, 'professional') && !subscription.is_trialing;
+              const hasScenarioAccess = hasPlanAccess(subscription.plan, 'professional') || 
+                                       subscription.is_trialing || 
+                                       (subscription.subscribed && subscription.plan);
+              const showProfessionalLock = section.id === 'scenario-planning' && !hasScenarioAccess;
               
               return <SidebarMenuItem key={section.id}>
                     <SidebarMenuButton onClick={() => handleSectionClick(section.id, section)} className={`
@@ -242,10 +262,14 @@ export function AppSidebar({
               }
               return <SidebarMenuItem key={section.id}>
                     <SidebarMenuButton onClick={() => {
-                  if (section.id === 'document-storage' && 
-                      !hasPlanAccess(subscription.plan, 'growing') && !subscription.is_trialing) {
-                    setShowUpgradeModal(true);
-                    return;
+                  if (section.id === 'document-storage') {
+                    const hasAccess = hasPlanAccess(subscription.plan, 'growing') || 
+                                    subscription.is_trialing || 
+                                    (subscription.subscribed && subscription.plan);
+                    if (!hasAccess) {
+                      setShowUpgradeModal(true);
+                      return;
+                    }
                   }
                   if (isFlexReport && onFlexReportClick) {
                     onFlexReportClick();
@@ -269,13 +293,21 @@ export function AppSidebar({
                                 {unreadSupportCount}
                               </Badge>}
                             {section.id === "referrals" && <Badge variant="secondary" className="ml-auto text-[10px] bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30 font-bold px-1.5 py-0">Earn $2k</Badge>}
-                            {section.id === "document-storage" && !hasPlanAccess(subscription.plan, 'growing') && !subscription.is_trialing && <Lock className="h-4 w-4 text-muted-foreground" />}
+                            {section.id === "document-storage" && 
+                             !hasPlanAccess(subscription.plan, 'growing') && 
+                             !subscription.is_trialing && 
+                             !(subscription.subscribed && subscription.plan) && 
+                             <Lock className="h-4 w-4 text-muted-foreground" />}
                           </span>
                         </span>}
                       {isCollapsed && 'showSupportBadge' in section && section.showSupportBadge && unreadSupportCount > 0 && <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
                           {unreadSupportCount}
                         </div>}
-                      {isCollapsed && section.id === "document-storage" && !hasPlanAccess(subscription.plan, 'growing') && !subscription.is_trialing && <div className="absolute -top-1 -right-1">
+                      {isCollapsed && section.id === "document-storage" && 
+                       !hasPlanAccess(subscription.plan, 'growing') && 
+                       !subscription.is_trialing && 
+                       !(subscription.subscribed && subscription.plan) && 
+                       <div className="absolute -top-1 -right-1">
                           <Lock className="h-3 w-3 text-muted-foreground" />
                         </div>}
                     </SidebarMenuButton>

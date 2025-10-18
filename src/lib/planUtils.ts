@@ -15,11 +15,23 @@ export const hasPlanAccess = (
   const planHierarchy: Record<string, number> = {
     'starter': 1,
     'growing': 2,
-    'professional': 3
+    'professional': 3,
+    // Enterprise plans have all features
+    'enterprise': 4
   };
   
+  // Get the user's plan level, defaulting to 0 if not found
   const userPlanLevel = planHierarchy[userPlan] || 0;
   const requiredPlanLevel = planHierarchy[minimumPlan] || 0;
+  
+  // Debug logging
+  console.log('[PLAN ACCESS CHECK]', {
+    userPlan,
+    minimumPlan,
+    userPlanLevel,
+    requiredPlanLevel,
+    hasAccess: userPlanLevel >= requiredPlanLevel
+  });
   
   return userPlanLevel >= requiredPlanLevel;
 };
