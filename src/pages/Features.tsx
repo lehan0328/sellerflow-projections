@@ -355,21 +355,21 @@ const Features = () => {
                     <div className="w-2 h-2 rounded-full bg-orange-500 mt-1.5" />
                     <div className="flex-1">
                       <p className="text-sm font-semibold">Aggressive (−3%)</p>
-                      <p className="text-xs text-muted-foreground">For 1–1.5 day settlement cycles, low returns</p>
+                      <p className="text-xs text-muted-foreground">Minimal buffer - best for stable sales with low returns</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                     <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
                     <div className="flex-1">
                       <p className="text-sm font-semibold">Moderate (−8%)</p>
-                      <p className="text-xs text-muted-foreground">For ~2 day cycles, steady payouts (Recommended)</p>
+                      <p className="text-xs text-muted-foreground">Balanced protection - typical reserve delays (Recommended)</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5" />
                     <div className="flex-1">
                       <p className="text-sm font-semibold">Conservative (−15%)</p>
-                      <p className="text-xs text-muted-foreground">For 3+ day cycles, volatile payouts</p>
+                      <p className="text-xs text-muted-foreground">Maximum safety - best for volatile sales or high returns</p>
                     </div>
                   </div>
                 </CardContent>
