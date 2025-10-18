@@ -210,7 +210,7 @@ const Dashboard = () => {
   }, [refetchSafeSpending]);
 
 
-  const { customers, addCustomer, deleteAllCustomers } = useCustomers();
+  const { customers, addCustomer } = useCustomers();
   
   // State for vendors used in forms (derived from database vendors) - always fresh data
   const formVendors = useMemo(() => {
@@ -1818,7 +1818,6 @@ const Dashboard = () => {
               onSubmitExpense={handleExpenseSubmit}
               customers={customers}
               onAddCustomer={addCustomer}
-              onDeleteAllCustomers={deleteAllCustomers}
             />
           )}
 
@@ -1831,7 +1830,6 @@ const Dashboard = () => {
               isRecurring={true}
               customers={customers}
               onAddCustomer={addCustomer}
-              onDeleteAllCustomers={deleteAllCustomers}
             />
           )}
 
@@ -1844,7 +1842,6 @@ const Dashboard = () => {
               editingIncome={editingIncome}
               customers={customers}
               onAddCustomer={addCustomer}
-              onDeleteAllCustomers={deleteAllCustomers}
             />
           )}
 

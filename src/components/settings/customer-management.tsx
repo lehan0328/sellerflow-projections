@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCustomers } from "@/hooks/useCustomers";
-import { Users, Plus, Trash2, User } from "lucide-react";
+import { Users, Plus, Trash2, User, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 interface CustomerFormData {
@@ -26,8 +26,10 @@ const categories = [
 ];
 
 export function CustomerManagement() {
-  const { customers, loading, addCustomer, deleteAllCustomers } = useCustomers();
+  const { customers, loading, addCustomer, updateCustomer, deleteCustomer } = useCustomers();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<{ id: string; name: string; category: string } | null>(null);
   const [formData, setFormData] = useState<CustomerFormData>({
     name: '',
     category: '',
@@ -60,9 +62,35 @@ export function CustomerManagement() {
     }
   };
 
-  const handleDeleteAllCustomers = async () => {
+  const handleEditCustomer = (customer: any) => {
+    setEditingCustomer({ id: customer.id, name: customer.name, category: '' });
+    setFormData({ name: customer.name, category: '' });
+    setShowEditDialog(true);
+  };
+
+  const handleUpdateCustomer = async () => {
+    if (!formData.name || !editingCustomer) {
+      toast.error("Please enter a customer name");
+      return;
+    }
+
     try {
-      await deleteAllCustomers();
+      await updateCustomer(editingCustomer.id, { 
+        name: formData.name,
+        paymentTerms: 'immediate',
+        netTermsDays: undefined
+      });
+      setShowEditDialog(false);
+      setEditingCustomer(null);
+      resetForm();
+    } catch (error) {
+      // Error already handled by useCustomers hook
+    }
+  };
+
+  const handleDeleteCustomer = async (customerId: string) => {
+    try {
+      await deleteCustomer(customerId);
     } catch (error) {
       // Error already handled by useCustomers hook
     }
@@ -104,80 +132,53 @@ export function CustomerManagement() {
               <p className="text-2xl font-semibold">{customers.length}</p>
             </div>
           </div>
-          <div className="flex space-x-2">
-            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="bg-gradient-primary">
-                  <Plus className="h-4 w-4 mr-2" />
+          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="bg-gradient-primary">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Customer
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Customer</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div>
+                  <Label htmlFor="name">Customer Name *</Label>
+                  <Input
+                    id="name"
+                    placeholder="Enter customer name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="category">Category</Label>
+                  <Select onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map(category => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleAddCustomer} className="bg-gradient-primary">
                   Add Customer
                 </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add New Customer</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div>
-                    <Label htmlFor="name">Customer Name *</Label>
-                    <Input
-                      id="name"
-                      placeholder="Enter customer name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="category">Category</Label>
-                    <Select onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map(category => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleAddCustomer} className="bg-gradient-primary">
-                    Add Customer
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-            
-            {customers.length > 0 && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete All
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete All Customers</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete all {customers.length} customers? This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteAllCustomers} className="bg-destructive hover:bg-destructive/90">
-                      Delete All
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-          </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Customer List */}
@@ -199,7 +200,40 @@ export function CustomerManagement() {
                       </p>
                     </div>
                   </div>
-                  <Badge variant="secondary">Active</Badge>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="secondary">Active</Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditCustomer(customer)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Customer</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete {customer.name}? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleDeleteCustomer(customer.id)}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               ))}
             </div>
@@ -260,6 +294,56 @@ export function CustomerManagement() {
             </Dialog>
           </div>
         )}
+
+        {/* Edit Customer Dialog */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Customer</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="edit-name">Customer Name *</Label>
+                <Input
+                  id="edit-name"
+                  placeholder="Enter customer name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-category">Category</Label>
+                <Select 
+                  value={formData.category}
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(category => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => {
+                setShowEditDialog(false);
+                setEditingCustomer(null);
+                resetForm();
+              }}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateCustomer} className="bg-gradient-primary">
+                Update Customer
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

@@ -75,23 +75,52 @@ export const useCustomers = () => {
     }
   };
 
-  const deleteAllCustomers = async () => {
+  const deleteCustomer = async (customerId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
       const { error } = await supabase
         .from('customers')
         .delete()
-        .is('customer_id', null);
+        .eq('id', customerId);
 
       if (error) throw error;
 
-      setCustomers([]);
-      toast.success('All customers deleted successfully');
+      setCustomers(prev => prev.filter(c => c.id !== customerId));
+      toast.success('Customer deleted successfully');
     } catch (error) {
-      console.error('Error deleting all customers:', error);
-      toast.error('Failed to delete all customers');
+      console.error('Error deleting customer:', error);
+      toast.error('Failed to delete customer');
+      throw error;
+    }
+  };
+
+  const updateCustomer = async (customerId: string, customerData: Omit<Customer, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .update({
+          name: customerData.name,
+          payment_terms: customerData.paymentTerms,
+          net_terms_days: customerData.netTermsDays
+        })
+        .eq('id', customerId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const updatedCustomer: Customer = {
+        id: data.id,
+        name: data.name,
+        paymentTerms: data.payment_terms,
+        netTermsDays: data.net_terms_days
+      };
+
+      setCustomers(prev => prev.map(c => c.id === customerId ? updatedCustomer : c).sort((a, b) => a.name.localeCompare(b.name)));
+      toast.success('Customer updated successfully');
+      return updatedCustomer;
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      toast.error('Failed to update customer');
       throw error;
     }
   };
@@ -104,7 +133,8 @@ export const useCustomers = () => {
     customers,
     loading,
     addCustomer,
-    deleteAllCustomers,
+    updateCustomer,
+    deleteCustomer,
     refetch: fetchCustomers
   };
 };

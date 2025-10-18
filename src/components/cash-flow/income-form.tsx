@@ -33,7 +33,6 @@ interface IncomeFormProps {
   editingIncome?: any;
   customers?: Customer[];
   onAddCustomer?: (customerData: any) => void;
-  onDeleteAllCustomers?: () => void;
 }
 
 export const IncomeForm = ({ 
@@ -44,8 +43,7 @@ export const IncomeForm = ({
   isRecurring = false, 
   editingIncome,
   customers = [],
-  onAddCustomer,
-  onDeleteAllCustomers
+  onAddCustomer
 }: IncomeFormProps) => {
   const { categories: incomeCategories, addCategory } = useCategories('income');
   const [showAddCategory, setShowAddCategory] = useState(false);
