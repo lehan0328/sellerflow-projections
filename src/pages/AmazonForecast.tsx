@@ -306,49 +306,7 @@ export default function AmazonForecast() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1 flex items-center gap-2">
-                  {advancedModelingEnabled ? (
-                    <>
-                      <Brain className="h-4 w-4 text-green-600" />
-                      Advanced Mathematical Modeling (Active)
-                    </>
-                  ) : hasEnoughDataForAdvanced ? (
-                    <>
-                      Advanced Mathematical Modeling Available
-                    </>
-                  ) : (
-                    <>
-                      Basic AI Forecasting
-                    </>
-                  )}
-                </p>
-                <p className="text-xs text-blue-700 dark:text-blue-300">
-                  {advancedModelingEnabled ? (
-                    <>
-                      Using time series analysis, exponential smoothing, ARIMA modeling, and regression analysis 
-                      to generate highly accurate forecasts based on {confirmedPayouts.length} confirmed payouts.
-                    </>
-                  ) : hasEnoughDataForAdvanced ? (
-                    <>
-                      You have {confirmedPayouts.length} confirmed payouts! Click "Generate AI Forecast" to unlock 
-                      advanced mathematical modeling with time series analysis and machine learning.
-                    </>
-                  ) : (
-                    <>
-                      Using baseline AI forecasting. Collect {3 - confirmedPayouts.length} more confirmed payout(s) 
-                      to unlock Advanced Mathematical Modeling with time series analysis and regression modeling.
-                    </>
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <Button 
+          <Button
             onClick={generateForecast}
             disabled={isGenerating}
             size="lg"

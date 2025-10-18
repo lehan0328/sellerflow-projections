@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Sparkles, TrendingUp, Info, AlertTriangle } from "lucide-react";
+import { Sparkles, TrendingUp, Info, AlertTriangle, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
@@ -32,7 +32,7 @@ export const ForecastSettings = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { amazonAccounts } = useAmazonAccounts();
-  const { refetch: refetchPayouts } = useAmazonPayouts();
+  const { amazonPayouts, refetch: refetchPayouts } = useAmazonPayouts();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [confidenceThreshold, setConfidenceThreshold] = useState(5); // -5 = Aggressive, 0 = Medium, 5 = Safe, 10 = Very Safe
@@ -40,8 +40,13 @@ export const ForecastSettings = () => {
   const [disabledAt, setDisabledAt] = useState<string | null>(null);
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
   const [togglingForecast, setTogglingForecast] = useState(false);
+  const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(false);
   
   const hasAmazonStore = amazonAccounts && amazonAccounts.length > 0;
+  
+  // Check if user has 3+ confirmed payouts for advanced modeling
+  const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
+  const hasEnoughDataForAdvanced = confirmedPayouts.length >= 3;
 
   // Calculate if 24 hours have passed since disabling
   const canReEnable = !disabledAt || 
@@ -61,7 +66,7 @@ export const ForecastSettings = () => {
     try {
       const { data, error } = await supabase
         .from('user_settings')
-        .select('forecast_confidence_threshold, forecasts_enabled, forecasts_disabled_at')
+        .select('forecast_confidence_threshold, forecasts_enabled, forecasts_disabled_at, advanced_modeling_enabled')
         .eq('user_id', user!.id)
         .maybeSingle();
 
@@ -84,6 +89,7 @@ export const ForecastSettings = () => {
       // Set forecast enabled state
       setForecastsEnabled(data?.forecasts_enabled ?? true);
       setDisabledAt(data?.forecasts_disabled_at || null);
+      setAdvancedModelingEnabled(data?.advanced_modeling_enabled ?? false);
     } catch (error) {
       console.error('Error fetching forecast settings:', error);
       // On error, default to 5 (Safe)
@@ -391,6 +397,49 @@ export const ForecastSettings = () => {
         )}
         
         <div className="space-y-4" style={{ opacity: forecastsEnabled ? 1 : 0.5, pointerEvents: forecastsEnabled ? 'auto' : 'none' }}>
+          {/* Advanced Modeling Status */}
+          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1 flex items-center gap-2">
+                  {advancedModelingEnabled ? (
+                    <>
+                      <Sparkles className="h-4 w-4 text-green-600" />
+                      Advanced Mathematical Modeling (Active)
+                    </>
+                  ) : hasEnoughDataForAdvanced ? (
+                    <>
+                      Advanced Mathematical Modeling Available
+                    </>
+                  ) : (
+                    <>
+                      Basic AI Forecasting
+                    </>
+                  )}
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  {advancedModelingEnabled ? (
+                    <>
+                      Using time series analysis, exponential smoothing, ARIMA modeling, and regression analysis 
+                      to generate highly accurate forecasts based on {confirmedPayouts.length} confirmed payouts.
+                    </>
+                  ) : hasEnoughDataForAdvanced ? (
+                    <>
+                      You have {confirmedPayouts.length} confirmed payouts! Go to AI Forecast page to unlock 
+                      advanced mathematical modeling with time series analysis and machine learning.
+                    </>
+                  ) : (
+                    <>
+                      Using baseline AI forecasting. Collect {3 - confirmedPayouts.length} more confirmed payout(s) 
+                      to unlock Advanced Mathematical Modeling with time series analysis and regression modeling.
+                    </>
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Label htmlFor="risk-threshold">Forecast Risk Adjustment</Label>
