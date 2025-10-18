@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRecurringDates } from "@/lib/recurringDates";
+import { format } from "date-fns";
 
 interface SafeSpendingData {
   safe_spending_limit: number;
@@ -628,18 +629,42 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       
       console.log(`\n✅ After filtering: ${filteredOpportunities.length} valid buying opportunities`);
       
-      // If we have no forecast data, clear all buying opportunities
-      const finalOpportunities = hasForecastData ? filteredOpportunities : [];
-      if (!hasForecastData) {
-        console.log('⚠️ No forecast data - clearing all buying opportunities');
-      }
-      
-      const nextBuyingOpportunity = finalOpportunities.length > 0 ? finalOpportunities[0] : null;
+      // Safe Spending = minimum projected balance - reserve (accounts for future obligations)
+      // This is what you can safely spend without going below minimum projected balance
+      const calculatedSafeSpending = minBalance - reserve;
+      const safeSpendingLimit = Math.max(0, calculatedSafeSpending);
       
       // Find earliest date when you can make purchases for safe spending
       // This is the first date from today UP TO the lowest point where you have enough buffer
       let safeSpendingAvailableDate: string | undefined;
-      const calculatedSafeSpending = minBalance - reserve;
+      
+      // Find the earliest date before the lowest point where spending won't drop us below minimum
+      // We need: current balance - safe spending >= minimum balance that will occur
+      for (let i = 0; i <= minDayIndex; i++) {
+        // Check if we can afford to spend the safe spending amount and still reach the minimum balance
+        if (dailyBalances[i].balance - calculatedSafeSpending >= minBalance) {
+          safeSpendingAvailableDate = dailyBalances[i].date;
+          break;
+        }
+      }
+      
+      // Create Opportunity 1 to match the safe spending limit
+      const safeSpendingOpportunity = {
+        date: format(new Date(), 'yyyy-MM-dd'),
+        balance: safeSpendingLimit,
+        available_date: safeSpendingAvailableDate
+      };
+      
+      // Prepend safe spending opportunity to the list
+      const allOpportunitiesWithSafeSpending = [safeSpendingOpportunity, ...filteredOpportunities];
+      
+      // If we have no forecast data, only show safe spending opportunity
+      const finalOpportunities = hasForecastData ? allOpportunitiesWithSafeSpending : [safeSpendingOpportunity];
+      if (!hasForecastData) {
+        console.log('⚠️ No forecast data - showing only safe spending opportunity');
+      }
+      
+      const nextBuyingOpportunity = finalOpportunities.length > 0 ? finalOpportunities[0] : null;
       
       // Find the earliest date before the lowest point where spending won't drop us below minimum
       // We need: current balance - safe spending >= minimum balance that will occur
@@ -658,10 +683,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           `#${i + 1} ${o.date}: $${o.balance.toFixed(2)} (available: ${o.available_date || 'N/A'})`
         ).join(', '));
       }
-      
-      // Safe Spending = minimum projected balance - reserve (accounts for future obligations)
-      // This is what you can safely spend without going below minimum projected balance
-      const safeSpendingLimit = Math.max(0, minBalance - reserve);
 
       console.log('🎯🎯🎯 SAFE SPENDING & BUYING OPPORTUNITY 🎯🎯🎯');
       console.log('Current Bank Balance:', bankBalance);
