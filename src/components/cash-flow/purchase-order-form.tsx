@@ -81,7 +81,7 @@ export const PurchaseOrderForm = ({
     paymentMethod: "bank-transfer" as "bank-transfer" | "credit-card",
     selectedCreditCard: "",
     splitPayment: false,
-    documentType: "purchase_order" as "invoice" | "proforma_invoice" | "purchase_order"
+    documentType: "purchase_order" as "sales_order" | "invoice" | "proforma_invoice" | "purchase_order"
   });
   const [cardSplits, setCardSplits] = useState<Array<{
     cardId: string;
