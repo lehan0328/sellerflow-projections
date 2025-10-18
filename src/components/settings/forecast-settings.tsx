@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import {
   Tooltip,
   TooltipContent,
@@ -28,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const ForecastSettings = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { amazonAccounts } = useAmazonAccounts();
   const { refetch: refetchPayouts } = useAmazonPayouts();
@@ -328,6 +330,15 @@ export const ForecastSettings = () => {
               <CardTitle>AI Forecast Settings</CardTitle>
             </div>
             <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/ai-forecast')}
+                className="flex items-center gap-2"
+              >
+                <TrendingUp className="h-4 w-4" />
+                View AI Forecast
+              </Button>
               <div className="flex items-center gap-2">
                 <Label htmlFor="forecast-toggle" className="text-sm">
                   AI Forecasts {forecastsEnabled ? 'Enabled' : 'Disabled'}
