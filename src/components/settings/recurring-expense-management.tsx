@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRecurringExpenses, RecurringExpense } from "@/hooks/useRecurringExpenses";
 import { Repeat, Plus, Trash2, Pencil, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -34,6 +35,7 @@ export function RecurringExpenseManagement() {
   const [editingExpense, setEditingExpense] = useState<RecurringExpense | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'recent' | 'oldest' | 'a-z' | 'z-a'>('recent');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
   const [formData, setFormData] = useState<RecurringExpenseFormData>({
     name: '',
     transaction_name: '',
@@ -146,11 +148,15 @@ export function RecurringExpenseManagement() {
 
   // Filter and sort expenses
   const filteredAndSortedExpenses = useMemo(() => {
-    let filtered = recurringExpenses.filter(expense =>
-      expense.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (expense.category && expense.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (expense.transaction_name && expense.transaction_name.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    let filtered = recurringExpenses.filter(expense => {
+      const matchesSearch = expense.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (expense.category && expense.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (expense.transaction_name && expense.transaction_name.toLowerCase().includes(searchQuery.toLowerCase()));
+      
+      const matchesType = typeFilter === 'all' || expense.type === typeFilter;
+      
+      return matchesSearch && matchesType;
+    });
 
     switch (sortBy) {
       case 'recent':
@@ -167,7 +173,7 @@ export function RecurringExpenseManagement() {
     }
 
     return filtered;
-  }, [recurringExpenses, searchQuery, sortBy]);
+  }, [recurringExpenses, searchQuery, sortBy, typeFilter]);
 
   if (isLoading) {
     return (
@@ -340,6 +346,15 @@ export function RecurringExpenseManagement() {
               <h4 className="font-medium">Recurring Transactions ({recurringExpenses.length})</h4>
             </div>
             
+            {/* Type Filter Tabs */}
+            <Tabs value={typeFilter} onValueChange={(value: any) => setTypeFilter(value)} className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="expense">Expenses</TabsTrigger>
+                <TabsTrigger value="income">Income</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
             {/* Search and Sort Controls */}
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
