@@ -65,6 +65,21 @@ const Settings = () => {
   const { isAdmin, isAccountAdmin, isLoading: adminLoading } = useAdmin();
   const [companyName, setCompanyName] = useState('');
 
+  // Check if user is website admin
+  const { data: isWebsiteAdmin = false } = useQuery({
+    queryKey: ['is-website-admin', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return false;
+      const { data, error } = await supabase.rpc('is_website_admin');
+      if (error) {
+        console.error('Error checking website admin status:', error);
+        return false;
+      }
+      return data || false;
+    },
+    enabled: !!user?.id,
+  });
+
   // Fetch user profile
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['profile', user?.id],
@@ -465,7 +480,7 @@ const Settings = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {isAdmin && (
+        {isWebsiteAdmin && (
           <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <div className="flex items-start space-x-3">
               <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
@@ -487,7 +502,7 @@ const Settings = () => {
             </div>
           </div>
         )}
-        {isAdmin && (
+        {isWebsiteAdmin && (
           <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
             <div className="flex items-start space-x-3">
               <Database className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
@@ -509,26 +524,28 @@ const Settings = () => {
             </div>
           </div>
         )}
-        <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <div className="flex items-start space-x-3">
-            <ShoppingCart className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-            <div className="flex-1">
-              <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Generate Sample Amazon Data</h4>
-              <p className="text-sm text-muted-foreground mb-3">
-                Create a sample Amazon account with 6 months of historical payouts and transactions for testing forecasts and insights.
-              </p>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => navigate('/sample-data')}
-                className="border-blue-300 dark:border-blue-700"
-              >
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                Generate Amazon Data
-              </Button>
+        {isWebsiteAdmin && (
+          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <ShoppingCart className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Generate Sample Amazon Data</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Create a sample Amazon account with 6 months of historical payouts and transactions for testing forecasts and insights.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/sample-data')}
+                  className="border-blue-300 dark:border-blue-700"
+                >
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  Generate Amazon Data
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
         <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
           <div className="flex items-start space-x-3">
             <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
