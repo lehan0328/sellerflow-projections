@@ -130,15 +130,17 @@ export const IncomeForm = ({
       try {
         const newCustomer = await onAddCustomer({
           name: customerData.name,
+          category: customerData.category || '',
           paymentTerms: customerData.paymentTerms,
           netTermsDays: customerData.netTermsDays ? parseInt(customerData.netTermsDays) : undefined
         });
         
-        // Auto-select the new customer - use a temporary ID since we don't get the actual ID back
+        // Auto-select the new customer and import their category
         setFormData(prev => ({
           ...prev,
           customer: customerData.name,
-          customerId: `temp-${Date.now()}`
+          customerId: `temp-${Date.now()}`,
+          category: customerData.category || ''
         }));
         
         setCustomerSearchTerm(customerData.name);
