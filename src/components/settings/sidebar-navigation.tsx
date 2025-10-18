@@ -13,8 +13,7 @@ import {
   Database,
   Repeat,
   FileText,
-  Tags,
-  Sparkles
+  Tags
 } from "lucide-react";
 
 const navigationItems = [
@@ -67,11 +66,6 @@ const navigationItems = [
     id: 'appearance',
     label: 'Appearance',
     icon: Palette,
-  },
-  {
-    id: 'forecast-settings',
-    label: 'AI Forecast Settings',
-    icon: Sparkles,
   },
   {
     id: 'invoices',
