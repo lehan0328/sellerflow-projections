@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCustomers } from "@/hooks/useCustomers";
-import { Users, Plus, Trash2, User, Pencil } from "lucide-react";
+import { Users, Plus, Trash2, User, Pencil, Search } from "lucide-react";
 import { toast } from "sonner";
 
 interface CustomerFormData {
@@ -30,6 +30,8 @@ export function CustomerManagement() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<{ id: string; name: string; category: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'recent' | 'oldest' | 'a-z' | 'z-a'>('recent');
   const [formData, setFormData] = useState<CustomerFormData>({
     name: '',
     category: '',
@@ -97,6 +99,33 @@ export function CustomerManagement() {
       // Error already handled by useCustomers hook
     }
   };
+
+  // Filter and sort customers
+  const filteredAndSortedCustomers = useMemo(() => {
+    let filtered = customers.filter(customer =>
+      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (customer.category && customer.category.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
+    // Sort based on selected option
+    switch (sortBy) {
+      case 'recent':
+        // Assuming most recently added are at the end, reverse the array
+        filtered = [...filtered].reverse();
+        break;
+      case 'oldest':
+        // Keep original order (oldest first)
+        break;
+      case 'a-z':
+        filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'z-a':
+        filtered = [...filtered].sort((a, b) => b.name.localeCompare(a.name));
+        break;
+    }
+
+    return filtered;
+  }, [customers, searchQuery, sortBy]);
 
   if (loading) {
     return (
@@ -186,9 +215,37 @@ export function CustomerManagement() {
         {/* Customer List */}
         {customers.length > 0 ? (
           <div className="space-y-3">
-            <h4 className="font-medium">Customers ({customers.length})</h4>
-            <div className="space-y-2">
-              {customers.map((customer) => (
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium">Customers ({customers.length})</h4>
+            </div>
+            
+            {/* Search and Sort Controls */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search customers..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recent">Recently Added</SelectItem>
+                  <SelectItem value="oldest">Oldest First</SelectItem>
+                  <SelectItem value="a-z">A-Z</SelectItem>
+                  <SelectItem value="z-a">Z-A</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {filteredAndSortedCustomers.length > 0 ? (
+              <div className="space-y-2">
+                {filteredAndSortedCustomers.map((customer) => (
                 <div key={customer.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="p-2 bg-muted rounded-full">
@@ -241,7 +298,12 @@ export function CustomerManagement() {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No customers match your search.
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center py-8">
