@@ -1,7 +1,8 @@
+import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Gift, DollarSign, Users, TrendingUp, Sun, Moon, Lock } from "lucide-react";
+import { Gift, DollarSign, Users, TrendingUp, Sun, Moon, Lock, AlertCircle, ArrowRight } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTheme } from "next-themes";
 import aurenIcon from "@/assets/auren-icon-blue.png";
@@ -9,6 +10,15 @@ import aurenIcon from "@/assets/auren-icon-blue.png";
 export default function Partners() {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const [showStickyCTA, setShowStickyCTA] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowStickyCTA(window.scrollY > 600);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <>
@@ -18,6 +28,26 @@ export default function Partners() {
         <meta name="keywords" content="amazon cashflow software affiliate, marketplace cash flow management partner, cashflow software referral program" />
         <link rel="canonical" href="https://aurenapp.com/partners" />
       </Helmet>
+
+      {/* Sticky CTA */}
+      {showStickyCTA && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t shadow-lg animate-slide-up">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-primary" />
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                <span className="font-semibold">Get clarity before your next Amazon payout</span>
+                <span className="text-xs text-muted-foreground hidden sm:inline">No credit card required</span>
+              </div>
+            </div>
+            <Button onClick={() => navigate('/signup')} className="bg-gradient-primary whitespace-nowrap">
+              Start Free Trial
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="min-h-screen bg-background">
       {/* Navigation */}
       <nav className="border-b bg-background/60 backdrop-blur-xl sticky top-0 z-50 animate-fade-in">

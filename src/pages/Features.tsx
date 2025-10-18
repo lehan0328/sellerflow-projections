@@ -27,13 +27,21 @@ import {
   ArrowRight,
   Shield,
   Search,
+  AlertCircle,
 } from "lucide-react";
 
 const Features = () => {
   const navigate = useNavigate();
+  const [showStickyCTA, setShowStickyCTA] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    
+    const handleScroll = () => {
+      setShowStickyCTA(window.scrollY > 600);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const features = [
@@ -200,6 +208,25 @@ const Features = () => {
         <meta name="twitter:title" content="Amazon Cashflow Management Software Features | Auren" />
         <meta name="twitter:description" content="Discover all the powerful Amazon cashflow management features to forecast payouts and optimize marketplace finances." />
       </Helmet>
+
+      {/* Sticky CTA */}
+      {showStickyCTA && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t shadow-lg animate-slide-up">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-primary" />
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                <span className="font-semibold">Get clarity before your next Amazon payout</span>
+                <span className="text-xs text-muted-foreground hidden sm:inline">No credit card required</span>
+              </div>
+            </div>
+            <Button onClick={() => navigate('/signup')} className="bg-gradient-primary whitespace-nowrap">
+              Start Free Trial
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
         {/* Signature Features */}
         <section className="py-20 px-4 bg-gradient-to-b from-primary/5 to-background">

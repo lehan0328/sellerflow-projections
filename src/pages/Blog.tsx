@@ -1,17 +1,24 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Calendar, Clock } from "lucide-react";
+import { ArrowRight, Calendar, Clock, AlertCircle } from "lucide-react";
 import { PublicLayout } from "@/components/PublicLayout";
 import { Helmet } from "react-helmet";
-import { useEffect } from "react";
 
 const Blog = () => {
   const navigate = useNavigate();
+  const [showStickyCTA, setShowStickyCTA] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    
+    const handleScroll = () => {
+      setShowStickyCTA(window.scrollY > 600);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const blogPosts = [
@@ -96,6 +103,25 @@ const Blog = () => {
         <meta name="description" content="Expert tips for Amazon cash flow management and e-commerce cashflow forecasting. Learn strategies to optimize marketplace finances." />
         <link rel="canonical" href="https://aurenapp.com/blog" />
       </Helmet>
+
+      {/* Sticky CTA */}
+      {showStickyCTA && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t shadow-lg animate-slide-up">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-primary" />
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                <span className="font-semibold">Get clarity before your next Amazon payout</span>
+                <span className="text-xs text-muted-foreground hidden sm:inline">No credit card required</span>
+              </div>
+            </div>
+            <Button onClick={() => navigate('/signup')} className="bg-gradient-primary whitespace-nowrap">
+              Start Free Trial
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <section className="py-20 bg-gradient-to-br from-primary/10 via-background to-accent/10">
