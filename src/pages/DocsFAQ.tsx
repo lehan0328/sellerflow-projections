@@ -134,7 +134,7 @@ const DocsFAQ = () => {
         },
         {
           question: "How far ahead can I forecast cash flow?",
-          answer: "All plans include 365-day (12-month) cash flow projection. Accuracy is highest for the next 30 days (95%+), good for 1-3 months (85%+), and directional for 3-12 months. Forecasts update automatically as new data syncs from your connected accounts."
+          answer: "All plans include 90-day cash flow projection. Accuracy is highest for the next 30 days (95%+), good for 1-3 months (85%+). Forecasts update automatically as new data syncs from your connected accounts."
         },
         {
           question: "Can I export my data?",

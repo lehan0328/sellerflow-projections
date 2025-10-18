@@ -94,7 +94,7 @@ const Docs = () => {
       icon: <BarChart3 className="h-6 w-6" />,
       path: "/docs/cash-flow",
       articles: [
-        "365-Day Cash Flow Forecasting",
+        "90-Day Cash Flow Forecasting",
         "Seasonal Planning for Q4",
         "Safe Spending Calculator",
         "Credit Optimization"

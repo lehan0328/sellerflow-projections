@@ -248,7 +248,7 @@ const Landing = () => {
     professional: true,
     enterprise: true
   }, {
-    feature: "365-Day Cash Flow Projection",
+    feature: "90-Day Cash Flow Projection",
     starter: true,
     growing: true,
     professional: true,
@@ -913,7 +913,7 @@ const Landing = () => {
                       <div className="space-y-2">
                         <div className="flex items-start gap-3">
                           <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                          <p className="text-sm">Forecasts cash surpluses up to 365 days ahead</p>
+                          <p className="text-sm">Forecasts cash surpluses up to 90 days ahead</p>
                         </div>
                         <div className="flex items-start gap-3">
                           <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
@@ -1718,7 +1718,7 @@ const Landing = () => {
               <p className="leading-relaxed">
                 <strong className="text-foreground">Auren</strong> was built specifically to solve the <strong className="text-foreground">cash flow management challenges</strong> faced by Amazon FBA and marketplace sellers. By connecting directly to your <a href="/docs/amazon-integration" className="text-primary hover:underline">Amazon Seller Central account</a>,
                 Auren forecasts every future payout using your real settlement data. Our AI-powered system maps sales, refunds, reserves, and fees to
-                generate a clear <strong className="text-foreground">365-day cash flow timeline</strong> — helping you understand exactly when funds will hit your bank and when your next big expense is due.
+                generate a clear <strong className="text-foreground">90-day cash flow timeline</strong> — helping you understand exactly when funds will hit your bank and when your next big expense is due.
               </p>
 
               <h3 className="text-2xl font-bold text-foreground">Scale Your Amazon Business with Predictable Cash Flow</h3>

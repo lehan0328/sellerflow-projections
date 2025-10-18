@@ -126,7 +126,7 @@ const BestCashflowTools = () => {
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="h-4 w-4 text-primary mt-1" />
-                      <span className="text-sm">365-day rolling cashflow projection</span>
+                      <span className="text-sm">90-day rolling cashflow projection</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="h-4 w-4 text-primary mt-1" />
@@ -308,7 +308,7 @@ const BestCashflowTools = () => {
                     <tr className="border-b">
                       <td className="p-3">Auren</td>
                       <td className="p-3">✅ Native</td>
-                      <td className="p-3">✅ 365 days</td>
+                      <td className="p-3">✅ 90 days</td>
                       <td className="p-3">$29+</td>
                     </tr>
                     <tr className="border-b">

@@ -162,7 +162,7 @@ export default function Pricing() {
     { feature: "Amazon Connections", starter: "1", growing: "1", professional: "1", enterprise: "2 + add-ons" },
     { feature: "Additional Users", starter: false, growing: "2", professional: "5", enterprise: "7 + add-ons" },
     { feature: "Advanced Forecasting Workflow", starter: true, growing: true, professional: true, enterprise: true },
-    { feature: "365-Day Cash Flow Projection", starter: true, growing: true, professional: true, enterprise: true },
+    { feature: "90-Day Cash Flow Projection", starter: true, growing: true, professional: true, enterprise: true },
     { feature: "Bank Transaction Matching", starter: true, growing: true, professional: true, enterprise: true },
     { feature: "Ai Insights", signature: true, starter: false, growing: true, professional: true, enterprise: true },
     { feature: "Ai PDF Extractor", signature: true, starter: false, growing: true, professional: true, enterprise: true },
