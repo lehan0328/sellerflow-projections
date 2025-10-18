@@ -6,13 +6,10 @@ import {
   Palette, 
   CreditCard, 
   Building2,
-  Settings,
   ShoppingCart,
-  MessageSquare,
   Users,
   Database,
   Repeat,
-  FileText,
   Tags
 } from "lucide-react";
 
@@ -68,11 +65,6 @@ const navigationItems = [
     icon: Palette,
   },
   {
-    id: 'invoices',
-    label: 'Billing & Invoices',
-    icon: FileText,
-  },
-  {
     id: 'export',
     label: 'Data Export',
     icon: Download,
@@ -81,11 +73,6 @@ const navigationItems = [
     id: 'data-management',
     label: 'Data Management',
     icon: Database,
-  },
-  {
-    id: 'feature-request',
-    label: 'Feature Request',
-    icon: MessageSquare,
   },
 ];
 
@@ -105,7 +92,6 @@ const adminOnlySections = [
   'recurring-expenses',
   'categories',
   'amazon',
-  'invoices',
   'export',
   'data-management'
 ];

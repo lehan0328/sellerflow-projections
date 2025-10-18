@@ -39,10 +39,8 @@ import { AmazonManagement } from "@/components/settings/amazon-management";
 import { TeamManagement } from "@/components/settings/team-management";
 import { BankAccountManagement } from "@/components/settings/bank-account-management";
 import { CustomerManagement } from "@/components/settings/customer-management";
-import { FeatureRequest } from "@/components/settings/feature-request";
 import { RecurringExpenseManagement } from "@/components/settings/recurring-expense-management";
 import { DataExport } from "@/components/settings/data-export";
-import { BillingInvoices } from "@/components/settings/billing-invoices";
 import { CategoryManagement } from "@/components/settings/category-management";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { PageLoadingWrapper } from "@/components/PageLoadingWrapper";
@@ -670,14 +668,10 @@ const Settings = () => {
         return <CreditCardManagement />;
       case 'appearance':
         return renderAppearanceSettings();
-      case 'invoices':
-        return <BillingInvoices />;
       case 'export':
         return renderDataExportSettings();
       case 'data-management':
         return renderDataManagement();
-      case 'feature-request':
-        return <FeatureRequest />;
       default:
         return renderProfileSettings();
     }
