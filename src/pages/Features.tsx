@@ -200,30 +200,8 @@ const Features = () => {
         <meta name="twitter:description" content="Discover all the powerful Amazon cashflow management features to forecast payouts and optimize marketplace finances." />
       </Helmet>
 
-        {/* Hero Section */}
-        <section className="py-20 px-4 bg-gradient-to-b from-primary/5 to-background">
-          <div className="container mx-auto max-w-4xl text-center">
-            <Badge className="mb-4">Full Feature Suite</Badge>
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              Everything You Need to Master Cash Flow
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8">
-              From AI-powered insights to Amazon integration, Auren provides the complete toolkit for marketplace sellers to forecast, plan, and optimize their finances.
-            </p>
-            <div className="flex gap-4 justify-center">
-              <Button size="lg" onClick={() => navigate("/signup")}>
-                Start Free Trial
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate("/schedule-demo")}>
-                Schedule a Demo
-              </Button>
-            </div>
-          </div>
-        </section>
-
         {/* Signature Features */}
-        <section className="py-20 px-4 bg-gradient-to-b from-background to-primary/5">
+        <section className="py-20 px-4 bg-gradient-to-b from-primary/5 to-background">
           <div className="container mx-auto">
             <div className="text-center mb-12">
               <Badge className="mb-4 bg-gradient-primary">✨ Signature Features</Badge>
