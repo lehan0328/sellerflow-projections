@@ -231,9 +231,9 @@ export default function AmazonForecast() {
                   Advanced Mathematical Modeling
                 </p>
                 <p className="text-xs text-blue-700 dark:text-blue-300">
-                  Our AI analyzes historical payout patterns, sales velocity, seasonal trends, and growth trajectories 
-                  using time series analysis, regression modeling, and predictive algorithms to forecast future Amazon payouts 
-                  with high accuracy.
+                  Our AI analyzes your Amazon data using time series analysis, regression modeling, and predictive algorithms 
+                  to forecast future payouts. Works with any amount of historical data - the more data available, 
+                  the higher the forecast accuracy.
                 </p>
               </div>
             </div>
@@ -241,7 +241,7 @@ export default function AmazonForecast() {
 
           <Button 
             onClick={generateForecast}
-            disabled={isGenerating || amazonPayouts.length < 3}
+            disabled={isGenerating}
             size="lg"
             className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
           >
@@ -257,12 +257,6 @@ export default function AmazonForecast() {
               </>
             )}
           </Button>
-
-          {amazonPayouts.length < 3 && (
-            <p className="text-sm text-amber-600 text-center">
-              Need at least 3 historical payouts to generate accurate forecasts
-            </p>
-          )}
         </CardContent>
       </Card>
 

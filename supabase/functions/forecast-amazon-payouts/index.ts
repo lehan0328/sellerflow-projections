@@ -107,8 +107,51 @@ serve(async (req) => {
       }
 
       if (!amazonPayouts || amazonPayouts.length === 0) {
-        console.log(`[FORECAST] No historical payouts found for account ${amazonAccount.account_name}, skipping forecast generation`);
-        continue;
+        console.log(`[FORECAST] No historical payouts found for account ${amazonAccount.account_name}, using default assumptions for forecast`);
+        
+        // Create a basic forecast even without historical data
+        // Use industry averages and user's marketplace as baseline
+        const defaultDailyPayout = 500; // Conservative daily estimate
+        const defaultBiweeklyPayout = 3000; // Conservative bi-weekly estimate
+        
+        const payoutFrequency = amazonAccount.payout_frequency || 'bi-weekly';
+        const baselineAmount = payoutFrequency === 'daily' ? defaultDailyPayout : defaultBiweeklyPayout;
+        
+        console.log(`[FORECAST] Using default baseline for ${amazonAccount.account_name}: $${baselineAmount} (${payoutFrequency})`);
+        
+        // Generate simple forecasts without AI
+        const simpleForecasts: any[] = [];
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() + 1); // Start tomorrow
+        
+        const maxForecasts = payoutFrequency === 'daily' ? 90 : 6;
+        const incrementDays = payoutFrequency === 'daily' ? 1 : 14;
+        
+        for (let i = 0; i < maxForecasts; i++) {
+          const forecastDate = new Date(startDate);
+          forecastDate.setDate(forecastDate.getDate() + (i * incrementDays));
+          
+          // Apply risk adjustment
+          const adjustmentMultiplier = 1 - (riskAdjustment / 100);
+          const adjustedAmount = baselineAmount * adjustmentMultiplier;
+          
+          simpleForecasts.push({
+            user_id: userId,
+            amazon_account_id: amazonAccount.id,
+            payout_date: forecastDate.toISOString().split('T')[0],
+            total_amount: Math.max(0, adjustedAmount),
+            orders_total: adjustedAmount * 1.3, // Approximate orders before fees
+            fees_total: adjustedAmount * 0.15, // Approximate 15% fees
+            refunds_total: 0,
+            other_total: 0,
+            status: 'forecasted',
+            confidence_score: 0.60, // Lower confidence for estimates
+            forecast_method: 'baseline_estimate'
+          });
+        }
+        
+        allForecasts.push(...simpleForecasts);
+        continue; // Skip AI analysis for this account
       }
 
       // Fetch Amazon transactions for this specific account from last 3 months
@@ -244,11 +287,15 @@ serve(async (req) => {
       }
 
       // Prepare a simplified data analysis prompt
-      const systemPrompt = `You are a financial analyst specializing in Amazon marketplace forecasting. Analyze payout data and provide accurate predictions.`;
+      const systemPrompt = `You are a financial analyst specializing in Amazon marketplace forecasting. Analyze payout data and provide accurate predictions. If data is limited, use conservative estimates based on available information.`;
 
-      const analysisPrompt = `Analyze Amazon Seller data from LAST 3 MONTHS ONLY and forecast next 3 months (6 bi-weekly periods) for ${amazonAccount.account_name} (${amazonAccount.marketplace_name}).
+      const dataAvailability = amazonPayouts.length >= 3 ? 'sufficient' : 'limited';
+      
+      const analysisPrompt = `Analyze Amazon Seller data and forecast next 3 months (6 bi-weekly periods) for ${amazonAccount.account_name} (${amazonAccount.marketplace_name}).
 
-RECENT SALES TRENDS (Last 3 Months):
+DATA AVAILABILITY: ${dataAvailability} (${amazonPayouts.length} payout${amazonPayouts.length !== 1 ? 's' : ''} available)
+
+${amazonPayouts.length >= 3 ? `RECENT SALES TRENDS (Last 3 Months):` : `AVAILABLE SALES TRENDS:`}
 Monthly Order Volume: ${JSON.stringify(Object.values(monthlyTransactions).map((m: any) => ({
   month: m.month,
   orders_amount: m.orders_amount,
@@ -256,15 +303,19 @@ Monthly Order Volume: ${JSON.stringify(Object.values(monthlyTransactions).map((m
   transaction_count: m.transaction_count
 })), null, 2)}
 
-RECENT PAYOUTS (Last 3 Months):
+${amazonPayouts.length >= 3 ? `RECENT PAYOUTS (Last 3 Months):` : `AVAILABLE PAYOUTS:`}
 ${JSON.stringify(amazonPayouts.map(p => ({
   date: p.payout_date,
   amount: p.total_amount
 })), null, 2)}
 
-3-Month Average Payout: $${avgPayoutAmount.toFixed(2)}
+Average Payout: $${avgPayoutAmount.toFixed(2)}
 
-IMPORTANT: Amazon payout forecasts are highly predictable based on historical data.
+${amazonPayouts.length < 3 ? `
+NOTE: Limited historical data available. Please provide conservative forecasts based on available information and typical Amazon seller patterns.
+` : ''}
+
+IMPORTANT: Amazon payout forecasts should be based on historical data when available.
 User's Risk Adjustment: ${riskAdjustment}% (-5=Aggressive+5%, 0=Medium, 5=Safe-5%, 10=Very Safe-10%)
 
 Analyze sales velocity trends, growth patterns, and provide 6 forecasted payout amounts.
@@ -272,20 +323,20 @@ Note: The system will apply the user's risk adjustment AFTER your predictions, s
 
 Return ONLY this JSON (no markdown):
 {
-  "analysis": "Brief trend analysis based on last 3 months (2-3 sentences)",
+  "analysis": "Brief trend analysis (2-3 sentences)${amazonPayouts.length < 3 ? ' - note that forecast is based on limited data' : ''}",
   "sales_trend": "increasing/decreasing/stable",
   "predictions": [
     {
       "period": "Period 1",
       "predicted_amount": number,
-      "confidence": 0.90,
-      "reasoning": "brief reason emphasizing data reliability"
+      "confidence": ${amazonPayouts.length >= 3 ? '0.90' : '0.70'},
+      "reasoning": "brief reason${amazonPayouts.length < 3 ? ' (based on limited data)' : ''}"
     }
   ],
   "buying_opportunity": {
     "recommended_amount": number,
     "timing": "specific date recommendation",
-    "confidence": 0.92
+    "confidence": ${amazonPayouts.length >= 3 ? '0.92' : '0.75'}
   }
 }`;
 
