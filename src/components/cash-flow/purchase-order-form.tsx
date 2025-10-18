@@ -164,7 +164,8 @@ export const PurchaseOrderForm = ({
         setFormData(prev => ({
           ...prev,
           vendorId: matchingVendor.id,
-          category: matchingVendor.category || "",
+          // Only update category if we have a category from vendor or if current category is empty
+          category: matchingVendor.category || prev.category || "",
           paymentType: mapVendorPaymentType(matchingVendor.paymentType),
           paymentMethod: matchingVendor.paymentMethod === "credit-card" ? "credit-card" : "bank-transfer",
           netTermsDays: mapNetTermsDays(matchingVendor.netTermsDays),
