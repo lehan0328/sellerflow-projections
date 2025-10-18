@@ -717,6 +717,14 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         calculation: `${minBalance.toFixed(2)} - ${reserve.toFixed(2)} = ${safeSpendingLimit.toFixed(2)}`
       });
 
+      console.log('🔍 DEBUG: Expected vs Actual:');
+      console.log(`  User expects lowest: $14,995`);
+      console.log(`  Calculated lowest: $${minBalance.toFixed(2)}`);
+      console.log(`  Difference: $${(14995 - minBalance).toFixed(2)}`);
+      console.log(`  Expected available: $12,995`);
+      console.log(`  Showing available: $${safeSpendingLimit.toFixed(2)}`);
+      console.log(`  Difference: $${(12995 - safeSpendingLimit).toFixed(2)}`);
+
       setData({
         safe_spending_limit: safeSpendingLimit, // Don't use Math.max - allow negative to show reserve is higher than minimum
         reserve_amount: reserve,
