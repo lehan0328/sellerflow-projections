@@ -7,6 +7,7 @@ export interface Customer {
   name: string;
   paymentTerms?: string;
   netTermsDays?: number;
+  category?: string;
 }
 
 export const useCustomers = () => {
@@ -29,7 +30,8 @@ export const useCustomers = () => {
         id: customer.id,
         name: customer.name,
         paymentTerms: customer.payment_terms,
-        netTermsDays: customer.net_terms_days
+        netTermsDays: customer.net_terms_days,
+        category: customer.category
       })) || [];
 
       setCustomers(formattedCustomers);
@@ -52,18 +54,25 @@ export const useCustomers = () => {
           user_id: user.id,
           name: customerData.name,
           payment_terms: customerData.paymentTerms,
-          net_terms_days: customerData.netTermsDays
+          net_terms_days: customerData.netTermsDays,
+          category: customerData.category
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          toast.error('A customer with this name already exists');
+        }
+        throw error;
+      }
 
       const newCustomer: Customer = {
         id: data.id,
         name: data.name,
         paymentTerms: data.payment_terms,
-        netTermsDays: data.net_terms_days
+        netTermsDays: data.net_terms_days,
+        category: data.category
       };
 
       setCustomers(prev => [newCustomer, ...prev].sort((a, b) => a.name.localeCompare(b.name)));
@@ -100,19 +109,26 @@ export const useCustomers = () => {
         .update({
           name: customerData.name,
           payment_terms: customerData.paymentTerms,
-          net_terms_days: customerData.netTermsDays
+          net_terms_days: customerData.netTermsDays,
+          category: customerData.category
         })
         .eq('id', customerId)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          toast.error('A customer with this name already exists');
+        }
+        throw error;
+      }
 
       const updatedCustomer: Customer = {
         id: data.id,
         name: data.name,
         paymentTerms: data.payment_terms,
-        netTermsDays: data.net_terms_days
+        netTermsDays: data.net_terms_days,
+        category: data.category
       };
 
       setCustomers(prev => prev.map(c => c.id === customerId ? updatedCustomer : c).sort((a, b) => a.name.localeCompare(b.name)));

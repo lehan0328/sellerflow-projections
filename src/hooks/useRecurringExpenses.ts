@@ -46,7 +46,12 @@ export const useRecurringExpenses = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error('A recurring expense with this name already exists');
+        }
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -71,7 +76,12 @@ export const useRecurringExpenses = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error('A recurring expense with this name already exists');
+        }
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {

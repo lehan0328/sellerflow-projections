@@ -137,6 +137,13 @@ export const useVendors = () => {
 
       if (error) {
         console.error('Supabase error adding vendor:', error);
+        if (error.code === '23505') {
+          toast({
+            title: "Error",
+            description: "A vendor with this name already exists",
+            variant: "destructive",
+          });
+        }
         throw error;
       }
 
@@ -201,7 +208,16 @@ export const useVendors = () => {
         .update(dbUpdates)
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          toast({
+            title: "Error",
+            description: "A vendor with this name already exists",
+            variant: "destructive",
+          });
+        }
+        throw error;
+      }
 
       // Update local state immediately
       setVendors(prev => prev.map(vendor => 

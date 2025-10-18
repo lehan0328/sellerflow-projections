@@ -52,7 +52,8 @@ export function CustomerManagement() {
       await addCustomer({ 
         name: formData.name,
         paymentTerms: 'immediate',
-        netTermsDays: undefined
+        netTermsDays: undefined,
+        category: formData.category
       });
       setShowAddDialog(false);
       resetForm();
@@ -63,8 +64,8 @@ export function CustomerManagement() {
   };
 
   const handleEditCustomer = (customer: any) => {
-    setEditingCustomer({ id: customer.id, name: customer.name, category: '' });
-    setFormData({ name: customer.name, category: '' });
+    setEditingCustomer({ id: customer.id, name: customer.name, category: customer.category || '' });
+    setFormData({ name: customer.name, category: customer.category || '' });
     setShowEditDialog(true);
   };
 
@@ -78,7 +79,8 @@ export function CustomerManagement() {
       await updateCustomer(editingCustomer.id, { 
         name: formData.name,
         paymentTerms: 'immediate',
-        netTermsDays: undefined
+        netTermsDays: undefined,
+        category: formData.category
       });
       setShowEditDialog(false);
       setEditingCustomer(null);
@@ -194,6 +196,9 @@ export function CustomerManagement() {
                     </div>
                     <div>
                       <p className="font-medium">{customer.name}</p>
+                      {customer.category && (
+                        <p className="text-xs text-muted-foreground">{customer.category}</p>
+                      )}
                       <p className="text-sm text-muted-foreground">
                         Payment Terms: {customer.paymentTerms || 'immediate'}
                         {customer.netTermsDays && ` (Net ${customer.netTermsDays} days)`}

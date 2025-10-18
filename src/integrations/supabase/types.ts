@@ -771,6 +771,7 @@ export type Database = {
       customers: {
         Row: {
           account_id: string | null
+          category: string | null
           created_at: string
           id: string
           name: string
@@ -781,6 +782,7 @@ export type Database = {
         }
         Insert: {
           account_id?: string | null
+          category?: string | null
           created_at?: string
           id?: string
           name: string
@@ -791,6 +793,7 @@ export type Database = {
         }
         Update: {
           account_id?: string | null
+          category?: string | null
           created_at?: string
           id?: string
           name?: string
