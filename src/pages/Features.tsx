@@ -328,16 +328,16 @@ const Features = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="bg-muted/50 rounded-lg p-4 border">
-                    <p className="text-xs font-semibold mb-2">Net Cash per Order:</p>
-                    <p className="text-xs font-mono">Net = (Gross − Fees − Shipping − Ads) × (1 − Return%) × (1 − Chargeback%)</p>
+                    <p className="text-xs font-semibold mb-2">Order-Level Analysis:</p>
+                    <p className="text-xs">Calculates net revenue accounting for all fees, costs, and risk factors</p>
                   </div>
                   <div className="bg-muted/50 rounded-lg p-4 border">
-                    <p className="text-xs font-semibold mb-2">Reserve Policy (DD+7):</p>
-                    <p className="text-xs font-mono">Unlock Date = Delivery Date + 7 days</p>
+                    <p className="text-xs font-semibold mb-2">Reserve Modeling:</p>
+                    <p className="text-xs">Models Amazon's reserve holds using delivery timing and historical patterns</p>
                   </div>
                   <div className="bg-muted/50 rounded-lg p-4 border">
-                    <p className="text-xs font-semibold mb-2">Settlement Payout:</p>
-                    <p className="text-xs font-mono">Payout = [Eligible Cash + Prior Balance + Adjustments] − Reserve</p>
+                    <p className="text-xs font-semibold mb-2">Settlement Forecasting:</p>
+                    <p className="text-xs">Projects payouts using proprietary algorithms and your settlement history</p>
                   </div>
                 </CardContent>
               </Card>
