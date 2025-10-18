@@ -544,7 +544,7 @@ const Landing = () => {
                   <h1 className="text-4xl lg:text-5xl xl:text-6xl font-display font-bold leading-relaxed tracking-tight flex-1">
                     <div className="flex items-center justify-between pb-2">
                       <span className="text-foreground">Smarter</span>
-                      <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm hover-scale whitespace-nowrap">
+                      <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm hover-scale whitespace-nowrap" style={{ wordSpacing: '0.15em' }}>
                         <Sparkles className="h-4 w-4 animate-pulse" />
                         <span className="font-display">Mathematical Rule-Based</span>
                         <span className="ml-2 px-2.5 py-0.5 bg-primary/20 rounded-full text-xs">Accurate</span>
