@@ -1288,6 +1288,54 @@ const Dashboard = () => {
     })
     .reduce((sum, event) => sum + event.amount, 0);
 
+  // Calculate projected balances using the same logic as the calendar
+  // This ensures the insights panel shows the ACTUAL minimum from the calendar
+  const calculateCalendarMinimum = () => {
+    const endDate = addDays(today, 180); // Next 180 days
+    const dailyBalances: Array<{ date: Date; balance: number }> = [];
+    let runningBalance = bankAccountBalance; // Start with current bank balance
+    
+    let currentDate = new Date(today);
+    while (currentDate <= endDate) {
+      currentDate.setHours(0, 0, 0, 0);
+      const dateStr = format(currentDate, 'yyyy-MM-dd');
+      
+      // Get all events for this day
+      const dayEvents = allCalendarEvents.filter(event => 
+        format(event.date, 'yyyy-MM-dd') === dateStr
+      );
+      
+      // Calculate net change for the day (exactly like the calendar does)
+      const dailyInflow = dayEvents.filter(e => e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
+      const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0);
+      const dailyChange = dailyInflow - dailyOutflow;
+      
+      runningBalance += dailyChange;
+      dailyBalances.push({ date: new Date(currentDate), balance: runningBalance });
+      
+      currentDate = addDays(currentDate, 1);
+    }
+    
+    // Find the minimum balance
+    if (dailyBalances.length === 0) return { balance: bankAccountBalance, date: format(today, 'yyyy-MM-dd') };
+    
+    const minBalanceData = dailyBalances.reduce((min, current) => 
+      current.balance < min.balance ? current : min
+    );
+    
+    return {
+      balance: minBalanceData.balance,
+      date: format(minBalanceData.date, 'yyyy-MM-dd')
+    };
+  };
+
+  const calendarMinimum = calculateCalendarMinimum();
+  
+  console.log('📊 Calendar-based Minimum Balance:', {
+    amount: calendarMinimum.balance,
+    date: calendarMinimum.date,
+    comparedTo: safeSpendingData?.calculation?.lowest_projected_balance
+  });
 
   const renderSection = () => {
     switch (activeSection) {
@@ -1338,8 +1386,8 @@ const Dashboard = () => {
                   income={incomeItems}
                   safeSpendingLimit={safeSpendingData?.safe_spending_limit || 0}
                   reserveAmount={reserveAmount}
-                  projectedLowestBalance={safeSpendingData?.calculation?.lowest_projected_balance || 0}
-                  lowestBalanceDate={safeSpendingData?.calculation?.lowest_balance_date || ""}
+                  projectedLowestBalance={calendarMinimum.balance}
+                  lowestBalanceDate={calendarMinimum.date}
                   safeSpendingAvailableDate={safeSpendingData?.calculation?.safe_spending_available_date}
                   nextBuyingOpportunityBalance={safeSpendingData?.calculation?.next_buying_opportunity_balance}
                   nextBuyingOpportunityDate={safeSpendingData?.calculation?.next_buying_opportunity_date}
