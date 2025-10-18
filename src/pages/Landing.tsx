@@ -1547,9 +1547,40 @@ const Landing = () => {
                 <CardTitle>How does Auren forecast my Amazon payouts?</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground leading-relaxed">
-                  Auren uses your Amazon Seller Central data to project upcoming payouts based on settlement trends and reserve patterns. You'll know exactly when and how much to expect.
-                </p>
+                <div className="space-y-4">
+                  <p className="text-muted-foreground leading-relaxed">
+                    Auren uses mathematical modeling based on Amazon's actual settlement mechanics to forecast your payouts with precision.
+                  </p>
+                  
+                  <div className="bg-muted/50 rounded-lg p-4 border">
+                    <h4 className="font-semibold text-sm mb-3">Forecasting Formula</h4>
+                    <div className="space-y-2 text-sm text-muted-foreground font-mono">
+                      <p><strong>Net Cash per Order:</strong></p>
+                      <p className="pl-4">Net = (Gross - Fees - Shipping - Ads) × (1 - Return Rate) × (1 - Chargeback Rate)</p>
+                      
+                      <p className="mt-3"><strong>Reserve Policy (DD+7):</strong></p>
+                      <p className="pl-4">Unlock Date = Delivery Date + 7 days</p>
+                      
+                      <p className="mt-3"><strong>Settlement Payout:</strong></p>
+                      <p className="pl-4">Payout = [Eligible Cash + Prior Balance + Adjustments] - Reserve</p>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold">How it works:</p>
+                    <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-5">
+                      <li>Tracks each order from delivery date through the DD+7 reserve period</li>
+                      <li>Calculates net cash after fees, returns, and chargebacks</li>
+                      <li>Models Amazon's reserve requirements based on recent deliveries</li>
+                      <li>Forecasts both bi-weekly settlements and daily available balances</li>
+                      <li>Adjusts predictions based on your risk tolerance settings</li>
+                    </ul>
+                  </div>
+                  
+                  <p className="text-sm text-muted-foreground italic">
+                    Note: Forecasts assume DD+7 reserve policy. Accuracy may vary if your account is under review or high-risk status.
+                  </p>
+                </div>
               </CardContent>
             </Card>
             

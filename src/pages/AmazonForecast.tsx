@@ -39,7 +39,6 @@ export default function AmazonForecast() {
   const { amazonPayouts } = useAmazonPayouts();
   const { incomeItems } = useIncome();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [forecast, setForecast] = useState<any>(null);
   const [showAdvancedDialog, setShowAdvancedDialog] = useState(false);
   const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(false);
 
@@ -294,36 +293,6 @@ export default function AmazonForecast() {
         </Card>
       </div>
 
-      {/* Generate Forecast Button */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5 text-primary" />
-            AI-Powered Forecast Generation
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button
-            onClick={generateForecast}
-            disabled={isGenerating}
-            size="lg"
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                Analyzing Data & Generating Forecast...
-              </>
-            ) : (
-              <>
-                <Brain className="h-5 w-5 mr-2" />
-                Generate AI Forecast
-              </>
-            )}
-          </Button>
-        </CardContent>
-      </Card>
-
       {/* Historical Trends */}
       <Card>
         <CardHeader>
@@ -357,111 +326,6 @@ export default function AmazonForecast() {
           </ResponsiveContainer>
         </CardContent>
       </Card>
-
-      {/* Forecast Results */}
-      {forecast && (
-        <Card className="border-2 border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-green-600" />
-              AI Forecast Results
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Summary Insights */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg p-6 border-2 border-blue-200 dark:border-blue-800">
-              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                <Brain className="h-5 w-5 text-blue-600" />
-                AI Analysis Summary
-              </h3>
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                  {forecast.analysis}
-                </div>
-              </div>
-            </div>
-
-            {/* Forecast Chart */}
-            {forecast.predictions && forecast.predictions.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Predicted Payouts</h3>
-                <ResponsiveContainer width="100%" height={400}>
-                  <AreaChart data={forecast.predictions}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="period" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
-                    <Legend />
-                    <Area 
-                      type="monotone" 
-                      dataKey="predicted_amount" 
-                      stroke="#8b5cf6" 
-                      fill="#8b5cf6" 
-                      fillOpacity={0.6}
-                      name="Predicted Payout"
-                    />
-                    {forecast.predictions[0]?.confidence_interval && (
-                      <>
-                        <Area 
-                          type="monotone" 
-                          dataKey="upper_bound" 
-                          stroke="#06b6d4" 
-                          fill="#06b6d4" 
-                          fillOpacity={0.2}
-                          name="Upper Confidence"
-                        />
-                        <Area 
-                          type="monotone" 
-                          dataKey="lower_bound" 
-                          stroke="#f59e0b" 
-                          fill="#f59e0b" 
-                          fillOpacity={0.2}
-                          name="Lower Confidence"
-                        />
-                      </>
-                    )}
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-
-            {/* Key Predictions */}
-            {forecast.predictions && forecast.predictions.length > 0 && (
-              <div className="grid gap-4 md:grid-cols-3">
-                {forecast.predictions.slice(0, 3).map((pred: any, idx: number) => (
-                  <Card key={idx}>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-medium text-muted-foreground">
-                        {pred.period}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold text-primary">
-                        ${pred.predicted_amount.toLocaleString()}
-                      </div>
-                      {pred.confidence && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {(pred.confidence * 100).toFixed(0)}% confidence
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-
-            {/* Methodology */}
-            {forecast.methodology && (
-              <div className="bg-muted/50 rounded-lg p-4">
-                <h4 className="text-sm font-semibold mb-2">Forecasting Methodology</h4>
-                <p className="text-xs text-muted-foreground">
-                  {forecast.methodology}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Forecast Accuracy Archive */}
       <AmazonForecastAccuracy />
