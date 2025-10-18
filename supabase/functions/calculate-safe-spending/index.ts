@@ -79,6 +79,64 @@ serve(async (req) => {
     const projectedExpenses = totalExpenses + totalVendorPayments;
     const projectedBalance = currentBalance + projectedIncome - projectedExpenses;
 
+    // Calculate day-by-day projected balance to find the lowest point
+    const dailyBalances: Array<{ date: string; balance: number }> = [];
+    let runningBalance = currentBalance;
+    let lowestBalance = currentBalance;
+    let lowestBalanceDate = today.toISOString().split('T')[0];
+
+    // Create a map of transactions by date
+    const transactionsByDate = new Map<string, { income: number; expenses: number }>();
+    
+    // Add income
+    (income || []).forEach(i => {
+      const date = new Date(i.payment_date).toISOString().split('T')[0];
+      const existing = transactionsByDate.get(date) || { income: 0, expenses: 0 };
+      existing.income += Number(i.amount) || 0;
+      transactionsByDate.set(date, existing);
+    });
+    
+    // Add Amazon payouts
+    (amazonPayouts || []).forEach(p => {
+      const date = new Date(p.payout_date).toISOString().split('T')[0];
+      const existing = transactionsByDate.get(date) || { income: 0, expenses: 0 };
+      existing.income += Number(p.total_amount) || 0;
+      transactionsByDate.set(date, existing);
+    });
+    
+    // Add expenses
+    (expenses || []).forEach(e => {
+      const date = new Date(e.transaction_date).toISOString().split('T')[0];
+      const existing = transactionsByDate.get(date) || { income: 0, expenses: 0 };
+      existing.expenses += Number(e.amount) || 0;
+      transactionsByDate.set(date, existing);
+    });
+    
+    // Add vendor payments
+    (vendors || []).forEach(v => {
+      const date = new Date(v.next_payment_date).toISOString().split('T')[0];
+      const existing = transactionsByDate.get(date) || { income: 0, expenses: 0 };
+      existing.expenses += Number(v.next_payment_amount) || 0;
+      transactionsByDate.set(date, existing);
+    });
+
+    // Simulate day-by-day for next 180 days
+    for (let i = 0; i < 180; i++) {
+      const currentDay = new Date(today);
+      currentDay.setDate(today.getDate() + i);
+      const dateStr = currentDay.toISOString().split('T')[0];
+      
+      const dayTransactions = transactionsByDate.get(dateStr) || { income: 0, expenses: 0 };
+      runningBalance += dayTransactions.income - dayTransactions.expenses;
+      
+      dailyBalances.push({ date: dateStr, balance: runningBalance });
+      
+      if (runningBalance < lowestBalance) {
+        lowestBalance = runningBalance;
+        lowestBalanceDate = dateStr;
+      }
+    }
+
     // Use AI to calculate safe spending limit
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -154,6 +212,11 @@ Return ONLY a JSON object with this exact structure:
         total_180day_limit: aiResult.total_180day_limit,
         confidence_level: aiResult.confidence_level,
         reasoning: aiResult.reasoning,
+        calculation: {
+          lowest_projected_balance: lowestBalance,
+          lowest_balance_date: lowestBalanceDate,
+          daily_balances: dailyBalances,
+        },
         projection_data: {
           current_balance: currentBalance,
           projected_income: projectedIncome,
