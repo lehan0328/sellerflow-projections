@@ -377,7 +377,7 @@ export const ForecastSettings = () => {
       color: "bg-orange-500", 
       recommended: false, 
       subtitle: "Fast Cycle (−3%)",
-      hint: "Use when settlement cycles are 1–1.5 days and returns are low."
+      hint: "Minimal buffer - best for stable sales with low returns and chargebacks."
     },
     { 
       value: 8, 
@@ -385,7 +385,7 @@ export const ForecastSettings = () => {
       color: "bg-blue-500", 
       recommended: true, 
       subtitle: "Balanced (−8%)",
-      hint: "Use when settlement cycles are ~2 days and payouts are steady."
+      hint: "Balanced protection - accounts for typical reserve delays and return rates."
     },
     { 
       value: 15, 
@@ -393,7 +393,7 @@ export const ForecastSettings = () => {
       color: "bg-emerald-500", 
       recommended: false, 
       subtitle: "Safe (−15%)",
-      hint: "Use when settlement cycles are 3+ days or payouts are volatile."
+      hint: "Maximum safety net - best for volatile sales or high return categories."
     }
   ];
 
