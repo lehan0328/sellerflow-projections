@@ -3,13 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Copy, DollarSign, TrendingUp, Users, Sparkles, Zap, Target, Award } from "lucide-react";
+import { Copy, DollarSign, TrendingUp, Users, Sparkles, Zap, Target, Award, ArrowLeft } from "lucide-react";
 import { useAffiliates } from "@/hooks/useAffiliates";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function AffiliateDashboard() {
   const { loading, affiliate, referrals, payouts, applyAsAffiliate, copyAffiliateLink } = useAffiliates();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     company_name: '',
     website: '',
@@ -40,9 +42,18 @@ export default function AffiliateDashboard() {
         <div className="relative max-w-4xl mx-auto p-6">
           {/* Header */}
           <div className="text-center mb-12 animate-fade-in">
-            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 border border-primary/30 mb-6 backdrop-blur-sm animate-shimmer bg-[length:200%_100%]">
-              <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-              <span className="text-sm font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/dashboard')}
+              className="mb-6"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 border border-primary/30 mb-6 backdrop-blur-sm">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <span className="text-sm font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
                 Affiliate Program Application
               </span>
             </div>
@@ -188,9 +199,18 @@ export default function AffiliateDashboard() {
       <div className="relative max-w-7xl mx-auto p-6 space-y-8">
         {/* Header */}
         <div className="animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 border border-primary/30 mb-4 backdrop-blur-sm animate-shimmer bg-[length:200%_100%]">
-            <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-            <span className="text-sm font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate('/dashboard')}
+            className="mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 border border-primary/30 mb-4 backdrop-blur-sm">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="text-sm font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
               Affiliate Portal
             </span>
           </div>
