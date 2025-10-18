@@ -80,7 +80,8 @@ export const PurchaseOrderForm = ({
     customDays: "",
     paymentMethod: "bank-transfer" as "bank-transfer" | "credit-card",
     selectedCreditCard: "",
-    splitPayment: false
+    splitPayment: false,
+    documentType: "purchase_order" as "invoice" | "proforma_invoice" | "purchase_order"
   });
   const [cardSplits, setCardSplits] = useState<Array<{
     cardId: string;
@@ -138,7 +139,8 @@ export const PurchaseOrderForm = ({
         customDays: "",
         paymentMethod: "bank-transfer",
         selectedCreditCard: "",
-        splitPayment: false
+        splitPayment: false,
+        documentType: "purchase_order"
       });
       setCardSplits([{
         cardId: "",
@@ -358,7 +360,7 @@ export const PurchaseOrderForm = ({
           vendor_id: formData.vendorId || null,
           amount: parseFloat(formData.amount),
           document_date: formData.poDate.toISOString().split('T')[0],
-          document_type: 'purchase_order'
+          document_type: formData.documentType || 'purchase_order'
         });
         if (metadataError) throw metadataError;
         console.log('Document saved to storage:', safeFileName);
@@ -490,7 +492,8 @@ export const PurchaseOrderForm = ({
           notes: extracted.notes || prev.notes,
           netTermsDays: extracted.netTermsDays || prev.netTermsDays,
           dueDate: extracted.dueDate ? parse(extracted.dueDate, 'yyyy-MM-dd', new Date()) : prev.dueDate,
-          deliveryDate: extracted.deliveryDate ? parse(extracted.deliveryDate, 'yyyy-MM-dd', new Date()) : prev.deliveryDate
+          deliveryDate: extracted.deliveryDate ? parse(extracted.deliveryDate, 'yyyy-MM-dd', new Date()) : prev.deliveryDate,
+          documentType: extracted.documentType || prev.documentType
         }));
 
         // Try to match vendor name

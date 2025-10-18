@@ -100,7 +100,7 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: "Extract all purchase order and invoice information from this document.\n\nIMPORTANT - TOTAL AMOUNT EXTRACTION RULES:\n1. Look for the FINAL payable amount with labels: 'Total:', 'Total Amount:', 'Grand Total:', 'Amount Due:', 'Balance Due:', or 'Total Payable:'\n2. IGNORE lines with: 'Subtotal:', 'Discount:', 'Deposit:', 'Tax:', 'VAT:', 'Shipping:', 'Handling:', 'Adjustment:', or 'Credit:'\n3. If multiple 'Total' entries exist, capture the LAST valid total that represents the final amount due (typically after all discounts, taxes, and adjustments)\n4. The correct total is usually the last monetary value before payment instructions or terms\n5. Return the amount as a number string without currency symbols (e.g., '1500.50' not '$1,500.50')\n\nFor the vendor name, check these fields in order of priority: 'From:', 'Vendor:', 'Supplier:', 'Sold By:', 'Issued By:', 'Ship From:', 'Company:'. Use whichever field is present to identify the vendor (required). Also extract: purchase order or invoice number, item description, payment terms (Net 30/60/90 or immediate), due date, delivery date, category (Inventory, Packaging Materials, Marketing/PPC, Shipping & Logistics, Professional Services, or Other), and additional notes."
+                text: "Extract all purchase order and invoice information from this document.\n\nIMPORTANT - DOCUMENT TYPE DETECTION:\n1. If the document explicitly says 'INVOICE' (not 'Pro-forma Invoice' or 'Proforma Invoice'), set documentType to 'invoice'\n2. If it says 'Pro-forma Invoice', 'Proforma Invoice', 'Pro forma Invoice', or similar, set documentType to 'proforma_invoice'\n3. If it says 'Purchase Order', 'PO', or similar, set documentType to 'purchase_order'\n4. Default to 'purchase_order' if unclear\n\nIMPORTANT - TOTAL AMOUNT EXTRACTION RULES:\n1. Look for the FINAL payable amount with labels: 'Total:', 'Total Amount:', 'Grand Total:', 'Amount Due:', 'Balance Due:', or 'Total Payable:'\n2. IGNORE lines with: 'Subtotal:', 'Discount:', 'Deposit:', 'Tax:', 'VAT:', 'Shipping:', 'Handling:', 'Adjustment:', or 'Credit:'\n3. If multiple 'Total' entries exist, capture the LAST valid total that represents the final amount due (typically after all discounts, taxes, and adjustments)\n4. The correct total is usually the last monetary value before payment instructions or terms\n5. Return the amount as a number string without currency symbols (e.g., '1500.50' not '$1,500.50')\n\nFor the vendor name, check these fields in order of priority: 'From:', 'Vendor:', 'Supplier:', 'Sold By:', 'Issued By:', 'Ship From:', 'Company:'. Use whichever field is present to identify the vendor (required). Also extract: purchase order or invoice number, item description, payment terms (Net 30/60/90 or immediate), due date, delivery date, category (Inventory, Packaging Materials, Marketing/PPC, Shipping & Logistics, Professional Services, or Other), and additional notes."
               },
               {
                 type: "image_url",
@@ -120,6 +120,11 @@ serve(async (req) => {
               parameters: {
                 type: "object",
                 properties: {
+                  documentType: {
+                    type: "string",
+                    enum: ["invoice", "proforma_invoice", "purchase_order"],
+                    description: "Type of document: 'invoice' (only for documents explicitly labeled INVOICE), 'proforma_invoice', or 'purchase_order'"
+                  },
                   vendorName: {
                     type: "string",
                     description: "The name of the vendor/supplier"
