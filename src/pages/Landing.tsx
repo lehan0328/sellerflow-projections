@@ -1553,32 +1553,32 @@ const Landing = () => {
                   </p>
                   
                   <div className="bg-muted/50 rounded-lg p-4 border">
-                    <h4 className="font-semibold text-sm mb-3">Forecasting Formula</h4>
-                    <div className="space-y-2 text-sm text-muted-foreground font-mono">
-                      <p><strong>Net Cash per Order:</strong></p>
-                      <p className="pl-4">Net = (Gross - Fees - Shipping - Ads) × (1 - Return Rate) × (1 - Chargeback Rate)</p>
+                    <h4 className="font-semibold text-sm mb-3">Our Methodology</h4>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p><strong>Order-Level Analysis:</strong></p>
+                      <p className="pl-4">Calculates net revenue per order accounting for fees, costs, returns, and chargebacks</p>
                       
-                      <p className="mt-3"><strong>Reserve Policy (DD+7):</strong></p>
-                      <p className="pl-4">Unlock Date = Delivery Date + 7 days</p>
+                      <p className="mt-3"><strong>Reserve Modeling:</strong></p>
+                      <p className="pl-4">Models Amazon's reserve holds based on delivery timing and historical patterns</p>
                       
-                      <p className="mt-3"><strong>Settlement Payout:</strong></p>
-                      <p className="pl-4">Payout = [Eligible Cash + Prior Balance + Adjustments] - Reserve</p>
+                      <p className="mt-3"><strong>Settlement Forecasting:</strong></p>
+                      <p className="pl-4">Projects future payouts using proprietary algorithms and your settlement history</p>
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <p className="text-sm font-semibold">How it works:</p>
+                    <p className="text-sm font-semibold">Key Features:</p>
                     <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-5">
-                      <li>Tracks each order from delivery date through the DD+7 reserve period</li>
-                      <li>Calculates net cash after fees, returns, and chargebacks</li>
-                      <li>Models Amazon's reserve requirements based on recent deliveries</li>
-                      <li>Forecasts both bi-weekly settlements and daily available balances</li>
-                      <li>Adjusts predictions based on your risk tolerance settings</li>
+                      <li>Auto-detects your settlement schedule (bi-weekly or daily withdrawals)</li>
+                      <li>Tracks deliveries through Amazon's reserve period</li>
+                      <li>Accounts for returns, fees, and adjustment patterns</li>
+                      <li>Adjustable safety buffers for conservative or aggressive forecasting</li>
+                      <li>Real-time accuracy tracking as settlements arrive</li>
                     </ul>
                   </div>
                   
                   <p className="text-sm text-muted-foreground italic">
-                    Note: Forecasts assume DD+7 reserve policy. Accuracy may vary if your account is under review or high-risk status.
+                    Note: Forecast accuracy depends on settlement consistency. Accounts under review may experience longer reserve holds.
                   </p>
                 </div>
               </CardContent>
