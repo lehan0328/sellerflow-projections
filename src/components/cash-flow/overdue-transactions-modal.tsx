@@ -54,7 +54,7 @@ export function OverdueTransactionsModal({ open, onOpenChange }: OverdueTransact
   const handleMarkIncomePaid = async (income: any) => {
     setProcessingId(income.id);
     try {
-      await updateIncome(income.id, { ...income, status: 'collected' });
+      await updateIncome(income.id, { ...income, status: 'received' });
     } finally {
       setProcessingId(null);
     }
