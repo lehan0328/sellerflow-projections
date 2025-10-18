@@ -44,7 +44,6 @@ export const ForecastSettings = () => {
   
   const hasAmazonStore = amazonAccounts && amazonAccounts.length > 0;
   const [payoutModel, setPayoutModel] = useState<'bi-weekly' | 'daily'>('bi-weekly');
-  const [reserveLagDays, setReserveLagDays] = useState(7);
   
   // Check if user has 3+ confirmed payouts for advanced modeling
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
@@ -78,7 +77,6 @@ export const ForecastSettings = () => {
       if (amazonAccounts && amazonAccounts.length > 0) {
         const firstAccount = amazonAccounts[0] as any;
         setPayoutModel(firstAccount.payout_model || 'bi-weekly');
-        setReserveLagDays(firstAccount.reserve_lag_days || 7);
       }
 
       if (error && error.code !== 'PGRST116') throw error;
@@ -99,7 +97,6 @@ export const ForecastSettings = () => {
       setForecastsEnabled(data?.forecasts_enabled ?? true);
       setDisabledAt(data?.forecasts_disabled_at || null);
       setAdvancedModelingEnabled(data?.advanced_modeling_enabled ?? false);
-      setReserveLagDays(data?.default_reserve_lag_days || 7);
     } catch (error) {
       console.error('Error fetching forecast settings:', error);
       // On error, default to 5 (Safe)
@@ -213,14 +210,14 @@ export const ForecastSettings = () => {
 
       if (!profile?.account_id) throw new Error("Account not found");
 
-      // Update Amazon account payout model and reserve settings
+      // Update Amazon account payout model (DD+7 is standard)
       if (amazonAccounts && amazonAccounts.length > 0) {
         for (const account of amazonAccounts) {
           await supabase
             .from('amazon_accounts')
             .update({
               payout_model: payoutModel,
-              reserve_lag_days: reserveLagDays
+              reserve_lag_days: 7 // DD+7 standard
             })
             .eq('id', account.id);
         }
@@ -243,7 +240,7 @@ export const ForecastSettings = () => {
             user_id: currentUser.id,
             account_id: profile.account_id,
             forecast_confidence_threshold: confidenceThreshold,
-            default_reserve_lag_days: reserveLagDays,
+            default_reserve_lag_days: 7, // DD+7 standard
           })
           .select('forecast_confidence_threshold')
           .single();
@@ -431,7 +428,7 @@ export const ForecastSettings = () => {
                   Mathematical Payout Forecasting
                 </p>
                 <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
-                  Using delivery-based reserve modeling (DD+{reserveLagDays}) with per-order net cash calculations, 
+                  Using delivery-based reserve modeling (DD+7) with per-order net cash calculations, 
                   Amazon fee structures, return rates, and chargeback modeling.
                 </p>
                 
@@ -466,19 +463,20 @@ export const ForecastSettings = () => {
                     </div>
                   </div>
 
-                  <div>
-                    <Label className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-2 block">
-                      Reserve Policy (DD+L)
-                    </Label>
-                    <select
-                      value={reserveLagDays}
-                      onChange={(e) => setReserveLagDays(Number(e.target.value))}
-                      className="w-full px-3 py-2 rounded-lg text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                    >
-                      <option value={7}>DD+7 (Standard - 7 days)</option>
-                      <option value={14}>DD+14 (Account Review)</option>
-                      <option value={21}>DD+21 (High Risk)</option>
-                    </select>
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium text-amber-900 dark:text-amber-100 mb-1">
+                          DD+7 Reserve Policy
+                        </p>
+                        <p className="text-[10px] text-amber-700 dark:text-amber-300">
+                          Forecasts assume Amazon's standard 7-day reserve policy after delivery. 
+                          <span className="font-medium"> Note: Forecasts may be less accurate if your account is under review or flagged as high-risk</span>, 
+                          as Amazon may hold funds longer (DD+14 or DD+21).
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -486,8 +484,8 @@ export const ForecastSettings = () => {
                   <p className="font-medium mb-1">Calculation Method:</p>
                   <p>
                     {payoutModel === 'bi-weekly' 
-                      ? 'Payout = [Eligible in Period + Prior Balance + Adjustments] - Reserve'
-                      : 'Daily Available = Eligible Cash - Account Reserve - Min Floor'}
+                      ? 'Payout = [Eligible in Period + Prior Balance + Adjustments] - Reserve(DD+7)'
+                      : 'Daily Available = Eligible Cash - Account Reserve(DD+7) - Min Floor'}
                   </p>
                 </div>
               </div>
