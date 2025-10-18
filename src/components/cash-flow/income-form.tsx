@@ -251,10 +251,13 @@ export const IncomeForm = ({
                         filteredCustomers.map((customer) => (
                           <div
                             key={customer.id}
-                            className="p-2 hover:bg-accent cursor-pointer text-sm border-b last:border-b-0"
+                            className="p-2 hover:bg-accent cursor-pointer border-b last:border-b-0"
                             onClick={() => handleCustomerSelect(customer)}
                           >
-                            <div className="font-medium">{customer.name}</div>
+                            <div className="font-medium text-sm">{customer.name}</div>
+                            {customer.category && (
+                              <div className="text-xs text-muted-foreground mt-0.5">{customer.category}</div>
+                            )}
                           </div>
                         ))
                       )}
