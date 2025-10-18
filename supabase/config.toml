@@ -117,6 +117,9 @@ verify_jwt = false
 [functions.forecast-amazon-payouts]
 verify_jwt = true
 
+[functions.forecast-amazon-payouts-math]
+verify_jwt = true
+
 [functions.disable-forecasts]
 verify_jwt = true
 

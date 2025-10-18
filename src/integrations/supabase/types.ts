@@ -198,6 +198,9 @@ export type Database = {
           marketplace_id: string
           marketplace_name: string
           payout_frequency: string
+          payout_model: string
+          reserve_lag_days: number
+          reserve_multiplier: number
           seller_id: string
           token_expires_at: string | null
           updated_at: string
@@ -217,6 +220,9 @@ export type Database = {
           marketplace_id: string
           marketplace_name: string
           payout_frequency?: string
+          payout_model?: string
+          reserve_lag_days?: number
+          reserve_multiplier?: number
           seller_id: string
           token_expires_at?: string | null
           updated_at?: string
@@ -236,6 +242,9 @@ export type Database = {
           marketplace_id?: string
           marketplace_name?: string
           payout_frequency?: string
+          payout_model?: string
+          reserve_lag_days?: number
+          reserve_multiplier?: number
           seller_id?: string
           token_expires_at?: string | null
           updated_at?: string
@@ -246,14 +255,17 @@ export type Database = {
       amazon_payouts: {
         Row: {
           account_id: string | null
+          adjustments: number | null
           amazon_account_id: string
           created_at: string
           currency_code: string
+          eligible_in_period: number | null
           fees_total: number | null
           forecast_accuracy_percentage: number | null
           forecast_replaced_at: string | null
           id: string
           marketplace_name: string
+          modeling_method: string | null
           orders_total: number | null
           original_forecast_amount: number | null
           other_total: number | null
@@ -261,6 +273,7 @@ export type Database = {
           payout_type: string
           raw_settlement_data: Json | null
           refunds_total: number | null
+          reserve_amount: number | null
           settlement_id: string
           status: string
           total_amount: number
@@ -270,14 +283,17 @@ export type Database = {
         }
         Insert: {
           account_id?: string | null
+          adjustments?: number | null
           amazon_account_id: string
           created_at?: string
           currency_code?: string
+          eligible_in_period?: number | null
           fees_total?: number | null
           forecast_accuracy_percentage?: number | null
           forecast_replaced_at?: string | null
           id?: string
           marketplace_name: string
+          modeling_method?: string | null
           orders_total?: number | null
           original_forecast_amount?: number | null
           other_total?: number | null
@@ -285,6 +301,7 @@ export type Database = {
           payout_type?: string
           raw_settlement_data?: Json | null
           refunds_total?: number | null
+          reserve_amount?: number | null
           settlement_id: string
           status?: string
           total_amount?: number
@@ -294,14 +311,17 @@ export type Database = {
         }
         Update: {
           account_id?: string | null
+          adjustments?: number | null
           amazon_account_id?: string
           created_at?: string
           currency_code?: string
+          eligible_in_period?: number | null
           fees_total?: number | null
           forecast_accuracy_percentage?: number | null
           forecast_replaced_at?: string | null
           id?: string
           marketplace_name?: string
+          modeling_method?: string | null
           orders_total?: number | null
           original_forecast_amount?: number | null
           other_total?: number | null
@@ -309,6 +329,7 @@ export type Database = {
           payout_type?: string
           raw_settlement_data?: Json | null
           refunds_total?: number | null
+          reserve_amount?: number | null
           settlement_id?: string
           status?: string
           total_amount?: number
@@ -329,64 +350,88 @@ export type Database = {
       amazon_transactions: {
         Row: {
           account_id: string | null
+          ads_cost: number | null
           amazon_account_id: string
           amount: number
+          chargeback_rate: number | null
           created_at: string
           currency_code: string
+          delivery_date: string | null
           description: string | null
           fee_description: string | null
           fee_type: string | null
+          gross_amount: number | null
           id: string
           marketplace_name: string | null
+          net_amount: number | null
           order_id: string | null
           raw_data: Json | null
+          return_rate: number | null
           settlement_id: string | null
+          shipping_cost: number | null
           sku: string | null
           transaction_date: string
           transaction_id: string
           transaction_type: string
+          unlock_date: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           account_id?: string | null
+          ads_cost?: number | null
           amazon_account_id: string
           amount?: number
+          chargeback_rate?: number | null
           created_at?: string
           currency_code?: string
+          delivery_date?: string | null
           description?: string | null
           fee_description?: string | null
           fee_type?: string | null
+          gross_amount?: number | null
           id?: string
           marketplace_name?: string | null
+          net_amount?: number | null
           order_id?: string | null
           raw_data?: Json | null
+          return_rate?: number | null
           settlement_id?: string | null
+          shipping_cost?: number | null
           sku?: string | null
           transaction_date: string
           transaction_id: string
           transaction_type: string
+          unlock_date?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           account_id?: string | null
+          ads_cost?: number | null
           amazon_account_id?: string
           amount?: number
+          chargeback_rate?: number | null
           created_at?: string
           currency_code?: string
+          delivery_date?: string | null
           description?: string | null
           fee_description?: string | null
           fee_type?: string | null
+          gross_amount?: number | null
           id?: string
           marketplace_name?: string | null
+          net_amount?: number | null
           order_id?: string | null
           raw_data?: Json | null
+          return_rate?: number | null
           settlement_id?: string | null
+          shipping_cost?: number | null
           sku?: string | null
           transaction_date?: string
           transaction_id?: string
           transaction_type?: string
+          unlock_date?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1794,11 +1839,13 @@ export type Database = {
           chart_show_reserve_line: boolean | null
           chart_show_resources_line: boolean | null
           created_at: string
+          default_reserve_lag_days: number | null
           forecast_confidence_threshold: number | null
           forecasts_disabled_at: string | null
           forecasts_enabled: boolean | null
           id: string
           last_forecast_refresh: string | null
+          min_reserve_floor: number | null
           reserve_last_updated_at: string | null
           safe_spending_percentage: number | null
           safe_spending_reserve: number | null
@@ -1821,11 +1868,13 @@ export type Database = {
           chart_show_reserve_line?: boolean | null
           chart_show_resources_line?: boolean | null
           created_at?: string
+          default_reserve_lag_days?: number | null
           forecast_confidence_threshold?: number | null
           forecasts_disabled_at?: string | null
           forecasts_enabled?: boolean | null
           id?: string
           last_forecast_refresh?: string | null
+          min_reserve_floor?: number | null
           reserve_last_updated_at?: string | null
           safe_spending_percentage?: number | null
           safe_spending_reserve?: number | null
@@ -1848,11 +1897,13 @@ export type Database = {
           chart_show_reserve_line?: boolean | null
           chart_show_resources_line?: boolean | null
           created_at?: string
+          default_reserve_lag_days?: number | null
           forecast_confidence_threshold?: number | null
           forecasts_disabled_at?: string | null
           forecasts_enabled?: boolean | null
           id?: string
           last_forecast_refresh?: string | null
+          min_reserve_floor?: number | null
           reserve_last_updated_at?: string | null
           safe_spending_percentage?: number | null
           safe_spending_reserve?: number | null

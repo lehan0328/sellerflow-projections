@@ -80,17 +80,13 @@ export default function AmazonForecast() {
 
   const generateForecast = async () => {
     setIsGenerating(true);
-    toast.loading("Generating AI Forecast - Analyzing your Amazon data...");
+    toast.loading("Generating Mathematical Forecast - Analyzing Amazon transactions and reserves...");
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase.functions.invoke("forecast-amazon-payouts", {
-        body: {
-          userId: user.id,
-          historicalPayouts: amazonPayouts.slice(0, 50), // Last 50 payouts
-          historicalData: historicalData
-        }
+      const { data, error } = await supabase.functions.invoke("forecast-amazon-payouts-math", {
+        body: { userId: user.id }
       });
 
       if (error) {
@@ -103,9 +99,10 @@ export default function AmazonForecast() {
         throw new Error(data.error);
       }
 
-      if (data?.forecast) {
-        setForecast(data.forecast);
-        toast.success("AI Forecast Complete! 🎉 Please refresh the page to see updated projections.");
+      if (data?.success) {
+        toast.dismiss();
+        toast.success(`Mathematical forecast generated! ${data.forecastCount || 0} forecasts created. Refreshing...`);
+        setTimeout(() => window.location.reload(), 1500);
       }
     } catch (error: any) {
       console.error("Forecast error:", error);

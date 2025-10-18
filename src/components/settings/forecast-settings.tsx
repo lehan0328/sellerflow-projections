@@ -43,6 +43,8 @@ export const ForecastSettings = () => {
   const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(false);
   
   const hasAmazonStore = amazonAccounts && amazonAccounts.length > 0;
+  const [payoutModel, setPayoutModel] = useState<'bi-weekly' | 'daily'>('bi-weekly');
+  const [reserveLagDays, setReserveLagDays] = useState(7);
   
   // Check if user has 3+ confirmed payouts for advanced modeling
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
@@ -66,11 +68,18 @@ export const ForecastSettings = () => {
     try {
       const { data, error } = await supabase
         .from('user_settings')
-        .select('forecast_confidence_threshold, forecasts_enabled, forecasts_disabled_at, advanced_modeling_enabled')
+        .select('forecast_confidence_threshold, forecasts_enabled, forecasts_disabled_at, advanced_modeling_enabled, default_reserve_lag_days')
         .eq('user_id', user!.id)
         .maybeSingle();
 
       console.log('🔍 Fetched settings:', data);
+      
+      // Load Amazon account payout model
+      if (amazonAccounts && amazonAccounts.length > 0) {
+        const firstAccount = amazonAccounts[0] as any;
+        setPayoutModel(firstAccount.payout_model || 'bi-weekly');
+        setReserveLagDays(firstAccount.reserve_lag_days || 7);
+      }
 
       if (error && error.code !== 'PGRST116') throw error;
 
@@ -90,6 +99,7 @@ export const ForecastSettings = () => {
       setForecastsEnabled(data?.forecasts_enabled ?? true);
       setDisabledAt(data?.forecasts_disabled_at || null);
       setAdvancedModelingEnabled(data?.advanced_modeling_enabled ?? false);
+      setReserveLagDays(data?.default_reserve_lag_days || 7);
     } catch (error) {
       console.error('Error fetching forecast settings:', error);
       // On error, default to 5 (Safe)
@@ -203,6 +213,19 @@ export const ForecastSettings = () => {
 
       if (!profile?.account_id) throw new Error("Account not found");
 
+      // Update Amazon account payout model and reserve settings
+      if (amazonAccounts && amazonAccounts.length > 0) {
+        for (const account of amazonAccounts) {
+          await supabase
+            .from('amazon_accounts')
+            .update({
+              payout_model: payoutModel,
+              reserve_lag_days: reserveLagDays
+            })
+            .eq('id', account.id);
+        }
+      }
+
       // Check if settings exist
       const { data: existing } = await supabase
         .from('user_settings')
@@ -220,6 +243,7 @@ export const ForecastSettings = () => {
             user_id: currentUser.id,
             account_id: profile.account_id,
             forecast_confidence_threshold: confidenceThreshold,
+            default_reserve_lag_days: reserveLagDays,
           })
           .select('forecast_confidence_threshold')
           .single();
@@ -280,9 +304,9 @@ export const ForecastSettings = () => {
         console.log('✅ Old forecasts deleted');
       }
 
-      // Generate new forecasts
-      console.log('🤖 Calling forecast-amazon-payouts function...');
-      const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts', {
+      // Generate new forecasts using mathematical model
+      console.log('🤖 Calling forecast-amazon-payouts-math function...');
+      const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
         body: { userId: currentUser.id }
       });
 
@@ -397,45 +421,75 @@ export const ForecastSettings = () => {
         )}
         
         <div className="space-y-4" style={{ opacity: forecastsEnabled ? 1 : 0.5, pointerEvents: forecastsEnabled ? 'auto' : 'none' }}>
-          {/* Advanced Modeling Status */}
-          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          {/* Mathematical Forecasting Model Selection */}
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1 flex items-center gap-2">
-                  {advancedModelingEnabled ? (
-                    <>
-                      <Sparkles className="h-4 w-4 text-green-600" />
-                      Advanced Mathematical Modeling (Active)
-                    </>
-                  ) : hasEnoughDataForAdvanced ? (
-                    <>
-                      Advanced Mathematical Modeling Available
-                    </>
-                  ) : (
-                    <>
-                      Basic AI Forecasting
-                    </>
-                  )}
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-purple-600" />
+                  Mathematical Payout Forecasting
                 </p>
-                <p className="text-xs text-blue-700 dark:text-blue-300">
-                  {advancedModelingEnabled ? (
-                    <>
-                      Using time series analysis, exponential smoothing, ARIMA modeling, and regression analysis 
-                      to generate highly accurate forecasts based on {confirmedPayouts.length} confirmed payouts.
-                    </>
-                  ) : hasEnoughDataForAdvanced ? (
-                    <>
-                      You have {confirmedPayouts.length} confirmed payouts! Go to AI Forecast page to unlock 
-                      advanced mathematical modeling with time series analysis and machine learning.
-                    </>
-                  ) : (
-                    <>
-                      Using baseline AI forecasting. Collect {3 - confirmedPayouts.length} more confirmed payout(s) 
-                      to unlock Advanced Mathematical Modeling with time series analysis and regression modeling.
-                    </>
-                  )}
+                <p className="text-xs text-blue-700 dark:text-blue-300 mb-3">
+                  Using delivery-based reserve modeling (DD+{reserveLagDays}) with per-order net cash calculations, 
+                  Amazon fee structures, return rates, and chargeback modeling.
                 </p>
+                
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-2 block">
+                      Forecast Model
+                    </Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setPayoutModel('bi-weekly')}
+                        className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                          payoutModel === 'bi-weekly'
+                            ? 'bg-blue-600 text-white shadow-md'
+                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        <div className="font-semibold">14-Day Settlements</div>
+                        <div className="text-[10px] opacity-80">Standard bi-weekly</div>
+                      </button>
+                      <button
+                        onClick={() => setPayoutModel('daily')}
+                        className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                          payoutModel === 'daily'
+                            ? 'bg-purple-600 text-white shadow-md'
+                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        <div className="font-semibold">Daily Available</div>
+                        <div className="text-[10px] opacity-80">Withdrawable funds</div>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-2 block">
+                      Reserve Policy (DD+L)
+                    </Label>
+                    <select
+                      value={reserveLagDays}
+                      onChange={(e) => setReserveLagDays(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-lg text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    >
+                      <option value={7}>DD+7 (Standard - 7 days)</option>
+                      <option value={14}>DD+14 (Account Review)</option>
+                      <option value={21}>DD+21 (High Risk)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-3 p-2 bg-white/50 dark:bg-slate-900/50 rounded text-[10px] text-slate-600 dark:text-slate-400">
+                  <p className="font-medium mb-1">Calculation Method:</p>
+                  <p>
+                    {payoutModel === 'bi-weekly' 
+                      ? 'Payout = [Eligible in Period + Prior Balance + Adjustments] - Reserve'
+                      : 'Daily Available = Eligible Cash - Account Reserve - Min Floor'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
