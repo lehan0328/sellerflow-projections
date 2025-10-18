@@ -26,6 +26,7 @@ import {
   DollarSign,
   ArrowRight,
   Shield,
+  Search,
 } from "lucide-react";
 
 const Features = () => {
@@ -266,8 +267,21 @@ const Features = () => {
                 </CardHeader>
               </Card>
 
+              {/* Search by Amount/Date */}
+              <Card className="bg-gradient-to-br from-indigo-500/10 via-background to-background border-indigo-500/20 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <CardHeader className="pb-3">
+                  <div className="mb-2 p-2 rounded-lg bg-indigo-500/20 w-fit mx-auto">
+                    <Search className="h-6 w-6 text-indigo-600" />
+                  </div>
+                  <CardTitle className="text-lg text-center">🔍 Smart Search</CardTitle>
+                  <CardDescription className="text-sm text-center">
+                    Search by specific amount or target date to instantly find when you'll have the cash available for your next big purchase.
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+
               {/* Scenario Planning */}
-              <Card className="bg-gradient-to-br from-teal-500/10 via-background to-background border-teal-500/20 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 md:col-span-2">
+              <Card className="bg-gradient-to-br from-teal-500/10 via-background to-background border-teal-500/20 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                 <CardHeader className="pb-3">
                   <div className="mb-2 p-2 rounded-lg bg-teal-500/20 w-fit mx-auto">
                     <Target className="h-6 w-6 text-teal-600" />
