@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -683,14 +683,16 @@ export const CashFlowCalendar = ({
   };
 
   // Wrapper-level handlers to keep tooltip active across the whole chart area (including left margins)
-  const handleWrapperMouseMove = (ev: any) => {
+  const handleWrapperMouseMove = useCallback((ev: any) => {
     const idx = computeIndexFromClientX(ev.clientX);
     setActiveTooltipIndex(idx);
-  };
-  const handleWrapperMouseLeave = () => {
+  }, [displayData.length]);
+  
+  const handleWrapperMouseLeave = useCallback(() => {
     setActiveTooltipIndex(null);
-  };
-  const buildTooltipPayload = (index: number) => {
+  }, []);
+  
+  const buildTooltipPayload = useCallback((index: number) => {
     const d = displayData[index as number];
     if (!d) return [];
     const items: any[] = [];
@@ -712,7 +714,13 @@ export const CashFlowCalendar = ({
     safePush('reserve', reserveColor);
 
     return items;
-  };
+  }, [displayData, cashFlowColor, totalResourcesColor, creditCardColor, reserveColor]);
+  
+  // Memoize tooltip payload to prevent recalculation on every render
+  const tooltipPayload = useMemo(() => {
+    if (activeTooltipIndex === null) return [];
+    return buildTooltipPayload(activeTooltipIndex);
+  }, [activeTooltipIndex, buildTooltipPayload]);
   
   // Zoom handlers
   const handleMouseDown = (e: any) => {
@@ -1417,7 +1425,7 @@ export const CashFlowCalendar = ({
                         position={{ x: 12, y: 12 }}
                         wrapperStyle={{ pointerEvents: 'none' }}
                         active={activeTooltipIndex !== null}
-                        payload={activeTooltipIndex !== null ? buildTooltipPayload(activeTooltipIndex) : []}
+                        payload={tooltipPayload}
                         label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined}
                         content={
                           <ChartTooltipContent 
