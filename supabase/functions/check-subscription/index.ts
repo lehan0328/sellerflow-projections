@@ -74,7 +74,7 @@ serve(async (req) => {
       
       return new Response(JSON.stringify({
         subscribed: true,
-        plan: profile.plan_override,
+        plan: profile.plan_override.toLowerCase(),
         subscription_end: null,
         is_override: true,
         discount_ever_redeemed: !!profile.discount_redeemed_at
