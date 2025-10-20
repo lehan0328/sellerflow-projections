@@ -48,12 +48,11 @@ export const useAmazonPayouts = () => {
         .from("amazon_payouts")
         .select(`
           *,
-          amazon_accounts!inner(
+          amazon_accounts(
             account_name,
             marketplace_name
           )
         `)
-        .gte("payout_date", todayStr)
         .order("payout_date", { ascending: true });
 
       if (error) {
