@@ -246,7 +246,7 @@ export const ForecastSettings = () => {
         .eq('user_id', currentUser.id)
         .maybeSingle();
 
-      console.log('💾 Current DB value:', existing?.forecast_confidence_threshold, '| Saving:', confidenceThreshold);
+      console.log('💾 Current DB value:', existing?.forecast_confidence_threshold, '| Saving:', confidenceThreshold, forecastsEnabled);
       
       if (!existing) {
         console.log('📝 Inserting new record');
@@ -256,6 +256,7 @@ export const ForecastSettings = () => {
             user_id: currentUser.id,
             account_id: profile.account_id,
             forecast_confidence_threshold: confidenceThreshold,
+            forecasts_enabled: forecastsEnabled,
             default_reserve_lag_days: 7, // DD+7 standard
           })
           .select('forecast_confidence_threshold')
@@ -270,7 +271,10 @@ export const ForecastSettings = () => {
         console.log('📝 Updating existing record');
         const { data: updatedData, error: updateError } = await supabase
           .from('user_settings')
-          .update({ forecast_confidence_threshold: confidenceThreshold })
+          .update({ 
+            forecast_confidence_threshold: confidenceThreshold,
+            forecasts_enabled: forecastsEnabled
+          })
           .eq('user_id', currentUser.id)
           .select('forecast_confidence_threshold')
           .single();
