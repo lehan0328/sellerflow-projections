@@ -3,7 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Clock } from "lucide-react";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useState } from "react";
@@ -153,16 +154,24 @@ export function AmazonPayouts() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {amazonPayouts.length === 0 ? <div className="text-center py-8">
-            <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">No Amazon payouts found</h3>
-            <p className="text-muted-foreground mb-4">
-              {amazonAccounts.length === 0 ? "Connect your Amazon seller account to see payouts" : "Sync your Amazon accounts to load payout data"}
-            </p>
-            <Button onClick={() => navigate('/settings')}>
-              <Settings className="h-4 w-4 mr-2" />
-              {amazonAccounts.length === 0 ? "Connect Amazon Account" : "Manage Amazon Settings"}
-            </Button>
+        {amazonPayouts.length === 0 ? <div className="space-y-4">
+            {amazonAccounts.length > 0 && <Alert className="border-blue-500/30 bg-blue-500/5">
+                <Clock className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-sm text-muted-foreground">
+                  Amazon data sync can take up to 24 hours after connecting your account. Please check back later.
+                </AlertDescription>
+              </Alert>}
+            <div className="text-center py-8">
+              <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">No Amazon payouts found</h3>
+              <p className="text-muted-foreground mb-4">
+                {amazonAccounts.length === 0 ? "Connect your Amazon seller account to see payouts" : "Sync your Amazon accounts to load payout data"}
+              </p>
+              <Button onClick={() => navigate('/settings')}>
+                <Settings className="h-4 w-4 mr-2" />
+                {amazonAccounts.length === 0 ? "Connect Amazon Account" : "Manage Amazon Settings"}
+              </Button>
+            </div>
           </div> : (() => {
           // Group payouts by date and aggregate amounts
           const filteredPayouts = amazonPayouts.filter(payout => showForecasts ? true : payout.status !== 'forecasted');
