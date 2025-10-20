@@ -55,15 +55,20 @@ export function AmazonManagement() {
   };
 
   const handleConnectAmazon = async () => {
+    console.log('=== STARTING AMAZON CONNECTION FLOW ===');
     try {
       // Get current session
+      console.log('Step 1: Getting session...');
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session:', session ? 'Found' : 'Not found');
       
       if (!session) {
+        console.error('No session found');
         toast.error('Please log in to connect your Amazon account.');
         return;
       }
 
+      console.log('Step 2: Fetching Amazon client ID from edge function...');
       toast.info('Fetching Amazon connection details...');
 
       // Get Amazon client ID from backend with auth token
@@ -73,22 +78,26 @@ export function AmazonManagement() {
         },
       });
       
+      console.log('Edge function response:', { data, error });
+      
       if (error) {
         console.error('Error fetching client ID:', error);
-        toast.error('Failed to get Amazon credentials. Please contact support.');
+        toast.error(`Failed to get Amazon credentials: ${error.message}`);
         return;
       }
       
       const clientId = data?.clientId;
       
-      console.log('Amazon Client ID received:', clientId ? 'Yes' : 'No');
+      console.log('Amazon Client ID received:', clientId);
       
       if (!clientId || clientId === 'undefined' || clientId === '') {
-        toast.error('Amazon Client ID is not configured. Please contact support to set up the integration.');
+        console.error('Invalid client ID:', clientId);
+        toast.error('Amazon Client ID is not configured. Please contact support.');
         return;
       }
       
       const redirectUri = `${window.location.origin}/amazon-oauth-callback`;
+      console.log('Step 3: Building authorization URL...');
       console.log('Redirect URI:', redirectUri);
       console.log('Selected marketplace:', selectedMarketplace);
       
@@ -98,14 +107,16 @@ export function AmazonManagement() {
       console.log('Amazon OAuth URL:', authUrl);
       
       toast.info('Redirecting to Amazon Seller Central...');
+      console.log('Step 4: Redirecting in 500ms...');
       
       // Small delay to ensure toast is visible
       setTimeout(() => {
+        console.log('REDIRECTING NOW to:', authUrl);
         window.location.href = authUrl;
       }, 500);
     } catch (error) {
-      console.error('Error connecting to Amazon:', error);
-      toast.error('Failed to initiate Amazon connection. Check console for details.');
+      console.error('=== ERROR IN AMAZON CONNECTION ===', error);
+      toast.error(`Failed to initiate Amazon connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
