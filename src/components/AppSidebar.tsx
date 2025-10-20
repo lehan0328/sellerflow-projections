@@ -114,9 +114,14 @@ export function AppSidebar({
       return;
     }
     
+    // Wait for subscription data to load before checking access
+    if (subscription.isLoading) {
+      return;
+    }
+    
     // Scenario Planning: Professional + Trial only
     if (sectionId === 'scenario-planning') {
-      const hasAccess = hasPlanAccess(subscription.plan, 'professional') || 
+      const hasAccess = (subscription.plan && hasPlanAccess(subscription.plan, 'professional')) || 
                        subscription.is_trialing;
       if (!hasAccess) {
         setShowUpgradeModal(true);
@@ -126,7 +131,7 @@ export function AppSidebar({
     
     // Document Storage: Growing, Professional + Trial
     if (sectionId === 'document-storage') {
-      const hasAccess = hasPlanAccess(subscription.plan, 'growing') || 
+      const hasAccess = (subscription.plan && hasPlanAccess(subscription.plan, 'growing')) || 
                        subscription.is_trialing;
       if (!hasAccess) {
         setShowUpgradeModal(true);
@@ -160,9 +165,9 @@ export function AppSidebar({
               const isActive = activeSection === section.id;
               
               // Check locks based on plan requirements
-              const hasScenarioAccess = hasPlanAccess(subscription.plan, 'professional') || 
+              const hasScenarioAccess = (subscription.plan && hasPlanAccess(subscription.plan, 'professional')) || 
                                        subscription.is_trialing;
-              const showProfessionalLock = section.id === 'scenario-planning' && !hasScenarioAccess;
+              const showProfessionalLock = section.id === 'scenario-planning' && !hasScenarioAccess && !subscription.isLoading;
               
               return <SidebarMenuItem key={section.id}>
                     <SidebarMenuButton onClick={() => handleSectionClick(section.id, section)} className={`
@@ -250,7 +255,8 @@ export function AppSidebar({
               return <SidebarMenuItem key={section.id}>
                 <SidebarMenuButton onClick={() => {
                   if (section.id === 'document-storage') {
-                    const hasAccess = hasPlanAccess(subscription.plan, 'growing') || 
+                    if (subscription.isLoading) return;
+                    const hasAccess = (subscription.plan && hasPlanAccess(subscription.plan, 'growing')) || 
                                     subscription.is_trialing;
                     if (!hasAccess) {
                       setShowUpgradeModal(true);
@@ -280,7 +286,8 @@ export function AppSidebar({
                               </Badge>}
                             {section.id === "referrals" && <Badge variant="secondary" className="ml-auto text-[10px] bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30 font-bold px-1.5 py-0">Earn $2k</Badge>}
                             {section.id === "document-storage" && 
-                             !hasPlanAccess(subscription.plan, 'growing') && 
+                             !subscription.isLoading &&
+                             !(subscription.plan && hasPlanAccess(subscription.plan, 'growing')) && 
                              !subscription.is_trialing && 
                              <Lock className="h-4 w-4 text-muted-foreground" />}
                           </span>
@@ -289,7 +296,8 @@ export function AppSidebar({
                           {unreadSupportCount}
                         </div>}
                       {isCollapsed && section.id === "document-storage" && 
-                       !hasPlanAccess(subscription.plan, 'growing') && 
+                       !subscription.isLoading &&
+                       !(subscription.plan && hasPlanAccess(subscription.plan, 'growing')) && 
                        !subscription.is_trialing && 
                        <div className="absolute -top-1 -right-1">
                           <Lock className="h-3 w-3 text-muted-foreground" />
