@@ -238,8 +238,11 @@ export function AmazonPayouts() {
               </Button>
             </div>
           </div> : (() => {
-          // Group payouts by date and aggregate amounts
-          const filteredPayouts = amazonPayouts.filter(payout => showForecasts ? true : payout.status !== 'forecasted');
+          // Group payouts by date and aggregate amounts, exclude past dates
+          const filteredPayouts = amazonPayouts.filter(payout => {
+            const daysUntil = getDaysUntil(payout.payout_date);
+            return daysUntil >= 0 && (showForecasts ? true : payout.status !== 'forecasted');
+          });
           const payoutsByDate = filteredPayouts.reduce((acc, payout) => {
             const dateKey = payout.payout_date;
             if (!acc[dateKey]) {
@@ -283,8 +286,8 @@ export function AmazonPayouts() {
                             <Calendar className="mr-1 h-3 w-3" />
                             {formatDate(aggregatedPayout.payout_date)}
                           </span>
-                          <span className={`font-medium ${daysUntil <= 0 ? 'text-finance-positive' : daysUntil <= 3 ? 'text-warning' : 'text-muted-foreground'}`}>
-                            {daysUntil <= 0 ? 'Today' : daysUntil < 0 ? `${Math.abs(daysUntil)} days ago` : `in ${daysUntil} days`}
+                          <span className={`font-medium ${daysUntil === 0 ? 'text-finance-positive' : daysUntil <= 3 ? 'text-warning' : 'text-muted-foreground'}`}>
+                            {daysUntil === 0 ? 'Today' : `in ${daysUntil} days`}
                           </span>
                           <span className="text-xs text-muted-foreground">
                             {aggregatedPayout.transaction_count} transactions
