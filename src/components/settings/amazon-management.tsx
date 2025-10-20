@@ -88,7 +88,7 @@ export function AmazonManagement() {
         return;
       }
       
-      const redirectUri = `${window.location.origin}/amazon/callback`;
+      const redirectUri = `${window.location.origin}/amazon-oauth-callback`;
       console.log('Redirect URI:', redirectUri);
       console.log('Selected marketplace:', selectedMarketplace);
       
