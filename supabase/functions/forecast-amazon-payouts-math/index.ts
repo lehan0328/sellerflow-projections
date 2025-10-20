@@ -348,8 +348,9 @@ function generateDailyForecasts(
     }
   });
 
-  // Calculate lump sum after reserve
-  const lumpSumBeforeAdjustment = Math.max(0, totalEligible - settlementReserve - minReserveFloor);
+  // Calculate lump sum after reserve (use max of calculated reserve or minimum floor)
+  const effectiveReserve = Math.max(settlementReserve, minReserveFloor);
+  const lumpSumBeforeAdjustment = Math.max(0, totalEligible - effectiveReserve);
   
   // Apply risk adjustment to lump sum
   const adjustmentMultiplier = 1 - (riskAdjustment / 100);
