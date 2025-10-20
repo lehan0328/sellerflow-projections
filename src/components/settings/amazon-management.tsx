@@ -101,8 +101,8 @@ export function AmazonManagement() {
       console.log('Redirect URI:', redirectUri);
       console.log('Selected marketplace:', selectedMarketplace);
       
-      // Construct Amazon authorization URL
-      const authUrl = `https://sellercentral.amazon.com/apps/authorize/consent?application_id=${clientId}&state=${selectedMarketplace}&redirect_uri=${encodeURIComponent(redirectUri)}&version=beta`;
+      // Construct Amazon authorization URL (removed version=beta for production)
+      const authUrl = `https://sellercentral.amazon.com/apps/authorize/consent?application_id=${clientId}&state=${selectedMarketplace}&redirect_uri=${encodeURIComponent(redirectUri)}`;
       
       console.log('Amazon OAuth URL:', authUrl);
       
