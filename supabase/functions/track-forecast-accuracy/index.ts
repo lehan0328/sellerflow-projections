@@ -44,10 +44,16 @@ serve(async (req) => {
       );
     }
 
-    // Get user profile info
+    // Get user profile info and settings
     const { data: profile } = await supabase
       .from('profiles')
       .select('first_name, last_name, monthly_revenue, account_id')
+      .eq('user_id', actualPayout.user_id)
+      .single();
+
+    const { data: userSettings } = await supabase
+      .from('user_settings')
+      .select('confidence_threshold')
       .eq('user_id', actualPayout.user_id)
       .single();
 
@@ -89,7 +95,8 @@ serve(async (req) => {
         marketplace_name: actualPayout.marketplace_name,
         user_email: user?.email,
         user_name: userName,
-        monthly_revenue: profile?.monthly_revenue
+        monthly_revenue: profile?.monthly_revenue,
+        confidence_threshold: userSettings?.confidence_threshold || 0.80
       });
 
     if (insertError) {

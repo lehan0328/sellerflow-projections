@@ -446,7 +446,7 @@ export const ForecastSettings = () => {
                 />
               </div>
               <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/20">
-                AI-Powered
+                Mathematical
               </Badge>
             </div>
           </div>
@@ -464,7 +464,7 @@ export const ForecastSettings = () => {
               <div className="mt-2 space-y-1">
                 <p className="text-sm text-orange-600 dark:text-orange-400 flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4" />
-                  AI forecasts are currently disabled
+                  Mathematical forecasts are currently disabled
                 </p>
                 {!canReEnable && (
                   <p className="text-xs text-muted-foreground">

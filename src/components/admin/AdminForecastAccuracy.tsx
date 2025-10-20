@@ -17,6 +17,7 @@ interface AccuracyLog {
   difference_amount: number;
   difference_percentage: number;
   marketplace_name: string;
+  confidence_threshold?: number;
   created_at: string;
 }
 
@@ -179,6 +180,7 @@ export function AdminForecastAccuracy() {
                   <TableHead>Date</TableHead>
                   <TableHead>User</TableHead>
                   <TableHead>Revenue</TableHead>
+                  <TableHead>Safety Net</TableHead>
                   <TableHead>Marketplace</TableHead>
                   <TableHead className="text-right">Forecasted</TableHead>
                   <TableHead className="text-right">Actual</TableHead>
@@ -190,7 +192,7 @@ export function AdminForecastAccuracy() {
               <TableBody>
                 {logs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground">
+                    <TableCell colSpan={10} className="text-center text-muted-foreground">
                       No forecast accuracy data yet
                     </TableCell>
                   </TableRow>
@@ -208,6 +210,13 @@ export function AdminForecastAccuracy() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">{log.monthly_revenue || 'N/A'}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {log.confidence_threshold === 0.65 ? 'Aggressive' : 
+                           log.confidence_threshold === 0.90 ? 'Conservative' : 
+                           'Moderate'}
+                        </Badge>
                       </TableCell>
                       <TableCell>{log.marketplace_name}</TableCell>
                       <TableCell className="text-right">
