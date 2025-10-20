@@ -249,46 +249,67 @@ export const ForecastSettings = () => {
       }
 
       console.log('✅ Forecast risk level saved and verified:', confidenceThreshold);
-      toast.success("Forecast settings updated");
       
       // Update saved value after successful save
       setSavedConfidenceThreshold(confidenceThreshold);
 
-      // Automatically regenerate forecasts with the new confidence threshold
-      console.log('🔄 Starting forecast regeneration...');
-      toast.loading("Regenerating forecasts with new confidence threshold...");
-      
-      // Delete old forecasts
-      const { error: deleteError } = await supabase
-        .from('amazon_payouts')
-        .delete()
-        .eq('user_id', currentUser.id)
-        .eq('status', 'forecasted');
+      // Handle forecasts based on enabled state
+      if (!forecastsEnabled) {
+        // Delete all forecasted payouts when disabled
+        console.log('🗑️ Forecasts disabled, deleting forecasted payouts...');
+        const { error: deleteError } = await supabase
+          .from('amazon_payouts')
+          .delete()
+          .eq('user_id', currentUser.id)
+          .eq('status', 'forecasted');
 
-      if (deleteError) {
-        console.error('❌ Error deleting old forecasts:', deleteError);
+        if (deleteError) {
+          console.error('❌ Error deleting forecasts:', deleteError);
+          toast.error("Settings saved but failed to remove forecasted payouts");
+        } else {
+          console.log('✅ Forecasts deleted');
+          toast.success("Forecast settings saved - forecasts disabled");
+        }
       } else {
-        console.log('✅ Old forecasts deleted');
-      }
-
-      // Generate new forecasts using mathematical model
-      console.log('🤖 Calling forecast-amazon-payouts-math function...');
-      const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
-        body: { userId: currentUser.id }
-      });
-
-      console.log('📊 Forecast response:', { data, error });
-
-      if (error) {
-        console.error('❌ Forecast regeneration error:', error);
-        toast.error("Settings saved but forecast regeneration failed");
-      } else if (data?.success) {
-        console.log('✅ Forecasts regenerated successfully');
-        toast.success("Settings saved and forecasts updated!");
+        // Automatically regenerate forecasts with the new confidence threshold
+        console.log('🔄 Starting forecast regeneration...');
+        toast.loading("Regenerating forecasts with new confidence threshold...");
         
-        // Refresh payout data to show new forecasts immediately
-        refetchPayouts();
+        // Delete old forecasts
+        const { error: deleteError } = await supabase
+          .from('amazon_payouts')
+          .delete()
+          .eq('user_id', currentUser.id)
+          .eq('status', 'forecasted');
+
+        if (deleteError) {
+          console.error('❌ Error deleting old forecasts:', deleteError);
+        } else {
+          console.log('✅ Old forecasts deleted');
+        }
+
+        // Generate new forecasts using mathematical model
+        console.log('🤖 Calling forecast-amazon-payouts-math function...');
+        const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
+          body: { userId: currentUser.id }
+        });
+
+        console.log('📊 Forecast response:', { data, error });
+
+        if (error) {
+          console.error('❌ Forecast regeneration error:', error);
+          toast.error("Settings saved but forecast regeneration failed");
+        } else if (data?.success) {
+          console.log('✅ Forecasts regenerated successfully');
+          toast.success("Settings saved and forecasts updated!");
+        }
       }
+      
+      // Refetch settings to update UI state
+      await fetchSettings();
+      
+      // Refresh payout data to show updated data
+      await refetchPayouts();
     } catch (error) {
       console.error('Error saving forecast settings:', error);
       toast.error("Failed to save settings");
