@@ -375,18 +375,18 @@ const FlexReport = () => {
             {/* Header with Branding */}
             <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-gradient-to-r from-blue-200 via-purple-200 to-blue-200">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-2 tracking-tight">
+                <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2 tracking-tight">
                   Financial Power Report
                 </h1>
                 <p className="text-slate-600 text-sm mb-1">Your business at a glance</p>
-                <p className="text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <p className="text-sm font-bold text-primary">
                   Cash Flow Management Software For Amazon Sellers
                 </p>
               </div>
               <div className="text-center flex flex-col items-center">
                 <img src={aurenLogo} alt="Auren" className="h-12 md:h-14 drop-shadow-lg mb-1" />
-                <p className="text-lg font-black bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 bg-clip-text text-transparent mb-1">Auren</p>
-                <p className="text-xs font-semibold text-blue-600">www.aurenapp.com</p>
+                <p className="text-lg font-black text-primary mb-1">Auren</p>
+                <p className="text-xs font-semibold text-primary">www.aurenapp.com</p>
               </div>
             </div>
 
