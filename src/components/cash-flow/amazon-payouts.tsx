@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Clock, Trash2 } from "lucide-react";
+import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Clock } from "lucide-react";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useState } from "react";
@@ -25,7 +25,6 @@ export function AmazonPayouts() {
   } = useAmazonAccounts();
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
   const [showForecasts, setShowForecasts] = useState(true);
-  const [deletingPayoutId, setDeletingPayoutId] = useState<string | null>(null);
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -81,26 +80,6 @@ export function AmazonPayouts() {
       await syncAmazonAccount(account.id);
     }
     setIsSyncing(null);
-  };
-
-  const handleDeletePayout = async (payoutId: string) => {
-    setDeletingPayoutId(payoutId);
-    try {
-      const { error } = await supabase
-        .from('amazon_payouts')
-        .delete()
-        .eq('id', payoutId);
-
-      if (error) throw error;
-
-      toast.success("Payout deleted successfully");
-      refetch();
-    } catch (error) {
-      console.error('Error deleting payout:', error);
-      toast.error("Failed to delete payout");
-    } finally {
-      setDeletingPayoutId(null);
-    }
   };
   if (isLoading) {
     return <Card className="shadow-card">
@@ -196,8 +175,8 @@ export function AmazonPayouts() {
             const isForecasted = aggregatedPayout.status === 'forecasted';
             
             return <div key={aggregatedPayout.payout_date} className={`rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card ${isUpcoming ? 'border-primary/30 bg-primary/5' : ''}`}>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="space-y-2 flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-2">
                         <div className="flex items-center space-x-2">
                           <Badge variant={getStatusColor(aggregatedPayout.status)} className="text-xs">
                             {aggregatedPayout.status}
@@ -225,30 +204,14 @@ export function AmazonPayouts() {
                           </span>
                         </div>
                       </div>
-                      <div className="text-right flex items-center gap-2">
-                        <div>
-                          <p className="font-bold text-lg text-finance-positive">
-                            {formatCurrency(aggregatedPayout.total_amount)}
-                          </p>
-                          {isUpcoming && <div className="flex items-center text-xs text-primary">
-                              <TrendingUp className="mr-1 h-3 w-3" />
-                              Upcoming
-                            </div>}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            // Delete all payouts for this date
-                            aggregatedPayout.payouts.forEach((payout: any) => {
-                              handleDeletePayout(payout.id);
-                            });
-                          }}
-                          disabled={deletingPayoutId !== null}
-                          className="h-8 w-8 p-0"
-                        >
-                          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                        </Button>
+                      <div className="text-right">
+                        <p className="font-bold text-lg text-finance-positive">
+                          {formatCurrency(aggregatedPayout.total_amount)}
+                        </p>
+                        {isUpcoming && <div className="flex items-center text-xs text-primary">
+                            <TrendingUp className="mr-1 h-3 w-3" />
+                            Upcoming
+                          </div>}
                       </div>
                     </div>
                   </div>;
