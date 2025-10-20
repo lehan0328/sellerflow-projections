@@ -32,7 +32,7 @@ const overviewSections = [{
   icon: BarChart3
 }, {
   id: "ai-forecast",
-  title: "AI Forecast",
+  title: "Advanced Forecast",
   icon: Sparkles,
   isRoute: true,
   url: "/ai-forecast"
@@ -108,7 +108,7 @@ export function AppSidebar({
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleSectionClick = (sectionId: string, section?: any) => {
-    // Handle route navigation for AI Forecast
+    // Handle route navigation for Advanced Forecast
     if (section?.isRoute && section?.url) {
       navigate(section.url);
       return;
