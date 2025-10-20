@@ -420,7 +420,7 @@ export const ForecastSettings = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-purple-600" />
-              <CardTitle>AI Forecast Settings</CardTitle>
+              <CardTitle>Mathematical Forecast Settings</CardTitle>
             </div>
             <div className="flex items-center gap-3">
               {!isOnForecastPage && (
@@ -436,7 +436,7 @@ export const ForecastSettings = () => {
               )}
               <div className="flex items-center gap-2">
                 <Label htmlFor="forecast-toggle" className="text-sm">
-                  AI Forecasts {forecastsEnabled ? 'Enabled' : 'Disabled'}
+                  Mathematical Forecasts {forecastsEnabled ? 'Enabled' : 'Disabled'}
                 </Label>
                 <Switch
                   id="forecast-toggle"
