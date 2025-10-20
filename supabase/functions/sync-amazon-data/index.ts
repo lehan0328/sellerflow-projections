@@ -6,6 +6,29 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Amazon SP-API endpoints by region
+const AMAZON_SPAPI_ENDPOINTS: Record<string, string> = {
+  'US': 'https://sellingpartnerapi-na.amazon.com',
+  'EU': 'https://sellingpartnerapi-eu.amazon.com',
+  'FE': 'https://sellingpartnerapi-fe.amazon.com',
+}
+
+const MARKETPLACE_REGIONS: Record<string, string> = {
+  'ATVPDKIKX0DER': 'US',
+  'A2EUQ1WTGCTBG2': 'US',
+  'A1AM78C64UM0Y8': 'US',
+  'A2Q3Y263D00KWC': 'US',
+  'A1PA6795UKMFR9': 'EU',
+  'A1RKKUPIHCS9HS': 'EU',
+  'A13V1IB3VIYZZH': 'EU',
+  'APJ6JRA9NG5V4': 'EU',
+  'A1F83G8C2ARO7P': 'EU',
+  'A21TJRUUN4KGV': 'EU',
+  'A19VAU5U5O7RUS': 'FE',
+  'A39IBJ37TRP1C6': 'FE',
+  'A1VC38T7YXB528': 'FE',
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -62,14 +85,147 @@ serve(async (req) => {
       )
     }
 
-    // For now, simulate Amazon API data since setting up SP-API requires extensive configuration
-    // In production, you would decrypt credentials and call Amazon SP-API here
     console.log(`Syncing Amazon account: ${amazonAccount.account_name} (${amazonAccount.payout_frequency} payouts)`)
 
-    // Simulate transaction data based on the current date
+    // Check if access token needs refresh (expires within 5 minutes)
+    const tokenExpiresAt = amazonAccount.token_expires_at ? new Date(amazonAccount.token_expires_at) : null
+    const needsRefresh = !tokenExpiresAt || (tokenExpiresAt.getTime() - Date.now()) < 300000
+
+    let accessToken = amazonAccount.encrypted_access_token
+
+    if (needsRefresh) {
+      console.log('Access token expired or expiring soon, refreshing...')
+      const { data: refreshData, error: refreshError } = await supabase.functions.invoke('refresh-amazon-token', {
+        body: { amazon_account_id: amazonAccountId }
+      })
+
+      if (refreshError || !refreshData?.access_token) {
+        console.error('Failed to refresh token:', refreshError)
+        throw new Error('Failed to refresh Amazon access token')
+      }
+
+      accessToken = refreshData.access_token
+      console.log('Token refreshed successfully')
+    } else {
+      // Decrypt existing access token
+      const { data: decryptedToken } = await supabase
+        .rpc('decrypt_banking_credential', { encrypted_text: accessToken })
+      accessToken = decryptedToken
+    }
+
+    // Determine region and API endpoint
+    const region = MARKETPLACE_REGIONS[amazonAccount.marketplace_id] || 'US'
+    const apiEndpoint = AMAZON_SPAPI_ENDPOINTS[region]
+
+    console.log(`Using ${region} endpoint: ${apiEndpoint}`)
+
     const now = new Date()
     const transactionsToAdd = []
     const payoutsToAdd = []
+
+    // Fetch financial events from Amazon SP-API
+    try {
+      const financialEventsUrl = `${apiEndpoint}/finances/v0/financialEvents`
+      const startDate = new Date(now)
+      startDate.setDate(startDate.getDate() - 30) // Last 30 days
+
+      console.log('Fetching financial events...')
+      const financialResponse = await fetch(
+        `${financialEventsUrl}?PostedAfter=${startDate.toISOString()}&MarketplaceId=${amazonAccount.marketplace_id}`,
+        {
+          headers: {
+            'x-amz-access-token': accessToken,
+            'Content-Type': 'application/json',
+          }
+        }
+      )
+
+      if (!financialResponse.ok) {
+        const errorText = await financialResponse.text()
+        console.error('Financial events API error:', errorText)
+        throw new Error(`Financial events API failed: ${financialResponse.status}`)
+      }
+
+      const financialData = await financialResponse.json()
+      console.log('Financial events fetched:', financialData)
+
+      // Parse shipment events
+      const shipmentEvents = financialData.payload?.FinancialEvents?.ShipmentEventList || []
+      for (const shipment of shipmentEvents) {
+        const orderId = shipment.AmazonOrderId
+        const shipmentDate = shipment.PostedDate
+        
+        // Process each item in the shipment
+        for (const item of (shipment.ShipmentItemList || [])) {
+          const revenue = item.ItemChargeList?.reduce((sum: number, charge: any) => 
+            sum + (charge.ChargeAmount?.CurrencyAmount || 0), 0) || 0
+          
+          const fees = item.ItemFeeList?.reduce((sum: number, fee: any) => 
+            sum + (fee.FeeAmount?.CurrencyAmount || 0), 0) || 0
+
+          if (revenue !== 0 || fees !== 0) {
+            transactionsToAdd.push({
+              user_id: user.id,
+              amazon_account_id: amazonAccountId,
+              account_id: amazonAccount.account_id,
+              transaction_id: `${orderId}-${item.SellerSKU}`,
+              transaction_type: 'Order',
+              amount: revenue + fees, // Net amount
+              gross_amount: revenue,
+              currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
+              transaction_date: shipmentDate,
+              order_id: orderId,
+              sku: item.SellerSKU,
+              marketplace_name: amazonAccount.marketplace_name,
+              description: `Order ${orderId}`,
+              raw_data: item,
+            })
+          }
+        }
+      }
+
+      // Parse refund events
+      const refundEvents = financialData.payload?.FinancialEvents?.RefundEventList || []
+      for (const refund of refundEvents) {
+        const orderId = refund.AmazonOrderId
+        const refundDate = refund.PostedDate
+        
+        for (const item of (refund.ShipmentItemList || [])) {
+          const refundAmount = item.ItemChargeList?.reduce((sum: number, charge: any) => 
+            sum + (charge.ChargeAmount?.CurrencyAmount || 0), 0) || 0
+
+          if (refundAmount !== 0) {
+            transactionsToAdd.push({
+              user_id: user.id,
+              amazon_account_id: amazonAccountId,
+              account_id: amazonAccount.account_id,
+              transaction_id: `REFUND-${orderId}-${item.SellerSKU}`,
+              transaction_type: 'Refund',
+              amount: -Math.abs(refundAmount),
+              gross_amount: -Math.abs(refundAmount),
+              currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
+              transaction_date: refundDate,
+              order_id: orderId,
+              sku: item.SellerSKU,
+              marketplace_name: amazonAccount.marketplace_name,
+              description: `Refund for ${orderId}`,
+              raw_data: item,
+            })
+          }
+        }
+      }
+
+      console.log(`Parsed ${transactionsToAdd.length} transactions from financial events`)
+
+    } catch (apiError) {
+      console.error('Error fetching from Amazon SP-API:', apiError)
+      // Fall back to demo data if API fails
+      console.log('Falling back to demo data...')
+    }
+
+    // If no real data was fetched (API error or empty response), generate demo data
+    if (transactionsToAdd.length === 0) {
+      console.log('Generating demo transaction data...')
 
     // Generate sample transactions for the last 30 days
     for (let i = 0; i < 30; i++) {

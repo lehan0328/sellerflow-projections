@@ -44,9 +44,19 @@ const AmazonOAuthCallback = () => {
           throw new Error('You must be logged in to connect Amazon');
         }
 
-        // TODO: Exchange the spapi_oauth_code for access token
-        // This will require calling Amazon's token endpoint
-        // For now, we'll just store the basic info
+        // Exchange the authorization code for access/refresh tokens
+        const { data: exchangeData, error: exchangeError } = await supabase.functions.invoke('exchange-amazon-token', {
+          body: {
+            code: spapi_oauth_code,
+            selling_partner_id: selling_partner_id,
+            marketplace_id: state, // State should contain marketplace_id
+            account_name: `Amazon Store - ${selling_partner_id.slice(0, 8)}`
+          }
+        });
+
+        if (exchangeError || !exchangeData?.success) {
+          throw new Error(exchangeError?.message || 'Failed to connect Amazon account');
+        }
         
         setStatus('success');
         setMessage('Amazon account connected successfully!');
