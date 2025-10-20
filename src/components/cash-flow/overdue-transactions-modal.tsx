@@ -3,8 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 import { useIncome } from "@/hooks/useIncome";
-import { AlertCircle, Trash2, CheckCircle } from "lucide-react";
+import { AlertCircle, Trash2, CheckCircle, Calendar } from "lucide-react";
 import { useState } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface OverdueTransactionsModalProps {
   open: boolean;
@@ -12,9 +16,10 @@ interface OverdueTransactionsModalProps {
 }
 
 export function OverdueTransactionsModal({ open, onOpenChange }: OverdueTransactionsModalProps) {
-  const { transactions, markAsPaid, deleteTransaction } = useVendorTransactions();
+  const { transactions, markAsPaid, deleteTransaction, updateDueDate } = useVendorTransactions();
   const { incomeItems, updateIncome, deleteIncome } = useIncome();
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [changingDateId, setChangingDateId] = useState<string | null>(null);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -69,6 +74,26 @@ export function OverdueTransactionsModal({ open, onOpenChange }: OverdueTransact
     }
   };
 
+  const handleChangeVendorDate = async (id: string, newDate: Date) => {
+    setProcessingId(id);
+    try {
+      await updateDueDate(id, newDate);
+      setChangingDateId(null);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleChangeIncomeDate = async (income: any, newDate: Date) => {
+    setProcessingId(income.id);
+    try {
+      await updateIncome(income.id, { ...income, paymentDate: newDate });
+      setChangingDateId(null);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
   const formatDate = (date: Date) => new Date(date).toLocaleDateString('en-US', { 
     month: 'short', 
@@ -113,6 +138,28 @@ export function OverdueTransactionsModal({ open, onOpenChange }: OverdueTransact
                         <div className="text-lg font-bold mt-2">{formatCurrency(tx.amount)}</div>
                       </div>
                       <div className="flex gap-2">
+                        <Popover open={changingDateId === tx.id} onOpenChange={(open) => !open && setChangingDateId(null)}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setChangingDateId(tx.id)}
+                              disabled={processingId === tx.id}
+                            >
+                              <Calendar className="h-4 w-4 mr-1" />
+                              Change Date
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={new Date(tx.dueDate)}
+                              onSelect={(date) => date && handleChangeVendorDate(tx.id, date)}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
                         <Button
                           variant="outline"
                           size="sm"
@@ -155,6 +202,28 @@ export function OverdueTransactionsModal({ open, onOpenChange }: OverdueTransact
                         <div className="text-lg font-bold mt-2">{formatCurrency(income.amount)}</div>
                       </div>
                       <div className="flex gap-2">
+                        <Popover open={changingDateId === income.id} onOpenChange={(open) => !open && setChangingDateId(null)}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setChangingDateId(income.id)}
+                              disabled={processingId === income.id}
+                            >
+                              <Calendar className="h-4 w-4 mr-1" />
+                              Change Date
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={new Date(income.paymentDate)}
+                              onSelect={(date) => date && handleChangeIncomeDate(income, date)}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
                         <Button
                           variant="outline"
                           size="sm"

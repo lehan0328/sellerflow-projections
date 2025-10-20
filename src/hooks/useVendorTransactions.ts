@@ -138,6 +138,36 @@ export const useVendorTransactions = () => {
     }
   };
 
+  const updateDueDate = async (transactionId: string, newDueDate: Date) => {
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .update({ due_date: formatDateForDB(newDueDate) } as any)
+        .eq('id', transactionId);
+
+      if (error) throw error;
+
+      setTransactions(prev => prev.map(tx => 
+        tx.id === transactionId ? { ...tx, dueDate: newDueDate } : tx
+      ));
+
+      toast({
+        title: "Success",
+        description: "Due date updated successfully",
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error updating due date:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update due date",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   const deleteTransaction = async (transactionId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -312,6 +342,7 @@ export const useVendorTransactions = () => {
     markAsPaid,
     markAsPartiallyPaid,
     updateRemarks,
+    updateDueDate,
     deleteTransaction,
     refetch: fetchVendorTransactions
   };
