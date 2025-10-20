@@ -681,9 +681,9 @@ const Landing = () => {
               </div>
 
               {/* Video Frame */}
-              <div className="relative animate-float">
+              <div className="relative">
                 {/* Glow effect */}
-                <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-3xl blur-3xl animate-glow-pulse" />
+                <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-3xl blur-3xl" />
                 
                 {/* Video card */}
                 <div className="relative rounded-2xl border-2 border-primary/20 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden group">
