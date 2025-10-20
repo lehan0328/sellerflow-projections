@@ -4,6 +4,7 @@ import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarCha
 import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useSupportMessageCount } from "@/hooks/useSupportMessageCount";
+import { useUserSettings } from "@/hooks/useUserSettings";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar, SidebarHeader } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import aurenIcon from "@/assets/auren-icon-blue.png";
@@ -101,6 +102,7 @@ export function AppSidebar({
   const {
     userRole
   } = useAdmin();
+  const { forecastsEnabled } = useUserSettings();
   const subscription = useSubscription();
   const navigate = useNavigate();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -166,6 +168,18 @@ export function AppSidebar({
                       {!isCollapsed && <span className="flex items-center justify-between w-full pr-1">
                           <span>{section.title}</span>
                           <span className="flex items-center gap-2">
+                            {section.id === 'ai-forecast' && (
+                              <Badge 
+                                variant={forecastsEnabled ? "default" : "secondary"} 
+                                className={`text-[10px] font-bold px-1.5 py-0 h-[18px] ${
+                                  forecastsEnabled 
+                                    ? "bg-emerald-500 hover:bg-emerald-600 text-white" 
+                                    : "bg-gray-400 hover:bg-gray-500 text-white"
+                                }`}
+                              >
+                                {forecastsEnabled ? "ON" : "OFF"}
+                              </Badge>
+                            )}
                             {'showMatchCount' in section && section.showMatchCount && matchCount > 0 && <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
                                 {matchCount}
                               </span>}
@@ -178,6 +192,15 @@ export function AppSidebar({
                       {isCollapsed && 'showBadge' in section && section.showBadge && unreadCount > 0 && <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
                           {unreadCount}
                         </div>}
+                      {isCollapsed && section.id === 'ai-forecast' && (
+                        <div className={`absolute -top-1 -right-1 rounded-full w-5 h-5 flex items-center justify-center text-[9px] font-bold ${
+                          forecastsEnabled 
+                            ? "bg-emerald-500 text-white" 
+                            : "bg-gray-400 text-white"
+                        }`}>
+                          {forecastsEnabled ? "ON" : "OFF"}
+                        </div>
+                      )}
                       {isCollapsed && 'showMatchCount' in section && section.showMatchCount && matchCount > 0 && <div className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
                           {matchCount}
                         </div>}

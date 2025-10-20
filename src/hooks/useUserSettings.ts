@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 export const useUserSettings = () => {
   const [totalCash, setTotalCash] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [forecastsEnabled, setForecastsEnabled] = useState(false);
   const [chartPreferences, setChartPreferences] = useState({
     showCashFlowLine: true,
     showTotalResourcesLine: true,
@@ -41,6 +42,7 @@ export const useUserSettings = () => {
       }
 
       setTotalCash(Number(data.total_cash));
+      setForecastsEnabled(data.forecasts_enabled ?? false);
       
       // Load chart preferences if they exist
       setChartPreferences({
@@ -383,6 +385,7 @@ export const useUserSettings = () => {
   return {
     totalCash,
     loading,
+    forecastsEnabled,
     chartPreferences,
     updateTotalCash,
     setStartingBalance,
