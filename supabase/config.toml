@@ -90,6 +90,9 @@ verify_jwt = true
 [functions.refresh-amazon-token]
 verify_jwt = false
 
+[functions.get-amazon-client-id]
+verify_jwt = false
+
 [functions.create-stripe-link-session]
 verify_jwt = true
 

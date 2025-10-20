@@ -12,6 +12,7 @@ import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { ShoppingCart, Plus, Trash2, RefreshCw, ExternalLink, Settings, DollarSign } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AmazonAccountFormData {
   seller_id: string;
@@ -53,25 +54,32 @@ export function AmazonManagement() {
     }).format(amount);
   };
 
-  const handleConnectAmazon = () => {
-    // TODO: Replace with your actual Amazon LWA Application ID from Amazon Developer Console
-    // Get this from: https://developer.amazonservices.com/
-    const clientId = 'amzn1.application-oa2-client.YOUR_CLIENT_ID_HERE';
-    const redirectUri = encodeURIComponent(`${window.location.origin}/amazon/callback`);
-    const state = selectedMarketplace; // Pass marketplace as state
-    
-    if (clientId.includes('YOUR_CLIENT_ID')) {
-      toast.error('Please configure your Amazon Client ID first');
-      return;
+  const handleConnectAmazon = async () => {
+    try {
+      // Get Amazon client ID from backend (it's stored in secrets)
+      const { data, error } = await supabase.functions.invoke('get-amazon-client-id');
+      
+      if (error || !data?.clientId) {
+        toast.error('Amazon integration not configured. Please contact support.');
+        console.error('Failed to get Amazon client ID:', error);
+        return;
+      }
+      
+      const clientId = data.clientId;
+      const redirectUri = encodeURIComponent(`${window.location.origin}/amazon/callback`);
+      const state = selectedMarketplace;
+      
+      // Construct Amazon authorization URL
+      const authUrl = `https://sellercentral.amazon.com/apps/authorize/consent?application_id=${clientId}&state=${state}&redirect_uri=${redirectUri}&version=beta`;
+      
+      toast.info('Redirecting to Amazon Seller Central...');
+      
+      // Redirect to Amazon authorization page
+      window.location.href = authUrl;
+    } catch (error) {
+      console.error('Error connecting to Amazon:', error);
+      toast.error('Failed to initiate Amazon connection');
     }
-    
-    // Construct Amazon authorization URL
-    const authUrl = `https://sellercentral.amazon.com/apps/authorize/consent?application_id=${clientId}&state=${state}&redirect_uri=${redirectUri}&version=beta`;
-    
-    toast.info('Redirecting to Amazon Seller Central...');
-    
-    // Redirect to Amazon authorization page
-    window.location.href = authUrl;
   };
 
   const handleSyncAccount = async (accountId: string) => {
