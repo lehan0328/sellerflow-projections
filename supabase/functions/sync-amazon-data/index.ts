@@ -227,7 +227,7 @@ serve(async (req) => {
     if (transactionsToAdd.length === 0) {
       console.log('Generating demo transaction data...')
 
-    // Generate sample transactions for the last 30 days
+      // Generate sample transactions for the last 30 days
     for (let i = 0; i < 30; i++) {
       const transactionDate = new Date(now)
       transactionDate.setDate(now.getDate() - i)
@@ -308,6 +308,7 @@ serve(async (req) => {
         other_total: totalAmount * 0.02
       })
     }
+    } // Close the if (transactionsToAdd.length === 0) block
 
     // Insert transactions (with conflict resolution)
     if (transactionsToAdd.length > 0) {
