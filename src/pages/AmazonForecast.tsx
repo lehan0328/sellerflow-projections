@@ -42,6 +42,7 @@ export default function AmazonForecast() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAdvancedDialog, setShowAdvancedDialog] = useState(false);
   const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(false);
+  const [hasBeenNotified, setHasBeenNotified] = useState(false);
 
   // Check if user has 3+ confirmed payouts for advanced modeling
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
@@ -128,7 +129,10 @@ export default function AmazonForecast() {
 
       if (settings?.advanced_modeling_enabled) {
         setAdvancedModelingEnabled(true);
-      } else if (!settings?.advanced_modeling_notified && hasEnoughDataForAdvanced) {
+        setHasBeenNotified(true);
+      } else if (settings?.advanced_modeling_notified) {
+        setHasBeenNotified(true);
+      } else if (!settings?.advanced_modeling_notified && hasEnoughDataForAdvanced && !hasBeenNotified) {
         // Show notification if they haven't been notified yet
         setShowAdvancedDialog(true);
       }
@@ -163,6 +167,7 @@ export default function AmazonForecast() {
 
       setAdvancedModelingEnabled(true);
       setShowAdvancedDialog(false);
+      setHasBeenNotified(true);
       toast.success("Advanced Mathematical Modeling activated! 🎯");
       
       // Regenerate forecasts with advanced modeling
@@ -197,6 +202,8 @@ export default function AmazonForecast() {
         });
 
       setShowAdvancedDialog(false);
+      setHasBeenNotified(true);
+      toast.success("Got it! You can enable advanced modeling anytime from settings.");
     } catch (error) {
       console.error('Error dismissing notification:', error);
     }
