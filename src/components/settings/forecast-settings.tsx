@@ -53,34 +53,12 @@ export const ForecastSettings = () => {
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
   const hasEnoughDataForAdvanced = confirmedPayouts.length >= 3;
   
-  // Auto-detect payout model from settlement history
-  const detectedPayoutModel = useMemo(() => {
-    if (confirmedPayouts.length < 2) return null; // Need at least 2 payouts to detect pattern
-    
-    // Sort by date
-    const sorted = [...confirmedPayouts].sort((a, b) => 
-      new Date(a.payout_date).getTime() - new Date(b.payout_date).getTime()
-    );
-    
-    // Calculate average days between settlements
-    let totalDays = 0;
-    let count = 0;
-    
-    for (let i = 1; i < sorted.length; i++) {
-      const daysBetween = Math.abs(
-        (new Date(sorted[i].payout_date).getTime() - new Date(sorted[i-1].payout_date).getTime()) / (1000 * 60 * 60 * 24)
-      );
-      totalDays += daysBetween;
-      count++;
-    }
-    
-    const avgDays = totalDays / count;
-    
-    // If average is 12-16 days, it's bi-weekly. If less than 12, it's daily
-    if (avgDays >= 12 && avgDays <= 16) return 'bi-weekly';
-    if (avgDays < 12) return 'daily';
-    return 'bi-weekly'; // Default to bi-weekly if unclear
-  }, [confirmedPayouts]);
+  // Use the payout frequency from the user's Amazon account settings instead of auto-detecting
+  const userSelectedPayoutModel = useMemo(() => {
+    // Get payout frequency from the first active Amazon account
+    const activeAccount = amazonAccounts?.find(acc => acc.is_active);
+    return activeAccount?.payout_frequency || 'bi-weekly';
+  }, [amazonAccounts]);
 
   // Calculate if 24 hours have passed since disabling
   const canReEnable = !disabledAt || 
@@ -106,18 +84,13 @@ export const ForecastSettings = () => {
 
       console.log('🔍 Fetched settings:', data);
       
-      // Auto-detect payout model from history or load from account
+      // Use the payout frequency from user's Amazon account settings
       if (amazonAccounts && amazonAccounts.length > 0) {
         const firstAccount = amazonAccounts[0] as any;
-        const currentModel = firstAccount.payout_model || 'bi-weekly';
+        const currentModel = firstAccount.payout_frequency || 'bi-weekly';
         
-        // If we have detected a model from history, use that
-        if (detectedPayoutModel && detectedPayoutModel !== currentModel) {
-          console.log('🔍 Auto-detected payout model:', detectedPayoutModel, '(was:', currentModel, ')');
-          setPayoutModel(detectedPayoutModel);
-        } else {
-          setPayoutModel(currentModel);
-        }
+        console.log('🔍 Using payout model from account settings:', currentModel);
+        setPayoutModel(currentModel);
       }
 
       if (error && error.code !== 'PGRST116') throw error;
@@ -501,18 +474,18 @@ export const ForecastSettings = () => {
                 </p>
                 
                 <div className="space-y-3">
-                  {detectedPayoutModel && (
+                  {userSelectedPayoutModel && (
                     <div className="p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
                       <p className="text-xs text-green-800 dark:text-green-200 flex items-center gap-1.5">
                         <AlertCircle className="h-3.5 w-3.5" />
-                        Auto-detected from your settlement history: <span className="font-semibold">{detectedPayoutModel === 'bi-weekly' ? '14-Day Settlements' : 'Daily Available'}</span>
+                        Using your selected payout schedule: <span className="font-semibold">{userSelectedPayoutModel === 'bi-weekly' ? '14-Day Settlements' : 'Daily Available'}</span>
                       </p>
                     </div>
                   )}
                   
                   <div>
                     <Label className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-2 block">
-                      Forecast Model {detectedPayoutModel ? '(Auto-Detected)' : ''}
+                      Forecast Model {userSelectedPayoutModel ? '(From Account Settings)' : ''}
                     </Label>
                     <div className="grid grid-cols-2 gap-2">
                       <div
@@ -536,11 +509,9 @@ export const ForecastSettings = () => {
                         <div className="text-[10px] opacity-80">Withdrawable funds</div>
                       </div>
                     </div>
-                    {!detectedPayoutModel && confirmedPayouts.length < 2 && (
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-2">
-                        Need at least 2 confirmed settlements to auto-detect your payout model
-                      </p>
-                    )}
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-2">
+                      Change your payout schedule in Amazon Account Settings
+                    </p>
                   </div>
 
                   <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
