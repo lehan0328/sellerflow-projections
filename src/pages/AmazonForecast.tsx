@@ -10,7 +10,8 @@ import {
   DollarSign,
   LineChart,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Target
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -223,6 +224,32 @@ export default function AmazonForecast() {
     };
   }, [amazonPayouts]);
 
+  // Calculate forecast accuracy
+  const [forecastAccuracy, setForecastAccuracy] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchAccuracy = async () => {
+      try {
+        const { data } = await supabase
+          .from('forecast_accuracy_log')
+          .select('difference_percentage')
+          .limit(10);
+
+        if (data && data.length > 0) {
+          const avgError = data.reduce((sum, log) => 
+            sum + Math.abs(log.difference_percentage), 0
+          ) / data.length;
+          const accuracy = 100 - avgError;
+          setForecastAccuracy(Math.max(0, Math.min(100, accuracy)));
+        }
+      } catch (error) {
+        console.error('Error fetching forecast accuracy:', error);
+      }
+    };
+
+    fetchAccuracy();
+  }, []);
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div>
@@ -248,6 +275,23 @@ export default function AmazonForecast() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Forecast Accuracy</CardTitle>
+            <Target className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {forecastAccuracy !== null ? `${forecastAccuracy.toFixed(1)}%` : 'N/A'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {forecastAccuracy !== null && forecastAccuracy >= 90 ? 'Excellent' : 
+               forecastAccuracy !== null && forecastAccuracy >= 80 ? 'Good' : 
+               forecastAccuracy !== null ? 'Fair' : 'Not enough data'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Payouts</CardTitle>
             <DollarSign className="h-4 w-4 text-green-600" />
           </CardHeader>
@@ -265,17 +309,6 @@ export default function AmazonForecast() {
           <CardContent>
             <div className="text-2xl font-bold">${metrics.avgPayout.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Per payout period</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Last Payout</CardTitle>
-            <Calendar className="h-4 w-4 text-amber-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${metrics.lastPayout.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Most recent</p>
           </CardContent>
         </Card>
 

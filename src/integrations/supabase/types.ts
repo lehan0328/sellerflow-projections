@@ -1083,6 +1083,71 @@ export type Database = {
         }
         Relationships: []
       }
+      forecast_accuracy_log: {
+        Row: {
+          account_id: string | null
+          actual_amount: number
+          amazon_account_id: string | null
+          created_at: string | null
+          difference_amount: number
+          difference_percentage: number
+          forecasted_amount: number
+          id: string
+          marketplace_name: string | null
+          monthly_revenue: string | null
+          payout_date: string
+          settlement_id: string
+          updated_at: string | null
+          user_email: string | null
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          actual_amount: number
+          amazon_account_id?: string | null
+          created_at?: string | null
+          difference_amount: number
+          difference_percentage: number
+          forecasted_amount: number
+          id?: string
+          marketplace_name?: string | null
+          monthly_revenue?: string | null
+          payout_date: string
+          settlement_id: string
+          updated_at?: string | null
+          user_email?: string | null
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          actual_amount?: number
+          amazon_account_id?: string | null
+          created_at?: string | null
+          difference_amount?: number
+          difference_percentage?: number
+          forecasted_amount?: number
+          id?: string
+          marketplace_name?: string | null
+          monthly_revenue?: string | null
+          payout_date?: string
+          settlement_id?: string
+          updated_at?: string | null
+          user_email?: string | null
+          user_id?: string
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forecast_accuracy_log_amazon_account_id_fkey"
+            columns: ["amazon_account_id"]
+            isOneToOne: false
+            referencedRelation: "amazon_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       income: {
         Row: {
           account_id: string | null
