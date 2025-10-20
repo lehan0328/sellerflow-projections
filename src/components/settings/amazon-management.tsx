@@ -112,7 +112,13 @@ export function AmazonManagement() {
       // Small delay to ensure toast is visible
       setTimeout(() => {
         console.log('REDIRECTING NOW to:', authUrl);
-        window.location.href = authUrl;
+        
+        // Show the URL in an alert before redirecting so you can copy it
+        const shouldProceed = confirm(`About to redirect to Amazon. URL:\n\n${authUrl}\n\nPress OK to continue, or Cancel to copy the URL first.`);
+        
+        if (shouldProceed) {
+          window.location.href = authUrl;
+        }
       }, 500);
     } catch (error) {
       console.error('=== ERROR IN AMAZON CONNECTION ===', error);
