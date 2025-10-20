@@ -24,15 +24,6 @@ export const hasPlanAccess = (
   const userPlanLevel = planHierarchy[userPlan] || 0;
   const requiredPlanLevel = planHierarchy[minimumPlan] || 0;
   
-  // Debug logging
-  console.log('[PLAN ACCESS CHECK]', {
-    userPlan,
-    minimumPlan,
-    userPlanLevel,
-    requiredPlanLevel,
-    hasAccess: userPlanLevel >= requiredPlanLevel
-  });
-  
   return userPlanLevel >= requiredPlanLevel;
 };
 

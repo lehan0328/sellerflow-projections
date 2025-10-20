@@ -114,20 +114,10 @@ export function AppSidebar({
       return;
     }
     
-    // Debug logging
-    console.log('[SIDEBAR CLICK]', {
-      sectionId,
-      plan: subscription.plan,
-      is_trialing: subscription.is_trialing,
-      subscribed: subscription.subscribed
-    });
-    
     // Scenario Planning: Professional + Trial only
-    // Allow access if: professional or higher plan, OR trialing, OR subscribed (to handle mapping issues)
     if (sectionId === 'scenario-planning') {
       const hasAccess = hasPlanAccess(subscription.plan, 'professional') || 
-                       subscription.is_trialing || 
-                       (subscription.subscribed && subscription.plan);
+                       subscription.is_trialing;
       if (!hasAccess) {
         setShowUpgradeModal(true);
         return;
@@ -135,11 +125,9 @@ export function AppSidebar({
     }
     
     // Document Storage: Growing, Professional + Trial
-    // Allow access if: growing or higher plan, OR trialing, OR subscribed (to handle mapping issues)
     if (sectionId === 'document-storage') {
       const hasAccess = hasPlanAccess(subscription.plan, 'growing') || 
-                       subscription.is_trialing || 
-                       (subscription.subscribed && subscription.plan);
+                       subscription.is_trialing;
       if (!hasAccess) {
         setShowUpgradeModal(true);
         return;
@@ -173,8 +161,7 @@ export function AppSidebar({
               
               // Check locks based on plan requirements
               const hasScenarioAccess = hasPlanAccess(subscription.plan, 'professional') || 
-                                       subscription.is_trialing || 
-                                       (subscription.subscribed && subscription.plan);
+                                       subscription.is_trialing;
               const showProfessionalLock = section.id === 'scenario-planning' && !hasScenarioAccess;
               
               return <SidebarMenuItem key={section.id}>
@@ -261,11 +248,10 @@ export function AppSidebar({
                 return null;
               }
               return <SidebarMenuItem key={section.id}>
-                    <SidebarMenuButton onClick={() => {
+                <SidebarMenuButton onClick={() => {
                   if (section.id === 'document-storage') {
                     const hasAccess = hasPlanAccess(subscription.plan, 'growing') || 
-                                    subscription.is_trialing || 
-                                    (subscription.subscribed && subscription.plan);
+                                    subscription.is_trialing;
                     if (!hasAccess) {
                       setShowUpgradeModal(true);
                       return;
@@ -296,7 +282,6 @@ export function AppSidebar({
                             {section.id === "document-storage" && 
                              !hasPlanAccess(subscription.plan, 'growing') && 
                              !subscription.is_trialing && 
-                             !(subscription.subscribed && subscription.plan) && 
                              <Lock className="h-4 w-4 text-muted-foreground" />}
                           </span>
                         </span>}
@@ -306,7 +291,6 @@ export function AppSidebar({
                       {isCollapsed && section.id === "document-storage" && 
                        !hasPlanAccess(subscription.plan, 'growing') && 
                        !subscription.is_trialing && 
-                       !(subscription.subscribed && subscription.plan) && 
                        <div className="absolute -top-1 -right-1">
                           <Lock className="h-3 w-3 text-muted-foreground" />
                         </div>}
