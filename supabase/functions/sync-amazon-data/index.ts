@@ -227,34 +227,54 @@ serve(async (req) => {
     if (transactionsToAdd.length === 0) {
       console.log('Generating demo transaction data...')
 
-      // Generate sample transactions for the last 30 days
+      // Generate sample transactions for the last 30 days with realistic data
     for (let i = 0; i < 30; i++) {
       const transactionDate = new Date(now)
       transactionDate.setDate(now.getDate() - i)
-      const transactionDateStr = transactionDate.toISOString().split('T')[0]
       
-      // Simulate various transaction types
+      // Calculate delivery date (2-4 days after order)
+      const deliveryDate = new Date(transactionDate)
+      deliveryDate.setDate(deliveryDate.getDate() + Math.floor(Math.random() * 3) + 2)
+      
+      // Simulate various transaction types with proper gross/net amounts
       const transactionTypes = [
-        { type: 'Order', amount: Math.random() * 500 + 50, description: 'Product Sale' },
-        { type: 'FBAInventoryFee', amount: -(Math.random() * 20 + 5), description: 'FBA Storage Fee' },
-        { type: 'Refund', amount: -(Math.random() * 100 + 25), description: 'Customer Refund' },
-        { type: 'ShippingCharge', amount: Math.random() * 15 + 5, description: 'Shipping Revenue' }
+        { type: 'Order', grossAmount: Math.random() * 500 + 50, description: 'Product Sale' },
+        { type: 'FBAInventoryFee', grossAmount: 0, netAmount: -(Math.random() * 20 + 5), description: 'FBA Storage Fee' },
+        { type: 'Refund', grossAmount: -(Math.random() * 100 + 25), description: 'Customer Refund' },
+        { type: 'ShippingCharge', grossAmount: Math.random() * 15 + 5, description: 'Shipping Revenue' }
       ]
 
       const randomTransaction = transactionTypes[Math.floor(Math.random() * transactionTypes.length)]
+      const isOrder = randomTransaction.type === 'Order'
+      
+      // Calculate realistic costs for orders
+      const grossAmount = randomTransaction.grossAmount
+      const shippingCost = isOrder ? Math.random() * 8 + 2 : 0
+      const adsCost = isOrder ? grossAmount * (Math.random() * 0.15) : 0 // 0-15% of gross
+      const fees = isOrder ? grossAmount * 0.15 : 0 // 15% Amazon fees
+      const returnRate = 0.01 + Math.random() * 0.04 // 1-5% return rate
+      const chargebackRate = 0.002 + Math.random() * 0.008 // 0.2-1% chargeback rate
+      const netAmount = randomTransaction.netAmount || (grossAmount - fees - shippingCost - adsCost)
       
       // Use deterministic transaction ID based on account, date, and index
-      const transactionId = `AMZ-${amazonAccountId.slice(0, 8)}-${transactionDateStr}-${i}`
+      const transactionId = `AMZ-${amazonAccountId.slice(0, 8)}-${transactionDate.toISOString().split('T')[0]}-${i}`
       
       transactionsToAdd.push({
         user_id: user.id,
         amazon_account_id: amazonAccountId,
+        account_id: amazonAccount.account_id,
         transaction_id: transactionId,
         transaction_type: randomTransaction.type,
-        amount: randomTransaction.amount,
+        amount: netAmount,
+        gross_amount: grossAmount,
+        delivery_date: isOrder ? deliveryDate.toISOString().split('T')[0] : null,
+        shipping_cost: shippingCost,
+        ads_cost: adsCost,
+        return_rate: returnRate,
+        chargeback_rate: chargebackRate,
         currency_code: 'USD',
         transaction_date: transactionDate.toISOString(),
-        settlement_id: `S${Math.floor(new Date(transactionDateStr).getTime() / 1000)}`,
+        settlement_id: `S${Math.floor(transactionDate.getTime() / 1000)}`,
         marketplace_name: amazonAccount.marketplace_name,
         description: randomTransaction.description
       })

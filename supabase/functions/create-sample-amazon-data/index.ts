@@ -89,16 +89,28 @@ serve(async (req) => {
         payout_type: 'bi-weekly',
       });
 
-      // Generate sample transactions for this payout
+      // Generate sample transactions for this payout with realistic data
       const numTransactions = Math.floor(Math.random() * 30) + 20;
       for (let j = 0; j < numTransactions; j++) {
         const transactionDate = new Date(payoutDate);
         transactionDate.setDate(transactionDate.getDate() - Math.floor(Math.random() * 14));
         
+        // Calculate delivery date (2-4 days after order)
+        const deliveryDate = new Date(transactionDate);
+        deliveryDate.setDate(deliveryDate.getDate() + Math.floor(Math.random() * 3) + 2);
+        
         const isOrder = Math.random() > 0.3;
-        const amount = isOrder 
+        const grossAmount = isOrder 
           ? Math.floor(Math.random() * 150) + 20
-          : -Math.floor(Math.random() * 30) - 5;
+          : 0;
+        
+        // Calculate realistic costs for orders
+        const shippingCost = isOrder ? Math.random() * 8 + 2 : 0;
+        const adsCost = isOrder ? grossAmount * (Math.random() * 0.15) : 0; // 0-15% of gross
+        const fees = isOrder ? grossAmount * 0.15 : -Math.floor(Math.random() * 30) - 5; // 15% fees or negative for FBA fees
+        const returnRate = 0.01 + Math.random() * 0.04; // 1-5% return rate
+        const chargebackRate = 0.002 + Math.random() * 0.008; // 0.2-1% chargeback rate
+        const netAmount = isOrder ? (grossAmount - fees - shippingCost - adsCost) : fees;
 
         transactions.push({
           user_id: user.id,
@@ -107,8 +119,14 @@ serve(async (req) => {
           settlement_id: settlementId,
           transaction_id: `TXN-${i}-${j}-${Date.now()}`,
           transaction_date: transactionDate.toISOString(),
+          delivery_date: isOrder ? deliveryDate.toISOString().split('T')[0] : null,
           transaction_type: isOrder ? 'Order' : 'FBAFee',
-          amount: amount,
+          amount: netAmount,
+          gross_amount: grossAmount,
+          shipping_cost: shippingCost,
+          ads_cost: adsCost,
+          return_rate: returnRate,
+          chargeback_rate: chargebackRate,
           currency_code: 'USD',
           marketplace_name: 'Amazon.com',
           description: isOrder ? `Sample Product Sale ${j + 1}` : `Fulfillment Fee ${j + 1}`,
