@@ -56,8 +56,20 @@ export function AmazonManagement() {
 
   const handleConnectAmazon = async () => {
     try {
-      // Get Amazon client ID from backend
-      const { data, error } = await supabase.functions.invoke('get-amazon-client-id');
+      // Get current session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error('Please log in to connect your Amazon account.');
+        return;
+      }
+
+      // Get Amazon client ID from backend with auth token
+      const { data, error } = await supabase.functions.invoke('get-amazon-client-id', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
       
       if (error) {
         console.error('Error fetching client ID:', error);

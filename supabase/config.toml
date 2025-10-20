@@ -91,7 +91,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.get-amazon-client-id]
-verify_jwt = false
+verify_jwt = true
 
 [functions.create-stripe-link-session]
 verify_jwt = true
