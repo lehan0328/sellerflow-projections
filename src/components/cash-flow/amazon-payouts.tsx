@@ -173,23 +173,11 @@ export function AmazonPayouts() {
             const daysUntil = getDaysUntil(aggregatedPayout.payout_date);
             const isUpcoming = daysUntil <= 7;
             const isForecasted = aggregatedPayout.status === 'forecasted';
-            const confidence = isForecasted ? aggregatedPayout.raw_settlement_data?.forecast_metadata?.confidence : null;
-            const riskLevel = isForecasted ? aggregatedPayout.raw_settlement_data?.forecast_metadata?.risk_level : null;
             
-            return <div key={aggregatedPayout.payout_date} className={`rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card ${isForecasted ? 'border-purple-500/30 bg-purple-500/5' : isUpcoming ? 'border-primary/30 bg-primary/5' : ''}`}>
+            return <div key={aggregatedPayout.payout_date} className={`rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card ${isUpcoming ? 'border-primary/30 bg-primary/5' : ''}`}>
                     <div className="flex items-center justify-between">
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
-                          {isForecasted && <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 border-purple-500/30">
-                              <Sparkles className="h-3 w-3 mr-1" />
-                              AI Forecast
-                            </Badge>}
-                          {isForecasted && confidence && <Badge variant="secondary" className="text-xs">
-                              {(confidence * 100).toFixed(0)}% confidence
-                            </Badge>}
-                          {isForecasted && riskLevel && <Badge variant="outline" className="text-xs capitalize">
-                              {riskLevel.replace('_', ' ')}
-                            </Badge>}
                           <Badge variant={getStatusColor(aggregatedPayout.status)} className="text-xs">
                             {aggregatedPayout.status}
                           </Badge>
