@@ -180,6 +180,53 @@ export const useUserSettings = () => {
 
   useEffect(() => {
     fetchUserSettings();
+
+    // Subscribe to realtime changes to user_settings
+    const setupRealtimeSubscription = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const channel = supabase
+          .channel('user-settings-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'user_settings',
+              filter: `user_id=eq.${user.id}`
+            },
+            (payload) => {
+              console.log('🔄 User settings changed:', payload);
+              if (payload.new) {
+                setForecastsEnabled(payload.new.forecasts_enabled ?? false);
+                setTotalCash(Number(payload.new.total_cash) || 0);
+                
+                // Update chart preferences
+                setChartPreferences({
+                  showCashFlowLine: payload.new.chart_show_cashflow_line ?? true,
+                  showTotalResourcesLine: payload.new.chart_show_resources_line ?? true,
+                  showCreditCardLine: payload.new.chart_show_credit_line ?? true,
+                  showReserveLine: payload.new.chart_show_reserve_line ?? true,
+                  showForecastLine: payload.new.chart_show_forecast_line ?? false,
+                  cashFlowColor: payload.new.chart_cashflow_color || 'hsl(221, 83%, 53%)',
+                  totalResourcesColor: payload.new.chart_resources_color || '#10b981',
+                  creditCardColor: payload.new.chart_credit_color || '#f59e0b',
+                  reserveColor: payload.new.chart_reserve_color || '#ef4444',
+                  forecastColor: payload.new.chart_forecast_color || '#a855f7',
+                });
+              }
+            }
+          )
+          .subscribe();
+
+        return () => {
+          channel.unsubscribe();
+        };
+      }
+    };
+
+    setupRealtimeSubscription();
   }, []);
 
   const setStartingBalance = async (amount: number) => {
