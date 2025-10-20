@@ -271,9 +271,9 @@ export const ForecastSettings = () => {
           toast.success("Forecast settings saved - forecasts disabled");
         }
       } else {
-        // Automatically regenerate forecasts with the new confidence threshold
+        // Automatically regenerate forecasts
         console.log('🔄 Starting forecast regeneration...');
-        toast.loading("Regenerating forecasts with new confidence threshold...");
+        const loadingToast = toast.loading("Regenerating forecasts...");
         
         // Delete old forecasts
         const { error: deleteError } = await supabase
@@ -295,6 +295,9 @@ export const ForecastSettings = () => {
         });
 
         console.log('📊 Forecast response:', { data, error });
+        
+        // Dismiss loading toast
+        toast.dismiss(loadingToast);
 
         if (error) {
           console.error('❌ Forecast regeneration error:', error);
