@@ -21,6 +21,10 @@ export interface AmazonPayout {
   raw_settlement_data?: any;
   created_at: string;
   updated_at: string;
+  available_for_daily_transfer?: number;
+  total_daily_draws?: number;
+  eligible_in_period?: number;
+  reserve_amount?: number;
   amazon_accounts?: {
     account_name: string;
     marketplace_name: string;
@@ -131,6 +135,12 @@ export const useAmazonPayouts = () => {
   const totalEstimated = amazonPayouts
     .filter(payout => payout.status === 'estimated')
     .reduce((sum, payout) => sum + payout.total_amount, 0);
+  
+  // Calculate available today (for daily payout accounts)
+  const todayStr = new Date().toISOString().split('T')[0];
+  const availableToday = amazonPayouts
+    .filter(payout => payout.payout_date === todayStr)
+    .reduce((sum, payout) => sum + (payout.available_for_daily_transfer || 0), 0);
 
   // Calculate orders total for current month
   const now = new Date();
@@ -152,6 +162,7 @@ export const useAmazonPayouts = () => {
     totalConfirmed,
     totalEstimated,
     monthlyOrdersTotal,
+    availableToday,
     refetch: fetchAmazonPayouts
   };
 };

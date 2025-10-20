@@ -1,0 +1,124 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get user from auth header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('No authorization header');
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
+      throw new Error('Invalid or expired token');
+    }
+
+    // Get request body
+    const { amazonAccountId, amount, drawDate, settlementId } = await req.json();
+
+    if (!amazonAccountId || !amount || !settlementId) {
+      throw new Error('Missing required fields: amazonAccountId, amount, settlementId');
+    }
+
+    // Get user's account_id
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('account_id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!profile?.account_id) {
+      throw new Error('User profile not found');
+    }
+
+    const today = drawDate || new Date().toISOString().split('T')[0];
+
+    // Record the daily draw
+    const { data: draw, error: drawError } = await supabase
+      .from('amazon_daily_draws')
+      .insert({
+        user_id: user.id,
+        account_id: profile.account_id,
+        amazon_account_id: amazonAccountId,
+        draw_date: today,
+        amount: amount,
+        settlement_id: settlementId,
+        settlement_period_start: today, // Will be updated with actual period
+        settlement_period_end: today,   // Will be updated with actual period
+      })
+      .select()
+      .single();
+
+    if (drawError) {
+      console.error('Error recording draw:', drawError);
+      throw drawError;
+    }
+
+    // Update the corresponding payout with new total_daily_draws
+    const { data: payout, error: payoutError } = await supabase
+      .from('amazon_payouts')
+      .select('total_daily_draws')
+      .eq('settlement_id', settlementId)
+      .eq('amazon_account_id', amazonAccountId)
+      .single();
+
+    if (!payoutError && payout) {
+      const newTotal = (payout.total_daily_draws || 0) + amount;
+      
+      await supabase
+        .from('amazon_payouts')
+        .update({
+          total_daily_draws: newTotal,
+          available_for_daily_transfer: Math.max(0, 
+            (payout as any).eligible_in_period - 
+            (payout as any).reserve_amount - 
+            newTotal
+          )
+        })
+        .eq('settlement_id', settlementId)
+        .eq('amazon_account_id', amazonAccountId);
+    }
+
+    console.log('Daily draw recorded successfully:', draw.id);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        draw_id: draw.id,
+        message: 'Daily draw recorded successfully'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      }
+    );
+  } catch (error) {
+    console.error('Error in record-daily-draw:', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      }
+    );
+  }
+});
