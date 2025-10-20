@@ -23,6 +23,7 @@ import { useIncome } from "@/hooks/useIncome";
 import { useExcludeToday } from "@/contexts/ExcludeTodayContext";
 import ScenarioPlanner from "@/pages/ScenarioPlanner";
 import Analytics from "@/pages/Analytics";
+import AmazonForecast from "@/pages/AmazonForecast";
 import DocumentStorage from "@/pages/DocumentStorage";
 import Support from "@/pages/Support";
 import Notifications from "@/pages/Notifications";
@@ -1754,6 +1755,9 @@ const Dashboard = () => {
       
       case "analytics":
         return <Analytics />;
+      
+      case "ai-forecast":
+        return <AmazonForecast />;
       
       case "document-storage":
         return <DocumentStorage />;

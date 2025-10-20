@@ -33,9 +33,7 @@ const overviewSections = [{
 }, {
   id: "ai-forecast",
   title: "Advanced Forecast",
-  icon: Sparkles,
-  isRoute: true,
-  url: "/ai-forecast"
+  icon: Sparkles
 }, {
   id: "scenario-planning",
   title: "Scenario Planning",
@@ -108,12 +106,6 @@ export function AppSidebar({
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleSectionClick = (sectionId: string, section?: any) => {
-    // Handle route navigation for Advanced Forecast
-    if (section?.isRoute && section?.url) {
-      navigate(section.url);
-      return;
-    }
-    
     // Always allow navigation during loading to prevent blocked interactions
     if (!subscription.isLoading) {
       // Scenario Planning: Professional + Trial only
