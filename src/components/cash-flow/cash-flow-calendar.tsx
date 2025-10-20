@@ -83,9 +83,9 @@ export const CashFlowCalendar = ({
   const { totalAvailableCredit } = useCreditCards();
   const { chartPreferences, updateChartPreferences } = useUserSettings();
   
+  // ALL STATE HOOKS MUST BE AT THE TOP - DO NOT ADD ANY BETWEEN DATA PROCESSING
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState<'calendar' | 'chart'>('chart');
-  useEffect(() => { console.log('[Calendar] currentDate changed:', currentDate); }, [currentDate]);
   const [chartTimeRange, setChartTimeRange] = useState<'1' | '3' | '6' | '12'>('3');
   const [chartType, setChartType] = useState<'bar' | 'line'>('line');
   const [selectedTransaction, setSelectedTransaction] = useState<CashFlowEvent | null>(null);
@@ -98,7 +98,7 @@ export const CashFlowCalendar = ({
   const [showTotalResourcesLine, setShowTotalResourcesLine] = useState(chartPreferences.showTotalResourcesLine);
   const [showCreditCardLine, setShowCreditCardLine] = useState(chartPreferences.showCreditCardLine);
   const [showReserveLine, setShowReserveLine] = useState(chartPreferences.showReserveLine);
-  const [showForecastLine, setShowForecastLine] = useState(true); // Always show forecast line
+  const [showForecastLine, setShowForecastLine] = useState(true);
   const [cashFlowColor, setCashFlowColor] = useState(chartPreferences.cashFlowColor);
   const [totalResourcesColor, setTotalResourcesColor] = useState(chartPreferences.totalResourcesColor);
   const [creditCardColor, setCreditCardColor] = useState(chartPreferences.creditCardColor);
@@ -109,6 +109,26 @@ export const CashFlowCalendar = ({
   const [zoomState, setZoomState] = useState<{ left?: number; right?: number } | null>(null);
   const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
   const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
+  
+  // Tooltip and chart state - MUST be with other hooks
+  const [activeTooltipIndex, setActiveTooltipIndex] = useState<number | null>(null);
+  const chartWrapperRef = useRef<HTMLDivElement | null>(null);
+  const [chartWidth, setChartWidth] = useState<number>(0);
+  const throttleRef = useRef<number | null>(null);
+  const chartMargin = { top: 32, right: 16, left: 8, bottom: 16 };
+  
+  useEffect(() => { console.log('[Calendar] currentDate changed:', currentDate); }, [currentDate]);
+  
+  // Chart resize observer
+  useEffect(() => {
+    if (!chartWrapperRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect?.width;
+      if (typeof w === 'number') setChartWidth(w);
+    });
+    ro.observe(chartWrapperRef.current);
+    return () => ro.disconnect();
+  }, []);
   
   // Sync local state with loaded preferences
   useEffect(() => {
@@ -635,22 +655,6 @@ export const CashFlowCalendar = ({
   const yPadding = Math.max(1000, Math.round(yRange * 0.05));
   const yDomain: [number, number] = [yMin - yPadding, yMax + yPadding];
   
-  // Controlled tooltip index to ensure tooltip shows anywhere vertically
-  const [activeTooltipIndex, setActiveTooltipIndex] = useState<number | null>(null);
-  const chartWrapperRef = useRef<HTMLDivElement | null>(null);
-  const [chartWidth, setChartWidth] = useState<number>(0);
-  const chartMargin = { top: 32, right: 16, left: 8, bottom: 16 };
-
-  useEffect(() => {
-    if (!chartWrapperRef.current) return;
-    const ro = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect?.width;
-      if (typeof w === 'number') setChartWidth(w);
-    });
-    ro.observe(chartWrapperRef.current);
-    return () => ro.disconnect();
-  }, []);
-
   const getChartInnerWidth = () => {
     const svg = chartWrapperRef.current?.querySelector('svg.recharts-surface') as SVGElement | null;
     return svg?.clientWidth || chartWidth || 0;
@@ -681,9 +685,6 @@ export const CashFlowCalendar = ({
     const idx = Math.round(fraction * (displayData.length - 1));
     return Math.max(0, Math.min(displayData.length - 1, idx));
   };
-
-  // Throttle helper
-  const throttleRef = useRef<number | null>(null);
   
   // Wrapper-level handlers to keep tooltip active across the whole chart area (including left margins)
   const handleWrapperMouseMove = useCallback((ev: any) => {
