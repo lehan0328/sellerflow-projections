@@ -624,7 +624,7 @@ export const ForecastSettings = () => {
               <div>
                 <Button 
                   onClick={handleSave} 
-                  disabled={saving || !hasAmazonStore || !forecastsEnabled || confidenceThreshold === savedConfidenceThreshold}
+                  disabled={saving || !forecastsEnabled || confidenceThreshold === savedConfidenceThreshold}
                   className="w-full"
                 >
                   {saving ? "Saving..." : confidenceThreshold === savedConfidenceThreshold ? "No Changes to Save" : "Save Forecast Settings"}
