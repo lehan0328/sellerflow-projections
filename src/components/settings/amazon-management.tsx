@@ -107,19 +107,10 @@ export function AmazonManagement() {
       console.log('Amazon OAuth URL:', authUrl);
       
       toast.info('Redirecting to Amazon Seller Central...');
-      console.log('Step 4: Redirecting in 500ms...');
+      console.log('Step 4: Redirecting to Amazon...');
       
-      // Small delay to ensure toast is visible
-      setTimeout(() => {
-        console.log('REDIRECTING NOW to:', authUrl);
-        
-        // Show the URL in an alert before redirecting so you can copy it
-        const shouldProceed = confirm(`About to redirect to Amazon. URL:\n\n${authUrl}\n\nPress OK to continue, or Cancel to copy the URL first.`);
-        
-        if (shouldProceed) {
-          window.location.href = authUrl;
-        }
-      }, 500);
+      // Redirect to Amazon authorization
+      window.location.href = authUrl;
     } catch (error) {
       console.error('=== ERROR IN AMAZON CONNECTION ===', error);
       toast.error(`Failed to initiate Amazon connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
