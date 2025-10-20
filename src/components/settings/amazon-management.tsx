@@ -56,16 +56,22 @@ export function AmazonManagement() {
 
   const handleConnectAmazon = async () => {
     try {
-      // Get Amazon client ID from backend (it's stored in secrets)
+      // Get Amazon client ID from backend
       const { data, error } = await supabase.functions.invoke('get-amazon-client-id');
       
-      if (error || !data?.clientId) {
+      if (error) {
+        console.error('Error fetching client ID:', error);
         toast.error('Amazon integration not configured. Please contact support.');
-        console.error('Failed to get Amazon client ID:', error);
         return;
       }
       
-      const clientId = data.clientId;
+      const clientId = data?.clientId;
+      
+      if (!clientId) {
+        toast.error('Amazon client ID not available. Please contact support.');
+        return;
+      }
+      
       const redirectUri = encodeURIComponent(`${window.location.origin}/amazon/callback`);
       const state = selectedMarketplace;
       
