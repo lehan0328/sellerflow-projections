@@ -151,7 +151,23 @@ export const ForecastSettings = () => {
         toast.success("Forecasts disabled and removed");
         await refetchPayouts();
       } else {
-        toast.success("Forecasts enabled - click Save Settings to regenerate");
+        // Automatically regenerate forecasts when enabled
+        const loadingToast = toast.loading("Generating forecasts...");
+        
+        // Generate new forecasts using mathematical model
+        const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
+          body: { userId: currentUser.id }
+        });
+
+        toast.dismiss(loadingToast);
+
+        if (error) {
+          console.error('❌ Forecast generation error:', error);
+          toast.error("Forecasts enabled but generation failed");
+        } else if (data?.success) {
+          toast.success("Forecasts enabled and generated!");
+          await refetchPayouts();
+        }
       }
     } catch (error) {
       console.error('Error toggling forecasts:', error);
