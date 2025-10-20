@@ -160,11 +160,6 @@ export default function AmazonForecast() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-3 mb-2">
-        <Brain className="h-8 w-8 text-primary" />
-        <h1 className="text-3xl font-bold">AI Amazon Payout Forecasting</h1>
-      </div>
-
       {/* Forecast Settings */}
       <ForecastSettings />
 
