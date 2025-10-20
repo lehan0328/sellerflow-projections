@@ -70,32 +70,21 @@ serve(async (req) => {
       throw drawError;
     }
 
-    // Update the corresponding payout with new total_daily_draws
-    const { data: payout, error: payoutError } = await supabase
-      .from('amazon_payouts')
-      .select('total_daily_draws')
-      .eq('settlement_id', settlementId)
-      .eq('amazon_account_id', amazonAccountId)
-      .single();
-
-    if (!payoutError && payout) {
-      const newTotal = (payout.total_daily_draws || 0) + amount;
-      
-      await supabase
-        .from('amazon_payouts')
-        .update({
-          total_daily_draws: newTotal,
-          available_for_daily_transfer: Math.max(0, 
-            (payout as any).eligible_in_period - 
-            (payout as any).reserve_amount - 
-            newTotal
-          )
-        })
-        .eq('settlement_id', settlementId)
-        .eq('amazon_account_id', amazonAccountId);
-    }
-
     console.log('Daily draw recorded successfully:', draw.id);
+
+    // Trigger recalculation of daily payouts
+    const { error: recalcError } = await supabase.functions.invoke('recalculate-daily-payouts', {
+      body: {
+        amazonAccountId,
+        settlementId,
+        drawAmount: amount
+      }
+    });
+
+    if (recalcError) {
+      console.error('Error recalculating payouts:', recalcError);
+      // Don't fail the whole operation if recalc fails
+    }
 
     return new Response(
       JSON.stringify({

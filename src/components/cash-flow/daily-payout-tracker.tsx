@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { CalendarClock, TrendingUp, Wallet, AlertCircle } from "lucide-react";
+import { CalendarClock, TrendingUp, Wallet, AlertCircle, DollarSign } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -12,22 +12,26 @@ interface DailyPayoutTrackerProps {
   amazonAccountId: string;
   settlementId: string;
   settlementDate: string;
-  availableToday: number;
-  projectedSettlement: number;
+  dailyAmounts: Array<{ date: string; amount: number; cumulative: number }>;
+  lumpSumAmount: number;
   totalDrawsToDate: number;
-  daysUntilSettlement: number;
 }
 
 export function DailyPayoutTracker({
   amazonAccountId,
   settlementId,
   settlementDate,
-  availableToday,
-  projectedSettlement,
+  dailyAmounts,
+  lumpSumAmount,
   totalDrawsToDate,
-  daysUntilSettlement,
 }: DailyPayoutTrackerProps) {
   const [isTransferring, setIsTransferring] = useState(false);
+  
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayData = dailyAmounts.find(d => d.date === todayStr);
+  const availableToday = todayData?.amount || 0;
+  const cumulativeAvailable = todayData?.cumulative || 0;
+  const daysUntilSettlement = dailyAmounts.length;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -76,14 +80,11 @@ export function DailyPayoutTracker({
     }
   };
 
-  // Calculate progress towards settlement
-  const progressPercentage = Math.min(100, 
-    projectedSettlement > 0 
-      ? ((projectedSettlement + totalDrawsToDate) / (projectedSettlement + totalDrawsToDate)) * 100 
-      : 0
-  );
-
-  const dailyIncrement = projectedSettlement / Math.max(1, daysUntilSettlement);
+  // Calculate progress
+  const totalProjected = lumpSumAmount + totalDrawsToDate;
+  const progressPercentage = totalProjected > 0 
+    ? (totalDrawsToDate / totalProjected) * 100 
+    : 0;
 
   return (
     <Card className="border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-background">
@@ -107,13 +108,13 @@ export function DailyPayoutTracker({
         {/* Available Today */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-medium text-muted-foreground">Available Today</p>
               <p className="text-3xl font-bold text-finance-positive">
                 {formatCurrency(availableToday)}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Ready for daily transfer
+                Cumulative if not withdrawn: {formatCurrency(cumulativeAvailable)}
               </p>
             </div>
             <Button 
@@ -127,32 +128,47 @@ export function DailyPayoutTracker({
           </div>
         </div>
 
-        {/* Projected Settlement */}
-        <div className="space-y-3 p-4 rounded-lg bg-muted/50">
+        {/* Lump Sum Settlement */}
+        <div className="space-y-3 p-4 rounded-lg bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border border-purple-200 dark:border-purple-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CalendarClock className="h-4 w-4 text-muted-foreground" />
-              <p className="text-sm font-medium">Projected Settlement</p>
+              <DollarSign className="h-5 w-5 text-purple-600" />
+              <div>
+                <p className="text-sm font-medium">Final Settlement (Lump Sum)</p>
+                <p className="text-xs text-muted-foreground">Due {formatDate(settlementDate)}</p>
+              </div>
             </div>
-            <p className="text-2xl font-bold">{formatCurrency(projectedSettlement)}</p>
+            <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">
+              {formatCurrency(lumpSumAmount)}
+            </p>
           </div>
           <Progress value={progressPercentage} className="h-2" />
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Total drawn: {formatCurrency(totalDrawsToDate)}</span>
-            <span>Remaining: {formatCurrency(projectedSettlement)}</span>
+            <span>Already drawn: {formatCurrency(totalDrawsToDate)}</span>
+            <span>Remaining: {formatCurrency(lumpSumAmount)}</span>
           </div>
+          <p className="text-xs text-purple-600 dark:text-purple-400">
+            Redistributed mathematically across {daysUntilSettlement} days based on DD+7 sales trends
+          </p>
         </div>
 
-        {/* Daily Increment Info */}
-        <div className="flex items-start gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
-          <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5" />
-          <div className="flex-1 space-y-1">
-            <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-              Daily Accumulation
-            </p>
-            <p className="text-xs text-blue-700 dark:text-blue-300">
-              Approximately {formatCurrency(dailyIncrement)} adds to your available balance each day
-            </p>
+        {/* Daily Distribution Preview */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Next 7 Days Distribution</p>
+          <div className="space-y-1">
+            {dailyAmounts.slice(0, 7).map((day) => (
+              <div key={day.date} className="flex items-center justify-between text-sm p-2 rounded bg-muted/30">
+                <span className="text-muted-foreground">
+                  {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </span>
+                <div className="flex items-center gap-3">
+                  <span className="font-medium">{formatCurrency(day.amount)}</span>
+                  <span className="text-xs text-muted-foreground">
+                    (Cumulative: {formatCurrency(day.cumulative)})
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 

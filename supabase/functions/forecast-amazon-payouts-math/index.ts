@@ -322,67 +322,128 @@ function generateDailyForecasts(
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Build cumulative eligible series
-  const cumulativeEligible = new Map<string, number>();
-  let cumSum = 0;
-  
+  // Calculate total eligible amount in the current settlement bucket (next 14 days)
   const sortedDates = Array.from(dailyEligibleMap.keys()).sort();
+  const settlementDate = new Date(today);
+  settlementDate.setDate(settlementDate.getDate() + 14);
+  const settlementDateStr = settlementDate.toISOString().split('T')[0];
+  
+  // Calculate lump sum (total eligible in settlement period minus reserve)
+  let totalEligible = 0;
   sortedDates.forEach(date => {
-    cumSum += dailyEligibleMap.get(date) || 0;
-    cumulativeEligible.set(date, cumSum);
+    if (date <= settlementDateStr && date > today.toISOString().split('T')[0]) {
+      totalEligible += dailyEligibleMap.get(date) || 0;
+    }
   });
 
-  // Generate 90 daily forecasts
-  for (let i = 1; i <= 90; i++) {
+  // Calculate reserve for settlement period
+  let settlementReserve = 0;
+  const reserveCutoffDate = new Date(settlementDate);
+  reserveCutoffDate.setDate(reserveCutoffDate.getDate() - reserveLag);
+  const reserveCutoffStr = reserveCutoffDate.toISOString().split('T')[0];
+
+  transactions.forEach(txn => {
+    if (txn.delivery_date > reserveCutoffStr && txn.delivery_date <= settlementDateStr) {
+      settlementReserve += txn.net_amount;
+    }
+  });
+
+  // Calculate lump sum after reserve
+  const lumpSumBeforeAdjustment = Math.max(0, totalEligible - settlementReserve - minReserveFloor);
+  
+  // Apply risk adjustment to lump sum
+  const adjustmentMultiplier = 1 - (riskAdjustment / 100);
+  const adjustedLumpSum = lumpSumBeforeAdjustment * adjustmentMultiplier;
+  
+  // Distribute lump sum evenly across 14 days
+  const dailyIncrement = adjustedLumpSum / 14;
+  
+  let cumulativeAvailable = 0;
+  const settlementId = `settlement-${account.id}-${settlementDateStr}`;
+
+  // Generate daily forecasts for current settlement period (next 14 days)
+  for (let i = 1; i <= 14; i++) {
     const forecastDate = new Date(today);
     forecastDate.setDate(forecastDate.getDate() + i);
     const forecastDateStr = forecastDate.toISOString().split('T')[0];
 
-    // Avail(t) = sum of eligible up to t
-    let availableBalance = cumulativeEligible.get(forecastDateStr) || cumSum;
-
-    // Calculate AccountReserve(t): deliveries in last L days
-    let accountReserve = 0;
-    const reserveCutoffDate = new Date(forecastDate);
-    reserveCutoffDate.setDate(reserveCutoffDate.getDate() - reserveLag);
-    const reserveCutoffStr = reserveCutoffDate.toISOString().split('T')[0];
-
-    transactions.forEach(txn => {
-      if (txn.delivery_date > reserveCutoffStr && txn.delivery_date <= forecastDateStr) {
-        accountReserve += txn.net_amount;
-      }
-    });
-
-    // DailyPayout(t) = MAX(0, Avail(t) - AccountReserve(t) - MinReserveFloor)
-    let dailyPayout = availableBalance - accountReserve - minReserveFloor;
-
-    // Apply risk adjustment
-    const adjustmentMultiplier = 1 - (riskAdjustment / 100);
-    dailyPayout *= adjustmentMultiplier;
-
-    // Ensure non-negative
-    dailyPayout = Math.max(0, dailyPayout);
+    cumulativeAvailable += dailyIncrement;
+    const isSettlementDay = i === 14;
 
     forecasts.push({
       user_id: userId,
       account_id: account.account_id,
       amazon_account_id: account.id,
       payout_date: forecastDateStr,
-      total_amount: dailyPayout,
-      reserve_amount: accountReserve,
+      total_amount: dailyIncrement, // Daily increment shown on calendar
+      reserve_amount: settlementReserve / 14, // Distribute reserve proportionally
       adjustments: 0,
-      orders_total: dailyPayout * 1.2,
-      fees_total: dailyPayout * 0.15,
+      orders_total: totalEligible / 14, // Distribute orders proportionally
+      fees_total: (totalEligible * 0.15) / 14,
       refunds_total: 0,
       other_total: 0,
       status: 'forecasted',
-      payout_type: 'daily',
+      payout_type: 'bi-weekly',
       marketplace_name: account.marketplace_name,
-      settlement_id: `forecast_daily_${account.id}_${i}`,
-      transaction_count: 0,
+      settlement_id: settlementId,
+      transaction_count: Math.round(transactions.length / 14),
       currency_code: 'USD',
-      modeling_method: 'mathematical_daily'
+      modeling_method: 'daily_distribution_dd7',
+      eligible_in_period: isSettlementDay ? adjustedLumpSum : 0, // Show lump sum only on settlement day
+      available_for_daily_transfer: dailyIncrement,
+      total_daily_draws: 0,
+      last_draw_calculation_date: today.toISOString().split('T')[0]
     });
+  }
+
+  // Generate additional forecasts for next cycles (15-90 days)
+  const numberOfAdditionalCycles = Math.floor((90 - 14) / 14);
+  
+  for (let cycle = 1; cycle <= numberOfAdditionalCycles; cycle++) {
+    const cycleStartDay = 14 * cycle + 1;
+    const cycleEndDay = 14 * (cycle + 1);
+    const cycleSettlementDate = new Date(today);
+    cycleSettlementDate.setDate(cycleSettlementDate.getDate() + cycleEndDay);
+    const cycleSettlementDateStr = cycleSettlementDate.toISOString().split('T')[0];
+    const cycleSettlementId = `settlement-${account.id}-${cycleSettlementDateStr}`;
+    
+    // Use average from current cycle for future cycles
+    const futureDaily = dailyIncrement;
+    let futureCumulative = 0;
+    
+    for (let i = cycleStartDay; i <= cycleEndDay; i++) {
+      const forecastDate = new Date(today);
+      forecastDate.setDate(forecastDate.getDate() + i);
+      const forecastDateStr = forecastDate.toISOString().split('T')[0];
+      
+      futureCumulative += futureDaily;
+      const isSettlementDay = i === cycleEndDay;
+
+      forecasts.push({
+        user_id: userId,
+        account_id: account.account_id,
+        amazon_account_id: account.id,
+        payout_date: forecastDateStr,
+        total_amount: futureDaily,
+        reserve_amount: settlementReserve / 14,
+        adjustments: 0,
+        orders_total: totalEligible / 14,
+        fees_total: (totalEligible * 0.15) / 14,
+        refunds_total: 0,
+        other_total: 0,
+        status: 'forecasted',
+        payout_type: 'bi-weekly',
+        marketplace_name: account.marketplace_name,
+        settlement_id: cycleSettlementId,
+        transaction_count: Math.round(transactions.length / 14),
+        currency_code: 'USD',
+        modeling_method: 'daily_distribution_projected',
+        eligible_in_period: isSettlementDay ? (futureDaily * 14) : 0,
+        available_for_daily_transfer: futureDaily,
+        total_daily_draws: 0,
+        last_draw_calculation_date: today.toISOString().split('T')[0]
+      });
+    }
   }
 
   return forecasts;
