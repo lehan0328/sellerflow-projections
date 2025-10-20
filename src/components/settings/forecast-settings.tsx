@@ -124,61 +124,8 @@ export const ForecastSettings = () => {
   };
 
   const handleToggleForecast = async (enabled: boolean) => {
-    if (!enabled) {
-      // Show confirmation dialog before disabling
-      setShowDisableConfirm(true);
-      return;
-    }
-
-    // Check if 24 hours have passed
-    if (!canReEnable) {
-      toast.error(`You can re-enable forecasts in ${hoursUntilReEnable} hours`);
-      return;
-    }
-
-    // Re-enable forecasts
-    setTogglingForecast(true);
-    try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (!currentUser) throw new Error("Not authenticated");
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('account_id')
-        .eq('user_id', currentUser.id)
-        .maybeSingle();
-
-      if (!profile?.account_id) throw new Error("Account not found");
-
-      const { error: updateError } = await supabase
-        .from('user_settings')
-        .upsert({
-          user_id: currentUser.id,
-          account_id: profile.account_id,
-          forecasts_enabled: true,
-          forecasts_disabled_at: null,
-          forecast_confidence_threshold: confidenceThreshold
-        }, {
-          onConflict: 'user_id'
-        });
-
-      if (updateError) throw updateError;
-
-      setForecastsEnabled(true);
-      setDisabledAt(null);
-      toast.success("AI forecasts re-enabled");
-      
-      // Regenerate forecasts
-      await handleSave();
-      
-      // Refresh payout data to show new forecasts
-      refetchPayouts();
-    } catch (error) {
-      console.error('Error enabling forecasts:', error);
-      toast.error("Failed to enable forecasts");
-    } finally {
-      setTogglingForecast(false);
-    }
+    // Just update local state - user will click Save Settings to apply
+    setForecastsEnabled(enabled);
   };
 
   const confirmDisableForecast = async () => {
