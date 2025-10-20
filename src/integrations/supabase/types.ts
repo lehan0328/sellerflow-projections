@@ -205,6 +205,7 @@ export type Database = {
           token_expires_at: string | null
           updated_at: string
           user_id: string
+          uses_daily_payouts: boolean | null
         }
         Insert: {
           account_id?: string | null
@@ -227,6 +228,7 @@ export type Database = {
           token_expires_at?: string | null
           updated_at?: string
           user_id: string
+          uses_daily_payouts?: boolean | null
         }
         Update: {
           account_id?: string | null
@@ -249,14 +251,79 @@ export type Database = {
           token_expires_at?: string | null
           updated_at?: string
           user_id?: string
+          uses_daily_payouts?: boolean | null
         }
         Relationships: []
+      }
+      amazon_daily_draws: {
+        Row: {
+          account_id: string | null
+          amazon_account_id: string
+          amount: number
+          created_at: string
+          draw_date: string
+          id: string
+          notes: string | null
+          raw_data: Json | null
+          settlement_id: string
+          settlement_period_end: string
+          settlement_period_start: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amazon_account_id: string
+          amount: number
+          created_at?: string
+          draw_date: string
+          id?: string
+          notes?: string | null
+          raw_data?: Json | null
+          settlement_id: string
+          settlement_period_end: string
+          settlement_period_start: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amazon_account_id?: string
+          amount?: number
+          created_at?: string
+          draw_date?: string
+          id?: string
+          notes?: string | null
+          raw_data?: Json | null
+          settlement_id?: string
+          settlement_period_end?: string
+          settlement_period_start?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "amazon_daily_draws_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "amazon_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "amazon_daily_draws_amazon_account_id_fkey"
+            columns: ["amazon_account_id"]
+            isOneToOne: false
+            referencedRelation: "amazon_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       amazon_payouts: {
         Row: {
           account_id: string | null
           adjustments: number | null
           amazon_account_id: string
+          available_for_daily_transfer: number | null
           created_at: string
           currency_code: string
           eligible_in_period: number | null
@@ -264,6 +331,7 @@ export type Database = {
           forecast_accuracy_percentage: number | null
           forecast_replaced_at: string | null
           id: string
+          last_draw_calculation_date: string | null
           marketplace_name: string
           modeling_method: string | null
           orders_total: number | null
@@ -277,6 +345,7 @@ export type Database = {
           settlement_id: string
           status: string
           total_amount: number
+          total_daily_draws: number | null
           transaction_count: number | null
           updated_at: string
           user_id: string
@@ -285,6 +354,7 @@ export type Database = {
           account_id?: string | null
           adjustments?: number | null
           amazon_account_id: string
+          available_for_daily_transfer?: number | null
           created_at?: string
           currency_code?: string
           eligible_in_period?: number | null
@@ -292,6 +362,7 @@ export type Database = {
           forecast_accuracy_percentage?: number | null
           forecast_replaced_at?: string | null
           id?: string
+          last_draw_calculation_date?: string | null
           marketplace_name: string
           modeling_method?: string | null
           orders_total?: number | null
@@ -305,6 +376,7 @@ export type Database = {
           settlement_id: string
           status?: string
           total_amount?: number
+          total_daily_draws?: number | null
           transaction_count?: number | null
           updated_at?: string
           user_id: string
@@ -313,6 +385,7 @@ export type Database = {
           account_id?: string | null
           adjustments?: number | null
           amazon_account_id?: string
+          available_for_daily_transfer?: number | null
           created_at?: string
           currency_code?: string
           eligible_in_period?: number | null
@@ -320,6 +393,7 @@ export type Database = {
           forecast_accuracy_percentage?: number | null
           forecast_replaced_at?: string | null
           id?: string
+          last_draw_calculation_date?: string | null
           marketplace_name?: string
           modeling_method?: string | null
           orders_total?: number | null
@@ -333,6 +407,7 @@ export type Database = {
           settlement_id?: string
           status?: string
           total_amount?: number
+          total_daily_draws?: number | null
           transaction_count?: number | null
           updated_at?: string
           user_id?: string
