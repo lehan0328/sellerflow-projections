@@ -10,19 +10,25 @@ export const hasPlanAccess = (
   userPlan: PlanTier | null | undefined,
   minimumPlan: 'starter' | 'growing' | 'professional'
 ): boolean => {
-  if (!userPlan) return false;
+  // Always return consistent result - false if no plan
+  if (!userPlan) {
+    return false;
+  }
   
   const planHierarchy: Record<string, number> = {
     'starter': 1,
     'growing': 2,
     'professional': 3,
-    // Enterprise plans have all features
     'enterprise': 4
   };
   
-  // Get the user's plan level, defaulting to 0 if not found
-  const userPlanLevel = planHierarchy[userPlan] || 0;
-  const requiredPlanLevel = planHierarchy[minimumPlan] || 0;
+  const userPlanLevel = planHierarchy[userPlan as string];
+  const requiredPlanLevel = planHierarchy[minimumPlan];
+  
+  // If user plan not found in hierarchy, treat as no access
+  if (userPlanLevel === undefined) {
+    return false;
+  }
   
   return userPlanLevel >= requiredPlanLevel;
 };
