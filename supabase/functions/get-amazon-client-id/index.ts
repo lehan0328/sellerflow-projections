@@ -35,18 +35,18 @@ serve(async (req) => {
       )
     }
 
-    // Amazon OAuth client ID is safe to expose (it's public in the authorization URL anyway)
-    const clientId = Deno.env.get('AMAZON_CLIENT_ID')
+    // Amazon SP-API Application ID is safe to expose (it's public in the authorization URL anyway)
+    const appId = Deno.env.get('AMAZON_APP_ID')
 
-    if (!clientId) {
+    if (!appId) {
       return new Response(
-        JSON.stringify({ error: 'Amazon client ID not configured' }),
+        JSON.stringify({ error: 'Amazon SP-API Application ID not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     return new Response(
-      JSON.stringify({ clientId }),
+      JSON.stringify({ clientId: appId }), // Keep field name for backward compatibility
       {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
