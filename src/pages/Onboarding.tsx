@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, ShoppingCart, CheckCircle2, ArrowRight } from "lucide-react";
+import { Building2, ShoppingCart, CheckCircle2, ArrowRight, Sparkles, TrendingUp, Brain } from "lucide-react";
 import { toast } from "sonner";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { EnterpriseSetupModal } from "@/components/EnterpriseSetupModal";
 import { useSubscription } from "@/hooks/useSubscription";
 import aurenIcon from "@/assets/auren-icon-blue.png";
+import { supabase } from "@/integrations/supabase/client";
 
 const marketplaces = [
   { id: "ATVPDKIKX0DER", name: "United States", code: "US" },
@@ -36,10 +37,11 @@ export default function Onboarding() {
   const { addAmazonAccount } = useAmazonAccounts();
   const { product_id } = useSubscription();
   
-  const [currentStep, setCurrentStep] = useState<'welcome' | 'amazon' | 'bank'>('welcome');
+  const [currentStep, setCurrentStep] = useState<'welcome' | 'amazon' | 'bank' | 'forecasting'>('welcome');
   const [showEnterpriseSetup, setShowEnterpriseSetup] = useState(false);
   const [amazonSkipped, setAmazonSkipped] = useState(false);
   const [bankSkipped, setBankSkipped] = useState(false);
+  const [forecastingEnabled, setForecastingEnabled] = useState(false);
 
   const [amazonFormData, setAmazonFormData] = useState({
     seller_id: '',
@@ -87,7 +89,7 @@ export default function Onboarding() {
 
   const handleAddBankAccount = async () => {
     toast.info("Plaid integration requires backend setup. Skipping for now.");
-    navigate('/dashboard');
+    setCurrentStep('forecasting');
   };
 
   const handleSkipAmazon = () => {
@@ -97,11 +99,51 @@ export default function Onboarding() {
 
   const handleSkipBank = () => {
     setBankSkipped(true);
-    navigate('/dashboard');
+    setCurrentStep('forecasting');
   };
 
-  const handleFinish = () => {
-    navigate('/dashboard');
+  const handleFinish = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/dashboard');
+        return;
+      }
+
+      // Get account_id from profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (profile?.account_id) {
+        // Save forecasting preference
+        await supabase
+          .from('user_settings')
+          .upsert({
+            user_id: user.id,
+            account_id: profile.account_id,
+            forecasts_enabled: forecastingEnabled,
+            forecast_confidence_threshold: 8, // Default to Moderate
+            default_reserve_lag_days: 7
+          }, {
+            onConflict: 'user_id'
+          });
+
+        // If enabled, generate initial forecasts
+        if (forecastingEnabled) {
+          toast.loading("Setting up your forecasts...");
+          await supabase.functions.invoke('forecast-amazon-payouts-math', {
+            body: { userId: user.id }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error saving onboarding preferences:', error);
+    } finally {
+      navigate('/dashboard');
+    }
   };
 
   return (
@@ -332,6 +374,83 @@ export default function Onboarding() {
                   className="flex-1 bg-gradient-primary"
                 >
                   Connect Bank Account
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Forecasting Step */}
+        {currentStep === 'forecasting' && (
+          <Card className="shadow-2xl border border-primary/20 backdrop-blur-xl bg-card/95">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-6 w-6 text-purple-600" />
+                <CardTitle className="text-2xl">AI-Powered Forecasting</CardTitle>
+              </div>
+              <CardDescription>
+                Would you like to enable mathematical payout forecasting?
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg p-6 border-2 border-blue-200 dark:border-blue-800">
+                <div className="flex items-start gap-3 mb-4">
+                  <Brain className="h-6 w-6 text-purple-600 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Mathematical Payout Forecasting</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Our forecasting system uses sophisticated mathematical models to predict your Amazon payouts based on:
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 ml-9 text-sm">
+                  <div className="flex items-start gap-2">
+                    <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <span><strong>Transaction History:</strong> Analyzes your sales, fees, and settlement patterns</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <span><strong>Reserve Modeling:</strong> Calculates held reserves based on Amazon's DD+7 schedule</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <span><strong>Risk Adjustment:</strong> Accounts for returns, chargebacks, and seasonal variations</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <span><strong>Configurable Safety Nets:</strong> Choose between aggressive, moderate, or conservative forecasts</span>
+                  </div>
+                </div>
+
+                <div className="mt-4 p-3 bg-white/50 dark:bg-black/20 rounded border border-blue-300 dark:border-blue-700">
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Note:</strong> You can enable or disable forecasts anytime from Settings. The system works best when you have at least 3 confirmed payouts for accurate predictions.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => {
+                    setForecastingEnabled(true);
+                    handleFinish();
+                  }}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-12 text-base font-semibold"
+                >
+                  <Sparkles className="h-5 w-5 mr-2" />
+                  Yes, Enable Forecasting
+                </Button>
+                
+                <Button 
+                  onClick={() => {
+                    setForecastingEnabled(false);
+                    handleFinish();
+                  }}
+                  variant="outline"
+                  className="w-full"
+                >
+                  No, I'll Enable Later
                 </Button>
               </div>
             </CardContent>
