@@ -33,6 +33,9 @@ export const ForecastSettings = () => {
   const { user } = useAuth();
   const { amazonAccounts } = useAmazonAccounts();
   const { amazonPayouts, refetch: refetchPayouts } = useAmazonPayouts();
+  
+  // Check if we're on the AI Forecast page
+  const isOnForecastPage = window.location.pathname === '/ai-forecast';
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [confidenceThreshold, setConfidenceThreshold] = useState(8); // 3 = Aggressive, 8 = Moderate, 15 = Conservative
@@ -413,15 +416,17 @@ export const ForecastSettings = () => {
               <CardTitle>AI Forecast Settings</CardTitle>
             </div>
             <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/ai-forecast')}
-                className="flex items-center gap-2"
-              >
-                <TrendingUp className="h-4 w-4" />
-                View AI Forecast
-              </Button>
+              {!isOnForecastPage && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/ai-forecast')}
+                  className="flex items-center gap-2"
+                >
+                  <TrendingUp className="h-4 w-4" />
+                  View Advanced Forecast
+                </Button>
+              )}
               <div className="flex items-center gap-2">
                 <Label htmlFor="forecast-toggle" className="text-sm">
                   AI Forecasts {forecastsEnabled ? 'Enabled' : 'Disabled'}
