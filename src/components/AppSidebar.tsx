@@ -252,8 +252,10 @@ export function AppSidebar({
               if (isFlexReport && userRole === 'staff') {
                 return null;
               }
-              return <SidebarMenuItem key={section.id}>
-                <SidebarMenuButton onClick={() => {
+               return <SidebarMenuItem key={section.id}>
+                <SidebarMenuButton onClick={(e) => {
+                  e.preventDefault();
+                  
                   if (section.id === 'document-storage') {
                     if (subscription.isLoading) return;
                     const hasAccess = (subscription.plan && hasPlanAccess(subscription.plan, 'growing')) || 
@@ -268,7 +270,11 @@ export function AppSidebar({
                   } else if (isRoute && 'url' in section) {
                     navigate(section.url);
                   } else if (isExternal && 'url' in section) {
-                    window.open(section.url, '_blank', 'noopener,noreferrer');
+                    try {
+                      window.open(section.url, '_blank', 'noopener,noreferrer');
+                    } catch (error) {
+                      console.error('Failed to open link:', error);
+                    }
                   } else {
                     onSectionChange(section.id);
                   }
