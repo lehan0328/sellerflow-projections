@@ -124,8 +124,43 @@ export const ForecastSettings = () => {
   };
 
   const handleToggleForecast = async (enabled: boolean) => {
-    // Just update local state - user will click Save Settings to apply
-    setForecastsEnabled(enabled);
+    setTogglingForecast(true);
+    
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) throw new Error("Not authenticated");
+
+      // Update forecasts_enabled in database
+      const { error: updateError } = await supabase
+        .from('user_settings')
+        .update({ forecasts_enabled: enabled })
+        .eq('user_id', currentUser.id);
+
+      if (updateError) throw updateError;
+
+      setForecastsEnabled(enabled);
+
+      if (!enabled) {
+        // Delete all forecasted payouts when disabled
+        await supabase
+          .from('amazon_payouts')
+          .delete()
+          .eq('user_id', currentUser.id)
+          .eq('status', 'forecasted');
+        
+        toast.success("Forecasts disabled and removed");
+        await refetchPayouts();
+      } else {
+        toast.success("Forecasts enabled - click Save Settings to regenerate");
+      }
+    } catch (error) {
+      console.error('Error toggling forecasts:', error);
+      toast.error("Failed to update forecast settings");
+      // Revert on error
+      setForecastsEnabled(!enabled);
+    } finally {
+      setTogglingForecast(false);
+    }
   };
 
   const confirmDisableForecast = async () => {
