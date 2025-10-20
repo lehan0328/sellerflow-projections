@@ -43,11 +43,11 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil" 
     });
 
-    // Fetch all profiles with active subscriptions (not in trial)
+    // Fetch all profiles with Stripe customer IDs to check their subscriptions
     const { data: profiles, error: profilesError } = await supabaseClient
       .from('profiles')
       .select('*')
-      .not('plan_override', 'is', null)
+      .not('stripe_customer_id', 'is', null)
       .order('created_at', { ascending: false });
 
     if (profilesError) throw profilesError;
@@ -59,7 +59,7 @@ serve(async (req) => {
     const emailMap = new Map(users.map(u => [u.id, u.email || '']));
 
     // Enrich profiles with Stripe subscription data
-    const subscriptions = await Promise.all(
+    const allProfiles = await Promise.all(
       (profiles || []).map(async (profile) => {
         const email = emailMap.get(profile.user_id) || '';
         let stripeData = null;
@@ -107,6 +107,9 @@ serve(async (req) => {
         };
       })
     );
+
+    // Filter to only show profiles with active Stripe subscriptions
+    const subscriptions = allProfiles.filter(profile => profile.stripe_data !== null);
 
     // Calculate summary stats
     const totalMRR = subscriptions.reduce((sum, sub) => {
