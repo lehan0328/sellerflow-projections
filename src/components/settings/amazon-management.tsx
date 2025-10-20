@@ -25,20 +25,29 @@ interface AmazonAccountFormData {
   payout_frequency: 'daily' | 'bi-weekly';
 }
 
+// Region-specific Seller Central consent URLs
+const SELLER_CENTRAL_CONSENT_URLS: Record<string, string> = {
+  'NA': 'https://sellercentral.amazon.com/apps/authorize/consent',
+  'EU': 'https://sellercentral-europe.amazon.com/apps/authorize/consent',
+  'UK': 'https://sellercentral.amazon.co.uk/apps/authorize/consent',
+  'JP': 'https://sellercentral.amazon.co.jp/apps/authorize/consent',
+  'FE': 'https://sellercentral.amazon.sg/apps/authorize/consent', // Far East (SG, AU)
+};
+
 const marketplaces = [
-  { id: "ATVPDKIKX0DER", name: "United States", code: "US" },
-  { id: "A2Q3Y263D00KWC", name: "Brazil", code: "BR" },
-  { id: "A2EUQ1WTGCTBG2", name: "Canada", code: "CA" },
-  { id: "A1AM78C64UM0Y8", name: "Mexico", code: "MX" },
-  { id: "A1PA6795UKMFR9", name: "Germany", code: "DE" },
-  { id: "A1RKKUPIHCS9HS", name: "Spain", code: "ES" },
-  { id: "A13V1IB3VIYZZH", name: "France", code: "FR" },
-  { id: "APJ6JRA9NG5V4", name: "Italy", code: "IT" },
-  { id: "A1F83G8C2ARO7P", name: "United Kingdom", code: "UK" },
-  { id: "A21TJRUUN4KGV", name: "India", code: "IN" },
-  { id: "A19VAU5U5O7RUS", name: "Singapore", code: "SG" },
-  { id: "A39IBJ37TRP1C6", name: "Australia", code: "AU" },
-  { id: "A1VC38T7YXB528", name: "Japan", code: "JP" },
+  { id: "ATVPDKIKX0DER", name: "United States", code: "US", region: "NA" },
+  { id: "A2Q3Y263D00KWC", name: "Brazil", code: "BR", region: "NA" },
+  { id: "A2EUQ1WTGCTBG2", name: "Canada", code: "CA", region: "NA" },
+  { id: "A1AM78C64UM0Y8", name: "Mexico", code: "MX", region: "NA" },
+  { id: "A1PA6795UKMFR9", name: "Germany", code: "DE", region: "EU" },
+  { id: "A1RKKUPIHCS9HS", name: "Spain", code: "ES", region: "EU" },
+  { id: "A13V1IB3VIYZZH", name: "France", code: "FR", region: "EU" },
+  { id: "APJ6JRA9NG5V4", name: "Italy", code: "IT", region: "EU" },
+  { id: "A1F83G8C2ARO7P", name: "United Kingdom", code: "UK", region: "UK" },
+  { id: "A21TJRUUN4KGV", name: "India", code: "IN", region: "EU" },
+  { id: "A19VAU5U5O7RUS", name: "Singapore", code: "SG", region: "FE" },
+  { id: "A39IBJ37TRP1C6", name: "Australia", code: "AU", region: "FE" },
+  { id: "A1VC38T7YXB528", name: "Japan", code: "JP", region: "JP" },
 ];
 
 export function AmazonManagement() {
@@ -68,10 +77,10 @@ export function AmazonManagement() {
         return;
       }
 
-      console.log('Step 2: Fetching Amazon client ID from edge function...');
+      console.log('Step 2: Fetching Amazon SP-API Application ID from edge function...');
       toast.info('Fetching Amazon connection details...');
 
-      // Get Amazon client ID from backend with auth token
+      // Get Amazon SP-API Application ID from backend with auth token
       const { data, error } = await supabase.functions.invoke('get-amazon-client-id', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -81,36 +90,52 @@ export function AmazonManagement() {
       console.log('Edge function response:', { data, error });
       
       if (error) {
-        console.error('Error fetching client ID:', error);
+        console.error('Error fetching SP-API Application ID:', error);
         toast.error(`Failed to get Amazon credentials: ${error.message}`);
         return;
       }
       
-      const clientId = data?.clientId;
+      const applicationId = data?.clientId; // This should be SP-API Application ID
       
-      console.log('Amazon Client ID received:', clientId);
+      console.log('Amazon SP-API Application ID received:', applicationId);
       
-      if (!clientId || clientId === 'undefined' || clientId === '') {
-        console.error('Invalid client ID:', clientId);
-        toast.error('Amazon Client ID is not configured. Please contact support.');
+      if (!applicationId || applicationId === 'undefined' || applicationId === '') {
+        console.error('Invalid SP-API Application ID:', applicationId);
+        toast.error('Amazon SP-API Application ID is not configured. Please contact support.');
         return;
       }
+      
+      // Get the selected marketplace region
+      const marketplace = marketplaces.find(m => m.id === selectedMarketplace);
+      const region = marketplace?.region || 'NA';
+      const consentBaseUrl = SELLER_CENTRAL_CONSENT_URLS[region];
       
       const redirectUri = `${window.location.origin}/amazon-oauth-callback`;
       console.log('Step 3: Building authorization URL...');
       console.log('Redirect URI:', redirectUri);
       console.log('Selected marketplace:', selectedMarketplace);
+      console.log('Region:', region);
+      console.log('Consent URL:', consentBaseUrl);
       
-      // Construct Amazon authorization URL (removed version=beta for production)
-      const authUrl = `https://sellercentral.amazon.com/apps/authorize/consent?application_id=${clientId}&state=${selectedMarketplace}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+      // Construct Amazon authorization URL with region-specific consent URL
+      // IMPORTANT: Use application_id (SP-API App ID), not client_id
+      const authUrl = `${consentBaseUrl}?application_id=${applicationId}&state=${selectedMarketplace}&redirect_uri=${encodeURIComponent(redirectUri)}`;
       
       console.log('Amazon OAuth URL:', authUrl);
       
-      toast.info('Redirecting to Amazon Seller Central...');
-      console.log('Step 4: Redirecting to Amazon...');
+      toast.info('Opening Amazon Seller Central in a new tab...');
+      console.log('Step 4: Opening Amazon in new tab...');
       
-      // Redirect to Amazon authorization
-      window.location.href = authUrl;
+      // CRITICAL: Open in new tab to avoid iframe blocking (X-Frame-Options: DENY)
+      // Use window.open with noopener for security
+      const newWindow = window.open(authUrl, '_blank', 'noopener,noreferrer');
+      
+      if (!newWindow) {
+        toast.error('Pop-up blocked. Please allow pop-ups and try again.');
+        console.error('Pop-up was blocked by browser');
+      } else {
+        toast.success('Amazon authorization opened in new tab. Please complete the process there.');
+      }
     } catch (error) {
       console.error('=== ERROR IN AMAZON CONNECTION ===', error);
       toast.error(`Failed to initiate Amazon connection: ${error instanceof Error ? error.message : 'Unknown error'}`);

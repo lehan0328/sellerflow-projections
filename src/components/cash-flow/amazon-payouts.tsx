@@ -13,6 +13,32 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+
+// Region-specific Seller Central consent URLs
+const SELLER_CENTRAL_CONSENT_URLS: Record<string, string> = {
+  'NA': 'https://sellercentral.amazon.com/apps/authorize/consent',
+  'EU': 'https://sellercentral-europe.amazon.com/apps/authorize/consent',
+  'UK': 'https://sellercentral.amazon.co.uk/apps/authorize/consent',
+  'JP': 'https://sellercentral.amazon.co.jp/apps/authorize/consent',
+  'FE': 'https://sellercentral.amazon.sg/apps/authorize/consent', // Far East (SG, AU)
+};
+
+const marketplaces = [
+  { id: "ATVPDKIKX0DER", name: "United States", region: "NA" },
+  { id: "A2Q3Y263D00KWC", name: "Brazil", region: "NA" },
+  { id: "A2EUQ1WTGCTBG2", name: "Canada", region: "NA" },
+  { id: "A1AM78C64UM0Y8", name: "Mexico", region: "NA" },
+  { id: "A1PA6795UKMFR9", name: "Germany", region: "EU" },
+  { id: "A1RKKUPIHCS9HS", name: "Spain", region: "EU" },
+  { id: "A13V1IB3VIYZZH", name: "France", region: "EU" },
+  { id: "APJ6JRA9NG5V4", name: "Italy", region: "EU" },
+  { id: "A1F83G8C2ARO7P", name: "United Kingdom", region: "UK" },
+  { id: "A21TJRUUN4KGV", name: "India", region: "EU" },
+  { id: "A19VAU5U5O7RUS", name: "Singapore", region: "FE" },
+  { id: "A39IBJ37TRP1C6", name: "Australia", region: "FE" },
+  { id: "A1VC38T7YXB528", name: "Japan", region: "JP" },
+];
+
 export function AmazonPayouts() {
   const navigate = useNavigate();
   const {
@@ -97,6 +123,7 @@ export function AmazonPayouts() {
 
       toast.info('Fetching Amazon connection details...');
 
+      // Get Amazon SP-API Application ID from backend
       const { data, error } = await supabase.functions.invoke('get-amazon-client-id', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -108,18 +135,35 @@ export function AmazonPayouts() {
         return;
       }
       
-      const clientId = data?.clientId;
+      const applicationId = data?.clientId; // This should be SP-API Application ID
       
-      if (!clientId || clientId === 'undefined' || clientId === '') {
-        toast.error('Amazon Client ID is not configured. Please contact support.');
+      if (!applicationId || applicationId === 'undefined' || applicationId === '') {
+        toast.error('Amazon SP-API Application ID is not configured. Please contact support.');
         return;
       }
       
-      const redirectUri = `${window.location.origin}/amazon-oauth-callback`;
-      const authUrl = `https://sellercentral.amazon.com/apps/authorize/consent?application_id=${clientId}&state=${selectedMarketplace}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+      // Get the selected marketplace region
+      const marketplace = marketplaces.find(m => m.id === selectedMarketplace);
+      const region = marketplace?.region || 'NA';
+      const consentBaseUrl = SELLER_CENTRAL_CONSENT_URLS[region];
       
-      toast.info('Redirecting to Amazon Seller Central...');
-      window.location.href = authUrl;
+      const redirectUri = `${window.location.origin}/amazon-oauth-callback`;
+      
+      // Construct Amazon authorization URL with region-specific consent URL
+      // IMPORTANT: Use application_id (SP-API App ID), not client_id
+      const authUrl = `${consentBaseUrl}?application_id=${applicationId}&state=${selectedMarketplace}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+      
+      toast.info('Opening Amazon Seller Central in a new tab...');
+      
+      // CRITICAL: Open in new tab to avoid iframe blocking (X-Frame-Options: DENY)
+      const newWindow = window.open(authUrl, '_blank', 'noopener,noreferrer');
+      
+      if (!newWindow) {
+        toast.error('Pop-up blocked. Please allow pop-ups and try again.');
+      } else {
+        toast.success('Amazon authorization opened in new tab. Please complete the process there.');
+        setShowConnectDialog(false);
+      }
     } catch (error) {
       toast.error(`Failed to initiate Amazon connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -300,7 +344,7 @@ export function AmazonPayouts() {
 
             <Alert>
               <AlertDescription className="text-sm">
-                You'll be redirected to Amazon Seller Central to authorize the connection. This is secure and read-only.
+                A new tab will open with Amazon Seller Central to authorize the connection. This is secure and read-only. Make sure pop-ups are enabled.
               </AlertDescription>
             </Alert>
 
