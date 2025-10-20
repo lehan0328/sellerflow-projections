@@ -6,8 +6,10 @@ import { useNavigate } from "react-router-dom";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ManualBankAccountDialog } from "./manual-bank-account-dialog";
+import { usePlaidLink } from "react-plaid-link";
+import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +29,7 @@ import {
 
 export function BankAccounts() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { accounts, isLoading, totalBalance, refetch } = useBankAccounts();
   const [syncingAccounts, setSyncingAccounts] = useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -35,6 +38,65 @@ export function BankAccounts() {
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
   const [editingBalanceId, setEditingBalanceId] = useState<string | null>(null);
   const [newBalance, setNewBalance] = useState<string>("");
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  const config = {
+    token: linkToken,
+    onSuccess: async (publicToken: string, metadata: any) => {
+      try {
+        const { error } = await supabase.functions.invoke('exchange-plaid-token', {
+          body: { publicToken, metadata }
+        });
+        
+        if (error) throw error;
+        
+        toast.success("Bank account connected successfully!");
+        refetch();
+      } catch (error: any) {
+        console.error('Error exchanging token:', error);
+        toast.error(error.message || "Failed to connect account");
+      }
+    },
+    onExit: (err: any) => {
+      if (err) {
+        console.error('Plaid Link error:', err);
+        toast.error("Failed to connect account");
+      }
+      setLinkToken(null);
+      setIsConnecting(false);
+    }
+  };
+
+  const { open, ready } = usePlaidLink(config);
+
+  useEffect(() => {
+    if (linkToken && ready) {
+      open();
+    }
+  }, [linkToken, ready, open]);
+
+  const handleConnectPlaid = async () => {
+    if (!user) {
+      toast.error("Please log in to connect a bank account");
+      return;
+    }
+
+    setIsConnecting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-plaid-link-token', {
+        body: { userId: user.id }
+      });
+
+      if (error) throw error;
+      
+      setLinkToken(data.link_token);
+    } catch (error: any) {
+      console.error('Error creating link token:', error);
+      toast.error(error.message || "Failed to initialize bank connection");
+      setIsConnecting(false);
+    }
+  };
 
   const handleSyncTransactions = async (accountId: string, stripeAccountId: string) => {
     setSyncingAccounts(prev => new Set(prev).add(accountId));
@@ -207,12 +269,13 @@ export function BankAccounts() {
             <Building2 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
             <p className="text-muted-foreground">No bank accounts connected</p>
             <Button 
-              variant="outline" 
+              variant="default" 
               size="sm" 
-              onClick={() => navigate('/settings')}
+              onClick={handleConnectPlaid}
+              disabled={isConnecting}
               className="mt-2"
             >
-              Connect Your First Account
+              {isConnecting ? "Connecting..." : "Connect Your First Account"}
             </Button>
           </div>
         ) : (
