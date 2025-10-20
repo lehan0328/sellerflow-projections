@@ -13,9 +13,10 @@ import { cn } from "@/lib/utils";
 interface OverdueTransactionsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onUpdate?: () => void;
 }
 
-export function OverdueTransactionsModal({ open, onOpenChange }: OverdueTransactionsModalProps) {
+export function OverdueTransactionsModal({ open, onOpenChange, onUpdate }: OverdueTransactionsModalProps) {
   const { transactions, markAsPaid, deleteTransaction, updateDueDate } = useVendorTransactions();
   const { incomeItems, updateIncome, deleteIncome } = useIncome();
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -79,6 +80,7 @@ export function OverdueTransactionsModal({ open, onOpenChange }: OverdueTransact
     try {
       await updateDueDate(id, newDate);
       setChangingDateId(null);
+      onUpdate?.();
     } finally {
       setProcessingId(null);
     }
@@ -89,6 +91,7 @@ export function OverdueTransactionsModal({ open, onOpenChange }: OverdueTransact
     try {
       await updateIncome(income.id, { ...income, paymentDate: newDate });
       setChangingDateId(null);
+      onUpdate?.();
     } finally {
       setProcessingId(null);
     }

@@ -93,7 +93,7 @@ const Dashboard = () => {
   // Use database hooks
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, cleanupOrphanedVendors, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction, refetch: refetchTransactions } = useTransactions();
-  const { transactions: vendorTransactions, markAsPaid } = useVendorTransactions();
+  const { transactions: vendorTransactions, markAsPaid, refetch: refetchVendorTransactions } = useVendorTransactions();
   const { totalBalance: bankAccountBalance, accounts, refetch: refetchBankAccounts } = useBankAccounts();
   const { transactions: bankTransactionsData, isLoading: isBankTransactionsLoading } = useBankTransactions();
   const { creditCards, refetch: refetchCreditCards } = useCreditCards();
@@ -1347,6 +1347,10 @@ const Dashboard = () => {
               totalCash={displayCash} 
               events={allCalendarEvents}
               onUpdateCashBalance={handleUpdateCashBalance}
+              onTransactionUpdate={() => {
+                refetchVendorTransactions();
+                refetchSafeSpending();
+              }}
               pendingIncomeToday={pendingIncomeToday}
             />
             

@@ -28,6 +28,7 @@ interface OverviewStatsProps {
     date: Date;
   }>;
   onUpdateCashBalance?: () => void;
+  onTransactionUpdate?: () => void;
   pendingIncomeToday?: {
     amount: number;
     count: number;
@@ -52,7 +53,7 @@ const amazonTimeRangeOptions = [
   { value: "lastmonth", label: "Last Month" },
 ];
 
-export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance, pendingIncomeToday }: OverviewStatsProps) {
+export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance, onTransactionUpdate, pendingIncomeToday }: OverviewStatsProps) {
   const [incomingTimeRange, setIncomingTimeRange] = useState(() => {
     return localStorage.getItem('incomingTimeRange') || "7days";
   });
@@ -663,7 +664,8 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
       {/* Overdue Transactions Modal */}
       <OverdueTransactionsModal 
         open={showOverdueModal} 
-        onOpenChange={setShowOverdueModal} 
+        onOpenChange={setShowOverdueModal}
+        onUpdate={onTransactionUpdate}
       />
     </>
   );
