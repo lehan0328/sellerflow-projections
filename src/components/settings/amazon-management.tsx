@@ -43,18 +43,8 @@ const marketplaces = [
 export function AmazonManagement() {
   const { amazonAccounts, isLoading, addAmazonAccount, removeAmazonAccount, syncAmazonAccount, updatePayoutFrequency } = useAmazonAccounts();
   const { amazonPayouts, totalUpcoming } = useAmazonPayouts();
-  const [showAddDialog, setShowAddDialog] = useState(false);
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
-  const [formData, setFormData] = useState<AmazonAccountFormData>({
-    seller_id: '',
-    marketplace_id: '',
-    marketplace_name: '',
-    account_name: '',
-    refresh_token: '',
-    client_id: '',
-    client_secret: '',
-    payout_frequency: 'bi-weekly',
-  });
+  const [selectedMarketplace, setSelectedMarketplace] = useState('ATVPDKIKX0DER'); // Default to US
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -63,30 +53,25 @@ export function AmazonManagement() {
     }).format(amount);
   };
 
-  const resetForm = () => {
-    setFormData({
-      seller_id: '',
-      marketplace_id: '',
-      marketplace_name: '',
-      account_name: '',
-      refresh_token: '',
-      client_id: '',
-      client_secret: '',
-      payout_frequency: 'bi-weekly',
-    });
-  };
-
-  const handleAddAccount = async () => {
-    if (!formData.seller_id || !formData.marketplace_id || !formData.account_name) {
-      toast.error("Please fill in all required fields");
+  const handleConnectAmazon = () => {
+    // TODO: Replace with your actual Amazon LWA Application ID from Amazon Developer Console
+    // Get this from: https://developer.amazonservices.com/
+    const clientId = 'amzn1.application-oa2-client.YOUR_CLIENT_ID_HERE';
+    const redirectUri = encodeURIComponent(`${window.location.origin}/amazon/callback`);
+    const state = selectedMarketplace; // Pass marketplace as state
+    
+    if (clientId.includes('YOUR_CLIENT_ID')) {
+      toast.error('Please configure your Amazon Client ID first');
       return;
     }
-
-    const success = await addAmazonAccount(formData);
-    if (success) {
-      setShowAddDialog(false);
-      resetForm();
-    }
+    
+    // Construct Amazon authorization URL
+    const authUrl = `https://sellercentral.amazon.com/apps/authorize/consent?application_id=${clientId}&state=${state}&redirect_uri=${redirectUri}&version=beta`;
+    
+    toast.info('Redirecting to Amazon Seller Central...');
+    
+    // Redirect to Amazon authorization page
+    window.location.href = authUrl;
   };
 
   const handleSyncAccount = async (accountId: string) => {
@@ -102,15 +87,6 @@ export function AmazonManagement() {
     if (confirm('Are you sure you want to remove this Amazon account? This will also remove all associated transaction data.')) {
       await removeAmazonAccount(accountId);
     }
-  };
-
-  const handleMarketplaceChange = (marketplaceId: string) => {
-    const marketplace = marketplaces.find(m => m.id === marketplaceId);
-    setFormData({
-      ...formData,
-      marketplace_id: marketplaceId,
-      marketplace_name: marketplace ? marketplace.name : '',
-    });
   };
 
   if (isLoading) {
@@ -165,44 +141,27 @@ export function AmazonManagement() {
               <ShoppingCart className="h-5 w-5 text-primary" />
               <span>Amazon Seller Accounts</span>
             </CardTitle>
-            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+            <Dialog>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
-                  Connect Account
+                  Connect Amazon Account
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Connect Amazon Seller Account</DialogTitle>
+                  <DialogTitle>Connect to Amazon Seller Central</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="seller_id">Seller ID *</Label>
-                      <Input
-                        id="seller_id"
-                        value={formData.seller_id}
-                        onChange={(e) => setFormData({...formData, seller_id: e.target.value})}
-                        placeholder="A1BCDEFG2HIJKLM"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="account_name">Account Name *</Label>
-                      <Input
-                        id="account_name"
-                        value={formData.account_name}
-                        onChange={(e) => setFormData({...formData, account_name: e.target.value})}
-                        placeholder="My Amazon Store"
-                      />
-                    </div>
-                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    You'll be redirected to Amazon Seller Central to authorize access to your account data.
+                  </p>
                   
-                  <div>
-                    <Label htmlFor="marketplace">Marketplace *</Label>
-                    <Select value={formData.marketplace_id} onValueChange={handleMarketplaceChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select marketplace" />
+                  <div className="space-y-2">
+                    <Label htmlFor="marketplace">Select Your Marketplace</Label>
+                    <Select value={selectedMarketplace} onValueChange={setSelectedMarketplace}>
+                      <SelectTrigger id="marketplace">
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {marketplaces.map((marketplace) => (
@@ -214,104 +173,22 @@ export function AmazonManagement() {
                     </Select>
                   </div>
 
-                  <div>
-                    <Label htmlFor="payout_frequency">Payout Schedule *</Label>
-                    <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50 mt-2">
-                      <div className="flex items-center gap-4 flex-1">
-                        <span className={`text-sm font-medium transition-colors ${
-                          formData.payout_frequency === 'bi-weekly' ? 'text-primary' : 'text-muted-foreground'
-                        }`}>
-                          Bi-Weekly (Every 14 days)
-                        </span>
-                        <Switch
-                          id="payout_frequency"
-                          checked={formData.payout_frequency === 'daily'}
-                          onCheckedChange={(checked) => 
-                            setFormData({
-                              ...formData, 
-                              payout_frequency: checked ? 'daily' : 'bi-weekly'
-                            })
-                          }
-                        />
-                        <span className={`text-sm font-medium transition-colors ${
-                          formData.payout_frequency === 'daily' ? 'text-primary' : 'text-muted-foreground'
-                        }`}>
-                          Daily
-                        </span>
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Toggle to select how often Amazon pays out to your account
-                    </p>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium">SP-API Credentials</h4>
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg">
+                    <div className="flex items-start space-x-3">
+                      <ExternalLink className="h-5 w-5 text-blue-600 mt-0.5" />
                       <div>
-                        <Label htmlFor="client_id">Client ID</Label>
-                        <Input
-                          id="client_id"
-                          type="password"
-                          value={formData.client_id}
-                          onChange={(e) => setFormData({...formData, client_id: e.target.value})}
-                          placeholder="Your SP-API Client ID"
-                        />
+                        <p className="text-sm font-medium text-foreground mb-1">Secure OAuth Connection</p>
+                        <p className="text-xs text-muted-foreground">
+                          This will open Amazon Seller Central where you can safely authorize Auren to access your seller data. No credentials stored locally.
+                        </p>
                       </div>
-                      <div>
-                        <Label htmlFor="client_secret">Client Secret</Label>
-                        <Input
-                          id="client_secret"
-                          type="password"
-                          value={formData.client_secret}
-                          onChange={(e) => setFormData({...formData, client_secret: e.target.value})}
-                          placeholder="Your SP-API Client Secret"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="refresh_token">Refresh Token</Label>
-                      <Textarea
-                        id="refresh_token"
-                        value={formData.refresh_token}
-                        onChange={(e) => setFormData({...formData, refresh_token: e.target.value})}
-                        placeholder="Your SP-API Refresh Token"
-                        rows={3}
-                      />
                     </div>
                   </div>
 
-                  <div className="bg-muted p-4 rounded-lg">
-                    <p className="text-sm text-muted-foreground mb-2">
-                      <strong>To get your SP-API credentials:</strong>
-                    </p>
-                    <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                      <li>Go to Amazon Seller Central → Apps & Services → Develop apps</li>
-                      <li>Create a new app or use existing SP-API credentials</li>
-                      <li>Generate refresh token through Authorization workflow</li>
-                      <li>All credentials are encrypted and stored securely</li>
-                    </ol>
-                    <div className="flex items-center mt-2">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      <a 
-                        href="https://developer-docs.amazon.com/sp-api/" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline text-sm"
-                      >
-                        Amazon SP-API Documentation
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleAddAccount}>
-                      Connect Account
-                    </Button>
-                  </div>
+                  <Button onClick={handleConnectAmazon} className="w-full" size="lg">
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Continue to Amazon
+                  </Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -323,10 +200,57 @@ export function AmazonManagement() {
               <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold text-foreground mb-2">No Amazon accounts connected</h3>
               <p className="text-muted-foreground mb-4">Connect your Amazon seller account to sync payouts and transaction data</p>
-              <Button onClick={() => setShowAddDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Connect Your First Account
-              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Connect Your First Account
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Connect to Amazon Seller Central</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      You'll be redirected to Amazon Seller Central to authorize access to your account data.
+                    </p>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="marketplace-first">Select Your Marketplace</Label>
+                      <Select value={selectedMarketplace} onValueChange={setSelectedMarketplace}>
+                        <SelectTrigger id="marketplace-first">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {marketplaces.map((marketplace) => (
+                            <SelectItem key={marketplace.id} value={marketplace.id}>
+                              {marketplace.name} ({marketplace.code})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg">
+                      <div className="flex items-start space-x-3">
+                        <ExternalLink className="h-5 w-5 text-blue-600 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-foreground mb-1">Secure OAuth Connection</p>
+                          <p className="text-xs text-muted-foreground">
+                            This will open Amazon Seller Central where you can safely authorize Auren to access your seller data. No credentials stored locally.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button onClick={handleConnectAmazon} className="w-full" size="lg">
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      Continue to Amazon
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           ) : (
             amazonAccounts.map((account) => (
