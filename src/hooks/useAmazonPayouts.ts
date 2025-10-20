@@ -43,6 +43,15 @@ export const useAmazonPayouts = () => {
     }
 
     try {
+      // Check if forecasts are enabled
+      const { data: settings } = await supabase
+        .from('user_settings')
+        .select('forecasts_enabled')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const forecastsEnabled = settings?.forecasts_enabled ?? true;
+
       // Only fetch payouts from today onwards (archive past payouts)
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -65,8 +74,11 @@ export const useAmazonPayouts = () => {
         return;
       }
 
-      // Filter out forecasted payouts when actual payouts exist for same date & account
+      // Filter out forecasted payouts based on settings and duplicates
       const filteredPayouts = (data || []).filter((payout) => {
+        // If forecasts are disabled, exclude all forecasted payouts
+        if (!forecastsEnabled && payout.status === 'forecasted') return false;
+        
         // Keep all non-forecasted payouts
         if (payout.status !== 'forecasted') return true;
         
