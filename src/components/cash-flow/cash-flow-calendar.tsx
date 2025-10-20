@@ -639,21 +639,23 @@ export const CashFlowCalendar = ({
   
   const displayData = getDisplayData();
   
-  // Dynamic Y-axis domain with padding to ensure hover works near chart extremes
-  const yValues = displayData.flatMap((d: any) => [
-    d.cashBalance,
-    d.totalResources,
-    d.creditCardBalance,
-    d.reserveAmount,
-    d.projectedBalance,
-    d.cashFlow,
-  ].filter((v: any) => typeof v === 'number')) as number[];
+  // Memoize Y-axis domain calculation
+  const yDomain = useMemo((): [number, number] => {
+    const yValues = displayData.flatMap((d: any) => [
+      d.cashBalance,
+      d.totalResources,
+      d.creditCardBalance,
+      d.reserveAmount,
+      d.projectedBalance,
+      d.cashFlow,
+    ].filter((v: any) => typeof v === 'number')) as number[];
 
-  const yMin = yValues.length ? Math.min(...yValues) : 0;
-  const yMax = yValues.length ? Math.max(...yValues) : 0;
-  const yRange = Math.max(1, yMax - yMin);
-  const yPadding = Math.max(1000, Math.round(yRange * 0.05));
-  const yDomain: [number, number] = [yMin - yPadding, yMax + yPadding];
+    const yMin = yValues.length ? Math.min(...yValues) : 0;
+    const yMax = yValues.length ? Math.max(...yValues) : 0;
+    const yRange = Math.max(1, yMax - yMin);
+    const yPadding = Math.max(1000, Math.round(yRange * 0.05));
+    return [yMin - yPadding, yMax + yPadding];
+  }, [displayData]);
   
   const getChartInnerWidth = () => {
     const svg = chartWrapperRef.current?.querySelector('svg.recharts-surface') as SVGElement | null;
@@ -692,16 +694,23 @@ export const CashFlowCalendar = ({
     
     throttleRef.current = window.setTimeout(() => {
       throttleRef.current = null;
-    }, 16); // ~60fps
+    }, 50); // Increased throttle for better performance
     
     const idx = computeIndexFromClientX(ev.clientX);
     setActiveTooltipIndex(idx);
   }, [displayData.length]);
   
-  const handleWrapperMouseLeave = useCallback(() => {
-    setActiveTooltipIndex(null);
-  }, []);
-  
+  // Memoize colors to prevent function recreation
+  const memoizedColors = useMemo(() => {
+    const cashColor = cashFlowColor?.startsWith?.('hsl') ? '#3b82f6' : cashFlowColor;
+    return {
+      cashColor,
+      totalResourcesColor,
+      creditCardColor,
+      reserveColor
+    };
+  }, [cashFlowColor, totalResourcesColor, creditCardColor, reserveColor]);
+
   const buildTooltipPayload = useCallback((index: number) => {
     const d = displayData[index as number];
     if (!d) return [];
@@ -710,7 +719,7 @@ export const CashFlowCalendar = ({
       const v = (d as any)[key];
       if (typeof v === 'number') items.push({ dataKey: key, name: key, value: v, color, payload: d });
     };
-    const cashColor = cashFlowColor?.startsWith?.('hsl') ? '#3b82f6' : cashFlowColor;
+    const { cashColor, totalResourcesColor, creditCardColor, reserveColor } = memoizedColors;
     safePush('totalResources', totalResourcesColor);
     safePush('cashBalance', cashColor);
     safePush('creditCardBalance', creditCardColor);
@@ -724,7 +733,7 @@ export const CashFlowCalendar = ({
     safePush('reserve', reserveColor);
 
     return items;
-  }, [displayData, cashFlowColor, totalResourcesColor, creditCardColor, reserveColor]);
+  }, [displayData, memoizedColors]);
   
   // Memoize tooltip payload to prevent recalculation on every render
   const tooltipPayload = useMemo(() => {
@@ -781,10 +790,6 @@ export const CashFlowCalendar = ({
     }
   };
 
-  const handleMouseEnter = (e: any) => {
-    // Ensure tooltip appears immediately anywhere in plot area
-    handleMouseMove(e);
-  };
   const handleMouseUp = () => {
     if (refAreaLeft && refAreaRight) {
       const leftIndex = chartData.findIndex(d => d.date === refAreaLeft);
@@ -1166,9 +1171,6 @@ export const CashFlowCalendar = ({
                  className="relative w-full"
                  style={{ height: '500px' }}
                  ref={chartWrapperRef}
-                 onMouseEnter={handleWrapperMouseMove}
-                 onMouseMove={handleWrapperMouseMove}
-                 onMouseLeave={handleWrapperMouseLeave}
                >
                  <div className="flex justify-between items-center mb-2 px-4">
                  <p className="text-sm text-muted-foreground">
@@ -1191,14 +1193,13 @@ export const CashFlowCalendar = ({
                <ChartContainer config={chartConfig} className="h-full w-full">
                  <ResponsiveContainer width="100%" height="100%">
                    {chartType === 'bar' ? (
-                      <BarChart 
+                       <BarChart 
                         data={displayData} 
                         onClick={handleChartClick}
                         onMouseDown={handleMouseDown}
-                        onMouseEnter={handleMouseEnter}
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
-                         onMouseLeave={() => {}}
+                        onMouseLeave={() => setActiveTooltipIndex(null)}
                         margin={chartMargin}
                         syncMethod="index"
                       >
@@ -1221,7 +1222,7 @@ export const CashFlowCalendar = ({
                         position={{ x: 12, y: 12 }}
                         wrapperStyle={{ pointerEvents: 'none' }}
                         active={activeTooltipIndex !== null}
-                        payload={activeTooltipIndex !== null ? buildTooltipPayload(activeTooltipIndex) : []}
+                        payload={tooltipPayload}
                         label={activeTooltipIndex !== null ? displayData[activeTooltipIndex]?.date : undefined}
                         content={
                           <ChartTooltipContent 
@@ -1409,10 +1410,9 @@ export const CashFlowCalendar = ({
                         data={displayData} 
                         onClick={handleChartClick}
                          onMouseDown={handleMouseDown}
-                         onMouseEnter={handleMouseEnter}
                          onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
-                        onMouseLeave={() => {}}
+                        onMouseLeave={() => setActiveTooltipIndex(null)}
                         margin={chartMargin}
                         syncMethod="index"
                       >
