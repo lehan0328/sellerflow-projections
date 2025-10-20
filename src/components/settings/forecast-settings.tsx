@@ -118,15 +118,15 @@ export const ForecastSettings = () => {
 
       if (error && error.code !== 'PGRST116') throw error;
 
-      // If data exists and has a valid threshold, use it; otherwise keep default of 8 (Moderate)
+      // Default to Moderate (8) for all accounts until changed
       if (data?.forecast_confidence_threshold !== null && data?.forecast_confidence_threshold !== undefined) {
         console.log('📊 Loaded forecast risk level from database:', data.forecast_confidence_threshold);
         const loadedValue = data.forecast_confidence_threshold;
         setConfidenceThreshold(loadedValue);
         console.log('📊 State set to:', loadedValue, 'Safety Net:', getSafetyLevel(loadedValue).label);
       } else {
-        // No setting exists yet, keep default of 8 (Moderate - Balanced)
-        console.log('📊 No existing setting, using default: 8 (Moderate)');
+        // No setting exists yet, default to Moderate (8)
+        console.log('📊 No existing setting, defaulting to Moderate (8)');
         setConfidenceThreshold(8);
       }
 
