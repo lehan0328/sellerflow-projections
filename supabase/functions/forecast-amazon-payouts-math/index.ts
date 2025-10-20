@@ -240,6 +240,10 @@ function generateBiWeeklyForecasts(
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  // Calculate average eligible amount from all transactions for future projections
+  const totalEligible = Array.from(dailyEligibleMap.values()).reduce((sum, amt) => sum + amt, 0);
+  const avgBiWeeklyEligible = totalEligible > 0 ? (totalEligible / dailyEligibleMap.size) * 14 : 10000;
+
   // Generate 6 bi-weekly settlement forecasts (3 months)
   for (let i = 0; i < 6; i++) {
     const settlementDate = new Date(today);
@@ -258,7 +262,13 @@ function generateBiWeeklyForecasts(
       }
     });
 
+    // If no transactions in this period (future forecast), use average
+    if (eligibleInPeriod === 0) {
+      eligibleInPeriod = avgBiWeeklyEligible;
+    }
+
     // Calculate Reserve(s_k) ≈ sum of Net_i for deliveries in last L days
+    // For future forecasts, estimate reserve as a percentage of eligible amount
     let reserveAmount = 0;
     const reserveCutoffDate = new Date(settlementDate);
     reserveCutoffDate.setDate(reserveCutoffDate.getDate() - reserveLag);
@@ -269,6 +279,11 @@ function generateBiWeeklyForecasts(
         reserveAmount += txn.net_amount;
       }
     });
+
+    // If no reserve calculated (future period), estimate as 30% of eligible
+    if (reserveAmount === 0) {
+      reserveAmount = eligibleInPeriod * 0.3;
+    }
 
     reserveAmount *= reserveMultiplier;
 
