@@ -64,6 +64,8 @@ export function AmazonManagement() {
         return;
       }
 
+      toast.info('Fetching Amazon connection details...');
+
       // Get Amazon client ID from backend with auth token
       const { data, error } = await supabase.functions.invoke('get-amazon-client-id', {
         headers: {
@@ -73,30 +75,37 @@ export function AmazonManagement() {
       
       if (error) {
         console.error('Error fetching client ID:', error);
-        toast.error('Amazon integration not configured. Please contact support.');
+        toast.error('Failed to get Amazon credentials. Please contact support.');
         return;
       }
       
       const clientId = data?.clientId;
       
-      if (!clientId) {
-        toast.error('Amazon client ID not available. Please contact support.');
+      console.log('Amazon Client ID received:', clientId ? 'Yes' : 'No');
+      
+      if (!clientId || clientId === 'undefined' || clientId === '') {
+        toast.error('Amazon Client ID is not configured. Please contact support to set up the integration.');
         return;
       }
       
-      const redirectUri = encodeURIComponent(`${window.location.origin}/amazon/callback`);
-      const state = selectedMarketplace;
+      const redirectUri = `${window.location.origin}/amazon/callback`;
+      console.log('Redirect URI:', redirectUri);
+      console.log('Selected marketplace:', selectedMarketplace);
       
       // Construct Amazon authorization URL
-      const authUrl = `https://sellercentral.amazon.com/apps/authorize/consent?application_id=${clientId}&state=${state}&redirect_uri=${redirectUri}&version=beta`;
+      const authUrl = `https://sellercentral.amazon.com/apps/authorize/consent?application_id=${clientId}&state=${selectedMarketplace}&redirect_uri=${encodeURIComponent(redirectUri)}&version=beta`;
+      
+      console.log('Amazon OAuth URL:', authUrl);
       
       toast.info('Redirecting to Amazon Seller Central...');
       
-      // Redirect to Amazon authorization page
-      window.location.href = authUrl;
+      // Small delay to ensure toast is visible
+      setTimeout(() => {
+        window.location.href = authUrl;
+      }, 500);
     } catch (error) {
       console.error('Error connecting to Amazon:', error);
-      toast.error('Failed to initiate Amazon connection');
+      toast.error('Failed to initiate Amazon connection. Check console for details.');
     }
   };
 
