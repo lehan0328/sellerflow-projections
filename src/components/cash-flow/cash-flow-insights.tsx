@@ -519,15 +519,6 @@ export const CashFlowInsights = ({
             AI Insights
           </div>
           <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => navigate('/settings#forecast')}
-              className="bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950/20 dark:via-blue-950/20 dark:to-indigo-950/20 border-purple-200 dark:border-purple-800"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              AI Forecast Settings
-            </Button>
             <Button variant={chatMode ? "default" : "ghost"} size="sm" onClick={() => setChatMode(!chatMode)}>
               <MessageCircle className="h-4 w-4 mr-1" />
               {chatMode ? "Back" : "Chat"}
