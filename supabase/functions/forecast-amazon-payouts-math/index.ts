@@ -240,9 +240,16 @@ function generateBiWeeklyForecasts(
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Calculate average eligible amount from all transactions for future projections
-  const totalEligible = Array.from(dailyEligibleMap.values()).reduce((sum, amt) => sum + amt, 0);
-  const avgBiWeeklyEligible = totalEligible > 0 ? (totalEligible / dailyEligibleMap.size) * 14 : 10000;
+  // Calculate average and variance from historical data for future projections
+  const eligibleValues = Array.from(dailyEligibleMap.values());
+  const totalEligible = eligibleValues.reduce((sum, amt) => sum + amt, 0);
+  const avgDailyEligible = totalEligible > 0 ? totalEligible / dailyEligibleMap.size : 714; // ~10k per 14 days
+  
+  // Calculate standard deviation for realistic variance
+  const variance = eligibleValues.length > 0 
+    ? eligibleValues.reduce((sum, val) => sum + Math.pow(val - avgDailyEligible, 2), 0) / eligibleValues.length
+    : Math.pow(avgDailyEligible * 0.25, 2); // Default to 25% variance
+  const stdDev = Math.sqrt(variance);
 
   // Generate 6 bi-weekly settlement forecasts (3 months)
   for (let i = 0; i < 6; i++) {
@@ -262,9 +269,13 @@ function generateBiWeeklyForecasts(
       }
     });
 
-    // If no transactions in this period (future forecast), use average
+    // If no transactions in this period (future forecast), use average with realistic variance
     if (eligibleInPeriod === 0) {
-      eligibleInPeriod = avgBiWeeklyEligible;
+      // Add variance: use normal distribution approximation
+      // Each forecast gets a different variance factor based on position
+      const varianceFactor = Math.sin(i * 0.7 + 2.3) * 0.5 + 1.0; // Ranges from ~0.5 to ~1.5
+      const randomVariance = (Math.random() - 0.5) * stdDev * 0.5; // ±25% of std dev
+      eligibleInPeriod = Math.max(0, (avgDailyEligible * 14 * varianceFactor) + randomVariance);
     }
 
     // Calculate Reserve(s_k) ≈ sum of Net_i for deliveries in last L days
@@ -280,9 +291,10 @@ function generateBiWeeklyForecasts(
       }
     });
 
-    // If no reserve calculated (future period), estimate as 30% of eligible
+    // If no reserve calculated (future period), estimate as 25-35% of eligible
     if (reserveAmount === 0) {
-      reserveAmount = eligibleInPeriod * 0.3;
+      const reserveRate = 0.25 + (Math.random() * 0.1); // 25-35%
+      reserveAmount = eligibleInPeriod * reserveRate;
     }
 
     reserveAmount *= reserveMultiplier;
