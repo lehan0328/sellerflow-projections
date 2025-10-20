@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,16 @@ const BestCashflowTools = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Best Cashflow Tools for Marketplace Sellers in 2025 | Auren Blog</title>
+        <meta name="description" content="A comprehensive comparison of the top cashflow management tools built specifically for Amazon and multi-channel sellers." />
+        <link rel="canonical" href="https://aurenapp.com/blog/best-cashflow-tools" />
+        <meta property="og:title" content="Best Cashflow Tools for Marketplace Sellers in 2025 | Auren Blog" />
+        <meta property="og:description" content="A comprehensive comparison of the top cashflow management tools built specifically for Amazon and multi-channel sellers." />
+        <meta property="og:url" content="https://aurenapp.com/blog/best-cashflow-tools" />
+        <meta property="og:type" content="article" />
+      </Helmet>
+
       <nav className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
