@@ -36,6 +36,13 @@ const Landing = () => {
   const [showStickyCTA, setShowStickyCTA] = useState(false);
   const [isStartingTrial, setIsStartingTrial] = useState(false);
 
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
+
   // Track scroll for sticky CTA
   useEffect(() => {
     const handleScroll = () => {
