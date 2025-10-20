@@ -162,16 +162,30 @@ export const ForecastSettings = () => {
     console.log('🔵 Starting save with value:', confidenceThreshold);
     
     try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+      if (userError) {
+        console.error('❌ Auth error:', userError);
+        throw new Error("Authentication error: " + userError.message);
+      }
       if (!currentUser) throw new Error("Not authenticated");
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('account_id')
         .eq('user_id', currentUser.id)
         .maybeSingle();
 
-      if (!profile?.account_id) throw new Error("Account not found");
+      if (profileError) {
+        console.error('❌ Profile fetch error:', profileError);
+        throw new Error("Failed to fetch profile: " + profileError.message);
+      }
+
+      if (!profile?.account_id) {
+        console.error('❌ No account_id found in profile:', profile);
+        throw new Error("Account not found. Please contact support.");
+      }
+
+      console.log('✅ Found account_id:', profile.account_id);
 
       // Update Amazon account payout model (DD+7 is standard)
       if (amazonAccounts && amazonAccounts.length > 0) {
@@ -314,8 +328,9 @@ export const ForecastSettings = () => {
       // Refresh payout data to show updated data
       await refetchPayouts();
     } catch (error) {
-      console.error('Error saving forecast settings:', error);
-      toast.error("Failed to save settings");
+      console.error('❌ Error saving forecast settings:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to save settings";
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }

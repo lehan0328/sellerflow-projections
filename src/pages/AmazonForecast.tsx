@@ -40,13 +40,10 @@ export default function AmazonForecast() {
   const { amazonPayouts } = useAmazonPayouts();
   const { incomeItems } = useIncome();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [showAdvancedDialog, setShowAdvancedDialog] = useState(false);
-  const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(false);
-  const [hasBeenNotified, setHasBeenNotified] = useState(false);
 
-  // Check if user has 3+ confirmed payouts for advanced modeling
+  // Check if user has 3+ confirmed payouts
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
-  const hasEnoughDataForAdvanced = confirmedPayouts.length >= 3;
+  const hasEnoughData = confirmedPayouts.length >= 3;
 
   // Calculate historical metrics
   const historicalData = useMemo(() => {
@@ -110,102 +107,6 @@ export default function AmazonForecast() {
       toast.error(error.message || "Failed to generate forecast. Please try again");
     } finally {
       setIsGenerating(false);
-    }
-  };
-
-  // Check for advanced modeling eligibility on mount
-  useEffect(() => {
-    const checkAdvancedEligibility = async () => {
-      if (!hasEnoughDataForAdvanced) return;
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: settings } = await supabase
-        .from('user_settings')
-        .select('advanced_modeling_enabled, advanced_modeling_notified')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (settings?.advanced_modeling_enabled) {
-        setAdvancedModelingEnabled(true);
-        setHasBeenNotified(true);
-      } else if (settings?.advanced_modeling_notified) {
-        setHasBeenNotified(true);
-      } else if (!settings?.advanced_modeling_notified && hasEnoughDataForAdvanced && !hasBeenNotified) {
-        // Show notification if they haven't been notified yet
-        setShowAdvancedDialog(true);
-      }
-    };
-
-    checkAdvancedEligibility();
-  }, [hasEnoughDataForAdvanced]);
-
-  const enableAdvancedModeling = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('account_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (!profile?.account_id) throw new Error("Account not found");
-
-      await supabase
-        .from('user_settings')
-        .upsert({
-          user_id: user.id,
-          account_id: profile.account_id,
-          advanced_modeling_enabled: true,
-          advanced_modeling_notified: true
-        }, {
-          onConflict: 'user_id'
-        });
-
-      setAdvancedModelingEnabled(true);
-      setShowAdvancedDialog(false);
-      setHasBeenNotified(true);
-      toast.success("Advanced Mathematical Modeling activated! 🎯");
-      
-      // Regenerate forecasts with advanced modeling
-      await generateForecast();
-    } catch (error) {
-      console.error('Error enabling advanced modeling:', error);
-      toast.error("Failed to enable advanced modeling");
-    }
-  };
-
-  const dismissAdvancedNotification = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('account_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (!profile?.account_id) return;
-
-      await supabase
-        .from('user_settings')
-        .upsert({
-          user_id: user.id,
-          account_id: profile.account_id,
-          advanced_modeling_notified: true
-        }, {
-          onConflict: 'user_id'
-        });
-
-      setShowAdvancedDialog(false);
-      setHasBeenNotified(true);
-      toast.success("Got it! You can enable advanced modeling anytime from settings.");
-    } catch (error) {
-      console.error('Error dismissing notification:', error);
     }
   };
 
@@ -358,73 +259,6 @@ export default function AmazonForecast() {
 
       {/* Forecast Accuracy Archive */}
       <AmazonForecastAccuracy />
-
-      {/* Advanced Modeling Notification Dialog */}
-      {showAdvancedDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="max-w-2xl w-full border-2 border-primary/20 shadow-2xl">
-            <CardHeader>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-3 rounded-full bg-gradient-to-br from-blue-500 to-purple-600">
-                  <Brain className="h-6 w-6 text-white" />
-                </div>
-                <CardTitle className="text-2xl">🎉 Advanced Mathematical Modeling Available!</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg p-6 border-2 border-blue-200 dark:border-blue-800">
-                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-blue-600" />
-                  What is Advanced Mathematical Modeling?
-                </h3>
-                <div className="space-y-3 text-sm">
-                  <p>
-                    You now have <strong>{confirmedPayouts.length} confirmed payouts</strong>, which is enough data to activate 
-                    our advanced AI forecasting system that uses sophisticated mathematical techniques:
-                  </p>
-                  
-                  <div className="space-y-2 ml-4">
-                    <p><strong>📊 Time Series Analysis:</strong> Identifies seasonal patterns, cyclical trends, and growth trajectories in your payout history</p>
-                    <p><strong>📈 Exponential Smoothing:</strong> Weights recent data more heavily to capture current business momentum and market conditions</p>
-                    <p><strong>🎯 ARIMA Modeling:</strong> Auto-Regressive Integrated Moving Average models capture complex patterns and autocorrelations</p>
-                    <p><strong>🔮 Regression Analysis:</strong> Multi-variable regression considers order velocity, fees trends, and refund patterns</p>
-                    <p><strong>🧠 Machine Learning:</strong> Neural network patterns detect non-linear relationships in your Amazon sales data</p>
-                  </div>
-
-                  <p className="font-semibold text-primary mt-4">
-                    Result: Up to 30% more accurate forecasts compared to basic averaging methods
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-                <p className="text-sm text-amber-900 dark:text-amber-200">
-                  <strong>Note:</strong> Advanced modeling will work alongside your current forecast settings. 
-                  You can still toggle forecasts on/off and adjust risk levels as needed.
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  onClick={enableAdvancedModeling}
-                  size="lg"
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                >
-                  <Brain className="h-5 w-5 mr-2" />
-                  Activate Advanced Modeling
-                </Button>
-                <Button
-                  onClick={dismissAdvancedNotification}
-                  variant="outline"
-                  size="lg"
-                >
-                  Maybe Later
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
