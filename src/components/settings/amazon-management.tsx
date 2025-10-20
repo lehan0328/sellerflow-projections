@@ -213,9 +213,13 @@ export function AmazonManagement() {
                       <ExternalLink className="h-5 w-5 text-blue-600 mt-0.5" />
                       <div>
                         <p className="text-sm font-medium text-foreground mb-1">Secure OAuth Connection</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground mb-2">
                           This will open Amazon Seller Central where you can safely authorize Auren to access your seller data. No credentials stored locally.
                         </p>
+                        <div className="bg-white/50 p-2 rounded border border-blue-200">
+                          <p className="text-xs font-medium text-foreground mb-1">Required Redirect URL in Amazon:</p>
+                          <code className="text-xs text-blue-600 break-all">{window.location.origin}/amazon-oauth-callback</code>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -272,9 +276,13 @@ export function AmazonManagement() {
                         <ExternalLink className="h-5 w-5 text-blue-600 mt-0.5" />
                         <div>
                           <p className="text-sm font-medium text-foreground mb-1">Secure OAuth Connection</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground mb-2">
                             This will open Amazon Seller Central where you can safely authorize Auren to access your seller data. No credentials stored locally.
                           </p>
+                          <div className="bg-white/50 p-2 rounded border border-blue-200">
+                            <p className="text-xs font-medium text-foreground mb-1">Required Redirect URL in Amazon:</p>
+                            <code className="text-xs text-blue-600 break-all">{window.location.origin}/amazon-oauth-callback</code>
+                          </div>
                         </div>
                       </div>
                     </div>
