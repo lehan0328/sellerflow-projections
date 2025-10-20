@@ -182,11 +182,13 @@ export const useUserSettings = () => {
     fetchUserSettings();
 
     // Subscribe to realtime changes to user_settings
+    let channel: any = null;
+
     const setupRealtimeSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        const channel = supabase
+        channel = supabase
           .channel('user-settings-changes')
           .on(
             'postgres_changes',
@@ -199,7 +201,9 @@ export const useUserSettings = () => {
             (payload) => {
               console.log('🔄 User settings changed:', payload);
               if (payload.new) {
-                setForecastsEnabled(payload.new.forecasts_enabled ?? false);
+                const newForecastsEnabled = payload.new.forecasts_enabled ?? false;
+                console.log('📊 Updating forecastsEnabled to:', newForecastsEnabled);
+                setForecastsEnabled(newForecastsEnabled);
                 setTotalCash(Number(payload.new.total_cash) || 0);
                 
                 // Update chart preferences
@@ -219,14 +223,17 @@ export const useUserSettings = () => {
             }
           )
           .subscribe();
-
-        return () => {
-          channel.unsubscribe();
-        };
       }
     };
 
     setupRealtimeSubscription();
+
+    // Cleanup function
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, []);
 
   const setStartingBalance = async (amount: number) => {

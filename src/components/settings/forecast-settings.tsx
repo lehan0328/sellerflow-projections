@@ -123,12 +123,14 @@ export const ForecastSettings = () => {
     }
   };
 
-  const handleToggleForecast = async (enabled: boolean) => {
+   const handleToggleForecast = async (enabled: boolean) => {
     setTogglingForecast(true);
     
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) throw new Error("Not authenticated");
+
+      console.log('🔄 Toggling forecasts to:', enabled);
 
       // Update forecasts_enabled in database
       const { error: updateError } = await supabase
@@ -137,6 +139,15 @@ export const ForecastSettings = () => {
         .eq('user_id', currentUser.id);
 
       if (updateError) throw updateError;
+
+      // Verify the update
+      const { data: verifyData } = await supabase
+        .from('user_settings')
+        .select('forecasts_enabled')
+        .eq('user_id', currentUser.id)
+        .single();
+      
+      console.log('✅ Database updated, verified value:', verifyData?.forecasts_enabled);
 
       setForecastsEnabled(enabled);
 
@@ -169,6 +180,9 @@ export const ForecastSettings = () => {
           await refetchPayouts();
         }
       }
+      
+      // Refetch settings to ensure UI is in sync
+      await fetchSettings();
     } catch (error) {
       console.error('Error toggling forecasts:', error);
       toast.error("Failed to update forecast settings");
