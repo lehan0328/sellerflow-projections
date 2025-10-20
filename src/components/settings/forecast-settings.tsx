@@ -38,7 +38,8 @@ export const ForecastSettings = () => {
   const isOnForecastPage = window.location.pathname === '/ai-forecast';
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [confidenceThreshold, setConfidenceThreshold] = useState(8); // 3 = Aggressive, 8 = Moderate, 15 = Conservative
+  const [confidenceThreshold, setConfidenceThreshold] = useState(8); // Working value (can be changed)
+  const [savedConfidenceThreshold, setSavedConfidenceThreshold] = useState(8); // Saved value (only changes after save)
   const [forecastsEnabled, setForecastsEnabled] = useState(true);
   const [disabledAt, setDisabledAt] = useState<string | null>(null);
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
@@ -126,11 +127,13 @@ export const ForecastSettings = () => {
         console.log('📊 Loaded forecast risk level from database:', data.forecast_confidence_threshold);
         const loadedValue = data.forecast_confidence_threshold;
         setConfidenceThreshold(loadedValue);
+        setSavedConfidenceThreshold(loadedValue); // Set both working and saved values
         console.log('📊 State set to:', loadedValue, 'Safety Net:', getSafetyLevel(loadedValue).label);
       } else {
         // No setting exists yet, default to Moderate (8)
         console.log('📊 No existing setting, defaulting to Moderate (8)');
         setConfidenceThreshold(8);
+        setSavedConfidenceThreshold(8);
       }
 
       // Set forecast enabled state
@@ -323,6 +326,9 @@ export const ForecastSettings = () => {
 
       console.log('✅ Forecast risk level saved and verified:', confidenceThreshold);
       toast.success("Forecast settings updated");
+      
+      // Update saved value after successful save
+      setSavedConfidenceThreshold(confidenceThreshold);
 
       // Automatically regenerate forecasts with the new confidence threshold
       console.log('🔄 Starting forecast regeneration...');
@@ -401,6 +407,7 @@ export const ForecastSettings = () => {
   ];
 
   const safetyLevel = getSafetyLevel(confidenceThreshold);
+  const savedSafetyLevel = getSafetyLevel(savedConfidenceThreshold); // For "Current" display
 
   if (loading) {
     return <div>Loading...</div>;
@@ -445,11 +452,11 @@ export const ForecastSettings = () => {
           </div>
           <CardDescription>
             {forecastsEnabled ? (
-              <>
+               <>
                 Adjust the conservatism of your Amazon payout forecasts
                 {!loading && (
                   <div className="mt-2 text-xs text-muted-foreground">
-                    Current safety net: <span className="font-semibold">{safetyLevel.label} {safetyLevel.discount}</span>
+                    Current safety net: <span className="font-semibold">{savedSafetyLevel.label} {savedSafetyLevel.discount}</span>
                   </div>
                 )}
               </>
@@ -583,11 +590,11 @@ export const ForecastSettings = () => {
               </TooltipProvider>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Current:</span>
-              <Badge className={safetyLevel.color}>
-                {safetyLevel.label}
+              <span className="text-xs text-muted-foreground">Saved:</span>
+              <Badge className={savedSafetyLevel.color}>
+                {savedSafetyLevel.label}
               </Badge>
-              <span className="text-xs font-mono text-muted-foreground">{safetyLevel.discount}</span>
+              <span className="text-xs font-mono text-muted-foreground">{savedSafetyLevel.discount}</span>
             </div>
           </div>
 
@@ -615,6 +622,13 @@ export const ForecastSettings = () => {
                 <div className="text-sm font-medium mb-1">{tier.label}</div>
                 <div className="text-[10px] text-muted-foreground mb-2">{tier.subtitle}</div>
                 <div className="text-[9px] text-muted-foreground italic line-clamp-2">{tier.hint}</div>
+                {savedConfidenceThreshold === tier.value && confidenceThreshold !== tier.value && (
+                  <div className="absolute top-1 left-1">
+                    <Badge variant="outline" className="text-[9px] px-1 py-0">
+                      Saved
+                    </Badge>
+                  </div>
+                )}
               </button>
             ))}
           </div>
@@ -639,10 +653,10 @@ export const ForecastSettings = () => {
               <div>
                 <Button 
                   onClick={handleSave} 
-                  disabled={saving || !hasAmazonStore || !forecastsEnabled}
+                  disabled={saving || !hasAmazonStore || !forecastsEnabled || confidenceThreshold === savedConfidenceThreshold}
                   className="w-full"
                 >
-                  {saving ? "Saving..." : "Save Forecast Settings"}
+                  {saving ? "Saving..." : confidenceThreshold === savedConfidenceThreshold ? "No Changes to Save" : "Save Forecast Settings"}
                 </Button>
               </div>
             </TooltipTrigger>
