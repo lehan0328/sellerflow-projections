@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Clock, Plus } from "lucide-react";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useState } from "react";
@@ -25,6 +27,8 @@ export function AmazonPayouts() {
   } = useAmazonAccounts();
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
   const [showForecasts, setShowForecasts] = useState(true);
+  const [showConnectDialog, setShowConnectDialog] = useState(false);
+  const [selectedMarketplace, setSelectedMarketplace] = useState("ATVPDKIKX0DER");
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -80,6 +84,45 @@ export function AmazonPayouts() {
       await syncAmazonAccount(account.id);
     }
     setIsSyncing(null);
+  };
+
+  const handleConnectAmazon = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error('Please log in to connect your Amazon account.');
+        return;
+      }
+
+      toast.info('Fetching Amazon connection details...');
+
+      const { data, error } = await supabase.functions.invoke('get-amazon-client-id', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      
+      if (error) {
+        toast.error(`Failed to get Amazon credentials: ${error.message}`);
+        return;
+      }
+      
+      const clientId = data?.clientId;
+      
+      if (!clientId || clientId === 'undefined' || clientId === '') {
+        toast.error('Amazon Client ID is not configured. Please contact support.');
+        return;
+      }
+      
+      const redirectUri = `${window.location.origin}/amazon-oauth-callback`;
+      const authUrl = `https://sellercentral.amazon.com/apps/authorize/consent?application_id=${clientId}&state=${selectedMarketplace}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+      
+      toast.info('Redirecting to Amazon Seller Central...');
+      window.location.href = authUrl;
+    } catch (error) {
+      toast.error(`Failed to initiate Amazon connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
   if (isLoading) {
     return <Card className="shadow-card">
@@ -145,8 +188,8 @@ export function AmazonPayouts() {
               <p className="text-muted-foreground mb-4">
                 {amazonAccounts.length === 0 ? "Connect your Amazon seller account to see payouts" : "Sync your Amazon accounts to load payout data"}
               </p>
-              <Button onClick={() => navigate('/settings')}>
-                <Settings className="h-4 w-4 mr-2" />
+              <Button onClick={() => amazonAccounts.length === 0 ? setShowConnectDialog(true) : navigate('/settings')}>
+                {amazonAccounts.length === 0 ? <Plus className="h-4 w-4 mr-2" /> : <Settings className="h-4 w-4 mr-2" />}
                 {amazonAccounts.length === 0 ? "Connect Amazon Account" : "Manage Amazon Settings"}
               </Button>
             </div>
@@ -223,5 +266,49 @@ export function AmazonPayouts() {
             </Button>
           </div>}
       </CardContent>
+
+      <Dialog open={showConnectDialog} onOpenChange={setShowConnectDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Connect Amazon Seller Account</DialogTitle>
+            <DialogDescription>
+              Select your Amazon marketplace to connect your seller account.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Marketplace</Label>
+              <Select value={selectedMarketplace} onValueChange={setSelectedMarketplace}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select marketplace" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ATVPDKIKX0DER">🇺🇸 United States</SelectItem>
+                  <SelectItem value="A2EUQ1WTGCTBG2">🇨🇦 Canada</SelectItem>
+                  <SelectItem value="A1AM78C64UM0Y8">🇲🇽 Mexico</SelectItem>
+                  <SelectItem value="A1F83G8C2ARO7P">🇬🇧 United Kingdom</SelectItem>
+                  <SelectItem value="A1PA6795UKMFR9">🇩🇪 Germany</SelectItem>
+                  <SelectItem value="A13V1IB3VIYZZH">🇫🇷 France</SelectItem>
+                  <SelectItem value="APJ6JRA9NG5V4">🇮🇹 Italy</SelectItem>
+                  <SelectItem value="A1RKKUPIHCS9HS">🇪🇸 Spain</SelectItem>
+                  <SelectItem value="A1VC38T7YXB528">🇯🇵 Japan</SelectItem>
+                  <SelectItem value="A39IBJ37TRP1C6">🇦🇺 Australia</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Alert>
+              <AlertDescription className="text-sm">
+                You'll be redirected to Amazon Seller Central to authorize the connection. This is secure and read-only.
+              </AlertDescription>
+            </Alert>
+
+            <Button onClick={handleConnectAmazon} className="w-full">
+              Connect to Amazon
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>;
 }
