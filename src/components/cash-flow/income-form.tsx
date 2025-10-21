@@ -7,11 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCategories } from "@/hooks/useCategories";
 import { AddCategoryDialog } from "./add-category-dialog";
-import { Plus } from "lucide-react";
+import { Plus, TrendingUp, TrendingDown } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, Search } from "lucide-react";
-import { format, addMonths } from "date-fns";
+import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { CustomerForm } from "./customer-form";
@@ -149,15 +149,8 @@ export const IncomeForm = ({
   };
 
 
-  const maxEndDate = addMonths(new Date(), 3);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate end date is within 3 months for recurring
-    if (formData.isRecurring && formData.endDate && formData.endDate > maxEndDate) {
-      return; // Prevent submission
-    }
     
     const data = {
       id: editingIncome?.id || Date.now().toString(),
@@ -205,11 +198,16 @@ export const IncomeForm = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
         "max-h-[90vh] overflow-y-auto",
-        !formData.customerId ? "max-w-lg" : "max-w-md"
+        !formData.customerId ? "max-w-2xl" : "max-w-3xl"
       )}>
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
-            {editingIncome ? 'Edit Income' : (isRecurring ? `Add Recurring ${formData.type === "expense" ? "Expense" : "Income"}` : 'Add Income')}
+          <DialogTitle className="text-xl font-bold flex items-center gap-2">
+            {formData.type === "income" ? (
+              <TrendingUp className="h-5 w-5 text-green-600" />
+            ) : (
+              <TrendingDown className="h-5 w-5 text-red-600" />
+            )}
+            {editingIncome ? `Edit ${formData.type === "expense" ? "Expense" : "Income"}` : (isRecurring ? `Add Recurring ${formData.type === "expense" ? "Expense" : "Income"}` : 'Add Income')}
           </DialogTitle>
         </DialogHeader>
         
@@ -309,112 +307,133 @@ export const IncomeForm = ({
               </div>
             )}
             
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Type selector for recurring entries */}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Type toggle for recurring entries */}
               {formData.isRecurring && (
-                <div className="space-y-2">
-                  <Label htmlFor="type">Type *</Label>
-                  <Select 
-                    value={formData.type} 
-                    onValueChange={(value: "income" | "expense") => handleInputChange("type", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="income">Income</SelectItem>
-                      <SelectItem value="expense">Expense</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Transaction Type *</Label>
+                  <div className="flex gap-2 p-1 bg-muted rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => handleInputChange("type", "income")}
+                      className={cn(
+                        "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md font-medium transition-all",
+                        formData.type === "income"
+                          ? "bg-background shadow-sm text-green-600 border border-green-200"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <TrendingUp className="h-4 w-4" />
+                      Income
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleInputChange("type", "expense")}
+                      className={cn(
+                        "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md font-medium transition-all",
+                        formData.type === "expense"
+                          ? "bg-background shadow-sm text-red-600 border border-red-200"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <TrendingDown className="h-4 w-4" />
+                      Expense
+                    </button>
+                  </div>
                 </div>
               )}
-              {/* Transaction Name field - only for recurring */}
-              {(formData.isRecurring || isRecurring) && (
+              {/* Transaction Name and Amount - side by side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Transaction Name field - only for recurring */}
+                {(formData.isRecurring || isRecurring) && (
+                  <div className="space-y-2">
+                    <Label htmlFor="transactionName">Transaction Name *</Label>
+                    <Input
+                      id="transactionName"
+                      placeholder="e.g., Office Rent, Monthly Salary"
+                      value={formData.transactionName}
+                      onChange={(e) => handleInputChange("transactionName", e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-2">
-                  <Label htmlFor="transactionName">Transaction Name *</Label>
+                  <Label htmlFor="amount">Amount ($) *</Label>
                   <Input
-                    id="transactionName"
-                    placeholder="e.g., Office Rent, Monthly Salary"
-                    value={formData.transactionName}
-                    onChange={(e) => handleInputChange("transactionName", e.target.value)}
+                    id="amount"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.amount}
+                    onChange={(e) => handleInputChange("amount", e.target.value)}
                     required
                   />
                 </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount ($) *</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={formData.amount}
-                  onChange={(e) => handleInputChange("amount", e.target.value)}
-                  required
-                />
               </div>
 
-              <div className="space-y-2">
-                <Label>Start Date *</Label>
-                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !formData.paymentDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.paymentDate ? format(formData.paymentDate, "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={formData.paymentDate}
-                      onSelect={(date) => {
-                        handleInputChange("paymentDate", date || new Date());
-                        setIsDatePickerOpen(false);
-                      }}
-                      initialFocus
-                      className={cn("p-3 pointer-events-auto")}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* End Date - only for recurring, right under start date */}
-              {(formData.isRecurring || isRecurring) && (
+              {/* Date fields - side by side for recurring */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>End Date (Optional, max 3 months)</Label>
-                  <Popover>
+                  <Label>Start Date *</Label>
+                  <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
                           "w-full justify-start text-left font-normal",
-                          !formData.endDate && "text-muted-foreground"
+                          !formData.paymentDate && "text-muted-foreground"
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {formData.endDate ? format(formData.endDate, "PPP") : "No end date"}
+                        {formData.paymentDate ? format(formData.paymentDate, "PPP") : "Pick a date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={formData.endDate}
-                        onSelect={(date) => handleInputChange("endDate", date || undefined)}
-                        disabled={(date) => date > maxEndDate}
+                        selected={formData.paymentDate}
+                        onSelect={(date) => {
+                          handleInputChange("paymentDate", date || new Date());
+                          setIsDatePickerOpen(false);
+                        }}
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
                       />
                     </PopoverContent>
                   </Popover>
                 </div>
-              )}
+
+                {/* End Date - only for recurring */}
+                {(formData.isRecurring || isRecurring) && (
+                  <div className="space-y-2">
+                    <Label>End Date (Optional)</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !formData.endDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {formData.endDate ? format(formData.endDate, "PPP") : "No end date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formData.endDate}
+                          onSelect={(date) => handleInputChange("endDate", date || undefined)}
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                )}
+              </div>
 
               {/* Frequency - only for recurring */}
               {(formData.isRecurring || isRecurring) && (
@@ -518,7 +537,6 @@ export const IncomeForm = ({
                 <Button 
                   type="submit" 
                   className="flex-1 bg-gradient-primary"
-                  disabled={formData.isRecurring && formData.endDate ? formData.endDate > maxEndDate : false}
                 >
                   {editingIncome ? 'Update' : 'Add'} {isRecurring ? 'Recurring ' : ''}{formData.isRecurring ? (formData.type === "expense" ? "Expense" : "Income") : "Income"}
                 </Button>
