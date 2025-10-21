@@ -312,34 +312,34 @@ export const IncomeForm = ({
               {formData.isRecurring && (
                 <div className="space-y-3">
                   <Label className="text-sm font-medium">Transaction Type *</Label>
-                  <div className="flex gap-2 p-1 bg-muted rounded-lg">
-                    <button
-                      type="button"
-                      onClick={() => handleInputChange("type", "income")}
-                      className={cn(
-                        "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md font-medium transition-all",
-                        formData.type === "income"
-                          ? "bg-background shadow-sm text-green-600 border border-green-200"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      <TrendingUp className="h-4 w-4" />
-                      Income
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleInputChange("type", "expense")}
-                      className={cn(
-                        "flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-md font-medium transition-all",
-                        formData.type === "expense"
-                          ? "bg-background shadow-sm text-red-600 border border-red-200"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      <TrendingDown className="h-4 w-4" />
-                      Expense
-                    </button>
-                  </div>
+              <div className="flex gap-1.5 p-0.5 bg-muted rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => handleInputChange("type", "income")}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-all",
+                    formData.type === "income"
+                      ? "bg-background shadow-sm text-green-600 border border-green-200"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  Income
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInputChange("type", "expense")}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-all",
+                    formData.type === "expense"
+                      ? "bg-background shadow-sm text-red-600 border border-red-200"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <TrendingDown className="h-3.5 w-3.5" />
+                  Expense
+                </button>
+              </div>
                 </div>
               )}
               {/* Transaction Name and Amount - side by side */}
