@@ -76,6 +76,19 @@ serve(async (req) => {
       const customerEmail = invoice.customer_email;
 
       if (customerEmail) {
+        // Check if subscription is already terminated
+        if (invoice.subscription) {
+          const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+          
+          if (subscription.status === 'canceled' || subscription.status === 'incomplete_expired') {
+            console.log("Skipping payment failed processing - subscription already terminated:", subscription.id);
+            return new Response(JSON.stringify({ received: true, skipped: true }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            });
+          }
+        }
+
         console.log("Payment failed for customer:", customerEmail);
 
         // Find user by email and suspend account
