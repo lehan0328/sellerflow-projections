@@ -4,11 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useSubscription, PRICING_PLANS } from "@/hooks/useSubscription";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
-import { Check, Crown, Loader2, ExternalLink, XCircle, Star } from "lucide-react";
+import { Check, Crown, Loader2, ExternalLink, XCircle, Star, HardDrive } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CancellationFlow } from "@/components/subscription/CancellationFlow";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 
 export default function SubscriptionManagement() {
+  const { user } = useAuth();
   const { 
     subscribed, 
     plan, 
@@ -26,6 +30,70 @@ export default function SubscriptionManagement() {
   const { currentPlan, planLimits, currentUsage } = usePlanLimits();
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
   const [showCancellationFlow, setShowCancellationFlow] = useState(false);
+
+  // Storage limit: 2GB for all users
+  const STORAGE_LIMIT_BYTES = 2 * 1024 * 1024 * 1024; // 2GB in bytes
+
+  // Fetch user's account_id
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Fetch storage usage
+  const { data: storageUsage } = useQuery({
+    queryKey: ['storage-usage', profile?.account_id],
+    queryFn: async () => {
+      if (!profile?.account_id) return 0;
+      
+      // Fetch all documents metadata
+      const { data: metadata, error: metadataError } = await supabase
+        .from('documents_metadata')
+        .select('file_name, file_path')
+        .eq('account_id', profile.account_id);
+
+      if (metadataError) throw metadataError;
+
+      // Fetch storage files to get sizes
+      let totalSize = 0;
+      try {
+        const { data: storageFiles, error: filesError } = await supabase.storage
+          .from('purchase-orders')
+          .list(profile.account_id);
+
+        if (!filesError && storageFiles) {
+          totalSize = storageFiles.reduce((sum, file) => sum + (file.metadata?.size || 0), 0);
+        }
+      } catch (error) {
+        console.warn('Could not fetch storage files:', error);
+      }
+
+      return totalSize;
+    },
+    enabled: !!profile?.account_id,
+  });
+
+  // Format bytes to human readable
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  const storagePercentage = ((storageUsage || 0) / STORAGE_LIMIT_BYTES) * 100;
 
   const handleUpgrade = async (priceId: string, planKey: string) => {
     setProcessingPlan(planKey);
@@ -112,7 +180,7 @@ export default function SubscriptionManagement() {
             </div>
           </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Financial Connections</span>
@@ -142,6 +210,28 @@ export default function SubscriptionManagement() {
                   className="bg-orange-500 h-2 rounded-full transition-all"
                   style={{ 
                     width: planLimits.amazonConnections === 999 ? '10%' : `${Math.min((currentUsage.amazonConnections / planLimits.amazonConnections) * 100, 100)}%`
+                  }}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium flex items-center gap-1">
+                  <HardDrive className="h-3.5 w-3.5" />
+                  Document Storage
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {formatBytes(storageUsage || 0)} / 2GB
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground mb-1">All Plans</div>
+              <div className="w-full bg-secondary rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full transition-all ${
+                    storagePercentage > 90 ? 'bg-destructive' : storagePercentage > 75 ? 'bg-yellow-500' : 'bg-blue-500'
+                  }`}
+                  style={{ 
+                    width: `${Math.min(storagePercentage, 100)}%`
                   }}
                 />
               </div>

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, FileText, Download, Trash2, Search, Calendar as CalendarIcon, Plus, Loader2, RefreshCw, Edit } from "lucide-react";
+import { ArrowLeft, Upload, FileText, Download, Trash2, Search, Calendar as CalendarIcon, Plus, Loader2, RefreshCw, Edit, HardDrive } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -64,6 +65,9 @@ export default function DocumentStorage() {
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [newCustomerName, setNewCustomerName] = useState("");
   const [replacingDocument, setReplacingDocument] = useState<string | null>(null);
+
+  // Storage limit: 2GB
+  const STORAGE_LIMIT_BYTES = 2 * 1024 * 1024 * 1024; // 2GB in bytes
 
   const { vendors } = useVendors();
 
@@ -152,6 +156,17 @@ export default function DocumentStorage() {
     if (!documents) return 0;
     return documents.reduce((total, doc) => total + ((doc as any).file_size || 0), 0);
   }, [documents]);
+
+  // Format bytes to human readable
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  const storagePercentage = (totalStorageUsed / STORAGE_LIMIT_BYTES) * 100;
 
   // Upload mutation
   const uploadMutation = useMutation({
@@ -258,6 +273,12 @@ export default function DocumentStorage() {
     // Validate file size (50MB max as per reference)
     if (file.size > 50 * 1024 * 1024) {
       toast.error('File size must be less than 50MB');
+      return;
+    }
+
+    // Check if upload would exceed storage limit
+    if (totalStorageUsed + file.size > STORAGE_LIMIT_BYTES) {
+      toast.error(`Upload would exceed your 2GB storage limit. You have ${formatBytes(STORAGE_LIMIT_BYTES - totalStorageUsed)} remaining.`);
       return;
     }
 
@@ -636,10 +657,36 @@ export default function DocumentStorage() {
         {/* Upload Form Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Upload Document</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Upload PDF files (Max 50MB) with vendor information
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <HardDrive className="h-5 w-5" />
+                  Upload Document
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Upload PDF files (Max 50MB) with vendor information
+                </p>
+              </div>
+            </div>
+            
+            {/* Storage Usage */}
+            <div className="space-y-2 mt-4 p-4 bg-muted/30 rounded-lg border">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium">Storage Usage</span>
+                <span className={cn(
+                  "font-semibold",
+                  storagePercentage > 90 ? "text-destructive" : storagePercentage > 75 ? "text-yellow-600" : "text-muted-foreground"
+                )}>
+                  {formatBytes(totalStorageUsed)} / {formatBytes(STORAGE_LIMIT_BYTES)}
+                </span>
+              </div>
+              <Progress value={storagePercentage} className="h-2" />
+              <p className="text-xs text-muted-foreground">
+                {storagePercentage > 90 
+                  ? "Storage almost full - consider deleting unused documents" 
+                  : `${formatBytes(STORAGE_LIMIT_BYTES - totalStorageUsed)} available`}
+              </p>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
