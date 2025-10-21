@@ -199,7 +199,7 @@ export const IncomeForm = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
         "max-h-[90vh] overflow-y-auto",
-        !formData.customerId ? "max-w-2xl" : "max-w-3xl"
+        !formData.customerId ? "max-w-lg" : "max-w-3xl w-full"
       )}>
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
