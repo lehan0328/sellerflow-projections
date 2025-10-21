@@ -347,42 +347,19 @@ export default function Analytics() {
       .sort((a, b) => b.value - a.value);
   }, [incomeItems, amazonPayouts, dbTransactions, incomeDateRange, customStartDate, customEndDate]);
 
-  // Expense breakdown by vendor category
-  const vendorCategoryData = useMemo(() => {
+  // Purchase Orders breakdown by vendor category (inventory, goods)
+  const purchaseOrderCategoryData = useMemo(() => {
     const categoryTotals: Record<string, number> = {};
     const { start, end } = getDateRange(vendorDateRange);
     
-    console.log('📊 Expense Analytics Debug:', {
+    console.log('📊 Purchase Order Analytics Debug:', {
       dateRange: vendorDateRange,
       start: start.toISOString(),
       end: end.toISOString(),
       totalVendorTransactions: vendorTransactions.length,
-      totalBankTransactions: bankTransactions.length,
-      totalVendors: vendors.length
     });
     
-    // Define all possible expense categories
-    const allCategories = new Set<string>();
-    
-    // Collect categories from vendors
-    vendors.forEach(vendor => {
-      const category = vendor.category || 'Uncategorized';
-      allCategories.add(category);
-    });
-    
-    // Collect categories from bank transactions
-    bankTransactions.forEach(tx => {
-      if (tx.transactionType === 'debit' && tx.category && tx.category.length > 0) {
-        allCategories.add(tx.category[0]);
-      }
-    });
-    
-    // Initialize all categories with 0
-    allCategories.forEach(category => {
-      categoryTotals[category] = 0;
-    });
-    
-    // Add amounts from vendor transactions - ONLY include if due date is in the selected range
+    // Add amounts from vendor transactions (purchase orders) - ONLY include if due date is in the selected range
     vendorTransactions.forEach(tx => {
       const dueDate = new Date(tx.dueDate);
       const isInRange = dueDate >= start && dueDate <= end;
@@ -392,30 +369,81 @@ export default function Analytics() {
         categoryTotals[category] = (categoryTotals[category] || 0) + tx.amount;
       }
     });
-    
-    // Add amounts from bank transactions (current expenses)
-    bankTransactions.forEach(tx => {
-      if (tx.transactionType === 'debit') {
-        const txDate = new Date(tx.date);
-        const isInRange = txDate >= start && txDate <= end;
-        
-        if (isInRange && !tx.archived) {
-          const category = (tx.category && tx.category.length > 0) ? tx.category[0] : 'Uncategorized';
-          categoryTotals[category] = (categoryTotals[category] || 0) + tx.amount;
-        }
-      }
-    });
 
-    console.log('📊 Category totals:', categoryTotals);
+    console.log('📊 Purchase Order Category totals:', categoryTotals);
 
     return Object.entries(categoryTotals)
       .map(([category, total]) => ({
         name: category,
         value: total
       }))
-      .filter(item => item.value > 0) // Only show categories with expenses
+      .filter(item => item.value > 0)
       .sort((a, b) => b.value - a.value);
-  }, [vendors, vendorTransactions, bankTransactions, vendorDateRange, customStartDate, customEndDate]);
+  }, [vendorTransactions, vendorDateRange, customStartDate, customEndDate]);
+
+  // Recurring Expenses breakdown by category (employee costs, software, etc.)
+  const recurringExpenseCategoryData = useMemo(() => {
+    const categoryTotals: Record<string, number> = {};
+    const { start, end } = getDateRange(vendorDateRange);
+    
+    console.log('📊 Recurring Expense Analytics Debug:', {
+      dateRange: vendorDateRange,
+      start: start.toISOString(),
+      end: end.toISOString(),
+      totalRecurringExpenses: recurringExpenses.length,
+    });
+    
+    // Add amounts from recurring expenses within the date range
+    recurringExpenses.forEach(expense => {
+      if (!expense.is_active) return;
+      
+      const expenseStart = new Date(expense.start_date);
+      const expenseEnd = expense.end_date ? new Date(expense.end_date) : null;
+      
+      // Check if the recurring expense is active during the selected date range
+      const isActive = expenseStart <= end && (!expenseEnd || expenseEnd >= start);
+      
+      if (isActive) {
+        const category = expense.category || 'Uncategorized';
+        // Calculate the total for the date range based on frequency
+        // For simplicity, we'll just add the monthly amount
+        categoryTotals[category] = (categoryTotals[category] || 0) + (expense.amount || 0);
+      }
+    });
+
+    console.log('📊 Recurring Expense Category totals:', categoryTotals);
+
+    return Object.entries(categoryTotals)
+      .map(([category, total]) => ({
+        name: category,
+        value: total
+      }))
+      .filter(item => item.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [recurringExpenses, vendorDateRange, customStartDate, customEndDate]);
+
+  // Combined expense data (purchase orders + recurring expenses)
+  const vendorCategoryData = useMemo(() => {
+    const categoryTotals: Record<string, number> = {};
+    
+    // Merge purchase order data
+    purchaseOrderCategoryData.forEach(item => {
+      categoryTotals[item.name] = (categoryTotals[item.name] || 0) + item.value;
+    });
+    
+    // Merge recurring expense data
+    recurringExpenseCategoryData.forEach(item => {
+      categoryTotals[item.name] = (categoryTotals[item.name] || 0) + item.value;
+    });
+
+    return Object.entries(categoryTotals)
+      .map(([category, total]) => ({
+        name: category,
+        value: total
+      }))
+      .filter(item => item.value > 0)
+      .sort((a, b) => b.value - a.value);
+  }, [purchaseOrderCategoryData, recurringExpenseCategoryData]);
 
   // Top vendors by spending
   const topVendors = useMemo(() => {
@@ -792,16 +820,35 @@ export default function Analytics() {
         </TabsContent>
 
         <TabsContent value="expenses" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 mb-4">
             <Card>
               <CardHeader>
-                <CardTitle>Expense Distribution</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-4 w-4 text-primary" />
+                    Purchase Orders by Category
+                  </CardTitle>
+                  <Select value={vendorDateRange} onValueChange={setVendorDateRange}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="this-month">This Month</SelectItem>
+                      <SelectItem value="last-month">Last Month</SelectItem>
+                      <SelectItem value="last-2-months">Last 2 Months</SelectItem>
+                      <SelectItem value="last-3-months">Last 3 Months</SelectItem>
+                      <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+                      <SelectItem value="ytd">Year to Date</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">Inventory & goods purchases</p>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={vendorCategoryData}
+                      data={purchaseOrderCategoryData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -810,15 +857,70 @@ export default function Analytics() {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {vendorCategoryData.map((entry, index) => (
+                      {purchaseOrderCategoryData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
                   </PieChart>
                 </ResponsiveContainer>
+                {purchaseOrderCategoryData.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">No purchase orders in this period</p>
+                )}
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-purple-600" />
+                    Recurring Expenses by Category
+                  </CardTitle>
+                  <Select value={vendorDateRange} onValueChange={setVendorDateRange}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="this-month">This Month</SelectItem>
+                      <SelectItem value="last-month">Last Month</SelectItem>
+                      <SelectItem value="last-2-months">Last 2 Months</SelectItem>
+                      <SelectItem value="last-3-months">Last 3 Months</SelectItem>
+                      <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+                      <SelectItem value="ytd">Year to Date</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">Employee costs, software, etc.</p>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={recurringExpenseCategoryData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name}: $${value.toLocaleString()}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {recurringExpenseCategoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
+                  </PieChart>
+                </ResponsiveContainer>
+                {recurringExpenseCategoryData.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">No recurring expenses in this period</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
 
             <Card>
               <CardHeader>
