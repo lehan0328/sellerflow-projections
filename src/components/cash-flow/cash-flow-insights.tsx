@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sparkles, TrendingUp, AlertCircle, Loader2, MessageCircle, Send, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw, Settings, DollarSign, Calendar, ArrowLeft } from "lucide-react";
+import { Sparkles, TrendingUp, AlertCircle, Loader2, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw, Settings, DollarSign, Calendar, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -76,15 +76,12 @@ export const CashFlowInsights = ({
   const [showAllOpportunities, setShowAllOpportunities] = useState(false);
   const [showSearchOpportunities, setShowSearchOpportunities] = useState(false);
   const [showAllCreditCards, setShowAllCreditCards] = useState(false);
-  const [chatMode, setChatMode] = useState(false);
   const [searchType, setSearchType] = useState<'amount' | 'date'>('amount');
   const [searchAmount, setSearchAmount] = useState('');
   const [searchDate, setSearchDate] = useState('');
   const [tempProjections, setTempProjections] = useState<Array<{ amount: number; date: string }>>([]);
   const [projectionAmount, setProjectionAmount] = useState('');
   const [projectionDate, setProjectionDate] = useState('');
-  const [chatQuestion, setChatQuestion] = useState("");
-  const [chatLoading, setChatLoading] = useState(false);
   const [isEditingReserve, setIsEditingReserve] = useState(false);
   const [editReserveValue, setEditReserveValue] = useState(reserveAmount.toString());
   const [isForecastGenerating, setIsForecastGenerating] = useState(false);
@@ -92,14 +89,6 @@ export const CashFlowInsights = ({
   const [lastRefreshTime, setLastRefreshTime] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [userConfidenceThreshold, setUserConfidenceThreshold] = useState<number>(0);
-  const [conversationHistory, setConversationHistory] = useState<Array<{
-    role: 'user' | 'assistant';
-    content: string;
-  }>>(() => {
-    // Load conversation history from localStorage on mount
-    const saved = localStorage.getItem('cashflow-chat-history');
-    return saved ? JSON.parse(saved) : [];
-  });
   const netDaily = dailyInflow - dailyOutflow;
   const healthStatus = netDaily >= 0 ? "positive" : "negative";
 
@@ -298,11 +287,6 @@ export const CashFlowInsights = ({
     setIsEditingReserve(false);
   };
 
-  // Save conversation history to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('cashflow-chat-history', JSON.stringify(conversationHistory));
-  }, [conversationHistory]);
-
   // Fetch pending purchase orders for each credit card
   useEffect(() => {
     const fetchPendingOrders = async () => {
@@ -386,56 +370,6 @@ export const CashFlowInsights = ({
 
     calculateCardOpportunities();
   }, [creditCards]);
-  const handleChatSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatQuestion.trim()) return;
-    const currentQuestion = chatQuestion.trim();
-
-    // Add user message to history immediately
-    setConversationHistory(prev => [...prev, {
-      role: 'user',
-      content: currentQuestion
-    }]);
-    setChatQuestion(""); // Clear input field
-    setChatLoading(true);
-    try {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-      const {
-        data,
-        error
-      } = await supabase.functions.invoke("cash-flow-chat", {
-        body: {
-          question: currentQuestion,
-          userId: user.id,
-          conversationHistory: conversationHistory
-        }
-      });
-      if (error) throw error;
-      if (data?.answer) {
-        // Add assistant response to history
-        setConversationHistory(prev => [...prev, {
-          role: 'assistant',
-          content: data.answer
-        }]);
-      }
-    } catch (error: any) {
-      console.error("Chat error:", error);
-      let errorMessage = "Unable to get an answer. Please try again later.";
-
-      // Add error message to history
-      setConversationHistory(prev => [...prev, {
-        role: 'assistant',
-        content: errorMessage
-      }]);
-    } finally {
-      setChatLoading(false);
-    }
-  };
 
   // Handle adding a temporary PO projection
   const handleAddProjection = () => {
@@ -518,53 +452,12 @@ export const CashFlowInsights = ({
             <Sparkles className="h-5 w-5 text-primary" />
             AI Insights
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant={chatMode ? "default" : "ghost"} size="sm" onClick={() => setChatMode(!chatMode)}>
-              <MessageCircle className="h-4 w-4 mr-1" />
-              {chatMode ? "Back" : "Chat"}
-            </Button>
-          </div>
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-1">
           All projections reflect transactions within the next 3 months only
         </p>
       </CardHeader>
       <CardContent className="space-y-4 flex-1 overflow-auto">
-        {chatMode ? <div className="flex flex-col h-full space-y-4">
-            {/* Conversation History */}
-            {conversationHistory.length > 0 && <ScrollArea className="flex-1 h-[400px]">
-                <div className="space-y-3 pr-4">
-                  {conversationHistory.map((message, index) => <div key={index} className={`p-3 rounded-lg ${message.role === 'user' ? 'bg-primary/10 ml-8' : 'bg-muted mr-8'}`}>
-                    <p className="text-xs font-semibold mb-1 text-muted-foreground">
-                      {message.role === 'user' ? 'You' : 'AI Assistant'}
-                    </p>
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                      {message.content}
-                    </p>
-                  </div>)}
-                  {chatLoading && <div className="flex items-center gap-2 p-3 bg-muted mr-8 rounded-lg">
-                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                      <span className="text-sm text-muted-foreground">AI is thinking...</span>
-                    </div>}
-                </div>
-              </ScrollArea>}
-
-            {/* Input Form */}
-            <form onSubmit={handleChatSubmit} className="space-y-3 flex-shrink-0">
-              <div className="flex gap-2">
-                <Input placeholder="Ask about your cash flow..." value={chatQuestion} onChange={e => setChatQuestion(e.target.value)} disabled={chatLoading} className="flex-1" />
-                <Button type="submit" disabled={chatLoading || !chatQuestion.trim()} size="icon">
-                  {chatLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </Button>
-              </div>
-              {conversationHistory.length > 0 && <Button type="button" variant="outline" size="sm" onClick={() => {
-            setConversationHistory([]);
-            localStorage.removeItem('cashflow-chat-history');
-          }} className="w-full">
-                  Clear Chat History
-                </Button>}
-            </form>
-          </div> : <>
             {/* Safe Spending Power */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -808,10 +701,9 @@ export const CashFlowInsights = ({
                       {transactionMatchButton}
                     </div>
                   )}
-                </div>
-              )}
             </div>
-          </>}
+          )}
+        </div>
       </CardContent>
 
       {/* All Buying Opportunities Modal - List View */}
