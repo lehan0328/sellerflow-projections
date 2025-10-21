@@ -673,23 +673,80 @@ export const PurchaseOrderForm = ({
                 </div>
               </div>
 
-            {/* PO Name */}
-            <div className="space-y-2">
-              <Label htmlFor="poName">PO Name *</Label>
-              <Input id="poName" placeholder="e.g., Q1 Inventory Restock" value={formData.poName} onChange={e => setFormData(prev => ({
-              ...prev,
-              poName: e.target.value
-            }))} required />
+            {/* PO Name and Amount in Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="poName">PO Name *</Label>
+                <Input id="poName" placeholder="e.g., Q1 Inventory Restock" value={formData.poName} onChange={e => setFormData(prev => ({
+                ...prev,
+                poName: e.target.value
+              }))} required />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="amount">Total Amount *</Label>
+                <Input id="amount" type="number" step="0.01" placeholder="0.00" value={formData.amount} onChange={e => setFormData(prev => ({
+                ...prev,
+                amount: e.target.value
+              }))} required />
+              </div>
             </div>
 
-            {/* Amount */}
+            {/* Category */}
             <div className="space-y-2">
-              <Label htmlFor="amount">Total Amount *</Label>
-              <Input id="amount" type="number" step="0.01" placeholder="0.00" value={formData.amount} onChange={e => setFormData(prev => ({
-              ...prev,
-              amount: e.target.value
-            }))} required />
+              <Label>Category</Label>
+              <Select 
+                value={formData.category}
+                onValueChange={(value) => {
+                  if (value === "__add_new__") {
+                    setShowAddCategory(true);
+                  } else {
+                    setFormData(prev => ({
+                      ...prev,
+                      category: value
+                    }));
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="border-b pb-1 mb-1">
+                    <SelectItem value="__add_new__" className="text-primary font-medium">
+                      <div className="flex items-center gap-2">
+                        <Plus className="h-4 w-4" />
+                        Add New Category
+                      </div>
+                    </SelectItem>
+                  </div>
+                  {categories.map(category => (
+                    <SelectItem key={category.id} value={category.name}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{category.name}</span>
+                        {category.is_default && (
+                          <span className="text-xs text-muted-foreground ml-2">(default)</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
+            <AddCategoryDialog
+              open={showAddCategory}
+              onOpenChange={setShowAddCategory}
+              onAddCategory={async (name) => {
+                await addCategory(name);
+                await refetchCategories();
+                setFormData(prev => ({
+                  ...prev,
+                  category: name
+                }));
+              }}
+              type="expense"
+            />
             
             {/* PO Date */}
             <div className="space-y-2">
@@ -1070,70 +1127,6 @@ export const PurchaseOrderForm = ({
                 </div>}
             </div>
 
-            {/* Category */}
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <Select 
-                value={formData.category}
-                onValueChange={(value) => {
-                  if (value === "__add_new__") {
-                    setShowAddCategory(true);
-                  } else {
-                    setFormData(prev => ({
-                      ...prev,
-                      category: value
-                    }));
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <div className="border-b pb-1 mb-1">
-                    <SelectItem value="__add_new__" className="text-primary font-medium">
-                      <div className="flex items-center gap-2">
-                        <Plus className="h-4 w-4" />
-                        Add New Category
-                      </div>
-                    </SelectItem>
-                  </div>
-                  {categories.map(category => (
-                    <SelectItem key={category.id} value={category.name}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{category.name}</span>
-                        {category.is_default && (
-                          <span className="text-xs text-muted-foreground ml-2">(default)</span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <AddCategoryDialog
-              open={showAddCategory}
-              onOpenChange={setShowAddCategory}
-              onAddCategory={async (name) => {
-                await addCategory(name);
-                await refetchCategories();
-                setFormData(prev => ({
-                  ...prev,
-                  category: name
-                }));
-              }}
-              type="expense"
-            />
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description(optional)</Label>
-              <Textarea id="description" placeholder="Brief description of the purchase order" value={formData.description} onChange={e => setFormData(prev => ({
-              ...prev,
-              description: e.target.value
-            }))} rows={2} />
-            </div>
 
             {/* Notes */}
             <div className="space-y-2">
