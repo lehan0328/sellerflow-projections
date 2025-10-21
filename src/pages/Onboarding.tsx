@@ -221,15 +221,15 @@ export default function Onboarding() {
                 Enter your Amazon Seller Central credentials
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="text-center py-8 space-y-4">
-                <ShoppingCart className="h-16 w-16 text-primary mx-auto" />
+            <CardContent className="space-y-4">
+              <div className="text-center py-4 space-y-3">
+                <ShoppingCart className="h-12 w-12 text-primary mx-auto" />
                 <div>
-                  <h3 className="font-semibold text-lg mb-2">One-Click Store Connection</h3>
-                  <p className="text-muted-foreground mb-4">
+                  <h3 className="font-semibold text-base mb-1">One-Click Store Connection</h3>
+                  <p className="text-muted-foreground text-sm mb-3">
                     Securely connect your Amazon store to automatically sync:
                   </p>
-                  <div className="text-left max-w-md mx-auto space-y-2 text-sm">
+                  <div className="text-left max-w-md mx-auto space-y-1.5 text-sm">
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                       <span>Amazon payout schedules and amounts</span>
@@ -253,8 +253,8 @@ export default function Onboarding() {
                   </div>
                 </div>
                 
-                <div className="max-w-md mx-auto pt-4">
-                  <Label htmlFor="payout-frequency" className="text-left block mb-2">
+                <div className="max-w-md mx-auto pt-2">
+                  <Label htmlFor="payout-frequency" className="text-left block mb-1.5 text-sm">
                     Payout Schedule
                   </Label>
                   <Select 
@@ -282,7 +282,7 @@ export default function Onboarding() {
                   toast.info("Store connection API coming soon!");
                   setCurrentStep('bank');
                 }}
-                className="w-full bg-gradient-primary h-12 text-base font-semibold"
+                className="w-full bg-gradient-primary h-10"
               >
                 Connect Your Store
               </Button>
