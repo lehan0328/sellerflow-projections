@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
@@ -40,7 +40,7 @@ export const useIncome = () => {
   };
 
   // Fetch income items from database
-  const fetchIncome = async () => {
+  const fetchIncome = useCallback(async () => {
     if (!user) {
       setIncomeItems([]);
       setIsLoading(false);
@@ -104,7 +104,7 @@ export const useIncome = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
 
   // Add new income item
   const addIncome = async (incomeData: Omit<IncomeItem, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -338,7 +338,7 @@ export const useIncome = () => {
   // Load income on mount and when auth changes
   useEffect(() => {
     fetchIncome();
-  }, [user]);
+  }, [fetchIncome]);
 
   // Realtime subscription for income
   useEffect(() => {
@@ -366,7 +366,7 @@ export const useIncome = () => {
         supabase.removeChannel(channel);
       }
     };
-  }, [user]);
+  }, [fetchIncome]);
 
   return {
     incomeItems,
