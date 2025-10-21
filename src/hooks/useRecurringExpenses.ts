@@ -54,13 +54,14 @@ export const useRecurringExpenses = () => {
       }
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['recurring-expenses'] });
-      toast({ title: "Recurring expense added successfully" });
+      const typeLabel = data.type === 'income' ? 'income' : 'expense';
+      toast({ title: `Recurring ${typeLabel} added successfully` });
     },
     onError: (error: Error) => {
       toast({ 
-        title: "Failed to add recurring expense", 
+        title: "Failed to add recurring transaction", 
         description: error.message,
         variant: "destructive" 
       });
@@ -84,13 +85,14 @@ export const useRecurringExpenses = () => {
       }
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['recurring-expenses'] });
-      toast({ title: "Recurring expense updated successfully" });
+      const typeLabel = data.type === 'income' ? 'income' : 'expense';
+      toast({ title: `Recurring ${typeLabel} updated successfully` });
     },
     onError: (error: Error) => {
       toast({ 
-        title: "Failed to update recurring expense", 
+        title: "Failed to update recurring transaction", 
         description: error.message,
         variant: "destructive" 
       });
@@ -108,11 +110,11 @@ export const useRecurringExpenses = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recurring-expenses'] });
-      toast({ title: "Recurring expense deleted successfully" });
+      toast({ title: "Recurring transaction deleted successfully" });
     },
     onError: (error: Error) => {
       toast({ 
-        title: "Failed to delete recurring expense", 
+        title: "Failed to delete recurring transaction", 
         description: error.message,
         variant: "destructive" 
       });
