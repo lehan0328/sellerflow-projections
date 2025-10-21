@@ -340,7 +340,13 @@ const Settings = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="default-currency">Default Currency</Label>
-              <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+              <Select 
+                value={selectedCurrency} 
+                onValueChange={(value) => {
+                  setSelectedCurrency(value);
+                  updateProfileMutation.mutate({ currency: value });
+                }}
+              >
                 <SelectTrigger id="default-currency" className="bg-background">
                   <SelectValue placeholder="Select currency" />
                 </SelectTrigger>
@@ -357,13 +363,6 @@ const Settings = () => {
                   <SelectItem value="BRL">BRL - Brazilian Real (R$)</SelectItem>
                 </SelectContent>
               </Select>
-              <Button 
-                onClick={() => updateProfileMutation.mutate({ currency: selectedCurrency })}
-                disabled={updateProfileMutation.isPending || selectedCurrency === profile?.currency}
-                className="w-full mt-2"
-              >
-                {updateProfileMutation.isPending ? 'Saving...' : 'Save Currency'}
-              </Button>
             </div>
           </div>
         )}
