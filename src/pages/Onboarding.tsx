@@ -118,8 +118,10 @@ export default function Onboarding() {
         .maybeSingle();
 
       if (profile?.account_id) {
+        console.log('💾 Saving forecast preference:', forecastingEnabled);
+        
         // Save forecasting preference
-        await supabase
+        const { data: settingsData, error: settingsError } = await supabase
           .from('user_settings')
           .upsert({
             user_id: user.id,
@@ -129,20 +131,42 @@ export default function Onboarding() {
             default_reserve_lag_days: 7
           }, {
             onConflict: 'user_id'
-          });
+          })
+          .select();
+
+        if (settingsError) {
+          console.error('❌ Error saving settings:', settingsError);
+          toast.error('Failed to save forecast settings');
+          return;
+        }
+
+        console.log('✅ Settings saved successfully:', settingsData);
 
         // If enabled, generate initial forecasts
         if (forecastingEnabled) {
           toast.loading("Setting up your forecasts...");
-          await supabase.functions.invoke('forecast-amazon-payouts-math', {
+          const { error: forecastError } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
             body: { userId: user.id }
           });
+          
+          if (forecastError) {
+            console.error('❌ Error generating forecasts:', forecastError);
+            toast.error('Forecasts enabled but initial generation failed');
+          } else {
+            toast.success('Forecasts enabled successfully!');
+          }
+        } else {
+          toast.success('Onboarding complete!');
         }
       }
     } catch (error) {
       console.error('Error saving onboarding preferences:', error);
+      toast.error('An error occurred during onboarding');
     } finally {
-      navigate('/dashboard');
+      // Small delay to ensure database writes complete
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1000);
     }
   };
 
