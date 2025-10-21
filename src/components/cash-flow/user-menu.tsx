@@ -1,13 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Settings, CreditCard, LogOut, History, Lightbulb, Shield, Users, Award } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,55 +9,60 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useAdmin } from "@/hooks/useAdmin";
-
 export function UserMenu() {
   const navigate = useNavigate();
-  const { signOut, user } = useAuth();
-  const { resetAccount } = useUserSettings();
-  const { isAdmin } = useAdmin();
-  
+  const {
+    signOut,
+    user
+  } = useAuth();
+  const {
+    resetAccount
+  } = useUserSettings();
+  const {
+    isAdmin
+  } = useAdmin();
+
   // Fetch user profile
-  const { data: profile } = useQuery({
+  const {
+    data: profile
+  } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('first_name, last_name')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
+      const {
+        data,
+        error
+      } = await supabase.from('profiles').select('first_name, last_name').eq('user_id', user.id).maybeSingle();
       if (error) {
         console.error('Error fetching profile:', error);
         return null;
       }
       return data;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id
   });
 
   // Check if user has affiliate access
-  const { data: affiliateStatus } = useQuery({
+  const {
+    data: affiliateStatus
+  } = useQuery({
     queryKey: ['affiliate-status', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from('affiliates')
-        .select('status')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
+      const {
+        data,
+        error
+      } = await supabase.from('affiliates').select('status').eq('user_id', user.id).maybeSingle();
       if (error) {
         console.error('Error fetching affiliate status:', error);
         return null;
       }
       return data;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id
   });
-
   const hasAffiliateAccess = affiliateStatus?.status === 'approved';
-  
+
   // Get user display name
   const getUserName = () => {
     if (profile?.first_name && profile?.last_name) {
@@ -77,16 +76,11 @@ export function UserMenu() {
     }
     return 'User';
   };
-  
+
   // Get initials from user name
   const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(part => part.charAt(0).toUpperCase())
-      .join('')
-      .slice(0, 2);
+    return name.split(' ').map(part => part.charAt(0).toUpperCase()).join('').slice(0, 2);
   };
-
   const handleSignOut = async () => {
     const error = await signOut();
     if (!error) {
@@ -96,9 +90,7 @@ export function UserMenu() {
       toast.error('Failed to sign out');
     }
   };
-
-  return (
-    <DropdownMenu>
+  return <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
@@ -109,24 +101,20 @@ export function UserMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 bg-background z-50" align="end" forceMount>
-        {isAdmin && (
-          <>
+        {isAdmin && <>
             <DropdownMenuItem onClick={() => navigate('/admin')}>
               <Shield className="mr-2 h-4 w-4" />
               <span>Admin Dashboard</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-          </>
-        )}
-        {hasAffiliateAccess && (
-          <>
+          </>}
+        {hasAffiliateAccess && <>
             <DropdownMenuItem onClick={() => navigate('/affiliate-dashboard')}>
               <Award className="mr-2 h-4 w-4" />
               <span>Affiliate Dashboard</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-          </>
-        )}
+          </>}
         <DropdownMenuItem onClick={() => navigate('/settings')}>
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
@@ -142,7 +130,7 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => navigate('/transactions')}>
           <History className="mr-2 h-4 w-4" />
-          <span>Transaction Log</span>
+          <span>Archived Transaction</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate('/settings?section=feature-request')}>
           <Lightbulb className="mr-2 h-4 w-4" />
@@ -154,6 +142,5 @@ export function UserMenu() {
           <span>Sign out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
-    </DropdownMenu>
-  );
+    </DropdownMenu>;
 }
