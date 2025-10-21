@@ -539,6 +539,56 @@ export const PurchaseOrderForm = ({
                 <p className="text-sm text-muted-foreground">Choose a vendor to create a purchase order</p>
               </div>
 
+              <div className="space-y-2.5">
+                <Label htmlFor="vendor" className="text-sm font-medium">Vendor *</Label>
+                <div className="flex gap-2.5">
+                  <div className="relative flex-1">
+                    <div className="relative">
+                      <Input placeholder="Search or select vendor..." value={vendorSearchTerm} onChange={e => {
+                    setVendorSearchTerm(e.target.value);
+                    if (e.target.value) setShowVendorDropdown(true);
+                  }} onClick={() => setShowVendorDropdown(true)} className="pr-8" />
+                      <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    </div>
+                    
+                    {showVendorDropdown && <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
+                        {filteredVendors.length === 0 ? <div className="p-3 text-sm text-muted-foreground text-center bg-background">
+                            {vendorSearchTerm ? <div className="space-y-2">
+                                <div>No vendors found matching your search</div>
+                                 <Button size="sm" variant="outline" onClick={() => setShowVendorForm(true)} className="text-xs">
+                                   Add "{vendorSearchTerm}" as new vendor
+                                 </Button>
+                              </div> : <div className="space-y-2">
+                                <div>No vendors available</div>
+                                 <Button size="sm" variant="outline" onClick={() => setShowVendorForm(true)} className="text-xs">
+                                   Create Your First Vendor
+                                 </Button>
+                              </div>}
+                          </div> : filteredVendors.map(vendor => <div key={vendor.id} className="p-2 hover:bg-accent cursor-pointer text-sm border-b last:border-b-0 bg-background" onClick={() => handleVendorSelect(vendor)}>
+                              <div className="font-medium">{vendor.name}</div>
+                              {vendor.category && <div className="text-xs text-muted-foreground">{vendor.category}</div>}
+                            </div>)}
+                      </div>}
+                  </div>
+                  
+                  <Button type="button" variant="outline" onClick={() => setShowVendorForm(true)} className="px-3 shadow-sm">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-3 text-muted-foreground font-medium">
+                    Or upload document
+                  </span>
+                </div>
+              </div>
+
               {/* AI Document Upload */}
               <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
                 <CardContent className="pt-4 pb-4">
@@ -593,56 +643,6 @@ export const PurchaseOrderForm = ({
                   </div>
                 </CardContent>
               </Card>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-3 text-muted-foreground font-medium">
-                    Or select manually
-                  </span>
-                </div>
-              </div>
-              
-              <div className="space-y-2.5">
-                <Label htmlFor="vendor" className="text-sm font-medium">Vendor *</Label>
-                <div className="flex gap-2.5">
-                  <div className="relative flex-1">
-                    <div className="relative">
-                      <Input placeholder="Search or select vendor..." value={vendorSearchTerm} onChange={e => {
-                    setVendorSearchTerm(e.target.value);
-                    if (e.target.value) setShowVendorDropdown(true);
-                  }} onClick={() => setShowVendorDropdown(true)} className="pr-8" />
-                      <Search className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    </div>
-                    
-                    {showVendorDropdown && <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-48 overflow-y-auto">
-                        {filteredVendors.length === 0 ? <div className="p-3 text-sm text-muted-foreground text-center bg-background">
-                            {vendorSearchTerm ? <div className="space-y-2">
-                                <div>No vendors found matching your search</div>
-                                 <Button size="sm" variant="outline" onClick={() => setShowVendorForm(true)} className="text-xs">
-                                   Add "{vendorSearchTerm}" as new vendor
-                                 </Button>
-                              </div> : <div className="space-y-2">
-                                <div>No vendors available</div>
-                                 <Button size="sm" variant="outline" onClick={() => setShowVendorForm(true)} className="text-xs">
-                                   Create Your First Vendor
-                                 </Button>
-                              </div>}
-                          </div> : filteredVendors.map(vendor => <div key={vendor.id} className="p-2 hover:bg-accent cursor-pointer text-sm border-b last:border-b-0 bg-background" onClick={() => handleVendorSelect(vendor)}>
-                              <div className="font-medium">{vendor.name}</div>
-                              {vendor.category && <div className="text-xs text-muted-foreground">{vendor.category}</div>}
-                            </div>)}
-                      </div>}
-                  </div>
-                  
-                  <Button type="button" variant="outline" onClick={() => setShowVendorForm(true)} className="px-3 shadow-sm">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add
-                  </Button>
-                </div>
-              </div>
               
               <div className="flex justify-end pt-2">
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
