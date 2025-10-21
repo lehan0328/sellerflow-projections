@@ -230,6 +230,16 @@ export default function Onboarding() {
                     </p>
                   </div>
                 </div>
+                
+                <div className="flex items-start gap-4 p-4 rounded-lg bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-2 border-blue-200 dark:border-blue-800">
+                  <Sparkles className="h-6 w-6 text-purple-600 mt-1" />
+                  <div>
+                    <h3 className="font-semibold">Mathematical Forecasting</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Enable AI-powered payout predictions based on your Amazon transaction history
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <Button 
