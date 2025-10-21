@@ -89,7 +89,12 @@ export default function Onboarding() {
 
   const handleAddBankAccount = async () => {
     toast.info("Plaid integration requires backend setup. Skipping for now.");
-    setCurrentStep('forecasting');
+    // Only show forecasting if Amazon was connected
+    if (!amazonSkipped) {
+      setCurrentStep('forecasting');
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   const handleSkipAmazon = () => {
@@ -99,7 +104,12 @@ export default function Onboarding() {
 
   const handleSkipBank = () => {
     setBankSkipped(true);
-    setCurrentStep('forecasting');
+    // Only show forecasting if Amazon was connected
+    if (!amazonSkipped) {
+      setCurrentStep('forecasting');
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   const handleFinish = async () => {
@@ -302,8 +312,18 @@ export default function Onboarding() {
               </div>
 
               <Button 
-                onClick={() => {
+                onClick={async () => {
+                  // Simulate successful connection
+                  const mockAmazonData = {
+                    seller_id: 'demo-seller',
+                    marketplace_id: amazonFormData.marketplace_id || 'ATVPDKIKX0DER',
+                    marketplace_name: 'United States',
+                    account_name: 'Demo Amazon Store',
+                    payout_frequency: amazonFormData.payout_frequency
+                  };
+                  
                   toast.info("Store connection API coming soon!");
+                  setAmazonSkipped(false); // Mark as connected
                   setCurrentStep('bank');
                 }}
                 className="w-full bg-gradient-primary h-10"
