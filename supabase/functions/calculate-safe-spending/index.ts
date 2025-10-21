@@ -24,10 +24,10 @@ serve(async (req) => {
     
     if (!user) throw new Error("User not authenticated");
 
-    // Get data for next 180 days
+    // Get data for next 90 days (3 months)
     const today = new Date();
-    const next180Days = new Date();
-    next180Days.setDate(today.getDate() + 180);
+    const next90Days = new Date();
+    next90Days.setDate(today.getDate() + 90);
 
     // Fetch income data
     const { data: income } = await supabaseClient
@@ -35,7 +35,7 @@ serve(async (req) => {
       .select('amount, payment_date, status')
       .eq('user_id', user.id)
       .gte('payment_date', today.toISOString())
-      .lte('payment_date', next180Days.toISOString());
+      .lte('payment_date', next90Days.toISOString());
 
     // Fetch expense data (transactions)
     const { data: expenses } = await supabaseClient
@@ -43,7 +43,7 @@ serve(async (req) => {
       .select('amount, transaction_date, status')
       .eq('user_id', user.id)
       .gte('transaction_date', today.toISOString())
-      .lte('transaction_date', next180Days.toISOString());
+      .lte('transaction_date', next90Days.toISOString());
 
     // Fetch vendor payments
     const { data: vendors } = await supabaseClient
@@ -51,7 +51,7 @@ serve(async (req) => {
       .select('next_payment_amount, next_payment_date, status')
       .eq('user_id', user.id)
       .gte('next_payment_date', today.toISOString())
-      .lte('next_payment_date', next180Days.toISOString());
+      .lte('next_payment_date', next90Days.toISOString());
 
     // Fetch Amazon payouts (include forecasted payouts as confirmed income)
     const { data: amazonPayouts } = await supabaseClient
@@ -59,7 +59,7 @@ serve(async (req) => {
       .select('total_amount, payout_date, status')
       .eq('user_id', user.id)
       .gte('payout_date', today.toISOString())
-      .lte('payout_date', next180Days.toISOString());
+      .lte('payout_date', next90Days.toISOString());
 
     // Get current bank balance
     const { data: settings } = await supabaseClient
@@ -120,8 +120,8 @@ serve(async (req) => {
       transactionsByDate.set(date, existing);
     });
 
-    // Simulate day-by-day for next 180 days
-    for (let i = 0; i < 180; i++) {
+    // Simulate day-by-day for next 90 days (3 months)
+    for (let i = 0; i < 90; i++) {
       const currentDay = new Date(today);
       currentDay.setDate(today.getDate() + i);
       const dateStr = currentDay.toISOString().split('T')[0];
@@ -143,11 +143,11 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const prompt = `You are a financial advisor analyzing cash flow data for the next 180 days.
+    const prompt = `You are a financial advisor analyzing cash flow data for the next 90 days (3 months).
 
 Current Balance: $${currentBalance.toFixed(2)}
-Projected Income (180 days): $${projectedIncome.toFixed(2)}
-Projected Expenses (180 days): $${projectedExpenses.toFixed(2)}
+Projected Income (90 days): $${projectedIncome.toFixed(2)}
+Projected Expenses (90 days): $${projectedExpenses.toFixed(2)}
 Projected End Balance: $${projectedBalance.toFixed(2)}
 
 Number of income transactions: ${(income?.length || 0) + (amazonPayouts?.length || 0)}
@@ -162,7 +162,7 @@ Based on this data, calculate a conservative "safe spending limit" - the maximum
 Return ONLY a JSON object with this exact structure:
 {
   "safe_daily_limit": <number>,
-  "total_180day_limit": <number>,
+  "total_90day_limit": <number>,
   "confidence_level": "high|medium|low",
   "reasoning": "<brief 1-2 sentence explanation>"
 }`;
@@ -196,11 +196,11 @@ Return ONLY a JSON object with this exact structure:
       aiResult = JSON.parse(aiContent);
     } catch {
       // Fallback calculation if AI parsing fails
-      const dailyAverage = projectedBalance / 180;
+      const dailyAverage = projectedBalance / 90;
       const safeDaily = Math.max(0, dailyAverage * 0.7); // 70% safety margin
       aiResult = {
         safe_daily_limit: safeDaily,
-        total_180day_limit: safeDaily * 180,
+        total_90day_limit: safeDaily * 90,
         confidence_level: "medium",
         reasoning: "Calculated with 30% safety buffer based on projected balance."
       };
@@ -209,7 +209,7 @@ Return ONLY a JSON object with this exact structure:
     return new Response(
       JSON.stringify({
         safe_daily_limit: aiResult.safe_daily_limit,
-        total_180day_limit: aiResult.total_180day_limit,
+        total_90day_limit: aiResult.total_90day_limit,
         confidence_level: aiResult.confidence_level,
         reasoning: aiResult.reasoning,
         calculation: {

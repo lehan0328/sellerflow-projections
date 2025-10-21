@@ -75,13 +75,13 @@ serve(async (req) => {
       userId: user.id
     });
 
-    // Calculate future cash flow projections (180 days)
+    // Calculate future cash flow projections (90 days / 3 months)
     const projections = [];
     let runningBalance = currentBalance || 0;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    for (let i = 0; i <= 180; i++) {
+    for (let i = 0; i <= 90; i++) {
       const targetDate = new Date(today);
       targetDate.setDate(today.getDate() + i);
       targetDate.setHours(0, 0, 0, 0);
@@ -153,6 +153,8 @@ serve(async (req) => {
 
     const systemPrompt = `You are a business cash flow advisor analyzing a business's financial data and future projections. Provide concise, actionable BUSINESS advice focused on operations, vendor relationships, and business growth. This is a BUSINESS-ONLY tool - do NOT provide personal finance advice.
 
+IMPORTANT: All projections and analysis are based on a 90-day (3-month) window ONLY.
+
 IMPORTANT FORMATTING RULES:
 - Start with "**Current Financial Health:**" followed by your business health assessment
 - Add "**Lowest Balance Alert:**" showing when balance will be at its lowest point (MUST include exact day count and amount)
@@ -177,16 +179,16 @@ Focus on:
       projectionSummary = `⚠️ CRITICAL: Balance projected to go NEGATIVE in ${daysUntilNegative} days (${formattedDate}). Balance will drop to $${goesNegative.balance.toLocaleString()}.`;
     } else if (projections.length > 0 && lowestBalanceDay) {
       const formattedDate = new Date(lowestBalanceDay.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      projectionSummary = `📊 Lowest Balance: $${lowestBalance.toLocaleString()} occurring in ${lowestBalanceDay.daysFromNow} days (${formattedDate}). Will stay positive for next 180 days.`;
+      projectionSummary = `📊 Lowest Balance: $${lowestBalance.toLocaleString()} occurring in ${lowestBalanceDay.daysFromNow} days (${formattedDate}). Will stay positive for next 90 days.`;
     } else {
-      projectionSummary = `No significant cash flow changes projected in the next 180 days.`;
+      projectionSummary = `No significant cash flow changes projected in the next 90 days.`;
     }
 
     const userPrompt = `Current Balance: $${currentBalance.toLocaleString()}
 Upcoming Income (Total): $${totalUpcomingIncome.toLocaleString()}
 Upcoming Expenses (Total): $${totalUpcomingExpenses.toLocaleString()}
 
-PROJECTION ANALYSIS (Next 180 Days):
+PROJECTION ANALYSIS (Next 90 Days - 3 Months):
 ${projectionSummary}
 
 SAFE SPENDING CALCULATION BREAKDOWN:

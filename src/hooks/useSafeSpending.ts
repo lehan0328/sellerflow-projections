@@ -98,7 +98,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       const todayStr = formatDate(today);
 
       const futureDate = new Date(today);
-      futureDate.setDate(futureDate.getDate() + 180); // Next 6 months
+      futureDate.setDate(futureDate.getDate() + 90); // Next 3 months
       const futureDateStr = formatDate(futureDate);
 
       console.log('🎯 EXCLUDE TODAY SETTING:', excludeTodayTransactions ? 'ENABLED ✅' : 'DISABLED ❌');
@@ -159,7 +159,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       })) || 'No payouts fetched');
       
       const totalAmazonRevenue = (amazonResult.data || []).reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
-      console.log('🛒 Total forecasted Amazon revenue (next 180 days):', 
+      console.log('🛒 Total forecasted Amazon revenue (next 90 days):', 
         '$' + totalAmazonRevenue.toLocaleString());
 
       console.log('🔍 VENDOR DATA:', vendorsResult.data?.map(v => ({
@@ -200,8 +200,8 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       const dailyBalances: DailyBalance[] = [];
       let runningBalance = bankBalance;
 
-      // Process each day in the next 180 days (6 months)
-      for (let i = 0; i <= 180; i++) {
+      // Process each day in the next 90 days (3 months)
+      for (let i = 0; i <= 90; i++) {
         const targetDate = new Date(today);
         targetDate.setDate(targetDate.getDate() + i);
         targetDate.setHours(0, 0, 0, 0);
@@ -481,7 +481,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         }
       }
 
-      // Find the absolute minimum balance over the entire 180-day period
+      // Find the absolute minimum balance over the entire 90-day period (3 months)
       const minBalance = Math.min(...dailyBalances.map(d => d.balance));
       const minDayIndex = dailyBalances.findIndex(d => d.balance === minBalance);
       const minDay = dailyBalances[minDayIndex];

@@ -525,6 +525,9 @@ export const CashFlowInsights = ({
             </Button>
           </div>
         </CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          All projections reflect transactions within the next 3 months only
+        </p>
       </CardHeader>
       <CardContent className="space-y-4 flex-1 overflow-auto">
         {chatMode ? <div className="flex flex-col h-full space-y-4">
@@ -577,7 +580,7 @@ export const CashFlowInsights = ({
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
                         <p className="text-sm">
-                          Calculated by projecting your balance 180 days into the future, considering all income and expenses. 
+                          Calculated by projecting your balance 90 days (3 months) into the future, considering all income and expenses. 
                           We find your lowest projected balance, subtract your reserve amount, and that's what you can safely spend today without risking shortfalls.
                         </p>
                       </TooltipContent>
@@ -820,7 +823,7 @@ export const CashFlowInsights = ({
               All Buying Opportunities
             </DialogTitle>
             <DialogDescription>
-              View all your upcoming buying opportunities based on projected cash flow
+              View all your upcoming buying opportunities based on projected cash flow. All opportunities reflect transactions within the next 3 months only.
             </DialogDescription>
           </DialogHeader>
           
@@ -990,7 +993,7 @@ export const CashFlowInsights = ({
               Search Buying Opportunities
             </DialogTitle>
             <DialogDescription>
-              Search by amount to find when you can spend it, or by date to see how much you can spend on that day
+              Search by amount to find when you can spend it, or by date to see how much you can spend on that day. All results reflect transactions within the next 3 months only.
             </DialogDescription>
           </DialogHeader>
           
