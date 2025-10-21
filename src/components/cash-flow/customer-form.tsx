@@ -6,7 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
+import { useCategories } from "@/hooks/useCategories";
+import { AddCategoryDialog } from "./add-category-dialog";
 
 interface CustomerFormProps {
   open: boolean;
@@ -15,19 +18,12 @@ interface CustomerFormProps {
 }
 
 export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerFormProps) => {
+  const { categories, addCategory, refetch: refetchCategories } = useCategories('income');
+  const [showAddCategory, setShowAddCategory] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     category: ""
   });
-
-  const categories = [
-    "Retail Partner",
-    "Wholesale Client", 
-    "Direct Consumer",
-    "B2B Customer",
-    "Distributor",
-    "Other"
-  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,14 +75,36 @@ export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerForm
 
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
-            <Select onValueChange={(value) => handleInputChange("category", value)}>
+            <Select 
+              value={formData.category}
+              onValueChange={(value) => {
+                if (value === "__add_new__") {
+                  setShowAddCategory(true);
+                } else {
+                  handleInputChange("category", value);
+                }
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
+                <div className="border-b pb-1 mb-1">
+                  <SelectItem value="__add_new__" className="text-primary font-medium">
+                    <div className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Add New Category
+                    </div>
+                  </SelectItem>
+                </div>
                 {categories.map(category => (
-                  <SelectItem key={category} value={category}>
-                    {category}
+                  <SelectItem key={category.id} value={category.name}>
+                    <div className="flex items-center justify-between w-full">
+                      <span>{category.name}</span>
+                      {category.is_default && (
+                        <span className="text-xs text-muted-foreground ml-2">(default)</span>
+                      )}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -102,6 +120,20 @@ export const CustomerForm = ({ open, onOpenChange, onAddCustomer }: CustomerForm
             </Button>
           </div>
         </form>
+
+        <AddCategoryDialog
+          open={showAddCategory}
+          onOpenChange={setShowAddCategory}
+          onAddCategory={async (name) => {
+            await addCategory(name);
+            await refetchCategories();
+            setFormData(prev => ({
+              ...prev,
+              category: name
+            }));
+          }}
+          type="income"
+        />
       </DialogContent>
     </Dialog>
   );
