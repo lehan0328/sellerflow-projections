@@ -23,11 +23,13 @@ import { useTransactionMatching } from "@/hooks/useTransactionMatching";
 import { BankTransaction } from "./bank-transaction-log";
 import { toast } from "sonner";
 import * as React from "react";
+
 interface VendorsOverviewProps {
   bankTransactions?: BankTransaction[];
   onVendorUpdate?: () => void;
   refreshKey?: number;
 }
+
 export const VendorsOverview = ({
   bankTransactions = [],
   onVendorUpdate,
@@ -152,6 +154,7 @@ export const VendorsOverview = ({
       return 0;
     });
   }, [transactions, searchTerm, selectedVendor, statusFilter, sortBy, sortOrder, dateRange, customFromDate, customToDate, paymentMethodFilter]);
+
   const handleVendorSearch = (value: string) => {
     // Check if the value matches one of our vendor options exactly
     const matchingOption = vendorSearchOptions.find(option => option.value === value);
@@ -165,6 +168,7 @@ export const VendorsOverview = ({
       setSearchTerm(value);
     }
   };
+
   const handleDeleteTransaction = async (transactionId: string) => {
     try {
       await deleteTransaction(transactionId);
@@ -175,6 +179,7 @@ export const VendorsOverview = ({
       toast.error("Failed to delete transaction");
     }
   };
+
   const handlePayToday = async (transactionId: string) => {
     try {
       await markAsPaid(transactionId);
@@ -183,6 +188,7 @@ export const VendorsOverview = ({
       console.error('Error processing payment:', error);
     }
   };
+
   const handlePartialPayment = async (data: {
     transactionId: string;
     amountPaid: number;
@@ -196,6 +202,7 @@ export const VendorsOverview = ({
       console.error('Error processing partial payment:', error);
     }
   };
+
   const getStatusColor = (tx: VendorTransaction) => {
     if (!tx.dueDate) return 'default';
     if (tx.status === 'completed' || tx.status === 'paid') {
@@ -216,6 +223,7 @@ export const VendorsOverview = ({
     }
     return 'default'; // upcoming - neutral
   };
+
   const getStatusIcon = (tx: VendorTransaction) => {
     if (!tx.dueDate) return <Calendar className="h-4 w-4" />;
     const today = new Date();
@@ -229,6 +237,7 @@ export const VendorsOverview = ({
     }
     return <Calendar className="h-4 w-4" />;
   };
+
   const getStatusText = (tx: VendorTransaction) => {
     if (!tx.dueDate) return 'No due date';
     const today = new Date();
@@ -249,6 +258,7 @@ export const VendorsOverview = ({
       return overdueDays === 1 ? '1 day overdue' : `${overdueDays} days overdue`;
     }
   };
+
   const totalOwed = filteredAndSortedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
   const overdueAmount = filteredAndSortedTransactions.filter(tx => {
     if (!tx.dueDate || tx.status === 'completed' || tx.status === 'paid') return false;
@@ -258,6 +268,7 @@ export const VendorsOverview = ({
     dueDate.setHours(0, 0, 0, 0);
     return dueDate < today;
   }).reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
   return <Card className="shadow-card h-[700px] flex flex-col">
       <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
@@ -280,10 +291,19 @@ export const VendorsOverview = ({
               </div>}
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => navigate("/transactions?tab=vendors")} className="flex items-center space-x-2">
-            <ExternalLink className="h-4 w-4" />
-            <span>Archived </span>
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" onClick={() => navigate("/transactions?tab=vendors")} className="flex items-center space-x-2">
+                  <ExternalLink className="h-4 w-4" />
+                  <span>Archived Transactions</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>View archived transactions. All archived transactions are automatically erased after 1 year.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         
         <div className="flex items-center space-x-4 mt-4">
