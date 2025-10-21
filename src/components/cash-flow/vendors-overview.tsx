@@ -23,18 +23,31 @@ import { useTransactionMatching } from "@/hooks/useTransactionMatching";
 import { BankTransaction } from "./bank-transaction-log";
 import { toast } from "sonner";
 import * as React from "react";
-
 interface VendorsOverviewProps {
   bankTransactions?: BankTransaction[];
   onVendorUpdate?: () => void;
   refreshKey?: number;
 }
-
-export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refreshKey }: VendorsOverviewProps) => {
+export const VendorsOverview = ({
+  bankTransactions = [],
+  onVendorUpdate,
+  refreshKey
+}: VendorsOverviewProps) => {
   const navigate = useNavigate();
-  const { transactions, markAsPaid, markAsPartiallyPaid, updateRemarks, deleteTransaction, refetch } = useVendorTransactions();
-  const { vendors } = useVendors();
-  const { getMatchesForVendorTransaction } = useTransactionMatching(bankTransactions, transactions, []);
+  const {
+    transactions,
+    markAsPaid,
+    markAsPartiallyPaid,
+    updateRemarks,
+    deleteTransaction,
+    refetch
+  } = useVendorTransactions();
+  const {
+    vendors
+  } = useVendors();
+  const {
+    getMatchesForVendorTransaction
+  } = useTransactionMatching(bankTransactions, transactions, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVendor, setSelectedVendor] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'overdue' | 'paid'>('all');
@@ -78,20 +91,17 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
       if (tx.status === 'partially_paid' || tx.description.endsWith('.1')) {
         return false;
       }
-      
+
       // If a specific vendor is selected, show only that vendor's transactions
       if (selectedVendor) {
         const matchesSelectedVendor = tx.vendorName.toLowerCase() === selectedVendor.toLowerCase();
         if (!matchesSelectedVendor) return false;
       } else if (searchTerm) {
         // General text search filter
-        const matchesSearch = tx.vendorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          tx.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          tx.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          tx.amount.toString().includes(searchTerm);
+        const matchesSearch = tx.vendorName.toLowerCase().includes(searchTerm.toLowerCase()) || tx.description.toLowerCase().includes(searchTerm.toLowerCase()) || tx.category?.toLowerCase().includes(searchTerm.toLowerCase()) || tx.amount.toString().includes(searchTerm);
         if (!matchesSearch) return false;
       }
-      
+
       // Status filter - automatically exclude overdue and completed from 'all' filter
       let matchesStatus = true;
       if (statusFilter === 'all') {
@@ -106,7 +116,6 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
       } else if (statusFilter === 'paid') {
         matchesStatus = tx.status === 'completed' || tx.status === 'paid';
       }
-      
       if (!matchesStatus) return false;
 
       // Payment method filter
@@ -123,13 +132,10 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
         const date = new Date(tx.dueDate);
         if (date < customFromDate || date > customToDate) return false;
       }
-      
       return true;
     });
-
     return filtered.sort((a, b) => {
       let aValue: any, bValue: any;
-      
       if (sortBy === 'dueDate') {
         aValue = a.dueDate ? a.dueDate.getTime() : 0;
         bValue = b.dueDate ? b.dueDate.getTime() : 0;
@@ -137,25 +143,18 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
         aValue = a[sortBy];
         bValue = b[sortBy];
       }
-
       if (typeof aValue === 'string') {
-        return sortOrder === 'asc' 
-          ? aValue.localeCompare(bValue as string)
-          : (bValue as string).localeCompare(aValue);
+        return sortOrder === 'asc' ? aValue.localeCompare(bValue as string) : (bValue as string).localeCompare(aValue);
       }
-
       if (typeof aValue === 'number') {
         return sortOrder === 'asc' ? aValue - (bValue as number) : (bValue as number) - aValue;
       }
-
       return 0;
     });
   }, [transactions, searchTerm, selectedVendor, statusFilter, sortBy, sortOrder, dateRange, customFromDate, customToDate, paymentMethodFilter]);
-
   const handleVendorSearch = (value: string) => {
     // Check if the value matches one of our vendor options exactly
     const matchingOption = vendorSearchOptions.find(option => option.value === value);
-    
     if (matchingOption) {
       // User selected a specific vendor from dropdown
       setSelectedVendor(value);
@@ -166,7 +165,6 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
       setSearchTerm(value);
     }
   };
-
   const handleDeleteTransaction = async (transactionId: string) => {
     try {
       await deleteTransaction(transactionId);
@@ -177,7 +175,6 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
       toast.error("Failed to delete transaction");
     }
   };
-
   const handlePayToday = async (transactionId: string) => {
     try {
       await markAsPaid(transactionId);
@@ -186,7 +183,6 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
       console.error('Error processing payment:', error);
     }
   };
-
   const handlePartialPayment = async (data: {
     transactionId: string;
     amountPaid: number;
@@ -194,34 +190,23 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
     newDueDate: Date;
   }) => {
     try {
-      await markAsPartiallyPaid(
-        data.transactionId,
-        data.amountPaid,
-        data.remainingBalance,
-        data.newDueDate
-      );
+      await markAsPartiallyPaid(data.transactionId, data.amountPaid, data.remainingBalance, data.newDueDate);
       onVendorUpdate?.();
     } catch (error) {
       console.error('Error processing partial payment:', error);
     }
   };
-
   const getStatusColor = (tx: VendorTransaction) => {
     if (!tx.dueDate) return 'default';
-    
     if (tx.status === 'completed' || tx.status === 'paid') {
       return 'default'; // Paid - neutral color
     }
-    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
     const dueDate = new Date(tx.dueDate);
     dueDate.setHours(0, 0, 0, 0);
-    
     const timeDiff = dueDate.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    
     if (daysDiff < 0) {
       return 'destructive'; // overdue - red
     } else if (daysDiff === 0) {
@@ -231,41 +216,30 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
     }
     return 'default'; // upcoming - neutral
   };
-
   const getStatusIcon = (tx: VendorTransaction) => {
     if (!tx.dueDate) return <Calendar className="h-4 w-4" />;
-    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
     const dueDate = new Date(tx.dueDate);
     dueDate.setHours(0, 0, 0, 0);
-    
     const timeDiff = dueDate.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    
     if (daysDiff < 0) {
       return <AlertTriangle className="h-4 w-4" />;
     }
     return <Calendar className="h-4 w-4" />;
   };
-
   const getStatusText = (tx: VendorTransaction) => {
     if (!tx.dueDate) return 'No due date';
-    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
     const dueDate = new Date(tx.dueDate);
     dueDate.setHours(0, 0, 0, 0);
-    
     const timeDiff = dueDate.getTime() - today.getTime();
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-    
     if (tx.status === 'completed' || tx.status === 'paid') {
       return 'Paid';
     }
-    
     if (daysDiff > 0) {
       return `${daysDiff} ${daysDiff === 1 ? 'day' : 'days'}`;
     } else if (daysDiff === 0) {
@@ -275,21 +249,16 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
       return overdueDays === 1 ? '1 day overdue' : `${overdueDays} days overdue`;
     }
   };
-
   const totalOwed = filteredAndSortedTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
-  const overdueAmount = filteredAndSortedTransactions
-    .filter(tx => {
-      if (!tx.dueDate || tx.status === 'completed' || tx.status === 'paid') return false;
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const dueDate = new Date(tx.dueDate);
-      dueDate.setHours(0, 0, 0, 0);
-      return dueDate < today;
-    })
-    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
-
-  return (
-    <Card className="shadow-card h-[700px] flex flex-col">
+  const overdueAmount = filteredAndSortedTransactions.filter(tx => {
+    if (!tx.dueDate || tx.status === 'completed' || tx.status === 'paid') return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueDate = new Date(tx.dueDate);
+    dueDate.setHours(0, 0, 0, 0);
+    return dueDate < today;
+  }).reduce((sum, tx) => sum + (tx.amount || 0), 0);
+  return <Card className="shadow-card h-[700px] flex flex-col">
       <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -303,50 +272,29 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
               <span className="text-muted-foreground">Total Owed:</span>
               <span className="font-semibold">${totalOwed.toLocaleString()}</span>
             </div>
-            {overdueAmount > 0 && (
-              <div className="flex items-center space-x-2">
+            {overdueAmount > 0 && <div className="flex items-center space-x-2">
                 <AlertTriangle className="h-4 w-4 text-destructive" />
                 <span className="text-destructive font-semibold">
                   ${overdueAmount.toLocaleString()} Overdue
                 </span>
-              </div>
-            )}
+              </div>}
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("/transactions?tab=vendors")}
-            className="flex items-center space-x-2"
-          >
+          <Button variant="outline" size="sm" onClick={() => navigate("/transactions?tab=vendors")} className="flex items-center space-x-2">
             <ExternalLink className="h-4 w-4" />
-            <span>View All Transactions</span>
+            <span>Archived </span>
           </Button>
         </div>
         
         <div className="flex items-center space-x-4 mt-4">
           <div className="flex-1 max-w-sm flex items-center space-x-2">
-            <Combobox
-              options={vendorSearchOptions}
-              value={selectedVendor || searchTerm}
-              onValueChange={handleVendorSearch}
-              placeholder="Search vendors..."
-              emptyText="No vendors found."
-              className="flex-1"
-            />
-            {(selectedVendor || searchTerm) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setSelectedVendor('');
-                  setSearchTerm('');
-                }}
-                className="px-3"
-              >
+            <Combobox options={vendorSearchOptions} value={selectedVendor || searchTerm} onValueChange={handleVendorSearch} placeholder="Search vendors..." emptyText="No vendors found." className="flex-1" />
+            {(selectedVendor || searchTerm) && <Button variant="outline" size="sm" onClick={() => {
+            setSelectedVendor('');
+            setSearchTerm('');
+          }} className="px-3">
                 Clear
-              </Button>
-            )}
+              </Button>}
           </div>
           
           <div className="flex items-center space-x-2">
@@ -393,8 +341,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
             </Select>
           </div>
 
-          {dateRange === "custom" && (
-            <>
+          {dateRange === "custom" && <>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className={cn(!customFromDate && "text-muted-foreground")}>
@@ -415,8 +362,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                   <CalendarComponent mode="single" selected={customToDate} onSelect={setCustomToDate} initialFocus className="pointer-events-auto" />
                 </PopoverContent>
               </Popover>
-            </>
-          )}
+            </>}
 
           <div className="flex items-center space-x-2">
             <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
@@ -432,11 +378,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
               </SelectContent>
             </Select>
             
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            >
+            <Button variant="outline" size="sm" onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
               {sortOrder === 'asc' ? '↑' : '↓'}
             </Button>
           </div>
@@ -457,17 +399,11 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAndSortedTransactions.length === 0 ? (
-                <TableRow>
+              {filteredAndSortedTransactions.length === 0 ? <TableRow>
                   <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                    {selectedVendor ? `No purchase orders found for ${vendorSearchOptions.find(v => v.value === selectedVendor)?.label || selectedVendor}.` :
-                     searchTerm ? 'No transactions found matching your search.' : 
-                     'No vendor purchase orders.'}
+                    {selectedVendor ? `No purchase orders found for ${vendorSearchOptions.find(v => v.value === selectedVendor)?.label || selectedVendor}.` : searchTerm ? 'No transactions found matching your search.' : 'No vendor purchase orders.'}
                   </TableCell>
-                </TableRow>
-              ) : (
-                filteredAndSortedTransactions.map((tx) => (
-                  <TableRow key={tx.id}>
+                </TableRow> : filteredAndSortedTransactions.map(tx => <TableRow key={tx.id}>
                     <TableCell className="font-medium">{tx.vendorName}</TableCell>
                     <TableCell>{tx.description || 'N/A'}</TableCell>
                     <TableCell>
@@ -475,15 +411,11 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              {tx.creditCardId ? (
-                                <Badge variant="outline" className="text-xs px-1.5 py-0.5 border-primary bg-primary/10">
+                              {tx.creditCardId ? <Badge variant="outline" className="text-xs px-1.5 py-0.5 border-primary bg-primary/10">
                                   <CreditCard className="h-3 w-3 text-primary" />
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-xs px-1.5 py-0.5 border-green-600 bg-green-600/10">
+                                </Badge> : <Badge variant="outline" className="text-xs px-1.5 py-0.5 border-green-600 bg-green-600/10">
                                   <Banknote className="h-3 w-3 text-green-600" />
-                                </Badge>
-                              )}
+                                </Badge>}
                             </TooltipTrigger>
                             <TooltipContent>
                               <p>{tx.creditCardId ? 'Credit card purchase' : 'Cash purchase'}</p>
@@ -496,9 +428,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                       </div>
                     </TableCell>
                     <TableCell>
-                      {tx.dueDate
-                        ? new Date(tx.dueDate).toLocaleDateString()
-                        : 'N/A'}
+                      {tx.dueDate ? new Date(tx.dueDate).toLocaleDateString() : 'N/A'}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
@@ -506,8 +436,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                           {getStatusIcon(tx)}
                           <span className="ml-1">{getStatusText(tx)}</span>
                         </Badge>
-                        {getMatchesForVendorTransaction(tx.id).length > 0 && (
-                          <TooltipProvider>
+                        {getMatchesForVendorTransaction(tx.id).length > 0 && <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
                                 <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
@@ -518,15 +447,11 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                                 <p>{getMatchesForVendorTransaction(tx.id).length} potential bank transaction match(es)</p>
                               </TooltipContent>
                             </Tooltip>
-                          </TooltipProvider>
-                        )}
+                          </TooltipProvider>}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={tx.remarks || 'Ordered'}
-                        onValueChange={(value) => updateRemarks(tx.id, value)}
-                      >
+                      <Select value={tx.remarks || 'Ordered'} onValueChange={value => updateRemarks(tx.id, value)}>
                         <SelectTrigger className="h-8 text-xs max-w-[130px] bg-background border border-border">
                           <SelectValue placeholder="Ordered" />
                         </SelectTrigger>
@@ -545,11 +470,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => setEditingTransaction(tx)}
-                              >
+                              <Button variant="outline" size="sm" onClick={() => setEditingTransaction(tx)}>
                                 <Edit className="h-3 w-3" />
                               </Button>
                             </TooltipTrigger>
@@ -558,20 +479,12 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
-                        {tx.status !== 'completed' && tx.status !== 'paid' && tx.dueDate && (
-                          <TooltipProvider>
+                        {tx.status !== 'completed' && tx.status !== 'paid' && tx.dueDate && <TooltipProvider>
                             <Tooltip>
-                              <AlertDialog 
-                                open={paymentDialogOpen === tx.id}
-                                onOpenChange={(open) => setPaymentDialogOpen(open ? tx.id : null)}
-                              >
+                              <AlertDialog open={paymentDialogOpen === tx.id} onOpenChange={open => setPaymentDialogOpen(open ? tx.id : null)}>
                                 <TooltipTrigger asChild>
                                   <AlertDialogTrigger asChild>
-                                    <Button 
-                                      size="sm" 
-                                      variant="default"
-                                      className="bg-green-600 hover:bg-green-700"
-                                    >
+                                    <Button size="sm" variant="default" className="bg-green-600 hover:bg-green-700">
                                       <CreditCard className="h-3 w-3" />
                                     </Button>
                                   </AlertDialogTrigger>
@@ -588,13 +501,10 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => {
-                                        setPaymentDialogOpen(null);
-                                        setPartialPaymentTx(tx);
-                                      }}
-                                    >
+                                    <Button variant="outline" onClick={() => {
+                              setPaymentDialogOpen(null);
+                              setPartialPaymentTx(tx);
+                            }}>
                                       Mark as Partially Paid
                                     </Button>
                                     <AlertDialogAction onClick={() => handlePayToday(tx.id)}>
@@ -604,17 +514,13 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                                 </AlertDialogContent>
                               </AlertDialog>
                             </Tooltip>
-                          </TooltipProvider>
-                        )}
+                          </TooltipProvider>}
                         <TooltipProvider>
                           <Tooltip>
                             <AlertDialog>
                               <TooltipTrigger asChild>
                                 <AlertDialogTrigger asChild>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                  >
+                                  <Button variant="outline" size="sm">
                                     <Trash2 className="h-3 w-3" />
                                   </Button>
                                 </AlertDialogTrigger>
@@ -631,10 +537,7 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction 
-                                    onClick={() => handleDeleteTransaction(tx.id)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
+                                  <AlertDialogAction onClick={() => handleDeleteTransaction(tx.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                                     Delete
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
@@ -644,45 +547,25 @@ export const VendorsOverview = ({ bankTransactions = [], onVendorUpdate, refresh
                         </TooltipProvider>
                       </div>
                     </TableCell>
-                  </TableRow>
-                ))
-              )}
+                  </TableRow>)}
             </TableBody>
           </Table>
         </div>
       </CardContent>
 
-      <VendorOrderDetailModal
-        open={!!editingVendor}
-        onOpenChange={(open) => {
-          if (!open) setEditingVendor(null);
-        }}
-        vendor={editingVendor}
-      />
+      <VendorOrderDetailModal open={!!editingVendor} onOpenChange={open => {
+      if (!open) setEditingVendor(null);
+    }} vendor={editingVendor} />
 
-      <TransactionEditModal
-        open={!!editingTransaction}
-        onOpenChange={(open) => {
-          if (!open) setEditingTransaction(null);
-        }}
-        transaction={editingTransaction}
-        onSuccess={() => {
-          refetch();
-          onVendorUpdate?.();
-        }}
-      />
+      <TransactionEditModal open={!!editingTransaction} onOpenChange={open => {
+      if (!open) setEditingTransaction(null);
+    }} transaction={editingTransaction} onSuccess={() => {
+      refetch();
+      onVendorUpdate?.();
+    }} />
 
-      <PartialPaymentModal
-        open={!!partialPaymentTx}
-        onOpenChange={(open) => {
-          if (!open) setPartialPaymentTx(null);
-        }}
-        transactionId={partialPaymentTx?.id || ''}
-        totalAmount={partialPaymentTx?.amount || 0}
-        vendorName={partialPaymentTx?.vendorName || ''}
-        poNumber={partialPaymentTx?.description || ''}
-        onConfirm={handlePartialPayment}
-      />
-    </Card>
-  );
+      <PartialPaymentModal open={!!partialPaymentTx} onOpenChange={open => {
+      if (!open) setPartialPaymentTx(null);
+    }} transactionId={partialPaymentTx?.id || ''} totalAmount={partialPaymentTx?.amount || 0} vendorName={partialPaymentTx?.vendorName || ''} poNumber={partialPaymentTx?.description || ''} onConfirm={handlePartialPayment} />
+    </Card>;
 };
