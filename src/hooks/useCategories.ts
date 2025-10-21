@@ -7,9 +7,10 @@ export interface Category {
   name: string;
   type: 'expense' | 'income';
   is_default: boolean;
+  is_recurring?: boolean;
 }
 
-export function useCategories(type: 'expense' | 'income') {
+export function useCategories(type: 'expense' | 'income', isRecurring?: boolean) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -31,11 +32,18 @@ export function useCategories(type: 'expense' | 'income') {
         return;
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('categories')
         .select('*')
         .eq('type', type)
-        .eq('account_id', profile.account_id)
+        .eq('account_id', profile.account_id);
+
+      // Filter by is_recurring if specified
+      if (isRecurring !== undefined) {
+        query = query.eq('is_recurring', isRecurring);
+      }
+
+      const { data, error } = await query
         .order('is_default', { ascending: false })
         .order('name');
 
@@ -64,7 +72,7 @@ export function useCategories(type: 'expense' | 'income') {
     }
   };
 
-  const addCategory = async (name: string) => {
+  const addCategory = async (name: string, recurring = false) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -111,6 +119,7 @@ export function useCategories(type: 'expense' | 'income') {
           name: normalizedName,
           type,
           is_default: false,
+          is_recurring: recurring,
         })
         .select()
         .single();
@@ -177,11 +186,11 @@ export function useCategories(type: 'expense' | 'income') {
   };
 
   useEffect(() => {
-    console.log('[Categories] Setting up subscription for type:', type);
+    console.log('[Categories] Setting up subscription for type:', type, 'isRecurring:', isRecurring);
     fetchCategories();
 
     const channel = supabase
-      .channel(`categories_changes_${type}_${Date.now()}`)
+      .channel(`categories_changes_${type}_${isRecurring}_${Date.now()}`)
       .on(
         'postgres_changes',
         {
@@ -201,7 +210,7 @@ export function useCategories(type: 'expense' | 'income') {
       console.log('[Categories] Cleaning up subscription for type:', type);
       supabase.removeChannel(channel);
     };
-  }, [type]);
+  }, [type, isRecurring]);
 
   return {
     categories,

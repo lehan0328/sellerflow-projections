@@ -17,37 +17,65 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export function CategoryManagement() {
-  const expenseCategories = useCategories('expense');
-  const incomeCategories = useCategories('income');
+  // Regular categories
+  const expenseCategories = useCategories('expense', false);
+  const incomeCategories = useCategories('income', false);
+  
+  // Recurring categories
+  const recurringExpenseCategories = useCategories('expense', true);
+  const recurringIncomeCategories = useCategories('income', true);
+  
   const [newExpenseCategory, setNewExpenseCategory] = useState("");
   const [newIncomeCategory, setNewIncomeCategory] = useState("");
+  const [newRecurringExpenseCategory, setNewRecurringExpenseCategory] = useState("");
+  const [newRecurringIncomeCategory, setNewRecurringIncomeCategory] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string; type: 'expense' | 'income' } | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<{ id: string; name: string; type: 'expense' | 'income'; isRecurring: boolean } | null>(null);
 
   const handleAddExpenseCategory = async () => {
     if (!newExpenseCategory.trim()) return;
-    await expenseCategories.addCategory(newExpenseCategory.trim());
+    await expenseCategories.addCategory(newExpenseCategory.trim(), false);
     setNewExpenseCategory("");
   };
 
   const handleAddIncomeCategory = async () => {
     if (!newIncomeCategory.trim()) return;
-    await incomeCategories.addCategory(newIncomeCategory.trim());
+    await incomeCategories.addCategory(newIncomeCategory.trim(), false);
     setNewIncomeCategory("");
   };
 
-  const handleDeleteClick = (id: string, name: string, type: 'expense' | 'income') => {
-    setCategoryToDelete({ id, name, type });
+  const handleAddRecurringExpenseCategory = async () => {
+    if (!newRecurringExpenseCategory.trim()) return;
+    await recurringExpenseCategories.addCategory(newRecurringExpenseCategory.trim(), true);
+    setNewRecurringExpenseCategory("");
+  };
+
+  const handleAddRecurringIncomeCategory = async () => {
+    if (!newRecurringIncomeCategory.trim()) return;
+    await recurringIncomeCategories.addCategory(newRecurringIncomeCategory.trim(), true);
+    setNewRecurringIncomeCategory("");
+  };
+
+  const handleDeleteClick = (id: string, name: string, type: 'expense' | 'income', isRecurring: boolean) => {
+    setCategoryToDelete({ id, name, type, isRecurring });
     setDeleteDialogOpen(true);
   };
 
   const handleConfirmDelete = async () => {
     if (!categoryToDelete) return;
     
-    if (categoryToDelete.type === 'expense') {
-      await expenseCategories.deleteCategory(categoryToDelete.id);
+    if (categoryToDelete.isRecurring) {
+      if (categoryToDelete.type === 'expense') {
+        await recurringExpenseCategories.deleteCategory(categoryToDelete.id);
+      } else {
+        await recurringIncomeCategories.deleteCategory(categoryToDelete.id);
+      }
     } else {
-      await incomeCategories.deleteCategory(categoryToDelete.id);
+      if (categoryToDelete.type === 'expense') {
+        await expenseCategories.deleteCategory(categoryToDelete.id);
+      } else {
+        await incomeCategories.deleteCategory(categoryToDelete.id);
+      }
     }
     
     setDeleteDialogOpen(false);
@@ -64,9 +92,11 @@ export function CategoryManagement() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="expense" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="expense">Expense Categories</TabsTrigger>
             <TabsTrigger value="income">Income Categories</TabsTrigger>
+            <TabsTrigger value="recurring-expense">Recurring Expenses</TabsTrigger>
+            <TabsTrigger value="recurring-income">Recurring Income</TabsTrigger>
           </TabsList>
 
           <TabsContent value="expense" className="space-y-4">
@@ -95,7 +125,7 @@ export function CategoryManagement() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDeleteClick(category.id, category.name, 'expense')}
+                      onClick={() => handleDeleteClick(category.id, category.name, 'expense', false)}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -131,10 +161,94 @@ export function CategoryManagement() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDeleteClick(category.id, category.name, 'income')}
+                      onClick={() => handleDeleteClick(category.id, category.name, 'income', false)}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="recurring-expense" className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="New recurring expense category"
+                value={newRecurringExpenseCategory}
+                onChange={(e) => setNewRecurringExpenseCategory(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddRecurringExpenseCategory()}
+              />
+              <Button onClick={handleAddRecurringExpenseCategory} size="icon">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {recurringExpenseCategories.isLoading ? (
+                <p className="text-sm text-muted-foreground">Loading...</p>
+              ) : recurringExpenseCategories.categories.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Default categories: Payroll, Software, Loan
+                </p>
+              ) : (
+                recurringExpenseCategories.categories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-card min-h-[52px]"
+                  >
+                    <span className="text-sm font-medium">{category.name}</span>
+                    {!category.is_default && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteClick(category.id, category.name, 'expense', true)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="recurring-income" className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="New recurring income category"
+                value={newRecurringIncomeCategory}
+                onChange={(e) => setNewRecurringIncomeCategory(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAddRecurringIncomeCategory()}
+              />
+              <Button onClick={handleAddRecurringIncomeCategory} size="icon">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {recurringIncomeCategories.isLoading ? (
+                <p className="text-sm text-muted-foreground">Loading...</p>
+              ) : recurringIncomeCategories.categories.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No recurring income categories. Add your own.
+                </p>
+              ) : (
+                recurringIncomeCategories.categories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-card min-h-[52px]"
+                  >
+                    <span className="text-sm font-medium">{category.name}</span>
+                    {!category.is_default && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteClick(category.id, category.name, 'income', true)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
                   </div>
                 ))
               )}
