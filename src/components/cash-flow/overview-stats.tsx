@@ -1,4 +1,4 @@
-import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw, CheckCircle, ShoppingCart, AlertCircle, XCircle } from "lucide-react";
+import { DollarSign, CreditCard, TrendingUp, Calendar, AlertTriangle, RefreshCw, CheckCircle, ShoppingCart, AlertCircle, XCircle, Eye } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import { useExcludeToday } from "@/contexts/ExcludeTodayContext";
 import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { OverdueTransactionsModal } from "./overdue-transactions-modal";
+import { TransactionsListModal } from "./transactions-list-modal";
 
 interface OverviewStatsProps {
   totalCash?: number;
@@ -66,6 +67,8 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showOverdueModal, setShowOverdueModal] = useState(false);
+  const [showIncomingModal, setShowIncomingModal] = useState(false);
+  const [showUpcomingModal, setShowUpcomingModal] = useState(false);
   
   // Save selections to localStorage
   useEffect(() => {
@@ -524,9 +527,25 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               <p className="text-sm text-slate-600">
                 {incomingPayments.length > 0 ? `${incomingPayments.length} Amazon payouts & income` : "No Amazon payouts or income"}
               </p>
-              <p className="text-xs text-green-600">
-                {timeRangeOptions.find(opt => opt.value === incomingTimeRange)?.label}
-              </p>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-xs text-green-600">
+                  {timeRangeOptions.find(opt => opt.value === incomingTimeRange)?.label}
+                </p>
+                {incomingPayments.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowIncomingModal(true)}
+                    className="h-7 px-2 text-xs border-green-600 text-green-700 hover:bg-green-600 hover:text-white"
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    View
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px] bg-green-100 text-green-700">
+                      {incomingPayments.length}
+                    </Badge>
+                  </Button>
+                )}
+              </div>
             </div>
             <TrendingUp className="h-8 w-8 text-green-500" />
           </div>
@@ -557,20 +576,36 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 <p className="text-xs text-amber-600">
                   {timeRangeOptions.find(opt => opt.value === upcomingTimeRange)?.label}
                 </p>
-                {totalOverdueCount > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowOverdueModal(true)}
-                    className="h-7 px-2 text-xs border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                  >
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    Overdue
-                    <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">
-                      {totalOverdueCount}
-                    </Badge>
-                  </Button>
-                )}
+                <div className="flex items-center space-x-2">
+                  {upcomingPayments.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowUpcomingModal(true)}
+                      className="h-7 px-2 text-xs border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white"
+                    >
+                      <Eye className="h-3 w-3 mr-1" />
+                      View
+                      <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px] bg-amber-100 text-amber-700">
+                        {upcomingPayments.length}
+                      </Badge>
+                    </Button>
+                  )}
+                  {totalOverdueCount > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowOverdueModal(true)}
+                      className="h-7 px-2 text-xs border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    >
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      Overdue
+                      <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">
+                        {totalOverdueCount}
+                      </Badge>
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
             <Calendar className="h-8 w-8 text-amber-500" />
@@ -666,6 +701,24 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
         open={showOverdueModal} 
         onOpenChange={setShowOverdueModal}
         onUpdate={onTransactionUpdate}
+      />
+
+      {/* Incoming Transactions Modal */}
+      <TransactionsListModal
+        open={showIncomingModal}
+        onOpenChange={setShowIncomingModal}
+        transactions={incomingPayments as any}
+        title={`Incoming Transactions (${timeRangeOptions.find(opt => opt.value === incomingTimeRange)?.label})`}
+        type="incoming"
+      />
+
+      {/* Upcoming Payments Modal */}
+      <TransactionsListModal
+        open={showUpcomingModal}
+        onOpenChange={setShowUpcomingModal}
+        transactions={upcomingPayments as any}
+        title={`Upcoming Payments (${timeRangeOptions.find(opt => opt.value === upcomingTimeRange)?.label})`}
+        type="upcoming"
       />
     </>
   );
