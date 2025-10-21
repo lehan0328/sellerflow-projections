@@ -228,28 +228,12 @@ export function BankAccounts() {
           <div className="flex items-center space-x-2">
             <Building2 className="h-5 w-5 text-primary" />
             <CardTitle>Bank Accounts</CardTitle>
-            <Button 
-              variant="default" 
-              size="sm" 
-              onClick={() => navigate('/settings?tab=bank-accounts')}
-              className="ml-4"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Connect Bank
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setDialogOpen(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Manual
-            </Button>
             {accounts.length > 0 && (
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={() => navigate('/transactions')}
+                className="ml-4"
               >
                 View Transactions
               </Button>
