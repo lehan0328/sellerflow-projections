@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Repeat, Pencil, Filter, Trash2, Search } from "lucide-react";
+import { Plus, Repeat, Pencil, Filter, Trash2, Search, ArrowUpDown } from "lucide-react";
 import { useRecurringExpenses, RecurringExpense } from "@/hooks/useRecurringExpenses";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,8 @@ export const RecurringExpensesOverview = () => {
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [showInactive, setShowInactive] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<'name' | 'amount' | 'start_date' | 'frequency'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [editingExpense, setEditingExpense] = useState<RecurringExpense | null>(null);
   const [deletingExpense, setDeletingExpense] = useState<RecurringExpense | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -50,22 +52,50 @@ export const RecurringExpensesOverview = () => {
     notes: "",
   });
 
-  // Filter transactions
-  let filteredTransactions = recurringExpenses;
-  if (!showInactive) {
-    filteredTransactions = filteredTransactions.filter(item => item.is_active);
-  }
-  if (filterType !== 'all') {
-    filteredTransactions = filteredTransactions.filter(item => item.type === filterType);
-  }
-  if (searchTerm) {
-    filteredTransactions = filteredTransactions.filter(item => 
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.transaction_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.notes?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }
+  // Filter and sort transactions
+  const filteredTransactions = useMemo(() => {
+    let filtered = recurringExpenses;
+    
+    if (!showInactive) {
+      filtered = filtered.filter(item => item.is_active);
+    }
+    if (filterType !== 'all') {
+      filtered = filtered.filter(item => item.type === filterType);
+    }
+    if (searchTerm) {
+      filtered = filtered.filter(item => 
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.transaction_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.notes?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Sort
+    const sorted = [...filtered].sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'amount':
+          comparison = Number(a.amount) - Number(b.amount);
+          break;
+        case 'start_date':
+          comparison = new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+          break;
+        case 'frequency':
+          const frequencyOrder = { daily: 1, weekdays: 2, weekly: 3, 'bi-weekly': 4, monthly: 5, yearly: 6 };
+          comparison = frequencyOrder[a.frequency] - frequencyOrder[b.frequency];
+          break;
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return sorted;
+  }, [recurringExpenses, showInactive, filterType, searchTerm, sortBy, sortOrder]);
 
   const activeTransactions = recurringExpenses.filter(item => item.is_active);
   const activeIncome = activeTransactions.filter(item => item.type === 'income');
@@ -192,7 +222,7 @@ export const RecurringExpensesOverview = () => {
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <Tabs value={filterType} onValueChange={(v) => setFilterType(v as any)} className="h-9">
               <TabsList>
                 <TabsTrigger value="all">All</TabsTrigger>
@@ -209,6 +239,29 @@ export const RecurringExpensesOverview = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
               />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="amount">Amount</SelectItem>
+                  <SelectItem value="start_date">Start Date</SelectItem>
+                  <SelectItem value="frequency">Frequency</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                title={`Sort ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
+              >
+                <ArrowUpDown className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </CardHeader>
