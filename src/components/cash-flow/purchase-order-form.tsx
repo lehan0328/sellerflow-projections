@@ -541,10 +541,10 @@ export const PurchaseOrderForm = ({
 
               {/* AI Document Upload */}
               <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
-                <CardContent className="pt-6 pb-6">
-                  <div className="flex items-center justify-between mb-5">
+                <CardContent className="pt-4 pb-4">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-2">
-                      <Label htmlFor="save-toggle" className="text-sm font-medium cursor-pointer">
+                      <Label htmlFor="save-toggle" className="text-xs font-medium cursor-pointer">
                         Save to Document Storage
                       </Label>
                     </div>
@@ -553,26 +553,25 @@ export const PurchaseOrderForm = ({
                   localStorage.setItem('po-save-to-storage', String(checked));
                 }} />
                   </div>
-                  <div className="text-center space-y-4">
+                  <div className="text-center space-y-2.5">
                     <div className="flex justify-center">
-                      <div className="h-14 w-14 rounded-xl bg-primary/20 flex items-center justify-center shadow-sm">
-                        <FileText className="h-7 w-7 text-primary" />
+                      <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                        <FileText className="h-5 w-5 text-primary" />
                       </div>
                     </div>
                   <div>
-                    <h4 className="font-semibold text-base mb-1.5">Upload Purchase Order Document</h4>
-                    <p className="text-sm text-muted-foreground mb-1">
+                    <h4 className="font-semibold text-sm mb-1">Upload Purchase Order Document</h4>
+                    <p className="text-xs text-muted-foreground mb-0.5">
                       Let AI automatically fill the form from your image
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Supported formats: PNG, JPG, JPEG, WEBP
+                      PNG, JPG, JPEG, WEBP
                     </p>
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/webp" onChange={handleFileUpload} className="hidden" />
                   <Button 
                     type="button" 
                     variant="default"
-                    size="lg"
                     onClick={() => {
                       if (!hasPlanAccess(subscription.plan, 'growing')) {
                         setShowUpgradeModal(true);
@@ -581,13 +580,13 @@ export const PurchaseOrderForm = ({
                       fileInputRef.current?.click();
                     }} 
                     disabled={isProcessingDocument} 
-                    className="w-full shadow-sm"
+                    className="w-full shadow-sm h-9"
                   >
                     {isProcessingDocument ? <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
                         Processing {uploadedFileName}...
                       </> : <>
-                        <Upload className="h-4 w-4 mr-2" />
+                        <Upload className="h-3.5 w-3.5 mr-2" />
                         Upload Image
                       </>}
                   </Button>
