@@ -300,12 +300,13 @@ export function RecurringExpenseManagement() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="category">Category</Label>
+                  <Label htmlFor="category">Category *</Label>
                   <Input
                     id="category"
                     placeholder="e.g., Rent, Utilities"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    required
                   />
                 </div>
                 <div>
@@ -631,12 +632,13 @@ export function RecurringExpenseManagement() {
               />
             </div>
             <div>
-              <Label htmlFor="edit-category">Category</Label>
+              <Label htmlFor="edit-category">Category *</Label>
               <Input
                 id="edit-category"
                 placeholder="e.g., Rent, Utilities"
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                required
               />
             </div>
             <div>

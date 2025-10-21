@@ -697,7 +697,7 @@ export const PurchaseOrderForm = ({
 
             {/* Category */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Category</Label>
+              <Label className="text-sm font-medium">Category *</Label>
               <Select 
                 value={formData.category}
                 onValueChange={(value) => {
@@ -710,6 +710,7 @@ export const PurchaseOrderForm = ({
                     }));
                   }
                 }}
+                required
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />

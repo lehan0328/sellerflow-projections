@@ -391,7 +391,7 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
           )}
           
           <div className="space-y-2">
-            <Label htmlFor="category">Category (Optional)</Label>
+            <Label htmlFor="category">Category *</Label>
             <Select 
               value={formData.category}
               onValueChange={(value) => {
@@ -401,6 +401,7 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
                   handleInputChange("category", value);
                 }
               }}
+              required
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
