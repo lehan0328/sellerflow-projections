@@ -57,13 +57,16 @@ export const useUserSettings = () => {
         reserveColor: data.chart_reserve_color ?? '#ef4444',
         forecastColor: data.chart_forecast_color ?? '#a855f7',
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching user settings:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load user settings",
-        variant: "destructive",
-      });
+      // Don't show toast if user is simply not authenticated (signed out)
+      if (error?.message !== 'User not authenticated') {
+        toast({
+          title: "Error",
+          description: "Failed to load user settings",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
