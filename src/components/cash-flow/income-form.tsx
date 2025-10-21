@@ -45,7 +45,8 @@ export const IncomeForm = ({
   customers = [],
   onAddCustomer
 }: IncomeFormProps) => {
-  const { categories: incomeCategories, addCategory } = useCategories('income');
+  const { categories: incomeCategories, addCategory: addIncomeCategory } = useCategories('income');
+  const { categories: expenseCategories, addCategory: addExpenseCategory } = useCategories('expense');
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [formData, setFormData] = useState({
     type: "income" as "income" | "expense",
@@ -458,66 +459,55 @@ export const IncomeForm = ({
                 </div>
               )}
 
-              {/* Category - only for non-recurring income */}
-              {!formData.isRecurring && !isRecurring && (
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category (Optional)</Label>
-                  <Select 
-                    value={formData.category} 
-                    onValueChange={(value) => {
-                      if (value === "__add_new__") {
-                        setShowAddCategory(true);
-                      } else {
-                        handleInputChange("category", value);
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <div className="border-b pb-1 mb-1">
-                        <SelectItem value="__add_new__" className="text-primary font-medium">
-                          <div className="flex items-center gap-2">
-                            <Plus className="h-4 w-4" />
-                            Add New Category
-                          </div>
-                        </SelectItem>
-                      </div>
-                      {incomeCategories.map(category => (
-                        <SelectItem key={category.id} value={category.name}>
-                          <div className="flex items-center justify-between w-full">
-                            <span>{category.name}</span>
-                            {category.is_default && (
-                              <span className="text-xs text-muted-foreground ml-2">(default)</span>
-                            )}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              {/* Category */}
+              <div className="space-y-2">
+                <Label htmlFor="category">Category (Optional)</Label>
+                <Select 
+                  value={formData.category} 
+                  onValueChange={(value) => {
+                    if (value === "__add_new__") {
+                      setShowAddCategory(true);
+                    } else {
+                      handleInputChange("category", value);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <div className="border-b pb-1 mb-1">
+                      <SelectItem value="__add_new__" className="text-primary font-medium">
+                        <div className="flex items-center gap-2">
+                          <Plus className="h-4 w-4" />
+                          Add New Category
+                        </div>
+                      </SelectItem>
+                    </div>
+                    {(formData.type === "income" ? incomeCategories : expenseCategories).map(category => (
+                      <SelectItem key={category.id} value={category.name}>
+                        <div className="flex items-center justify-between w-full">
+                          <span>{category.name}</span>
+                          {category.is_default && (
+                            <span className="text-xs text-muted-foreground ml-2">(default)</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               <AddCategoryDialog
                 open={showAddCategory}
                 onOpenChange={setShowAddCategory}
                 onAddCategory={async (name) => {
-                  await addCategory(name);
+                  const addFn = formData.type === "income" ? addIncomeCategory : addExpenseCategory;
+                  await addFn(name);
                   handleInputChange("category", name);
                 }}
-                type="income"
+                type={formData.type}
               />
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (Optional)</Label>
-                <Input
-                  id="description"
-                  placeholder="e.g., Monthly subscription revenue"
-                  value={formData.description}
-                  onChange={(e) => handleInputChange("description", e.target.value)}
-                />
-              </div>
               
               <div className="space-y-2">
                 <Label htmlFor="notes">Notes (Optional)</Label>

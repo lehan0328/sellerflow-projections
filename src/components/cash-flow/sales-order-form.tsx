@@ -12,6 +12,9 @@ import { CalendarIcon, Plus, Trash2 } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useCategories } from "@/hooks/useCategories";
+import { AddCategoryDialog } from "./add-category-dialog";
+import { cn } from "@/lib/utils";
 
 interface SalesOrderFormProps {
   open: boolean;
@@ -33,12 +36,13 @@ interface PaymentSchedule {
 }
 
 export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }: SalesOrderFormProps) => {
+  const { categories: incomeCategories, addCategory } = useCategories('income');
+  const [showAddCategory, setShowAddCategory] = useState(false);
   const [formData, setFormData] = useState({
     soName: "",
     customer: "",
     amount: "",
     dueDate: undefined as Date | undefined,
-    description: "",
     category: "",
     notes: "",
     paymentType: "total" as "total" | "preorder" | "net-terms",
@@ -52,15 +56,6 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
 
   const [isMainDatePickerOpen, setIsMainDatePickerOpen] = useState(false);
   const [openPaymentDatePickers, setOpenPaymentDatePickers] = useState<Record<string, boolean>>({});
-
-  const categories = [
-    "Product Sales",
-    "Service Revenue",
-    "Subscription",
-    "Consulting",
-    "License Fees",
-    "Other"
-  ];
 
   const addPayment = () => {
     const newPayment: PaymentSchedule = {
@@ -104,7 +99,6 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
       customer: "",
       amount: "",
       dueDate: undefined,
-      description: "",
       category: "",
       notes: "",
       paymentType: "total",
@@ -134,39 +128,41 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
             Add Sales Order
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="customer">Customer</Label>
-            <Select onValueChange={handleCustomerChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select customer" />
-              </SelectTrigger>
-              <SelectContent>
-                {customers.map(customer => (
-                  <SelectItem key={customer.id} value={customer.name}>
-                    {customer.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="customer">Customer</Label>
+              <Select onValueChange={handleCustomerChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select customer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {customers.map(customer => (
+                    <SelectItem key={customer.id} value={customer.name}>
+                      {customer.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="soName">Sales Order Name *</Label>
-            <Input
-              id="soName"
-              placeholder="e.g., Q1 Product Sales"
-              value={formData.soName}
-              onChange={(e) => handleInputChange("soName", e.target.value)}
-              required
-            />
+            <div className="space-y-2">
+              <Label htmlFor="soName">Sales Order Name *</Label>
+              <Input
+                id="soName"
+                placeholder="e.g., Q1 Product Sales"
+                value={formData.soName}
+                onChange={(e) => handleInputChange("soName", e.target.value)}
+                required
+              />
+            </div>
           </div>
           
           <div className="space-y-3">
@@ -226,7 +222,7 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
                         setIsMainDatePickerOpen(false);
                       }}
                       initialFocus
-                      className="p-3 pointer-events-auto"
+                      className={cn("p-3 pointer-events-auto")}
                     />
                   </PopoverContent>
                 </Popover>
@@ -367,14 +363,14 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
                               <Calendar
                                 mode="single"
                                 selected={payment.dueDate}
-                                onSelect={(date) => {
-                                  updatePayment(payment.id, "dueDate", date);
-                                  setOpenPaymentDatePickers(prev => ({ ...prev, [payment.id]: false }));
-                                }}
-                                initialFocus
-                                className="p-3 pointer-events-auto"
-                              />
-                            </PopoverContent>
+                              onSelect={(date) => {
+                                updatePayment(payment.id, "dueDate", date);
+                                setOpenPaymentDatePickers(prev => ({ ...prev, [payment.id]: false }));
+                              }}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
                           </Popover>
                         </div>
                       </div>
@@ -395,31 +391,52 @@ export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }:
           )}
           
           <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
-            <Select onValueChange={(value) => handleInputChange("category", value)}>
+            <Label htmlFor="category">Category (Optional)</Label>
+            <Select 
+              value={formData.category}
+              onValueChange={(value) => {
+                if (value === "__add_new__") {
+                  setShowAddCategory(true);
+                } else {
+                  handleInputChange("category", value);
+                }
+              }}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                {categories.map(category => (
-                  <SelectItem key={category} value={category}>
-                    {category}
+                <div className="border-b pb-1 mb-1">
+                  <SelectItem value="__add_new__" className="text-primary font-medium">
+                    <div className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Add New Category
+                    </div>
+                  </SelectItem>
+                </div>
+                {incomeCategories.map(category => (
+                  <SelectItem key={category.id} value={category.name}>
+                    <div className="flex items-center justify-between w-full">
+                      <span>{category.name}</span>
+                      {category.is_default && (
+                        <span className="text-xs text-muted-foreground ml-2">(default)</span>
+                      )}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              placeholder="Brief description of the sale"
-              value={formData.description}
-              onChange={(e) => handleInputChange("description", e.target.value)}
-              required
-            />
-          </div>
+
+          <AddCategoryDialog
+            open={showAddCategory}
+            onOpenChange={setShowAddCategory}
+            onAddCategory={async (name) => {
+              await addCategory(name);
+              handleInputChange("category", name);
+            }}
+            type="income"
+          />
           
           <div className="space-y-2">
             <Label htmlFor="notes">Notes (Optional)</Label>
