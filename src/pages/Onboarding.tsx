@@ -423,8 +423,8 @@ export default function Onboarding() {
                   </div>
                 </div>
 
-                <div className="mt-4 p-3 bg-white/50 dark:bg-black/20 rounded border border-blue-300 dark:border-blue-700">
-                  <p className="text-xs text-muted-foreground">
+                <div className="mt-4 p-4 bg-white/50 dark:bg-black/20 rounded border border-blue-300 dark:border-blue-700">
+                  <p className="text-sm text-muted-foreground font-medium">
                     <strong>Note:</strong> You can enable or disable forecasts anytime from Settings. The system works best when you have at least 3 confirmed payouts for accurate predictions.
                   </p>
                 </div>
