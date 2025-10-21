@@ -525,24 +525,24 @@ export const PurchaseOrderForm = ({
   };
   return <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("max-h-[90vh] overflow-y-auto", !formData.vendorId ? "max-w-lg" : "max-w-2xl w-full")}>
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold">
+      <DialogContent className={cn("max-h-[90vh] overflow-y-auto", !formData.vendorId ? "max-w-lg" : "max-w-3xl w-full")}>
+          <DialogHeader className="pb-4 border-b">
+            <DialogTitle className="text-2xl font-semibold">
               Add Purchase Order
             </DialogTitle>
           </DialogHeader>
           
           {/* Step 1: Vendor Selection */}
-          {!formData.vendorId && <div className="space-y-4">
-              <div className="text-center py-4">
-                <h3 className="text-lg font-semibold mb-2">Select a Vendor</h3>
+          {!formData.vendorId && <div className="space-y-6 pt-2">
+              <div className="text-center py-2">
+                <h3 className="text-lg font-semibold mb-1">Select a Vendor</h3>
                 <p className="text-sm text-muted-foreground">Choose a vendor to create a purchase order</p>
               </div>
 
               {/* AI Document Upload */}
-              <Card className="border-2 border-dashed border-primary/20 bg-primary/5">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-4">
+              <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+                <CardContent className="pt-6 pb-6">
+                  <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center space-x-2">
                       <Label htmlFor="save-toggle" className="text-sm font-medium cursor-pointer">
                         Save to Document Storage
@@ -553,25 +553,26 @@ export const PurchaseOrderForm = ({
                   localStorage.setItem('po-save-to-storage', String(checked));
                 }} />
                   </div>
-                  <div className="text-center space-y-3">
+                  <div className="text-center space-y-4">
                     <div className="flex justify-center">
-                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <FileText className="h-6 w-6 text-primary" />
+                      <div className="h-14 w-14 rounded-xl bg-primary/20 flex items-center justify-center shadow-sm">
+                        <FileText className="h-7 w-7 text-primary" />
                       </div>
                     </div>
                   <div>
-                    <h4 className="font-semibold mb-1">Upload Purchase Order Document</h4>
-                    <p className="text-sm text-muted-foreground">
+                    <h4 className="font-semibold text-base mb-1.5">Upload Purchase Order Document</h4>
+                    <p className="text-sm text-muted-foreground mb-1">
                       Let AI automatically fill the form from your image
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-xs text-muted-foreground">
                       Supported formats: PNG, JPG, JPEG, WEBP
                     </p>
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/webp" onChange={handleFileUpload} className="hidden" />
                   <Button 
                     type="button" 
-                    variant="outline" 
+                    variant="default"
+                    size="lg"
                     onClick={() => {
                       if (!hasPlanAccess(subscription.plan, 'growing')) {
                         setShowUpgradeModal(true);
@@ -580,7 +581,7 @@ export const PurchaseOrderForm = ({
                       fileInputRef.current?.click();
                     }} 
                     disabled={isProcessingDocument} 
-                    className="w-full"
+                    className="w-full shadow-sm"
                   >
                     {isProcessingDocument ? <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -596,18 +597,18 @@ export const PurchaseOrderForm = ({
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
+                  <span className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
+                  <span className="bg-background px-3 text-muted-foreground font-medium">
                     Or select manually
                   </span>
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="vendor">Vendor *</Label>
-                <div className="flex gap-2">
+              <div className="space-y-2.5">
+                <Label htmlFor="vendor" className="text-sm font-medium">Vendor *</Label>
+                <div className="flex gap-2.5">
                   <div className="relative flex-1">
                     <div className="relative">
                       <Input placeholder="Search or select vendor..." value={vendorSearchTerm} onChange={e => {
@@ -637,64 +638,67 @@ export const PurchaseOrderForm = ({
                       </div>}
                   </div>
                   
-                  <Button type="button" variant="outline" onClick={() => setShowVendorForm(true)} className="px-3">
+                  <Button type="button" variant="outline" onClick={() => setShowVendorForm(true)} className="px-3 shadow-sm">
                     <Plus className="h-4 w-4 mr-1" />
-                    Add Vendor
+                    Add
                   </Button>
                 </div>
               </div>
               
-              <div className="flex justify-end pt-4">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <div className="flex justify-end pt-2">
+                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
                   Cancel
                 </Button>
               </div>
             </div>}
 
           {/* Step 2: Purchase Order Details */}
-          {formData.vendorId && <form onSubmit={handleSubmit} className="space-y-4">
+          {formData.vendorId && <form onSubmit={handleSubmit} className="space-y-5 pt-2">
               {/* Selected Vendor Display */}
-              <div className="p-3 bg-accent/20 rounded-lg border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">{formData.vendor}</div>
-                    {formData.category && <div className="text-sm text-muted-foreground">{formData.category}</div>}
-                  </div>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => {
+              <Card className="border-primary/30 bg-primary/5">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs uppercase text-muted-foreground font-medium mb-1">Selected Vendor</div>
+                      <div className="font-semibold text-base">{formData.vendor}</div>
+                      {formData.category && <div className="text-sm text-muted-foreground mt-0.5">{formData.category}</div>}
+                    </div>
+                    <Button type="button" variant="outline" size="sm" onClick={() => {
                 setFormData(prev => ({
                   ...prev,
                   vendor: "",
                   vendorId: ""
                 }));
                 setVendorSearchTerm("");
-              }}>
-                    Change Vendor
-                  </Button>
-                </div>
-              </div>
+              }} className="shadow-sm">
+                      Change
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
 
             {/* PO Name and Amount in Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="poName">PO Name *</Label>
+                <Label htmlFor="poName" className="text-sm font-medium">PO Name *</Label>
                 <Input id="poName" placeholder="e.g., Q1 Inventory Restock" value={formData.poName} onChange={e => setFormData(prev => ({
                 ...prev,
                 poName: e.target.value
-              }))} required />
+              }))} required className="h-10" />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="amount">Total Amount *</Label>
+                <Label htmlFor="amount" className="text-sm font-medium">Total Amount *</Label>
                 <Input id="amount" type="number" step="0.01" placeholder="0.00" value={formData.amount} onChange={e => setFormData(prev => ({
                 ...prev,
                 amount: e.target.value
-              }))} required />
+              }))} required className="h-10" />
               </div>
             </div>
 
             {/* Category */}
             <div className="space-y-2">
-              <Label>Category</Label>
+              <Label className="text-sm font-medium">Category</Label>
               <Select 
                 value={formData.category}
                 onValueChange={(value) => {
@@ -750,10 +754,10 @@ export const PurchaseOrderForm = ({
             
             {/* PO Date */}
             <div className="space-y-2">
-              <Label>PO Date *</Label>
+              <Label className="text-sm font-medium">PO Date *</Label>
               <Popover open={isPODatePickerOpen} onOpenChange={setIsPODatePickerOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  <Button variant="outline" className="w-full justify-start text-left font-normal h-10">
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {formData.poDate ? format(formData.poDate, "PPP") : "Pick a date"}
                   </Button>
@@ -765,14 +769,14 @@ export const PurchaseOrderForm = ({
                     poDate: date || new Date(new Date().setDate(new Date().getDate() + 1))
                   }));
                   setIsPODatePickerOpen(false);
-                }} disabled={(date) => date <= new Date(new Date().setHours(0, 0, 0, 0))} initialFocus />
+                }} disabled={(date) => date <= new Date(new Date().setHours(0, 0, 0, 0))} initialFocus className={cn("pointer-events-auto")} />
                 </PopoverContent>
               </Popover>
             </div>
 
             {/* Payment Terms */}
             <div className="space-y-3">
-              <Label>Payment Terms</Label>
+              <Label className="text-sm font-medium">Payment Terms</Label>
               <RadioGroup value={formData.paymentType} onValueChange={value => setFormData(prev => ({
               ...prev,
               paymentType: value as any
@@ -1138,11 +1142,11 @@ export const PurchaseOrderForm = ({
             </div>
 
             {/* Submit Button */}
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <div className="flex justify-end space-x-3 pt-6 border-t">
+              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit">
+              <Button type="submit" size="lg" className="shadow-sm min-w-[160px]">
                 Create Purchase Order
               </Button>
             </div>
