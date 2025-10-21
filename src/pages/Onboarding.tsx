@@ -236,7 +236,7 @@ export default function Onboarding() {
                   <div>
                     <h3 className="font-semibold">Mathematical Forecasting</h3>
                     <p className="text-sm text-muted-foreground">
-                      Enable AI-powered payout predictions based on your Amazon transaction history
+                      Enable AI-powered payout predictions based on your Amazon transaction history (requires Amazon connection)
                     </p>
                   </div>
                 </div>
