@@ -386,7 +386,7 @@ export default function Onboarding() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Sparkles className="h-6 w-6 text-purple-600" />
-                <CardTitle className="text-2xl">AI-Powered Forecasting</CardTitle>
+                <CardTitle className="text-2xl">Mathematical Forecasting</CardTitle>
               </div>
               <CardDescription>
                 Would you like to enable mathematical payout forecasting?
