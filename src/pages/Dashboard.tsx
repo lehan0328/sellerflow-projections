@@ -1728,9 +1728,9 @@ const Dashboard = () => {
                       <div className="flex items-center p-5">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
                           <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
-                            tx.type === 'debit' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'
+                            tx.type === 'credit' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'
                           }`}>
-                            {tx.type === 'debit' ? (
+                            {tx.type === 'credit' ? (
                               <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
                             ) : (
                               <CreditCardIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
@@ -1761,7 +1761,7 @@ const Dashboard = () => {
                         </div>
                         <div className="flex items-center gap-4 flex-shrink-0 ml-4">
                           <div className="text-right">
-                            <p className={`text-2xl font-bold ${tx.type === 'debit' ? 'text-green-600' : 'text-red-600'}`}>
+                            <p className={`text-2xl font-bold ${tx.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
                               {tx.type === 'debit' ? '-' : '+'}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                             <p className="text-xs text-muted-foreground uppercase tracking-wide mt-0.5">{tx.type === 'debit' ? 'Debit' : 'Credit'}</p>
