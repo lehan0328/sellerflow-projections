@@ -1659,7 +1659,16 @@ const Dashboard = () => {
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="font-medium">{tx.merchantName || tx.description}</p>
+                          <p className="font-medium">
+                            {tx.merchantName 
+                              ? tx.merchantName 
+                              : tx.description 
+                                ? tx.description.split(' ').map(word => 
+                                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                                  ).join(' ')
+                                : 'Unknown Transaction'
+                            }
+                          </p>
                           {tx.status === 'pending' && (
                             <span className="text-xs px-2 py-0.5 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-500/20 rounded">
                               Pending
@@ -1695,7 +1704,7 @@ const Dashboard = () => {
                       <div className="flex items-center gap-3">
                         <div className="text-right">
                           <p className="font-semibold">
-                            {tx.type === 'debit' ? '-' : '+'}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {tx.type === 'credit' ? '-' : '+'}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                           <p className="text-xs text-muted-foreground capitalize">
                             {tx.type}
