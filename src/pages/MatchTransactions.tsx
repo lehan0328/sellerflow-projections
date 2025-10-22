@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { format } from "date-fns";
-import { Link2, CheckCircle2, XCircle, TrendingDown, TrendingUp, AlertTriangle } from "lucide-react";
+import { Link2, CheckCircle2, XCircle, TrendingDown, TrendingUp, AlertTriangle, ChevronDown } from "lucide-react";
 import { useTransactionMatching, TransactionMatch } from "@/hooks/useTransactionMatching";
 import { useBankTransactions } from "@/hooks/useBankTransactions";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
@@ -205,105 +206,118 @@ const MatchTransactions = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {Object.entries(groupedMatches).map(([txId, txMatches]) => {
-            const topMatch = txMatches[0];
-            const isProcessing = processingMatches.has(txId);
-            
-            return (
-              <Card key={txId} className={showPotentialMatches ? "border-yellow-500/50 bg-yellow-500/5" : "border-green-500/50 bg-green-500/5"}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="flex items-center gap-2">
-                        {showPotentialMatches ? (
-                          <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                        ) : (
-                          <Link2 className="h-5 w-5 text-green-600" />
-                        )}
-                        {topMatch.bankTransaction.merchantName || topMatch.bankTransaction.description}
-                        <Badge variant="secondary" className="ml-2">
-                          {Math.round(topMatch.matchScore * 100)}% Match
-                        </Badge>
-                      </CardTitle>
-                      <CardDescription className="mt-2 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">
-                            {topMatch.bankTransaction.type === 'debit' ? '-' : '+'}
-                            ${Math.abs(topMatch.bankTransaction.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
-                          <span>•</span>
-                          <span>{format(topMatch.bankTransaction.date, 'MMM dd, yyyy')}</span>
-                          <span>•</span>
-                          <span>{topMatch.bankTransaction.institutionName} - {topMatch.bankTransaction.accountName}</span>
-                        </div>
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {txMatches.map((match, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 bg-background rounded-lg border">
-                      <div className="flex items-start gap-4">
-                        <div className={`p-2 rounded-full ${match.type === 'income' ? 'bg-green-100 dark:bg-green-900/20' : 'bg-red-100 dark:bg-red-900/20'}`}>
-                          {match.type === 'income' ? (
-                            <TrendingUp className="h-5 w-5 text-green-600" />
-                          ) : (
-                            <TrendingDown className="h-5 w-5 text-red-600" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold">
-                              {match.type === 'income' ? 'Income' : 'Expense'}
-                            </span>
-                            <Badge variant="outline" className="text-xs">
-                              {Math.round(match.matchScore * 100)}% match
-                            </Badge>
+        <Card>
+          <CardContent className="p-0">
+            <Accordion type="multiple" className="w-full">
+              {Object.entries(groupedMatches).map(([txId, txMatches]) => {
+                const topMatch = txMatches[0];
+                const isProcessing = processingMatches.has(txId);
+                
+                return (
+                  <AccordionItem key={txId} value={txId} className="border-b last:border-0">
+                    <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-accent/50">
+                      <div className="flex items-center justify-between w-full pr-4">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className={`p-2 rounded-full ${showPotentialMatches ? 'bg-yellow-100 dark:bg-yellow-900/20' : 'bg-green-100 dark:bg-green-900/20'}`}>
+                            {showPotentialMatches ? (
+                              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                            ) : (
+                              <Link2 className="h-5 w-5 text-green-600" />
+                            )}
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            {match.type === 'income' && match.matchedIncome && (
-                              <>
-                                {match.matchedIncome.source} - {match.matchedIncome.description}
-                                <span className="mx-2">•</span>
-                                ${match.matchedIncome.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                              </>
-                            )}
-                            {match.type === 'vendor' && match.matchedVendorTransaction && (
-                              <>
-                                {match.matchedVendorTransaction.vendorName} - {match.matchedVendorTransaction.description}
-                                <span className="mx-2">•</span>
-                                ${match.matchedVendorTransaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                              </>
-                            )}
-                          </p>
+                          <div className="flex-1 text-left">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold">
+                                {topMatch.bankTransaction.merchantName || topMatch.bankTransaction.description}
+                              </span>
+                              <Badge 
+                                variant="secondary" 
+                                className={showPotentialMatches ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"}
+                              >
+                                {txMatches.length} {txMatches.length === 1 ? 'match' : 'matches'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <span className="font-medium">
+                                {topMatch.bankTransaction.type === 'debit' ? '-' : '+'}
+                                ${Math.abs(topMatch.bankTransaction.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </span>
+                              <span>•</span>
+                              <span>{format(topMatch.bankTransaction.date, 'MMM dd, yyyy')}</span>
+                              <span>•</span>
+                              <span>{topMatch.bankTransaction.institutionName} - {topMatch.bankTransaction.accountName}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleReviewMatch(match)}
-                          disabled={isProcessing}
-                        >
-                          Review
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handleAcceptMatch(match)}
-                          disabled={isProcessing}
-                        >
-                          <CheckCircle2 className="h-4 w-4 mr-1" />
-                          Accept
-                        </Button>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-4">
+                      <div className="space-y-3 pt-2">
+                        {txMatches.map((match, index) => (
+                          <div key={index} className="flex items-center justify-between p-4 bg-accent/30 rounded-lg border">
+                            <div className="flex items-start gap-4 flex-1">
+                              <div className={`p-2 rounded-full ${match.type === 'income' ? 'bg-green-100 dark:bg-green-900/20' : 'bg-red-100 dark:bg-red-900/20'}`}>
+                                {match.type === 'income' ? (
+                                  <TrendingUp className="h-5 w-5 text-green-600" />
+                                ) : (
+                                  <TrendingDown className="h-5 w-5 text-red-600" />
+                                )}
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-semibold">
+                                    {match.type === 'income' ? 'Income' : 'Expense'}
+                                  </span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {Math.round(match.matchScore * 100)}% match
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  {match.type === 'income' && match.matchedIncome && (
+                                    <>
+                                      {match.matchedIncome.source} - {match.matchedIncome.description}
+                                      <span className="mx-2">•</span>
+                                      ${match.matchedIncome.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                    </>
+                                  )}
+                                  {match.type === 'vendor' && match.matchedVendorTransaction && (
+                                    <>
+                                      {match.matchedVendorTransaction.vendorName} - {match.matchedVendorTransaction.description}
+                                      <span className="mx-2">•</span>
+                                      ${match.matchedVendorTransaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                    </>
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleReviewMatch(match)}
+                                disabled={isProcessing}
+                              >
+                                Review
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleAcceptMatch(match)}
+                                disabled={isProcessing}
+                              >
+                                <CheckCircle2 className="h-4 w-4 mr-1" />
+                                Accept
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          </CardContent>
+        </Card>
       )}
 
       <MatchReviewDialog
