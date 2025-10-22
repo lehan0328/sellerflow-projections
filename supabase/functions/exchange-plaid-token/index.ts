@@ -276,25 +276,41 @@ serve(async (req) => {
 
     console.log('Successfully stored accounts:', { bankAccounts: bankAccountIds.length, creditCards: creditCardIds.length });
 
-    // Start background task to sync transactions ONLY for bank accounts (not credit cards)
-    const syncPromises = bankAccountIds.map(async (accountId) => {
+    // Start background task to sync transactions for both bank accounts and credit cards
+    const bankSyncPromises = bankAccountIds.map(async (accountId) => {
       try {
         console.log('Starting transaction sync for bank account:', accountId);
         const { error: syncError } = await supabase.functions.invoke('sync-plaid-transactions', {
-          body: { accountId, isInitialSync: true },
+          body: { accountId, isInitialSync: true, accountType: 'bank' },
         });
         if (syncError) {
-          console.error(`Failed to sync transactions for account ${accountId}:`, syncError);
+          console.error(`Failed to sync transactions for bank account ${accountId}:`, syncError);
         } else {
-          console.log(`✅ Successfully synced transactions for account ${accountId}`);
+          console.log(`✅ Successfully synced transactions for bank account ${accountId}`);
         }
       } catch (error) {
-        console.error(`Error syncing transactions for account ${accountId}:`, error);
+        console.error(`Error syncing transactions for bank account ${accountId}:`, error);
+      }
+    });
+
+    const creditSyncPromises = creditCardIds.map(async (accountId) => {
+      try {
+        console.log('Starting transaction sync for credit card:', accountId);
+        const { error: syncError } = await supabase.functions.invoke('sync-plaid-transactions', {
+          body: { accountId, isInitialSync: true, accountType: 'credit' },
+        });
+        if (syncError) {
+          console.error(`Failed to sync transactions for credit card ${accountId}:`, syncError);
+        } else {
+          console.log(`✅ Successfully synced transactions for credit card ${accountId}`);
+        }
+      } catch (error) {
+        console.error(`Error syncing transactions for credit card ${accountId}:`, error);
       }
     });
 
     // Don't await - let it run in background
-    Promise.all(syncPromises).catch(console.error);
+    Promise.all([...bankSyncPromises, ...creditSyncPromises]).catch(console.error);
 
     return new Response(
       JSON.stringify({ 
