@@ -1150,19 +1150,19 @@ export const CashFlowInsights = ({
 
       {/* All Credit Cards Modal */}
       <Dialog open={showAllCreditCards} onOpenChange={setShowAllCreditCards}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-green-600" />
               All Credit Cards
             </DialogTitle>
           </DialogHeader>
-          <ScrollArea className="max-h-[500px] pr-4">
-              <div className="space-y-3">
-              <div className="p-4 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800 mb-3">
+          <ScrollArea className="max-h-[600px] pr-4">
+              <div className="space-y-2.5">
+              <div className="p-3 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800 mb-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Available</span>
-                  <span className="text-2xl font-bold text-green-700 dark:text-green-400">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Available Credit</span>
+                  <span className="text-xl font-bold text-green-700 dark:text-green-400">
                     ${creditCards.reduce((sum, card) => sum + card.available_credit, 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </span>
                 </div>
@@ -1179,21 +1179,21 @@ export const CashFlowInsights = ({
                 const priorityColor = card.priority === 1 ? 'text-green-600' : card.priority === 2 ? 'text-blue-600' : 'text-gray-600';
                 
                 return (
-                  <div key={card.id} className={`p-4 rounded-lg space-y-3 ${isOverLimit ? 'bg-red-50 dark:bg-red-950/20 border-2 border-red-500' : 'bg-muted/50 border border-border'}`}>
-                    <div className="flex justify-between items-start gap-2">
+                  <div key={card.id} className={`p-3 rounded-lg space-y-2 ${isOverLimit ? 'bg-red-50 dark:bg-red-950/20 border-2 border-red-500' : 'bg-muted/50 border border-border'}`}>
+                    <div className="flex justify-between items-start gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <p className="font-semibold text-base truncate text-gray-900 dark:text-gray-100">{card.account_name}</p>
-                          <span className={`text-xs font-medium ${priorityColor}`}>
+                          <p className="font-semibold text-sm truncate text-gray-900 dark:text-gray-100">{card.account_name}</p>
+                          <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${priorityColor} ${card.priority === 1 ? 'bg-green-100 dark:bg-green-900/20' : card.priority === 2 ? 'bg-blue-100 dark:bg-blue-900/20' : 'bg-gray-100 dark:bg-gray-800'}`}>
                             {priorityLabel}
                           </span>
-                          {isOverLimit && <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />}
+                          {isOverLimit && <AlertCircle className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />}
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{card.institution_name}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 truncate mb-1">{card.institution_name}</p>
                         {/* Due Date & Statement Balance */}
-                        <div className="flex gap-3 mt-2 text-sm">
+                        <div className="flex gap-3 text-xs">
                           {card.payment_due_date && (
-                            <span className="text-orange-600 dark:text-orange-400">
+                            <span className="text-orange-600 dark:text-orange-400 font-medium">
                               Due: {new Date(card.payment_due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                             </span>
                           )}
@@ -1204,14 +1204,17 @@ export const CashFlowInsights = ({
                           )}
                         </div>
                       </div>
-                      <span className={`text-xl font-bold flex-shrink-0 ${isOverLimit ? 'text-red-600 dark:text-red-500' : 'text-green-700 dark:text-green-400'}`}>
-                        ${card.available_credit.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                      </span>
+                      <div className="text-right">
+                        <span className={`text-lg font-bold flex-shrink-0 ${isOverLimit ? 'text-red-600 dark:text-red-500' : 'text-green-700 dark:text-green-400'}`}>
+                          ${card.available_credit.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                        </span>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Available</p>
+                      </div>
                     </div>
                     
                     {isOverLimit && (
-                      <div className="flex items-start gap-2 p-3 bg-red-100 dark:bg-red-900/30 rounded text-sm">
-                        <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex items-start gap-1.5 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs">
+                        <AlertCircle className="h-3.5 w-3.5 text-red-600 flex-shrink-0 mt-0.5" />
                         <p className="text-red-700 dark:text-red-400">
                           Over limit by ${Math.abs(currentAvailableSpend).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </p>
@@ -1221,15 +1224,15 @@ export const CashFlowInsights = ({
                     <Separator />
                     
                     {/* Available to Spend Section */}
-                    <div className={`p-3 rounded-lg border ${currentAvailableSpend < 0 ? 'bg-red-50 dark:bg-red-950/20 border-red-500' : 'bg-green-50 dark:bg-green-950/20 border-green-500'}`}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Available to Spend</span>
-                        <span className={`text-xl font-bold ${currentAvailableSpend < 0 ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}>
+                    <div className={`p-2.5 rounded-lg border ${currentAvailableSpend < 0 ? 'bg-red-50 dark:bg-red-950/20 border-red-500' : 'bg-green-50 dark:bg-green-950/20 border-green-500'}`}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Available to Spend</span>
+                        <span className={`text-lg font-bold ${currentAvailableSpend < 0 ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}>
                           ${Math.max(0, currentAvailableSpend).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
                       </div>
                       {pendingOrders > 0 && (
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                           Pending Orders: ${pendingOrders.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </p>
                       )}
@@ -1237,19 +1240,19 @@ export const CashFlowInsights = ({
                     
                     {/* Buying Opportunities */}
                     {opportunities.length > 0 && (
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-semibold flex items-center gap-1">
-                            <ShoppingCart className="h-4 w-4" />
+                          <h4 className="text-xs font-semibold flex items-center gap-1">
+                            <ShoppingCart className="h-3.5 w-3.5" />
                             Buying Opportunities
                           </h4>
                           <span className="text-xs text-muted-foreground">
                             {opportunities.length} available
                           </span>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                           {opportunities.slice(0, 2).map((opp, idx) => (
-                            <div key={idx} className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-sm border border-blue-200 dark:border-blue-800">
+                            <div key={idx} className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-xs border border-blue-200 dark:border-blue-800">
                               <span className="text-muted-foreground">
                                 {new Date(opp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                               </span>
@@ -1267,14 +1270,14 @@ export const CashFlowInsights = ({
                       </div>
                     )}
                     
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between items-center p-2 bg-background/50 rounded">
-                        <span className="text-gray-600 dark:text-gray-400">Credit Limit</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">${card.credit_limit.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="flex flex-col p-2 bg-background/50 rounded">
+                        <span className="text-gray-600 dark:text-gray-400 mb-0.5">Credit Limit</span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">${card.credit_limit.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                       </div>
-                      <div className="flex justify-between items-center p-2 bg-background/50 rounded">
-                        <span className="text-gray-600 dark:text-gray-400">Current Balance</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">${card.balance.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                      <div className="flex flex-col p-2 bg-background/50 rounded">
+                        <span className="text-gray-600 dark:text-gray-400 mb-0.5">Current Balance</span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">${card.balance.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                       </div>
                     </div>
                   </div>
