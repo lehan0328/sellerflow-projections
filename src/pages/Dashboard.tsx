@@ -1032,35 +1032,12 @@ const Dashboard = () => {
       // Update income or vendor
       if (matchType === 'income') {
         await updateIncome(matchId, { status: 'received' });
-        await addTransaction({
-          type: 'customer_payment',
-          amount: Math.abs(manualMatchDialog.transaction.amount),
-          description: `Manual match: ${manualMatchDialog.transaction.merchantName || manualMatchDialog.transaction.description}`,
-          transactionDate: new Date(),
-          status: 'completed'
-        });
       } else {
         const vendor = vendors.find(v => v.id === matchId);
         if (vendor) {
           await updateVendor(matchId, {
             totalOwed: Math.max(0, vendor.totalOwed - Math.abs(manualMatchDialog.transaction.amount))
           });
-          const newTx = await addTransaction({
-            type: 'vendor_payment',
-            amount: Math.abs(manualMatchDialog.transaction.amount),
-            description: `Manual match: Payment to ${vendor.name}`,
-            vendorId: matchId,
-            transactionDate: new Date(),
-            status: 'completed'
-          });
-          
-          // Archive the newly created transaction since it's matched to bank transaction
-          if (newTx?.id) {
-            await supabase
-              .from('transactions')
-              .update({ archived: true })
-              .eq('id', newTx.id);
-          }
         }
       }
 

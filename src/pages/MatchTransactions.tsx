@@ -88,18 +88,10 @@ const MatchTransactions = () => {
     try {
       if (match.type === 'income' && match.matchedIncome) {
         await updateIncome(match.matchedIncome.id, { status: 'received' });
-        await addTransaction({
-          type: 'customer_payment',
-          amount: match.matchedIncome.amount,
-          description: `Matched: ${match.matchedIncome.source} - ${match.matchedIncome.description}`,
-          customerId: match.matchedIncome.customerId,
-          transactionDate: new Date(),
-          status: 'completed'
-        });
         
         toast({
           title: 'Income matched',
-          description: 'Income has been matched with bank transaction.',
+          description: 'Income has been marked as received and matched with bank transaction.',
         });
       } else if (match.type === 'vendor' && match.matchedVendorTransaction) {
         await markAsPaid(match.matchedVendorTransaction.id);
@@ -116,7 +108,7 @@ const MatchTransactions = () => {
         
         toast({
           title: 'Vendor payment matched',
-          description: 'Vendor payment has been matched and archived.',
+          description: 'Purchase order has been archived and matched with bank transaction.',
         });
       }
       
