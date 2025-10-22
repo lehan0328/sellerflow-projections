@@ -22,9 +22,21 @@ export const TransactionMatchButton = ({
   onMatchAll,
   onReviewMatches 
 }: TransactionMatchButtonProps) => {
-  const matchCount = matches.length;
-  const incomeMatches = matches.filter(m => m.type === 'income').length;
-  const vendorMatches = matches.filter(m => m.type === 'vendor').length;
+  // Calculate unique PO/vendor transactions with matches
+  const uniquePoIds = new Set<string>();
+  const uniqueIncomeIds = new Set<string>();
+  
+  matches.forEach(match => {
+    if (match.type === 'vendor' && match.matchedVendorTransaction) {
+      uniquePoIds.add(match.matchedVendorTransaction.id);
+    } else if (match.type === 'income' && match.matchedIncome) {
+      uniqueIncomeIds.add(match.matchedIncome.id);
+    }
+  });
+  
+  const matchCount = uniquePoIds.size + uniqueIncomeIds.size;
+  const incomeMatches = uniqueIncomeIds.size;
+  const vendorMatches = uniquePoIds.size;
 
   return (
     <DropdownMenu>
