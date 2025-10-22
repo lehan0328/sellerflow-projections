@@ -185,6 +185,7 @@ serve(async (req) => {
             minimum_payment: liabilityInfo?.minimum_payment_amount || null,
             payment_due_date: liabilityInfo?.next_payment_due_date || null,
             statement_close_date: liabilityInfo?.last_statement_issue_date || null,
+            statement_balance: liabilityInfo?.last_statement_balance ? Math.abs(liabilityInfo.last_statement_balance) : 0,
             annual_fee: null,
             cash_back: 0,
             priority: 3,
