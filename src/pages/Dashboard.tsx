@@ -174,6 +174,9 @@ const Dashboard = () => {
     return bankTransactionsData.map(tx => {
       const account = accounts?.find(acc => acc.id === tx.bankAccountId);
       
+      // Determine transaction type from transactionType field, not amount sign
+      const txType = tx.transactionType || (tx.amount >= 0 ? 'credit' : 'debit');
+      
       return {
         id: tx.id,
         accountId: tx.bankAccountId,
@@ -182,8 +185,8 @@ const Dashboard = () => {
         date: tx.date,
         description: tx.name,
         merchantName: tx.merchantName,
-        amount: tx.amount,
-        type: tx.amount >= 0 ? 'credit' : 'debit',
+        amount: Math.abs(tx.amount), // Always positive, sign shown based on type
+        type: txType,
         category: tx.category?.[0] || 'Uncategorized',
         status: tx.pending ? 'pending' : 'posted',
         matchScore: 0
@@ -196,6 +199,22 @@ const Dashboard = () => {
     if (selectedBankAccountId === "all") return allBankTransactions;
     return allBankTransactions.filter(tx => tx.accountId === selectedBankAccountId);
   }, [allBankTransactions, selectedBankAccountId]);
+
+  // Group transactions by bank account
+  const transactionsByAccount = useMemo(() => {
+    const grouped = new Map<string, BankTransaction[]>();
+    bankTransactions.forEach(tx => {
+      const key = `${tx.institutionName} - ${tx.accountName}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+      }
+      grouped.get(key)!.push(tx);
+    });
+    return Array.from(grouped.entries()).map(([accountName, txs]) => ({
+      accountName,
+      transactions: txs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    }));
+  }, [bankTransactions]);
   
   // Ensure starting balance is 0 for a fresh start (so 9/29 shows only the $60k inflow)
   React.useEffect(() => {
@@ -1687,8 +1706,15 @@ const Dashboard = () => {
                 No transactions found.
               </div>
             ) : (
-              <div className="space-y-3">
-                {bankTransactions.map((tx) => {
+              <div className="space-y-6">
+                {transactionsByAccount.map(({ accountName, transactions }) => (
+                  <div key={accountName} className="space-y-3">
+                    <div className="flex items-center gap-2 px-2">
+                      <Building2 className="h-5 w-5 text-primary" />
+                      <h3 className="text-lg font-semibold text-foreground">{accountName}</h3>
+                      <Badge variant="secondary" className="ml-2">{transactions.length} transactions</Badge>
+                    </div>
+                    {transactions.map((tx) => {
                   const txMatches = getMatchesForBankTransaction(tx.id);
                   const hasMatch = txMatches.length > 0;
                   const topMatch = txMatches[0];
@@ -1723,7 +1749,6 @@ const Dashboard = () => {
                             </div>
                             <div className="flex items-center gap-3 text-sm text-muted-foreground">
                               <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{format(tx.date, 'MMM dd, yyyy')}</span>
-                              <span className="flex items-center gap-1"><Building2 className="h-3.5 w-3.5" />{tx.institutionName}</span>
                               {tx.category && <Badge variant="secondary" className="text-xs">{tx.category}</Badge>}
                             </div>
                             {hasMatch && topMatch && (
@@ -1740,7 +1765,7 @@ const Dashboard = () => {
                         <div className="flex items-center gap-4 flex-shrink-0 ml-4">
                           <div className="text-right">
                             <p className={`text-2xl font-bold ${tx.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
-                              {tx.type === 'debit' ? '-' : '+'}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              {tx.type === 'debit' ? '-' : '+'}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                             <p className="text-xs text-muted-foreground uppercase tracking-wide mt-0.5">{tx.type}</p>
                           </div>
@@ -1755,7 +1780,9 @@ const Dashboard = () => {
                       </div>
                     </div>
                   );
-                })}
+                    })}
+                  </div>
+                ))}
               </div>
             )}
           </div>
