@@ -129,6 +129,9 @@ const Dashboard = () => {
       setShowLimitModal({ open: true, type: 'amazon_connection' });
     } else if (isOverTeamLimit) {
       setShowLimitModal({ open: true, type: 'user' });
+    } else {
+      // Close modal when all limits are satisfied
+      setShowLimitModal({ open: false, type: 'bank_connection' });
     }
   }, [isOverBankLimit, isOverAmazonLimit, isOverTeamLimit]);
   
@@ -1963,6 +1966,7 @@ const Dashboard = () => {
           {/* Limit Enforcement Modal */}
           <LimitEnforcementModal
             open={showLimitModal.open}
+            onClose={() => setShowLimitModal({ ...showLimitModal, open: false })}
             limitType={showLimitModal.type}
             currentUsage={
               showLimitModal.type === 'bank_connection' ? currentUsage.bankConnections :

@@ -14,13 +14,15 @@ import { useNavigate } from "react-router-dom";
 
 interface LimitEnforcementModalProps {
   open: boolean;
+  onClose: () => void;
   limitType: 'bank_connection' | 'amazon_connection' | 'user';
   currentUsage: number;
   limit: number;
 }
 
 export const LimitEnforcementModal = ({ 
-  open, 
+  open,
+  onClose,
   limitType,
   currentUsage,
   limit 
@@ -34,6 +36,13 @@ export const LimitEnforcementModal = ({
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
   const excess = currentUsage - limit;
+
+  // Auto-close when back within limits
+  useEffect(() => {
+    if (open && currentUsage <= limit) {
+      onClose();
+    }
+  }, [open, currentUsage, limit, onClose]);
 
   useEffect(() => {
     if (limitType === 'user' && open) {
@@ -209,7 +218,7 @@ export const LimitEnforcementModal = ({
   const content = getContent();
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && currentUsage <= limit && onClose()}>
       <DialogPortal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content 
