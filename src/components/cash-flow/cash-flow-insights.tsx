@@ -295,10 +295,19 @@ export const CashFlowInsights = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Get user's account_id first
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile?.account_id) return;
+
       const { data: transactions } = await supabase
         .from('transactions')
         .select('credit_card_id, amount')
-        .eq('user_id', user.id)
+        .eq('account_id', profile.account_id)
         .eq('type', 'purchase_order')
         .eq('status', 'pending')
         .eq('archived', false)
