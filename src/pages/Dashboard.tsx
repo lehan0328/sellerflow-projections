@@ -1762,7 +1762,7 @@ const Dashboard = () => {
                         <div className="flex items-center gap-4 flex-shrink-0 ml-4">
                           <div className="text-right">
                             <p className={`text-2xl font-bold ${tx.type === 'debit' ? 'text-green-600' : 'text-red-600'}`}>
-                              {tx.type === 'debit' ? '+' : '-'}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              {tx.type === 'debit' ? '-' : '+'}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                             <p className="text-xs text-muted-foreground uppercase tracking-wide mt-0.5">{tx.type === 'debit' ? 'Debit' : 'Credit'}</p>
                           </div>
