@@ -122,15 +122,16 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
   const { open: openPlaid, ready } = usePlaidLink({
     token: linkToken,
     onSuccess: async (public_token: string, metadata: any) => {
+      console.log('Plaid onSuccess - Selected accounts:', metadata.accounts);
       setIsLoading(true);
       try {
         const { data, error } = await supabase.functions.invoke('exchange-plaid-token', {
-          body: { public_token, metadata }
+          body: { publicToken: public_token, metadata }
         });
 
         if (error) throw error;
 
-        toast.success("Bank account connected successfully!");
+        toast.success(`Successfully connected ${metadata.accounts?.length || 0} account(s)!`);
         refetchBankAccounts();
         refetchCreditCards();
         onOpenChange(false);
@@ -141,7 +142,12 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
         setIsLoading(false);
       }
     },
-    onExit: () => {
+    onExit: (error, metadata) => {
+      console.log('Plaid onExit:', { error, metadata });
+      if (error) {
+        console.error('Plaid Link error:', error);
+        toast.error(`Connection canceled: ${error.error_message || 'Unknown error'}`);
+      }
       setIsLoading(false);
     },
   });
