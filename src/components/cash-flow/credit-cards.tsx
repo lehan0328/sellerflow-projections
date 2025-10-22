@@ -167,6 +167,14 @@ export function CreditCards() {
             <div className="text-sm text-muted-foreground">
               Total Available: <span className="font-semibold text-finance-positive">{formatCurrency(totalAvailableCredit)}</span>
             </div>
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={() => navigate('/settings', { state: { activeSection: 'credit-cards' } })}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Card
+            </Button>
           </div>
         </div>
       </CardHeader>
