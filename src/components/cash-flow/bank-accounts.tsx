@@ -270,22 +270,17 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
             <Building2 className="h-5 w-5 text-primary" />
             <CardTitle>Bank Accounts</CardTitle>
             <span className="text-xs text-muted-foreground ml-2">• Syncs every 3 hours</span>
-            {accounts.length > 0 && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => navigate('/transactions')}
-                className="ml-4"
-              >
-                View Transactions
-              </Button>
-            )}
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 mr-4">
-              <Label htmlFor="balance-toggle" className="text-xs text-muted-foreground cursor-pointer">
-                Available
-              </Label>
+              <div className="flex items-center gap-1">
+                <Label htmlFor="balance-toggle" className="text-xs text-muted-foreground cursor-pointer">
+                  Available
+                </Label>
+                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
+                  Recommended
+                </Badge>
+              </div>
               <Switch
                 id="balance-toggle"
                 checked={useActualBalance}
