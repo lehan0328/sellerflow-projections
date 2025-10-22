@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface LimitEnforcementModalProps {
   open: boolean;
@@ -29,6 +30,7 @@ export const LimitEnforcementModal = ({
 }: LimitEnforcementModalProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const subscription = useSubscription();
   const { accounts: bankAccounts, refetch: refetchBankAccounts } = useBankAccounts();
   const { creditCards, refetch: refetchCreditCards } = useCreditCards();
   const { amazonAccounts, refetch: refetchAmazonAccounts } = useAmazonAccounts();
@@ -36,6 +38,7 @@ export const LimitEnforcementModal = ({
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
   const excess = currentUsage - limit;
+  const isProfessionalTier = subscription.plan === 'professional';
 
   // Auto-close when back within limits
   useEffect(() => {
@@ -230,7 +233,11 @@ export const LimitEnforcementModal = ({
               <DialogTitle>{content.title}</DialogTitle>
             </div>
             <DialogDescription>
-              {content.description}
+              {isProfessionalTier ? (
+                <>You're on the Professional tier and have reached your limit. To add more, you'll need to purchase add-ons or contact us for an Enterprise plan.</>
+              ) : (
+                content.description
+              )}
             </DialogDescription>
           </DialogHeader>
 
