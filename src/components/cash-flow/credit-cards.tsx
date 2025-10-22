@@ -272,16 +272,21 @@ export function CreditCards() {
                     </div>
                     <div>
                       <p className="text-muted-foreground">Limit</p>
-                      <p className="font-semibold">
-                        {formatCurrency(card.credit_limit)}
-                      </p>
+                      <div className="flex items-center gap-1">
+                        <p className="font-semibold">
+                          {formatCurrency(card.credit_limit_override || card.credit_limit)}
+                        </p>
+                        {card.credit_limit_override && (
+                          <span className="text-xs text-blue-600">*</span>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Available</p>
                       <p className={`font-semibold ${
-                        card.available_credit < 0 ? 'text-finance-negative' : 'text-finance-positive'
+                        ((card.credit_limit_override || card.credit_limit) - card.balance) < 0 ? 'text-finance-negative' : 'text-finance-positive'
                       }`}>
-                        {formatCurrency(card.available_credit)}
+                        {formatCurrency((card.credit_limit_override || card.credit_limit) - card.balance)}
                       </p>
                     </div>
                   </div>

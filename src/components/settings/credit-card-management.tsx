@@ -313,7 +313,7 @@ export function CreditCardManagement() {
               Connect with Plaid
             </Button>
             <p className="text-xs text-muted-foreground text-center max-w-md">
-              Plaid automatically syncs statement balance, minimum payment, and due dates from your credit card
+              Plaid automatically syncs balances from your credit card. Statement balance and due dates may not be available in all environments - you can manually enter these using the edit button.
             </p>
           </div>
 

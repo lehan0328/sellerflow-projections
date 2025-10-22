@@ -110,6 +110,7 @@ serve(async (req) => {
     
     if (creditAccounts.length > 0) {
       try {
+        console.log(`Attempting to fetch liabilities data for ${creditAccounts.length} credit account(s)`);
         const liabilitiesResponse = await fetch(`https://${PLAID_ENV}.plaid.com/liabilities/get`, {
           method: 'POST',
           headers: {
@@ -124,20 +125,36 @@ serve(async (req) => {
 
         if (liabilitiesResponse.ok) {
           const liabData = await liabilitiesResponse.json();
-          console.log('Liabilities response:', JSON.stringify(liabData, null, 2));
+          console.log('Liabilities API response received');
+          console.log('Full liabilities response:', JSON.stringify(liabData, null, 2));
           liabilitiesData = liabData.liabilities?.credit || [];
           if (liabilitiesData.length > 0) {
             console.log('Found liabilities data for', liabilitiesData.length, 'credit accounts');
+            liabilitiesData.forEach((lib: any, idx: number) => {
+              console.log(`Credit account ${idx + 1}:`, {
+                account_id: lib.account_id,
+                last_statement_balance: lib.last_statement_balance,
+                minimum_payment_amount: lib.minimum_payment_amount,
+                next_payment_due_date: lib.next_payment_due_date,
+                last_statement_issue_date: lib.last_statement_issue_date
+              });
+            });
           } else {
-            console.log('No liabilities data in response - this is normal for Plaid Sandbox unless using specific test credentials');
+            console.log('⚠️ No liabilities data in response - this is NORMAL for Plaid Sandbox unless using specific test credentials');
+            console.log('To get statement balance and due dates in sandbox, use these credentials:');
+            console.log('Username: user_good, Password: pass_good');
           }
         } else {
           const errorData = await liabilitiesResponse.json();
-          console.log('Liabilities endpoint error:', errorData);
+          console.log('⚠️ Liabilities endpoint error:', errorData);
+          console.log('This endpoint may not be available for all Plaid environments or institutions');
         }
       } catch (error) {
         console.error('Error fetching liabilities (non-critical):', error);
+        console.log('Statement balance and due dates will need to be entered manually');
       }
+    } else {
+      console.log('No credit accounts detected, skipping liabilities fetch');
     }
 
     // Store accounts in database - ONLY process accounts the user selected
@@ -158,10 +175,27 @@ serve(async (req) => {
       
       // Determine if it's a credit card or bank account
       if (account.type === 'credit') {
-        console.log('Detected CREDIT CARD account:', { name: account.name, balance: account.balances.current, limit: account.balances.limit });
+        console.log('Processing CREDIT CARD account:', { 
+          name: account.name, 
+          balance: account.balances.current, 
+          limit: account.balances.limit,
+          available: account.balances.available
+        });
         
         // Find matching liabilities data for this credit card
         const liabilityInfo = liabilitiesData?.find((lib: any) => lib.account_id === account.account_id);
+        
+        if (liabilityInfo) {
+          console.log('✅ Found liabilities data for', account.name, ':', {
+            statement_balance: liabilityInfo.last_statement_balance,
+            minimum_payment: liabilityInfo.minimum_payment_amount,
+            due_date: liabilityInfo.next_payment_due_date,
+            statement_close_date: liabilityInfo.last_statement_issue_date
+          });
+        } else {
+          console.log('⚠️ No liabilities data for', account.name, '- statement balance and due dates will be null');
+          console.log('User can manually enter these values in Settings > Credit Cards > Edit');
+        }
         
         const currentBalance = Math.abs(account.balances.current || 0);
         const now = new Date().toISOString();
