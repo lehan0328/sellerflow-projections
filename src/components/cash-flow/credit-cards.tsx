@@ -337,7 +337,7 @@ export function CreditCards() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Credit Card</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete this credit card? Reconnecting it will cost money. This action cannot be undone.
+                Are you sure you want to delete this credit card? This will delete all associated transactions and update available cash, which will affect your forecasting. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

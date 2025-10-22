@@ -453,7 +453,7 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Bank Account</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete this bank account? Reconnecting it will cost money. This action cannot be undone.
+                Are you sure you want to delete this bank account? This will delete all associated transactions and update available cash, which will affect your forecasting. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
