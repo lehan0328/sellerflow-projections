@@ -57,117 +57,27 @@ serve(async (req) => {
       throw new Error('Failed to decrypt access token');
     }
 
-    // Get latest balance from Plaid
-    const response = await fetch(`https://${PLAID_ENV}.plaid.com/accounts/balance/get`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        client_id: PLAID_CLIENT_ID,
-        secret: PLAID_SECRET,
-        access_token: accessToken,
-        options: {
-          account_ids: account.plaid_account_id ? [account.plaid_account_id] : undefined,
-        },
-      }),
-    });
+    // DON'T fetch balance from Plaid (costs $0.10 per call)
+    // Balance is now calculated from transactions only via database trigger
+    console.log('Skipping balance fetch - balance calculated from transactions');
 
-    const balanceData = await response.json();
-    
-    if (!response.ok) {
-      console.error('Plaid API error:', balanceData);
-      throw new Error(balanceData.error_message || 'Failed to fetch balance');
+    // Just update the last_sync timestamp
+    const updateResult = await supabase
+      .from(tableName)
+      .update({ last_sync: new Date().toISOString() })
+      .eq('id', accountId)
+      .eq('user_id', user.id);
+
+    if (updateResult.error) {
+      throw updateResult.error;
     }
 
-    const plaidAccount = balanceData.accounts[0];
-    
-    if (!plaidAccount) {
-      throw new Error('Account not found in Plaid');
-    }
-
-    // Update the account in database using secure RPC function
-    if (accountType === 'credit_card') {
-      // Also fetch liabilities data for credit cards to get statement balance and due dates
-      let liabilitiesData = null;
-      try {
-        const liabilitiesResponse = await fetch(`https://${PLAID_ENV}.plaid.com/liabilities/get`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            client_id: PLAID_CLIENT_ID,
-            secret: PLAID_SECRET,
-            access_token: accessToken,
-          }),
-        });
-
-        if (liabilitiesResponse.ok) {
-          const liabData = await liabilitiesResponse.json();
-          console.log('Liabilities data:', JSON.stringify(liabData));
-          
-          // Find the matching credit account by account_id
-          if (liabData.liabilities?.credit) {
-            liabilitiesData = liabData.liabilities.credit.find(
-              (credit: any) => credit.account_id === account.plaid_account_id
-            );
-            console.log('Matched credit liabilities:', liabilitiesData);
-          }
-        } else {
-          console.log('Liabilities endpoint not available or failed, skipping');
-        }
-      } catch (error) {
-        console.error('Error fetching liabilities (non-critical):', error);
-      }
-
-      // Prepare update parameters
-      const updateParams: any = {
-        p_card_id: accountId,
-        p_balance: Math.abs(plaidAccount.balances.current || 0),
-        p_available_credit: plaidAccount.balances.available || 0,
-      };
-
-      // Add liabilities data if available
-      if (liabilitiesData) {
-        if (liabilitiesData.last_statement_balance !== undefined) {
-          updateParams.p_statement_balance = Math.abs(liabilitiesData.last_statement_balance);
-        }
-        if (liabilitiesData.minimum_payment_amount !== undefined) {
-          updateParams.p_minimum_payment = liabilitiesData.minimum_payment_amount;
-        }
-        if (liabilitiesData.next_payment_due_date) {
-          updateParams.p_payment_due_date = liabilitiesData.next_payment_due_date;
-        }
-        if (liabilitiesData.last_statement_issue_date) {
-          updateParams.p_statement_close_date = liabilitiesData.last_statement_issue_date;
-        }
-      }
-
-      const { error: updateError } = await supabase.rpc('update_secure_credit_card', updateParams);
-
-      if (updateError) {
-        throw updateError;
-      }
-    } else {
-      const { error: updateError } = await supabase.rpc('update_secure_bank_account', {
-        p_account_id: accountId,
-        p_balance: plaidAccount.balances.current || 0,
-        p_available_balance: plaidAccount.balances.available,
-      });
-
-      if (updateError) {
-        throw updateError;
-      }
-    }
-
-    console.log('Successfully synced account');
+    console.log('Successfully updated sync timestamp. Balance auto-calculated from transactions.');
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        balance: plaidAccount.balances.current,
-        message: 'Account synced successfully' 
+        message: 'Account synced. Balance calculated from transactions.' 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

@@ -55,7 +55,7 @@ const amazonTimeRangeOptions = [
   { value: "lastmonth", label: "Last Month" },
 ];
 
-export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance, onTransactionUpdate, pendingIncomeToday }: OverviewStatsProps) {
+export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance, onTransactionUpdate, pendingIncomeToday, useAvailableBalance }: OverviewStatsProps & { useAvailableBalance?: boolean }) {
   const [incomingTimeRange, setIncomingTimeRange] = useState(() => {
     return localStorage.getItem('incomingTimeRange') || "7days";
   });
@@ -85,6 +85,14 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   }, [amazonTimeRange]);
   
   const { totalBalance: bankAccountBalance, accounts } = useBankAccounts();
+  
+  // Calculate available balance total
+  const totalAvailableBalance = accounts.reduce((sum, account) => {
+    return sum + (account.available_balance ?? account.balance);
+  }, 0);
+  
+  // Use toggled balance type
+  const displayBankBalance = useAvailableBalance ? totalAvailableBalance : bankAccountBalance;
   const { totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
   const { reserveAmount, updateReserveAmount: updateReserve, canUpdate, lastUpdated } = useReserveAmount();
   const { excludeToday, setExcludeToday } = useExcludeToday();
@@ -427,10 +435,10 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 )}
               </div>
               <p className="text-2xl font-bold text-green-700">
-                {formatCurrency(bankAccountBalance)}
+                {formatCurrency(displayBankBalance)}
               </p>
               <p className="text-sm text-slate-600">
-                {accounts.length === 0 ? 'No accounts connected' : 'Current balance'}
+                {accounts.length === 0 ? 'No accounts connected' : useAvailableBalance ? 'Available balance' : 'Current balance'}
               </p>
               {totalOverdueCount > 0 && (
                 <div className="mt-2">

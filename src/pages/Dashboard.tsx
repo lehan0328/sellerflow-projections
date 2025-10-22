@@ -1434,6 +1434,7 @@ const Dashboard = () => {
                 refetchSafeSpending();
               }}
               pendingIncomeToday={pendingIncomeToday}
+              useAvailableBalance={useAvailableBalance}
             />
             
             {/* Transaction Match Notification */}
