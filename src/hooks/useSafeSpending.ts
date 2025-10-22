@@ -30,7 +30,7 @@ interface DailyBalance {
   balance: number;
 }
 
-export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTransactions: boolean = false) => {
+export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTransactions: boolean = false, useAvailableBalance: boolean = true) => {
   const [data, setData] = useState<SafeSpendingData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,14 +82,21 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       const reserve = Number(settings?.safe_spending_reserve || 0);
       console.log('🔄 [SAFE SPENDING] Using reserve from database:', reserve);
 
-      // Get bank account balance
+      // Get bank account balance - use available_balance or balance based on toggle
       const { data: bankAccounts } = await supabase
         .from('bank_accounts')
-        .select('balance')
+        .select('balance, available_balance')
         .eq('account_id', profile.account_id)
         .eq('is_active', true);
 
-      const bankBalance = bankAccounts?.reduce((sum, acc) => sum + Number(acc.balance || 0), 0) || 0;
+      const bankBalance = bankAccounts?.reduce((sum, acc) => {
+        const balanceToUse = useAvailableBalance 
+          ? (acc.available_balance ?? acc.balance)
+          : acc.balance;
+        return sum + Number(balanceToUse || 0);
+      }, 0) || 0;
+      
+      console.log('🔄 [SAFE SPENDING] Using balance type:', useAvailableBalance ? 'Available' : 'Current', 'Balance:', bankBalance);
 
       // Get ALL events (transactions, income, recurring, vendors, etc.)
       // This should match what the calendar receives

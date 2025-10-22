@@ -122,7 +122,7 @@ const Dashboard = () => {
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
   const { reserveAmount, updateReserveAmount, canUpdate: canUpdateReserve, lastUpdated: lastReserveUpdate } = useReserveAmount();
   const { excludeToday } = useExcludeToday();
-  const { data: safeSpendingData, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount, excludeToday);
+  const { data: safeSpendingData, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount, excludeToday, useAvailableBalance);
   const { isOverBankLimit, isOverAmazonLimit, isOverTeamLimit, currentUsage, planLimits } = usePlanLimits();
   const [showLimitModal, setShowLimitModal] = useState<{
     open: boolean;
