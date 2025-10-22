@@ -104,7 +104,21 @@ export function CreditCards() {
         
         if (error) throw error;
         
-        toast.success("Credit card connected successfully!");
+        // Check if institution might have imported all accounts (Bank of America, Chase, etc.)
+        const knownBulkInstitutions = ['Bank of America', 'Chase', 'Wells Fargo'];
+        const isKnownBulkInstitution = knownBulkInstitutions.some(name => 
+          metadata.institution.name.includes(name)
+        );
+        
+        if (isKnownBulkInstitution && metadata.accounts.length > 1) {
+          toast.success("Credit cards connected!", {
+            description: `${metadata.institution.name} imported ${metadata.accounts.length} accounts. You can delete unwanted accounts from the list below.`,
+            duration: 8000,
+          });
+        } else {
+          toast.success("Credit card connected successfully!");
+        }
+        
         // Refresh credit cards list
         window.location.reload();
       } catch (error: any) {

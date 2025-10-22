@@ -138,6 +138,34 @@ export const usePlanLimits = () => {
     };
 
     fetchUsage();
+
+    // Set up real-time subscriptions to refresh when accounts change
+    const bankChannel = supabase
+      .channel('bank_accounts_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bank_accounts' }, () => {
+        fetchUsage();
+      })
+      .subscribe();
+
+    const creditChannel = supabase
+      .channel('credit_cards_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'credit_cards' }, () => {
+        fetchUsage();
+      })
+      .subscribe();
+
+    const amazonChannel = supabase
+      .channel('amazon_accounts_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'amazon_accounts' }, () => {
+        fetchUsage();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(bankChannel);
+      supabase.removeChannel(creditChannel);
+      supabase.removeChannel(amazonChannel);
+    };
   }, [subscription.is_trialing, planLimits.bankConnections, planLimits.amazonConnections]);
 
   // During trial, allow unlimited connections
