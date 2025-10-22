@@ -144,15 +144,31 @@ const MatchTransactions = () => {
     }
   };
 
-  // Group matches by transaction
+  // Group matches by vendor/income transaction instead of bank transaction
   const groupedMatches = displayedMatches.reduce((acc, match) => {
-    const txId = match.bankTransaction.id;
-    if (!acc[txId]) {
-      acc[txId] = [];
+    let txId: string;
+    let txType: 'vendor' | 'income';
+    
+    if (match.type === 'vendor' && match.matchedVendorTransaction) {
+      txId = match.matchedVendorTransaction.id;
+      txType = 'vendor';
+    } else if (match.type === 'income' && match.matchedIncome) {
+      txId = match.matchedIncome.id;
+      txType = 'income';
+    } else {
+      return acc;
     }
-    acc[txId].push(match);
+    
+    if (!acc[txId]) {
+      acc[txId] = {
+        matches: [],
+        type: txType,
+        transaction: match.type === 'vendor' ? match.matchedVendorTransaction : match.matchedIncome
+      };
+    }
+    acc[txId].matches.push(match);
     return acc;
-  }, {} as Record<string, TransactionMatch[]>);
+  }, {} as Record<string, { matches: TransactionMatch[], type: 'vendor' | 'income', transaction: any }>);
 
   return (
     <div className="space-y-6">
@@ -209,26 +225,30 @@ const MatchTransactions = () => {
         <Card>
           <CardContent className="p-0">
             <Accordion type="multiple" className="w-full">
-              {Object.entries(groupedMatches).map(([txId, txMatches]) => {
+              {Object.entries(groupedMatches).map(([txId, group]) => {
+                const { matches: txMatches, type: txType, transaction } = group;
                 const topMatch = txMatches[0];
-                const isProcessing = processingMatches.has(txId);
+                const isProcessing = processingMatches.has(topMatch.bankTransaction.id);
                 
                 return (
                   <AccordionItem key={txId} value={txId} className="border-b last:border-0">
                     <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-accent/50">
                       <div className="flex items-center justify-between w-full pr-4">
                         <div className="flex items-center gap-4 flex-1">
-                          <div className={`p-2 rounded-full ${showPotentialMatches ? 'bg-yellow-100 dark:bg-yellow-900/20' : 'bg-green-100 dark:bg-green-900/20'}`}>
-                            {showPotentialMatches ? (
-                              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                          <div className={`p-2 rounded-full ${txType === 'income' ? 'bg-green-100 dark:bg-green-900/20' : 'bg-red-100 dark:bg-red-900/20'}`}>
+                            {txType === 'income' ? (
+                              <TrendingUp className="h-5 w-5 text-green-600" />
                             ) : (
-                              <Link2 className="h-5 w-5 text-green-600" />
+                              <TrendingDown className="h-5 w-5 text-red-600" />
                             )}
                           </div>
                           <div className="flex-1 text-left">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="font-semibold">
-                                {topMatch.bankTransaction.merchantName || topMatch.bankTransaction.description}
+                                {txType === 'income' 
+                                  ? `${transaction.source} - ${transaction.description}`
+                                  : `${transaction.vendorName} - ${transaction.description}`
+                                }
                               </span>
                               <Badge 
                                 variant="secondary" 
@@ -239,13 +259,14 @@ const MatchTransactions = () => {
                             </div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                               <span className="font-medium">
-                                {topMatch.bankTransaction.type === 'debit' ? '-' : '+'}
-                                ${Math.abs(topMatch.bankTransaction.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                ${transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </span>
                               <span>•</span>
-                              <span>{format(topMatch.bankTransaction.date, 'MMM dd, yyyy')}</span>
+                              <span>{txType === 'income' ? 'Expected' : 'Due'}: {format(txType === 'income' ? transaction.paymentDate : transaction.dueDate, 'MMM dd, yyyy')}</span>
                               <span>•</span>
-                              <span>{topMatch.bankTransaction.institutionName} - {topMatch.bankTransaction.accountName}</span>
+                              <Badge variant="outline" className="text-xs">
+                                {transaction.status}
+                              </Badge>
                             </div>
                           </div>
                         </div>
@@ -256,38 +277,31 @@ const MatchTransactions = () => {
                         {txMatches.map((match, index) => (
                           <div key={index} className="flex items-center justify-between p-4 bg-accent/30 rounded-lg border">
                             <div className="flex items-start gap-4 flex-1">
-                              <div className={`p-2 rounded-full ${match.type === 'income' ? 'bg-green-100 dark:bg-green-900/20' : 'bg-red-100 dark:bg-red-900/20'}`}>
-                                {match.type === 'income' ? (
-                                  <TrendingUp className="h-5 w-5 text-green-600" />
-                                ) : (
-                                  <TrendingDown className="h-5 w-5 text-red-600" />
-                                )}
+                              <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900/20">
+                                <Link2 className="h-5 w-5 text-blue-600" />
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
                                   <span className="font-semibold">
-                                    {match.type === 'income' ? 'Income' : 'Expense'}
+                                    Bank Transaction
                                   </span>
                                   <Badge variant="outline" className="text-xs">
                                     {Math.round(match.matchScore * 100)}% match
                                   </Badge>
                                 </div>
-                                <p className="text-sm text-muted-foreground">
-                                  {match.type === 'income' && match.matchedIncome && (
-                                    <>
-                                      {match.matchedIncome.source} - {match.matchedIncome.description}
-                                      <span className="mx-2">•</span>
-                                      ${match.matchedIncome.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                    </>
-                                  )}
-                                  {match.type === 'vendor' && match.matchedVendorTransaction && (
-                                    <>
-                                      {match.matchedVendorTransaction.vendorName} - {match.matchedVendorTransaction.description}
-                                      <span className="mx-2">•</span>
-                                      ${match.matchedVendorTransaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                    </>
-                                  )}
+                                <p className="text-sm text-muted-foreground mb-1">
+                                  {match.bankTransaction.merchantName || match.bankTransaction.description}
                                 </p>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <span className="font-medium">
+                                    {match.bankTransaction.type === 'debit' ? '-' : '+'}
+                                    ${Math.abs(match.bankTransaction.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </span>
+                                  <span>•</span>
+                                  <span>{format(match.bankTransaction.date, 'MMM dd, yyyy')}</span>
+                                  <span>•</span>
+                                  <span>{match.bankTransaction.institutionName} - {match.bankTransaction.accountName}</span>
+                                </div>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
