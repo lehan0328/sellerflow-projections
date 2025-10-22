@@ -54,8 +54,6 @@ serve(async (req) => {
             account_subtypes: ['credit card'],
           },
         },
-        // Force account selection screen
-        required_if_supported_auth_type_selection: ['automatically_selected'],
       }),
     });
 
