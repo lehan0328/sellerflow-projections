@@ -69,6 +69,23 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
       return;
     }
     
+    // Validate required fields
+    if (!formData.name.trim()) {
+      toast.error("Please enter a vendor name");
+      return;
+    }
+    
+    if (!formData.category) {
+      toast.error("Please select a category");
+      return;
+    }
+    
+    // Validate net terms custom days if selected
+    if (formData.paymentType === 'net-terms' && formData.netTermsDays === 'custom' && !formData.customNetDays) {
+      toast.error("Please enter custom net terms days");
+      return;
+    }
+    
     const vendor = {
       id: Date.now().toString(),
       name: formData.name,
@@ -132,6 +149,7 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
                   handleInputChange("category", value);
                 }
               }}
+              required
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
@@ -268,8 +286,12 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
               Cancel
             </Button>
-            <Button type="submit" className="flex-1 bg-gradient-primary">
-              Add Vendor
+            <Button 
+              type="submit" 
+              className="flex-1 bg-gradient-primary"
+              disabled={!formData.name.trim() || !formData.category}
+            >
+              Okay - Create PO
             </Button>
           </div>
         </form>
