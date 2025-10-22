@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { addDays, isToday, isBefore, startOfDay, format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Building2, CreditCard as CreditCardIcon, TrendingUp, Calendar, CheckCircle } from "lucide-react";
+import { RefreshCw, Building2, CreditCard as CreditCardIcon, TrendingUp, TrendingDown, Calendar, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -1733,7 +1733,7 @@ const Dashboard = () => {
                             {tx.type === 'credit' ? (
                               <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
                             ) : (
-                              <CreditCardIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
+                              <TrendingDown className="h-6 w-6 text-red-600 dark:text-red-400" />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
