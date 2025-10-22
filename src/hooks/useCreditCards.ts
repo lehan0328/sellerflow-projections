@@ -165,9 +165,15 @@ export const useCreditCards = () => {
     });
   };
 
-  const totalCreditLimit = creditCards.reduce((sum, card) => sum + card.credit_limit, 0);
+  const totalCreditLimit = creditCards.reduce((sum, card) => {
+    const effectiveLimit = card.credit_limit_override || card.credit_limit;
+    return sum + effectiveLimit;
+  }, 0);
   const totalBalance = creditCards.reduce((sum, card) => sum + card.balance, 0);
-  const totalAvailableCredit = creditCards.reduce((sum, card) => sum + card.available_credit, 0);
+  const totalAvailableCredit = creditCards.reduce((sum, card) => {
+    const effectiveLimit = card.credit_limit_override || card.credit_limit;
+    return sum + (effectiveLimit - card.balance);
+  }, 0);
 
   useEffect(() => {
     fetchCreditCards();

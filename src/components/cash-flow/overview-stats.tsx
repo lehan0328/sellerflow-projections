@@ -266,7 +266,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   });
   const pendingCreditTotal = pendingCreditPurchases.reduce((sum, purchase) => sum + purchase.amount, 0);
   
-  // Calculate credit utilization
+  // Calculate credit utilization (totalCreditLimit already uses credit_limit_override from hook)
   const creditUtilization = totalCreditLimit > 0 ? (totalCreditBalance / totalCreditLimit) * 100 : 0;
   
   const getCreditVariant = () => {
