@@ -174,6 +174,37 @@ serve(async (req) => {
       
       console.log(`Processing selected account: ${account.name}, type: ${account.type}, subtype: ${account.subtype}`);
       
+      // Check for duplicates BEFORE inserting
+      if (account.type === 'credit') {
+        // Check if this credit card already exists
+        const { data: existingCard } = await supabaseAdmin
+          .from('credit_cards')
+          .select('id, account_name, plaid_account_id')
+          .eq('account_id', accountId)
+          .eq('plaid_account_id', account.account_id)
+          .maybeSingle();
+        
+        if (existingCard) {
+          console.log(`⚠️ Credit card already connected: ${existingCard.account_name} (${existingCard.id})`);
+          console.log('Skipping duplicate - this account is already linked');
+          continue;
+        }
+      } else {
+        // Check if this bank account already exists
+        const { data: existingAccount } = await supabaseAdmin
+          .from('bank_accounts')
+          .select('id, account_name, plaid_account_id')
+          .eq('account_id', accountId)
+          .eq('plaid_account_id', account.account_id)
+          .maybeSingle();
+        
+        if (existingAccount) {
+          console.log(`⚠️ Bank account already connected: ${existingAccount.account_name} (${existingAccount.id})`);
+          console.log('Skipping duplicate - this account is already linked');
+          continue;
+        }
+      }
+      
       // Determine if it's a credit card or bank account
       if (account.type === 'credit') {
         console.log('Processing CREDIT CARD account:', { 
