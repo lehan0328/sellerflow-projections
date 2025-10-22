@@ -378,7 +378,7 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-lg">
-                          {formatCurrency(account.balance)}
+                          {formatCurrency(account.available_balance ?? account.balance)}
                         </p>
                         {isManualAccount(account) && (
                           <Button 
@@ -394,8 +394,8 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
                       <div className="flex items-center gap-2">
                         <p className="text-xs text-muted-foreground">
                           {account.available_balance !== null && account.available_balance !== undefined 
-                            ? `Available: ${formatCurrency(account.available_balance)}`
-                            : 'Includes pending'}
+                            ? `Current: ${formatCurrency(account.balance)}`
+                            : 'Available balance'}
                         </p>
                       </div>
                     </div>
