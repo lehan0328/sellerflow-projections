@@ -217,16 +217,26 @@ serve(async (req) => {
         // Find matching liabilities data for this credit card
         const liabilityInfo = liabilitiesData?.find((lib: any) => lib.account_id === account.account_id);
         
+        console.log('📊 PLAID DATA AVAILABLE FOR', account.name, ':');
+        console.log('  Account Balance Data:');
+        console.log('    - current (balance):', account.balances.current);
+        console.log('    - limit:', account.balances.limit);
+        console.log('    - available:', account.balances.available);
+        console.log('  Liabilities Data (Statement Info):');
         if (liabilityInfo) {
-          console.log('✅ Found liabilities data for', account.name, ':', {
-            statement_balance: liabilityInfo.last_statement_balance,
-            minimum_payment: liabilityInfo.minimum_payment_amount,
-            due_date: liabilityInfo.next_payment_due_date,
-            statement_close_date: liabilityInfo.last_statement_issue_date
-          });
+          console.log('    ✅ AVAILABLE from Plaid:');
+          console.log('      - last_statement_balance:', liabilityInfo.last_statement_balance);
+          console.log('      - minimum_payment_amount:', liabilityInfo.minimum_payment_amount);
+          console.log('      - next_payment_due_date:', liabilityInfo.next_payment_due_date);
+          console.log('      - last_statement_issue_date:', liabilityInfo.last_statement_issue_date);
+          console.log('      - is_overdue:', liabilityInfo.is_overdue);
+          console.log('      - last_payment_amount:', liabilityInfo.last_payment_amount);
+          console.log('      - last_payment_date:', liabilityInfo.last_payment_date);
         } else {
-          console.log('⚠️ No liabilities data for', account.name, '- statement balance and due dates will be null');
-          console.log('User can manually enter these values in Settings > Credit Cards > Edit');
+          console.log('    ❌ NOT AVAILABLE from Plaid');
+          console.log('    📝 Note: Liabilities endpoint often returns null in Plaid Sandbox');
+          console.log('    💡 To get real data in sandbox, use credentials: user_good / pass_good');
+          console.log('    🔧 Users can manually enter these values in Settings > Credit Cards');
         }
         
         const currentBalance = Math.abs(account.balances.current || 0);
@@ -251,7 +261,8 @@ serve(async (req) => {
             minimum_payment: liabilityInfo?.minimum_payment_amount || null,
             payment_due_date: liabilityInfo?.next_payment_due_date || null,
             statement_close_date: liabilityInfo?.last_statement_issue_date || null,
-            statement_balance: liabilityInfo?.last_statement_balance ? Math.abs(liabilityInfo.last_statement_balance) : currentBalance,
+            // FIXED: Don't fall back to currentBalance - use null if no liabilities data
+            statement_balance: liabilityInfo?.last_statement_balance ? Math.abs(liabilityInfo.last_statement_balance) : null,
             annual_fee: null,
             cash_back: 0,
             priority: 3,
@@ -267,8 +278,13 @@ serve(async (req) => {
           throw insertError;
         }
         
-        creditCardIds.push(cardData.id);
-        console.log('✅ Credit card stored successfully:', cardData.id);
+      console.log('✅ Credit card stored successfully:', cardData.id);
+      
+      // Show priority dialog for newly connected card
+      if (metadata.accounts.length === 1) {
+        // Only show for single card connection to avoid blocking other cards
+        console.log('📋 Showing priority dialog for newly connected card');
+      }
       } else {
         const currentBalance = account.balances.current || 0;
         const now = new Date().toISOString();

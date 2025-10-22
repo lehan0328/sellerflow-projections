@@ -144,24 +144,27 @@ export function CreditCards() {
         }
         toast.success("Transactions synced!");
         
-        // Wait a moment for the database to update, then show priority dialog for first card
-        setTimeout(async () => {
-          const { data: cards } = await supabase
-            .from('credit_cards')
-            .select('*')
-            .eq('is_active', true)
-            .order('created_at', { ascending: false })
-            .limit(1);
-          
-          if (cards && cards.length > 0) {
-            const newestCard = cards[0];
-            setNewCardForPriority({
-              id: newestCard.id,
-              name: newestCard.account_name
-            });
-            setShowPriorityDialog(true);
-          }
-        }, 2000);
+        // Only show priority dialog if exactly ONE card was connected
+        // (prevents blocking UI when multiple cards are connected)
+        if (metadata.accounts.length === 1) {
+          setTimeout(async () => {
+            const { data: cards } = await supabase
+              .from('credit_cards')
+              .select('*')
+              .eq('is_active', true)
+              .order('created_at', { ascending: false })
+              .limit(1);
+            
+            if (cards && cards.length > 0) {
+              const newestCard = cards[0];
+              setNewCardForPriority({
+                id: newestCard.id,
+                name: newestCard.account_name
+              });
+              setShowPriorityDialog(true);
+            }
+          }, 2000);
+        }
         
         // Refresh credit cards list
         window.location.reload();
