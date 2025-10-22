@@ -586,6 +586,39 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_sync_logs: {
+        Row: {
+          accounts_synced: number
+          created_at: string
+          error_message: string | null
+          id: string
+          success: boolean
+          sync_time: string
+          total_accounts: number
+          total_transactions: number
+        }
+        Insert: {
+          accounts_synced?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          success?: boolean
+          sync_time?: string
+          total_accounts?: number
+          total_transactions?: number
+        }
+        Update: {
+          accounts_synced?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          success?: boolean
+          sync_time?: string
+          total_accounts?: number
+          total_transactions?: number
+        }
+        Relationships: []
+      }
       bank_transactions: {
         Row: {
           account_id: string | null
