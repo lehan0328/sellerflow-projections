@@ -53,6 +53,8 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
+  const [showBalanceConfirmation, setShowBalanceConfirmation] = useState(false);
+  const [pendingBalanceToggle, setPendingBalanceToggle] = useState<boolean | null>(null);
   const [localUseActualBalance, setLocalUseActualBalance] = useState(() => {
     const saved = localStorage.getItem('useAvailableBalance');
     return saved !== null ? saved !== 'true' : false; // Default to false (use available balance)
@@ -62,11 +64,20 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
   const useActualBalance = useAvailableBalance === undefined ? localUseActualBalance : !useAvailableBalance;
   
   const handleToggle = (checked: boolean) => {
-    if (onToggleBalance) {
-      onToggleBalance(!checked);
-    } else {
-      setLocalUseActualBalance(checked);
+    setPendingBalanceToggle(checked);
+    setShowBalanceConfirmation(true);
+  };
+
+  const confirmToggle = () => {
+    if (pendingBalanceToggle !== null) {
+      if (onToggleBalance) {
+        onToggleBalance(!pendingBalanceToggle);
+      } else {
+        setLocalUseActualBalance(pendingBalanceToggle);
+      }
     }
+    setShowBalanceConfirmation(false);
+    setPendingBalanceToggle(null);
   };
 
   // Calculate available balance total
@@ -460,6 +471,42 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                 Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Balance Toggle Confirmation */}
+        <AlertDialog open={showBalanceConfirmation} onOpenChange={setShowBalanceConfirmation}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Change Balance Calculation</AlertDialogTitle>
+              <AlertDialogDescription>
+                Toggling this setting will change all calculations throughout the app.
+                <div className="mt-4 space-y-2">
+                  <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+                    <p className="text-sm font-medium text-green-900 dark:text-green-100 mb-1">
+                      Available Balance (Recommended)
+                    </p>
+                    <p className="text-xs text-green-700 dark:text-green-300">
+                      Includes pending transactions and provides the most accurate view of funds you can actually use.
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                    <p className="text-sm font-medium text-amber-900 dark:text-amber-100 mb-1">
+                      Current Balance
+                    </p>
+                    <p className="text-xs text-amber-700 dark:text-amber-300">
+                      Does not include pending transactions. May show funds that are not yet available for spending.
+                    </p>
+                  </div>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setPendingBalanceToggle(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmToggle}>
+                Continue
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
