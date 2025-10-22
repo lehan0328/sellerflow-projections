@@ -1161,8 +1161,8 @@ export const CashFlowInsights = ({
             <div className="space-y-3">
               <div className="p-4 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-200 dark:border-green-800 mb-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">Total Available</span>
-                  <span className="text-2xl font-bold text-green-600">
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Available</span>
+                  <span className="text-2xl font-bold text-green-700 dark:text-green-400">
                     ${creditCards.reduce((sum, card) => sum + card.available_credit, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
@@ -1183,15 +1183,15 @@ export const CashFlowInsights = ({
                     <div className="flex justify-between items-start gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-0.5">
-                          <p className="font-semibold text-sm truncate">{card.account_name}</p>
+                          <p className="font-semibold text-sm truncate text-gray-900 dark:text-gray-100">{card.account_name}</p>
                           <span className={`text-xs font-medium ${priorityColor}`}>
                             {priorityLabel}
                           </span>
                           {isOverLimit && <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />}
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">{card.institution_name}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{card.institution_name}</p>
                       </div>
-                      <span className={`text-lg font-bold flex-shrink-0 ${isOverLimit ? 'text-red-600' : 'text-green-600'}`}>
+                      <span className={`text-lg font-bold flex-shrink-0 ${isOverLimit ? 'text-red-600 dark:text-red-500' : 'text-green-700 dark:text-green-400'}`}>
                         ${card.available_credit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
@@ -1208,12 +1208,12 @@ export const CashFlowInsights = ({
                     {/* Available to Spend Section */}
                     <div className={`p-2.5 rounded-lg border ${currentAvailableSpend < 0 ? 'bg-red-50 dark:bg-red-950/20 border-red-500' : 'bg-green-50 dark:bg-green-950/20 border-green-500'}`}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-muted-foreground">Available to Spend</span>
-                        <span className={`text-base font-bold ${currentAvailableSpend < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Available to Spend</span>
+                        <span className={`text-base font-bold ${currentAvailableSpend < 0 ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}>
                           ${Math.max(0, currentAvailableSpend).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
                         After pending orders: ${pendingOrders.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                     </div>
@@ -1252,13 +1252,13 @@ export const CashFlowInsights = ({
                     
                     <div className="space-y-1.5 text-xs">
                       <div className="flex justify-between items-center p-2 bg-background/50 rounded">
-                        <span className="text-muted-foreground">Credit Limit</span>
-                        <span className="font-medium">${card.credit_limit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Credit Limit</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">${card.credit_limit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                       {pendingOrders > 0 && (
                         <div className="flex justify-between items-center p-2 bg-orange-50 dark:bg-orange-950/20 rounded">
-                          <span className="text-muted-foreground">Pending Orders</span>
-                          <span className="font-medium text-orange-600">-${pendingOrders.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          <span className="text-gray-600 dark:text-gray-400">Pending Orders</span>
+                          <span className="font-medium text-orange-700 dark:text-orange-400">-${pendingOrders.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                       )}
                     </div>
