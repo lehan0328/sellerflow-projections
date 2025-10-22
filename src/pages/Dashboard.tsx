@@ -174,8 +174,9 @@ const Dashboard = () => {
     return bankTransactionsData.map(tx => {
       const account = accounts?.find(acc => acc.id === tx.bankAccountId);
       
-      // Determine transaction type from transactionType field, not amount sign
-      const txType = tx.transactionType || (tx.amount >= 0 ? 'credit' : 'debit');
+      // Negative amount = debit (money out), Positive = credit (money in)
+      const txType = tx.amount < 0 ? 'debit' : 'credit';
+      const txAmount = Math.abs(tx.amount);
       
       return {
         id: tx.id,
@@ -185,7 +186,7 @@ const Dashboard = () => {
         date: tx.date,
         description: tx.name,
         merchantName: tx.merchantName,
-        amount: Math.abs(tx.amount), // Always positive, sign shown based on type
+        amount: txAmount,
         type: txType,
         category: tx.category?.[0] || 'Uncategorized',
         status: tx.pending ? 'pending' : 'posted',
@@ -1650,7 +1651,12 @@ const Dashboard = () => {
         return (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Bank Transactions</h2>
+              <div className="flex flex-col gap-1">
+                <h2 className="text-2xl font-bold">Bank Transactions</h2>
+                <p className="text-sm text-muted-foreground">
+                  Last synced: {accounts[0]?.last_sync ? format(new Date(accounts[0].last_sync), 'MMM dd, yyyy h:mm a') : 'Never'} • Syncs every 24 hours
+                </p>
+              </div>
               <div className="flex items-center gap-2">
                 <Select value={selectedBankAccountId} onValueChange={setSelectedBankAccountId}>
                   <SelectTrigger className="w-[240px]">
@@ -1674,15 +1680,6 @@ const Dashboard = () => {
                     })}
                   </SelectContent>
                 </Select>
-                <Button
-                  onClick={handleSyncAllTransactions}
-                  disabled={syncingTransactions || accounts.length === 0}
-                  variant="outline"
-                  size="sm"
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${syncingTransactions ? 'animate-spin' : ''}`} />
-                  {syncingTransactions ? 'Syncing...' : 'Sync All'}
-                </Button>
                 {matches.length > 0 && (
                   <TransactionMatchButton 
                     matches={matches}
@@ -1767,7 +1764,7 @@ const Dashboard = () => {
                             <p className={`text-2xl font-bold ${tx.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
                               {tx.type === 'debit' ? '-' : '+'}${tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
-                            <p className="text-xs text-muted-foreground uppercase tracking-wide mt-0.5">{tx.type}</p>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide mt-0.5">{tx.type === 'debit' ? 'Debit' : 'Credit'}</p>
                           </div>
                           <div className="flex flex-col gap-2">
                             {hasMatch ? (
