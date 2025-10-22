@@ -1704,7 +1704,7 @@ const Dashboard = () => {
                       <div className="flex items-center gap-3">
                         <div className="text-right">
                           <p className="font-semibold">
-                            {tx.type === 'credit' ? '-' : '+'}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {tx.type === 'debit' ? '-' : '+'}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                           <p className="text-xs text-muted-foreground capitalize">
                             {tx.type}
