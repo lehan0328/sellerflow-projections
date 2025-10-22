@@ -1457,6 +1457,10 @@ const Dashboard = () => {
                   upcomingExpenses={upcomingExpenses}
                   incomeItems={incomeItems}
                   bankAccountBalance={displayBankBalance}
+                  projectedDailyBalances={(safeSpendingData?.calculation?.daily_balances || []).map(d => ({ 
+                    date: new Date(d.date), 
+                    balance: d.balance 
+                  }))}
                   vendors={vendors}
                   onVendorClick={handleEditVendorOrder}
                   onIncomeClick={handleEditIncome}

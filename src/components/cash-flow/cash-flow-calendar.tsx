@@ -63,6 +63,7 @@ interface CashFlowCalendarProps {
   onVendorClick?: (vendor: Vendor) => void;
   onIncomeClick?: (income: IncomeItem) => void;
   reserveAmount?: number;
+  projectedDailyBalances?: Array<{ date: Date; balance: number }>;
 }
 
 export const CashFlowCalendar = ({ 
@@ -79,6 +80,7 @@ export const CashFlowCalendar = ({
   onVendorClick,
   onIncomeClick,
   reserveAmount = 0,
+  projectedDailyBalances = [],
 }: CashFlowCalendarProps) => {
   const { totalAvailableCredit } = useCreditCards();
   const { chartPreferences, updateChartPreferences } = useUserSettings();
@@ -528,8 +530,15 @@ export const CashFlowCalendar = ({
     const chartEnd = endOfMonth(addMonths(today, monthsToShow)); // End at the end of month X months from now
     
     const days = eachDayOfInterval({ start: chartStart, end: chartEnd });
+    
+    // Create a map of projected balances from safe spending calculation
+    const projectedBalanceMap = new Map<string, number>();
+    projectedDailyBalances.forEach(({ date, balance }) => {
+      const dateKey = format(new Date(date), 'yyyy-MM-dd');
+      projectedBalanceMap.set(dateKey, balance);
+    });
+    
     let runningTotal = bankAccountBalance; // Cash balance including forecasted payouts
-    let projectedBalance = bankAccountBalance; // Same as runningTotal
     let cumulativeInflow = 0;
     let cumulativeOutflow = 0;
     
@@ -546,10 +555,13 @@ export const CashFlowCalendar = ({
       const dayToCheck = new Date(day);
       dayToCheck.setHours(0, 0, 0, 0);
       
+      // Get projected balance from safe spending calculation if available
+      const dateKey = format(day, 'yyyy-MM-dd');
+      const projectedBalance = projectedBalanceMap.get(dateKey);
+      
       if (dayToCheck >= accountStartDate) {
         // Include AI forecasted payouts as actual income in the cash balance
         runningTotal += dailyChange; // Includes both confirmed and forecasted
-        projectedBalance += dailyChange; // Same as runningTotal now
         cumulativeInflow += dailyInflow;
         cumulativeOutflow += dailyOutflow;
       }
