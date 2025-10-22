@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import { ManualBankAccountDialog } from "./manual-bank-account-dialog";
 import { usePlaidLink } from "react-plaid-link";
 import { useAuth } from "@/hooks/useAuth";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,11 +29,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvailableBalance?: boolean; onToggleBalance?: (value: boolean) => void }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { accounts, isLoading, totalBalance, refetch } = useBankAccounts();
+  const { isOverBankLimit, currentUsage, planLimits } = usePlanLimits();
   const [syncingAccounts, setSyncingAccounts] = useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<any>(null);
@@ -42,6 +52,7 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
   const [newBalance, setNewBalance] = useState<string>("");
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
   const [localUseActualBalance, setLocalUseActualBalance] = useState(() => {
     const saved = localStorage.getItem('useAvailableBalance');
     return saved !== null ? saved !== 'true' : false; // Default to false (use available balance)
@@ -103,6 +114,12 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
   const handleConnectPlaid = async () => {
     if (!user) {
       toast.error("Please log in to connect a bank account");
+      return;
+    }
+
+    // Check if user is at or over their bank connection limit
+    if (isOverBankLimit) {
+      setShowLimitModal(true);
       return;
     }
 
@@ -452,6 +469,31 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <Dialog open={showLimitModal} onOpenChange={setShowLimitModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Bank Connection Limit Reached</DialogTitle>
+              <DialogDescription>
+                You've reached your plan's limit of {planLimits?.bankConnections || 0} bank account connections.
+                You currently have {currentUsage.bankConnections} account(s) connected.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground">
+                To connect more bank accounts, please upgrade your plan or disconnect an existing account.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowLimitModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => navigate('/pricing')}>
+                View Plans
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
