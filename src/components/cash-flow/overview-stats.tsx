@@ -189,8 +189,8 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
   
   // Check if balances match (within $1 tolerance)
-  const balanceMatches = Math.abs(totalCash - bankAccountBalance) < 1.00;
-  const balanceDifference = Math.abs(totalCash - bankAccountBalance);
+  const balanceMatches = Math.abs(totalCash - displayBankBalance) < 1.00;
+  const balanceDifference = Math.abs(totalCash - displayBankBalance);
 
   const handleSyncRequest = () => {
     if (accounts.length === 0) {
