@@ -472,9 +472,16 @@ export const CashFlowInsights = ({
                         </button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
+                        <p className="text-sm font-semibold mb-2">How Available to Spend Works:</p>
+                        <p className="text-sm mb-2">
+                          We project your balance 90 days (3 months) into the future, considering all scheduled income and expenses.
+                        </p>
+                        <p className="text-sm mb-2">
+                          <strong>Formula:</strong><br />
+                          Available to Spend = Lowest Projected Balance - Reserve
+                        </p>
                         <p className="text-sm">
-                          Calculated by projecting your balance 90 days (3 months) into the future, considering all income and expenses. 
-                          We find your lowest projected balance, subtract your reserve amount, and that's what you can safely spend today without risking shortfalls.
+                          This ensures you can safely spend this amount today without going below your minimum projected balance or your reserve.
                         </p>
                       </TooltipContent>
                     </Tooltip>
@@ -615,13 +622,28 @@ export const CashFlowInsights = ({
                   </div>
                 )}
                   <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                    <span className="text-muted-foreground">Lowest Projected</span>
+                    <span className="text-muted-foreground">Current Cash Balance</span>
+                    <span className="font-semibold text-green-600">
+                      ${(safeSpendingLimit + reserveAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                    <span className="text-muted-foreground">Reserve Amount</span>
+                    <span className="font-semibold text-orange-600">
+                      -${reserveAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                    <span className="text-muted-foreground">Lowest Projected (next 90 days)</span>
                     <span className="font-semibold text-orange-600">
                       ${projectedLowestBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
-                  {lowestBalanceDate && <p className="text-xs text-muted-foreground italic p-2">
-                      Your balance will reach its lowest point on {(() => {
+                   {lowestBalanceDate && <p className="text-xs text-muted-foreground italic p-2 border-t border-border/50 mt-2 pt-2">
+                       📊 <strong>Formula:</strong> Lowest Projected (${ projectedLowestBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) - Reserve (${reserveAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}) = Available to Spend (${safeSpendingLimit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                     </p>}
+                   {lowestBalanceDate && <p className="text-xs text-muted-foreground italic p-2">
+                       Lowest point in next 3 months: {(() => {
                         const [year, month, day] = lowestBalanceDate.split('-').map(Number);
                         const date = new Date(year, month - 1, day);
                         return date.toLocaleDateString('en-US', {

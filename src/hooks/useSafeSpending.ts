@@ -97,9 +97,17 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       today.setHours(0, 0, 0, 0);
       const todayStr = formatDate(today);
 
+      // Only look 90 days (3 months) ahead for projections
       const futureDate = new Date(today);
-      futureDate.setDate(futureDate.getDate() + 90); // Next 3 months
+      futureDate.setDate(futureDate.getDate() + 90);
       const futureDateStr = formatDate(futureDate);
+      
+      console.log('📅 Date Range for Projections:', {
+        today: todayStr,
+        futureDate: futureDateStr,
+        daysAhead: 90,
+        note: 'Only transactions within 90 days will be included'
+      });
 
       console.log('🎯 EXCLUDE TODAY SETTING:', excludeTodayTransactions ? 'ENABLED ✅' : 'DISABLED ❌');
       
@@ -481,10 +489,16 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         }
       }
 
-      // Find the absolute minimum balance over the entire 90-day period (3 months)
+      // Find the absolute minimum balance over the entire 90-day period (3 months) ONLY
+      // This ensures we ONLY look at the next 3 months, not beyond
       const minBalance = Math.min(...dailyBalances.map(d => d.balance));
       const minDayIndex = dailyBalances.findIndex(d => d.balance === minBalance);
       const minDay = dailyBalances[minDayIndex];
+      
+      console.log(`🔍 Lowest Projected Balance Search:`);
+      console.log(`  - Searched ${dailyBalances.length} days (${todayStr} to ${futureDateStr})`);
+      console.log(`  - Found lowest: $${minBalance.toFixed(2)} on ${minDay.date}`);
+      console.log(`  - This is ${Math.round((new Date(minDay.date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24))} days from today`);
       
       console.log('\n🔍 SCANNING FOR BUYING OPPORTUNITIES...');
       console.log('📊 First 30 days of balances:');
@@ -687,9 +701,11 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       console.log('🎯🎯🎯 SAFE SPENDING & BUYING OPPORTUNITY 🎯🎯🎯');
       console.log('Current Bank Balance:', bankBalance);
       console.log('Reserve Amount:', reserve);
-      console.log('Safe Spending (Current - Reserve):', safeSpendingLimit);
+      console.log('Safe Spending (Lowest Projected - Reserve):', safeSpendingLimit);
       console.log('Minimum Balance Date:', minDay.date);
       console.log('Minimum Balance Value:', minBalance);
+      console.log('🔍 IMPORTANT: Available to Spend = Lowest Projected Balance - Reserve');
+      console.log(`  Formula: $${minBalance.toFixed(2)} - $${reserve.toFixed(2)} = $${safeSpendingLimit.toFixed(2)}`);
       
       // Find the FIRST day balance goes below safe spending limit (SSL)
       const firstBelowLimitDay = dailyBalances.find(day => day.balance < safeSpendingLimit);
