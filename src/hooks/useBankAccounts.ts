@@ -172,10 +172,9 @@ export const useBankAccounts = () => {
     }
 
     try {
-      // Still use direct update for deactivation as this doesn't involve sensitive data
       const { error } = await supabase
         .from("bank_accounts")
-        .update({ is_active: false })
+        .delete()
         .eq("id", accountId);
 
       if (error) {

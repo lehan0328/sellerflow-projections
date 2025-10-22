@@ -231,7 +231,7 @@ export const useAmazonAccounts = () => {
     try {
       const { error } = await supabase
         .from("amazon_accounts")
-        .update({ is_active: false })
+        .delete()
         .eq("id", accountId)
         .eq("user_id", user.id);
 

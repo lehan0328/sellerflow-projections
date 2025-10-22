@@ -139,7 +139,7 @@ export const useCreditCards = () => {
     try {
       const { error } = await supabase
         .from("credit_cards")
-        .update({ is_active: false })
+        .delete()
         .eq("id", cardId);
 
       if (error) {
