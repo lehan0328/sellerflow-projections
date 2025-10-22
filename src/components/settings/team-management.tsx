@@ -201,6 +201,7 @@ export function TeamManagement() {
   const sendInviteMutation = useMutation({
     mutationFn: async () => {
       if (!canAddTeamMember) {
+        toast.error(`Team member limit reached! You have ${currentUsage.teamMembers}/${planLimits.teamMembers} members. Please remove a member or purchase add-ons.`);
         throw new Error('Team member limit reached');
       }
 
@@ -243,6 +244,7 @@ export function TeamManagement() {
       }
 
       if (!canAddTeamMember) {
+        toast.error(`Team member limit reached! You have ${currentUsage.teamMembers}/${planLimits.teamMembers} members. Please remove a member or purchase add-ons.`);
         throw new Error('Team member limit reached');
       }
 

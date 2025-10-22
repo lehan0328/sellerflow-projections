@@ -145,6 +145,11 @@ export const usePlanLimits = () => {
   const canAddAmazonConnection = subscription.is_trialing ? true : currentUsage.amazonConnections < planLimits.amazonConnections;
   const canAddTeamMember = subscription.is_trialing ? true : currentUsage.teamMembers < planLimits.teamMembers;
 
+  // Check if user is over limit (not trialing and exceeded)
+  const isOverBankLimit = !subscription.is_trialing && currentUsage.bankConnections > planLimits.bankConnections;
+  const isOverAmazonLimit = !subscription.is_trialing && currentUsage.amazonConnections > planLimits.amazonConnections;
+  const isOverTeamLimit = !subscription.is_trialing && currentUsage.teamMembers > planLimits.teamMembers;
+
   return {
     currentPlan,
     planLimits,
@@ -154,5 +159,8 @@ export const usePlanLimits = () => {
     canAddTeamMember,
     PLAN_LIMITS,
     isInTrial: subscription.is_trialing || false,
+    isOverBankLimit,
+    isOverAmazonLimit,
+    isOverTeamLimit,
   };
 };

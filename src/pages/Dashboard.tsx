@@ -34,6 +34,8 @@ import { useCustomers } from "@/hooks/useCustomers";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useCreditCards } from "@/hooks/useCreditCards";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
+import { LimitEnforcementModal } from "@/components/LimitEnforcementModal";
 
 import { useVendors, type Vendor } from "@/hooks/useVendors";
 import { useTransactions } from "@/hooks/useTransactions";
@@ -101,6 +103,11 @@ const Dashboard = () => {
   const { reserveAmount, updateReserveAmount, canUpdate: canUpdateReserve, lastUpdated: lastReserveUpdate } = useReserveAmount();
   const { excludeToday } = useExcludeToday();
   const { data: safeSpendingData, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount, excludeToday);
+  const { isOverBankLimit, isOverAmazonLimit, isOverTeamLimit, currentUsage, planLimits } = usePlanLimits();
+  const [showLimitModal, setShowLimitModal] = useState<{
+    open: boolean;
+    type: 'bank_connection' | 'amazon_connection' | 'user';
+  }>({ open: false, type: 'bank_connection' });
 
   // Refetch safe spending whenever reserve amount changes
   useEffect(() => {
@@ -113,6 +120,18 @@ const Dashboard = () => {
     console.log('🔄 [DASHBOARD] Exclude today changed to:', excludeToday, '- refetching safe spending');
     refetchSafeSpending();
   }, [excludeToday, refetchSafeSpending]);
+  
+  // Check for limit violations and show modal
+  useEffect(() => {
+    if (isOverBankLimit) {
+      setShowLimitModal({ open: true, type: 'bank_connection' });
+    } else if (isOverAmazonLimit) {
+      setShowLimitModal({ open: true, type: 'amazon_connection' });
+    } else if (isOverTeamLimit) {
+      setShowLimitModal({ open: true, type: 'user' });
+    }
+  }, [isOverBankLimit, isOverAmazonLimit, isOverTeamLimit]);
+  
   const { amazonPayouts } = useAmazonPayouts();
   
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
@@ -1939,6 +1958,22 @@ const Dashboard = () => {
               status: i.status,
             }))}
             onMatch={handleManualMatchConfirm}
+          />
+          
+          {/* Limit Enforcement Modal */}
+          <LimitEnforcementModal
+            open={showLimitModal.open}
+            limitType={showLimitModal.type}
+            currentUsage={
+              showLimitModal.type === 'bank_connection' ? currentUsage.bankConnections :
+              showLimitModal.type === 'amazon_connection' ? currentUsage.amazonConnections :
+              currentUsage.teamMembers
+            }
+            limit={
+              showLimitModal.type === 'bank_connection' ? planLimits.bankConnections :
+              showLimitModal.type === 'amazon_connection' ? planLimits.amazonConnections :
+              planLimits.teamMembers
+            }
           />
           
           {/* Subtle gradient orbs */}

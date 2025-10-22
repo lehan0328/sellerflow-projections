@@ -41,6 +41,7 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
   // Stripe Financial Connections handler
   const handleStripeConnect = async () => {
     if (!canAddBankConnection) {
+      toast.error(`Limit reached! You have ${currentUsage.bankConnections}/${planLimits.bankConnections} financial connections. Please delete a connection or purchase add-ons.`);
       setAddonType('bank_connection');
       setShowAddonDialog(true);
       return;
@@ -93,6 +94,7 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
   // Plaid link token creation
   const handlePlaidConnect = async () => {
     if (!canAddBankConnection) {
+      toast.error(`Limit reached! You have ${currentUsage.bankConnections}/${planLimits.bankConnections} financial connections. Please delete a connection or purchase add-ons.`);
       setAddonType('bank_connection');
       setShowAddonDialog(true);
       return;
@@ -155,6 +157,7 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
   // Amazon handler
   const handleAmazonConnect = () => {
     if (!canAddAmazonConnection) {
+      toast.error(`Limit reached! You have ${currentUsage.amazonConnections}/${planLimits.amazonConnections} Amazon connections. Please delete a connection or purchase add-ons.`);
       setAddonType('amazon_connection');
       setShowAddonDialog(true);
       return;
