@@ -1179,26 +1179,26 @@ export const CashFlowInsights = ({
                 const priorityColor = card.priority === 1 ? 'text-green-600' : card.priority === 2 ? 'text-blue-600' : 'text-gray-600';
                 
                 return (
-                  <div key={card.id} className={`p-4 rounded-lg space-y-3 ${isOverLimit ? 'bg-red-50 dark:bg-red-950/20 border-2 border-red-500' : 'bg-muted/50 border border-border'}`}>
+                  <div key={card.id} className={`p-5 rounded-lg space-y-4 ${isOverLimit ? 'bg-red-50 dark:bg-red-950/20 border-2 border-red-500' : 'bg-muted/50 border border-border'}`}>
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-semibold text-sm truncate">{card.account_name}</p>
-                          <span className={`text-xs font-medium ${priorityColor}`}>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <p className="font-semibold text-base truncate">{card.account_name}</p>
+                          <span className={`text-sm font-medium ${priorityColor}`}>
                             {priorityLabel} Priority
                           </span>
-                          {isOverLimit && <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0" />}
+                          {isOverLimit && <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />}
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">{card.institution_name}</p>
+                        <p className="text-sm text-muted-foreground truncate">{card.institution_name}</p>
                       </div>
-                      <span className={`text-xl font-bold flex-shrink-0 ${isOverLimit ? 'text-red-600' : 'text-green-600'}`}>
+                      <span className={`text-2xl font-bold flex-shrink-0 ${isOverLimit ? 'text-red-600' : 'text-green-600'}`}>
                         ${card.available_credit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
                     
                     {isOverLimit && (
-                      <div className="flex items-start gap-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs">
-                        <AlertCircle className="h-4 w-4 text-red-600 flex-shrink-0 mt-0.5" />
+                      <div className="flex items-start gap-2 p-3 bg-red-100 dark:bg-red-900/30 rounded text-sm">
+                        <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                         <p className="text-red-700 dark:text-red-400">
                           Over limit by ${Math.abs(currentAvailableSpend).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
@@ -1206,14 +1206,14 @@ export const CashFlowInsights = ({
                     )}
                     
                     {/* Available to Spend Section */}
-                    <div className={`p-3 rounded-lg border-2 ${currentAvailableSpend < 0 ? 'bg-red-50 dark:bg-red-950/20 border-red-500' : 'bg-green-50 dark:bg-green-950/20 border-green-500'}`}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-muted-foreground">Available to Spend</span>
-                        <span className={`text-lg font-bold ${currentAvailableSpend < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    <div className={`p-4 rounded-lg border-2 ${currentAvailableSpend < 0 ? 'bg-red-50 dark:bg-red-950/20 border-red-500' : 'bg-green-50 dark:bg-green-950/20 border-green-500'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-muted-foreground">Available to Spend</span>
+                        <span className={`text-xl font-bold ${currentAvailableSpend < 0 ? 'text-red-600' : 'text-green-600'}`}>
                           ${Math.max(0, currentAvailableSpend).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         After pending orders: ${pendingOrders.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                     </div>
@@ -1222,17 +1222,17 @@ export const CashFlowInsights = ({
                     {opportunities.length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-semibold flex items-center gap-1">
-                            <ShoppingCart className="h-3 w-3" />
+                          <h4 className="text-sm font-semibold flex items-center gap-1.5">
+                            <ShoppingCart className="h-4 w-4" />
                             Buying Opportunities
                           </h4>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-sm text-muted-foreground">
                             {opportunities.length} found
                           </span>
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-2">
                           {opportunities.slice(0, 2).map((opp, idx) => (
-                            <div key={idx} className="flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-950/20 rounded text-xs border border-blue-200 dark:border-blue-800">
+                            <div key={idx} className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded text-sm border border-blue-200 dark:border-blue-800">
                               <span className="text-muted-foreground">
                                 {new Date(opp.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                               </span>
@@ -1242,7 +1242,7 @@ export const CashFlowInsights = ({
                             </div>
                           ))}
                           {opportunities.length > 2 && (
-                            <p className="text-xs text-center text-muted-foreground py-1">
+                            <p className="text-sm text-center text-muted-foreground py-1">
                               +{opportunities.length - 2} more opportunities
                             </p>
                           )}
@@ -1250,13 +1250,13 @@ export const CashFlowInsights = ({
                       </div>
                     )}
                     
-                    <div className="space-y-2 text-xs">
-                      <div className="flex justify-between items-center p-2 bg-background/50 rounded">
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between items-center p-3 bg-background/50 rounded">
                         <span className="text-muted-foreground">Credit Limit</span>
                         <span className="font-medium">${card.credit_limit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                       {pendingOrders > 0 && (
-                        <div className="flex justify-between items-center p-2 bg-orange-50 dark:bg-orange-950/20 rounded">
+                        <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-950/20 rounded">
                           <span className="text-muted-foreground">Pending Orders</span>
                           <span className="font-medium text-orange-600">-${pendingOrders.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
