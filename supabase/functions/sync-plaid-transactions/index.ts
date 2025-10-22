@@ -134,11 +134,17 @@ serve(async (req) => {
 
     console.log(`Successfully synced ${insertedCount} transactions`);
 
+    // Update last_sync timestamp (balance auto-updates via trigger)
+    await supabase
+      .from('bank_accounts')
+      .update({ last_sync: new Date().toISOString() })
+      .eq('id', accountId);
+
     return new Response(
       JSON.stringify({ 
         success: true,
         count: insertedCount,
-        message: `Synced ${insertedCount} transaction(s)` 
+        message: `Synced ${insertedCount} transaction(s). Balance updated automatically.` 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

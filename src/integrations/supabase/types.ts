@@ -533,6 +533,8 @@ export type Database = {
           encrypted_account_number: string | null
           encrypted_plaid_item_id: string | null
           id: string
+          initial_balance: number | null
+          initial_balance_date: string | null
           institution_name: string
           is_active: boolean
           last_sync: string
@@ -552,6 +554,8 @@ export type Database = {
           encrypted_account_number?: string | null
           encrypted_plaid_item_id?: string | null
           id?: string
+          initial_balance?: number | null
+          initial_balance_date?: string | null
           institution_name: string
           is_active?: boolean
           last_sync?: string
@@ -571,6 +575,8 @@ export type Database = {
           encrypted_account_number?: string | null
           encrypted_plaid_item_id?: string | null
           id?: string
+          initial_balance?: number | null
+          initial_balance_date?: string | null
           institution_name?: string
           is_active?: boolean
           last_sync?: string
@@ -809,6 +815,8 @@ export type Database = {
           encrypted_plaid_item_id: string | null
           forecast_next_month: boolean | null
           id: string
+          initial_balance: number | null
+          initial_balance_date: string | null
           institution_name: string
           interest_rate: number | null
           is_active: boolean
@@ -841,6 +849,8 @@ export type Database = {
           encrypted_plaid_item_id?: string | null
           forecast_next_month?: boolean | null
           id?: string
+          initial_balance?: number | null
+          initial_balance_date?: string | null
           institution_name: string
           interest_rate?: number | null
           is_active?: boolean
@@ -873,6 +883,8 @@ export type Database = {
           encrypted_plaid_item_id?: string | null
           forecast_next_month?: boolean | null
           id?: string
+          initial_balance?: number | null
+          initial_balance_date?: string | null
           institution_name?: string
           interest_rate?: number | null
           is_active?: boolean
@@ -2130,10 +2142,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      cleanup_expired_reset_tokens: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
+      calculate_bank_account_balance: {
+        Args: { account_id_param: string }
+        Returns: number
       }
+      calculate_credit_card_balance: {
+        Args: { card_id_param: string }
+        Returns: number
+      }
+      cleanup_expired_reset_tokens: { Args: never; Returns: undefined }
       decrypt_banking_credential: {
         Args: { encrypted_text: string }
         Returns: string
@@ -2142,10 +2159,7 @@ export type Database = {
         Args: { plain_text: string }
         Returns: string
       }
-      get_user_account_id: {
-        Args: { _user_id: string }
-        Returns: string
-      }
+      get_user_account_id: { Args: { _user_id: string }; Returns: string }
       get_user_plan_limits: {
         Args: { p_user_id: string }
         Returns: {
@@ -2159,10 +2173,7 @@ export type Database = {
           team_members: number
         }[]
       }
-      has_admin_role: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
+      has_admin_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _account_id: string
@@ -2261,10 +2272,7 @@ export type Database = {
         Args: { _account_id: string; _user_id: string }
         Returns: boolean
       }
-      is_website_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_website_admin: { Args: never; Returns: boolean }
       update_secure_amazon_account: {
         Args: {
           p_access_token?: string
@@ -2292,9 +2300,9 @@ export type Database = {
         }
         Returns: boolean
       }
-      update_secure_credit_card: {
-        Args:
-          | {
+      update_secure_credit_card:
+        | {
+            Args: {
               p_access_token?: string
               p_account_name?: string
               p_account_number?: string
@@ -2315,7 +2323,32 @@ export type Database = {
               p_statement_balance?: number
               p_statement_close_date?: string
             }
-          | {
+            Returns: boolean
+          }
+        | {
+            Args: {
+              p_access_token?: string
+              p_account_name?: string
+              p_account_number?: string
+              p_account_type?: string
+              p_annual_fee?: number
+              p_available_credit?: number
+              p_balance?: number
+              p_card_id: string
+              p_credit_limit?: number
+              p_currency_code?: string
+              p_institution_name?: string
+              p_interest_rate?: number
+              p_minimum_payment?: number
+              p_payment_due_date?: string
+              p_plaid_account_id?: string
+              p_plaid_item_id?: string
+              p_statement_close_date?: string
+            }
+            Returns: boolean
+          }
+        | {
+            Args: {
               p_access_token?: string
               p_account_name?: string
               p_account_number?: string
@@ -2335,27 +2368,8 @@ export type Database = {
               p_priority?: number
               p_statement_close_date?: string
             }
-          | {
-              p_access_token?: string
-              p_account_name?: string
-              p_account_number?: string
-              p_account_type?: string
-              p_annual_fee?: number
-              p_available_credit?: number
-              p_balance?: number
-              p_card_id: string
-              p_credit_limit?: number
-              p_currency_code?: string
-              p_institution_name?: string
-              p_interest_rate?: number
-              p_minimum_payment?: number
-              p_payment_due_date?: string
-              p_plaid_account_id?: string
-              p_plaid_item_id?: string
-              p_statement_close_date?: string
-            }
-        Returns: boolean
-      }
+            Returns: boolean
+          }
       user_belongs_to_account: {
         Args: { _account_id: string }
         Returns: boolean

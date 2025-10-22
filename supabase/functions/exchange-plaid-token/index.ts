@@ -154,6 +154,9 @@ serve(async (req) => {
         // Find matching liabilities data for this credit card
         const liabilityInfo = liabilitiesData?.find((lib: any) => lib.account_id === account.account_id);
         
+        const currentBalance = Math.abs(account.balances.current || 0);
+        const now = new Date().toISOString();
+        
         // Store as credit card with encrypted access token - insert directly to bypass RPC issues
         const { data: cardData, error: insertError } = await supabaseAdmin
           .from('credit_cards')
@@ -163,7 +166,7 @@ serve(async (req) => {
             institution_name: metadata.institution.name,
             account_name: account.name,
             account_type: account.subtype || 'credit',
-            balance: Math.abs(account.balances.current || 0),
+            balance: currentBalance,
             credit_limit: account.balances.limit || 0,
             available_credit: account.balances.available || 0,
             currency_code: account.balances.iso_currency_code || 'USD',
@@ -176,6 +179,9 @@ serve(async (req) => {
             annual_fee: null,
             cash_back: 0,
             priority: 3,
+            initial_balance: currentBalance,
+            initial_balance_date: now,
+            last_sync: now,
           })
           .select('id')
           .single();
@@ -187,6 +193,9 @@ serve(async (req) => {
         
         accountIds.push(cardData.id);
       } else {
+        const currentBalance = account.balances.current || 0;
+        const now = new Date().toISOString();
+        
         // Store as bank account with encrypted access token - insert directly to bypass RPC issues
         const { data: accountData, error: insertError } = await supabaseAdmin
           .from('bank_accounts')
@@ -196,12 +205,15 @@ serve(async (req) => {
             institution_name: metadata.institution.name,
             account_name: account.name,
             account_type: account.subtype || account.type,
-            balance: account.balances.current || 0,
+            balance: currentBalance,
             available_balance: account.balances.available,
             currency_code: account.balances.iso_currency_code || 'USD',
             encrypted_access_token: access_token,
             encrypted_plaid_item_id: item_id,
             plaid_account_id: account.account_id,
+            initial_balance: currentBalance,
+            initial_balance_date: now,
+            last_sync: now,
           })
           .select('id')
           .single();
