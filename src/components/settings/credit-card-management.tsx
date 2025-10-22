@@ -22,7 +22,8 @@ import {
   Info,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  Pencil
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -48,6 +49,7 @@ export function CreditCardManagement() {
   
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
   const [showOnboardingDialog, setShowOnboardingDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [newCardIds, setNewCardIds] = useState<string[]>([]);
   const [enableForecast, setEnableForecast] = useState(true);
   const [selectedTheme, setSelectedTheme] = useState<string>("system");
@@ -55,6 +57,12 @@ export function CreditCardManagement() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
   const [linkToken, setLinkToken] = useState<string | null>(null);
+  
+  // Edit form state
+  const [editPaymentDueDate, setEditPaymentDueDate] = useState('');
+  const [editStatementCloseDate, setEditStatementCloseDate] = useState('');
+  const [editStatementBalance, setEditStatementBalance] = useState('');
+  const [editCreditLimitOverride, setEditCreditLimitOverride] = useState('');
 
   // Plaid Link configuration for credit cards
   const config = {
@@ -141,10 +149,40 @@ export function CreditCardManagement() {
 
   const handleRemoveCard = async () => {
     if (!selectedCard) return;
-
+    
     const success = await removeCreditCard(selectedCard);
     if (success) {
       setShowRemoveDialog(false);
+      setSelectedCard(null);
+    }
+  };
+
+  const handleEditCard = (card: any) => {
+    setSelectedCard(card.id);
+    setEditPaymentDueDate(card.payment_due_date || '');
+    setEditStatementCloseDate(card.statement_close_date || '');
+    setEditStatementBalance(card.statement_balance?.toString() || '');
+    setEditCreditLimitOverride(card.credit_limit_override?.toString() || '');
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedCard) return;
+    
+    const updates: any = {};
+    
+    if (editPaymentDueDate) updates.payment_due_date = editPaymentDueDate;
+    if (editStatementCloseDate) updates.statement_close_date = editStatementCloseDate;
+    if (editStatementBalance) updates.statement_balance = parseFloat(editStatementBalance);
+    if (editCreditLimitOverride) {
+      updates.credit_limit_override = parseFloat(editCreditLimitOverride);
+    } else {
+      updates.credit_limit_override = null;
+    }
+    
+    const success = await updateCreditCard(selectedCard, updates);
+    if (success) {
+      setShowEditDialog(false);
       setSelectedCard(null);
     }
   };
@@ -224,7 +262,9 @@ export function CreditCardManagement() {
                   <span className="text-sm font-medium">Total Credit Limit</span>
                 </div>
                 <p className="text-2xl font-bold text-blue-600">
-                  {formatCurrency(totalCreditLimit)}
+                  {formatCurrency(creditCards.reduce((sum, card) => {
+                    return sum + (card.credit_limit_override || card.credit_limit);
+                  }, 0))}
                 </p>
               </CardContent>
             </Card>
@@ -248,7 +288,11 @@ export function CreditCardManagement() {
                   <span className="text-sm font-medium">Available Credit</span>
                 </div>
                 <p className="text-2xl font-bold text-green-600">
-                  {formatCurrency(totalAvailableCredit)}
+                  {formatCurrency(creditCards.reduce((sum, card) => {
+                    const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+                    const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+                    return sum + effectiveAvailableCredit;
+                  }, 0))}
                 </p>
               </CardContent>
             </Card>
@@ -291,8 +335,10 @@ export function CreditCardManagement() {
           ) : (
             <div className="space-y-4">
               {creditCards.map((card) => {
-                const utilizationPercentage = getUtilizationPercentage(card.balance, card.credit_limit);
-                const isOverLimit = card.available_credit < 0;
+                const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+                const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+                const utilizationPercentage = getUtilizationPercentage(card.balance, effectiveCreditLimit);
+                const isOverLimit = effectiveAvailableCredit < 0;
                 
                 return (
                   <Card key={card.id} className={cn(
@@ -319,19 +365,24 @@ export function CreditCardManagement() {
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                             <div>
                               <p className="text-xs text-muted-foreground">Statement Balance</p>
-                              <p className="font-semibold">{formatCurrency(card.balance)}</p>
+                              <p className="font-semibold">{formatCurrency(card.statement_balance || card.balance)}</p>
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground">Credit Limit</p>
-                              <p className="font-semibold">{formatCurrency(card.credit_limit)}</p>
+                              <div className="flex items-center gap-1">
+                                <p className="font-semibold">{formatCurrency(effectiveCreditLimit)}</p>
+                                {card.credit_limit_override && (
+                                  <Badge variant="secondary" className="text-xs px-1">Extended</Badge>
+                                )}
+                              </div>
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground">Available Credit</p>
                               <p className={cn(
                                 "font-semibold",
-                                card.available_credit < 0 ? "text-red-600" : "text-green-600"
+                                effectiveAvailableCredit < 0 ? "text-red-600" : "text-green-600"
                               )}>
-                                {formatCurrency(card.available_credit)}
+                                {formatCurrency(effectiveAvailableCredit)}
                               </p>
                             </div>
                             <div>
@@ -410,6 +461,13 @@ export function CreditCardManagement() {
                         </div>
 
                         <div className="flex space-x-2 ml-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditCard(card)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
@@ -561,6 +619,98 @@ export function CreditCardManagement() {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Credit Card Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Credit Card Details</DialogTitle>
+            <DialogDescription>
+              Update payment dates, statement balance, and credit limit. Plaid will sync most data automatically, but you can manually adjust these values.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {selectedCard && (() => {
+              const card = creditCards.find(c => c.id === selectedCard);
+              return card ? (
+                <>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">{card.account_name}</Label>
+                    <p className="text-xs text-muted-foreground">{card.institution_name}</p>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-payment-due-date">Payment Due Date</Label>
+                    <Input
+                      id="edit-payment-due-date"
+                      type="date"
+                      value={editPaymentDueDate}
+                      onChange={(e) => setEditPaymentDueDate(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      When is your payment due?
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-statement-close-date">Statement Close Date</Label>
+                    <Input
+                      id="edit-statement-close-date"
+                      type="date"
+                      value={editStatementCloseDate}
+                      onChange={(e) => setEditStatementCloseDate(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      When does your statement close?
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-statement-balance">Statement Balance</Label>
+                    <Input
+                      id="edit-statement-balance"
+                      type="number"
+                      placeholder={card.statement_balance?.toString() || card.balance.toString()}
+                      value={editStatementBalance}
+                      onChange={(e) => setEditStatementBalance(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Your current statement balance
+                    </p>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-credit-limit-override">Extended Credit Limit (Override)</Label>
+                    <Input
+                      id="edit-credit-limit-override"
+                      type="number"
+                      placeholder={`Default: $${card.credit_limit.toLocaleString()}`}
+                      value={editCreditLimitOverride}
+                      onChange={(e) => setEditCreditLimitOverride(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Some cards allow purchasing beyond the standard limit. Set an extended limit here. Leave empty to use standard limit.
+                    </p>
+                  </div>
+                </>
+              ) : null;
+            })()}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Remove Credit Card Dialog */}
       <Dialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
