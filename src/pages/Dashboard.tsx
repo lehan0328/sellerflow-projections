@@ -94,12 +94,28 @@ const Dashboard = () => {
     transaction: BankTransaction | null;
   }>({ open: false, transaction: null });
   const [selectedBankAccountId, setSelectedBankAccountId] = useState<string>("all");
+  const [useAvailableBalance, setUseAvailableBalance] = useState(() => {
+    return localStorage.getItem('useAvailableBalance') === 'true';
+  });
   
   // Use database hooks
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, cleanupOrphanedVendors, refetch: refetchVendors } = useVendors();
   const { transactions, addTransaction, deleteTransaction, refetch: refetchTransactions } = useTransactions();
   const { transactions: vendorTransactions, markAsPaid, refetch: refetchVendorTransactions } = useVendorTransactions();
   const { totalBalance: bankAccountBalance, accounts, refetch: refetchBankAccounts } = useBankAccounts();
+  
+  // Calculate available balance total
+  const totalAvailableBalance = accounts.reduce((sum, account) => {
+    return sum + (account.available_balance ?? account.balance);
+  }, 0);
+  
+  // Use selected balance type
+  const displayBankBalance = useAvailableBalance ? totalAvailableBalance : bankAccountBalance;
+  
+  // Save preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('useAvailableBalance', String(useAvailableBalance));
+  }, [useAvailableBalance]);
   const { transactions: bankTransactionsData, isLoading: isBankTransactionsLoading } = useBankTransactions();
   const { creditCards, refetch: refetchCreditCards } = useCreditCards();
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
@@ -1329,7 +1345,7 @@ const Dashboard = () => {
   });
   
   // Use bank account balance if connected, otherwise calculate from user settings + transactions
-  const displayCash = accounts.length > 0 ? bankAccountBalance : userSettingsCash + transactionTotal;
+  const displayCash = accounts.length > 0 ? displayBankBalance : userSettingsCash + transactionTotal;
 
   // Calculate today's activity for insights
   const todayInflow = transactions
@@ -1359,7 +1375,7 @@ const Dashboard = () => {
   const calculateCalendarMinimum = () => {
     const endDate = addDays(today, 90); // Next 90 days (3 months)
     const dailyBalances: Array<{ date: Date; balance: number }> = [];
-    let runningBalance = bankAccountBalance; // Start with current bank balance
+    let runningBalance = displayBankBalance; // Start with current bank balance (based on toggle)
     
     let currentDate = new Date(today);
     while (currentDate <= endDate) {
@@ -1383,7 +1399,7 @@ const Dashboard = () => {
     }
     
     // Find the minimum balance
-    if (dailyBalances.length === 0) return { balance: bankAccountBalance, date: format(today, 'yyyy-MM-dd') };
+    if (dailyBalances.length === 0) return { balance: displayBankBalance, date: format(today, 'yyyy-MM-dd') };
     
     const minBalanceData = dailyBalances.reduce((min, current) => 
       current.balance < min.balance ? current : min
@@ -1438,7 +1454,7 @@ const Dashboard = () => {
                   todayOutflow={todayOutflow}
                   upcomingExpenses={upcomingExpenses}
                   incomeItems={incomeItems}
-                  bankAccountBalance={bankAccountBalance}
+                  bankAccountBalance={displayBankBalance}
                   vendors={vendors}
                   onVendorClick={handleEditVendorOrder}
                   onIncomeClick={handleEditIncome}
@@ -1826,7 +1842,7 @@ const Dashboard = () => {
                 </button>
               </div>
             </div>
-            {financialsView === "bank-accounts" && <BankAccounts />}
+            {financialsView === "bank-accounts" && <BankAccounts useAvailableBalance={useAvailableBalance} onToggleBalance={setUseAvailableBalance} />}
             {financialsView === "credit-cards" && <CreditCards />}
             {financialsView === "amazon-payouts" && <AmazonPayouts />}
           </div>

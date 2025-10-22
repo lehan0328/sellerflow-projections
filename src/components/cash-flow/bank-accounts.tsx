@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Building2, MoreVertical, Settings, RefreshCw, Plus, Edit, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
@@ -27,7 +29,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export function BankAccounts() {
+export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvailableBalance?: boolean; onToggleBalance?: (value: boolean) => void }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { accounts, isLoading, totalBalance, refetch } = useBankAccounts();
@@ -40,6 +42,25 @@ export function BankAccounts() {
   const [newBalance, setNewBalance] = useState<string>("");
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [localUseActualBalance, setLocalUseActualBalance] = useState(!useAvailableBalance);
+
+  // Use prop value if provided, otherwise use local state
+  const useActualBalance = useAvailableBalance === undefined ? localUseActualBalance : !useAvailableBalance;
+  
+  const handleToggle = (checked: boolean) => {
+    if (onToggleBalance) {
+      onToggleBalance(!checked);
+    } else {
+      setLocalUseActualBalance(checked);
+    }
+  };
+
+  // Calculate available balance total
+  const totalAvailableBalance = accounts.reduce((sum, account) => {
+    return sum + (account.available_balance ?? account.balance);
+  }, 0);
+
+  const displayBalance = useActualBalance ? totalBalance : totalAvailableBalance;
 
   const config = {
     token: linkToken,
@@ -228,6 +249,7 @@ export function BankAccounts() {
           <div className="flex items-center space-x-2">
             <Building2 className="h-5 w-5 text-primary" />
             <CardTitle>Bank Accounts</CardTitle>
+            <span className="text-xs text-muted-foreground ml-2">• Syncs every 3 hours</span>
             {accounts.length > 0 && (
               <Button 
                 variant="outline" 
@@ -240,10 +262,23 @@ export function BankAccounts() {
             )}
           </div>
           <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 mr-4">
+              <Label htmlFor="balance-toggle" className="text-xs text-muted-foreground cursor-pointer">
+                Available
+              </Label>
+              <Switch
+                id="balance-toggle"
+                checked={useActualBalance}
+                onCheckedChange={handleToggle}
+              />
+              <Label htmlFor="balance-toggle" className="text-xs text-muted-foreground cursor-pointer">
+                Current
+              </Label>
+            </div>
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Total Balance</p>
               <p className="text-xl font-bold text-primary">
-                {formatCurrency(totalBalance)}
+                {formatCurrency(displayBalance)}
               </p>
             </div>
             <Button 
