@@ -8,7 +8,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sparkles, TrendingUp, AlertCircle, Loader2, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw, Settings, DollarSign, Calendar, ArrowLeft } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Sparkles, TrendingUp, AlertCircle, Loader2, Pencil, Check, X, CreditCard, ShoppingCart, Info, RefreshCw, Settings, DollarSign, Calendar, ArrowLeft, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -92,6 +94,14 @@ export const CashFlowInsights = ({
   const [lastRefreshTime, setLastRefreshTime] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [userConfidenceThreshold, setUserConfidenceThreshold] = useState<number>(0);
+  const [showDateSearch, setShowDateSearch] = useState(false);
+  const [searchedDate, setSearchedDate] = useState<Date | undefined>(undefined);
+  const [dateSearchResults, setDateSearchResults] = useState<{
+    projectedCash: number;
+    availableCredit: number;
+    expenses: number;
+    income: number;
+  } | null>(null);
   const netDaily = dailyInflow - dailyOutflow;
   const healthStatus = netDaily >= 0 ? "positive" : "negative";
 
@@ -460,6 +470,39 @@ export const CashFlowInsights = ({
 
   const adjustedOpportunities = getAdjustedOpportunities();
 
+  const handleDateSearch = (date: Date) => {
+    setSearchedDate(date);
+    const dateStr = date.toISOString().split('T')[0];
+    
+    // Calculate expenses for this date
+    const dayExpenses = events
+      .filter(e => e.type === 'expense' && e.start.split('T')[0] === dateStr)
+      .reduce((sum, e) => sum + Math.abs(e.amount), 0);
+    
+    // Calculate income for this date
+    const dayIncome = events
+      .filter(e => e.type === 'income' && e.start.split('T')[0] === dateStr)
+      .reduce((sum, e) => sum + e.amount, 0);
+    
+    // Find the buying opportunity for this date to get projected cash
+    const opportunity = allBuyingOpportunities.find(opp => opp.date === dateStr);
+    const projectedCash = opportunity?.balance || currentBalance;
+    
+    // Calculate available credit
+    const totalAvailableCredit = creditCards.reduce((sum, card) => {
+      const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+      const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+      return sum + effectiveAvailableCredit;
+    }, 0);
+    
+    setDateSearchResults({
+      projectedCash,
+      availableCredit: totalAvailableCredit,
+      expenses: dayExpenses,
+      income: dayIncome
+    });
+  };
+
 
   return <Card className="shadow-card h-full flex flex-col">
       <CardHeader>
@@ -468,6 +511,27 @@ export const CashFlowInsights = ({
             <Sparkles className="h-5 w-5 text-primary" />
             AI Insights
           </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Search className="h-4 w-4 mr-2" />
+                Search Date
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <CalendarComponent
+                mode="single"
+                selected={searchedDate}
+                onSelect={(date) => {
+                  if (date) {
+                    handleDateSearch(date);
+                    setShowDateSearch(true);
+                  }
+                }}
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
         </CardTitle>
         <p className="text-xs text-muted-foreground mt-1">
           All projections reflect transactions within the next 3 months only
@@ -1369,6 +1433,89 @@ export const CashFlowInsights = ({
             }}>
               Save
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Date Search Results Dialog */}
+      <Dialog open={showDateSearch} onOpenChange={setShowDateSearch}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Financial Snapshot</DialogTitle>
+            <DialogDescription>
+              {searchedDate && `Financial overview for ${searchedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`}
+            </DialogDescription>
+          </DialogHeader>
+          {dateSearchResults && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    <DollarSign className="h-4 w-4 text-blue-600" />
+                    <span className="text-xs font-medium text-muted-foreground">Projected Cash</span>
+                  </div>
+                  <span className="text-2xl font-bold text-blue-600">
+                    ${dateSearchResults.projectedCash.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+
+                <div className="p-4 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border border-green-200 dark:border-green-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CreditCard className="h-4 w-4 text-green-600" />
+                    <span className="text-xs font-medium text-muted-foreground">Available Credit</span>
+                  </div>
+                  <span className="text-2xl font-bold text-green-600">
+                    ${dateSearchResults.availableCredit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+
+                <div className="p-4 rounded-lg bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/30 dark:to-rose-950/30 border border-red-200 dark:border-red-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="h-4 w-4 text-red-600 rotate-180" />
+                    <span className="text-xs font-medium text-muted-foreground">Expenses</span>
+                  </div>
+                  <span className="text-2xl font-bold text-red-600">
+                    ${dateSearchResults.expenses.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+
+                <div className="p-4 rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="h-4 w-4 text-emerald-600" />
+                    <span className="text-xs font-medium text-muted-foreground">Income</span>
+                  </div>
+                  <span className="text-2xl font-bold text-emerald-600">
+                    ${dateSearchResults.income.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg bg-muted/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Net Change</span>
+                  <span className={`text-lg font-bold ${
+                    (dateSearchResults.income - dateSearchResults.expenses) >= 0 
+                      ? 'text-green-600' 
+                      : 'text-red-600'
+                  }`}>
+                    {(dateSearchResults.income - dateSearchResults.expenses) >= 0 ? '+' : ''}
+                    ${(dateSearchResults.income - dateSearchResults.expenses).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 border border-purple-200 dark:border-purple-800">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">Total Available Funds</span>
+                  <span className="text-xl font-bold text-purple-600">
+                    ${(dateSearchResults.projectedCash + dateSearchResults.availableCredit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setShowDateSearch(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
