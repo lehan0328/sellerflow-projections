@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { addDays, isToday, isBefore, startOfDay, format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Building2, CreditCard as CreditCardIcon, TrendingUp, Calendar, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -91,6 +93,7 @@ const Dashboard = () => {
     open: boolean;
     transaction: BankTransaction | null;
   }>({ open: false, transaction: null });
+  const [selectedBankAccountId, setSelectedBankAccountId] = useState<string>("all");
   
   // Use database hooks
   const { vendors, addVendor, updateVendor, deleteVendor, deleteAllVendors, cleanupOrphanedVendors, refetch: refetchVendors } = useVendors();
@@ -165,7 +168,7 @@ const Dashboard = () => {
   }, [refetchBankAccounts, refetchSafeSpending]);
 
   // Map real bank transactions to BankTransaction format
-  const bankTransactions: BankTransaction[] = useMemo(() => {
+  const allBankTransactions: BankTransaction[] = useMemo(() => {
     if (!bankTransactionsData) return [];
     
     return bankTransactionsData.map(tx => {
@@ -187,6 +190,12 @@ const Dashboard = () => {
       } as BankTransaction;
     });
   }, [bankTransactionsData, accounts]);
+
+  // Filter bank transactions by selected account
+  const bankTransactions = useMemo(() => {
+    if (selectedBankAccountId === "all") return allBankTransactions;
+    return allBankTransactions.filter(tx => tx.accountId === selectedBankAccountId);
+  }, [allBankTransactions, selectedBankAccountId]);
   
   // Ensure starting balance is 0 for a fresh start (so 9/29 shows only the $60k inflow)
   React.useEffect(() => {
@@ -1624,6 +1633,28 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">Bank Transactions</h2>
               <div className="flex items-center gap-2">
+                <Select value={selectedBankAccountId} onValueChange={setSelectedBankAccountId}>
+                  <SelectTrigger className="w-[240px]">
+                    <SelectValue placeholder="Filter by bank account" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border shadow-lg z-50">
+                    <SelectItem value="all" className="cursor-pointer">
+                      All Accounts ({allBankTransactions.length})
+                    </SelectItem>
+                    {accounts.map((account) => {
+                      const accountTxCount = allBankTransactions.filter(tx => tx.accountId === account.id).length;
+                      return (
+                        <SelectItem key={account.id} value={account.id} className="cursor-pointer">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4" />
+                            <span>{account.institution_name} - {account.account_name}</span>
+                            <Badge variant="secondary" className="ml-auto">{accountTxCount}</Badge>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
                 <Button
                   onClick={handleSyncAllTransactions}
                   disabled={syncingTransactions || accounts.length === 0}
@@ -1656,7 +1687,7 @@ const Dashboard = () => {
                 No transactions found.
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {bankTransactions.map((tx) => {
                   const txMatches = getMatchesForBankTransaction(tx.id);
                   const hasMatch = txMatches.length > 0;
@@ -1665,83 +1696,61 @@ const Dashboard = () => {
                   return (
                     <div
                       key={tx.id}
-                      className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                      className={`group relative overflow-hidden rounded-xl border transition-all duration-200 ${
                         hasMatch 
-                          ? 'border-green-500/50 bg-green-500/5 hover:bg-green-500/10' 
-                          : 'hover:bg-accent/50'
+                          ? 'border-green-500/40 bg-gradient-to-r from-green-50/50 to-green-100/30 dark:from-green-950/20 dark:to-green-900/10 hover:shadow-lg hover:shadow-green-500/10' 
+                          : 'border-border bg-card hover:shadow-md hover:border-primary/30'
                       }`}
                     >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">
-                            {tx.merchantName 
-                              ? tx.merchantName 
-                              : tx.description 
-                                ? tx.description.split(' ').map(word => 
-                                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                                  ).join(' ')
-                                : 'Unknown Transaction'
-                            }
-                          </p>
-                          {tx.status === 'pending' && (
-                            <span className="text-xs px-2 py-0.5 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border border-yellow-500/20 rounded">
-                              Pending
-                            </span>
-                          )}
-                          {hasMatch && (
-                            <span className="text-xs px-2 py-0.5 bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20 rounded">
-                              Match Found ({Math.round(topMatch.matchScore * 100)}%)
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                          <span>{format(tx.date, 'MMM dd, yyyy')}</span>
-                          <span>{tx.institutionName} - {tx.accountName}</span>
-                          {tx.category && (
-                            <span>{tx.category}</span>
-                          )}
-                        </div>
-                        {hasMatch && topMatch && (
-                          <div className="flex items-center gap-2 mt-2 text-sm">
-                            <span className="text-muted-foreground">
-                              Matched with:
-                            </span>
-                            <span className="font-medium text-green-600 dark:text-green-400">
-                              {topMatch.type === 'income' 
-                                ? `${topMatch.matchedIncome?.source} - ${topMatch.matchedIncome?.description}`
-                                : `${topMatch.matchedVendorTransaction?.vendorName} - ${topMatch.matchedVendorTransaction?.description}`
-                              }
-                            </span>
+                      <div className="flex items-center p-5">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
+                            tx.type === 'credit' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'
+                          }`}>
+                            {tx.type === 'credit' ? (
+                              <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+                            ) : (
+                              <CreditCardIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
+                            )}
                           </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <p className="font-semibold">
-                            {tx.type === 'debit' ? '-' : '+'}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </p>
-                          <p className="text-xs text-muted-foreground capitalize">
-                            {tx.type}
-                          </p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <p className="font-semibold text-base truncate">
+                                {tx.merchantName || tx.description?.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') || 'Unknown'}
+                              </p>
+                              {tx.status === 'pending' && <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">Pending</Badge>}
+                              {hasMatch && <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">{Math.round(topMatch.matchScore * 100)}% Match</Badge>}
+                            </div>
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{format(tx.date, 'MMM dd, yyyy')}</span>
+                              <span className="flex items-center gap-1"><Building2 className="h-3.5 w-3.5" />{tx.institutionName}</span>
+                              {tx.category && <Badge variant="secondary" className="text-xs">{tx.category}</Badge>}
+                            </div>
+                            {hasMatch && topMatch && (
+                              <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 border border-green-200 rounded-lg">
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                <span className="text-sm text-muted-foreground">Matched with:</span>
+                                <span className="font-medium text-sm text-green-700 truncate">
+                                  {topMatch.type === 'income' ? `${topMatch.matchedIncome?.source} - ${topMatch.matchedIncome?.description}` : `${topMatch.matchedVendorTransaction?.vendorName} - ${topMatch.matchedVendorTransaction?.description}`}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {hasMatch ? (
-                            <Button
-                              size="sm"
-                              onClick={() => handleBankManualMatch(tx)}
-                              className="bg-green-500 hover:bg-green-600"
-                            >
-                              Review Match
-                            </Button>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleOpenManualMatch(tx)}
-                            >
-                              Manual Match
-                            </Button>
-                          )}
+                        <div className="flex items-center gap-4 flex-shrink-0 ml-4">
+                          <div className="text-right">
+                            <p className={`text-2xl font-bold ${tx.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
+                              {tx.type === 'debit' ? '-' : '+'}${Math.abs(tx.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </p>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide mt-0.5">{tx.type}</p>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            {hasMatch ? (
+                              <Button size="sm" onClick={() => handleBankManualMatch(tx)} className="bg-green-600 hover:bg-green-700 text-white shadow-sm">Review Match</Button>
+                            ) : (
+                              <Button size="sm" variant="outline" onClick={() => handleOpenManualMatch(tx)} className="border-primary/50 hover:bg-primary hover:text-primary-foreground">Manual Match</Button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
