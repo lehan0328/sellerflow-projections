@@ -20,6 +20,10 @@ interface CreditCardFormData {
   priority: number;
   forecast_next_month: boolean;
   pay_minimum: boolean;
+  payment_due_date: string;
+  statement_close_date: string;
+  statement_balance: number;
+  credit_limit_override: number | null;
 }
 
 export function CreditCards() {
@@ -34,6 +38,10 @@ export function CreditCards() {
     priority: 3,
     forecast_next_month: false,
     pay_minimum: false,
+    payment_due_date: '',
+    statement_close_date: '',
+    statement_balance: 0,
+    credit_limit_override: null,
   });
 
   const formatCurrency = (amount: number) => {
@@ -61,6 +69,10 @@ export function CreditCards() {
       priority: 3,
       forecast_next_month: false,
       pay_minimum: false,
+      payment_due_date: '',
+      statement_close_date: '',
+      statement_balance: 0,
+      credit_limit_override: null,
     });
   };
 
@@ -78,6 +90,10 @@ export function CreditCards() {
       priority: card.priority || 3,
       forecast_next_month: card.forecast_next_month || false,
       pay_minimum: card.pay_minimum || false,
+      payment_due_date: card.payment_due_date || '',
+      statement_close_date: card.statement_close_date || '',
+      statement_balance: card.statement_balance || 0,
+      credit_limit_override: card.credit_limit_override || null,
     });
     setShowEditDialog(true);
   };
@@ -152,8 +168,10 @@ export function CreditCards() {
           </div>
         ) : (
           creditCards.map((card) => {
-            const utilizationPercentage = getUtilizationPercentage(card.balance, card.credit_limit);
-            const isOverLimit = card.available_credit < 0;
+            const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+            const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+            const utilizationPercentage = getUtilizationPercentage(card.balance, effectiveCreditLimit);
+            const isOverLimit = effectiveAvailableCredit < 0;
             
             return (
               <div
@@ -323,44 +341,64 @@ export function CreditCards() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Minimum Payment</Label>
-                  <div className="flex items-center h-10 px-3 py-2 text-sm border border-input rounded-md bg-muted">
-                    {editingCard?.minimum_payment 
-                      ? formatCurrency(editingCard.minimum_payment)
-                      : 'Not set'}
-                  </div>
+                  <Label htmlFor="edit_payment_due_date">Payment Due Date</Label>
+                  <Input
+                    id="edit_payment_due_date"
+                    type="date"
+                    value={formData.payment_due_date}
+                    onChange={(e) => setFormData({...formData, payment_due_date: e.target.value})}
+                  />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Automatically imported from bank (read-only)
+                    When is your payment due?
                   </p>
                 </div>
                 <div>
-                  <Label htmlFor="edit_cash_back">Cash Back (%)</Label>
+                  <Label htmlFor="edit_statement_close_date">Statement Close Date</Label>
                   <Input
-                    id="edit_cash_back"
-                    type="number"
-                    step="0.01"
-                    value={formData.cash_back}
-                    onChange={(e) => setFormData({...formData, cash_back: parseFloat(e.target.value) || 0})}
+                    id="edit_statement_close_date"
+                    type="date"
+                    value={formData.statement_close_date}
+                    onChange={(e) => setFormData({...formData, statement_close_date: e.target.value})}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    When does your statement close?
+                  </p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Payment Due Date</Label>
-                  <div className="flex items-center h-10 px-3 py-2 text-sm border border-input rounded-md bg-muted">
-                    {editingCard?.payment_due_date 
-                      ? new Date(editingCard.payment_due_date).toLocaleDateString()
-                      : 'Not set'}
-                  </div>
+                  <Label htmlFor="edit_statement_balance">Statement Balance</Label>
+                  <Input
+                    id="edit_statement_balance"
+                    type="number"
+                    step="0.01"
+                    value={formData.statement_balance}
+                    onChange={(e) => setFormData({...formData, statement_balance: parseFloat(e.target.value) || 0})}
+                  />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Automatically imported from bank (read-only)
+                    Your current statement balance
                   </p>
                 </div>
                 <div>
-                  <Label>Statement Close Date</Label>
+                  <Label htmlFor="edit_credit_limit_override">Extended Credit Limit</Label>
+                  <Input
+                    id="edit_credit_limit_override"
+                    type="number"
+                    placeholder={editingCard ? `Default: ${formatCurrency(editingCard.credit_limit)}` : ''}
+                    value={formData.credit_limit_override || ''}
+                    onChange={(e) => setFormData({...formData, credit_limit_override: e.target.value ? parseFloat(e.target.value) : null})}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Extended purchasing power beyond standard limit
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Minimum Payment</Label>
                   <div className="flex items-center h-10 px-3 py-2 text-sm border border-input rounded-md bg-muted">
-                    {editingCard?.statement_close_date 
-                      ? new Date(editingCard.statement_close_date).toLocaleDateString()
+                    {editingCard?.minimum_payment 
+                      ? formatCurrency(editingCard.minimum_payment)
                       : 'Not set'}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">

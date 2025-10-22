@@ -158,7 +158,8 @@ serve(async (req) => {
     }
 
     // Store accounts in database - ONLY process accounts the user selected
-    const accountIds = [];
+    const bankAccountIds: string[] = [];
+    const creditCardIds: string[] = [];
     const selectedAccountIds = metadata.accounts.map((a: any) => a.id);
     
     console.log('User selected accounts:', selectedAccountIds);
@@ -219,7 +220,7 @@ serve(async (req) => {
             minimum_payment: liabilityInfo?.minimum_payment_amount || null,
             payment_due_date: liabilityInfo?.next_payment_due_date || null,
             statement_close_date: liabilityInfo?.last_statement_issue_date || null,
-            statement_balance: liabilityInfo?.last_statement_balance ? Math.abs(liabilityInfo.last_statement_balance) : 0,
+            statement_balance: liabilityInfo?.last_statement_balance ? Math.abs(liabilityInfo.last_statement_balance) : currentBalance,
             annual_fee: null,
             cash_back: 0,
             priority: 3,
@@ -235,7 +236,8 @@ serve(async (req) => {
           throw insertError;
         }
         
-        accountIds.push(cardData.id);
+        creditCardIds.push(cardData.id);
+        console.log('✅ Credit card stored successfully:', cardData.id);
       } else {
         const currentBalance = account.balances.current || 0;
         const now = new Date().toISOString();
@@ -267,20 +269,24 @@ serve(async (req) => {
           throw insertError;
         }
         
-        accountIds.push(accountData.id);
+        bankAccountIds.push(accountData.id);
+        console.log('✅ Bank account stored successfully:', accountData.id);
       }
     }
 
-    console.log('Successfully stored accounts:', accountIds);
+    console.log('Successfully stored accounts:', { bankAccounts: bankAccountIds.length, creditCards: creditCardIds.length });
 
-    // Start background task to sync transactions for each account
-    const syncPromises = accountIds.map(async (accountId) => {
+    // Start background task to sync transactions ONLY for bank accounts (not credit cards)
+    const syncPromises = bankAccountIds.map(async (accountId) => {
       try {
+        console.log('Starting transaction sync for bank account:', accountId);
         const { error: syncError } = await supabase.functions.invoke('sync-plaid-transactions', {
           body: { accountId, isInitialSync: true },
         });
         if (syncError) {
           console.error(`Failed to sync transactions for account ${accountId}:`, syncError);
+        } else {
+          console.log(`✅ Successfully synced transactions for account ${accountId}`);
         }
       } catch (error) {
         console.error(`Error syncing transactions for account ${accountId}:`, error);
@@ -293,7 +299,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        accountIds,
+        bankAccountIds,
+        creditCardIds,
         message: `Successfully connected ${accountsData.accounts.length} account(s)` 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
