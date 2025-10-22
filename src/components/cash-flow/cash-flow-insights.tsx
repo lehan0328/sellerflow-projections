@@ -700,7 +700,11 @@ export const CashFlowInsights = ({
                     </div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-bold text-green-600">
-                        ${creditCards.reduce((sum, card) => sum + card.available_credit, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ${creditCards.reduce((sum, card) => {
+                          const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+                          const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+                          return sum + effectiveAvailableCredit;
+                        }, 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         across {creditCards.length} {creditCards.length === 1 ? 'card' : 'cards'}
