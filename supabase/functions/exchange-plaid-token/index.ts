@@ -140,12 +140,21 @@ serve(async (req) => {
       }
     }
 
-    // Store accounts in database using secure RPC function
+    // Store accounts in database - ONLY process accounts the user selected
     const accountIds = [];
+    const selectedAccountIds = metadata.accounts.map((a: any) => a.id);
+    
+    console.log('User selected accounts:', selectedAccountIds);
+    console.log('Total accounts available:', accountsData.accounts.length);
+    
     for (const account of accountsData.accounts) {
-      const accountType = metadata.accounts.find((a: any) => a.id === account.account_id);
+      // Skip accounts that weren't selected by the user
+      if (!selectedAccountIds.includes(account.account_id)) {
+        console.log(`Skipping unselected account: ${account.name} (${account.account_id})`);
+        continue;
+      }
       
-      console.log(`Processing account: ${account.name}, type: ${account.type}, subtype: ${account.subtype}`);
+      console.log(`Processing selected account: ${account.name}, type: ${account.type}, subtype: ${account.subtype}`);
       
       // Determine if it's a credit card or bank account
       if (account.type === 'credit') {
