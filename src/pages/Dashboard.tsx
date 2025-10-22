@@ -279,7 +279,21 @@ const Dashboard = () => {
     incomeItems.filter(item => item.status !== 'received')
   );
   
-  // Calculate unmatched transactions that need attention
+  // Calculate unique PO/vendor transactions with matches (not total match count)
+  const uniquePoMatchCount = matches.reduce((acc, match) => {
+    let txId: string;
+    if (match.type === 'vendor' && match.matchedVendorTransaction) {
+      txId = match.matchedVendorTransaction.id;
+    } else if (match.type === 'income' && match.matchedIncome) {
+      txId = match.matchedIncome.id;
+    } else {
+      return acc;
+    }
+    acc.add(txId);
+    return acc;
+  }, new Set<string>()).size;
+  
+  // Keep this for the notification component
   const unmatchedTransactionsCount = matches.length;
 
   // Calculate pending income due today that's not matched
@@ -1815,7 +1829,7 @@ const Dashboard = () => {
           activeSection={activeSection} 
           onSectionChange={setActiveSection}
           onFlexReportClick={() => navigate('/flex-report')}
-          matchCount={matches.length}
+          matchCount={uniquePoMatchCount}
         />
         
         <div className="flex-1 overflow-y-auto relative">
