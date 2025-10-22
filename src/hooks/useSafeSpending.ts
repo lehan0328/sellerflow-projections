@@ -83,10 +83,11 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       console.log('🔄 [SAFE SPENDING] Using reserve from database:', reserve);
 
       // Get bank account balance - use available_balance or balance based on toggle
-      // RLS already filters to user's accounts, so we don't need account_id filter
+      // IMPORTANT: Filter by account_id to ensure account separation
       const { data: bankAccounts } = await supabase
         .from('bank_accounts')
         .select('balance, available_balance, account_name')
+        .eq('account_id', profile.account_id)
         .eq('is_active', true);
 
       const bankBalance = bankAccounts?.reduce((sum, acc) => {
@@ -103,6 +104,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         using: useAvailableBalance ? acc.available_balance : acc.balance
       })));
       console.log('🏦 Total Bank Balance:', bankBalance);
+      console.log('🔒 Account ID:', profile.account_id);
       
       console.log('🔄 [SAFE SPENDING] Using balance type:', useAvailableBalance ? 'Available' : 'Current', 'Balance:', bankBalance);
 
