@@ -320,23 +320,32 @@ export function BankAccounts() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-lg">
-                        {formatCurrency(account.balance)}
-                      </p>
-                      {isManualAccount(account) && (
-                        <Button 
-                          size="sm" 
-                          variant="ghost"
-                          onClick={() => handleBalanceEdit(account.id, account.balance)}
-                          className="h-6 w-6 p-0"
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                      )}
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-lg">
+                          {formatCurrency(account.balance)}
+                        </p>
+                        {isManualAccount(account) && (
+                          <Button 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={() => handleBalanceEdit(account.id, account.balance)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-muted-foreground">
+                          {account.available_balance !== null && account.available_balance !== undefined 
+                            ? `Available: ${formatCurrency(account.available_balance)}`
+                            : 'Includes pending'}
+                        </p>
+                      </div>
                     </div>
                   )}
-                  <Badge variant={getBalanceVariant(account.balance)} className="text-xs">
+                  <Badge variant={getBalanceVariant(account.balance)} className="text-xs mt-1">
                     {account.account_type}
                   </Badge>
                 </div>
