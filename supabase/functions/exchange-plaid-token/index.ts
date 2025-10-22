@@ -45,6 +45,20 @@ serve(async (req) => {
 
     console.log('Exchanging public token for user:', user.id);
 
+    // Get user's account_id from profile
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('account_id')
+      .eq('user_id', user.id)
+      .single();
+    
+    if (profileError || !profile?.account_id) {
+      throw new Error('User profile or account_id not found');
+    }
+
+    const accountId = profile.account_id;
+    console.log('User account_id:', accountId);
+
     // Exchange public token for access token
     const response = await fetch(`https://${PLAID_ENV}.plaid.com/item/public_token/exchange`, {
       method: 'POST',
@@ -140,56 +154,64 @@ serve(async (req) => {
         // Find matching liabilities data for this credit card
         const liabilityInfo = liabilitiesData?.find((lib: any) => lib.account_id === account.account_id);
         
-        // Store as credit card with encrypted access token using RPC
-        const { data: cardData, error: insertError } = await supabase
-          .rpc('insert_secure_credit_card_simple', {
-            p_institution_name: metadata.institution.name,
-            p_account_name: account.name,
-            p_account_type: account.subtype || 'credit',
-            p_balance: Math.abs(account.balances.current || 0),
-            p_credit_limit: account.balances.limit || 0,
-            p_available_credit: account.balances.available || 0,
-            p_currency_code: account.balances.iso_currency_code || 'USD',
-            p_access_token: access_token,
-            p_account_number: null,
-            p_plaid_item_id: item_id,
-            p_plaid_account_id: account.account_id,
-            p_minimum_payment: liabilityInfo?.minimum_payment_amount || null,
-            p_payment_due_date: liabilityInfo?.next_payment_due_date || null,
-            p_statement_close_date: liabilityInfo?.last_statement_issue_date || null,
-            p_annual_fee: null,
-            p_cash_back: 0,
-            p_priority: 3,
-          });
+        // Store as credit card with encrypted access token - insert directly to bypass RPC issues
+        const { data: cardData, error: insertError } = await supabaseAdmin
+          .from('credit_cards')
+          .insert({
+            user_id: user.id,
+            account_id: accountId,
+            institution_name: metadata.institution.name,
+            account_name: account.name,
+            account_type: account.subtype || 'credit',
+            balance: Math.abs(account.balances.current || 0),
+            credit_limit: account.balances.limit || 0,
+            available_credit: account.balances.available || 0,
+            currency_code: account.balances.iso_currency_code || 'USD',
+            encrypted_access_token: access_token,
+            encrypted_plaid_item_id: item_id,
+            plaid_account_id: account.account_id,
+            minimum_payment: liabilityInfo?.minimum_payment_amount || null,
+            payment_due_date: liabilityInfo?.next_payment_due_date || null,
+            statement_close_date: liabilityInfo?.last_statement_issue_date || null,
+            annual_fee: null,
+            cash_back: 0,
+            priority: 3,
+          })
+          .select('id')
+          .single();
 
         if (insertError) {
           console.error('Error inserting credit card:', insertError);
           throw insertError;
         }
         
-        accountIds.push(cardData);
+        accountIds.push(cardData.id);
       } else {
-        // Store as bank account with encrypted access token using RPC
-        const { data: accountData, error: insertError } = await supabase
-          .rpc('insert_secure_bank_account_simple', {
-            p_institution_name: metadata.institution.name,
-            p_account_name: account.name,
-            p_account_type: account.subtype || account.type,
-            p_balance: account.balances.current || 0,
-            p_available_balance: account.balances.available,
-            p_currency_code: account.balances.iso_currency_code || 'USD',
-            p_access_token: access_token,
-            p_account_number: null,
-            p_plaid_item_id: item_id,
-            p_plaid_account_id: account.account_id,
-          });
+        // Store as bank account with encrypted access token - insert directly to bypass RPC issues
+        const { data: accountData, error: insertError } = await supabaseAdmin
+          .from('bank_accounts')
+          .insert({
+            user_id: user.id,
+            account_id: accountId,
+            institution_name: metadata.institution.name,
+            account_name: account.name,
+            account_type: account.subtype || account.type,
+            balance: account.balances.current || 0,
+            available_balance: account.balances.available,
+            currency_code: account.balances.iso_currency_code || 'USD',
+            encrypted_access_token: access_token,
+            encrypted_plaid_item_id: item_id,
+            plaid_account_id: account.account_id,
+          })
+          .select('id')
+          .single();
 
         if (insertError) {
           console.error('Error inserting bank account:', insertError);
           throw insertError;
         }
         
-        accountIds.push(accountData);
+        accountIds.push(accountData.id);
       }
     }
 
