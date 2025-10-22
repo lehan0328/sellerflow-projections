@@ -41,7 +41,7 @@ serve(async (req) => {
         user: {
           client_user_id: userId,
         },
-        client_name: 'Cash Flow Dashboard',
+        client_name: 'Auren',
         products: ['transactions'],
         country_codes: ['US'],
         language: 'en',
