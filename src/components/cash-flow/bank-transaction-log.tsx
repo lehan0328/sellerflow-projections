@@ -73,7 +73,7 @@ export const BankTransactionLog = ({ transactions = [], vendors = [], incomeItem
       accountName: account?.account_name || 'Unknown Account',
       institutionName: account?.institution_name || 'Unknown Bank',
       amount: tx.amount,
-      description: tx.name,
+      description: tx.merchantName || tx.name,
       category: tx.category?.[0],
       date: tx.date,
       type: tx.amount < 0 ? 'debit' as const : 'credit' as const,
@@ -316,7 +316,7 @@ export const BankTransactionLog = ({ transactions = [], vendors = [], incomeItem
                       
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium">{transaction.description}</p>
+                          <p className="text-sm font-medium">{transaction.merchantName || transaction.description}</p>
                           <div className="flex items-center">
                             <DollarSign className="h-3 w-3 text-muted-foreground" />
                             <span className={`font-medium text-sm ${
@@ -338,12 +338,6 @@ export const BankTransactionLog = ({ transactions = [], vendors = [], incomeItem
                             })}
                           </span>
                         </div>
-                        
-                        {transaction.merchantName && transaction.merchantName !== transaction.description && (
-                          <div className="text-xs text-muted-foreground">
-                            Merchant: {transaction.merchantName}
-                          </div>
-                        )}
                         
                         {/* Show potential matches */}
                         {matches.filter(m => m.bankTransaction.id === transaction.id).map((match, idx) => (
