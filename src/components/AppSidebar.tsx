@@ -23,6 +23,10 @@ const overviewSections = [{
   title: "Overview",
   icon: Home
 }, {
+  id: "ai-forecast",
+  title: "Advanced Forecast",
+  icon: Sparkles
+}, {
   id: "match-transactions",
   title: "Match Transactions",
   icon: Link2,
@@ -31,10 +35,6 @@ const overviewSections = [{
   id: "analytics",
   title: "Analytics",
   icon: BarChart3
-}, {
-  id: "ai-forecast",
-  title: "Advanced Forecast",
-  icon: Sparkles
 }, {
   id: "scenario-planning",
   title: "Scenario Planning",
