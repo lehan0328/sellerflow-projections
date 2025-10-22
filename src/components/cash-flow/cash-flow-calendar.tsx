@@ -533,10 +533,12 @@ export const CashFlowCalendar = ({
     
     // Create a map of projected balances from safe spending calculation
     const projectedBalanceMap = new Map<string, number>();
-    projectedDailyBalances.forEach(({ date, balance }) => {
-      const dateKey = format(new Date(date), 'yyyy-MM-dd');
-      projectedBalanceMap.set(dateKey, balance);
-    });
+    if (projectedDailyBalances && projectedDailyBalances.length > 0) {
+      projectedDailyBalances.forEach(({ date, balance }) => {
+        const dateKey = format(new Date(date), 'yyyy-MM-dd');
+        projectedBalanceMap.set(dateKey, balance);
+      });
+    }
     
     let runningTotal = bankAccountBalance; // Cash balance including forecasted payouts
     let cumulativeInflow = 0;
@@ -557,7 +559,7 @@ export const CashFlowCalendar = ({
       
       // Get projected balance from safe spending calculation if available
       const dateKey = format(day, 'yyyy-MM-dd');
-      const projectedBalance = projectedBalanceMap.get(dateKey);
+      const projectedBalance = projectedBalanceMap.size > 0 ? projectedBalanceMap.get(dateKey) : undefined;
       
       if (dayToCheck >= accountStartDate) {
         // Include AI forecasted payouts as actual income in the cash balance

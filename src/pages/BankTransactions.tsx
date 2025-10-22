@@ -353,8 +353,18 @@ const BankTransactions = () => {
                 </Button>
               </div>
             ) : transactions.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No transactions found. Try syncing your account.
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">
+                  {selectedAccountId === "all" 
+                    ? "No transactions found across any accounts. Select a specific account and sync to import transactions."
+                    : "No transactions found for this account."}
+                </p>
+                {selectedAccountId !== "all" && (
+                  <Button onClick={handleSync} disabled={syncing}>
+                    <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                    Sync Transactions Now
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-2">

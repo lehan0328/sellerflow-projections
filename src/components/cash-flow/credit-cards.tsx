@@ -119,6 +119,23 @@ export function CreditCards() {
           toast.success("Credit card connected successfully!");
         }
         
+        // Trigger initial transaction sync for the newly connected card(s)
+        toast.info("Syncing transactions...", { duration: 3000 });
+        for (const account of metadata.accounts) {
+          try {
+            await supabase.functions.invoke('sync-plaid-transactions', {
+              body: { 
+                accountId: account.id,
+                isInitialSync: true,
+                accountType: 'credit'
+              }
+            });
+          } catch (syncError) {
+            console.error('Initial sync error for card:', account.id, syncError);
+          }
+        }
+        toast.success("Transactions synced!");
+        
         // Refresh credit cards list
         window.location.reload();
       } catch (error: any) {

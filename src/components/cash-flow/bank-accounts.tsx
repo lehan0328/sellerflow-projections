@@ -112,6 +112,23 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
           toast.success("Bank account connected successfully!");
         }
         
+        // Trigger initial transaction sync for the newly connected account(s)
+        toast.info("Syncing transactions...", { duration: 3000 });
+        for (const account of metadata.accounts) {
+          try {
+            await supabase.functions.invoke('sync-plaid-transactions', {
+              body: { 
+                accountId: account.id,
+                isInitialSync: true,
+                accountType: 'bank'
+              }
+            });
+          } catch (syncError) {
+            console.error('Initial sync error for account:', account.id, syncError);
+          }
+        }
+        toast.success("Transactions synced!");
+        
         refetch();
       } catch (error: any) {
         console.error('Error exchanging token:', error);

@@ -816,6 +816,10 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         console.log('🔄 Credit cards changed - refetching safe spending');
         fetchSafeSpending();
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bank_transactions' }, () => {
+        console.log('🔄 Bank transactions changed - refetching safe spending');
+        fetchSafeSpending();
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_settings' }, () => {
         console.log('🔄 User settings (reserve) changed - refetching safe spending');
         fetchSafeSpending();
