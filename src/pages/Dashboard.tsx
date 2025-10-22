@@ -1767,7 +1767,7 @@ const Dashboard = () => {
                             </div>
                             <div className="flex items-center gap-3 text-sm text-muted-foreground">
                               <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{format(tx.date, 'MMM dd, yyyy')}</span>
-                              {tx.category && <Badge variant="secondary" className="text-xs">{tx.category}</Badge>}
+                              {tx.category && tx.category !== 'Uncategorized' && <Badge variant="secondary" className="text-xs">{tx.category}</Badge>}
                             </div>
                             {hasMatch && topMatch && (
                               <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 border border-green-200 rounded-lg">
