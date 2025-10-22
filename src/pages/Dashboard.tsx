@@ -1391,7 +1391,7 @@ const Dashboard = () => {
                   income={incomeItems}
                   safeSpendingLimit={safeSpendingData?.safe_spending_limit || 0}
                   reserveAmount={reserveAmount}
-                  projectedLowestBalance={calendarMinimum.balance}
+                  projectedLowestBalance={safeSpendingData?.calculation?.lowest_projected_balance || calendarMinimum.balance}
                   lowestBalanceDate={calendarMinimum.date}
                   safeSpendingAvailableDate={safeSpendingData?.calculation?.safe_spending_available_date}
                   nextBuyingOpportunityBalance={safeSpendingData?.calculation?.next_buying_opportunity_balance}

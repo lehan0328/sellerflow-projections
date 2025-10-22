@@ -443,24 +443,39 @@ const UpgradePlan = () => {
                 
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Financial Connections</span>
-                  <Badge variant="secondary">
+                  <Badge variant={currentUsage.bankConnections > planLimits.bankConnections ? "destructive" : "secondary"}>
                     {currentUsage.bankConnections}/{planLimits.bankConnections === 999 ? '∞' : planLimits.bankConnections}
                   </Badge>
                 </div>
+                {!is_trialing && currentUsage.bankConnections > planLimits.bankConnections && (
+                  <div className="text-xs text-destructive bg-destructive/10 p-2 rounded border border-destructive/20">
+                    ⚠️ You've exceeded your plan limit. Please disconnect {currentUsage.bankConnections - planLimits.bankConnections} connection(s) or purchase add-ons below.
+                  </div>
+                )}
                 
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Amazon Connections</span>
-                  <Badge variant="secondary">
+                  <Badge variant={currentUsage.amazonConnections > planLimits.amazonConnections ? "destructive" : "secondary"}>
                     {currentUsage.amazonConnections}/{planLimits.amazonConnections === 999 ? '∞' : planLimits.amazonConnections}
                   </Badge>
                 </div>
+                {!is_trialing && currentUsage.amazonConnections > planLimits.amazonConnections && (
+                  <div className="text-xs text-destructive bg-destructive/10 p-2 rounded border border-destructive/20">
+                    ⚠️ You've exceeded your plan limit. Please disconnect {currentUsage.amazonConnections - planLimits.amazonConnections} connection(s) or purchase add-ons below.
+                  </div>
+                )}
                 
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Team Members</span>
-                  <Badge variant="secondary">
+                  <Badge variant={currentUsage.teamMembers > planLimits.teamMembers ? "destructive" : "secondary"}>
                     {currentUsage.teamMembers}/{planLimits.teamMembers === 999 ? '∞' : planLimits.teamMembers}
                   </Badge>
                 </div>
+                {!is_trialing && currentUsage.teamMembers > planLimits.teamMembers && (
+                  <div className="text-xs text-destructive bg-destructive/10 p-2 rounded border border-destructive/20">
+                    ⚠️ You've exceeded your plan limit. Please remove {currentUsage.teamMembers - planLimits.teamMembers} team member(s) or purchase add-ons below.
+                  </div>
+                )}
                 
                 {discount_ever_redeemed && (
                     <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20 space-y-2">
