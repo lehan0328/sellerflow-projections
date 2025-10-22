@@ -724,13 +724,6 @@ export const CashFlowInsights = ({
                     <CreditCard className="h-4 w-4 mr-2" />
                     See All {creditCards.length} {creditCards.length === 1 ? 'Card' : 'Cards'}
                   </Button>
-                  
-                  {/* Transaction Match Button */}
-                  {transactionMatchButton && (
-                    <div className="mt-3">
-                      {transactionMatchButton}
-                    </div>
-                  )}
             </div>
           )}
         </div>
