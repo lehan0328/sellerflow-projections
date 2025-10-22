@@ -1045,7 +1045,7 @@ const Dashboard = () => {
           await updateVendor(matchId, {
             totalOwed: Math.max(0, vendor.totalOwed - Math.abs(manualMatchDialog.transaction.amount))
           });
-          await addTransaction({
+          const newTx = await addTransaction({
             type: 'vendor_payment',
             amount: Math.abs(manualMatchDialog.transaction.amount),
             description: `Manual match: Payment to ${vendor.name}`,
@@ -1053,6 +1053,14 @@ const Dashboard = () => {
             transactionDate: new Date(),
             status: 'completed'
           });
+          
+          // Archive the newly created transaction since it's matched to bank transaction
+          if (newTx?.id) {
+            await supabase
+              .from('transactions')
+              .update({ archived: true })
+              .eq('id', newTx.id);
+          }
         }
       }
 

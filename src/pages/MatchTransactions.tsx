@@ -16,6 +16,7 @@ import { useSafeSpending } from "@/hooks/useSafeSpending";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useToast } from "@/hooks/use-toast";
 import { MatchReviewDialog } from "@/components/cash-flow/match-review-dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const MatchTransactions = () => {
   const { toast } = useToast();
@@ -103,9 +104,19 @@ const MatchTransactions = () => {
       } else if (match.type === 'vendor' && match.matchedVendorTransaction) {
         await markAsPaid(match.matchedVendorTransaction.id);
         
+        // Archive the purchase order in transactions table since it's now matched
+        const { error: archiveError } = await supabase
+          .from('transactions')
+          .update({ archived: true })
+          .eq('id', match.matchedVendorTransaction.id);
+        
+        if (archiveError) {
+          console.error('Error archiving purchase order:', archiveError);
+        }
+        
         toast({
           title: 'Vendor payment matched',
-          description: 'Vendor payment has been matched with bank transaction.',
+          description: 'Vendor payment has been matched and archived.',
         });
       }
       

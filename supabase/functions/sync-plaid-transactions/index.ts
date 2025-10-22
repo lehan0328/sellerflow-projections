@@ -48,7 +48,7 @@ serve(async (req) => {
     const tableName = accountType === 'credit' ? 'credit_cards' : 'bank_accounts';
     const { data: account, error: fetchError } = await supabase
       .from(tableName)
-      .select('encrypted_access_token, plaid_account_id')
+      .select('encrypted_access_token, plaid_account_id, account_id')
       .eq('id', accountId)
       .eq('user_id', user.id)
       .single();
@@ -108,6 +108,7 @@ serve(async (req) => {
           .upsert({
             user_id: user.id,
             bank_account_id: accountId,
+            account_id: account.account_id,
             plaid_transaction_id: transaction.transaction_id,
             amount: transaction.amount,
             date: transaction.date,
