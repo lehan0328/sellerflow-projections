@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { CreditCardPriorityDialog } from "./credit-card-priority-dialog";
 
 interface CreditCardFormData {
   nickname: string;
@@ -49,6 +50,8 @@ export function CreditCards() {
   const [cardToDelete, setCardToDelete] = useState<string | null>(null);
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [showPriorityDialog, setShowPriorityDialog] = useState(false);
+  const [newCardForPriority, setNewCardForPriority] = useState<{ id: string; name: string } | null>(null);
   const [formData, setFormData] = useState<CreditCardFormData>({
     nickname: '',
     annual_fee: 0,
@@ -94,11 +97,16 @@ export function CreditCards() {
     });
   };
 
+  const handleSavePriority = async (cardId: string, priority: number) => {
+    await updateCreditCard(cardId, { priority });
+    toast.success("Card priority updated!");
+  };
+
   const config = {
     token: linkToken,
     onSuccess: async (publicToken: string, metadata: any) => {
       try {
-        const { error } = await supabase.functions.invoke('exchange-plaid-token', {
+        const { data, error } = await supabase.functions.invoke('exchange-plaid-token', {
           body: { publicToken, metadata }
         });
         
@@ -135,6 +143,25 @@ export function CreditCards() {
           }
         }
         toast.success("Transactions synced!");
+        
+        // Wait a moment for the database to update, then show priority dialog for first card
+        setTimeout(async () => {
+          const { data: cards } = await supabase
+            .from('credit_cards')
+            .select('*')
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(1);
+          
+          if (cards && cards.length > 0) {
+            const newestCard = cards[0];
+            setNewCardForPriority({
+              id: newestCard.id,
+              name: newestCard.account_name
+            });
+            setShowPriorityDialog(true);
+          }
+        }, 2000);
         
         // Refresh credit cards list
         window.location.reload();
@@ -603,6 +630,17 @@ export function CreditCards() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Priority Dialog for Newly Added Cards */}
+        {newCardForPriority && (
+          <CreditCardPriorityDialog
+            open={showPriorityDialog}
+            onOpenChange={setShowPriorityDialog}
+            cardName={newCardForPriority.name}
+            cardId={newCardForPriority.id}
+            onSave={handleSavePriority}
+          />
+        )}
       </CardContent>
     </Card>
   );

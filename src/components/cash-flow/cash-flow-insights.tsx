@@ -470,19 +470,59 @@ export const CashFlowInsights = ({
 
   const adjustedOpportunities = getAdjustedOpportunities();
 
-  const handleDateSearch = (date: Date) => {
+  const handleDateSearch = async (date: Date) => {
     setSearchedDate(date);
     const dateStr = date.toISOString().split('T')[0];
     
-    // Calculate expenses for this date
-    const dayExpenses = events
+    // Calculate regular expenses for this date
+    let dayExpenses = events
       .filter(e => e.type === 'expense' && e.start.split('T')[0] === dateStr)
       .reduce((sum, e) => sum + Math.abs(e.amount), 0);
     
-    // Calculate income for this date
-    const dayIncome = events
+    // Calculate regular income for this date
+    let dayIncome = events
       .filter(e => e.type === 'income' && e.start.split('T')[0] === dateStr)
       .reduce((sum, e) => sum + e.amount, 0);
+    
+    // Fetch recurring expenses/income for this date
+    try {
+      const { data: recurringExpenses } = await supabase
+        .from('recurring_expenses')
+        .select('*')
+        .eq('is_active', true);
+      
+      if (recurringExpenses) {
+        // Import the generateRecurringDates function
+        const { generateRecurringDates } = await import('@/lib/recurringDates');
+        
+        recurringExpenses.forEach(recurring => {
+          const occurrences = generateRecurringDates(
+            {
+              id: recurring.id,
+              transaction_name: recurring.name,
+              amount: recurring.amount,
+              frequency: recurring.frequency as any,
+              start_date: recurring.start_date,
+              end_date: recurring.end_date,
+              is_active: recurring.is_active,
+              type: recurring.type as any
+            },
+            date,
+            date
+          );
+          
+          if (occurrences.length > 0) {
+            if (recurring.type === 'expense') {
+              dayExpenses += Number(recurring.amount);
+            } else {
+              dayIncome += Number(recurring.amount);
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching recurring expenses:', error);
+    }
     
     // Find the buying opportunity for this date to get projected cash
     const opportunity = allBuyingOpportunities.find(opp => opp.date === dateStr);
