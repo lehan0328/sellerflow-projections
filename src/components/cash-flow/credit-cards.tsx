@@ -12,6 +12,16 @@ import { Switch } from "@/components/ui/switch";
 import { CreditCard, Calendar, AlertTriangle, Settings, Plus, Edit, Trash2 } from "lucide-react";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CreditCardFormData {
   nickname: string;
@@ -31,6 +41,8 @@ export function CreditCards() {
   const { creditCards, isLoading, totalCreditLimit, totalBalance, totalAvailableCredit, addCreditCard, updateCreditCard, removeCreditCard } = useCreditCards();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingCard, setEditingCard] = useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [cardToDelete, setCardToDelete] = useState<string | null>(null);
   const [formData, setFormData] = useState<CreditCardFormData>({
     nickname: '',
     annual_fee: 0,
@@ -110,10 +122,12 @@ export function CreditCards() {
     }
   };
 
-  const handleDeleteCard = async (cardId: string) => {
-    if (confirm('Are you sure you want to remove this credit card?')) {
-      await removeCreditCard(cardId);
-    }
+  const handleDeleteCard = async () => {
+    if (!cardToDelete) return;
+    
+    await removeCreditCard(cardToDelete);
+    setDeleteDialogOpen(false);
+    setCardToDelete(null);
   };
 
   if (isLoading) {
@@ -249,7 +263,10 @@ export function CreditCards() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleDeleteCard(card.id)}
+                        onClick={() => {
+                          setCardToDelete(card.id);
+                          setDeleteDialogOpen(true);
+                        }}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -313,6 +330,24 @@ export function CreditCards() {
             );
           })
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Credit Card</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this credit card? Reconnecting it will cost money. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteCard} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Edit Dialog */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
