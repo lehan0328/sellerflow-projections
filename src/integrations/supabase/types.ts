@@ -842,6 +842,7 @@ export type Database = {
           cash_back: number | null
           created_at: string
           credit_limit: number
+          credit_limit_override: number | null
           currency_code: string
           encrypted_access_token: string | null
           encrypted_account_number: string | null
@@ -876,6 +877,7 @@ export type Database = {
           cash_back?: number | null
           created_at?: string
           credit_limit?: number
+          credit_limit_override?: number | null
           currency_code?: string
           encrypted_access_token?: string | null
           encrypted_account_number?: string | null
@@ -910,6 +912,7 @@ export type Database = {
           cash_back?: number | null
           created_at?: string
           credit_limit?: number
+          credit_limit_override?: number | null
           currency_code?: string
           encrypted_access_token?: string | null
           encrypted_account_number?: string | null

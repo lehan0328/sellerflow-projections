@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
@@ -69,19 +69,22 @@ export const CashFlowInsights = ({
   } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { creditCards, isLoading: cardsLoading } = useCreditCards();
+  const { creditCards, isLoading: cardsLoading, updateCreditCard } = useCreditCards();
   const { amazonPayouts, refetch: refetchPayouts } = useAmazonPayouts();
   const [pendingOrdersByCard, setPendingOrdersByCard] = useState<Record<string, number>>({});
   const [cardOpportunities, setCardOpportunities] = useState<Record<string, Array<{ date: string; availableCredit: number }>>>({});
+  const [tempProjections, setTempProjections] = useState<Array<{ amount: number; date: string }>>([]);
+  const [projectionAmount, setProjectionAmount] = useState('');
+  const [projectionDate, setProjectionDate] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [editingCreditLimit, setEditingCreditLimit] = useState<string | null>(null);
+  const [creditLimitOverride, setCreditLimitOverride] = useState('');
   const [showAllOpportunities, setShowAllOpportunities] = useState(false);
   const [showSearchOpportunities, setShowSearchOpportunities] = useState(false);
   const [showAllCreditCards, setShowAllCreditCards] = useState(false);
   const [searchType, setSearchType] = useState<'amount' | 'date'>('amount');
   const [searchAmount, setSearchAmount] = useState('');
   const [searchDate, setSearchDate] = useState('');
-  const [tempProjections, setTempProjections] = useState<Array<{ amount: number; date: string }>>([]);
-  const [projectionAmount, setProjectionAmount] = useState('');
-  const [projectionDate, setProjectionDate] = useState('');
   const [isEditingReserve, setIsEditingReserve] = useState(false);
   const [editReserveValue, setEditReserveValue] = useState(reserveAmount.toString());
   const [isForecastGenerating, setIsForecastGenerating] = useState(false);
@@ -340,10 +343,14 @@ export const CashFlowInsights = ({
       for (const card of creditCards) {
         const opportunities: Array<{ date: string; availableCredit: number }> = [];
         
+        // Calculate effective available credit using override if set
+        const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+        const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+        
         // Current available credit is always the first opportunity
         opportunities.push({
           date: today.toISOString().split('T')[0],
-          availableCredit: card.available_credit
+          availableCredit: effectiveAvailableCredit
         });
 
         // If card has statement balance and due date, that's a buying opportunity
@@ -353,7 +360,7 @@ export const CashFlowInsights = ({
 
           // Only include if due date is in the future
           if (paymentDueDate > today) {
-            const newAvailableCredit = card.available_credit + Number(card.statement_balance);
+            const newAvailableCredit = effectiveAvailableCredit + Number(card.statement_balance);
             opportunities.push({
               date: paymentDueDate.toISOString().split('T')[0],
               availableCredit: newAvailableCredit
@@ -1163,14 +1170,20 @@ export const CashFlowInsights = ({
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Available Credit</span>
                   <span className="text-xl font-bold text-green-700 dark:text-green-400">
-                    ${creditCards.reduce((sum, card) => sum + card.available_credit, 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    ${creditCards.reduce((sum, card) => {
+                      const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+                      const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
+                      return sum + effectiveAvailableCredit;
+                    }, 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </span>
                 </div>
               </div>
               
               {[...creditCards].sort((a, b) => (a.priority || 3) - (b.priority || 3)).map((card) => {
+                const effectiveCreditLimit = card.credit_limit_override || card.credit_limit;
+                const effectiveAvailableCredit = effectiveCreditLimit - card.balance;
                 const pendingOrders = pendingOrdersByCard[card.id] || 0;
-                const currentAvailableSpend = card.available_credit - pendingOrders;
+                const currentAvailableSpend = effectiveAvailableCredit - pendingOrders;
                 const opportunities = cardOpportunities[card.id] || [];
                 const isOverLimit = currentAvailableSpend < 0;
                 
@@ -1206,7 +1219,7 @@ export const CashFlowInsights = ({
                       </div>
                       <div className="text-right">
                         <span className={`text-lg font-bold flex-shrink-0 ${isOverLimit ? 'text-red-600 dark:text-red-500' : 'text-green-700 dark:text-green-400'}`}>
-                          ${card.available_credit.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          ${effectiveAvailableCredit.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                         </span>
                         <p className="text-xs text-gray-500 dark:text-gray-400">Available</p>
                       </div>
@@ -1272,8 +1285,26 @@ export const CashFlowInsights = ({
                     
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="flex flex-col p-2 bg-background/50 rounded">
-                        <span className="text-gray-600 dark:text-gray-400 mb-0.5">Credit Limit</span>
-                        <span className="font-semibold text-gray-900 dark:text-gray-100">${card.credit_limit.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className="text-gray-600 dark:text-gray-400">Credit Limit</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-4 w-4 p-0"
+                            onClick={() => {
+                              setEditingCreditLimit(card.id);
+                              setCreditLimitOverride(card.credit_limit_override?.toString() || '');
+                            }}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">
+                          ${(card.credit_limit_override || card.credit_limit).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                          {card.credit_limit_override && (
+                            <span className="ml-1 text-xs text-blue-600 dark:text-blue-400">*</span>
+                          )}
+                        </span>
                       </div>
                       <div className="flex flex-col p-2 bg-background/50 rounded">
                         <span className="text-gray-600 dark:text-gray-400 mb-0.5">Current Balance</span>
@@ -1285,6 +1316,63 @@ export const CashFlowInsights = ({
               })}
             </div>
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Credit Limit Override Dialog */}
+      <Dialog open={editingCreditLimit !== null} onOpenChange={(open) => !open && setEditingCreditLimit(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Override Credit Limit</DialogTitle>
+            <DialogDescription>
+              Set an extended credit limit for this card. Some credit cards allow purchasing power beyond the standard limit.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {editingCreditLimit && (() => {
+              const card = creditCards.find(c => c.id === editingCreditLimit);
+              return card ? (
+                <>
+                  <div className="space-y-2">
+                    <Label>Card</Label>
+                    <p className="text-sm font-medium">{card.account_name}</p>
+                    <p className="text-xs text-muted-foreground">Standard Limit: ${card.credit_limit.toLocaleString()}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="credit-limit-override">Extended Credit Limit</Label>
+                    <Input
+                      id="credit-limit-override"
+                      type="number"
+                      placeholder={card.credit_limit.toString()}
+                      value={creditLimitOverride}
+                      onChange={(e) => setCreditLimitOverride(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Leave empty to use standard limit
+                    </p>
+                  </div>
+                </>
+              ) : null;
+            })()}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingCreditLimit(null)}>
+              Cancel
+            </Button>
+            <Button onClick={async () => {
+              if (!editingCreditLimit) return;
+              
+              const override = creditLimitOverride ? parseFloat(creditLimitOverride) : null;
+              await updateCreditCard(editingCreditLimit, { 
+                credit_limit_override: override as any
+              });
+              setEditingCreditLimit(null);
+              setCreditLimitOverride('');
+              toast({ title: "Credit limit updated" });
+            }}>
+              Save
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>;

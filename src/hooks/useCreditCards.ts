@@ -13,6 +13,7 @@ export interface CreditCard {
   balance: number;
   statement_balance: number;
   credit_limit: number;
+  credit_limit_override?: number;
   available_credit: number;
   currency_code: string;
   plaid_account_id?: string;
