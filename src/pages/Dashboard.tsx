@@ -1654,7 +1654,10 @@ const Dashboard = () => {
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-bold">Bank Transactions</h2>
                 <p className="text-sm text-muted-foreground">
-                  Last synced: {accounts[0]?.last_sync ? format(new Date(accounts[0].last_sync), 'MMM dd, yyyy h:mm a') : 'Never'} • Syncs every 24 hours
+                  Last synced: {accounts[0]?.last_sync ? format(new Date(accounts[0].last_sync), 'MMM dd, yyyy h:mm a') : 'Never'} • Syncs every 3 hours
+                </p>
+                <p className="text-xs text-muted-foreground/70">
+                  Transaction history retained for 45 days • Pending transactions included in balance
                 </p>
               </div>
               <div className="flex items-center gap-2">

@@ -2187,6 +2187,7 @@ export type Database = {
         Returns: number
       }
       cleanup_expired_reset_tokens: { Args: never; Returns: undefined }
+      cleanup_old_bank_transactions: { Args: never; Returns: undefined }
       decrypt_banking_credential: {
         Args: { encrypted_text: string }
         Returns: string
