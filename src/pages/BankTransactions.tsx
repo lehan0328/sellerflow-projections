@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useBankTransactions } from "@/hooks/useBankTransactions";
+import { useCreditCards } from "@/hooks/useCreditCards";
 import { useVendors } from "@/hooks/useVendors";
 import { useVendorTransactions } from "@/hooks/useVendorTransactions";
 import { useIncome } from "@/hooks/useIncome";
@@ -21,7 +22,9 @@ const BankTransactions = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { accounts, isLoading: accountsLoading } = useBankAccounts();
+  const { creditCards, isLoading: creditCardsLoading } = useCreditCards();
   const [selectedAccountId, setSelectedAccountId] = useState<string>("all");
+  const [selectedAccountType, setSelectedAccountType] = useState<'bank' | 'credit'>('bank');
   const [syncing, setSyncing] = useState(false);
   const [matchingAll, setMatchingAll] = useState(false);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
@@ -35,6 +38,17 @@ const BankTransactions = () => {
   const { vendors } = useVendors();
   const { incomeItems } = useIncome();
   
+  // Combine bank accounts and credit cards for selection
+  const allAccounts = [
+    ...accounts.map(acc => ({ ...acc, accountType: 'bank' as const })),
+    ...creditCards.map(card => ({ 
+      id: card.id,
+      account_name: card.account_name || card.nickname || 'Credit Card',
+      institution_name: card.institution_name,
+      accountType: 'credit' as const
+    }))
+  ];
+  
   // Transform data for transaction matching
   const bankTransactionsForMatching = transactions.map(tx => ({
     id: tx.id,
@@ -42,9 +56,9 @@ const BankTransactions = () => {
     merchantName: tx.merchantName || tx.name,
     amount: tx.amount,
     date: tx.date,
-    accountName: accounts.find(acc => acc.id === tx.bankAccountId)?.account_name || '',
+    accountName: allAccounts.find(acc => acc.id === tx.bankAccountId)?.account_name || '',
     accountId: tx.bankAccountId,
-    institutionName: accounts.find(acc => acc.id === tx.bankAccountId)?.institution_name || '',
+    institutionName: allAccounts.find(acc => acc.id === tx.bankAccountId)?.institution_name || '',
     type: (tx.amount < 0 ? 'debit' : 'credit') as 'credit' | 'debit',
     status: (tx.pending ? 'pending' : 'posted') as 'pending' | 'posted',
     pending: tx.pending
@@ -97,8 +111,16 @@ const BankTransactions = () => {
 
     setSyncing(true);
     try {
+      // Determine account type from selected account
+      const selectedAccount = allAccounts.find(acc => acc.id === selectedAccountId);
+      const accountType = selectedAccount?.accountType === 'credit' ? 'credit' : 'bank';
+      
       const { data, error } = await supabase.functions.invoke('sync-plaid-transactions', {
-        body: { accountId: selectedAccountId, isInitialSync: false },
+        body: { 
+          accountId: selectedAccountId, 
+          isInitialSync: false,
+          accountType 
+        },
       });
 
       if (error) throw error;
@@ -267,8 +289,8 @@ const BankTransactions = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Bank Transactions</h1>
-            <p className="text-muted-foreground">View and manage your connected bank account transactions</p>
+            <h1 className="text-3xl font-bold">Bank & Credit Card Transactions</h1>
+            <p className="text-muted-foreground">View and manage your connected account transactions</p>
           </div>
         </div>
 
@@ -279,9 +301,20 @@ const BankTransactions = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Accounts</SelectItem>
+              {accounts.length > 0 && (
+                <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Bank Accounts</div>
+              )}
               {accounts.map(account => (
                 <SelectItem key={account.id} value={account.id}>
                   {account.institution_name} - {account.account_name}
+                </SelectItem>
+              ))}
+              {creditCards.length > 0 && (
+                <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">Credit Cards</div>
+              )}
+              {creditCards.map(card => (
+                <SelectItem key={card.id} value={card.id}>
+                  {card.institution_name} - {card.account_name || card.nickname || 'Credit Card'}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -310,13 +343,13 @@ const BankTransactions = () => {
             <CardTitle>Transaction History</CardTitle>
           </CardHeader>
           <CardContent>
-            {accountsLoading || transactionsLoading ? (
+            {accountsLoading || creditCardsLoading || transactionsLoading ? (
               <div className="text-center py-8 text-muted-foreground">Loading transactions...</div>
-            ) : accounts.length === 0 ? (
+            ) : allAccounts.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">No bank accounts connected yet.</p>
+                <p className="text-muted-foreground mb-4">No accounts connected yet.</p>
                 <Button onClick={() => navigate('/settings')}>
-                  Connect Bank Account
+                  Connect Account
                 </Button>
               </div>
             ) : transactions.length === 0 ? (
@@ -326,7 +359,7 @@ const BankTransactions = () => {
             ) : (
               <div className="space-y-2">
                 {transactions.map((tx) => {
-                  const account = accounts.find(acc => acc.id === tx.bankAccountId);
+                  const account = allAccounts.find(acc => acc.id === tx.bankAccountId);
                   const txMatches = getMatchesForTransaction(tx.id);
                   const hasMatches = txMatches.length > 0;
                   
@@ -353,7 +386,12 @@ const BankTransactions = () => {
                         <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                           <span>{format(tx.date, 'MMM dd, yyyy')}</span>
                           {account && (
-                            <span>{account.institution_name} - {account.account_name}</span>
+                            <>
+                              <span>{account.institution_name} - {account.account_name}</span>
+                              {account.accountType === 'credit' && (
+                                <Badge variant="secondary" className="text-xs">Credit Card</Badge>
+                              )}
+                            </>
                           )}
                           {tx.category && tx.category.length > 0 && (
                             <span>{tx.category[0]}</span>

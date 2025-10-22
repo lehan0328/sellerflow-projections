@@ -20,36 +20,53 @@ serve(async (req) => {
     console.log('Starting scheduled bank transaction sync...');
 
     // Get all active bank accounts with encrypted tokens
-    const { data: accounts, error: fetchError } = await supabaseAdmin
+    const { data: bankAccounts, error: bankFetchError } = await supabaseAdmin
       .from('bank_accounts')
       .select('id, user_id, institution_name, account_name, encrypted_access_token')
       .eq('is_active', true)
       .not('encrypted_access_token', 'is', null);
 
-    if (fetchError) {
-      console.error('Error fetching bank accounts:', fetchError);
-      throw fetchError;
+    if (bankFetchError) {
+      console.error('Error fetching bank accounts:', bankFetchError);
+      throw bankFetchError;
     }
 
-    if (!accounts || accounts.length === 0) {
-      console.log('No active bank accounts found to sync');
+    // Get all active credit cards with encrypted tokens
+    const { data: creditCards, error: creditFetchError } = await supabaseAdmin
+      .from('credit_cards')
+      .select('id, user_id, institution_name, account_name, encrypted_access_token')
+      .eq('is_active', true)
+      .not('encrypted_access_token', 'is', null);
+
+    if (creditFetchError) {
+      console.error('Error fetching credit cards:', creditFetchError);
+      throw creditFetchError;
+    }
+
+    const accounts = [
+      ...(bankAccounts || []).map(acc => ({ ...acc, accountType: 'bank' })),
+      ...(creditCards || []).map(card => ({ ...card, accountType: 'credit' }))
+    ];
+
+    if (accounts.length === 0) {
+      console.log('No active accounts found to sync');
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: 'No active bank accounts to sync',
+          message: 'No active accounts to sync',
           synced: 0 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Found ${accounts.length} active bank accounts to sync`);
+    console.log(`Found ${bankAccounts?.length || 0} bank accounts and ${creditCards?.length || 0} credit cards to sync`);
 
     // Sync each account
     const results = [];
     for (const account of accounts) {
       try {
-        console.log(`Syncing account: ${account.institution_name} - ${account.account_name} (${account.id})`);
+        console.log(`Syncing ${account.accountType} account: ${account.institution_name} - ${account.account_name} (${account.id})`);
         
         // Get user's auth token
         const { data: { user }, error: userError } = await supabaseAdmin.auth.admin.getUserById(account.user_id);
@@ -68,23 +85,26 @@ serve(async (req) => {
         const { data, error: syncError } = await supabaseAdmin.functions.invoke('sync-plaid-transactions', {
           body: { 
             accountId: account.id, 
-            isInitialSync: false 
+            isInitialSync: false,
+            accountType: account.accountType
           },
         });
 
         if (syncError) {
-          console.error(`Failed to sync account ${account.id}:`, syncError);
+          console.error(`Failed to sync ${account.accountType} account ${account.id}:`, syncError);
           results.push({
             accountId: account.id,
+            accountType: account.accountType,
             institutionName: account.institution_name,
             accountName: account.account_name,
             success: false,
             error: syncError.message
           });
         } else {
-          console.log(`Successfully synced account ${account.id}:`, data);
+          console.log(`Successfully synced ${account.accountType} account ${account.id}:`, data);
           results.push({
             accountId: account.id,
+            accountType: account.accountType,
             institutionName: account.institution_name,
             accountName: account.account_name,
             success: true,
@@ -92,9 +112,10 @@ serve(async (req) => {
           });
         }
       } catch (error) {
-        console.error(`Error processing account ${account.id}:`, error);
+        console.error(`Error processing ${account.accountType} account ${account.id}:`, error);
         results.push({
           accountId: account.id,
+          accountType: account.accountType,
           success: false,
           error: error.message
         });

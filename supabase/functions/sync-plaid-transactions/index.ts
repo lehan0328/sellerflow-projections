@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { accountId, isInitialSync = false } = await req.json();
+    const { accountId, isInitialSync = false, accountType = 'bank' } = await req.json();
     
     const PLAID_CLIENT_ID = Deno.env.get('PLAID_CLIENT_ID');
     const PLAID_SECRET = Deno.env.get('PLAID_SECRET');
@@ -42,18 +42,19 @@ serve(async (req) => {
       },
     });
 
-    console.log(`Syncing transactions for account:`, accountId);
+    console.log(`Syncing transactions for ${accountType} account:`, accountId);
 
-    // Get the account from database
+    // Get the account from database (bank or credit card)
+    const tableName = accountType === 'credit' ? 'credit_cards' : 'bank_accounts';
     const { data: account, error: fetchError } = await supabase
-      .from('bank_accounts')
+      .from(tableName)
       .select('encrypted_access_token, plaid_account_id')
       .eq('id', accountId)
       .eq('user_id', user.id)
       .single();
 
     if (fetchError || !account) {
-      throw new Error('Account not found');
+      throw new Error(`${accountType === 'credit' ? 'Credit card' : 'Account'} not found`);
     }
 
     // Decrypt the access token
@@ -136,7 +137,7 @@ serve(async (req) => {
 
     // Update last_sync timestamp (balance auto-updates via trigger)
     await supabase
-      .from('bank_accounts')
+      .from(tableName)
       .update({ last_sync: new Date().toISOString() })
       .eq('id', accountId);
 
