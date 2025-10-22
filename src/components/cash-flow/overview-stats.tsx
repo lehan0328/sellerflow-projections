@@ -432,6 +432,22 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
               <p className="text-sm text-slate-600">
                 {accounts.length === 0 ? 'No accounts connected' : 'Current balance'}
               </p>
+              {totalOverdueCount > 0 && (
+                <div className="mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowOverdueModal(true)}
+                    className="h-7 px-2 text-xs border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground w-full"
+                  >
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    Overdue Transactions
+                    <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">
+                      {totalOverdueCount}
+                    </Badge>
+                  </Button>
+                </div>
+              )}
             </div>
             <DollarSign className="h-8 w-8 text-green-500" />
           </div>
@@ -588,36 +604,20 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
                 <p className="text-xs text-amber-600">
                   {timeRangeOptions.find(opt => opt.value === upcomingTimeRange)?.label}
                 </p>
-                <div className="flex items-center space-x-2">
-                  {upcomingPayments.length > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowUpcomingModal(true)}
-                      className="h-7 px-2 text-xs border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white"
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      View
-                      <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px] bg-amber-100 text-amber-700">
-                        {upcomingPayments.length}
-                      </Badge>
-                    </Button>
-                  )}
-                  {totalOverdueCount > 0 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowOverdueModal(true)}
-                      className="h-7 px-2 text-xs border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                    >
-                      <AlertCircle className="h-3 w-3 mr-1" />
-                      Overdue
-                      <Badge variant="destructive" className="ml-1 h-4 px-1 text-[10px]">
-                        {totalOverdueCount}
-                      </Badge>
-                    </Button>
-                  )}
-                </div>
+                {upcomingPayments.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowUpcomingModal(true)}
+                    className="h-7 px-2 text-xs border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white"
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    View
+                    <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px] bg-amber-100 text-amber-700">
+                      {upcomingPayments.length}
+                    </Badge>
+                  </Button>
+                )}
               </div>
             </div>
             <Calendar className="h-8 w-8 text-amber-500" />
