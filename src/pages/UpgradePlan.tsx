@@ -602,13 +602,13 @@ const UpgradePlan = () => {
               ) : is_trialing ? (
                 <>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">Plan</span>
-                    <Badge variant="secondary">Professional (Trial)</Badge>
+                    <span className="text-sm font-medium">Plan</span>
+                    <Badge className="bg-gradient-primary">Professional (Trial)</Badge>
                   </div>
                   
                   {profile?.trial_start && (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm">Trial Started</span>
+                      <span className="text-sm font-medium">Trial Started</span>
                       <span className="text-sm text-muted-foreground">
                         {new Date(profile.trial_start).toLocaleDateString()}
                       </span>
@@ -617,12 +617,33 @@ const UpgradePlan = () => {
                   
                   {profile?.trial_end && (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm">Trial Ends</span>
+                      <span className="text-sm font-medium">Trial Ends</span>
                       <span className="text-sm text-muted-foreground">
                         {new Date(profile.trial_end).toLocaleDateString()}
                       </span>
                     </div>
                   )}
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Financial Connections</span>
+                    <Badge variant="secondary">
+                      {currentUsage.bankConnections}/{planLimits.bankConnections === 999 ? '∞' : planLimits.bankConnections}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Amazon Connections</span>
+                    <Badge variant="secondary">
+                      {currentUsage.amazonConnections}/{planLimits.amazonConnections === 999 ? '∞' : planLimits.amazonConnections}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Team Members</span>
+                    <Badge variant="secondary">
+                      {currentUsage.teamMembers}/{planLimits.teamMembers === 999 ? '∞' : planLimits.teamMembers}
+                    </Badge>
+                  </div>
                   
                   <p className="text-xs text-muted-foreground text-center pt-2">
                     You're on a 7-day free trial of the Professional plan
