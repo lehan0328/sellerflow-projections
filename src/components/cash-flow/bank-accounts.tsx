@@ -239,11 +239,22 @@ export function BankAccounts() {
               </Button>
             )}
           </div>
-          <div className="text-right">
-            <p className="text-sm text-muted-foreground">Total Balance</p>
-            <p className="text-xl font-bold text-primary">
-              {formatCurrency(totalBalance)}
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">Total Balance</p>
+              <p className="text-xl font-bold text-primary">
+                {formatCurrency(totalBalance)}
+              </p>
+            </div>
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={handleConnectPlaid}
+              disabled={isConnecting}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              {isConnecting ? "Connecting..." : "Connect Account"}
+            </Button>
           </div>
         </div>
       </CardHeader>
