@@ -622,18 +622,6 @@ export const CashFlowInsights = ({
                   </div>
                 )}
                   <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                    <span className="text-muted-foreground">Current Cash Balance</span>
-                    <span className="font-semibold text-green-600">
-                      ${(safeSpendingLimit + reserveAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                    <span className="text-muted-foreground">Reserve Amount</span>
-                    <span className="font-semibold text-orange-600">
-                      -${reserveAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
                     <span className="text-muted-foreground">Lowest Projected (next 90 days)</span>
                     <span className="font-semibold text-orange-600">
                       ${projectedLowestBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
