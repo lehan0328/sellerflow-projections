@@ -95,7 +95,8 @@ const Dashboard = () => {
   }>({ open: false, transaction: null });
   const [selectedBankAccountId, setSelectedBankAccountId] = useState<string>("all");
   const [useAvailableBalance, setUseAvailableBalance] = useState(() => {
-    return localStorage.getItem('useAvailableBalance') === 'true';
+    const saved = localStorage.getItem('useAvailableBalance');
+    return saved !== null ? saved === 'true' : true; // Default to true (available balance)
   });
   
   // Use database hooks

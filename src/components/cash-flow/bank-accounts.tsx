@@ -42,7 +42,10 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
   const [newBalance, setNewBalance] = useState<string>("");
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [localUseActualBalance, setLocalUseActualBalance] = useState(!useAvailableBalance);
+  const [localUseActualBalance, setLocalUseActualBalance] = useState(() => {
+    const saved = localStorage.getItem('useAvailableBalance');
+    return saved !== null ? saved !== 'true' : false; // Default to false (use available balance)
+  });
 
   // Use prop value if provided, otherwise use local state
   const useActualBalance = useAvailableBalance === undefined ? localUseActualBalance : !useAvailableBalance;
