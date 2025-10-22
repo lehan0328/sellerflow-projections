@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,9 @@ import { Switch } from "@/components/ui/switch";
 import { CreditCard, Calendar, AlertTriangle, Settings, Plus, Edit, Trash2 } from "lucide-react";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { toast } from "sonner";
+import { usePlaidLink } from "react-plaid-link";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,11 +41,14 @@ interface CreditCardFormData {
 
 export function CreditCards() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { creditCards, isLoading, totalCreditLimit, totalBalance, totalAvailableCredit, addCreditCard, updateCreditCard, removeCreditCard } = useCreditCards();
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingCard, setEditingCard] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [cardToDelete, setCardToDelete] = useState<string | null>(null);
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [formData, setFormData] = useState<CreditCardFormData>({
     nickname: '',
     annual_fee: 0,
@@ -88,9 +94,62 @@ export function CreditCards() {
     });
   };
 
+  const config = {
+    token: linkToken,
+    onSuccess: async (publicToken: string, metadata: any) => {
+      try {
+        const { error } = await supabase.functions.invoke('exchange-plaid-token', {
+          body: { publicToken, metadata }
+        });
+        
+        if (error) throw error;
+        
+        toast.success("Credit card connected successfully!");
+        // Refresh credit cards list
+        window.location.reload();
+      } catch (error: any) {
+        console.error('Error exchanging token:', error);
+        toast.error(error.message || "Failed to connect credit card");
+      }
+    },
+    onExit: (err: any) => {
+      if (err) {
+        console.error('Plaid Link error:', err);
+        toast.error("Failed to connect credit card");
+      }
+      setLinkToken(null);
+      setIsConnecting(false);
+    }
+  };
+
+  const { open, ready } = usePlaidLink(config);
+
+  useEffect(() => {
+    if (linkToken && ready) {
+      open();
+    }
+  }, [linkToken, ready, open]);
+
   const handleAddCard = async () => {
-    // Redirect to manage credit cards page for Plaid integration
-    navigate('/manage-credit-cards');
+    if (!user) {
+      toast.error("Please log in to connect a credit card");
+      return;
+    }
+
+    setIsConnecting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-plaid-link-token', {
+        body: { userId: user.id }
+      });
+
+      if (error) throw error;
+      
+      setLinkToken(data.link_token);
+    } catch (error: any) {
+      console.error('Error creating link token:', error);
+      toast.error(error.message || "Failed to initialize credit card connection");
+      setIsConnecting(false);
+    }
   };
 
   const handleEditCard = (card: any) => {
@@ -170,10 +229,11 @@ export function CreditCards() {
             <Button 
               variant="default" 
               size="sm" 
-              onClick={() => navigate('/settings', { state: { activeSection: 'credit-cards' } })}
+              onClick={handleAddCard}
+              disabled={isConnecting}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add Card
+              {isConnecting ? "Connecting..." : "Add Card"}
             </Button>
           </div>
         </div>
