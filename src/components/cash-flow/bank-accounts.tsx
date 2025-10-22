@@ -206,41 +206,6 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
     }
   };
 
-  const handleSyncPlaidAccount = async (accountId: string) => {
-    setSyncingAccounts(prev => new Set(prev).add(accountId));
-    try {
-      // First sync account balances
-      const { error: accountError } = await supabase.functions.invoke('sync-plaid-accounts', {
-        body: { accountId, accountType: 'bank_account' }
-      });
-
-      if (accountError) throw accountError;
-
-      // Then sync transactions
-      const { error: transError } = await supabase.functions.invoke('sync-plaid-transactions', {
-        body: { 
-          accountId, 
-          isInitialSync: false,
-          accountType: 'bank'
-        }
-      });
-
-      if (transError) throw transError;
-
-      toast.success("Account and transactions synced successfully");
-      await refetch();
-    } catch (error: any) {
-      console.error('Error syncing Plaid account:', error);
-      toast.error("Failed to sync account: " + error.message);
-    } finally {
-      setSyncingAccounts(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(accountId);
-        return newSet;
-      });
-    }
-  };
-
   const handleEdit = (account: any) => {
     setEditingAccount(account);
     setDialogOpen(true);
@@ -324,6 +289,26 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
     if (balance > 10000) return "default";
     if (balance > 1000) return "secondary";
     return "destructive";
+  };
+
+  const handleCleanupDuplicates = async () => {
+    try {
+      toast.info("Checking for duplicate accounts...");
+      
+      const { data, error } = await supabase.functions.invoke('cleanup-duplicate-accounts');
+      
+      if (error) throw error;
+      
+      if (data.actions && data.actions.length > 0) {
+        toast.success(`Cleanup complete: ${data.actions.join(', ')}`);
+        await refetch();
+      } else {
+        toast.info("No duplicate accounts found");
+      }
+    } catch (error: any) {
+      console.error('Cleanup error:', error);
+      toast.error("Cleanup failed: " + error.message);
+    }
   };
 
   if (isLoading) {
@@ -482,18 +467,6 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
                     variant="outline" 
                     size="sm"
                     onClick={() => handleSyncTransactions(account.id, account.plaid_account_id!)}
-                    disabled={syncingAccounts.has(account.id)}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-1 ${syncingAccounts.has(account.id) ? 'animate-spin' : ''}`} />
-                    {syncingAccounts.has(account.id) ? 'Syncing...' : 'Sync'}
-                  </Button>
-                )}
-                {/* Show sync button for Plaid-connected bank accounts */}
-                {account.plaid_account_id && !account.plaid_account_id.startsWith('fca_') && (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleSyncPlaidAccount(account.id)}
                     disabled={syncingAccounts.has(account.id)}
                   >
                     <RefreshCw className={`h-4 w-4 mr-1 ${syncingAccounts.has(account.id) ? 'animate-spin' : ''}`} />
