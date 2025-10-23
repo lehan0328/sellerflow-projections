@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Sparkles, TrendingUp, Info, AlertTriangle, AlertCircle, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
@@ -51,6 +52,7 @@ export const ForecastSettings = () => {
   const [disabledAt, setDisabledAt] = useState<string | null>(null);
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
   const [togglingForecast, setTogglingForecast] = useState(false);
+  const [syncProgress, setSyncProgress] = useState(0);
   const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(false);
   
   const hasAmazonStore = amazonAccounts && amazonAccounts.length > 0;
@@ -138,6 +140,7 @@ export const ForecastSettings = () => {
       if (!currentUser) throw new Error("Not authenticated");
 
       console.log('🔄 Toggling forecasts to:', enabled);
+      setSyncProgress(10);
 
       // Update forecasts_enabled in database
       const { error: updateError } = await supabase
@@ -146,6 +149,7 @@ export const ForecastSettings = () => {
         .eq('user_id', currentUser.id);
 
       if (updateError) throw updateError;
+      setSyncProgress(20);
 
       // Verify the update
       const { data: verifyData } = await supabase
@@ -157,21 +161,26 @@ export const ForecastSettings = () => {
       console.log('✅ Database updated, verified value:', verifyData?.forecasts_enabled);
 
       setForecastsEnabled(enabled);
+      setSyncProgress(30);
 
       if (!enabled) {
         // Delete all forecasted payouts when disabled
+        setSyncProgress(50);
         await supabase
           .from('amazon_payouts')
           .delete()
           .eq('user_id', currentUser.id)
           .eq('status', 'forecasted');
         
-        toast.success("Forecasts disabled and removed");
+        setSyncProgress(80);
         await refetchPayouts();
+        setSyncProgress(100);
+        toast.success("Forecasts disabled and removed");
       } else {
         // Automatically regenerate forecasts when enabled
         const loadingToastId = `forecast-generation-${Date.now()}`;
         toast.loading("Starting forecast generation...", { id: loadingToastId });
+        setSyncProgress(40);
         
         try {
           // Generate new forecasts using mathematical model
@@ -184,8 +193,11 @@ export const ForecastSettings = () => {
             console.error('❌ Forecast generation error:', error);
             toast.error(`Forecast generation failed: ${error.message || 'Unknown error'}`);
             setForecastsEnabled(false);
+            setSyncProgress(0);
             return;
           }
+
+          setSyncProgress(50);
 
           // Poll for forecasts to appear in the database
           let forecastsFound = false;
@@ -194,6 +206,8 @@ export const ForecastSettings = () => {
           
           while (!forecastsFound && attempts < maxAttempts) {
             attempts++;
+            const progressPercent = 50 + (attempts / maxAttempts) * 30; // 50-80%
+            setSyncProgress(progressPercent);
             toast.loading(`Waiting for forecasts (${attempts}/${maxAttempts})...`, { id: loadingToastId });
             console.log(`🔍 Polling for forecasts (attempt ${attempts}/${maxAttempts})...`);
             
@@ -223,10 +237,13 @@ export const ForecastSettings = () => {
           toast.dismiss(loadingToastId);
           
           if (forecastsFound) {
+            setSyncProgress(90);
             await refetchPayouts();
             await fetchSettings();
+            setSyncProgress(100);
             toast.success("Forecasts enabled and generated!");
           } else {
+            setSyncProgress(0);
             toast.error("Forecast generation timed out. Please try again.");
             setForecastsEnabled(false);
           }
@@ -235,18 +252,25 @@ export const ForecastSettings = () => {
           console.error('❌ Unexpected error:', err);
           toast.error("An error occurred while generating forecasts");
           setForecastsEnabled(false);
+          setSyncProgress(0);
         }
       }
       
       // Refetch settings to ensure UI is in sync
       await fetchSettings();
+      
+      // Small delay to ensure realtime updates propagate
+      await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
       console.error('Error toggling forecasts:', error);
       toast.error("Failed to update forecast settings");
       // Revert on error
       setForecastsEnabled(!enabled);
+      setSyncProgress(0);
     } finally {
       setTogglingForecast(false);
+      // Reset progress after a brief delay
+      setTimeout(() => setSyncProgress(0), 1000);
     }
   };
 
@@ -582,6 +606,16 @@ export const ForecastSettings = () => {
               </Badge>
             </div>
           </div>
+           {syncProgress > 0 && syncProgress < 100 && (
+            <div className="mt-3 space-y-2">
+              <Progress value={syncProgress} className="h-2" />
+              <p className="text-xs text-muted-foreground text-center">
+                {syncProgress < 40 ? 'Updating settings...' : 
+                 syncProgress < 60 ? 'Generating forecasts...' : 
+                 syncProgress < 90 ? 'Waiting for sync...' : 'Finalizing...'}
+              </p>
+            </div>
+          )}
           <CardDescription>
             {forecastsEnabled ? (
                <>
