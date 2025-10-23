@@ -8,6 +8,7 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { supabase } from "@/integrations/supabase/client";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
+import { useAmazonTransactions } from "@/hooks/useAmazonTransactions";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
 import { 
@@ -123,6 +124,7 @@ export default function Analytics() {
   }, []);
   const { creditCards } = useCreditCards();
   const { amazonPayouts } = useAmazonPayouts();
+  const { amazonTransactions } = useAmazonTransactions();
   const { accounts } = useBankAccounts();
   const { recurringExpenses } = useRecurringExpenses();
   const now = new Date();
@@ -178,8 +180,15 @@ export default function Analytics() {
     const totalCreditUsed = creditCards.reduce((sum, c) => sum + (c.balance || 0), 0);
     const creditUtilization = totalCreditLimit > 0 ? (totalCreditUsed / totalCreditLimit) * 100 : 0;
 
-    // Amazon revenue
-    const amazonRevenue = amazonPayouts.reduce((sum, p) => sum + (p.total_amount || 0), 0);
+    // Amazon revenue - track gross order totals (before fees) for plan tier tracking
+    // Only count Order/Shipment transactions, not fees or refunds
+    const amazonRevenue = amazonTransactions
+      .filter(tx => 
+        tx.transaction_type && 
+        (tx.transaction_type.toLowerCase().includes('order') || 
+         tx.transaction_type.toLowerCase().includes('shipment'))
+      )
+      .reduce((sum, tx) => sum + (tx.gross_amount || tx.amount || 0), 0);
 
     // Total expenses from vendors + purchase orders
     const vendorExpenses = vendors.reduce((sum, v) => sum + (v.totalOwed || 0), 0);
@@ -201,7 +210,7 @@ export default function Analytics() {
       totalExpenses,
       netCashFlow
     };
-  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts]);
+  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, amazonTransactions, accounts]);
 
   // Revenue over time (last 6 months) - includes Amazon payouts and recurring income
   const revenueData = useMemo(() => {
@@ -560,7 +569,7 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${metrics.currentBalance.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Total across all accounts</p>
+            <p className="text-xs text-muted-foreground">Current balance</p>
           </CardContent>
         </Card>
 
@@ -571,7 +580,7 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">${metrics.totalInflow.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Money received</p>
+            <p className="text-xs text-muted-foreground">All-time money received</p>
           </CardContent>
         </Card>
 
@@ -582,7 +591,7 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">${metrics.totalOutflow.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Money spent</p>
+            <p className="text-xs text-muted-foreground">All-time money spent</p>
           </CardContent>
         </Card>
 
@@ -593,7 +602,7 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">${metrics.amazonRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Total Amazon payouts</p>
+            <p className="text-xs text-muted-foreground">Gross order revenue (all-time)</p>
           </CardContent>
         </Card>
 

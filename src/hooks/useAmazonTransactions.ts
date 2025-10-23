@@ -18,6 +18,7 @@ export interface AmazonTransaction {
   description: string | null;
   fee_description: string | null;
   fee_type: string | null;
+  gross_amount: number | null;
   raw_data: any;
   created_at: string;
   updated_at: string;
@@ -38,8 +39,7 @@ export const useAmazonTransactions = () => {
       const { data, error } = await supabase
         .from("amazon_transactions")
         .select("*")
-        .order("transaction_date", { ascending: false })
-        .limit(100);
+        .order("transaction_date", { ascending: false });
 
       if (error) {
         console.error("Error fetching Amazon transactions:", error);
