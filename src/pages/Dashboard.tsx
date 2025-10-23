@@ -417,10 +417,18 @@ const Dashboard = () => {
       return;
     }
 
+    // Determine if the selected account is a bank account or credit card
+    const selectedAccount = allFinancialAccounts.find(acc => acc.id === selectedBankAccountId);
+    const accountType = selectedAccount?.type === 'credit' ? 'credit' : 'bank';
+
     setIsBankSyncing(true);
     try {
       const { data, error } = await supabase.functions.invoke('sync-plaid-transactions', {
-        body: { accountId: selectedBankAccountId }
+        body: { 
+          accountId: selectedBankAccountId,
+          accountType: accountType,
+          isInitialSync: false
+        }
       });
 
       if (error) throw error;
@@ -1642,9 +1650,13 @@ const Dashboard = () => {
         const handleSyncAllTransactions = async () => {
           setSyncingTransactions(true);
           try {
-            const syncPromises = accounts.map(account =>
+            const syncPromises = allFinancialAccounts.map(account =>
               supabase.functions.invoke('sync-plaid-transactions', {
-                body: { accountId: account.id, isInitialSync: false },
+                body: { 
+                  accountId: account.id, 
+                  isInitialSync: false,
+                  accountType: account.type
+                },
               })
             );
 
