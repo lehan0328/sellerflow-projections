@@ -64,6 +64,27 @@ export const useAmazonTransactions = () => {
 
   useEffect(() => {
     fetchAmazonTransactions();
+
+    // Set up realtime subscription for transaction changes
+    const channel = supabase
+      .channel('amazon-transactions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'amazon_transactions'
+        },
+        (payload) => {
+          console.log('Amazon transaction change detected:', payload);
+          fetchAmazonTransactions();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   return {
