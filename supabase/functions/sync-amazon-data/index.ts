@@ -195,8 +195,22 @@ serve(async (req) => {
         // Extract NextToken for pagination
         nextToken = financialData.payload?.NextToken
 
-        // Parse shipment events
+        // Log what event types are available in this response
+        const eventTypes = financialData.payload?.FinancialEvents || {}
+        console.log('📦 Available event types:', Object.keys(eventTypes))
+        console.log('📊 Event counts:', {
+          shipments: (eventTypes.ShipmentEventList || []).length,
+          refunds: (eventTypes.RefundEventList || []).length,
+          reimbursements: (eventTypes.ShipmentSettleEventList || []).length,
+          serviceFees: (eventTypes.ServiceFeeEventList || []).length,
+          guaranteeClaims: (eventTypes.SAFETReimbursementEventList || []).length,
+          chargebacks: (eventTypes.ChargebackEventList || []).length,
+          adjustments: (eventTypes.AdjustmentEventList || []).length
+        })
+
+        // Parse shipment events (Orders/Sales)
         const shipmentEvents = financialData.payload?.FinancialEvents?.ShipmentEventList || []
+        console.log(`Processing ${shipmentEvents.length} shipment events...`)
         for (const shipment of shipmentEvents) {
           const orderId = shipment.AmazonOrderId
           const shipmentDate = shipment.PostedDate
@@ -232,6 +246,7 @@ serve(async (req) => {
 
         // Parse refund events
         const refundEvents = financialData.payload?.FinancialEvents?.RefundEventList || []
+        console.log(`Processing ${refundEvents.length} refund events...`)
         for (const refund of refundEvents) {
           const orderId = refund.AmazonOrderId
           const refundDate = refund.PostedDate
@@ -261,6 +276,114 @@ serve(async (req) => {
           }
         }
 
+        // Parse reimbursement events (Amazon reimbursements for lost/damaged inventory)
+        const reimbursementEvents = financialData.payload?.FinancialEvents?.ShipmentSettleEventList || []
+        console.log(`Processing ${reimbursementEvents.length} reimbursement settlement events...`)
+        for (const settlement of reimbursementEvents) {
+          const settlementDate = settlement.PostedDate
+          const settlementId = settlement.SettlementId
+          
+          for (const item of (settlement.ShipmentItemList || [])) {
+            const reimbursementAmount = item.ItemChargeList?.reduce((sum: number, charge: any) => 
+              sum + (charge.ChargeAmount?.CurrencyAmount || 0), 0) || 0
+
+            if (reimbursementAmount !== 0) {
+              transactionsToAdd.push({
+                user_id: user.id,
+                amazon_account_id: amazonAccountId,
+                account_id: amazonAccount.account_id,
+                transaction_id: `REIMBURSE-${settlementId}-${item.SellerSKU}`,
+                transaction_type: 'Reimbursement',
+                amount: reimbursementAmount,
+                gross_amount: reimbursementAmount,
+                currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
+                transaction_date: settlementDate,
+                settlement_id: settlementId,
+                sku: item.SellerSKU,
+                marketplace_name: amazonAccount.marketplace_name,
+                description: `Reimbursement - ${settlementId}`,
+                raw_data: item,
+              })
+            }
+          }
+        }
+
+        // Parse service fee events (subscription fees, etc.)
+        const serviceFeeEvents = financialData.payload?.FinancialEvents?.ServiceFeeEventList || []
+        console.log(`Processing ${serviceFeeEvents.length} service fee events...`)
+        for (const fee of serviceFeeEvents) {
+          const feeAmount = fee.FeeList?.reduce((sum: number, f: any) => 
+            sum + (f.FeeAmount?.CurrencyAmount || 0), 0) || 0
+
+          if (feeAmount !== 0) {
+            transactionsToAdd.push({
+              user_id: user.id,
+              amazon_account_id: amazonAccountId,
+              account_id: amazonAccount.account_id,
+              transaction_id: `FEE-${fee.SellerSKU || 'SERVICE'}-${fee.PostedDate}`,
+              transaction_type: 'ServiceFee',
+              amount: -Math.abs(feeAmount), // Fees are negative
+              gross_amount: -Math.abs(feeAmount),
+              currency_code: fee.FeeList?.[0]?.FeeAmount?.CurrencyCode || 'USD',
+              transaction_date: fee.PostedDate,
+              sku: fee.SellerSKU,
+              marketplace_name: amazonAccount.marketplace_name,
+              description: fee.FeeDescription || 'Service Fee',
+              fee_description: fee.FeeDescription,
+              fee_type: fee.FeeType,
+              raw_data: fee,
+            })
+          }
+        }
+
+        // Parse adjustment events (manual adjustments, corrections)
+        const adjustmentEvents = financialData.payload?.FinancialEvents?.AdjustmentEventList || []
+        console.log(`Processing ${adjustmentEvents.length} adjustment events...`)
+        for (const adjustment of adjustmentEvents) {
+          const adjustmentAmount = adjustment.AdjustmentAmount?.CurrencyAmount || 0
+
+          if (adjustmentAmount !== 0) {
+            transactionsToAdd.push({
+              user_id: user.id,
+              amazon_account_id: amazonAccountId,
+              account_id: amazonAccount.account_id,
+              transaction_id: `ADJ-${adjustment.AdjustmentType}-${adjustment.PostedDate}`,
+              transaction_type: 'Adjustment',
+              amount: adjustmentAmount,
+              gross_amount: adjustmentAmount,
+              currency_code: adjustment.AdjustmentAmount?.CurrencyCode || 'USD',
+              transaction_date: adjustment.PostedDate,
+              marketplace_name: amazonAccount.marketplace_name,
+              description: `${adjustment.AdjustmentType}: ${adjustment.AdjustmentReason || 'N/A'}`,
+              raw_data: adjustment,
+            })
+          }
+        }
+
+        // Parse SAFE-T claim reimbursements
+        const safetEvents = financialData.payload?.FinancialEvents?.SAFETReimbursementEventList || []
+        console.log(`Processing ${safetEvents.length} SAFE-T reimbursement events...`)
+        for (const safet of safetEvents) {
+          const reimbursementAmount = safet.ReimbursedAmount?.CurrencyAmount || 0
+
+          if (reimbursementAmount !== 0) {
+            transactionsToAdd.push({
+              user_id: user.id,
+              amazon_account_id: amazonAccountId,
+              account_id: amazonAccount.account_id,
+              transaction_id: `SAFET-${safet.SAFETClaimId}`,
+              transaction_type: 'SAFETReimbursement',
+              amount: reimbursementAmount,
+              gross_amount: reimbursementAmount,
+              currency_code: safet.ReimbursedAmount?.CurrencyCode || 'USD',
+              transaction_date: safet.PostedDate,
+              marketplace_name: amazonAccount.marketplace_name,
+              description: `SAFE-T Claim: ${safet.ReasonCode || 'Reimbursement'}`,
+              raw_data: safet,
+            })
+          }
+        }
+
         console.log(`✓ Page ${pageCount}: Added ${transactionsToAdd.length} transactions so far`)
 
         // Amazon rate limit: 0.6 seconds per request (safer than 0.5)
@@ -277,8 +400,18 @@ serve(async (req) => {
       }
 
       console.log(`✅ Completed pagination: ${pageCount} pages, ${transactionsToAdd.length} total transactions`)
-
-      console.log(`✅ Completed pagination: ${pageCount} pages, ${transactionsToAdd.length} total transactions`)
+      
+      // Log date range of actual transactions received
+      if (transactionsToAdd.length > 0) {
+        const dates = transactionsToAdd.map(t => new Date(t.transaction_date).getTime()).sort()
+        const earliestDate = new Date(Math.min(...dates))
+        const latestDate = new Date(Math.max(...dates))
+        console.log(`📅 Transaction date range: ${earliestDate.toISOString().split('T')[0]} to ${latestDate.toISOString().split('T')[0]}`)
+        console.log(`📊 Transaction type breakdown:`, transactionsToAdd.reduce((acc: any, t) => {
+          acc[t.transaction_type] = (acc[t.transaction_type] || 0) + 1
+          return acc
+        }, {}))
+      }
 
       if (pageCount >= maxPages && nextToken) {
         console.log(`⚠️ Reached max page limit (${maxPages}). More data may be available.`)

@@ -6,6 +6,7 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ForecastExplainer } from "@/components/ForecastExplainer";
 
 const AmazonTransactionsTest = () => {
   const { amazonTransactions, isLoading } = useAmazonTransactions();
@@ -28,6 +29,8 @@ const AmazonTransactionsTest = () => {
         </Button>
         <h1 className="text-3xl font-bold">Amazon Transactions Data Test</h1>
       </div>
+
+      <ForecastExplainer />
 
       <Card>
         <CardHeader>
