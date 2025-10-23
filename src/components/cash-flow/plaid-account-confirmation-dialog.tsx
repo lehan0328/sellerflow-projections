@@ -23,11 +23,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 interface PlaidAccount {
-  account_id: string;
+  id: string; // Plaid uses 'id' not 'account_id'
   name: string;
   type: string;
   subtype: string;
-  institution_name: string;
+  institution_name?: string;
   balances: {
     current: number;
     limit?: number;
@@ -55,7 +55,7 @@ export function PlaidAccountConfirmationDialog({
   // Generate stable unique IDs for each account
   const accountsWithIds = accounts.map((acc, index) => ({
     ...acc,
-    uniqueId: acc.account_id || `temp-account-${index}-${acc.name.replace(/\s/g, '-')}`
+    uniqueId: acc.id || `temp-account-${index}-${acc.name.replace(/\s/g, '-')}`
   }));
 
   // Initialize with empty selection - user must explicitly select accounts
@@ -70,7 +70,7 @@ export function PlaidAccountConfirmationDialog({
 
   // Debug logging
   console.log('PlaidAccountConfirmationDialog - Accounts:', accountsWithIds.map(acc => ({
-    id: acc.account_id,
+    id: acc.id,
     uniqueId: acc.uniqueId,
     name: acc.name,
     type: acc.type
@@ -110,19 +110,23 @@ export function PlaidAccountConfirmationDialog({
   const handleConfirm = async () => {
     setIsAdding(true);
     try {
-      // Map uniqueIds back to actual account_ids for the API call
+      // Map uniqueIds back to actual Plaid account IDs for the API call
       const selectedAccounts = accountsWithIds
         .filter(acc => selectedAccountIds.has(acc.uniqueId))
-        .map(acc => acc.account_id);
+        .map(acc => acc.id);
       
-      // Map priorities back to account_ids
+      console.log('Confirming accounts:', selectedAccounts);
+      
+      // Map priorities back to Plaid account IDs
       const mappedPriorities: Record<string, number> = {};
       Object.entries(priorities).forEach(([uniqueId, priority]) => {
         const account = accountsWithIds.find(acc => acc.uniqueId === uniqueId);
-        if (account?.account_id) {
-          mappedPriorities[account.account_id] = priority;
+        if (account?.id) {
+          mappedPriorities[account.id] = priority;
         }
       });
+      
+      console.log('Mapped priorities:', mappedPriorities);
       
       await onConfirm(selectedAccounts, mappedPriorities);
       onOpenChange(false);
