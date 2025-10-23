@@ -1,9 +1,13 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { addDays, isToday, isBefore, startOfDay, format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Building2, CreditCard as CreditCardIcon, TrendingUp, TrendingDown, Calendar, CheckCircle } from "lucide-react";
+import { RefreshCw, Building2, CreditCard as CreditCardIcon, TrendingUp, TrendingDown, Calendar, CheckCircle, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { DashboardHeader } from "@/components/cash-flow/dashboard-header";
 import { FloatingMenu } from "@/components/cash-flow/floating-menu";
@@ -89,6 +93,74 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("overview");
   const [settingsSection, setSettingsSection] = useState("profile");
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [companyName, setCompanyName] = useState('');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
+  
+  // Fetch user profile
+  const { data: profile, isLoading: profileLoading } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (profileData: { first_name?: string; last_name?: string; company?: string; currency?: string }) => {
+      if (!user?.id) throw new Error('No user ID');
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update(profileData)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
+      toast({
+        title: "Success",
+        description: "Settings updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update settings",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Set currency and company from profile data
+  useEffect(() => {
+    if (profile?.currency) {
+      setSelectedCurrency(profile.currency);
+    }
+    if (profile?.company) {
+      setCompanyName(profile.company);
+    }
+  }, [profile]);
+
+  // Handle profile field changes
+  const handleProfileChange = (field: string, value: string) => {
+    updateProfileMutation.mutate({ [field]: value });
+  };
   
   // Handle section change with special logic for team-management
   const handleSectionChange = (section: string) => {
@@ -1527,10 +1599,103 @@ const Dashboard = () => {
         return (
           <Card>
             <CardHeader>
-              <CardTitle>Profile Settings</CardTitle>
+              <CardTitle className="flex items-center space-x-2">
+                <User className="h-5 w-5" />
+                <span>Profile Settings</span>
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Profile settings will be shown here.</p>
+            <CardContent className="space-y-4">
+              {profileLoading ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="h-10 bg-muted animate-pulse rounded"></div>
+                    <div className="h-10 bg-muted animate-pulse rounded"></div>
+                  </div>
+                  <div className="h-10 bg-muted animate-pulse rounded"></div>
+                  <div className="h-10 bg-muted animate-pulse rounded"></div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="first-name">First Name</Label>
+                      <Input 
+                        id="first-name" 
+                        defaultValue={profile?.first_name || ""} 
+                        placeholder="Enter your first name"
+                        onBlur={(e) => handleProfileChange('first_name', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="last-name">Last Name</Label>
+                      <Input 
+                        id="last-name" 
+                        defaultValue={profile?.last_name || ""} 
+                        placeholder="Enter your last name"
+                        onBlur={(e) => handleProfileChange('last_name', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input 
+                      id="email" 
+                      type="email" 
+                      value={user?.email || ""} 
+                      disabled
+                      className="bg-muted"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Email cannot be changed here. Contact support if needed.
+                    </p>
+                  </div>
+                  <div>
+                    <Label htmlFor="company">Company Name</Label>
+                    <Input 
+                      id="company" 
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      placeholder="Enter your company name"
+                      onBlur={(e) => {
+                        const trimmed = e.target.value.trim();
+                        if (trimmed !== profile?.company) {
+                          handleProfileChange('company', trimmed);
+                        }
+                      }}
+                      maxLength={255}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Changes are saved automatically when you click away.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="default-currency">Default Currency</Label>
+                    <Select 
+                      value={selectedCurrency} 
+                      onValueChange={(value) => {
+                        setSelectedCurrency(value);
+                        updateProfileMutation.mutate({ currency: value });
+                      }}
+                    >
+                      <SelectTrigger id="default-currency" className="bg-background">
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover z-50">
+                        <SelectItem value="USD">USD - US Dollar ($)</SelectItem>
+                        <SelectItem value="EUR">EUR - Euro (€)</SelectItem>
+                        <SelectItem value="GBP">GBP - British Pound (£)</SelectItem>
+                        <SelectItem value="CAD">CAD - Canadian Dollar (C$)</SelectItem>
+                        <SelectItem value="AUD">AUD - Australian Dollar (A$)</SelectItem>
+                        <SelectItem value="JPY">JPY - Japanese Yen (¥)</SelectItem>
+                        <SelectItem value="CNY">CNY - Chinese Yuan (¥)</SelectItem>
+                        <SelectItem value="INR">INR - Indian Rupee (₹)</SelectItem>
+                        <SelectItem value="MXN">MXN - Mexican Peso ($)</SelectItem>
+                        <SelectItem value="BRL">BRL - Brazilian Real (R$)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         );
