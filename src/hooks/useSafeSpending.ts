@@ -50,7 +50,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
 
   const fetchSafeSpending = useCallback(async () => {
     try {
-      console.log('🔄 [SAFE SPENDING] Starting fresh calculation with reserve:', reserveAmountInput);
+      console.log('🔄 [SAFE SPENDING] Starting fresh calculation with reserve:', reserveAmountInput, 'useAvailableBalance:', useAvailableBalance);
       setIsLoading(true);
       setError(null);
 
@@ -97,13 +97,14 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         return sum + Number(balanceToUse || 0);
       }, 0) || 0;
       
-      console.log('🏦 Bank Accounts Found:', bankAccounts?.map(acc => ({
+      console.log('🏦 [SAFE SPENDING] Bank Accounts Found:', bankAccounts?.map(acc => ({
         name: acc.account_name,
         balance: acc.balance,
         available: acc.available_balance,
         using: useAvailableBalance ? acc.available_balance : acc.balance
       })));
-      console.log('🏦 Total Bank Balance:', bankBalance);
+      console.log('🏦 [SAFE SPENDING] Total Bank Balance:', bankBalance);
+      console.log('🏦 [SAFE SPENDING] useAvailableBalance toggle:', useAvailableBalance);
       console.log('🔒 Account ID:', profile.account_id);
       
       console.log('🔄 [SAFE SPENDING] Using balance type:', useAvailableBalance ? 'Available' : 'Current', 'Balance:', bankBalance);
