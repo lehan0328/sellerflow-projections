@@ -206,6 +206,37 @@ export default function Onboarding() {
       if (profile?.account_id) {
         console.log('💾 Saving forecast preference:', forecastingEnabled);
         
+        // If forecasting is requested, check if Amazon account has sufficient data
+        if (forecastingEnabled && !amazonSkipped) {
+          const { data: amazonAccounts } = await supabase
+            .from('amazon_accounts')
+            .select('initial_sync_complete, transaction_count')
+            .eq('user_id', user.id)
+            .eq('is_active', true);
+
+          const hasAmazonAccount = amazonAccounts && amazonAccounts.length > 0;
+          const accountReady = amazonAccounts?.some(acc => acc.initial_sync_complete && (acc.transaction_count || 0) >= 50);
+
+          if (!hasAmazonAccount || !accountReady) {
+            toast.warning("Amazon account needs more data before enabling forecasting. Forecasts will be enabled automatically once you sync 50+ transactions.");
+            // Don't enable forecasting yet, but save the preference
+            await supabase
+              .from('user_settings')
+              .upsert({
+                user_id: user.id,
+                account_id: profile.account_id,
+                forecasts_enabled: false, // Will be enabled after sync completes
+                forecast_confidence_threshold: 8,
+                default_reserve_lag_days: 7
+              }, {
+                onConflict: 'user_id'
+              });
+            
+            navigate('/dashboard');
+            return;
+          }
+        }
+        
         // Save forecasting preference
         const { data: settingsData, error: settingsError } = await supabase
           .from('user_settings')

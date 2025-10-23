@@ -81,6 +81,30 @@ serve(async (req) => {
           continue;
         }
 
+        // Check if user has expired subscription
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('trial_end')
+          .eq('user_id', account.user_id)
+          .single();
+
+        // Check if trial expired
+        const trialEnd = profile?.trial_end ? new Date(profile.trial_end) : null;
+        const isTrialExpired = trialEnd && trialEnd < new Date();
+
+        if (isTrialExpired) {
+          console.log(`Skipping sync for expired account ${account.id}`);
+          results.push({
+            accountId: account.id,
+            accountType: account.accountType,
+            institutionName: account.institution_name,
+            accountName: account.account_name,
+            success: false,
+            error: 'Account expired - subscription renewal required'
+          });
+          continue;
+        }
+
         // Call sync-plaid-transactions function
         const { data, error: syncError } = await supabaseAdmin.functions.invoke('sync-plaid-transactions', {
           body: { 

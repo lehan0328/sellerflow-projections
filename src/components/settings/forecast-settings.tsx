@@ -98,6 +98,14 @@ export const ForecastSettings = () => {
         .select('forecast_confidence_threshold, forecasts_enabled, forecasts_disabled_at, advanced_modeling_enabled, default_reserve_lag_days')
         .eq('user_id', user!.id)
         .maybeSingle();
+      
+      // If no Amazon accounts connected, disable forecasts
+      if (!hasAmazonStore && data?.forecasts_enabled) {
+        await supabase
+          .from('user_settings')
+          .update({ forecasts_enabled: false })
+          .eq('user_id', user!.id);
+      }
 
       console.log('🔍 Fetched settings:', data);
       
@@ -645,17 +653,28 @@ export const ForecastSettings = () => {
                   Regenerate
                 </Button>
               )}
-              <div className="flex items-center gap-2">
-                <Label htmlFor="forecast-toggle" className="text-sm">
-                  Mathematical Forecasts {forecastsEnabled ? 'Enabled' : 'Disabled'}
-                </Label>
-                <Switch
-                  id="forecast-toggle"
-                  checked={forecastsEnabled}
-                  onCheckedChange={handleToggleForecast}
-                  disabled={togglingForecast || !hasAmazonStore || (!forecastsEnabled && !canReEnable)}
-                />
-              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="forecast-toggle" className="text-sm">
+                        Mathematical Forecasts {forecastsEnabled ? 'Enabled' : 'Disabled'}
+                      </Label>
+                      <Switch
+                        id="forecast-toggle"
+                        checked={forecastsEnabled && hasAmazonStore}
+                        onCheckedChange={handleToggleForecast}
+                        disabled={togglingForecast || !hasAmazonStore || (!forecastsEnabled && !canReEnable)}
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  {!hasAmazonStore && (
+                    <TooltipContent>
+                      <p>Connect an Amazon account to enable forecasting</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
               <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/20">
                 Mathematical
               </Badge>

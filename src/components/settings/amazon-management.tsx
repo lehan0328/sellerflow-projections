@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
+import { useSubscription } from "@/hooks/useSubscription";
 import { ShoppingCart, Plus, Trash2, RefreshCw, ExternalLink, Settings, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,6 +56,7 @@ const marketplaces = [
 export function AmazonManagement() {
   const { amazonAccounts, isLoading, addAmazonAccount, removeAmazonAccount, syncAmazonAccount, updatePayoutFrequency } = useAmazonAccounts();
   const { amazonPayouts, totalUpcoming, refetch: refetchPayouts } = useAmazonPayouts();
+  const { is_expired, trial_expired } = useSubscription();
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
   const [syncProgress, setSyncProgress] = useState(0);
   const [selectedMarketplace, setSelectedMarketplace] = useState('ATVPDKIKX0DER'); // Default to US
@@ -664,8 +666,17 @@ export function AmazonManagement() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleSyncAccount(account.id)}
-                    disabled={isSyncing === account.id || !canSyncAccount(account.last_sync).canSync}
-                    title={canSyncAccount(account.last_sync).message}
+                    disabled={
+                      isSyncing === account.id || 
+                      !canSyncAccount(account.last_sync).canSync ||
+                      is_expired ||
+                      trial_expired
+                    }
+                    title={
+                      is_expired || trial_expired
+                        ? "Account expired. Please renew to sync."
+                        : canSyncAccount(account.last_sync).message
+                    }
                   >
                     <RefreshCw className={`h-4 w-4 ${isSyncing === account.id ? 'animate-spin' : ''}`} />
                   </Button>

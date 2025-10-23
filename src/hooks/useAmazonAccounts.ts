@@ -244,6 +244,31 @@ export const useAmazonAccounts = () => {
     }
 
     try {
+      // Delete all associated transactions first
+      const { error: transactionError } = await supabase
+        .from("amazon_transactions")
+        .delete()
+        .eq("amazon_account_id", accountId);
+
+      if (transactionError) {
+        console.error("Error deleting Amazon transactions:", transactionError);
+        toast.error("Failed to delete associated transactions");
+        return false;
+      }
+
+      // Delete all associated payouts
+      const { error: payoutError } = await supabase
+        .from("amazon_payouts")
+        .delete()
+        .eq("amazon_account_id", accountId);
+
+      if (payoutError) {
+        console.error("Error deleting Amazon payouts:", payoutError);
+        toast.error("Failed to delete associated payouts");
+        return false;
+      }
+
+      // Now delete the account
       const { error } = await supabase
         .from("amazon_accounts")
         .delete()
@@ -256,7 +281,7 @@ export const useAmazonAccounts = () => {
         return false;
       }
 
-      toast.success("Amazon account removed successfully!");
+      toast.success("Amazon account and all associated data removed successfully!");
       await fetchAmazonAccounts();
       return true;
     } catch (error) {
@@ -273,6 +298,19 @@ export const useAmazonAccounts = () => {
     }
 
     try {
+      // Check if user subscription is expired
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: subData } = await supabase.functions.invoke("check-subscription", {
+          headers: { Authorization: `Bearer ${session.access_token}` }
+        });
+        
+        if (subData?.is_expired || subData?.trial_expired) {
+          toast.error("Your account is expired. Please renew your subscription to sync data.");
+          return false;
+        }
+      }
+
       // Call the edge function to sync Amazon data
       const { data, error } = await supabase.functions.invoke("sync-amazon-data", {
         body: { amazonAccountId: accountId }
