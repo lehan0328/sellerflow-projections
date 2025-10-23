@@ -56,6 +56,24 @@ export const ForecastSettings = () => {
   const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(false);
   
   const hasAmazonStore = amazonAccounts && amazonAccounts.length > 0;
+  
+  // Check if any Amazon account is less than 24 hours old
+  const newestAmazonAccount = useMemo(() => {
+    if (!amazonAccounts || amazonAccounts.length === 0) return null;
+    return amazonAccounts.reduce((newest, account) => {
+      const accountDate = new Date(account.created_at);
+      const newestDate = newest ? new Date(newest.created_at) : new Date(0);
+      return accountDate > newestDate ? account : newest;
+    }, amazonAccounts[0]);
+  }, [amazonAccounts]);
+  
+  const amazonAccountAge = useMemo(() => {
+    if (!newestAmazonAccount) return Infinity;
+    return (Date.now() - new Date(newestAmazonAccount.created_at).getTime()) / (1000 * 60 * 60); // in hours
+  }, [newestAmazonAccount]);
+  
+  const canEnableForecasts = amazonAccountAge >= 24;
+  const hoursUntilForecastAvailable = Math.max(0, Math.ceil(24 - amazonAccountAge));
   const [payoutModel, setPayoutModel] = useState<'bi-weekly' | 'daily'>('bi-weekly');
   
   // Check if user has 3+ confirmed payouts for advanced modeling
@@ -701,17 +719,24 @@ export const ForecastSettings = () => {
                       </Label>
                       <Switch
                         id="forecast-toggle"
-                        checked={forecastsEnabled && hasAmazonStore}
+                        checked={forecastsEnabled && hasAmazonStore && canEnableForecasts}
                         onCheckedChange={handleToggleForecast}
-                        disabled={togglingForecast || !hasAmazonStore || (!forecastsEnabled && !canReEnable)}
+                        disabled={togglingForecast || !hasAmazonStore || !canEnableForecasts || (!forecastsEnabled && !canReEnable)}
                       />
                     </div>
                   </TooltipTrigger>
-                  {!hasAmazonStore && (
+                  {!hasAmazonStore ? (
                     <TooltipContent>
                       <p>Connect an Amazon account to enable forecasting</p>
                     </TooltipContent>
-                  )}
+                  ) : !canEnableForecasts ? (
+                    <TooltipContent>
+                      <p>Forecast available in {hoursUntilForecastAvailable} hours</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        24-hour data collection period required
+                      </p>
+                    </TooltipContent>
+                  ) : null}
                 </Tooltip>
               </TooltipProvider>
               <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/20">
@@ -730,7 +755,7 @@ export const ForecastSettings = () => {
             </div>
           )}
           <CardDescription>
-            {forecastsEnabled ? (
+            {forecastsEnabled && canEnableForecasts ? (
                <>
                 Adjust the conservatism of your Amazon payout forecasts
                 {!loading && (
@@ -739,6 +764,16 @@ export const ForecastSettings = () => {
                   </div>
                 )}
               </>
+            ) : !canEnableForecasts ? (
+              <div className="mt-2 space-y-1">
+                <p className="text-sm text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  Forecasts will be available in {hoursUntilForecastAvailable} hours
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  We need 24 hours to collect enough Amazon data for accurate forecasting
+                </p>
+              </div>
             ) : (
               <div className="mt-2 space-y-1">
                 <p className="text-sm text-orange-600 dark:text-orange-400 flex items-center gap-2">
