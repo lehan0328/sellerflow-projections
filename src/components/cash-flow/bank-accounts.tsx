@@ -466,8 +466,8 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
                       <div className="flex items-center gap-2">
                         <p className="text-xs text-muted-foreground">
                           {account.available_balance !== null && account.available_balance !== undefined 
-                            ? `Current: ${formatCurrency(account.balance)}`
-                            : 'Available balance'}
+                            ? `Total: ${formatCurrency(account.balance)} (Available)`
+                            : 'Total balance'}
                         </p>
                       </div>
                     </div>
