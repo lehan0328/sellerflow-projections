@@ -23,29 +23,30 @@ interface CurrentUsage {
 }
 
 // Map subscription tiers to plan limits
+// CRITICAL: These MUST match the features in PRICING_PLANS
 const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
   starter: {
     bankConnections: 2,
     amazonConnections: 1,
-    teamMembers: 0,
+    teamMembers: 0, // No additional users
     name: 'Starter',
     price: PRICING_PLANS.starter.price,
     revenueMin: 0,
     revenueMax: 20000
   },
   growing: {
-    bankConnections: 3,
+    bankConnections: 4, // Fixed: was 3, should be 4
     amazonConnections: 1,
-    teamMembers: 2,
+    teamMembers: 2, // 2 additional users
     name: 'Growing',
-    price: 59,
+    price: PRICING_PLANS.growing.price,
     revenueMin: 20001,
     revenueMax: 100000
   },
   professional: {
-    bankConnections: 4,
+    bankConnections: 7, // Fixed: was 4, should be 7
     amazonConnections: 1,
-    teamMembers: 5,
+    teamMembers: 5, // 5 additional users
     name: 'Professional', 
     price: PRICING_PLANS.professional.price,
     revenueMin: 100001,
@@ -54,7 +55,7 @@ const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
   enterprise: {
     bankConnections: 5,
     amazonConnections: 2,
-    teamMembers: 7,
+    teamMembers: 7, // 7 additional users
     name: 'Enterprise',
     price: 149, // Starting price, varies by revenue tier
     revenueMin: 200001,
