@@ -182,7 +182,7 @@ serve(async (req) => {
 
           let nextToken: string | undefined = undefined
           let pageCount = 0
-          const maxPages = 50 // Safety limit to prevent infinite loops
+          const maxPages = 200 // Increased to handle high-volume sellers (20k+ transactions)
           
           console.log('[Background Sync] Fetching financial events with pagination...')
           
@@ -201,10 +201,11 @@ serve(async (req) => {
             pageCount++
             console.log(`[Background Sync] 📄 Fetching page ${pageCount}... (${transactionsToAdd.length} transactions so far)`)
             
-            // Update progress based on page count (estimate 10 pages max for progress calculation)
-            // Only update every 2 pages to reduce database writes and avoid blocking
-            if (pageCount % 2 === 0) {
-              const progressPercentage = Math.min(10 + (pageCount / 10) * 60, 70)
+            // Update progress based on page count
+            // Only update every 5 pages to reduce database writes and avoid blocking
+            if (pageCount % 5 === 0) {
+              // Progress from 10% to 70% based on pages (assuming max 200 pages)
+              const progressPercentage = Math.min(10 + (pageCount / 200) * 60, 70)
               supabase
                 .from('amazon_accounts')
                 .update({ 
@@ -663,7 +664,16 @@ serve(async (req) => {
           } while (nextToken && pageCount < maxPages)
 
           if (pageCount >= maxPages && nextToken) {
-            console.log(`[Background Sync] ⚠️ Reached max pages (${maxPages}). More data may be available.`)
+            console.log(`[Background Sync] ⚠️ Reached max pages (${maxPages}). More data available - will continue on next sync.`)
+            // Update with warning message
+            supabase
+              .from('amazon_accounts')
+              .update({ 
+                sync_message: `Fetched ${pageCount} pages (${transactionsToAdd.length} transactions). More data available - sync again to continue.`
+              })
+              .eq('id', amazonAccountId)
+              .then(() => {})
+              .catch(err => console.error('[Background Sync] Warning update error:', err))
           }
 
           console.log(`[Background Sync] ✅ Fetched all pages: ${pageCount} pages total`)
@@ -711,14 +721,14 @@ serve(async (req) => {
         // Determine if initial sync is complete (more than 0 transactions and no next page)
         const shouldComplete = (totalTransactions ?? 0) > 0 && !nextToken
 
-        // Update account sync status to completed
+        // Update account sync status to idle (completed)
         await supabase
           .from('amazon_accounts')
           .update({
             last_sync: now.toISOString(),
             transaction_count: totalTransactions || 0,
             initial_sync_complete: shouldComplete || amazonAccount.initial_sync_complete,
-            sync_status: 'completed',
+            sync_status: 'idle',
             sync_progress: 100,
             sync_message: `Sync complete! ${totalTransactions} total transactions`,
             last_sync_error: null,
