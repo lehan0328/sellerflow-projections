@@ -170,7 +170,8 @@ export const ForecastSettings = () => {
         await refetchPayouts();
       } else {
         // Automatically regenerate forecasts when enabled
-        const loadingToast = toast.loading("Generating forecasts... This may take up to 30 seconds.");
+        const loadingToastId = `forecast-generation-${Date.now()}`;
+        toast.loading("Starting forecast generation...", { id: loadingToastId });
         
         try {
           // Generate new forecasts using mathematical model
@@ -179,9 +180,10 @@ export const ForecastSettings = () => {
           });
 
           if (error) {
-            toast.dismiss(loadingToast);
+            toast.dismiss(loadingToastId);
             console.error('❌ Forecast generation error:', error);
             toast.error(`Forecast generation failed: ${error.message || 'Unknown error'}`);
+            setForecastsEnabled(false);
             return;
           }
 
@@ -190,10 +192,9 @@ export const ForecastSettings = () => {
           let attempts = 0;
           const maxAttempts = 15; // 15 attempts * 2 seconds = 30 seconds max
           
-          toast.loading("Waiting for forecasts to load...", { id: loadingToast });
-          
           while (!forecastsFound && attempts < maxAttempts) {
             attempts++;
+            toast.loading(`Waiting for forecasts (${attempts}/${maxAttempts})...`, { id: loadingToastId });
             console.log(`🔍 Polling for forecasts (attempt ${attempts}/${maxAttempts})...`);
             
             // Wait 2 seconds between checks
@@ -215,21 +216,25 @@ export const ForecastSettings = () => {
             if (forecasts && forecasts.length > 0) {
               forecastsFound = true;
               console.log('✅ Forecasts found in database!');
+              break;
             }
           }
           
-          toast.dismiss(loadingToast);
+          toast.dismiss(loadingToastId);
           
           if (forecastsFound) {
             await refetchPayouts();
+            await fetchSettings();
             toast.success("Forecasts enabled and generated!");
           } else {
-            toast.warning("Forecasts are being generated. Please refresh the page in a moment.");
+            toast.error("Forecast generation timed out. Please try again.");
+            setForecastsEnabled(false);
           }
         } catch (err) {
-          toast.dismiss(loadingToast);
+          toast.dismiss(loadingToastId);
           console.error('❌ Unexpected error:', err);
           toast.error("An error occurred while generating forecasts");
+          setForecastsEnabled(false);
         }
       }
       
@@ -404,7 +409,8 @@ export const ForecastSettings = () => {
       } else {
         // Automatically regenerate forecasts
         console.log('🔄 Starting forecast regeneration...');
-        const loadingToast = toast.loading("Regenerating forecasts... This may take up to 30 seconds.");
+        const loadingToastId = `forecast-save-${Date.now()}`;
+        toast.loading("Regenerating forecasts...", { id: loadingToastId });
         
         try {
           // Delete old forecasts
@@ -429,7 +435,7 @@ export const ForecastSettings = () => {
           console.log('📊 Forecast response:', { data, error });
 
           if (error) {
-            toast.dismiss(loadingToast);
+            toast.dismiss(loadingToastId);
             console.error('❌ Forecast regeneration error:', error);
             toast.error(`Forecast regeneration failed: ${error.message || 'Unknown error'}`);
             return;
@@ -440,10 +446,9 @@ export const ForecastSettings = () => {
           let attempts = 0;
           const maxAttempts = 15; // 15 attempts * 2 seconds = 30 seconds max
           
-          toast.loading("Waiting for forecasts to load...", { id: loadingToast });
-          
           while (!forecastsFound && attempts < maxAttempts) {
             attempts++;
+            toast.loading(`Waiting for forecasts (${attempts}/${maxAttempts})...`, { id: loadingToastId });
             console.log(`🔍 Polling for forecasts (attempt ${attempts}/${maxAttempts})...`);
             
             // Wait 2 seconds between checks
@@ -465,20 +470,22 @@ export const ForecastSettings = () => {
             if (forecasts && forecasts.length > 0) {
               forecastsFound = true;
               console.log('✅ Forecasts found in database!');
+              break;
             }
           }
           
-          toast.dismiss(loadingToast);
+          toast.dismiss(loadingToastId);
           
           if (forecastsFound) {
             console.log('✅ Forecasts regenerated successfully');
             await refetchPayouts();
+            await fetchSettings();
             toast.success("Settings saved and forecasts updated!");
           } else {
-            toast.warning("Forecasts are being generated. Please refresh the page in a moment.");
+            toast.error("Forecast generation timed out. Please try again.");
           }
         } catch (err) {
-          toast.dismiss(loadingToast);
+          toast.dismiss(loadingToastId);
           console.error('❌ Unexpected error during regeneration:', err);
           toast.error("An error occurred during forecast regeneration");
         }
