@@ -48,8 +48,46 @@ export const useBankAccounts = () => {
         return;
       }
 
+      // Fetch pending transactions to calculate true available balance
+      const { data: pendingTransactions, error: pendingError } = await supabase
+        .from("bank_transactions")
+        .select("bank_account_id, amount")
+        .eq("pending", true)
+        .eq("archived", false);
+
+      if (pendingError) {
+        console.error("Error fetching pending transactions:", pendingError);
+      }
+
+      // Calculate pending totals per account (debits reduce available balance)
+      const pendingByAccount = (pendingTransactions || []).reduce((acc, txn) => {
+        if (!acc[txn.bank_account_id]) {
+          acc[txn.bank_account_id] = 0;
+        }
+        // Negative amounts are debits (money out), positive are credits (money in)
+        // Deduct debits from available balance
+        acc[txn.bank_account_id] += txn.amount;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Adjust available balance with pending transactions
+      const adjustedAccounts = (data || []).map(account => {
+        const pendingAmount = pendingByAccount[account.id] || 0;
+        const baseAvailable = account.available_balance ?? account.balance;
+        
+        // Subtract pending debits (positive amounts in our system are debits/money out)
+        const trueAvailable = baseAvailable - pendingAmount;
+        
+        console.log(`Account ${account.account_name}: Base available: $${baseAvailable}, Pending: $${pendingAmount}, True available: $${trueAvailable}`);
+        
+        return {
+          ...account,
+          available_balance: trueAvailable
+        };
+      });
+
       // Deduplicate accounts by plaid_account_id (keep the most recent one)
-      const uniqueAccounts = (data || []).reduce((acc, account) => {
+      const uniqueAccounts = adjustedAccounts.reduce((acc, account) => {
         const key = account.plaid_account_id || account.id;
         const existing = acc.get(key);
         
