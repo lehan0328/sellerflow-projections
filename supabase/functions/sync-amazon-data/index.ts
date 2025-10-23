@@ -61,13 +61,49 @@ serve(async (req) => {
       )
     }
 
-    const { amazonAccountId } = await req.json()
+    const { amazonAccountId, userId, cronJob } = await req.json()
 
     if (!amazonAccountId) {
       return new Response(
         JSON.stringify({ error: 'Amazon account ID is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // For cron jobs, skip auth check since we're using service role
+    if (!cronJob) {
+      // Verify the JWT and get user (only for manual syncs)
+      const token = authHeader.replace('Bearer ', '')
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+      
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid token' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      
+      // Verify user owns this account
+      const { data: accountCheck } = await supabase
+        .from('amazon_accounts')
+        .select('user_id')
+        .eq('id', amazonAccountId)
+        .single()
+      
+      if (!accountCheck || accountCheck.user_id !== user.id) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
+
+    // Get user_id from request or verify from token
+    let actualUserId = userId
+    if (!cronJob) {
+      const token = authHeader.replace('Bearer ', '')
+      const { data: { user } } = await supabase.auth.getUser(token)
+      actualUserId = user?.id
     }
 
     // Set status to 'syncing' BEFORE starting background task
@@ -97,7 +133,7 @@ serve(async (req) => {
             sync_progress: 5
           })
           .eq('id', amazonAccountId)
-          .eq('user_id', user.id)
+          .eq('user_id', actualUserId)
           .then(() => {}).catch(err => console.error('Failed to update sync message:', err))
         
         // Get the Amazon account with encrypted credentials
@@ -105,7 +141,7 @@ serve(async (req) => {
           .from('amazon_accounts')
           .select('*')
           .eq('id', amazonAccountId)
-          .eq('user_id', user.id)
+          .eq('user_id', actualUserId)
           .single()
 
         if (accountError || !amazonAccount) {
@@ -279,7 +315,7 @@ serve(async (req) => {
                 if (revenue !== 0 || fees !== 0) {
                   // Create unique transaction ID by adding item index to handle duplicate SKUs
                   transactionsToAdd.push({
-                    user_id: user.id,
+                    user_id: actualUserId,
                     amazon_account_id: amazonAccountId,
                     account_id: amazonAccount.account_id,
                     transaction_id: `${orderId}-${item.SellerSKU}-${itemIndex}`,
@@ -735,7 +771,7 @@ serve(async (req) => {
             updated_at: now.toISOString()
           })
           .eq('id', amazonAccountId)
-          .eq('user_id', user.id)
+          .eq('user_id', actualUserId)
 
         console.log(`[Background Sync] ✅ Sync complete: ${totalTransactions} total transactions`)
         console.log(`[Background Sync] Added ${transactionsToAdd.length} transactions, ${payoutsToAdd.length} payouts`)
@@ -752,7 +788,7 @@ serve(async (req) => {
             updated_at: new Date().toISOString()
           })
           .eq('id', amazonAccountId)
-          .eq('user_id', user.id)
+          .eq('user_id', actualUserId)
       }
     }
 

@@ -14,12 +14,18 @@ Deno.serve(async (req) => {
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
     )
 
     console.log('Starting scheduled Amazon sync for all active accounts...')
 
-    // Get all active Amazon accounts with last sync time
+    // Get all active Amazon accounts
     const { data: amazonAccounts, error: fetchError } = await supabase
       .from('amazon_accounts')
       .select('id, user_id, account_name, marketplace_name, last_sync, created_at')
@@ -46,27 +52,26 @@ Deno.serve(async (req) => {
     // Sync each account
     const syncResults = []
     for (const account of amazonAccounts) {
-      // Determine sync frequency based on account age
+      // Check last sync time to avoid over-syncing
       if (account.last_sync) {
-        const lastSyncTime = new Date(account.last_sync).getTime()
-        const accountCreatedTime = new Date(account.created_at || account.last_sync).getTime()
-        const now = Date.now()
-        const minutesSinceSync = (now - lastSyncTime) / (1000 * 60)
-        const hoursSinceCreation = (now - accountCreatedTime) / (1000 * 60 * 60)
+        const lastSyncDate = new Date(account.last_sync)
+        const now = new Date()
+        const hoursSinceSync = (now.getTime() - lastSyncDate.getTime()) / (1000 * 60 * 60)
         
-        // First 6 hours: sync every 10 minutes
-        // After 6 hours: sync every hour
-        const isInIntensivePeriod = hoursSinceCreation < 6
-        const minMinutesBetweenSync = isInIntensivePeriod ? 10 : 60
+        // For accounts less than 7 days old (intensive period): sync every 2 hours
+        // For older accounts: sync every 12 hours
+        const accountAgeInDays = (now.getTime() - new Date(account.created_at).getTime()) / (1000 * 60 * 60 * 24)
+        const isInIntensivePeriod = accountAgeInDays <= 7
+        const minHoursBetweenSync = isInIntensivePeriod ? 2 : 12
         
-        if (minutesSinceSync < minMinutesBetweenSync) {
-          console.log(`Skipping ${account.account_name} - last synced ${minutesSinceSync.toFixed(1)} minutes ago (threshold: ${minMinutesBetweenSync} minutes)`)
+        if (hoursSinceSync < minHoursBetweenSync) {
+          console.log(`Skipping ${account.account_name} - last synced ${hoursSinceSync.toFixed(1)} hours ago`)
           syncResults.push({
             accountId: account.id,
             accountName: account.account_name,
             success: true,
             skipped: true,
-            reason: `Last synced ${minutesSinceSync.toFixed(1)} minutes ago (${isInIntensivePeriod ? 'intensive period' : 'standard period'})`
+            reason: `Last synced ${hoursSinceSync.toFixed(1)} hours ago`
           })
           continue
         }
@@ -75,21 +80,36 @@ Deno.serve(async (req) => {
       console.log(`Syncing account: ${account.account_name} (${account.id})`)
       
       try {
-        // Call the sync-amazon-data function for this account
-        const { data, error } = await supabase.functions.invoke('sync-amazon-data', {
-          body: { amazonAccountId: account.id }
-        })
+        // Directly call sync with service role (bypassing auth check for cron jobs)
+        // The sync function will use the service role key to access the database
+        const response = await fetch(
+          `${Deno.env.get('SUPABASE_URL')}/functions/v1/sync-amazon-data`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            },
+            body: JSON.stringify({
+              amazonAccountId: account.id,
+              userId: account.user_id,
+              cronJob: true  // Flag to bypass user auth check
+            })
+          }
+        )
 
-        if (error) {
-          console.error(`Error syncing account ${account.id}:`, error)
+        const data = await response.json()
+
+        if (!response.ok) {
+          console.error(`Error syncing account ${account.id}:`, data)
           syncResults.push({
             accountId: account.id,
             accountName: account.account_name,
             success: false,
-            error: error.message
+            error: data.error || 'Sync failed'
           })
         } else {
-          console.log(`Successfully synced account ${account.id}`)
+          console.log(`Successfully started sync for account ${account.id}`)
           syncResults.push({
             accountId: account.id,
             accountName: account.account_name,
@@ -112,35 +132,27 @@ Deno.serve(async (req) => {
     }
 
     const successCount = syncResults.filter(r => r.success && !r.skipped).length
-    const skipCount = syncResults.filter(r => r.skipped).length
-    const failCount = syncResults.filter(r => !r.success).length
+    const skippedCount = syncResults.filter(r => r.skipped).length
+    const failedCount = syncResults.filter(r => !r.success).length
 
-    console.log(`Sync complete: ${successCount} succeeded, ${skipCount} skipped, ${failCount} failed`)
+    console.log(`Sync complete: ${successCount} succeeded, ${skippedCount} skipped, ${failedCount} failed`)
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Synced ${successCount} of ${amazonAccounts.length} accounts`,
+        message: `Sync complete: ${successCount} succeeded, ${skippedCount} skipped, ${failedCount} failed`,
         results: syncResults
       }),
-      { 
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
-
   } catch (error) {
-    console.error('Error in scheduled-amazon-sync function:', error)
-    
+    console.error('Error in scheduled Amazon sync:', error)
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error'
       }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
