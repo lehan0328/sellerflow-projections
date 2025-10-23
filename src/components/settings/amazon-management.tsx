@@ -141,19 +141,11 @@ export function AmazonManagement() {
       
       console.log('Amazon OAuth URL:', authUrl);
       
-      toast.info('Opening Amazon Seller Central in a new tab...');
-      console.log('Step 4: Opening Amazon in new tab...');
+      toast.info('Redirecting to Amazon Seller Central...');
+      console.log('Step 4: Redirecting to Amazon...');
       
-      // CRITICAL: Open in new tab to avoid iframe blocking (X-Frame-Options: DENY)
-      // Use window.open with noopener for security
-      const newWindow = window.open(authUrl, '_blank', 'noopener,noreferrer');
-      
-      if (!newWindow) {
-        toast.error('Pop-up blocked. Please allow pop-ups and try again.');
-        console.error('Pop-up was blocked by browser');
-      } else {
-        toast.success('Amazon authorization opened in new tab. Please complete the process there.');
-      }
+      // Open in same window to preserve session
+      window.location.href = authUrl;
     } catch (error) {
       console.error('=== ERROR IN AMAZON CONNECTION ===', error);
       toast.error(`Failed to initiate Amazon connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -368,10 +360,6 @@ export function AmazonManagement() {
                         <p className="text-xs text-muted-foreground mb-2">
                           This will open Amazon Seller Central where you can safely authorize Auren to access your seller data. No credentials stored locally.
                         </p>
-                        <div className="bg-white/50 p-2 rounded border border-blue-200">
-                          <p className="text-xs font-medium text-foreground mb-1">Required Redirect URL in Amazon:</p>
-                          <code className="text-xs text-blue-600 break-all">{window.location.origin}/amazon-oauth-callback</code>
-                        </div>
                       </div>
                     </div>
                   </div>
