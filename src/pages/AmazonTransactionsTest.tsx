@@ -42,9 +42,8 @@ const AmazonTransactionsTest = () => {
           </p>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[600px] w-full rounded-md border">
-            <div className="min-w-max p-4">
-              <Table>
+          <div className="h-[600px] w-full overflow-auto rounded-md border">
+            <Table className="min-w-max">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
@@ -130,8 +129,7 @@ const AmazonTransactionsTest = () => {
                   ))}
                 </TableBody>
               </Table>
-            </div>
-          </ScrollArea>
+          </div>
 
           {amazonTransactions.length === 0 && (
             <div className="text-center py-12">
