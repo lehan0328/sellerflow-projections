@@ -108,7 +108,8 @@ export function CreditCards() {
   const config = {
     token: linkToken,
     onSuccess: async (publicToken: string, metadata: any) => {
-      // Store the data and show confirmation dialog
+      // Don't call exchange-plaid-token yet - just store the data and show confirmation dialog
+      // Accounts won't be saved to database until user confirms
       setPendingPlaidData({ publicToken, metadata });
       setShowConfirmationDialog(true);
     },
@@ -128,10 +129,15 @@ export function CreditCards() {
     const { publicToken, metadata } = pendingPlaidData;
     
     try {
+      // NOW call exchange-plaid-token with only the selected accounts
+      // Only these will be stored in the database
       const { data, error } = await supabase.functions.invoke('exchange-plaid-token', {
         body: { 
           publicToken, 
-          metadata,
+          metadata: {
+            ...metadata,
+            accounts: metadata.accounts.filter((acc: any) => selectedAccountIds.includes(acc.account_id))
+          },
           selectedAccountIds,
           priorities
         }
@@ -139,7 +145,7 @@ export function CreditCards() {
       
       if (error) throw error;
       
-      toast.success("Financial accounts connected successfully!");
+      toast.success(`${selectedAccountIds.length} account${selectedAccountIds.length !== 1 ? 's' : ''} connected successfully!`);
       
       // Refresh the page to show new accounts
       window.location.reload();
