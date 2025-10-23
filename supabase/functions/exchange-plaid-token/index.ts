@@ -172,8 +172,8 @@ serve(async (req) => {
     console.log('Total accounts available:', accountsData.accounts.length);
     
     for (const account of accountsData.accounts) {
-      // Skip accounts that weren't selected by the user
-      if (!selectedAccountIds.includes(account.account_id)) {
+      // Skip accounts that weren't selected by the user (if selectedAccountIds is provided)
+      if (selectedAccountIds && !selectedAccountIds.includes(account.account_id)) {
         console.log(`Skipping unselected account: ${account.name} (${account.account_id})`);
         continue;
       }
@@ -291,7 +291,7 @@ serve(async (req) => {
         console.log('✅ Credit card stored successfully:', cardData.id);
       
         // Show priority dialog for newly connected card
-        if (metadata.accounts.length === 1) {
+        if (metadata.accounts && metadata.accounts.length === 1) {
           // Only show for single card connection to avoid blocking other cards
           console.log('📋 Showing priority dialog for newly connected card');
         }
