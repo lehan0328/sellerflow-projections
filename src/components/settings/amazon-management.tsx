@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
@@ -53,8 +54,9 @@ const marketplaces = [
 
 export function AmazonManagement() {
   const { amazonAccounts, isLoading, addAmazonAccount, removeAmazonAccount, syncAmazonAccount, updatePayoutFrequency } = useAmazonAccounts();
-  const { amazonPayouts, totalUpcoming } = useAmazonPayouts();
+  const { amazonPayouts, totalUpcoming, refetch: refetchPayouts } = useAmazonPayouts();
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
+  const [syncProgress, setSyncProgress] = useState(0);
   const [selectedMarketplace, setSelectedMarketplace] = useState('ATVPDKIKX0DER'); // Default to US
   const [manualFormOpen, setManualFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -158,11 +160,38 @@ export function AmazonManagement() {
 
   const handleSyncAccount = async (accountId: string) => {
     setIsSyncing(accountId);
+    setSyncProgress(10);
     toast.info("Syncing Amazon data... This may take several minutes for large datasets.");
+    
     try {
+      // Simulate progress during sync
+      setSyncProgress(20);
       await syncAmazonAccount(accountId);
+      setSyncProgress(60);
+      
+      // Poll for new transactions to confirm sync completion
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      while (attempts < maxAttempts) {
+        setSyncProgress(60 + (attempts / maxAttempts) * 30);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        attempts++;
+      }
+      
+      setSyncProgress(95);
+      await refetchPayouts();
+      setSyncProgress(100);
+      
+      toast.success("Amazon data synced successfully!");
+    } catch (error) {
+      console.error("Sync error:", error);
+      toast.error("Sync failed. Please try again.");
     } finally {
-      setIsSyncing(null);
+      setTimeout(() => {
+        setIsSyncing(null);
+        setSyncProgress(0);
+      }, 500);
     }
   };
 
@@ -594,6 +623,17 @@ export function AmazonManagement() {
                         <span>⏱️</span>
                         {canSyncAccount(account.last_sync).message}
                       </p>
+                    )}
+                    
+                    {isSyncing === account.id && syncProgress > 0 && syncProgress < 100 && (
+                      <div className="mt-2 space-y-1">
+                        <Progress value={syncProgress} className="h-2" />
+                        <p className="text-xs text-muted-foreground">
+                          {syncProgress < 30 ? 'Starting sync...' : 
+                           syncProgress < 70 ? 'Syncing Amazon data...' : 
+                           syncProgress < 95 ? 'Processing transactions...' : 'Finalizing...'}
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>
