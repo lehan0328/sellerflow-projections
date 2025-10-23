@@ -28,6 +28,41 @@ const AmazonTransactionsTest = () => {
 
   const syncingAccount = amazonAccounts.find(acc => acc.sync_status === 'syncing');
 
+  // Categorize transactions by type
+  const transactionsByType = amazonTransactions.reduce((acc, txn) => {
+    const type = txn.transaction_type || 'Unknown';
+    if (!acc[type]) {
+      acc[type] = [];
+    }
+    acc[type].push(txn);
+    return acc;
+  }, {} as Record<string, typeof amazonTransactions>);
+
+  // Define transaction type colors and labels
+  const transactionTypeInfo: Record<string, { color: string; label: string; description: string }> = {
+    'Order': { color: 'bg-green-500', label: 'Order/Sale', description: 'Product sales revenue' },
+    'Refund': { color: 'bg-red-500', label: 'Refund', description: 'Customer refunds' },
+    'Reimbursement': { color: 'bg-blue-500', label: 'Reimbursement', description: 'Amazon reimbursements for lost/damaged' },
+    'ServiceFee': { color: 'bg-purple-500', label: 'Service Fee', description: 'Amazon subscription & service fees' },
+    'Adjustment': { color: 'bg-yellow-500', label: 'Adjustment', description: 'Manual adjustments & corrections' },
+    'SAFETReimbursement': { color: 'bg-cyan-500', label: 'SAFE-T Claim', description: 'SAFE-T claim reimbursements' },
+    'Chargeback': { color: 'bg-orange-500', label: 'Chargeback', description: 'Payment chargebacks' },
+    'GuaranteeClaim': { color: 'bg-pink-500', label: 'A-to-z Claim', description: 'Amazon A-to-z guarantee claims' },
+    'SponsoredAds': { color: 'bg-indigo-500', label: 'Sponsored Ads', description: 'Amazon PPC advertising costs' },
+    'FBALiquidation': { color: 'bg-teal-500', label: 'FBA Liquidation', description: 'FBA liquidation proceeds' },
+    'RemovalShipment': { color: 'bg-amber-500', label: 'Removal Fee', description: 'FBA removal shipment fees' },
+    'CouponPayment': { color: 'bg-lime-500', label: 'Coupon', description: 'Coupon redemption payments' },
+    'RentalTransaction': { color: 'bg-emerald-500', label: 'Rental', description: 'Rental transaction revenue' },
+    'LoanServicing': { color: 'bg-violet-500', label: 'Loan', description: 'Amazon loan servicing' },
+    'TaxWithholding': { color: 'bg-rose-500', label: 'Tax', description: 'Tax withholding events' },
+  };
+
+  const getTypeInfo = (type: string) => transactionTypeInfo[type] || { 
+    color: 'bg-gray-500', 
+    label: type, 
+    description: 'Other transaction type' 
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -74,6 +109,44 @@ const AmazonTransactionsTest = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Transaction Type Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Amazon Financial Event Types Captured</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Breakdown by transaction type from Amazon SP-API Financial Events
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.entries(transactionsByType).map(([type, transactions]) => {
+              const typeInfo = getTypeInfo(type);
+              const totalAmount = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+              
+              return (
+                <div key={type} className="p-4 rounded-lg border bg-card hover:shadow-md transition-shadow">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-3 h-3 rounded-full ${typeInfo.color} mt-1 flex-shrink-0`} />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-sm">{typeInfo.label}</h4>
+                      <p className="text-xs text-muted-foreground mb-2">{typeInfo.description}</p>
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-xs">
+                          {transactions.length} events
+                        </Badge>
+                        <span className={`text-sm font-semibold ${totalAmount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          ${totalAmount.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -158,8 +231,11 @@ const AmazonTransactionsTest = () => {
                         {new Date(transaction.transaction_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={transaction.transaction_type === 'Order' ? 'default' : 'destructive'}>
-                          {transaction.transaction_type}
+                        <Badge 
+                          variant={transaction.transaction_type === 'Order' ? 'default' : 'destructive'}
+                          className={`${getTypeInfo(transaction.transaction_type).color} text-white border-0`}
+                        >
+                          {getTypeInfo(transaction.transaction_type).label}
                         </Badge>
                       </TableCell>
                       <TableCell className="font-mono text-xs">

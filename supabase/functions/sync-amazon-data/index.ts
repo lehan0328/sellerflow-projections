@@ -435,6 +435,222 @@ serve(async (req) => {
               }
             }
 
+            // Parse chargeback events
+            const chargebackEvents = financialData.payload?.FinancialEvents?.ChargebackEventList || []
+            console.log(`[Background Sync] Processing ${chargebackEvents.length} chargeback events...`)
+            for (const chargeback of chargebackEvents) {
+              const chargebackAmount = chargeback.ChargebackAmount?.CurrencyAmount || 0
+
+              if (chargebackAmount !== 0) {
+                transactionsToAdd.push({
+                  user_id: user.id,
+                  amazon_account_id: amazonAccountId,
+                  account_id: amazonAccount.account_id,
+                  transaction_id: `CHARGEBACK-${chargeback.AmazonOrderId || chargeback.PostedDate}`,
+                  transaction_type: 'Chargeback',
+                  amount: -Math.abs(chargebackAmount),
+                  gross_amount: -Math.abs(chargebackAmount),
+                  currency_code: chargeback.ChargebackAmount?.CurrencyCode || 'USD',
+                  transaction_date: chargeback.PostedDate,
+                  order_id: chargeback.AmazonOrderId,
+                  marketplace_name: amazonAccount.marketplace_name,
+                  raw_data: chargeback,
+                })
+              }
+            }
+
+            // Parse guarantee claim events (A-to-z)
+            const guaranteeClaimEvents = financialData.payload?.FinancialEvents?.GuaranteeClaimEventList || []
+            console.log(`[Background Sync] Processing ${guaranteeClaimEvents.length} guarantee claim events...`)
+            for (const claim of guaranteeClaimEvents) {
+              const claimAmount = claim.ClaimAmount?.CurrencyAmount || 0
+
+              if (claimAmount !== 0) {
+                transactionsToAdd.push({
+                  user_id: user.id,
+                  amazon_account_id: amazonAccountId,
+                  account_id: amazonAccount.account_id,
+                  transaction_id: `CLAIM-${claim.ClaimId || claim.PostedDate}`,
+                  transaction_type: 'GuaranteeClaim',
+                  amount: -Math.abs(claimAmount),
+                  gross_amount: -Math.abs(claimAmount),
+                  currency_code: claim.ClaimAmount?.CurrencyCode || 'USD',
+                  transaction_date: claim.PostedDate,
+                  order_id: claim.AmazonOrderId,
+                  marketplace_name: amazonAccount.marketplace_name,
+                  raw_data: claim,
+                })
+              }
+            }
+
+            // Parse Sponsored Products ad payment events
+            const productAdsEvents = financialData.payload?.FinancialEvents?.ProductAdsPaymentEventList || []
+            console.log(`[Background Sync] Processing ${productAdsEvents.length} Sponsored Products ad payment events...`)
+            for (const ad of productAdsEvents) {
+              const adAmount = ad.BaseValue?.CurrencyAmount || 0
+
+              if (adAmount !== 0) {
+                transactionsToAdd.push({
+                  user_id: user.id,
+                  amazon_account_id: amazonAccountId,
+                  account_id: amazonAccount.account_id,
+                  transaction_id: `ADS-${ad.TransactionType}-${ad.PostedDate}`,
+                  transaction_type: 'SponsoredAds',
+                  amount: -Math.abs(adAmount), // Ads are costs
+                  gross_amount: -Math.abs(adAmount),
+                  currency_code: ad.BaseValue?.CurrencyCode || 'USD',
+                  transaction_date: ad.PostedDate,
+                  marketplace_name: amazonAccount.marketplace_name,
+                  description: ad.TransactionType,
+                  raw_data: ad,
+                })
+              }
+            }
+
+            // Parse FBA liquidation events
+            const fbaLiquidationEvents = financialData.payload?.FinancialEvents?.FBALiquidationEventList || []
+            console.log(`[Background Sync] Processing ${fbaLiquidationEvents.length} FBA liquidation events...`)
+            for (const liquidation of fbaLiquidationEvents) {
+              const liquidationAmount = liquidation.LiquidationProceedsAmount?.CurrencyAmount || 0
+
+              if (liquidationAmount !== 0) {
+                transactionsToAdd.push({
+                  user_id: user.id,
+                  amazon_account_id: amazonAccountId,
+                  account_id: amazonAccount.account_id,
+                  transaction_id: `LIQUIDATION-${liquidation.PostedDate}`,
+                  transaction_type: 'FBALiquidation',
+                  amount: liquidationAmount,
+                  gross_amount: liquidationAmount,
+                  currency_code: liquidation.LiquidationProceedsAmount?.CurrencyCode || 'USD',
+                  transaction_date: liquidation.PostedDate,
+                  marketplace_name: amazonAccount.marketplace_name,
+                  raw_data: liquidation,
+                })
+              }
+            }
+
+            // Parse removal shipment events
+            const removalEvents = financialData.payload?.FinancialEvents?.RemovalShipmentEventList || []
+            console.log(`[Background Sync] Processing ${removalEvents.length} removal shipment events...`)
+            for (const removal of removalEvents) {
+              for (const item of (removal.RemovalShipmentItemList || [])) {
+                const removalFee = item.RemovalFee?.CurrencyAmount || 0
+
+                if (removalFee !== 0) {
+                  transactionsToAdd.push({
+                    user_id: user.id,
+                    amazon_account_id: amazonAccountId,
+                    account_id: amazonAccount.account_id,
+                    transaction_id: `REMOVAL-${removal.RemovalOrderId}-${item.SellerSKU}`,
+                    transaction_type: 'RemovalShipment',
+                    amount: -Math.abs(removalFee), // Removal fees are costs
+                    gross_amount: -Math.abs(removalFee),
+                    currency_code: item.RemovalFee?.CurrencyCode || 'USD',
+                    transaction_date: removal.PostedDate,
+                    sku: item.SellerSKU,
+                    marketplace_name: amazonAccount.marketplace_name,
+                    raw_data: item,
+                  })
+                }
+              }
+            }
+
+            // Parse coupon payment events
+            const couponEvents = financialData.payload?.FinancialEvents?.CouponPaymentEventList || []
+            console.log(`[Background Sync] Processing ${couponEvents.length} coupon payment events...`)
+            for (const coupon of couponEvents) {
+              const couponAmount = coupon.TotalAmount?.CurrencyAmount || 0
+
+              if (couponAmount !== 0) {
+                transactionsToAdd.push({
+                  user_id: user.id,
+                  amazon_account_id: amazonAccountId,
+                  account_id: amazonAccount.account_id,
+                  transaction_id: `COUPON-${coupon.CouponId || coupon.PostedDate}`,
+                  transaction_type: 'CouponPayment',
+                  amount: couponAmount,
+                  gross_amount: couponAmount,
+                  currency_code: coupon.TotalAmount?.CurrencyCode || 'USD',
+                  transaction_date: coupon.PostedDate,
+                  marketplace_name: amazonAccount.marketplace_name,
+                  raw_data: coupon,
+                })
+              }
+            }
+
+            // Parse rental transaction events
+            const rentalEvents = financialData.payload?.FinancialEvents?.RentalTransactionEventList || []
+            console.log(`[Background Sync] Processing ${rentalEvents.length} rental transaction events...`)
+            for (const rental of rentalEvents) {
+              const rentalAmount = rental.RentalChargeList?.reduce((sum: number, charge: any) => 
+                sum + (charge.ChargeAmount?.CurrencyAmount || 0), 0) || 0
+
+              if (rentalAmount !== 0) {
+                transactionsToAdd.push({
+                  user_id: user.id,
+                  amazon_account_id: amazonAccountId,
+                  account_id: amazonAccount.account_id,
+                  transaction_id: `RENTAL-${rental.AmazonOrderId || rental.PostedDate}`,
+                  transaction_type: 'RentalTransaction',
+                  amount: rentalAmount,
+                  gross_amount: rentalAmount,
+                  currency_code: rental.RentalChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
+                  transaction_date: rental.PostedDate,
+                  order_id: rental.AmazonOrderId,
+                  marketplace_name: amazonAccount.marketplace_name,
+                  raw_data: rental,
+                })
+              }
+            }
+
+            // Parse loan servicing events
+            const loanEvents = financialData.payload?.FinancialEvents?.LoanServicingEventList || []
+            console.log(`[Background Sync] Processing ${loanEvents.length} loan servicing events...`)
+            for (const loan of loanEvents) {
+              const loanAmount = loan.LoanAmount?.CurrencyAmount || 0
+
+              if (loanAmount !== 0) {
+                transactionsToAdd.push({
+                  user_id: user.id,
+                  amazon_account_id: amazonAccountId,
+                  account_id: amazonAccount.account_id,
+                  transaction_id: `LOAN-${loan.LoanType}-${loan.PostedDate}`,
+                  transaction_type: 'LoanServicing',
+                  amount: loanAmount,
+                  gross_amount: loanAmount,
+                  currency_code: loan.LoanAmount?.CurrencyCode || 'USD',
+                  transaction_date: loan.PostedDate,
+                  description: loan.LoanType,
+                  marketplace_name: amazonAccount.marketplace_name,
+                  raw_data: loan,
+                })
+              }
+            }
+
+            // Parse tax withholding events
+            const taxWithholdingEvents = financialData.payload?.FinancialEvents?.TaxWithholdingEventList || []
+            console.log(`[Background Sync] Processing ${taxWithholdingEvents.length} tax withholding events...`)
+            for (const tax of taxWithholdingEvents) {
+              const taxAmount = tax.TaxWithholdingAmount?.CurrencyAmount || 0
+
+              if (taxAmount !== 0) {
+                transactionsToAdd.push({
+                  user_id: user.id,
+                  amazon_account_id: amazonAccountId,
+                  account_id: amazonAccount.account_id,
+                  transaction_id: `TAX-${tax.PostedDate}`,
+                  transaction_type: 'TaxWithholding',
+                  amount: -Math.abs(taxAmount), // Tax is a deduction
+                  gross_amount: -Math.abs(taxAmount),
+                  currency_code: tax.TaxWithholdingAmount?.CurrencyCode || 'USD',
+                  transaction_date: tax.PostedDate,
+                  marketplace_name: amazonAccount.marketplace_name,
+                  raw_data: tax,
+                })
+              }
+            }
+
             console.log(`[Background Sync] ✓ Page ${pageCount}: Added ${transactionsToAdd.length} transactions so far`)
 
             // Amazon rate limit: 0.6 seconds per request (safer than 0.5)
