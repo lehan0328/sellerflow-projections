@@ -15,6 +15,8 @@ export interface AmazonAccount {
   transaction_count: number;
   initial_sync_complete: boolean;
   sync_status?: 'idle' | 'syncing' | 'completed' | 'error';
+  sync_progress?: number;
+  sync_message?: string;
   last_sync_error?: string | null;
   created_at: string;
   updated_at: string;
@@ -371,10 +373,12 @@ export const useAmazonAccounts = () => {
         (payload) => {
           console.log('Amazon account updated:', payload);
           
-          // If sync status changed to 'completed', show success toast
+          // If sync status changed to 'completed', show success toast with transaction count
           if (payload.eventType === 'UPDATE' && payload.new.sync_status === 'completed') {
             const account = payload.new as any;
-            toast.success(`${account.account_name}: Sync completed! ${account.transaction_count || 0} total transactions.`);
+            const txCount = account.transaction_count || 0;
+            const message = account.sync_message || `Sync complete! ${txCount} total transactions`;
+            toast.success(message);
           }
           
           // If sync status changed to 'error', show error toast

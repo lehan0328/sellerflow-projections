@@ -203,6 +203,8 @@ export type Database = {
           reserve_lag_days: number
           reserve_multiplier: number
           seller_id: string
+          sync_message: string | null
+          sync_progress: number | null
           sync_status: string | null
           token_expires_at: string | null
           transaction_count: number | null
@@ -229,6 +231,8 @@ export type Database = {
           reserve_lag_days?: number
           reserve_multiplier?: number
           seller_id: string
+          sync_message?: string | null
+          sync_progress?: number | null
           sync_status?: string | null
           token_expires_at?: string | null
           transaction_count?: number | null
@@ -255,6 +259,8 @@ export type Database = {
           reserve_lag_days?: number
           reserve_multiplier?: number
           seller_id?: string
+          sync_message?: string | null
+          sync_progress?: number | null
           sync_status?: string | null
           token_expires_at?: string | null
           transaction_count?: number | null

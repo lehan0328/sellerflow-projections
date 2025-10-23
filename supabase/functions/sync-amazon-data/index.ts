@@ -74,10 +74,15 @@ serve(async (req) => {
     const syncTask = async () => {
       console.log(`[Background Sync] Starting sync for account ${amazonAccountId}`)
       
-      // Set status to 'syncing'
+      // Set status to 'syncing' with initial progress
       await supabase
         .from('amazon_accounts')
-        .update({ sync_status: 'syncing', last_sync_error: null })
+        .update({ 
+          sync_status: 'syncing', 
+          sync_progress: 0,
+          sync_message: 'Starting sync...',
+          last_sync_error: null 
+        })
         .eq('id', amazonAccountId)
         .eq('user_id', user.id)
       
@@ -167,10 +172,29 @@ serve(async (req) => {
           const maxPages = 50 // Safety limit to prevent infinite loops
 
           console.log('[Background Sync] Fetching financial events with pagination...')
+          
+          // Update progress: Starting data fetch
+          await supabase
+            .from('amazon_accounts')
+            .update({ 
+              sync_progress: 10,
+              sync_message: 'Connecting to Amazon API...'
+            })
+            .eq('id', amazonAccountId)
 
           do {
             pageCount++
             console.log(`[Background Sync] 📄 Fetching page ${pageCount}... (${transactionsToAdd.length} transactions so far)`)
+            
+            // Update progress based on page count (estimate 10 pages max for progress calculation)
+            const progressPercentage = Math.min(10 + (pageCount / 10) * 60, 70)
+            await supabase
+              .from('amazon_accounts')
+              .update({ 
+                sync_progress: Math.round(progressPercentage),
+                sync_message: `Fetching page ${pageCount}... ${transactionsToAdd.length} transactions found`
+              })
+              .eq('id', amazonAccountId)
 
             // Build URL with pagination token if available
             let url = `${financialEventsUrl}?PostedAfter=${startDate.toISOString()}&MarketplaceId=${amazonAccount.marketplace_id}&MaxResultsPerPage=100`
@@ -409,6 +433,16 @@ serve(async (req) => {
 
         // Insert or update transactions in database with upsert
         console.log(`[Background Sync] Upserting ${transactionsToAdd.length} transactions...`)
+        
+        // Update progress: Processing data
+        await supabase
+          .from('amazon_accounts')
+          .update({ 
+            sync_progress: 75,
+            sync_message: `Processing ${transactionsToAdd.length} transactions...`
+          })
+          .eq('id', amazonAccountId)
+        
         if (transactionsToAdd.length > 0) {
           const { error: txError } = await supabase
             .from('amazon_transactions')
@@ -441,6 +475,8 @@ serve(async (req) => {
             transaction_count: totalTransactions || 0,
             initial_sync_complete: shouldComplete || amazonAccount.initial_sync_complete,
             sync_status: 'completed',
+            sync_progress: 100,
+            sync_message: `Sync complete! ${totalTransactions} total transactions`,
             last_sync_error: null,
             updated_at: now.toISOString()
           })
@@ -456,6 +492,8 @@ serve(async (req) => {
           .from('amazon_accounts')
           .update({ 
             sync_status: 'error',
+            sync_progress: 0,
+            sync_message: error instanceof Error ? error.message : 'Sync failed',
             last_sync_error: error instanceof Error ? error.message : 'Unknown error',
             updated_at: new Date().toISOString()
           })

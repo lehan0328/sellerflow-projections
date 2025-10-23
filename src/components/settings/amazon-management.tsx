@@ -89,19 +89,23 @@ export function AmazonManagement() {
     }
   }, []);
 
-  // Monitor sync status changes and clear syncing state when complete
+  // Monitor sync status changes and update progress in real-time
   useEffect(() => {
     if (!amazonAccounts || !isSyncing) return;
     
     const syncingAccount = amazonAccounts.find(acc => acc.id === isSyncing);
     if (syncingAccount) {
+      // Update progress from database
+      if (syncingAccount.sync_progress !== undefined) {
+        setSyncProgress(syncingAccount.sync_progress);
+      }
+      
       // Clear syncing state if status changed from 'syncing'
       if (syncingAccount.sync_status !== 'syncing') {
-        setIsSyncing(null);
-        setSyncProgress(0);
-      } else {
-        // Keep progress bar active while syncing
-        setSyncProgress(50);
+        setTimeout(() => {
+          setIsSyncing(null);
+          setSyncProgress(0);
+        }, 1000); // Keep showing 100% for 1 second
       }
     }
   }, [amazonAccounts, isSyncing]);
@@ -689,13 +693,14 @@ export function AmazonManagement() {
                       })()}
                     </div>
                     
-                    {isSyncing === account.id && syncProgress > 0 && syncProgress < 100 && (
+                    {isSyncing === account.id && syncProgress > 0 && (
                       <div className="mt-2 space-y-1">
                         <Progress value={syncProgress} className="h-2" />
                         <p className="text-xs text-muted-foreground">
-                          {syncProgress < 30 ? 'Starting sync...' : 
-                           syncProgress < 70 ? 'Syncing Amazon data...' : 
-                           syncProgress < 95 ? 'Processing transactions...' : 'Finalizing...'}
+                          {account.sync_message || 
+                            (syncProgress < 30 ? 'Starting sync...' : 
+                             syncProgress < 70 ? 'Syncing Amazon data...' : 
+                             syncProgress < 95 ? 'Processing transactions...' : 'Finalizing...')}
                         </p>
                       </div>
                     )}
