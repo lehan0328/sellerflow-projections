@@ -60,15 +60,11 @@ const transactionSections = [{
 const resourceSections = [{
   id: "settings",
   title: "Settings",
-  icon: Settings,
-  isRoute: true,
-  url: "/settings"
+  icon: Settings
 }, {
   id: "team-management",
   title: "Manage Users",
-  icon: Users,
-  isRoute: true,
-  url: "/settings?section=team"
+  icon: Users
 }, {
   id: "document-storage",
   title: "Document Storage",
@@ -139,6 +135,13 @@ export function AppSidebar({
           return;
         }
       }
+    }
+    
+    // Handle team-management -> settings with team tab
+    if (sectionId === 'team-management') {
+      onSectionChange('settings');
+      // This will be picked up by Dashboard to show settings with team section
+      return;
     }
     
     onSectionChange(sectionId);

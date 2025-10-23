@@ -30,6 +30,19 @@ import DocumentStorage from "@/pages/DocumentStorage";
 import Support from "@/pages/Support";
 import Notifications from "@/pages/Notifications";
 import MatchTransactions from "@/pages/MatchTransactions";
+import { TeamManagement } from "@/components/settings/team-management";
+import { SidebarNavigation } from "@/components/settings/sidebar-navigation";
+import { CreditCardManagement } from "@/components/settings/credit-card-management";
+import { VendorManagement } from "@/components/settings/vendor-management";
+import { AmazonManagement } from "@/components/settings/amazon-management";
+import { BankAccountManagement } from "@/components/settings/bank-account-management";
+import { CustomerManagement } from "@/components/settings/customer-management";
+import { RecurringExpenseManagement } from "@/components/settings/recurring-expense-management";
+import { DataExport } from "@/components/settings/data-export";
+import { CategoryManagement } from "@/components/settings/category-management";
+import { BillingInvoices } from "@/components/settings/billing-invoices";
+import { ForecastSettings } from "@/components/settings/forecast-settings";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useReserveAmount } from "@/hooks/useReserveAmount";
 import { useCustomers } from "@/hooks/useCustomers";
@@ -75,6 +88,20 @@ interface CashFlowEvent {
 const Dashboard = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("overview");
+  const [settingsSection, setSettingsSection] = useState("profile");
+  
+  // Handle section change with special logic for team-management
+  const handleSectionChange = (section: string) => {
+    if (section === "team-management") {
+      setActiveSection("settings");
+      setSettingsSection("team");
+    } else {
+      setActiveSection(section);
+      if (section !== "settings") {
+        setSettingsSection("profile"); // Reset to default when leaving settings
+      }
+    }
+  };
   const [financialsView, setFinancialsView] = useState<"bank-accounts" | "credit-cards" | "amazon-payouts">("bank-accounts");
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false);
   const [showIncomeForm, setShowIncomeForm] = useState(false);
@@ -1494,6 +1521,55 @@ const Dashboard = () => {
     };
   };
 
+  const renderSettingsContent = () => {
+    switch (settingsSection) {
+      case 'profile':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile Settings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">Profile settings will be shown here.</p>
+            </CardContent>
+          </Card>
+        );
+      case 'team':
+        return <TeamManagement />;
+      case 'bank-accounts':
+        return <BankAccountManagement />;
+      case 'vendors':
+        return <VendorManagement />;
+      case 'customers':
+        return <CustomerManagement />;
+      case 'recurring-expenses':
+        return <RecurringExpenseManagement />;
+      case 'categories':
+        return <CategoryManagement />;
+      case 'amazon':
+        return <AmazonManagement />;
+      case 'credit-cards':
+        return <CreditCardManagement />;
+      case 'invoices':
+        return <BillingInvoices />;
+      case 'forecast-settings':
+        return <ForecastSettings />;
+      case 'export':
+        return <DataExport />;
+      default:
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile Settings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">Profile settings will be shown here.</p>
+            </CardContent>
+          </Card>
+        );
+    }
+  };
+
   const calendarMinimum = calculateCalendarMinimum();
   
   console.log('📊 Calendar-based Minimum Balance:', {
@@ -1522,7 +1598,7 @@ const Dashboard = () => {
             {/* Transaction Match Notification */}
             <TransactionMatchNotification 
               unmatchedCount={unmatchedTransactionsCount} 
-              onNavigate={() => setActiveSection("match-transactions")}
+              onNavigate={() => handleSectionChange("match-transactions")}
             />
             
             
@@ -1976,6 +2052,35 @@ const Dashboard = () => {
       case "referrals":
         return <ReferralDashboardContent />;
       
+      case "settings":
+        return (
+          <div className="grid gap-6 lg:grid-cols-4">
+            {/* Sidebar Navigation */}
+            <div className="lg:col-span-1">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">Settings</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <SidebarNavigation 
+                    activeSection={settingsSection}
+                    onSectionChange={setSettingsSection}
+                    isAdmin={true}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Main Content */}
+            <div className="lg:col-span-3">
+              {renderSettingsContent()}
+            </div>
+          </div>
+        );
+      
+      case "team-management":
+        return <TeamManagement />;
+      
       default:
         return null;
     }
@@ -1986,7 +2091,7 @@ const Dashboard = () => {
       <div className="h-screen flex w-full bg-background overflow-hidden">
         <AppSidebar 
           activeSection={activeSection} 
-          onSectionChange={setActiveSection}
+          onSectionChange={handleSectionChange}
           onFlexReportClick={() => navigate('/flex-report')}
           matchCount={uniquePoMatchCount}
         />
