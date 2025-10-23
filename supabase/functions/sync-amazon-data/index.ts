@@ -41,26 +41,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get the authorization header from the request
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'No authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Verify the JWT and get user
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
+    // Parse request body first to check if this is a cron job
     const { amazonAccountId, userId, cronJob } = await req.json()
 
     if (!amazonAccountId) {
@@ -70,9 +51,19 @@ serve(async (req) => {
       )
     }
 
-    // For cron jobs, skip auth check since we're using service role
+    let actualUserId = userId
+    
+    // Only check auth for manual syncs (not cron jobs)
     if (!cronJob) {
-      // Verify the JWT and get user (only for manual syncs)
+      const authHeader = req.headers.get('Authorization')
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: 'No authorization header' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Verify the JWT and get user
       const token = authHeader.replace('Bearer ', '')
       const { data: { user }, error: authError } = await supabase.auth.getUser(token)
       
@@ -83,6 +74,8 @@ serve(async (req) => {
         )
       }
       
+      actualUserId = user.id
+      
       // Verify user owns this account
       const { data: accountCheck } = await supabase
         .from('amazon_accounts')
@@ -90,7 +83,7 @@ serve(async (req) => {
         .eq('id', amazonAccountId)
         .single()
       
-      if (!accountCheck || accountCheck.user_id !== user.id) {
+      if (!accountCheck || accountCheck.user_id !== actualUserId) {
         return new Response(
           JSON.stringify({ error: 'Unauthorized' }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -118,7 +111,7 @@ serve(async (req) => {
         last_sync_error: null 
       })
       .eq('id', amazonAccountId)
-      .eq('user_id', user.id)
+      .eq('user_id', actualUserId)
 
     // Define background sync task
     const syncTask = async () => {
