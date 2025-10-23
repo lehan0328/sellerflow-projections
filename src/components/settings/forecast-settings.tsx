@@ -691,7 +691,7 @@ export const ForecastSettings = () => {
                     <div className="grid grid-cols-2 gap-2">
                       <div
                         className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                          payoutModel === 'bi-weekly'
+                          userSelectedPayoutModel === 'bi-weekly'
                             ? 'bg-blue-600 text-white shadow-md'
                             : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 opacity-50'
                         }`}
@@ -701,7 +701,7 @@ export const ForecastSettings = () => {
                       </div>
                       <div
                         className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                          payoutModel === 'daily'
+                          userSelectedPayoutModel === 'daily'
                             ? 'bg-purple-600 text-white shadow-md'
                             : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 opacity-50'
                         }`}
