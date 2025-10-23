@@ -170,7 +170,7 @@ export const ForecastSettings = () => {
         await refetchPayouts();
       } else {
         // Automatically regenerate forecasts when enabled
-        const loadingToast = toast.loading("Generating forecasts... Please wait up to 30 seconds.");
+        const loadingToast = toast.loading("Generating forecasts... This may take up to 30 seconds.");
         
         try {
           // Generate new forecasts using mathematical model
@@ -178,16 +178,53 @@ export const ForecastSettings = () => {
             body: { userId: currentUser.id }
           });
 
-          toast.dismiss(loadingToast);
-
           if (error) {
+            toast.dismiss(loadingToast);
             console.error('❌ Forecast generation error:', error);
             toast.error(`Forecast generation failed: ${error.message || 'Unknown error'}`);
-          } else if (data?.success) {
-            toast.success("Forecasts enabled and generated!");
+            return;
+          }
+
+          // Poll for forecasts to appear in the database
+          let forecastsFound = false;
+          let attempts = 0;
+          const maxAttempts = 15; // 15 attempts * 2 seconds = 30 seconds max
+          
+          toast.loading("Waiting for forecasts to load...", { id: loadingToast });
+          
+          while (!forecastsFound && attempts < maxAttempts) {
+            attempts++;
+            console.log(`🔍 Polling for forecasts (attempt ${attempts}/${maxAttempts})...`);
+            
+            // Wait 2 seconds between checks
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Check if forecasts exist
+            const { data: forecasts, error: fetchError } = await supabase
+              .from('amazon_payouts')
+              .select('id')
+              .eq('user_id', currentUser.id)
+              .eq('status', 'forecasted')
+              .limit(1);
+            
+            if (fetchError) {
+              console.error('❌ Error checking for forecasts:', fetchError);
+              continue;
+            }
+            
+            if (forecasts && forecasts.length > 0) {
+              forecastsFound = true;
+              console.log('✅ Forecasts found in database!');
+            }
+          }
+          
+          toast.dismiss(loadingToast);
+          
+          if (forecastsFound) {
             await refetchPayouts();
+            toast.success("Forecasts enabled and generated!");
           } else {
-            toast.warning("Forecasts may still be processing. Refresh the page in a moment.");
+            toast.warning("Forecasts are being generated. Please refresh the page in a moment.");
           }
         } catch (err) {
           toast.dismiss(loadingToast);
@@ -367,7 +404,7 @@ export const ForecastSettings = () => {
       } else {
         // Automatically regenerate forecasts
         console.log('🔄 Starting forecast regeneration...');
-        const loadingToast = toast.loading("Regenerating forecasts... Please wait up to 30 seconds.");
+        const loadingToast = toast.loading("Regenerating forecasts... This may take up to 30 seconds.");
         
         try {
           // Delete old forecasts
@@ -390,18 +427,55 @@ export const ForecastSettings = () => {
           });
 
           console.log('📊 Forecast response:', { data, error });
-          
-          // Always dismiss loading toast
-          toast.dismiss(loadingToast);
 
           if (error) {
+            toast.dismiss(loadingToast);
             console.error('❌ Forecast regeneration error:', error);
             toast.error(`Forecast regeneration failed: ${error.message || 'Unknown error'}`);
-          } else if (data?.success) {
+            return;
+          }
+
+          // Poll for forecasts to appear in the database
+          let forecastsFound = false;
+          let attempts = 0;
+          const maxAttempts = 15; // 15 attempts * 2 seconds = 30 seconds max
+          
+          toast.loading("Waiting for forecasts to load...", { id: loadingToast });
+          
+          while (!forecastsFound && attempts < maxAttempts) {
+            attempts++;
+            console.log(`🔍 Polling for forecasts (attempt ${attempts}/${maxAttempts})...`);
+            
+            // Wait 2 seconds between checks
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Check if forecasts exist
+            const { data: forecasts, error: fetchError } = await supabase
+              .from('amazon_payouts')
+              .select('id')
+              .eq('user_id', currentUser.id)
+              .eq('status', 'forecasted')
+              .limit(1);
+            
+            if (fetchError) {
+              console.error('❌ Error checking for forecasts:', fetchError);
+              continue;
+            }
+            
+            if (forecasts && forecasts.length > 0) {
+              forecastsFound = true;
+              console.log('✅ Forecasts found in database!');
+            }
+          }
+          
+          toast.dismiss(loadingToast);
+          
+          if (forecastsFound) {
             console.log('✅ Forecasts regenerated successfully');
+            await refetchPayouts();
             toast.success("Settings saved and forecasts updated!");
           } else {
-            toast.warning("Forecasts may still be processing. Refresh the page in a moment.");
+            toast.warning("Forecasts are being generated. Please refresh the page in a moment.");
           }
         } catch (err) {
           toast.dismiss(loadingToast);
