@@ -136,12 +136,12 @@ export function PlaidAccountConfirmationDialog({
                       checked={selectedAccountIds.has(account.account_id)}
                       onCheckedChange={() => toggleAccount(account.account_id)}
                     />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{account.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {account.subtype} • Balance: ${account.balances.current?.toFixed(2) || '0.00'}
-                      </p>
-                    </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{account.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {account.subtype} • Balance: ${account.balances?.current?.toFixed(2) || '0.00'}
+                    </p>
+                  </div>
                   </div>
                 ))}
               </div>
@@ -173,8 +173,8 @@ export function PlaidAccountConfirmationDialog({
                         <div className="flex-1">
                           <p className="font-medium text-sm">{account.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            Balance: ${account.balances.current?.toFixed(2) || '0.00'} • 
-                            Limit: ${account.balances.limit?.toFixed(2) || '0.00'}
+                            Balance: ${account.balances?.current?.toFixed(2) || '0.00'} • 
+                            Limit: ${account.balances?.limit?.toFixed(2) || '0.00'}
                           </p>
                         </div>
                         {isSelected && (
