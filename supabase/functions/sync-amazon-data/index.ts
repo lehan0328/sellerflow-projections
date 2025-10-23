@@ -170,31 +170,38 @@ serve(async (req) => {
           let nextToken: string | undefined = undefined
           let pageCount = 0
           const maxPages = 50 // Safety limit to prevent infinite loops
-
+          
           console.log('[Background Sync] Fetching financial events with pagination...')
           
-          // Update progress: Starting data fetch
-          await supabase
+          // Update progress: Starting data fetch (don't await to avoid blocking)
+          supabase
             .from('amazon_accounts')
             .update({ 
               sync_progress: 10,
               sync_message: 'Connecting to Amazon API...'
             })
             .eq('id', amazonAccountId)
+            .then(() => {})
+            .catch(err => console.error('[Background Sync] Progress update error:', err))
 
           do {
             pageCount++
             console.log(`[Background Sync] 📄 Fetching page ${pageCount}... (${transactionsToAdd.length} transactions so far)`)
             
             // Update progress based on page count (estimate 10 pages max for progress calculation)
-            const progressPercentage = Math.min(10 + (pageCount / 10) * 60, 70)
-            await supabase
-              .from('amazon_accounts')
-              .update({ 
-                sync_progress: Math.round(progressPercentage),
-                sync_message: `Fetching page ${pageCount}... ${transactionsToAdd.length} transactions found`
-              })
-              .eq('id', amazonAccountId)
+            // Only update every 2 pages to reduce database writes and avoid blocking
+            if (pageCount % 2 === 0) {
+              const progressPercentage = Math.min(10 + (pageCount / 10) * 60, 70)
+              supabase
+                .from('amazon_accounts')
+                .update({ 
+                  sync_progress: Math.round(progressPercentage),
+                  sync_message: `Fetching page ${pageCount}... ${transactionsToAdd.length} transactions found`
+                })
+                .eq('id', amazonAccountId)
+                .then(() => {})
+                .catch(err => console.error('[Background Sync] Progress update error:', err))
+            }
 
             // Build URL with pagination token if available
             let url = `${financialEventsUrl}?PostedAfter=${startDate.toISOString()}&MarketplaceId=${amazonAccount.marketplace_id}&MaxResultsPerPage=100`
@@ -412,10 +419,10 @@ serve(async (req) => {
             console.log(`[Background Sync] ✓ Page ${pageCount}: Added ${transactionsToAdd.length} transactions so far`)
 
             // Amazon rate limit: 0.6 seconds per request (safer than 0.5)
-            // Wait 2.4 seconds between pagination requests to stay well under rate limits
+            // Wait 1 second between pagination requests (reduced from 2.4s)
             if (nextToken && pageCount < maxPages) {
-              console.log('[Background Sync] ⏱️ Waiting 2.4 seconds before next page (rate limit compliance)...')
-              await new Promise(resolve => setTimeout(resolve, 2400))
+              console.log('[Background Sync] ⏱️ Waiting 1 second before next page...')
+              await new Promise(resolve => setTimeout(resolve, 1000))
             }
 
           } while (nextToken && pageCount < maxPages)
@@ -434,14 +441,16 @@ serve(async (req) => {
         // Insert or update transactions in database with upsert
         console.log(`[Background Sync] Upserting ${transactionsToAdd.length} transactions...`)
         
-        // Update progress: Processing data
-        await supabase
+        // Update progress: Processing data (don't await to avoid blocking)
+        supabase
           .from('amazon_accounts')
           .update({ 
             sync_progress: 75,
             sync_message: `Processing ${transactionsToAdd.length} transactions...`
           })
           .eq('id', amazonAccountId)
+          .then(() => {})
+          .catch(err => console.error('[Background Sync] Progress update error:', err))
         
         if (transactionsToAdd.length > 0) {
           const { error: txError } = await supabase
