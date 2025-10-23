@@ -144,6 +144,27 @@ serve(async (req) => {
     await supabaseAdmin.from('credit_cards').delete().eq('user_id', userId);
     logStep("Deleted credit_cards");
 
+    await supabaseAdmin.from('categories').delete().eq('user_id', userId);
+    logStep("Deleted categories");
+
+    await supabaseAdmin.from('documents_metadata').delete().eq('user_id', userId);
+    logStep("Deleted documents_metadata");
+
+    await supabaseAdmin.from('notification_history').delete().eq('user_id', userId);
+    logStep("Deleted notification_history");
+
+    await supabaseAdmin.from('notification_preferences').delete().eq('user_id', userId);
+    logStep("Deleted notification_preferences");
+
+    await supabaseAdmin.from('purchased_addons').delete().eq('user_id', userId);
+    logStep("Deleted purchased_addons");
+
+    await supabaseAdmin.from('forecast_accuracy_log').delete().eq('user_id', userId);
+    logStep("Deleted forecast_accuracy_log");
+
+    await supabaseAdmin.from('amazon_daily_draws').delete().eq('user_id', userId);
+    logStep("Deleted amazon_daily_draws");
+
     await supabaseAdmin.from('amazon_transactions').delete().eq('user_id', userId);
     logStep("Deleted amazon_transactions");
 
