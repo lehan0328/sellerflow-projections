@@ -42,8 +42,8 @@ const AmazonTransactionsTest = () => {
           </p>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="w-full">
-            <div className="min-w-max">
+          <ScrollArea className="h-[600px] w-full rounded-md border">
+            <div className="min-w-max p-4">
               <Table>
                 <TableHeader>
                   <TableRow>

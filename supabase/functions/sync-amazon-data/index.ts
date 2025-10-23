@@ -215,6 +215,12 @@ serve(async (req) => {
           const orderId = shipment.AmazonOrderId
           const shipmentDate = shipment.PostedDate
           
+          // Try to extract delivery date from shipment data
+          // Amazon provides MarketplaceFacilitatorTaxList with potential delivery info
+          const deliveryDate = shipment.EarliestDeliveryDate || shipment.LatestDeliveryDate || null
+          
+          console.log(`Shipment ${orderId}: Posted=${shipmentDate}, Delivery=${deliveryDate || 'N/A'}`)
+          
           // Process each item in the shipment
           for (const item of (shipment.ShipmentItemList || [])) {
             const revenue = item.ItemChargeList?.reduce((sum: number, charge: any) => 
@@ -232,6 +238,7 @@ serve(async (req) => {
                 transaction_type: 'Order',
                 amount: revenue + fees, // Net amount
                 gross_amount: revenue,
+                delivery_date: deliveryDate,
                 currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
                 transaction_date: shipmentDate,
                 order_id: orderId,
