@@ -148,8 +148,18 @@ serve(async (req) => {
     // Fetch financial events from Amazon SP-API with pagination
     try {
       const financialEventsUrl = `${apiEndpoint}/finances/v0/financialEvents`
-      const startDate = new Date(now)
-      startDate.setDate(startDate.getDate() - 90) // Last 90 days for more complete data
+      
+      // Use incremental sync: fetch from last sync date, or last 30 days if first sync
+      const startDate = new Date()
+      if (amazonAccount.last_sync) {
+        // Incremental: fetch from last sync with 1 day overlap to catch any delayed data
+        startDate.setTime(new Date(amazonAccount.last_sync).getTime() - (24 * 60 * 60 * 1000))
+        console.log(`📅 Incremental sync from: ${startDate.toISOString()}`)
+      } else {
+        // Initial sync: last 30 days only
+        startDate.setDate(startDate.getDate() - 30)
+        console.log(`📅 Initial sync - fetching last 30 days from: ${startDate.toISOString()}`)
+      }
 
       let nextToken: string | undefined = undefined
       let pageCount = 0
@@ -159,7 +169,7 @@ serve(async (req) => {
 
       do {
         pageCount++
-        console.log(`📄 Fetching page ${pageCount}...`)
+        console.log(`📄 Fetching page ${pageCount}... (${transactionsToAdd.length} transactions so far)`)
 
         // Build URL with pagination token if available
         let url = `${financialEventsUrl}?PostedAfter=${startDate.toISOString()}&MarketplaceId=${amazonAccount.marketplace_id}&MaxResultsPerPage=100`
@@ -261,6 +271,12 @@ serve(async (req) => {
         }
 
       } while (nextToken && pageCount < maxPages)
+
+      if (pageCount >= maxPages && nextToken) {
+        console.log(`⚠️ Reached max page limit (${maxPages}). More data may be available - consider syncing again later.`)
+      }
+
+      console.log(`✅ Completed pagination: ${pageCount} pages, ${transactionsToAdd.length} total transactions`)
 
       console.log(`✅ Completed pagination: ${pageCount} pages, ${transactionsToAdd.length} total transactions`)
 
