@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { CreditCardPriorityDialog } from "./credit-card-priority-dialog";
+import { PlaidAccountConfirmationDialog } from "./plaid-account-confirmation-dialog";
 
 interface CreditCardFormData {
   nickname: string;
@@ -52,6 +53,8 @@ export function CreditCards() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [showPriorityDialog, setShowPriorityDialog] = useState(false);
   const [newCardForPriority, setNewCardForPriority] = useState<{ id: string; name: string } | null>(null);
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+  const [pendingPlaidData, setPendingPlaidData] = useState<{ publicToken: string; metadata: any } | null>(null);
   const [formData, setFormData] = useState<CreditCardFormData>({
     nickname: '',
     annual_fee: 0,
@@ -105,73 +108,9 @@ export function CreditCards() {
   const config = {
     token: linkToken,
     onSuccess: async (publicToken: string, metadata: any) => {
-      try {
-        const { data, error } = await supabase.functions.invoke('exchange-plaid-token', {
-          body: { publicToken, metadata }
-        });
-        
-        if (error) throw error;
-        
-        // Check if institution might have imported all accounts (Bank of America, Chase, etc.)
-        const knownBulkInstitutions = ['Bank of America', 'Chase', 'Wells Fargo'];
-        const isKnownBulkInstitution = knownBulkInstitutions.some(name => 
-          metadata.institution.name.includes(name)
-        );
-        
-        if (isKnownBulkInstitution && metadata.accounts.length > 1) {
-          toast.success("Credit cards connected!", {
-            description: `${metadata.institution.name} imported ${metadata.accounts.length} accounts. You can delete unwanted accounts from the list below.`,
-            duration: 8000,
-          });
-        } else {
-          toast.success("Credit card connected successfully!");
-        }
-        
-        // Trigger initial transaction sync for the newly connected card(s)
-        toast.info("Syncing transactions...", { duration: 3000 });
-        for (const account of metadata.accounts) {
-          try {
-            await supabase.functions.invoke('sync-plaid-transactions', {
-              body: { 
-                accountId: account.id,
-                isInitialSync: true,
-                accountType: 'credit'
-              }
-            });
-          } catch (syncError) {
-            console.error('Initial sync error for card:', account.id, syncError);
-          }
-        }
-        toast.success("Transactions synced!");
-        
-        // Only show priority dialog if exactly ONE card was connected
-        // (prevents blocking UI when multiple cards are connected)
-        if (metadata.accounts.length === 1) {
-          setTimeout(async () => {
-            const { data: cards } = await supabase
-              .from('credit_cards')
-              .select('*')
-              .eq('is_active', true)
-              .order('created_at', { ascending: false })
-              .limit(1);
-            
-            if (cards && cards.length > 0) {
-              const newestCard = cards[0];
-              setNewCardForPriority({
-                id: newestCard.id,
-                name: newestCard.account_name
-              });
-              setShowPriorityDialog(true);
-            }
-          }, 2000);
-        }
-        
-        // Refresh credit cards list
-        window.location.reload();
-      } catch (error: any) {
-        console.error('Error exchanging token:', error);
-        toast.error(error.message || "Failed to connect credit card");
-      }
+      // Store the data and show confirmation dialog
+      setPendingPlaidData({ publicToken, metadata });
+      setShowConfirmationDialog(true);
     },
     onExit: (err: any) => {
       if (err) {
@@ -180,6 +119,35 @@ export function CreditCards() {
       }
       setLinkToken(null);
       setIsConnecting(false);
+    }
+  };
+
+  const handleConfirmAccounts = async (selectedAccountIds: string[], priorities: Record<string, number>) => {
+    if (!pendingPlaidData) return;
+    
+    const { publicToken, metadata } = pendingPlaidData;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('exchange-plaid-token', {
+        body: { 
+          publicToken, 
+          metadata,
+          selectedAccountIds,
+          priorities
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Financial accounts connected successfully!");
+      
+      // Refresh the page to show new accounts
+      window.location.reload();
+    } catch (error: any) {
+      console.error('Error exchanging token:', error);
+      toast.error(error.message || "Failed to connect accounts");
+    } finally {
+      setPendingPlaidData(null);
     }
   };
 
@@ -642,6 +610,17 @@ export function CreditCards() {
             cardName={newCardForPriority.name}
             cardId={newCardForPriority.id}
             onSave={handleSavePriority}
+          />
+        )}
+
+        {/* Account Confirmation Dialog */}
+        {pendingPlaidData && (
+          <PlaidAccountConfirmationDialog
+            open={showConfirmationDialog}
+            onOpenChange={setShowConfirmationDialog}
+            accounts={pendingPlaidData.metadata.accounts}
+            institutionName={pendingPlaidData.metadata.institution.name}
+            onConfirm={handleConfirmAccounts}
           />
         )}
       </CardContent>

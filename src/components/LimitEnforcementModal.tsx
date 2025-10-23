@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogDescription, DialogHeader, DialogTitle, DialogPortal } from "@/components/ui/dialog";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Trash2, CreditCard, Building2, ShoppingCart, Users } from "lucide-react";
+import { AlertCircle, Trash2, CreditCard, Building2, ShoppingCart, Users, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useCreditCards } from "@/hooks/useCreditCards";
@@ -35,6 +35,7 @@ export const LimitEnforcementModal = ({
   const { creditCards, refetch: refetchCreditCards } = useCreditCards();
   const { amazonAccounts, refetch: refetchAmazonAccounts } = useAmazonAccounts();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
   const excess = currentUsage - limit;
@@ -246,7 +247,32 @@ export const LimitEnforcementModal = ({
             <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">Current Usage</span>
-                <Badge variant="destructive">{currentUsage} / {limit}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="destructive">{currentUsage} / {limit}</Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
+                      setIsRefreshing(true);
+                      try {
+                        if (limitType === 'bank_connection') {
+                          await Promise.all([refetchBankAccounts(), refetchCreditCards()]);
+                        } else if (limitType === 'amazon_connection') {
+                          await refetchAmazonAccounts();
+                        }
+                        toast.success("Refreshed connection count");
+                      } catch (error) {
+                        console.error('Error refreshing:', error);
+                      } finally {
+                        setIsRefreshing(false);
+                      }
+                    }}
+                    disabled={isRefreshing}
+                    className="h-7 w-7 p-0"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
               </div>
               <p className="text-xs text-muted-foreground">
                 You must reduce usage by {excess} or purchase add-ons to continue.

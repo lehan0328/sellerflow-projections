@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { publicToken, metadata } = await req.json();
+    const { publicToken, metadata, selectedAccountIds, priorities } = await req.json();
     
     const PLAID_CLIENT_ID = Deno.env.get('PLAID_CLIENT_ID');
     const PLAID_SECRET = Deno.env.get('PLAID_SECRET');
@@ -275,7 +275,7 @@ serve(async (req) => {
             statement_balance: liabilityInfo?.last_statement_balance ? Math.abs(liabilityInfo.last_statement_balance) : null,
             annual_fee: null,
             cash_back: 0,
-            priority: 3,
+            priority: priorities && priorities[account.account_id] ? priorities[account.account_id] : 3,
             initial_balance: currentBalance,
             initial_balance_date: now,
             last_sync: now,
