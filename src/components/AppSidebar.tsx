@@ -62,10 +62,6 @@ const resourceSections = [{
   title: "Settings",
   icon: Settings
 }, {
-  id: "team-management",
-  title: "Manage Users",
-  icon: Users
-}, {
   id: "document-storage",
   title: "Document Storage",
   icon: FolderOpen
@@ -135,13 +131,6 @@ export function AppSidebar({
           return;
         }
       }
-    }
-    
-    // Handle team-management -> settings with team tab
-    if (sectionId === 'team-management') {
-      onSectionChange('settings');
-      // This will be picked up by Dashboard to show settings with team section
-      return;
     }
     
     onSectionChange(sectionId);
