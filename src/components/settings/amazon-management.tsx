@@ -606,31 +606,41 @@ export function AmazonManagement() {
                       </div>
                     </div>
                     
-                    <p className="text-xs text-muted-foreground">
-                      Last sync: {new Date(account.last_sync).toLocaleString()}
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <span>🔄</span>
+                      Auto-sync enabled • Last: {new Date(account.last_sync).toLocaleString()}
                     </p>
                     
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="outline" className="text-xs">
                         {account.transaction_count || 0} transactions
                       </Badge>
-                      {account.initial_sync_complete ? (
-                        <Badge className="text-xs bg-green-100 text-green-800">
-                          ✓ Ready for forecasting
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800">
-                          Need {Math.max(0, 50 - (account.transaction_count || 0))} more for forecasting
-                        </Badge>
-                      )}
+                      {(() => {
+                        const createdAt = new Date(account.created_at);
+                        const hoursElapsed = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+                        const hoursRemaining = Math.max(0, 24 - hoursElapsed);
+                        
+                        if (hoursRemaining > 0) {
+                          return (
+                            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                              ⏱️ Forecast available in {Math.ceil(hoursRemaining)}h
+                            </Badge>
+                          );
+                        } else if (account.initial_sync_complete) {
+                          return (
+                            <Badge className="text-xs bg-green-100 text-green-800">
+                              ✓ Forecast ready
+                            </Badge>
+                          );
+                        } else {
+                          return (
+                            <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800">
+                              Processing data...
+                            </Badge>
+                          );
+                        }
+                      })()}
                     </div>
-                    
-                    {!canSyncAccount(account.last_sync).canSync && (
-                      <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                        <span>⏱️</span>
-                        {canSyncAccount(account.last_sync).message}
-                      </p>
-                    )}
                     
                     {isSyncing === account.id && syncProgress > 0 && syncProgress < 100 && (
                       <div className="mt-2 space-y-1">
@@ -646,24 +656,6 @@ export function AmazonManagement() {
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSyncAccount(account.id)}
-                    disabled={
-                      isSyncing === account.id || 
-                      !canSyncAccount(account.last_sync).canSync ||
-                      is_expired ||
-                      trial_expired
-                    }
-                    title={
-                      is_expired || trial_expired
-                        ? "Account expired. Please renew to sync."
-                        : canSyncAccount(account.last_sync).message
-                    }
-                  >
-                    <RefreshCw className={`h-4 w-4 ${isSyncing === account.id ? 'animate-spin' : ''}`} />
-                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
