@@ -241,7 +241,7 @@ export function PlaidAccountConfirmationDialog({
                               </SelectContent>
                             </Select>
                             <p className="text-xs text-muted-foreground">
-                              Higher priority cards are paid off first in forecasts
+                              Set based on favorable terms or cash back rewards
                             </p>
                           </div>
                         </div>
