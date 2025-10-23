@@ -158,6 +158,7 @@ export function AmazonManagement() {
 
   const handleSyncAccount = async (accountId: string) => {
     setIsSyncing(accountId);
+    toast.info("Syncing Amazon data... This may take several minutes for large datasets.");
     try {
       await syncAmazonAccount(accountId);
     } finally {

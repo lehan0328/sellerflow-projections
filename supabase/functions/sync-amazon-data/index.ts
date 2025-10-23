@@ -145,99 +145,128 @@ serve(async (req) => {
     const transactionsToAdd = []
     const payoutsToAdd = []
 
-    // Fetch financial events from Amazon SP-API
+    // Fetch financial events from Amazon SP-API with pagination
     try {
       const financialEventsUrl = `${apiEndpoint}/finances/v0/financialEvents`
       const startDate = new Date(now)
-      startDate.setDate(startDate.getDate() - 30) // Last 30 days
+      startDate.setDate(startDate.getDate() - 90) // Last 90 days for more complete data
 
-      console.log('Fetching financial events...')
-      const financialResponse = await fetch(
-        `${financialEventsUrl}?PostedAfter=${startDate.toISOString()}&MarketplaceId=${amazonAccount.marketplace_id}`,
-        {
+      let nextToken: string | undefined = undefined
+      let pageCount = 0
+      const maxPages = 50 // Safety limit to prevent infinite loops
+
+      console.log('Fetching financial events with pagination...')
+
+      do {
+        pageCount++
+        console.log(`📄 Fetching page ${pageCount}...`)
+
+        // Build URL with pagination token if available
+        let url = `${financialEventsUrl}?PostedAfter=${startDate.toISOString()}&MarketplaceId=${amazonAccount.marketplace_id}&MaxResultsPerPage=100`
+        if (nextToken) {
+          url += `&NextToken=${encodeURIComponent(nextToken)}`
+        }
+
+        const financialResponse = await fetch(url, {
           headers: {
             'x-amz-access-token': accessToken,
             'Content-Type': 'application/json',
           }
+        })
+
+        if (!financialResponse.ok) {
+          const errorText = await financialResponse.text()
+          console.error('Financial events API error:', errorText)
+          throw new Error(`Financial events API failed: ${financialResponse.status} - ${errorText}`)
         }
-      )
 
-      if (!financialResponse.ok) {
-        const errorText = await financialResponse.text()
-        console.error('Financial events API error:', errorText)
-        throw new Error(`Financial events API failed: ${financialResponse.status}`)
-      }
-
-      const financialData = await financialResponse.json()
-      console.log('Financial events fetched:', financialData)
-
-      // Parse shipment events
-      const shipmentEvents = financialData.payload?.FinancialEvents?.ShipmentEventList || []
-      for (const shipment of shipmentEvents) {
-        const orderId = shipment.AmazonOrderId
-        const shipmentDate = shipment.PostedDate
+        const financialData = await financialResponse.json()
         
-        // Process each item in the shipment
-        for (const item of (shipment.ShipmentItemList || [])) {
-          const revenue = item.ItemChargeList?.reduce((sum: number, charge: any) => 
-            sum + (charge.ChargeAmount?.CurrencyAmount || 0), 0) || 0
+        // Extract NextToken for pagination
+        nextToken = financialData.payload?.NextToken
+
+        // Parse shipment events
+        const shipmentEvents = financialData.payload?.FinancialEvents?.ShipmentEventList || []
+        for (const shipment of shipmentEvents) {
+          const orderId = shipment.AmazonOrderId
+          const shipmentDate = shipment.PostedDate
           
-          const fees = item.ItemFeeList?.reduce((sum: number, fee: any) => 
-            sum + (fee.FeeAmount?.CurrencyAmount || 0), 0) || 0
+          // Process each item in the shipment
+          for (const item of (shipment.ShipmentItemList || [])) {
+            const revenue = item.ItemChargeList?.reduce((sum: number, charge: any) => 
+              sum + (charge.ChargeAmount?.CurrencyAmount || 0), 0) || 0
+            
+            const fees = item.ItemFeeList?.reduce((sum: number, fee: any) => 
+              sum + (fee.FeeAmount?.CurrencyAmount || 0), 0) || 0
 
-          if (revenue !== 0 || fees !== 0) {
-            transactionsToAdd.push({
-              user_id: user.id,
-              amazon_account_id: amazonAccountId,
-              account_id: amazonAccount.account_id,
-              transaction_id: `${orderId}-${item.SellerSKU}`,
-              transaction_type: 'Order',
-              amount: revenue + fees, // Net amount
-              gross_amount: revenue,
-              currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
-              transaction_date: shipmentDate,
-              order_id: orderId,
-              sku: item.SellerSKU,
-              marketplace_name: amazonAccount.marketplace_name,
-              description: `Order ${orderId}`,
-              raw_data: item,
-            })
+            if (revenue !== 0 || fees !== 0) {
+              transactionsToAdd.push({
+                user_id: user.id,
+                amazon_account_id: amazonAccountId,
+                account_id: amazonAccount.account_id,
+                transaction_id: `${orderId}-${item.SellerSKU}`,
+                transaction_type: 'Order',
+                amount: revenue + fees, // Net amount
+                gross_amount: revenue,
+                currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
+                transaction_date: shipmentDate,
+                order_id: orderId,
+                sku: item.SellerSKU,
+                marketplace_name: amazonAccount.marketplace_name,
+                description: `Order ${orderId}`,
+                raw_data: item,
+              })
+            }
           }
         }
-      }
 
-      // Parse refund events
-      const refundEvents = financialData.payload?.FinancialEvents?.RefundEventList || []
-      for (const refund of refundEvents) {
-        const orderId = refund.AmazonOrderId
-        const refundDate = refund.PostedDate
-        
-        for (const item of (refund.ShipmentItemList || [])) {
-          const refundAmount = item.ItemChargeList?.reduce((sum: number, charge: any) => 
-            sum + (charge.ChargeAmount?.CurrencyAmount || 0), 0) || 0
+        // Parse refund events
+        const refundEvents = financialData.payload?.FinancialEvents?.RefundEventList || []
+        for (const refund of refundEvents) {
+          const orderId = refund.AmazonOrderId
+          const refundDate = refund.PostedDate
+          
+          for (const item of (refund.ShipmentItemList || [])) {
+            const refundAmount = item.ItemChargeList?.reduce((sum: number, charge: any) => 
+              sum + (charge.ChargeAmount?.CurrencyAmount || 0), 0) || 0
 
-          if (refundAmount !== 0) {
-            transactionsToAdd.push({
-              user_id: user.id,
-              amazon_account_id: amazonAccountId,
-              account_id: amazonAccount.account_id,
-              transaction_id: `REFUND-${orderId}-${item.SellerSKU}`,
-              transaction_type: 'Refund',
-              amount: -Math.abs(refundAmount),
-              gross_amount: -Math.abs(refundAmount),
-              currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
-              transaction_date: refundDate,
-              order_id: orderId,
-              sku: item.SellerSKU,
-              marketplace_name: amazonAccount.marketplace_name,
-              description: `Refund for ${orderId}`,
-              raw_data: item,
-            })
+            if (refundAmount !== 0) {
+              transactionsToAdd.push({
+                user_id: user.id,
+                amazon_account_id: amazonAccountId,
+                account_id: amazonAccount.account_id,
+                transaction_id: `REFUND-${orderId}-${item.SellerSKU}`,
+                transaction_type: 'Refund',
+                amount: -Math.abs(refundAmount),
+                gross_amount: -Math.abs(refundAmount),
+                currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
+                transaction_date: refundDate,
+                order_id: orderId,
+                sku: item.SellerSKU,
+                marketplace_name: amazonAccount.marketplace_name,
+                description: `Refund for ${orderId}`,
+                raw_data: item,
+              })
+            }
           }
         }
-      }
 
-      console.log(`Parsed ${transactionsToAdd.length} transactions from financial events`)
+        console.log(`✓ Page ${pageCount}: Added ${transactionsToAdd.length} transactions so far`)
+
+        // Amazon rate limit: 0.5 requests/second = 2 second delay between requests
+        // Add a small delay between pagination requests to avoid rate limits
+        if (nextToken && pageCount < maxPages) {
+          console.log('⏱️ Waiting 2 seconds before next page (rate limit compliance)...')
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
+
+      } while (nextToken && pageCount < maxPages)
+
+      console.log(`✅ Completed pagination: ${pageCount} pages, ${transactionsToAdd.length} total transactions`)
+
+      if (pageCount >= maxPages && nextToken) {
+        console.log(`⚠️ Reached max page limit (${maxPages}). More data may be available.`)
+      }
 
     } catch (apiError) {
       console.error('Error fetching from Amazon SP-API:', apiError)
