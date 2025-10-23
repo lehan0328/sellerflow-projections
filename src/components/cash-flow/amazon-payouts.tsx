@@ -229,30 +229,55 @@ export function AmazonPayouts() {
               </Badge>
             </div>
             <div className="space-y-2">
-              {amazonAccounts.map((account) => (
-                <div key={account.id} className="flex items-center justify-between text-sm p-2 rounded bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{account.account_name}</span>
-                    <span className="text-muted-foreground">({account.marketplace_name})</span>
+              {amazonAccounts.map((account) => {
+                const hoursSinceSync = account.last_sync 
+                  ? Math.floor((Date.now() - new Date(account.last_sync).getTime()) / (1000 * 60 * 60))
+                  : null;
+                const hasRecentSync = hoursSinceSync !== null && hoursSinceSync < 24;
+                const showWarning = !account.initial_sync_complete && hoursSinceSync !== null && hoursSinceSync > 24;
+                
+                return (
+                  <div key={account.id} className="flex items-center justify-between text-sm p-2 rounded bg-muted/50">
+                    <div className="flex items-center gap-2 flex-1">
+                      <ShoppingCart className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium truncate">{account.account_name}</span>
+                          <span className="text-muted-foreground text-xs">({account.marketplace_name})</span>
+                        </div>
+                        {showWarning && (
+                          <p className="text-xs text-amber-600 mt-0.5">
+                            Syncing for {hoursSinceSync}h - Amazon may have no recent activity
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {account.initial_sync_complete ? (
+                        <Badge variant="outline" className="text-xs bg-green-500/10 text-green-700 border-green-500/20">
+                          ✓ Synced
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-700 border-yellow-500/20">
+                          Syncing...
+                        </Badge>
+                      )}
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {account.transaction_count || 0} txns
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {account.initial_sync_complete ? (
-                      <Badge variant="outline" className="text-xs bg-green-500/10 text-green-700 border-green-500/20">
-                        Synced
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-700 border-yellow-500/20">
-                        Syncing...
-                      </Badge>
-                    )}
-                    <span className="text-xs text-muted-foreground">
-                      {account.transaction_count || 0} transactions
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
+            {amazonAccounts.some(a => !a.initial_sync_complete) && (
+              <Alert className="mt-3 bg-blue-500/5 border-blue-500/20">
+                <Clock className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-xs text-muted-foreground">
+                  Initial sync can take up to 24 hours. If no transactions appear, your Amazon account may have no recent sales activity.
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
         )}
         

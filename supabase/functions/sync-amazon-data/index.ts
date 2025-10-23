@@ -458,27 +458,30 @@ serve(async (req) => {
     }
 
     // Update last sync time and transaction count
-    // Mark initial sync as complete if we have sufficient data (50+ transactions)
+    // Mark initial sync as complete after first successful sync attempt (even if 0 transactions)
+    // This handles new accounts or accounts with no recent activity
     const { data: currentAccount } = await supabase
       .from('amazon_accounts')
-      .select('transaction_count')
+      .select('transaction_count, initial_sync_complete')
       .eq('id', amazonAccountId)
       .single();
     
     const totalTransactions = (currentAccount?.transaction_count || 0) + transactionsToAdd.length;
-    const hasEnoughData = totalTransactions >= 50;
+    // Mark as complete if: already complete, has any transactions, or this is not the first sync
+    const shouldComplete = currentAccount?.initial_sync_complete || totalTransactions > 0 || currentAccount !== null;
     
     await supabase
       .from('amazon_accounts')
       .update({ 
         last_sync: now.toISOString(),
         transaction_count: totalTransactions,
-        initial_sync_complete: hasEnoughData
+        initial_sync_complete: shouldComplete
       })
       .eq('id', amazonAccountId)
       .eq('user_id', user.id);
 
-    console.log(`📊 Account now has ${totalTransactions} total transactions. Initial sync complete: ${hasEnoughData}`);
+    console.log(`📊 Sync complete: ${totalTransactions} total transactions. Initial sync complete: ${shouldComplete}`);
+    console.log(`Added in this sync: ${transactionsToAdd.length} transactions, ${payoutsToAdd.length} payouts`);
 
     return new Response(
       JSON.stringify({ 
