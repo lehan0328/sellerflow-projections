@@ -557,7 +557,7 @@ export function AmazonManagement() {
                             <p className="text-xs font-semibold text-amber-900 mb-2">⚠️ Before connecting:</p>
                             <p className="text-xs text-amber-800 mb-2">Add this OAuth Redirect URL in your Amazon Developer Console (App Settings):</p>
                             <div className="bg-white p-2 rounded border border-amber-300">
-                              <code className="text-xs text-blue-600 break-all font-mono">https://auren.ai/amazon-oauth-callback</code>
+                              <code className="text-xs text-blue-600 break-all font-mono">https://aurenapp.com/amazon-oauth-callback</code>
                             </div>
                             <p className="text-xs text-amber-700 mt-2">Without this, you'll get error "MD5101: Invalid redirect URL"</p>
                           </div>
