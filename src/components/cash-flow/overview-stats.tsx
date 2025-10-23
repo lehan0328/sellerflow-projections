@@ -96,7 +96,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const { totalCreditLimit, totalBalance: totalCreditBalance, totalAvailableCredit } = useCreditCards();
   const { reserveAmount, updateReserveAmount: updateReserve, canUpdate, lastUpdated } = useReserveAmount();
   const { excludeToday, setExcludeToday } = useExcludeToday();
-  const { data: safeSpendingData, isLoading: isLoadingSafeSpending, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount, excludeToday);
+  const { data: safeSpendingData, isLoading: isLoadingSafeSpending, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount, excludeToday, useAvailableBalance);
   const { amazonPayouts, monthlyOrdersTotal } = useAmazonPayouts();
   const { transactions: vendorTransactions } = useVendorTransactions();
   const { incomeItems } = useIncome();
