@@ -193,6 +193,7 @@ export type Database = {
           encrypted_client_secret: string | null
           encrypted_refresh_token: string | null
           id: string
+          initial_sync_complete: boolean | null
           is_active: boolean
           last_sync: string | null
           marketplace_id: string
@@ -203,6 +204,7 @@ export type Database = {
           reserve_multiplier: number
           seller_id: string
           token_expires_at: string | null
+          transaction_count: number | null
           updated_at: string
           user_id: string
           uses_daily_payouts: boolean | null
@@ -216,6 +218,7 @@ export type Database = {
           encrypted_client_secret?: string | null
           encrypted_refresh_token?: string | null
           id?: string
+          initial_sync_complete?: boolean | null
           is_active?: boolean
           last_sync?: string | null
           marketplace_id: string
@@ -226,6 +229,7 @@ export type Database = {
           reserve_multiplier?: number
           seller_id: string
           token_expires_at?: string | null
+          transaction_count?: number | null
           updated_at?: string
           user_id: string
           uses_daily_payouts?: boolean | null
@@ -239,6 +243,7 @@ export type Database = {
           encrypted_client_secret?: string | null
           encrypted_refresh_token?: string | null
           id?: string
+          initial_sync_complete?: boolean | null
           is_active?: boolean
           last_sync?: string | null
           marketplace_id?: string
@@ -249,6 +254,7 @@ export type Database = {
           reserve_multiplier?: number
           seller_id?: string
           token_expires_at?: string | null
+          transaction_count?: number | null
           updated_at?: string
           user_id?: string
           uses_daily_payouts?: boolean | null

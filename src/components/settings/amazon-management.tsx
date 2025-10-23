@@ -161,12 +161,19 @@ export function AmazonManagement() {
   const handleSyncAccount = async (accountId: string) => {
     setIsSyncing(accountId);
     setSyncProgress(10);
-    toast.info("Syncing Amazon data... This may take several minutes for large datasets.");
+    toast.info("Syncing Amazon data... This will continue in the background.");
     
     try {
       // Simulate progress during sync
       setSyncProgress(20);
-      await syncAmazonAccount(accountId);
+      const syncSuccess = await syncAmazonAccount(accountId);
+      
+      if (!syncSuccess) {
+        // Sync was rate limited or failed
+        setSyncProgress(100);
+        return;
+      }
+      
       setSyncProgress(60);
       
       // Poll for new transactions to confirm sync completion
@@ -182,11 +189,9 @@ export function AmazonManagement() {
       setSyncProgress(95);
       await refetchPayouts();
       setSyncProgress(100);
-      
-      toast.success("Amazon data synced successfully!");
     } catch (error) {
       console.error("Sync error:", error);
-      toast.error("Sync failed. Please try again.");
+      // Error already handled by syncAmazonAccount with toast
     } finally {
       setTimeout(() => {
         setIsSyncing(null);
@@ -618,6 +623,22 @@ export function AmazonManagement() {
                     <p className="text-xs text-muted-foreground">
                       Last sync: {new Date(account.last_sync).toLocaleString()}
                     </p>
+                    
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-xs">
+                        {account.transaction_count || 0} transactions
+                      </Badge>
+                      {account.initial_sync_complete ? (
+                        <Badge className="text-xs bg-green-100 text-green-800">
+                          ✓ Ready for forecasting
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-800">
+                          Need {Math.max(0, 50 - (account.transaction_count || 0))} more for forecasting
+                        </Badge>
+                      )}
+                    </div>
+                    
                     {!canSyncAccount(account.last_sync).canSync && (
                       <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
                         <span>⏱️</span>

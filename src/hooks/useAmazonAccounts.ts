@@ -12,6 +12,8 @@ export interface AmazonAccount {
   last_sync: string;
   is_active: boolean;
   payout_frequency: 'daily' | 'bi-weekly';
+  transaction_count: number;
+  initial_sync_complete: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -51,6 +53,8 @@ export const useAmazonAccounts = () => {
           last_sync,
           is_active,
           payout_frequency,
+          transaction_count,
+          initial_sync_complete,
           created_at,
           updated_at
         `)
@@ -276,11 +280,28 @@ export const useAmazonAccounts = () => {
 
       if (error) {
         console.error("Error syncing Amazon account:", error);
+        
+        // Check if it's a rate limit error (429)
+        const errorMessage = error.message || String(error);
+        if (errorMessage.includes('Rate limit') || errorMessage.includes('429')) {
+          const waitMatch = errorMessage.match(/wait (\d+) seconds?/i);
+          const waitTime = waitMatch ? waitMatch[1] : 'a few';
+          toast.warning(`Amazon API rate limit reached. Please wait ${waitTime} seconds before syncing again.`);
+          return false;
+        }
+        
         toast.error("Failed to sync Amazon account");
         return false;
       }
 
-      toast.success("Amazon account synced successfully!");
+      const syncResult = data as { success: boolean; transactionsAdded: number; totalTransactions: number; initialSyncComplete: boolean };
+      
+      if (syncResult.initialSyncComplete) {
+        toast.success(`Synced ${syncResult.transactionsAdded} transactions! Account is ready for forecasting.`);
+      } else {
+        toast.info(`Synced ${syncResult.transactionsAdded} transactions. Total: ${syncResult.totalTransactions}. Keep syncing to enable forecasting (need 50+).`);
+      }
+      
       await fetchAmazonAccounts();
       return true;
     } catch (error) {

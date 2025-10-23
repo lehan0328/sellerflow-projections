@@ -263,11 +263,11 @@ serve(async (req) => {
 
         console.log(`✓ Page ${pageCount}: Added ${transactionsToAdd.length} transactions so far`)
 
-        // Amazon rate limit: 0.5 requests/second = 2 second delay between requests
-        // Add a small delay between pagination requests to avoid rate limits
+        // Amazon rate limit: 0.6 seconds per request (safer than 0.5)
+        // Wait 2.4 seconds between pagination requests to stay well under rate limits
         if (nextToken && pageCount < maxPages) {
-          console.log('⏱️ Waiting 2 seconds before next page (rate limit compliance)...')
-          await new Promise(resolve => setTimeout(resolve, 2000))
+          console.log('⏱️ Waiting 2.4 seconds before next page (rate limit compliance)...')
+          await new Promise(resolve => setTimeout(resolve, 2400))
         }
 
       } while (nextToken && pageCount < maxPages)
@@ -457,19 +457,37 @@ serve(async (req) => {
       }
     }
 
-    // Update last sync time
+    // Update last sync time and transaction count
+    // Mark initial sync as complete if we have sufficient data (50+ transactions)
+    const { data: currentAccount } = await supabase
+      .from('amazon_accounts')
+      .select('transaction_count')
+      .eq('id', amazonAccountId)
+      .single();
+    
+    const totalTransactions = (currentAccount?.transaction_count || 0) + transactionsToAdd.length;
+    const hasEnoughData = totalTransactions >= 50;
+    
     await supabase
       .from('amazon_accounts')
-      .update({ last_sync: now.toISOString() })
+      .update({ 
+        last_sync: now.toISOString(),
+        transaction_count: totalTransactions,
+        initial_sync_complete: hasEnoughData
+      })
       .eq('id', amazonAccountId)
-      .eq('user_id', user.id)
+      .eq('user_id', user.id);
+
+    console.log(`📊 Account now has ${totalTransactions} total transactions. Initial sync complete: ${hasEnoughData}`);
 
     return new Response(
       JSON.stringify({ 
         success: true,
         message: 'Amazon data synced successfully',
         transactionsAdded: transactionsToAdd.length,
-        payoutsAdded: payoutsToAdd.length
+        payoutsAdded: payoutsToAdd.length,
+        totalTransactions: totalTransactions,
+        initialSyncComplete: hasEnoughData
       }),
       { 
         status: 200,

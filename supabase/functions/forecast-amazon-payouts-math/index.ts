@@ -72,7 +72,7 @@ serve(async (req) => {
       minReserveFloor 
     });
 
-    // Fetch active Amazon accounts
+    // Fetch active Amazon accounts that have completed initial sync
     const { data: amazonAccounts } = await supabase
       .from('amazon_accounts')
       .select('*')
@@ -82,6 +82,22 @@ serve(async (req) => {
     if (!amazonAccounts || amazonAccounts.length === 0) {
       throw new Error('No active Amazon accounts found');
     }
+
+    // Filter accounts that have sufficient data for forecasting
+    const accountsReadyForForecast = amazonAccounts.filter(acc => {
+      const hasEnoughData = acc.initial_sync_complete && (acc.transaction_count || 0) >= 50;
+      if (!hasEnoughData) {
+        console.log(`⚠️ Skipping ${acc.account_name}: insufficient data (${acc.transaction_count || 0} transactions, need 50+)`);
+      }
+      return hasEnoughData;
+    });
+
+    if (accountsReadyForForecast.length === 0) {
+      console.log('⚠️ No accounts have sufficient data for forecasting yet');
+      throw new Error('Amazon accounts do not have enough transaction data yet. Please sync more data before generating forecasts (need 50+ transactions per account).');
+    }
+
+    console.log(`✅ ${accountsReadyForForecast.length} of ${amazonAccounts.length} accounts ready for forecasting`);
 
     // Delete existing forecasted payouts
     await supabase
@@ -94,7 +110,7 @@ serve(async (req) => {
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
-    for (const account of amazonAccounts) {
+    for (const account of accountsReadyForForecast) {
       console.log(`\n[MATH-FORECAST] Processing ${account.account_name} (${account.payout_model} model)`);
 
       const reserveLag = account.reserve_lag_days || defaultReserveLag;
