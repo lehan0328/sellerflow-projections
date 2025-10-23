@@ -46,13 +46,13 @@ Deno.serve(async (req) => {
     // Sync each account
     const syncResults = []
     for (const account of amazonAccounts) {
-      // Check if last sync was less than 12 hours ago
+      // Check if last sync was less than 6 hours ago
       if (account.last_sync) {
         const lastSyncTime = new Date(account.last_sync).getTime()
         const now = Date.now()
         const hoursSinceSync = (now - lastSyncTime) / (1000 * 60 * 60)
         
-        if (hoursSinceSync < 12) {
+        if (hoursSinceSync < 6) {
           console.log(`Skipping ${account.account_name} - last synced ${hoursSinceSync.toFixed(1)} hours ago`)
           syncResults.push({
             accountId: account.id,

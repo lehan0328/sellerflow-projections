@@ -71,17 +71,17 @@ const AmazonOAuthCallback = () => {
         }
         
         setStatus('success');
-        setMessage('Amazon account connected successfully!');
+        setMessage('Amazon account connected successfully! Redirecting to settings...');
         
         toast({
           title: "Success",
-          description: "Your Amazon seller account has been connected.",
+          description: "Your Amazon seller account has been connected. Syncing data now...",
         });
 
-        // Redirect to settings after 2 seconds
+        // Redirect to settings Amazon section immediately
         setTimeout(() => {
-          navigate('/settings');
-        }, 2000);
+          navigate('/settings?tab=integrations&section=amazon&syncing=true');
+        }, 1500);
 
       } catch (error) {
         console.error('Amazon OAuth error:', error);

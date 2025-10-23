@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +63,7 @@ export function AmazonManagement() {
   const [manualFormOpen, setManualFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
+  const [showSyncingBanner, setShowSyncingBanner] = useState(false);
   const [manualFormData, setManualFormData] = useState<AmazonAccountFormData>({
     seller_id: '',
     marketplace_id: 'ATVPDKIKX0DER',
@@ -73,6 +74,20 @@ export function AmazonManagement() {
     client_secret: '',
     payout_frequency: 'bi-weekly',
   });
+
+  // Check for syncing parameter from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('syncing') === 'true') {
+      setShowSyncingBanner(true);
+      // Remove the parameter from URL
+      params.delete('syncing');
+      window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+      
+      // Hide banner after 10 seconds
+      setTimeout(() => setShowSyncingBanner(false), 10000);
+    }
+  }, []);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -285,6 +300,35 @@ export function AmazonManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Syncing Banner */}
+      {showSyncingBanner && (
+        <Card className="shadow-card bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <RefreshCw className="h-5 w-5 text-blue-600 dark:text-blue-400 animate-spin" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                  Amazon is syncing
+                </h3>
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  Please allow up to 24 hours to fully sync and to update forecast. Your Amazon data is being processed in the background.
+                </p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setShowSyncingBanner(false)}
+                className="flex-shrink-0"
+              >
+                ✕
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       {/* Summary Card */}
       <Card className="shadow-card">
         <CardHeader>
