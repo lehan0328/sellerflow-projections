@@ -162,9 +162,13 @@ export const useAmazonAccounts = () => {
     }
 
     try {
+      // Update both payout_frequency (for AI forecast) and payout_model (for mathematical forecast)
       const { error } = await supabase
         .from("amazon_accounts")
-        .update({ payout_frequency: frequency })
+        .update({ 
+          payout_frequency: frequency,
+          payout_model: frequency // Sync both fields
+        })
         .eq("id", accountId)
         .eq("user_id", user.id);
 
