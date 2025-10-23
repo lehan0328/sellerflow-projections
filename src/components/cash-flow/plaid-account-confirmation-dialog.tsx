@@ -133,6 +133,7 @@ export function PlaidAccountConfirmationDialog({
                     className="flex items-center space-x-3 p-3 rounded-md border bg-card hover:bg-muted/50 transition-colors"
                   >
                     <Checkbox
+                      id={`bank-${account.account_id}`}
                       checked={selectedAccountIds.has(account.account_id)}
                       onCheckedChange={() => toggleAccount(account.account_id)}
                     />
@@ -168,6 +169,7 @@ export function PlaidAccountConfirmationDialog({
                     >
                       <div className="flex items-center space-x-3 p-3 hover:bg-muted/50 transition-colors">
                         <Checkbox
+                          id={`credit-${account.account_id}`}
                           checked={isSelected}
                           onCheckedChange={() => toggleAccount(account.account_id)}
                         />
