@@ -19,6 +19,13 @@ export interface AmazonTransaction {
   fee_description: string | null;
   fee_type: string | null;
   gross_amount: number | null;
+  delivery_date: string | null;
+  shipping_cost: number | null;
+  ads_cost: number | null;
+  return_rate: number | null;
+  chargeback_rate: number | null;
+  net_amount: number | null;
+  unlock_date: string | null;
   raw_data: any;
   created_at: string;
   updated_at: string;

@@ -214,6 +214,13 @@ export function AmazonPayouts() {
                   <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
                   Sync
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/amazon-transactions-test")}
+                >
+                  Test Data
+                </Button>
               </>}
           </div>
         </div>
