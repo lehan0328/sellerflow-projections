@@ -56,10 +56,20 @@ export function PlaidAccountConfirmationDialog({
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
   const [isAdding, setIsAdding] = useState(false);
 
+  // Debug logging
+  console.log('PlaidAccountConfirmationDialog - Accounts:', accounts.map(acc => ({
+    id: acc.account_id,
+    name: acc.name,
+    type: acc.type
+  })));
+  console.log('PlaidAccountConfirmationDialog - Selected IDs:', Array.from(selectedAccountIds));
+  console.log('PlaidAccountConfirmationDialog - Priorities:', priorities);
+
   const isCreditCard = (account: PlaidAccount) => 
     account.type === 'credit' || account.subtype === 'credit card' || account.subtype === 'credit';
 
   const toggleAccount = (accountId: string) => {
+    console.log('toggleAccount called with:', accountId);
     const newSelected = new Set(selectedAccountIds);
     if (newSelected.has(accountId)) {
       newSelected.delete(accountId);
@@ -70,6 +80,7 @@ export function PlaidAccountConfirmationDialog({
     } else {
       newSelected.add(accountId);
     }
+    console.log('New selected set:', Array.from(newSelected));
     setSelectedAccountIds(newSelected);
   };
 
