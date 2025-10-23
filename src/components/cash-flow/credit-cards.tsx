@@ -120,6 +120,8 @@ export function CreditCards() {
       }
       setLinkToken(null);
       setIsConnecting(false);
+      setPendingPlaidData(null);
+      setShowConfirmationDialog(false);
     }
   };
 
@@ -623,7 +625,14 @@ export function CreditCards() {
         {pendingPlaidData && (
           <PlaidAccountConfirmationDialog
             open={showConfirmationDialog}
-            onOpenChange={setShowConfirmationDialog}
+            onOpenChange={(open) => {
+              setShowConfirmationDialog(open);
+              if (!open) {
+                // User closed dialog without confirming - clean up
+                setPendingPlaidData(null);
+                setIsConnecting(false);
+              }
+            }}
             accounts={pendingPlaidData.metadata.accounts}
             institutionName={pendingPlaidData.metadata.institution.name}
             onConfirm={handleConfirmAccounts}
