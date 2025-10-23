@@ -70,23 +70,36 @@ serve(async (req) => {
       )
     }
 
+    // Set status to 'syncing' BEFORE starting background task
+    // This ensures the UI sees the status update immediately
+    console.log(`Setting sync status to 'syncing' for account ${amazonAccountId}`)
+    await supabase
+      .from('amazon_accounts')
+      .update({ 
+        sync_status: 'syncing', 
+        sync_progress: 0,
+        sync_message: 'Initializing sync...',
+        last_sync_error: null 
+      })
+      .eq('id', amazonAccountId)
+      .eq('user_id', user.id)
+
     // Define background sync task
     const syncTask = async () => {
       console.log(`[Background Sync] Starting sync for account ${amazonAccountId}`)
       
-      // Set status to 'syncing' with initial progress
-      await supabase
-        .from('amazon_accounts')
-        .update({ 
-          sync_status: 'syncing', 
-          sync_progress: 0,
-          sync_message: 'Starting sync...',
-          last_sync_error: null 
-        })
-        .eq('id', amazonAccountId)
-        .eq('user_id', user.id)
-      
       try {
+        // Update sync message to indicate we're fetching account details
+        supabase
+          .from('amazon_accounts')
+          .update({ 
+            sync_message: 'Fetching account details...',
+            sync_progress: 5
+          })
+          .eq('id', amazonAccountId)
+          .eq('user_id', user.id)
+          .then(() => {}).catch(err => console.error('Failed to update sync message:', err))
+        
         // Get the Amazon account with encrypted credentials
         const { data: amazonAccount, error: accountError } = await supabase
           .from('amazon_accounts')
