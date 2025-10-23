@@ -44,11 +44,6 @@ serve(async (req) => {
   console.log('=== EXCHANGE AMAZON TOKEN FUNCTION STARTED ===');
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       console.error('No authorization header');
@@ -59,6 +54,20 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace('Bearer ', '')
+    
+    // Create Supabase client with user's token for proper RLS context
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: {
+            Authorization: authHeader
+          }
+        }
+      }
+    )
+    
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     
     if (authError || !user) {
