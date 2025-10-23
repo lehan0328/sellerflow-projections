@@ -553,10 +553,6 @@ export function AmazonManagement() {
                           <p className="text-xs text-muted-foreground mb-2">
                             This will open Amazon Seller Central where you can safely authorize Auren to access your seller data. No credentials stored locally.
                           </p>
-                          <div className="bg-white/50 p-2 rounded border border-blue-200">
-                            <p className="text-xs font-medium text-foreground mb-1">Required Redirect URL in Amazon:</p>
-                            <code className="text-xs text-blue-600 break-all">{window.location.origin}/amazon-oauth-callback</code>
-                          </div>
                         </div>
                       </div>
                     </div>
