@@ -552,7 +552,7 @@ export default function Analytics() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Current Balance</CardTitle>
@@ -583,6 +583,17 @@ export default function Analytics() {
           <CardContent>
             <div className="text-2xl font-bold text-red-600">${metrics.totalOutflow.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Money spent</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Amazon Revenue</CardTitle>
+            <Package className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">${metrics.amazonRevenue.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Total Amazon payouts</p>
           </CardContent>
         </Card>
 
