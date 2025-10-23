@@ -253,7 +253,9 @@ serve(async (req) => {
               console.log(`[Background Sync] Shipment ${orderId}: Posted=${shipmentDate}, Delivery=${deliveryDate || 'N/A'}`)
               
               // Process each item in the shipment
+              let itemIndex = 0
               for (const item of (shipment.ShipmentItemList || [])) {
+                itemIndex++
                 const revenue = item.ItemChargeList?.reduce((sum: number, charge: any) => 
                   sum + (charge.ChargeAmount?.CurrencyAmount || 0), 0) || 0
                 
@@ -261,11 +263,12 @@ serve(async (req) => {
                   sum + (fee.FeeAmount?.CurrencyAmount || 0), 0) || 0
 
                 if (revenue !== 0 || fees !== 0) {
+                  // Create unique transaction ID by adding item index to handle duplicate SKUs
                   transactionsToAdd.push({
                     user_id: user.id,
                     amazon_account_id: amazonAccountId,
                     account_id: amazonAccount.account_id,
-                    transaction_id: `${orderId}-${item.SellerSKU}`,
+                    transaction_id: `${orderId}-${item.SellerSKU}-${itemIndex}`,
                     transaction_type: 'Order',
                     amount: revenue + fees, // Net amount
                     gross_amount: revenue,
@@ -288,16 +291,19 @@ serve(async (req) => {
               const orderId = refund.AmazonOrderId
               const refundDate = refund.PostedDate
               
+              let refundItemIndex = 0
               for (const item of (refund.ShipmentItemList || [])) {
+                refundItemIndex++
                 const refundAmount = item.ItemChargeList?.reduce((sum: number, charge: any) => 
                   sum + (charge.ChargeAmount?.CurrencyAmount || 0), 0) || 0
 
                 if (refundAmount !== 0) {
+                  // Add item index to prevent duplicates
                   transactionsToAdd.push({
                     user_id: user.id,
                     amazon_account_id: amazonAccountId,
                     account_id: amazonAccount.account_id,
-                    transaction_id: `REFUND-${orderId}-${item.SellerSKU}`,
+                    transaction_id: `REFUND-${orderId}-${item.SellerSKU}-${refundItemIndex}`,
                     transaction_type: 'Refund',
                     amount: -Math.abs(refundAmount),
                     gross_amount: -Math.abs(refundAmount),
