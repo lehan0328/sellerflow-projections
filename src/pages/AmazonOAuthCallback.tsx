@@ -52,6 +52,9 @@ const AmazonOAuthCallback = () => {
 
         // Exchange the authorization code for access/refresh tokens
         const { data: exchangeData, error: exchangeError } = await supabase.functions.invoke('exchange-amazon-token', {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
           body: {
             code: spapi_oauth_code,
             selling_partner_id: selling_partner_id,
@@ -60,7 +63,7 @@ const AmazonOAuthCallback = () => {
           }
         });
 
-        console.log('Exchange response:', { exchangeData, exchangeError });
+        console.log('Exchange response:', JSON.stringify({ exchangeData, exchangeError }, null, 2));
 
         if (exchangeError || !exchangeData?.success) {
           console.error('Exchange failed:', { exchangeError, exchangeData });
