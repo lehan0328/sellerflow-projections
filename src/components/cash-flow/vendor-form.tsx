@@ -22,6 +22,7 @@ interface VendorFormProps {
 export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = [], initialVendorName }: VendorFormProps) => {
   const { categories, addCategory, refetch: refetchCategories } = useCategories('expense');
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -58,6 +59,11 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent submission while adding category
+    if (isAddingCategory) {
+      return;
+    }
     
     // Check for duplicate vendor name
     const duplicateVendor = existingVendors.find(
@@ -181,12 +187,16 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
             open={showAddCategory}
             onOpenChange={setShowAddCategory}
             onAddCategory={async (name) => {
-              const newCategory = await addCategory(name);
-              if (newCategory) {
-                // Wait a moment for the categories list to update
-                setTimeout(() => {
+              setIsAddingCategory(true);
+              try {
+                const newCategory = await addCategory(name);
+                if (newCategory) {
+                  // Wait for categories to refresh via realtime subscription
+                  await new Promise(resolve => setTimeout(resolve, 300));
                   handleInputChange("category", name);
-                }, 100);
+                }
+              } finally {
+                setIsAddingCategory(false);
               }
             }}
             type="expense"
@@ -293,9 +303,9 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
             <Button 
               type="submit" 
               className="flex-1 bg-gradient-primary"
-              disabled={!formData.name.trim() || !formData.category}
+              disabled={!formData.name.trim() || !formData.category || isAddingCategory}
             >
-              Okay - Create PO
+              {isAddingCategory ? "Adding Category..." : "Okay - Create PO"}
             </Button>
           </div>
         </form>
