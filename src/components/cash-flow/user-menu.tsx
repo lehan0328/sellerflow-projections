@@ -115,10 +115,6 @@ export function UserMenu() {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>}
-        <DropdownMenuItem onClick={() => navigate('/settings')}>
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => navigate('/settings?section=team')}>
           <Users className="mr-2 h-4 w-4" />
           <span>Team Management</span>

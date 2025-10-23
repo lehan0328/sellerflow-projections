@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2, Lock, Sparkles } from "lucide-react";
+import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2, Lock, Sparkles, Settings } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useSupportMessageCount } from "@/hooks/useSupportMessageCount";
@@ -58,6 +58,12 @@ const transactionSections = [{
   icon: Wallet
 }];
 const resourceSections = [{
+  id: "settings",
+  title: "Settings",
+  icon: Settings,
+  isRoute: true,
+  url: "/settings"
+}, {
   id: "document-storage",
   title: "Document Storage",
   icon: FolderOpen
