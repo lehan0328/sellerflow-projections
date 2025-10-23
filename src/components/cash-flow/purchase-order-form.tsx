@@ -114,6 +114,18 @@ export const PurchaseOrderForm = ({
   const [isDeliveryDatePickerOpen, setIsDeliveryDatePickerOpen] = useState(false);
   const [openPaymentDatePickers, setOpenPaymentDatePickers] = useState<Record<string, boolean>>({});
 
+  // Ensure newly added category appears immediately even before realtime refresh
+  const combinedCategories = React.useMemo(() => {
+    const name = formData.category?.trim();
+    if (name && !categories.some(c => c.name.toLowerCase().trim() === name.toLowerCase())) {
+      return [
+        ...categories,
+        { id: `temp-${name}`, name, type: 'expense', is_default: false } as any,
+      ];
+    }
+    return categories;
+  }, [categories, formData.category]);
+
   // Get unique vendors first, then filter and sort alphabetically
   const uniqueVendors = vendors.filter((vendor, index, self) => index === self.findIndex(v => v.id === vendor.id)).sort((a, b) => a.name.localeCompare(b.name));
 
@@ -158,6 +170,13 @@ export const PurchaseOrderForm = ({
       setVendorSearchTerm("");
     }
   }, [open]);
+
+  // Refresh categories when closing the Vendor form to reflect newly added categories immediately
+  useEffect(() => {
+    if (!showVendorForm && open) {
+      refetchCategories();
+    }
+  }, [showVendorForm, open]);
 
   // Auto-update vendorId and category when a matching vendor is found (after adding new vendor)
   useEffect(() => {
@@ -727,7 +746,7 @@ export const PurchaseOrderForm = ({
                       </div>
                     </SelectItem>
                   </div>
-                  {categories.map(category => (
+                  {combinedCategories.map(category => (
                     <SelectItem key={category.id} value={category.name}>
                       <div className="flex items-center justify-between w-full">
                         <span>{category.name}</span>

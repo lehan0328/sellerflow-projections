@@ -147,7 +147,18 @@ export function useCategories(type: 'expense' | 'income', isRecurring?: boolean)
         description: `Category "${normalizedName}" added successfully`,
       });
 
-      await fetchCategories();
+      // Optimistically add to local state so UIs reflect it immediately
+      setCategories((prev) => {
+        const norm = normalizedName.toLowerCase().trim();
+        if (prev.some((c) => c.name.toLowerCase().trim() === norm)) return prev;
+        const next = [...prev, data as Category];
+        // Keep default categories surfaced and sort alphabetically
+        next.sort((a, b) => (Number(b.is_default) - Number(a.is_default)) || a.name.localeCompare(b.name));
+        return next;
+      });
+
+      // Background refresh to stay in sync with server and realtime
+      fetchCategories();
       return data;
     } catch (error: any) {
       console.error('[Category] Failed to add category:', error);
