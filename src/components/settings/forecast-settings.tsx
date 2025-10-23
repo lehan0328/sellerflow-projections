@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Sparkles, TrendingUp, Info, AlertTriangle, AlertCircle } from "lucide-react";
+import { Sparkles, TrendingUp, Info, AlertTriangle, AlertCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
@@ -27,6 +27,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export const ForecastSettings = () => {
   const navigate = useNavigate();
@@ -733,6 +740,28 @@ export const ForecastSettings = () => {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    {/* Loading Dialog - Blocks UI while toggling forecast */}
+    <Dialog open={togglingForecast} onOpenChange={() => {}}>
+      <DialogContent className="sm:max-w-md" hideClose>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            Processing Changes
+          </DialogTitle>
+          <DialogDescription className="space-y-3 pt-4">
+            <p className="text-base font-medium">Please wait while we update your forecast settings...</p>
+            <p className="text-sm text-muted-foreground">
+              This process may take a few moments. Please do not close this window or navigate away.
+            </p>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Updating forecasts and recalculating projections...</span>
+            </div>
+          </DialogDescription>
+        </DialogHeader>
+      </DialogContent>
+    </Dialog>
     </>
   );
 };
