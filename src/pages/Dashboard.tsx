@@ -185,12 +185,49 @@ const Dashboard = () => {
     };
   }, [refetchBankAccounts, refetchSafeSpending]);
 
+  // Combine bank accounts and credit cards into one list for the dropdown
+  const allFinancialAccounts = useMemo(() => {
+    const combined: Array<{ 
+      id: string; 
+      type: 'bank' | 'credit'; 
+      institution_name: string; 
+      account_name: string;
+      last_sync: string;
+    }> = [];
+    
+    // Add bank accounts
+    accounts.forEach(acc => {
+      combined.push({
+        id: acc.id,
+        type: 'bank',
+        institution_name: acc.institution_name,
+        account_name: acc.account_name,
+        last_sync: acc.last_sync,
+      });
+    });
+    
+    // Add credit cards
+    creditCards.forEach(card => {
+      combined.push({
+        id: card.id,
+        type: 'credit',
+        institution_name: card.institution_name,
+        account_name: card.account_name,
+        last_sync: card.last_sync,
+      });
+    });
+    
+    return combined;
+  }, [accounts, creditCards]);
+
   // Map real bank transactions to BankTransaction format
   const allBankTransactions: BankTransaction[] = useMemo(() => {
     if (!bankTransactionsData) return [];
     
     return bankTransactionsData.map(tx => {
+      // Check both bank accounts and credit cards
       const account = accounts?.find(acc => acc.id === tx.bankAccountId);
+      const creditCard = creditCards?.find(card => card.id === tx.creditCardId);
       
       // Flip: Negative amount = credit, Positive = debit
       const txType = tx.amount < 0 ? 'credit' : 'debit';
@@ -198,9 +235,9 @@ const Dashboard = () => {
       
       return {
         id: tx.id,
-        accountId: tx.bankAccountId,
-        accountName: account?.account_name || 'Unknown Account',
-        institutionName: account?.institution_name || 'Unknown Bank',
+        accountId: tx.bankAccountId || tx.creditCardId,
+        accountName: account?.account_name || creditCard?.account_name || 'Unknown Account',
+        institutionName: account?.institution_name || creditCard?.institution_name || 'Unknown',
         date: tx.date,
         description: tx.name,
         merchantName: tx.merchantName,
@@ -211,7 +248,7 @@ const Dashboard = () => {
         matchScore: 0
       } as BankTransaction;
     });
-  }, [bankTransactionsData, accounts]);
+  }, [bankTransactionsData, accounts, creditCards]);
 
   // Filter bank transactions by selected account
   const bankTransactions = useMemo(() => {
@@ -1710,18 +1747,22 @@ const Dashboard = () => {
               <div className="flex items-center gap-2">
                 <Select value={selectedBankAccountId} onValueChange={setSelectedBankAccountId}>
                   <SelectTrigger className="w-[240px]">
-                    <SelectValue placeholder="Filter by bank account" />
+                    <SelectValue placeholder="Filter by account" />
                   </SelectTrigger>
                   <SelectContent className="bg-background border shadow-lg z-50">
                     <SelectItem value="all" className="cursor-pointer">
                       All Accounts ({allBankTransactions.length})
                     </SelectItem>
-                    {accounts.map((account) => {
+                    {allFinancialAccounts.map((account) => {
                       const accountTxCount = allBankTransactions.filter(tx => tx.accountId === account.id).length;
                       return (
                         <SelectItem key={account.id} value={account.id} className="cursor-pointer">
                           <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4" />
+                            {account.type === 'bank' ? (
+                              <Building2 className="h-4 w-4" />
+                            ) : (
+                              <CreditCardIcon className="h-4 w-4" />
+                            )}
                             <span>{account.institution_name} - {account.account_name}</span>
                             <Badge variant="secondary" className="ml-auto">{accountTxCount}</Badge>
                           </div>
@@ -1730,15 +1771,17 @@ const Dashboard = () => {
                     })}
                   </SelectContent>
                 </Select>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleBankSync}
-                  disabled={isBankSyncing || selectedBankAccountId === 'all'}
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isBankSyncing ? 'animate-spin' : ''}`} />
-                  {isBankSyncing ? 'Syncing...' : 'Sync Transactions'}
-                </Button>
+                {selectedBankAccountId !== 'all' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleBankSync}
+                    disabled={isBankSyncing}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isBankSyncing ? 'animate-spin' : ''}`} />
+                    {isBankSyncing ? 'Syncing...' : 'Sync Transactions'}
+                  </Button>
+                )}
                 {matches.length > 0 && (
                   <TransactionMatchButton 
                     matches={matches}
