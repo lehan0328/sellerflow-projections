@@ -490,7 +490,7 @@ serve(async (req) => {
         transactionsAdded: transactionsToAdd.length,
         payoutsAdded: payoutsToAdd.length,
         totalTransactions: totalTransactions,
-        initialSyncComplete: hasEnoughData
+        initialSyncComplete: shouldComplete
       }),
       { 
         status: 200,
