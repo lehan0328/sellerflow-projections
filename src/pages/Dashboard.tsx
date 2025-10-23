@@ -142,6 +142,12 @@ const Dashboard = () => {
     refetchSafeSpending();
   }, [excludeToday, refetchSafeSpending]);
   
+  // Refetch safe spending whenever bank accounts change (added, removed, or balance updated)
+  useEffect(() => {
+    console.log('🏦 [DASHBOARD] Bank accounts changed (count:', accounts.length, ') - refetching safe spending');
+    refetchSafeSpending();
+  }, [accounts.length, displayBankBalance, refetchSafeSpending]);
+  
   // Check for limit violations and show modal
   useEffect(() => {
     if (isOverBankLimit) {
