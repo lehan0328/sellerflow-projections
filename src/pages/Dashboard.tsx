@@ -89,6 +89,7 @@ const Dashboard = () => {
   }>({ open: false, match: null });
   const [matchingAll, setMatchingAll] = useState(false);
   const [syncingTransactions, setSyncingTransactions] = useState(false);
+  const [isBankSyncing, setIsBankSyncing] = useState(false);
   const [manualMatchDialog, setManualMatchDialog] = useState<{
     open: boolean;
     transaction: BankTransaction | null;
@@ -117,7 +118,7 @@ const Dashboard = () => {
   useEffect(() => {
     localStorage.setItem('useAvailableBalance', String(useAvailableBalance));
   }, [useAvailableBalance]);
-  const { transactions: bankTransactionsData, isLoading: isBankTransactionsLoading } = useBankTransactions();
+  const { transactions: bankTransactionsData, isLoading: isBankTransactionsLoading, refetch: refetchBankTransactions } = useBankTransactions();
   const { creditCards, refetch: refetchCreditCards } = useCreditCards();
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
   const { reserveAmount, updateReserveAmount, canUpdate: canUpdateReserve, lastUpdated: lastReserveUpdate } = useReserveAmount();
@@ -368,6 +369,45 @@ const Dashboard = () => {
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
 
   // ========== Event Handlers ==========
+
+  const handleBankSync = async () => {
+    if (selectedBankAccountId === 'all') {
+      toast({
+        title: "Select Account",
+        description: "Please select a specific account to sync",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsBankSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('sync-plaid-transactions', {
+        body: { accountId: selectedBankAccountId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Sync Started",
+        description: "Bank transactions are being synced. This may take a moment.",
+      });
+
+      // Refresh bank transactions after a short delay
+      setTimeout(() => {
+        refetchBankTransactions();
+        setIsBankSyncing(false);
+      }, 2000);
+    } catch (error: any) {
+      console.error('Error syncing bank transactions:', error);
+      toast({
+        title: "Sync Failed",
+        description: error.message || "Failed to sync bank transactions",
+        variant: "destructive"
+      });
+      setIsBankSyncing(false);
+    }
+  };
 
   const handlePayToday = async (vendor: Vendor, amount?: number) => {
     const paymentAmount = amount || vendor.nextPaymentAmount;
@@ -1690,6 +1730,15 @@ const Dashboard = () => {
                     })}
                   </SelectContent>
                 </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBankSync}
+                  disabled={isBankSyncing || selectedBankAccountId === 'all'}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isBankSyncing ? 'animate-spin' : ''}`} />
+                  {isBankSyncing ? 'Syncing...' : 'Sync Transactions'}
+                </Button>
                 {matches.length > 0 && (
                   <TransactionMatchButton 
                     matches={matches}
