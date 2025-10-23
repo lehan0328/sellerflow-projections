@@ -783,12 +783,12 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
     } finally {
       setIsLoading(false);
     }
-  }, [reserveAmountInput, excludeTodayTransactions]);
+  }, [reserveAmountInput, excludeTodayTransactions, useAvailableBalance]);
 
 
   useEffect(() => {
     fetchSafeSpending();
-  }, [fetchSafeSpending, reserveAmountInput, excludeTodayTransactions]); // Recalculate when reserve or exclude setting changes
+  }, [fetchSafeSpending, reserveAmountInput, excludeTodayTransactions, useAvailableBalance]); // Recalculate when reserve, exclude setting, or balance type changes
 
   useEffect(() => {
 

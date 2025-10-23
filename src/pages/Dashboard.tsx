@@ -142,6 +142,12 @@ const Dashboard = () => {
     refetchSafeSpending();
   }, [excludeToday, refetchSafeSpending]);
   
+  // Refetch safe spending whenever balance toggle changes
+  useEffect(() => {
+    console.log('💳 [DASHBOARD] Balance type changed to:', useAvailableBalance ? 'Available' : 'Current', '- refetching safe spending');
+    refetchSafeSpending();
+  }, [useAvailableBalance, refetchSafeSpending]);
+  
   // Refetch safe spending whenever bank accounts change (added, removed, or balance updated)
   useEffect(() => {
     console.log('🏦 [DASHBOARD] Bank accounts changed (count:', accounts.length, ') - refetching safe spending');
