@@ -13,6 +13,7 @@ import { EnterpriseSetupModal } from "@/components/EnterpriseSetupModal";
 import { useSubscription } from "@/hooks/useSubscription";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import { supabase } from "@/integrations/supabase/client";
+import { usePlaidLink } from "react-plaid-link";
 
 const SELLER_CENTRAL_CONSENT_URLS: Record<string, string> = {
   'NA': 'https://sellercentral.amazon.com/apps/authorize/consent',
@@ -50,6 +51,8 @@ export default function Onboarding() {
   const [amazonSkipped, setAmazonSkipped] = useState(false);
   const [bankSkipped, setBankSkipped] = useState(false);
   const [forecastingEnabled, setForecastingEnabled] = useState(false);
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
 
   const [amazonFormData, setAmazonFormData] = useState({
     seller_id: '',
@@ -61,6 +64,55 @@ export default function Onboarding() {
     client_secret: '',
     payout_frequency: 'bi-weekly' as 'daily' | 'bi-weekly',
   });
+
+  // Plaid Link configuration
+  const plaidConfig = {
+    token: linkToken,
+    receivedRedirectUri: window.location.href,
+    onSuccess: async (public_token: string, metadata: any) => {
+      try {
+        console.log("Plaid Link success:", metadata);
+        
+        // Exchange the public token for an access token via edge function
+        const { data, error } = await supabase.functions.invoke('exchange-plaid-token', {
+          body: { publicToken: public_token, metadata }
+        });
+
+        if (error) throw error;
+
+        toast.success(data.message || "Bank account connected successfully!");
+        setIsConnecting(false);
+        setLinkToken(null);
+        
+        // Move to forecasting step if Amazon was connected
+        if (!amazonSkipped) {
+          setCurrentStep('forecasting');
+        } else {
+          navigate('/dashboard');
+        }
+      } catch (error) {
+        console.error("Error exchanging token:", error);
+        toast.error("Failed to connect account");
+        setIsConnecting(false);
+      }
+    },
+    onExit: (err: any, metadata: any) => {
+      console.log("Plaid Link exit:", { err, metadata });
+      if (err) {
+        toast.error("Failed to connect account");
+      }
+      setIsConnecting(false);
+    },
+  };
+
+  const { open: openPlaid, ready: plaidReady } = usePlaidLink(plaidConfig);
+
+  // Open Plaid Link when token is available
+  useEffect(() => {
+    if (linkToken && plaidReady) {
+      openPlaid();
+    }
+  }, [linkToken, plaidReady, openPlaid]);
 
   // Check for enterprise parameter and show modal
   useEffect(() => {
@@ -96,12 +148,28 @@ export default function Onboarding() {
   };
 
   const handleAddBankAccount = async () => {
-    toast.info("Plaid integration requires backend setup. Skipping for now.");
-    // Only show forecasting if Amazon was connected
-    if (!amazonSkipped) {
-      setCurrentStep('forecasting');
-    } else {
-      navigate('/dashboard');
+    try {
+      setIsConnecting(true);
+      
+      // Get link token from edge function
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please log in to connect accounts");
+        setIsConnecting(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-plaid-link-token', {
+        body: { userId: user.id }
+      });
+
+      if (error) throw error;
+
+      setLinkToken(data.link_token);
+    } catch (error) {
+      console.error("Error creating link token:", error);
+      toast.error("Failed to initialize bank connection");
+      setIsConnecting(false);
     }
   };
 
@@ -500,8 +568,9 @@ export default function Onboarding() {
                 <Button 
                   onClick={handleAddBankAccount}
                   className="flex-1 bg-gradient-primary"
+                  disabled={isConnecting}
                 >
-                  Connect Bank Account
+                  {isConnecting ? "Connecting..." : "Connect Bank Account"}
                 </Button>
               </div>
             </CardContent>
