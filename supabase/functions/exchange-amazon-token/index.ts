@@ -75,7 +75,7 @@ serve(async (req) => {
     }
 
     // Get Amazon LWA credentials from secrets
-    const clientId = Deno.env.get('AMAZON_CLIENT_ID')
+    const clientId = Deno.env.get('AMAZON_APP_ID')
     const clientSecret = Deno.env.get('AMAZON_CLIENT_SECRET')
 
     if (!clientId || !clientSecret) {
