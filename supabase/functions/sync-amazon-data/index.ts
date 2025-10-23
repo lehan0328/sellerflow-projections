@@ -73,6 +73,14 @@ serve(async (req) => {
     // Define background sync task
     const syncTask = async () => {
       console.log(`[Background Sync] Starting sync for account ${amazonAccountId}`)
+      
+      // Set status to 'syncing'
+      await supabase
+        .from('amazon_accounts')
+        .update({ sync_status: 'syncing', last_sync_error: null })
+        .eq('id', amazonAccountId)
+        .eq('user_id', user.id)
+      
       try {
         // Get the Amazon account with encrypted credentials
         const { data: amazonAccount, error: accountError } = await supabase
@@ -425,13 +433,15 @@ serve(async (req) => {
         // Determine if initial sync is complete (more than 0 transactions and no next page)
         const shouldComplete = (totalTransactions ?? 0) > 0 && !nextToken
 
-        // Update account sync status
+        // Update account sync status to completed
         await supabase
           .from('amazon_accounts')
           .update({
             last_sync: now.toISOString(),
             transaction_count: totalTransactions || 0,
             initial_sync_complete: shouldComplete || amazonAccount.initial_sync_complete,
+            sync_status: 'completed',
+            last_sync_error: null,
             updated_at: now.toISOString()
           })
           .eq('id', amazonAccountId)
@@ -445,6 +455,7 @@ serve(async (req) => {
         await supabase
           .from('amazon_accounts')
           .update({ 
+            sync_status: 'error',
             last_sync_error: error instanceof Error ? error.message : 'Unknown error',
             updated_at: new Date().toISOString()
           })

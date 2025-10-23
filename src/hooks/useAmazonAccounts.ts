@@ -14,6 +14,8 @@ export interface AmazonAccount {
   payout_frequency: 'daily' | 'bi-weekly';
   transaction_count: number;
   initial_sync_complete: boolean;
+  sync_status?: 'idle' | 'syncing' | 'completed' | 'error';
+  last_sync_error?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -311,7 +313,7 @@ export const useAmazonAccounts = () => {
         }
       }
 
-      // Call the edge function to sync Amazon data
+      // Call the edge function to sync Amazon data (background processing)
       const { data, error } = await supabase.functions.invoke("sync-amazon-data", {
         body: { amazonAccountId: accountId }
       });
@@ -332,12 +334,12 @@ export const useAmazonAccounts = () => {
         return false;
       }
 
-      const syncResult = data as { success: boolean; transactionsAdded: number; totalTransactions: number; initialSyncComplete: boolean };
+      // Background sync started successfully (202 response)
+      const syncResult = data as { success: boolean; status: string; message: string };
       
-      if (syncResult.initialSyncComplete) {
-        toast.success(`Synced ${syncResult.transactionsAdded} transactions! Account is ready for forecasting.`);
-      } else {
-        toast.info(`Synced ${syncResult.transactionsAdded} transactions. Total: ${syncResult.totalTransactions}. Keep syncing to enable forecasting (need 50+).`);
+      if (syncResult.status === 'processing') {
+        toast.info("Sync started! Data will appear automatically when ready.");
+        return true;
       }
       
       await fetchAmazonAccounts();
@@ -353,7 +355,7 @@ export const useAmazonAccounts = () => {
     fetchAmazonAccounts();
   }, [user]);
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time updates for sync status changes
   useEffect(() => {
     if (!user) return;
 
@@ -366,7 +368,21 @@ export const useAmazonAccounts = () => {
           schema: "public",
           table: "amazon_accounts",
         },
-        () => {
+        (payload) => {
+          console.log('Amazon account updated:', payload);
+          
+          // If sync status changed to 'completed', show success toast
+          if (payload.eventType === 'UPDATE' && payload.new.sync_status === 'completed') {
+            const account = payload.new as any;
+            toast.success(`${account.account_name}: Sync completed! ${account.transaction_count || 0} total transactions.`);
+          }
+          
+          // If sync status changed to 'error', show error toast
+          if (payload.eventType === 'UPDATE' && payload.new.sync_status === 'error') {
+            const account = payload.new as any;
+            toast.error(`${account.account_name}: Sync failed - ${account.last_sync_error || 'Unknown error'}`);
+          }
+          
           fetchAmazonAccounts();
         }
       )

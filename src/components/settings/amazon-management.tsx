@@ -89,6 +89,23 @@ export function AmazonManagement() {
     }
   }, []);
 
+  // Monitor sync status changes and clear syncing state when complete
+  useEffect(() => {
+    if (!amazonAccounts || !isSyncing) return;
+    
+    const syncingAccount = amazonAccounts.find(acc => acc.id === isSyncing);
+    if (syncingAccount) {
+      // Clear syncing state if status changed from 'syncing'
+      if (syncingAccount.sync_status !== 'syncing') {
+        setIsSyncing(null);
+        setSyncProgress(0);
+      } else {
+        // Keep progress bar active while syncing
+        setSyncProgress(50);
+      }
+    }
+  }, [amazonAccounts, isSyncing]);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -170,42 +187,28 @@ export function AmazonManagement() {
   const handleSyncAccount = async (accountId: string) => {
     setIsSyncing(accountId);
     setSyncProgress(10);
-    toast.info("Syncing Amazon data... This will continue in the background.");
     
     try {
-      // Simulate progress during sync
-      setSyncProgress(20);
       const syncSuccess = await syncAmazonAccount(accountId);
       
       if (!syncSuccess) {
         // Sync was rate limited or failed
-        setSyncProgress(100);
+        setIsSyncing(null);
+        setSyncProgress(0);
         return;
       }
       
-      setSyncProgress(60);
+      // Background sync started successfully
+      // The realtime subscription will handle showing completion toast
+      toast.info("Sync started! Watch for completion notification...");
       
-      // Poll for new transactions to confirm sync completion
-      let attempts = 0;
-      const maxAttempts = 10;
+      // Keep showing syncing status - will be cleared by realtime update
+      setSyncProgress(50);
       
-      while (attempts < maxAttempts) {
-        setSyncProgress(60 + (attempts / maxAttempts) * 30);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        attempts++;
-      }
-      
-      setSyncProgress(95);
-      await refetchPayouts();
-      setSyncProgress(100);
     } catch (error) {
       console.error("Sync error:", error);
-      // Error already handled by syncAmazonAccount with toast
-    } finally {
-      setTimeout(() => {
-        setIsSyncing(null);
-        setSyncProgress(0);
-      }, 500);
+      setIsSyncing(null);
+      setSyncProgress(0);
     }
   };
 
