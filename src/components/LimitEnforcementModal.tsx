@@ -39,7 +39,10 @@ export const LimitEnforcementModal = ({
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
   const excess = currentUsage - limit;
-  const isProfessionalTier = subscription.plan === 'professional';
+  
+  // Check if user is on Professional or Enterprise tier (can purchase add-ons)
+  const isTopTier = subscription.plan === 'professional' || 
+    subscription.product_id?.startsWith('prod_TBOi'); // Enterprise product IDs
 
   // Auto-close when back within limits
   useEffect(() => {
@@ -234,8 +237,8 @@ export const LimitEnforcementModal = ({
               <DialogTitle>{content.title}</DialogTitle>
             </div>
             <DialogDescription>
-              {isProfessionalTier ? (
-                <>You're on the Professional tier and have reached your limit. To add more, you'll need to purchase add-ons or contact us for an Enterprise plan.</>
+              {isTopTier ? (
+                <>You're on the {subscription.plan === 'professional' ? 'Professional' : 'Enterprise'} tier and have reached your limit. To add more, you'll need to purchase add-ons or contact us for custom Enterprise solutions.</>
               ) : (
                 content.description
               )}
