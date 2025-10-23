@@ -129,11 +129,11 @@ export function PlaidAccountConfirmationDialog({
               <div className="space-y-2 border rounded-lg p-2">
                 {bankAccounts.map((account) => (
                   <div
-                    key={account.account_id}
+                    key={`bank-account-${account.account_id}`}
                     className="flex items-center space-x-3 p-3 rounded-md border bg-card hover:bg-muted/50 transition-colors"
                   >
                     <Checkbox
-                      id={`bank-${account.account_id}`}
+                      id={`bank-checkbox-${account.account_id}`}
                       checked={selectedAccountIds.has(account.account_id)}
                       onCheckedChange={() => toggleAccount(account.account_id)}
                     />
@@ -164,12 +164,12 @@ export function PlaidAccountConfirmationDialog({
                   
                   return (
                     <div
-                      key={account.account_id}
+                      key={`credit-account-${account.account_id}`}
                       className="border rounded-md bg-card overflow-hidden"
                     >
                       <div className="flex items-center space-x-3 p-3 hover:bg-muted/50 transition-colors">
                         <Checkbox
-                          id={`credit-${account.account_id}`}
+                          id={`credit-checkbox-${account.account_id}`}
                           checked={isSelected}
                           onCheckedChange={() => toggleAccount(account.account_id)}
                         />
@@ -199,12 +199,13 @@ export function PlaidAccountConfirmationDialog({
                               Payment Priority
                             </Label>
                             <Select
+                              key={`priority-select-${account.account_id}`}
                               value={String(priorities[account.account_id] || 3)}
                               onValueChange={(value) => 
                                 setPriorities({ ...priorities, [account.account_id]: parseInt(value) })
                               }
                             >
-                              <SelectTrigger id={`priority-${account.account_id}`} className="h-9">
+                              <SelectTrigger id={`priority-trigger-${account.account_id}`} className="h-9">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
