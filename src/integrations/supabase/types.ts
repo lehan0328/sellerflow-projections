@@ -624,9 +624,10 @@ export type Database = {
           account_id: string | null
           amount: number
           archived: boolean
-          bank_account_id: string
+          bank_account_id: string | null
           category: string[] | null
           created_at: string
+          credit_card_id: string | null
           currency_code: string | null
           date: string
           id: string
@@ -646,9 +647,10 @@ export type Database = {
           account_id?: string | null
           amount: number
           archived?: boolean
-          bank_account_id: string
+          bank_account_id?: string | null
           category?: string[] | null
           created_at?: string
+          credit_card_id?: string | null
           currency_code?: string | null
           date: string
           id?: string
@@ -668,9 +670,10 @@ export type Database = {
           account_id?: string | null
           amount?: number
           archived?: boolean
-          bank_account_id?: string
+          bank_account_id?: string | null
           category?: string[] | null
           created_at?: string
+          credit_card_id?: string | null
           currency_code?: string | null
           date?: string
           id?: string
@@ -692,6 +695,13 @@ export type Database = {
             columns: ["bank_account_id"]
             isOneToOne: false
             referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_credit_card_id_fkey"
+            columns: ["credit_card_id"]
+            isOneToOne: false
+            referencedRelation: "credit_cards"
             referencedColumns: ["id"]
           },
         ]

@@ -4,7 +4,8 @@ import { useToast } from "./use-toast";
 
 export interface BankTransaction {
   id: string;
-  bankAccountId: string;
+  bankAccountId?: string;
+  creditCardId?: string;
   plaidTransactionId: string;
   amount: number;
   date: Date;
@@ -22,12 +23,12 @@ export interface BankTransaction {
   matchedType?: 'income' | 'vendor';
 }
 
-export const useBankTransactions = (accountId?: string) => {
+export const useBankTransactions = (accountId?: string, accountType: 'bank' | 'credit' = 'bank') => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: transactions = [], isLoading, error } = useQuery({
-    queryKey: ['bank_transactions', accountId],
+    queryKey: ['bank_transactions', accountId, accountType],
     queryFn: async () => {
       let query = supabase
         .from('bank_transactions')
@@ -36,7 +37,9 @@ export const useBankTransactions = (accountId?: string) => {
         .order('date', { ascending: false });
 
       if (accountId) {
-        query = query.eq('bank_account_id', accountId);
+        // Query by the appropriate column based on account type
+        const columnName = accountType === 'credit' ? 'credit_card_id' : 'bank_account_id';
+        query = query.eq(columnName, accountId);
       }
 
       const { data, error } = await query;
@@ -49,6 +52,7 @@ export const useBankTransactions = (accountId?: string) => {
       return (data || []).map(tx => ({
         id: tx.id,
         bankAccountId: tx.bank_account_id,
+        creditCardId: tx.credit_card_id,
         plaidTransactionId: tx.plaid_transaction_id,
         amount: Number(tx.amount),
         date: new Date(tx.date),
@@ -70,7 +74,7 @@ export const useBankTransactions = (accountId?: string) => {
   });
 
   const refetch = () => {
-    queryClient.invalidateQueries({ queryKey: ['bank_transactions', accountId] });
+    queryClient.invalidateQueries({ queryKey: ['bank_transactions', accountId, accountType] });
   };
 
   return {

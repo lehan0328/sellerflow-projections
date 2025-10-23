@@ -103,25 +103,34 @@ serve(async (req) => {
     let insertedCount = 0;
     for (const transaction of transactions) {
       try {
+        // Build transaction data based on account type
+        const transactionData: any = {
+          user_id: user.id,
+          account_id: account.account_id,
+          plaid_transaction_id: transaction.transaction_id,
+          amount: transaction.amount,
+          date: transaction.date,
+          name: transaction.name,
+          merchant_name: transaction.merchant_name,
+          category: transaction.category,
+          pending: transaction.pending,
+          payment_channel: transaction.payment_channel,
+          transaction_type: transaction.transaction_type,
+          currency_code: transaction.iso_currency_code || 'USD',
+          raw_data: transaction,
+        };
+
+        // Set either bank_account_id or credit_card_id based on account type
+        if (accountType === 'credit') {
+          transactionData.credit_card_id = accountId;
+        } else {
+          transactionData.bank_account_id = accountId;
+        }
+
         const { error: insertError } = await supabase
           .from('bank_transactions')
-          .upsert({
-            user_id: user.id,
-            bank_account_id: accountId,
-            account_id: account.account_id,
-            plaid_transaction_id: transaction.transaction_id,
-            amount: transaction.amount,
-            date: transaction.date,
-            name: transaction.name,
-            merchant_name: transaction.merchant_name,
-            category: transaction.category,
-            pending: transaction.pending,
-            payment_channel: transaction.payment_channel,
-            transaction_type: transaction.transaction_type,
-            currency_code: transaction.iso_currency_code || 'USD',
-            raw_data: transaction,
-          }, {
-            onConflict: 'plaid_transaction_id,bank_account_id',
+          .upsert(transactionData, {
+            onConflict: 'plaid_transaction_id,' + (accountType === 'credit' ? 'credit_card_id' : 'bank_account_id'),
           });
 
         if (insertError) {

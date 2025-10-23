@@ -105,8 +105,15 @@ serve(async (req) => {
     console.log('Account types:', accountsData.accounts.map((a: any) => ({ name: a.name, type: a.type, subtype: a.subtype })));
 
     // Fetch liabilities data for credit cards
+    // Check for both type === 'credit' AND subtype === 'credit card'
     let liabilitiesData: any = null;
-    const creditAccounts = accountsData.accounts.filter((a: any) => a.type === 'credit');
+    const creditAccounts = accountsData.accounts.filter((a: any) => 
+      a.type === 'credit' || a.subtype === 'credit card' || a.subtype === 'credit'
+    );
+    
+    console.log(`Checking for credit accounts. Found ${creditAccounts.length} credit-type accounts:`,
+      creditAccounts.map((a: any) => ({ name: a.name, type: a.type, subtype: a.subtype }))
+    );
     
     if (creditAccounts.length > 0) {
       try {
@@ -206,7 +213,10 @@ serve(async (req) => {
       }
       
       // Determine if it's a credit card or bank account
-      if (account.type === 'credit') {
+      // Check both type and subtype for credit cards
+      const isCreditCard = account.type === 'credit' || account.subtype === 'credit card' || account.subtype === 'credit';
+      
+      if (isCreditCard) {
         console.log('Processing CREDIT CARD account:', { 
           name: account.name, 
           balance: account.balances.current, 

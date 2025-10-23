@@ -32,7 +32,8 @@ const BankTransactions = () => {
   const [currentMatch, setCurrentMatch] = useState<TransactionMatch | null>(null);
   
   const { transactions, isLoading: transactionsLoading, refetch } = useBankTransactions(
-    selectedAccountId === "all" ? undefined : selectedAccountId
+    selectedAccountId === "all" ? undefined : selectedAccountId,
+    selectedAccountType
   );
   
   const { vendors } = useVendors();
@@ -56,9 +57,9 @@ const BankTransactions = () => {
     merchantName: tx.merchantName || tx.name,
     amount: tx.amount,
     date: tx.date,
-    accountName: allAccounts.find(acc => acc.id === tx.bankAccountId)?.account_name || '',
-    accountId: tx.bankAccountId,
-    institutionName: allAccounts.find(acc => acc.id === tx.bankAccountId)?.institution_name || '',
+    accountName: allAccounts.find(acc => acc.id === (tx.bankAccountId || tx.creditCardId))?.account_name || '',
+    accountId: tx.bankAccountId || tx.creditCardId,
+    institutionName: allAccounts.find(acc => acc.id === (tx.bankAccountId || tx.creditCardId))?.institution_name || '',
     type: (tx.amount < 0 ? 'debit' : 'credit') as 'credit' | 'debit',
     status: (tx.pending ? 'pending' : 'posted') as 'pending' | 'posted',
     pending: tx.pending
@@ -295,7 +296,14 @@ const BankTransactions = () => {
         </div>
 
         <div className="flex gap-4 items-center flex-wrap">
-          <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+          <Select value={selectedAccountId} onValueChange={(value) => {
+            setSelectedAccountId(value);
+            // Determine account type based on selected account
+            if (value !== "all") {
+              const selectedAccount = allAccounts.find(acc => acc.id === value);
+              setSelectedAccountType(selectedAccount?.accountType || 'bank');
+            }
+          }}>
             <SelectTrigger className="w-[300px]">
               <SelectValue placeholder="Select account" />
             </SelectTrigger>
