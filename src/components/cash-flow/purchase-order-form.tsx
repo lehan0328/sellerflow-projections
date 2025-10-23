@@ -123,6 +123,9 @@ export const PurchaseOrderForm = ({
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (open) {
+      // Refetch categories to ensure newly added categories are available
+      refetchCategories();
+      
       setFormData({
         poName: "",
         vendor: "",
