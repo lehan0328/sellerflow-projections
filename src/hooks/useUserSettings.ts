@@ -299,29 +299,48 @@ export const useUserSettings = () => {
       const accountId = profile.account_id;
       console.log('🗑️ Deleting all data for account:', accountId);
 
-      // Delete all account data from all tables with individual error checking
-      // Use account_id for multi-tenant tables
-      const deleteOperations = [
-        { name: 'bank_accounts', promise: supabase.from('bank_accounts').delete().eq('account_id', accountId) },
+      // Delete dependent records first (in proper order to avoid FK constraint violations)
+      console.log('🗑️ Step 1: Deleting dependent records...');
+      const dependentDeletes = [
         { name: 'bank_transactions', promise: supabase.from('bank_transactions').delete().eq('account_id', accountId) },
+        { name: 'amazon_transactions', promise: supabase.from('amazon_transactions').delete().eq('account_id', accountId) },
+        { name: 'amazon_payouts', promise: supabase.from('amazon_payouts').delete().eq('account_id', accountId) },
+        { name: 'transactions', promise: supabase.from('transactions').delete().eq('account_id', accountId) },
+        { name: 'cash_flow_events', promise: supabase.from('cash_flow_events').delete().eq('account_id', accountId) },
+        { name: 'cash_flow_insights', promise: supabase.from('cash_flow_insights').delete().eq('account_id', accountId) },
+        { name: 'documents_metadata', promise: supabase.from('documents_metadata').delete().eq('account_id', accountId) },
+        { name: 'notification_history', promise: supabase.from('notification_history').delete().eq('account_id', accountId) },
+        { name: 'deleted_transactions', promise: supabase.from('deleted_transactions').delete().eq('user_id', user.id) },
+      ];
+
+      const dependentResults = await Promise.allSettled(dependentDeletes.map(op => op.promise));
+      dependentResults.forEach((result, index) => {
+        const opName = dependentDeletes[index].name;
+        if (result.status === 'fulfilled') {
+          const { error } = result.value;
+          if (error) {
+            console.error(`❌ Failed to delete ${opName}:`, error);
+          } else {
+            console.log(`✅ Deleted ${opName}`);
+          }
+        } else {
+          console.error(`❌ Delete operation failed for ${opName}:`, result.reason);
+        }
+      });
+
+      // Delete parent records (bank accounts, vendors, etc.)
+      console.log('🗑️ Step 2: Deleting parent records...');
+      const parentDeletes = [
+        { name: 'bank_accounts', promise: supabase.from('bank_accounts').delete().eq('account_id', accountId) },
         { name: 'credit_cards', promise: supabase.from('credit_cards').delete().eq('account_id', accountId) },
         { name: 'amazon_accounts', promise: supabase.from('amazon_accounts').delete().eq('account_id', accountId) },
-        { name: 'amazon_payouts', promise: supabase.from('amazon_payouts').delete().eq('account_id', accountId) },
-        { name: 'amazon_transactions', promise: supabase.from('amazon_transactions').delete().eq('account_id', accountId) },
-        { name: 'transactions', promise: supabase.from('transactions').delete().eq('account_id', accountId) },
         { name: 'income', promise: supabase.from('income').delete().eq('account_id', accountId) },
         { name: 'vendors', promise: supabase.from('vendors').delete().eq('account_id', accountId) },
         { name: 'customers', promise: supabase.from('customers').delete().eq('account_id', accountId) },
         { name: 'recurring_expenses', promise: supabase.from('recurring_expenses').delete().eq('account_id', accountId) },
         { name: 'scenarios', promise: supabase.from('scenarios').delete().eq('account_id', accountId) },
-        { name: 'cash_flow_events', promise: supabase.from('cash_flow_events').delete().eq('account_id', accountId) },
-        { name: 'cash_flow_insights', promise: supabase.from('cash_flow_insights').delete().eq('account_id', accountId) },
         { name: 'categories', promise: supabase.from('categories').delete().eq('account_id', accountId).eq('is_default', false) },
-        { name: 'documents_metadata', promise: supabase.from('documents_metadata').delete().eq('account_id', accountId) },
-        { name: 'notification_history', promise: supabase.from('notification_history').delete().eq('account_id', accountId) },
         { name: 'notification_preferences', promise: supabase.from('notification_preferences').delete().eq('account_id', accountId) },
-        // User-specific tables (not account-level)
-        { name: 'deleted_transactions', promise: supabase.from('deleted_transactions').delete().eq('user_id', user.id) },
         { name: 'trial_addon_usage', promise: supabase.from('trial_addon_usage').delete().eq('user_id', user.id) },
         { name: 'support_tickets', promise: supabase.from('support_tickets').delete().eq('user_id', user.id) },
         { name: 'referrals_referrer', promise: supabase.from('referrals').delete().eq('referrer_id', user.id) },
@@ -330,11 +349,11 @@ export const useUserSettings = () => {
         { name: 'referral_rewards', promise: supabase.from('referral_rewards').delete().eq('user_id', user.id) },
       ];
 
-      const results = await Promise.allSettled(deleteOperations.map(op => op.promise));
+      const results = await Promise.allSettled(parentDeletes.map(op => op.promise));
       
       // Log results
       results.forEach((result, index) => {
-        const opName = deleteOperations[index].name;
+        const opName = parentDeletes[index].name;
         if (result.status === 'fulfilled') {
           const { error } = result.value;
           if (error) {
