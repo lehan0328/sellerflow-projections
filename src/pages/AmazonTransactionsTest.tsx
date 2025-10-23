@@ -1,16 +1,32 @@
 import { useAmazonTransactions } from "@/hooks/useAmazonTransactions";
+import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ForecastExplainer } from "@/components/ForecastExplainer";
+import { useEffect } from "react";
 
 const AmazonTransactionsTest = () => {
-  const { amazonTransactions, isLoading } = useAmazonTransactions();
+  const { amazonTransactions, isLoading, refetch } = useAmazonTransactions();
+  const { amazonAccounts } = useAmazonAccounts();
   const navigate = useNavigate();
+
+  // Auto-refresh every 3 seconds while syncing
+  useEffect(() => {
+    const isSyncing = amazonAccounts.some(acc => acc.sync_status === 'syncing');
+    if (isSyncing) {
+      const interval = setInterval(() => {
+        refetch();
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [amazonAccounts, refetch]);
+
+  const syncingAccount = amazonAccounts.find(acc => acc.sync_status === 'syncing');
 
   if (isLoading) {
     return (
@@ -31,6 +47,33 @@ const AmazonTransactionsTest = () => {
       </div>
 
       <ForecastExplainer />
+
+      {syncingAccount && (
+        <Card className="border-blue-500 bg-blue-50 dark:bg-blue-950">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+              <div className="flex-1">
+                <p className="font-semibold text-blue-900 dark:text-blue-100">
+                  Syncing: {syncingAccount.account_name}
+                </p>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  {syncingAccount.sync_message || 'Starting sync...'}
+                </p>
+                <div className="mt-2 bg-blue-200 dark:bg-blue-900 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${syncingAccount.sync_progress || 0}%` }}
+                  />
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={refetch}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -75,12 +118,20 @@ const AmazonTransactionsTest = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            Transaction Count: {amazonTransactions.length}
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Showing all available fields from Amazon SP-API
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>
+                Transaction Count: {amazonTransactions.length}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Showing all available fields from Amazon SP-API (auto-refreshes during sync)
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={refetch}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="h-[600px] w-full overflow-x-auto overflow-y-auto">
