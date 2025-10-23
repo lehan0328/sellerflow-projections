@@ -2036,7 +2036,56 @@ const Dashboard = () => {
                     })}
                   </SelectContent>
                 </Select>
-                {selectedBankAccountId !== 'all' && (
+                {selectedBankAccountId === 'all' ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      setSyncingTransactions(true);
+                      try {
+                        const syncPromises = allFinancialAccounts.map(account =>
+                          supabase.functions.invoke('sync-plaid-transactions', {
+                            body: { 
+                              accountId: account.id, 
+                              isInitialSync: false,
+                              accountType: account.type
+                            },
+                          })
+                        );
+                        const results = await Promise.all(syncPromises);
+                        const hasErrors = results.some(r => r.error);
+                        if (hasErrors) {
+                          toast({
+                            title: "Sync completed with errors",
+                            description: "Some accounts failed to sync. Please try again.",
+                            variant: "destructive",
+                          });
+                        } else {
+                          toast({
+                            title: "Transactions synced",
+                            description: "All bank transactions have been updated.",
+                          });
+                        }
+                        setTimeout(() => {
+                          refetchBankTransactions();
+                          setSyncingTransactions(false);
+                        }, 2000);
+                      } catch (error) {
+                        console.error('Error syncing all transactions:', error);
+                        toast({
+                          title: "Sync failed",
+                          description: "Failed to sync transactions. Please try again.",
+                          variant: "destructive",
+                        });
+                        setSyncingTransactions(false);
+                      }
+                    }}
+                    disabled={syncingTransactions || allFinancialAccounts.length === 0}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${syncingTransactions ? 'animate-spin' : ''}`} />
+                    {syncingTransactions ? 'Syncing All...' : 'Sync All Accounts'}
+                  </Button>
+                ) : (
                   <Button
                     variant="outline"
                     size="sm"
@@ -2044,7 +2093,7 @@ const Dashboard = () => {
                     disabled={isBankSyncing}
                   >
                     <RefreshCw className={`h-4 w-4 mr-2 ${isBankSyncing ? 'animate-spin' : ''}`} />
-                    {isBankSyncing ? 'Syncing...' : 'Sync Transactions'}
+                    {isBankSyncing ? 'Syncing...' : 'Sync Account'}
                   </Button>
                 )}
                 {matches.length > 0 && (
