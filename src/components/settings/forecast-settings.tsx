@@ -77,6 +77,14 @@ export const ForecastSettings = () => {
     ? Math.max(0, 24 - Math.floor((new Date().getTime() - new Date(disabledAt).getTime()) / (60 * 60 * 1000)))
     : 0;
 
+  // Sync payoutModel with userSelectedPayoutModel whenever it changes
+  useEffect(() => {
+    if (userSelectedPayoutModel) {
+      console.log('🔄 Syncing payout model to:', userSelectedPayoutModel);
+      setPayoutModel(userSelectedPayoutModel);
+    }
+  }, [userSelectedPayoutModel]);
+
   useEffect(() => {
     if (user) {
       fetchSettings();

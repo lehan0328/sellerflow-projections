@@ -165,3 +165,6 @@ verify_jwt = false
 [functions.create-sample-user-data]
 verify_jwt = false
 
+[functions.scheduled-amazon-sync]
+verify_jwt = false
+

@@ -19,10 +19,10 @@ Deno.serve(async (req) => {
 
     console.log('Starting scheduled Amazon sync for all active accounts...')
 
-    // Get all active Amazon accounts
+    // Get all active Amazon accounts with last sync time
     const { data: amazonAccounts, error: fetchError } = await supabase
       .from('amazon_accounts')
-      .select('id, user_id, account_name, marketplace_name')
+      .select('id, user_id, account_name, marketplace_name, last_sync')
       .eq('is_active', true)
 
     if (fetchError) {
@@ -46,6 +46,25 @@ Deno.serve(async (req) => {
     // Sync each account
     const syncResults = []
     for (const account of amazonAccounts) {
+      // Check if last sync was less than 12 hours ago
+      if (account.last_sync) {
+        const lastSyncTime = new Date(account.last_sync).getTime()
+        const now = Date.now()
+        const hoursSinceSync = (now - lastSyncTime) / (1000 * 60 * 60)
+        
+        if (hoursSinceSync < 12) {
+          console.log(`Skipping ${account.account_name} - last synced ${hoursSinceSync.toFixed(1)} hours ago`)
+          syncResults.push({
+            accountId: account.id,
+            accountName: account.account_name,
+            success: true,
+            skipped: true,
+            reason: `Last synced ${hoursSinceSync.toFixed(1)} hours ago`
+          })
+          continue
+        }
+      }
+
       console.log(`Syncing account: ${account.account_name} (${account.id})`)
       
       try {
@@ -71,6 +90,9 @@ Deno.serve(async (req) => {
             data
           })
         }
+
+        // Add delay between syncs to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 2000))
       } catch (error) {
         console.error(`Exception syncing account ${account.id}:`, error)
         syncResults.push({
@@ -82,10 +104,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    const successCount = syncResults.filter(r => r.success).length
+    const successCount = syncResults.filter(r => r.success && !r.skipped).length
+    const skipCount = syncResults.filter(r => r.skipped).length
     const failCount = syncResults.filter(r => !r.success).length
 
-    console.log(`Sync complete: ${successCount} succeeded, ${failCount} failed`)
+    console.log(`Sync complete: ${successCount} succeeded, ${skipCount} skipped, ${failCount} failed`)
 
     return new Response(
       JSON.stringify({
