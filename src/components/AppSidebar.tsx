@@ -64,6 +64,12 @@ const resourceSections = [{
   isRoute: true,
   url: "/settings"
 }, {
+  id: "team-management",
+  title: "Manage Users",
+  icon: Users,
+  isRoute: true,
+  url: "/settings?section=team"
+}, {
   id: "document-storage",
   title: "Document Storage",
   icon: FolderOpen
