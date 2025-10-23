@@ -17,9 +17,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Building2, CreditCard, AlertCircle } from "lucide-react";
+import { Building2, CreditCard, AlertCircle, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 interface PlaidAccount {
   account_id: string;
@@ -49,6 +50,8 @@ export function PlaidAccountConfirmationDialog({
   institutionName,
   onConfirm,
 }: PlaidAccountConfirmationDialogProps) {
+  const { planLimits, currentUsage, isInTrial } = usePlanLimits();
+  
   // Generate stable unique IDs for each account
   const accountsWithIds = accounts.map((acc, index) => ({
     ...acc,
@@ -60,6 +63,10 @@ export function PlaidAccountConfirmationDialog({
   const [priorities, setPriorities] = useState<Record<string, number>>({});
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
   const [isAdding, setIsAdding] = useState(false);
+  
+  // Calculate remaining connections
+  const remainingConnections = planLimits.bankConnections - currentUsage.bankConnections;
+  const willExceedLimit = !isInTrial && (selectedAccountIds.size > remainingConnections);
 
   // Debug logging
   console.log('PlaidAccountConfirmationDialog - Accounts:', accountsWithIds.map(acc => ({
@@ -140,12 +147,51 @@ export function PlaidAccountConfirmationDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          {/* Plan Limits Info */}
+          <div className={`flex items-start gap-3 p-4 rounded-lg border ${
+            willExceedLimit 
+              ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
+              : 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+          }`}>
+            <Zap className={`h-5 w-5 mt-0.5 flex-shrink-0 ${
+              willExceedLimit ? 'text-red-600' : 'text-green-600'
+            }`} />
+            <div className="text-sm flex-1">
+              <p className="font-medium mb-1 text-foreground">
+                {isInTrial ? 'Trial Mode - Unlimited Connections' : 'Connection Limits'}
+              </p>
+              {isInTrial ? (
+                <p className="text-muted-foreground">
+                  You're in trial mode and can connect unlimited accounts. Connect as many as you need to test the platform!
+                </p>
+              ) : (
+                <p className="text-muted-foreground">
+                  {remainingConnections > 0 ? (
+                    <>
+                      You have <strong className="text-foreground">{remainingConnections}</strong> of <strong className="text-foreground">{planLimits.bankConnections}</strong> connections remaining on your <strong className="text-foreground">{planLimits.name}</strong> plan.
+                    </>
+                  ) : (
+                    <>
+                      You've used all <strong className="text-foreground">{planLimits.bankConnections}</strong> connections on your <strong className="text-foreground">{planLimits.name}</strong> plan. Upgrade to add more.
+                    </>
+                  )}
+                </p>
+              )}
+              {willExceedLimit && (
+                <p className="mt-2 text-red-700 dark:text-red-300 font-medium">
+                  ⚠️ You've selected {selectedAccountIds.size} account{selectedAccountIds.size !== 1 ? 's' : ''}, which exceeds your limit. Please upgrade your plan or select fewer accounts.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Auto-sync Notice */}
           <div className="flex items-start gap-3 p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
             <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-blue-900 dark:text-blue-100">
-              <p className="font-medium mb-1">Review before connecting</p>
+              <p className="font-medium mb-1">Automatic Transaction Import</p>
               <p className="text-blue-700 dark:text-blue-300">
-                Select which accounts to connect and set credit card payment priorities.
+                Transactions will be automatically imported from all selected accounts and appear in your Bank Transactions view. Credit card transactions will also be synced and matched with your expenses.
               </p>
             </div>
           </div>
@@ -296,9 +342,9 @@ export function PlaidAccountConfirmationDialog({
           </Button>
           <Button 
             onClick={handleConfirm} 
-            disabled={selectedAccountIds.size === 0 || isAdding}
+            disabled={selectedAccountIds.size === 0 || isAdding || willExceedLimit}
           >
-            {isAdding ? "Adding..." : `Add ${selectedAccountIds.size} Account${selectedAccountIds.size !== 1 ? 's' : ''}`}
+            {isAdding ? "Adding..." : willExceedLimit ? "Exceeds Limit" : `Add ${selectedAccountIds.size} Account${selectedAccountIds.size !== 1 ? 's' : ''}`}
           </Button>
         </DialogFooter>
       </DialogContent>
