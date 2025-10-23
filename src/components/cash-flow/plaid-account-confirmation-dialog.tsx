@@ -139,7 +139,8 @@ export function PlaidAccountConfirmationDialog({
                   <div className="flex-1">
                     <p className="font-medium text-sm">{account.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {account.subtype} • Balance: ${account.balances?.current?.toFixed(2) || '0.00'}
+                      {account.subtype}
+                      {account.balances?.current != null && ` • Balance: $${account.balances.current.toFixed(2)}`}
                     </p>
                   </div>
                   </div>
@@ -173,8 +174,9 @@ export function PlaidAccountConfirmationDialog({
                         <div className="flex-1">
                           <p className="font-medium text-sm">{account.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            Balance: ${account.balances?.current?.toFixed(2) || '0.00'} • 
-                            Limit: ${account.balances?.limit?.toFixed(2) || '0.00'}
+                            {account.balances?.current != null && `Balance: $${account.balances.current.toFixed(2)}`}
+                            {account.balances?.current != null && account.balances?.limit != null && ' • '}
+                            {account.balances?.limit != null && `Limit: $${account.balances.limit.toFixed(2)}`}
                           </p>
                         </div>
                         {isSelected && (
