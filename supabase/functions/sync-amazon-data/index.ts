@@ -70,570 +70,410 @@ serve(async (req) => {
       )
     }
 
-    // Get the Amazon account with encrypted credentials
-    const { data: amazonAccount, error: accountError } = await supabase
-      .from('amazon_accounts')
-      .select('*')
-      .eq('id', amazonAccountId)
-      .eq('user_id', user.id)
-      .single()
-
-    if (accountError || !amazonAccount) {
-      return new Response(
-        JSON.stringify({ error: 'Amazon account not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    console.log(`Syncing Amazon account: ${amazonAccount.account_name} (${amazonAccount.payout_frequency} payouts)`)
-
-    // Check rate limiting - Amazon Financial Events API: 0.5 requests/second (120 second minimum between calls)
-    const lastSync = amazonAccount.last_sync ? new Date(amazonAccount.last_sync) : null
-    const timeSinceLastSync = lastSync ? (Date.now() - lastSync.getTime()) / 1000 : Infinity
-    const RATE_LIMIT_SECONDS = 120 // 2 minutes minimum between syncs
-    
-    if (timeSinceLastSync < RATE_LIMIT_SECONDS) {
-      const waitTime = Math.ceil(RATE_LIMIT_SECONDS - timeSinceLastSync)
-      console.log(`⏱️ Rate limit: Last sync was ${Math.floor(timeSinceLastSync)}s ago. Must wait ${waitTime}s more.`)
-      
-      return new Response(
-        JSON.stringify({ 
-          error: 'Rate limit exceeded',
-          message: `Please wait ${waitTime} seconds before syncing again to avoid Amazon API quota limits.`,
-          nextSyncAvailable: new Date(Date.now() + (waitTime * 1000)).toISOString(),
-          waitSeconds: waitTime
-        }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Check if access token needs refresh (expires within 5 minutes OR is null)
-    const tokenExpiresAt = amazonAccount.token_expires_at ? new Date(amazonAccount.token_expires_at) : null
-    const needsRefresh = !amazonAccount.encrypted_access_token || !tokenExpiresAt || (tokenExpiresAt.getTime() - Date.now()) < 300000
-
-    let accessToken = amazonAccount.encrypted_access_token
-
-    if (needsRefresh) {
-      console.log('Access token missing, expired, or expiring soon - refreshing...')
-      const { data: refreshData, error: refreshError } = await supabase.functions.invoke('refresh-amazon-token', {
-        body: { amazon_account_id: amazonAccountId }
-      })
-
-      if (refreshError || !refreshData?.access_token) {
-        console.error('Failed to refresh token:', refreshError)
-        throw new Error(`Failed to refresh Amazon access token: ${refreshError?.message || 'Unknown error'}`)
-      }
-
-      accessToken = refreshData.access_token
-      console.log('✅ Token refreshed successfully')
-    } else {
-      // Decrypt existing access token
-      console.log('Using existing access token, decrypting...')
-      const { data: decryptedToken } = await supabase
-        .rpc('decrypt_banking_credential', { encrypted_text: accessToken })
-      accessToken = decryptedToken
-      console.log('✅ Token decrypted successfully')
-    }
-
-    // Determine region and API endpoint
-    const region = MARKETPLACE_REGIONS[amazonAccount.marketplace_id] || 'US'
-    const apiEndpoint = AMAZON_SPAPI_ENDPOINTS[region]
-
-    console.log(`Using ${region} endpoint: ${apiEndpoint}`)
-
-    const now = new Date()
-    const transactionsToAdd = []
-    const payoutsToAdd = []
-
-    // Fetch financial events from Amazon SP-API with pagination
-    try {
-      const financialEventsUrl = `${apiEndpoint}/finances/v0/financialEvents`
-      
-      // Use incremental sync: fetch from last sync date, or last 30 days if first sync
-      const startDate = new Date()
-      if (amazonAccount.last_sync) {
-        // Incremental: fetch from last sync with 1 day overlap to catch any delayed data
-        startDate.setTime(new Date(amazonAccount.last_sync).getTime() - (24 * 60 * 60 * 1000))
-        console.log(`📅 Incremental sync from: ${startDate.toISOString()}`)
-      } else {
-        // Initial sync: last 30 days only
-        startDate.setDate(startDate.getDate() - 30)
-        console.log(`📅 Initial sync - fetching last 30 days from: ${startDate.toISOString()}`)
-      }
-
-      let nextToken: string | undefined = undefined
-      let pageCount = 0
-      const maxPages = 50 // Safety limit to prevent infinite loops
-
-      console.log('Fetching financial events with pagination...')
-
-      do {
-        pageCount++
-        console.log(`📄 Fetching page ${pageCount}... (${transactionsToAdd.length} transactions so far)`)
-
-        // Build URL with pagination token if available
-        let url = `${financialEventsUrl}?PostedAfter=${startDate.toISOString()}&MarketplaceId=${amazonAccount.marketplace_id}&MaxResultsPerPage=100`
-        if (nextToken) {
-          url += `&NextToken=${encodeURIComponent(nextToken)}`
-        }
-
-        const financialResponse = await fetch(url, {
-          headers: {
-            'x-amz-access-token': accessToken,
-            'Content-Type': 'application/json',
-          }
-        })
-
-        if (!financialResponse.ok) {
-          const errorText = await financialResponse.text()
-          console.error('Financial events API error:', errorText)
-          throw new Error(`Financial events API failed: ${financialResponse.status} - ${errorText}`)
-        }
-
-        const financialData = await financialResponse.json()
-        
-        // Extract NextToken for pagination
-        nextToken = financialData.payload?.NextToken
-
-        // Log what event types are available in this response
-        const eventTypes = financialData.payload?.FinancialEvents || {}
-        console.log('📦 Available event types:', Object.keys(eventTypes))
-        console.log('📊 Event counts:', {
-          shipments: (eventTypes.ShipmentEventList || []).length,
-          refunds: (eventTypes.RefundEventList || []).length,
-          reimbursements: (eventTypes.ShipmentSettleEventList || []).length,
-          serviceFees: (eventTypes.ServiceFeeEventList || []).length,
-          guaranteeClaims: (eventTypes.SAFETReimbursementEventList || []).length,
-          chargebacks: (eventTypes.ChargebackEventList || []).length,
-          adjustments: (eventTypes.AdjustmentEventList || []).length
-        })
-
-        // Parse shipment events (Orders/Sales)
-        const shipmentEvents = financialData.payload?.FinancialEvents?.ShipmentEventList || []
-        console.log(`Processing ${shipmentEvents.length} shipment events...`)
-        for (const shipment of shipmentEvents) {
-          const orderId = shipment.AmazonOrderId
-          const shipmentDate = shipment.PostedDate
-          
-          // Try to extract delivery date from shipment data
-          // Amazon provides MarketplaceFacilitatorTaxList with potential delivery info
-          const deliveryDate = shipment.EarliestDeliveryDate || shipment.LatestDeliveryDate || null
-          
-          console.log(`Shipment ${orderId}: Posted=${shipmentDate}, Delivery=${deliveryDate || 'N/A'}`)
-          
-          // Process each item in the shipment
-          for (const item of (shipment.ShipmentItemList || [])) {
-            const revenue = item.ItemChargeList?.reduce((sum: number, charge: any) => 
-              sum + (charge.ChargeAmount?.CurrencyAmount || 0), 0) || 0
-            
-            const fees = item.ItemFeeList?.reduce((sum: number, fee: any) => 
-              sum + (fee.FeeAmount?.CurrencyAmount || 0), 0) || 0
-
-            if (revenue !== 0 || fees !== 0) {
-              transactionsToAdd.push({
-                user_id: user.id,
-                amazon_account_id: amazonAccountId,
-                account_id: amazonAccount.account_id,
-                transaction_id: `${orderId}-${item.SellerSKU}`,
-                transaction_type: 'Order',
-                amount: revenue + fees, // Net amount
-                gross_amount: revenue,
-                delivery_date: deliveryDate,
-                currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
-                transaction_date: shipmentDate,
-                order_id: orderId,
-                sku: item.SellerSKU,
-                marketplace_name: amazonAccount.marketplace_name,
-                description: `Order ${orderId}`,
-                raw_data: item,
-              })
-            }
-          }
-        }
-
-        // Parse refund events
-        const refundEvents = financialData.payload?.FinancialEvents?.RefundEventList || []
-        console.log(`Processing ${refundEvents.length} refund events...`)
-        for (const refund of refundEvents) {
-          const orderId = refund.AmazonOrderId
-          const refundDate = refund.PostedDate
-          
-          for (const item of (refund.ShipmentItemList || [])) {
-            const refundAmount = item.ItemChargeList?.reduce((sum: number, charge: any) => 
-              sum + (charge.ChargeAmount?.CurrencyAmount || 0), 0) || 0
-
-            if (refundAmount !== 0) {
-              transactionsToAdd.push({
-                user_id: user.id,
-                amazon_account_id: amazonAccountId,
-                account_id: amazonAccount.account_id,
-                transaction_id: `REFUND-${orderId}-${item.SellerSKU}`,
-                transaction_type: 'Refund',
-                amount: -Math.abs(refundAmount),
-                gross_amount: -Math.abs(refundAmount),
-                currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
-                transaction_date: refundDate,
-                order_id: orderId,
-                sku: item.SellerSKU,
-                marketplace_name: amazonAccount.marketplace_name,
-                description: `Refund for ${orderId}`,
-                raw_data: item,
-              })
-            }
-          }
-        }
-
-        // Parse reimbursement events (Amazon reimbursements for lost/damaged inventory)
-        const reimbursementEvents = financialData.payload?.FinancialEvents?.ShipmentSettleEventList || []
-        console.log(`Processing ${reimbursementEvents.length} reimbursement settlement events...`)
-        for (const settlement of reimbursementEvents) {
-          const settlementDate = settlement.PostedDate
-          const settlementId = settlement.SettlementId
-          
-          for (const item of (settlement.ShipmentItemList || [])) {
-            const reimbursementAmount = item.ItemChargeList?.reduce((sum: number, charge: any) => 
-              sum + (charge.ChargeAmount?.CurrencyAmount || 0), 0) || 0
-
-            if (reimbursementAmount !== 0) {
-              transactionsToAdd.push({
-                user_id: user.id,
-                amazon_account_id: amazonAccountId,
-                account_id: amazonAccount.account_id,
-                transaction_id: `REIMBURSE-${settlementId}-${item.SellerSKU}`,
-                transaction_type: 'Reimbursement',
-                amount: reimbursementAmount,
-                gross_amount: reimbursementAmount,
-                currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
-                transaction_date: settlementDate,
-                settlement_id: settlementId,
-                sku: item.SellerSKU,
-                marketplace_name: amazonAccount.marketplace_name,
-                description: `Reimbursement - ${settlementId}`,
-                raw_data: item,
-              })
-            }
-          }
-        }
-
-        // Parse service fee events (subscription fees, etc.)
-        const serviceFeeEvents = financialData.payload?.FinancialEvents?.ServiceFeeEventList || []
-        console.log(`Processing ${serviceFeeEvents.length} service fee events...`)
-        for (const fee of serviceFeeEvents) {
-          const feeAmount = fee.FeeList?.reduce((sum: number, f: any) => 
-            sum + (f.FeeAmount?.CurrencyAmount || 0), 0) || 0
-
-          if (feeAmount !== 0) {
-            transactionsToAdd.push({
-              user_id: user.id,
-              amazon_account_id: amazonAccountId,
-              account_id: amazonAccount.account_id,
-              transaction_id: `FEE-${fee.SellerSKU || 'SERVICE'}-${fee.PostedDate}`,
-              transaction_type: 'ServiceFee',
-              amount: -Math.abs(feeAmount), // Fees are negative
-              gross_amount: -Math.abs(feeAmount),
-              currency_code: fee.FeeList?.[0]?.FeeAmount?.CurrencyCode || 'USD',
-              transaction_date: fee.PostedDate,
-              sku: fee.SellerSKU,
-              marketplace_name: amazonAccount.marketplace_name,
-              description: fee.FeeDescription || 'Service Fee',
-              fee_description: fee.FeeDescription,
-              fee_type: fee.FeeType,
-              raw_data: fee,
-            })
-          }
-        }
-
-        // Parse adjustment events (manual adjustments, corrections)
-        const adjustmentEvents = financialData.payload?.FinancialEvents?.AdjustmentEventList || []
-        console.log(`Processing ${adjustmentEvents.length} adjustment events...`)
-        for (const adjustment of adjustmentEvents) {
-          const adjustmentAmount = adjustment.AdjustmentAmount?.CurrencyAmount || 0
-
-          if (adjustmentAmount !== 0) {
-            transactionsToAdd.push({
-              user_id: user.id,
-              amazon_account_id: amazonAccountId,
-              account_id: amazonAccount.account_id,
-              transaction_id: `ADJ-${adjustment.AdjustmentType}-${adjustment.PostedDate}`,
-              transaction_type: 'Adjustment',
-              amount: adjustmentAmount,
-              gross_amount: adjustmentAmount,
-              currency_code: adjustment.AdjustmentAmount?.CurrencyCode || 'USD',
-              transaction_date: adjustment.PostedDate,
-              marketplace_name: amazonAccount.marketplace_name,
-              description: `${adjustment.AdjustmentType}: ${adjustment.AdjustmentReason || 'N/A'}`,
-              raw_data: adjustment,
-            })
-          }
-        }
-
-        // Parse SAFE-T claim reimbursements
-        const safetEvents = financialData.payload?.FinancialEvents?.SAFETReimbursementEventList || []
-        console.log(`Processing ${safetEvents.length} SAFE-T reimbursement events...`)
-        for (const safet of safetEvents) {
-          const reimbursementAmount = safet.ReimbursedAmount?.CurrencyAmount || 0
-
-          if (reimbursementAmount !== 0) {
-            transactionsToAdd.push({
-              user_id: user.id,
-              amazon_account_id: amazonAccountId,
-              account_id: amazonAccount.account_id,
-              transaction_id: `SAFET-${safet.SAFETClaimId}`,
-              transaction_type: 'SAFETReimbursement',
-              amount: reimbursementAmount,
-              gross_amount: reimbursementAmount,
-              currency_code: safet.ReimbursedAmount?.CurrencyCode || 'USD',
-              transaction_date: safet.PostedDate,
-              marketplace_name: amazonAccount.marketplace_name,
-              description: `SAFE-T Claim: ${safet.ReasonCode || 'Reimbursement'}`,
-              raw_data: safet,
-            })
-          }
-        }
-
-        console.log(`✓ Page ${pageCount}: Added ${transactionsToAdd.length} transactions so far`)
-
-        // Amazon rate limit: 0.6 seconds per request (safer than 0.5)
-        // Wait 2.4 seconds between pagination requests to stay well under rate limits
-        if (nextToken && pageCount < maxPages) {
-          console.log('⏱️ Waiting 2.4 seconds before next page (rate limit compliance)...')
-          await new Promise(resolve => setTimeout(resolve, 2400))
-        }
-
-      } while (nextToken && pageCount < maxPages)
-
-      if (pageCount >= maxPages && nextToken) {
-        console.log(`⚠️ Reached max page limit (${maxPages}). More data may be available - consider syncing again later.`)
-      }
-
-      console.log(`✅ Completed pagination: ${pageCount} pages, ${transactionsToAdd.length} total transactions`)
-      
-      // Log date range of actual transactions received
-      if (transactionsToAdd.length > 0) {
-        const dates = transactionsToAdd.map(t => new Date(t.transaction_date).getTime()).sort()
-        const earliestDate = new Date(Math.min(...dates))
-        const latestDate = new Date(Math.max(...dates))
-        console.log(`📅 Transaction date range: ${earliestDate.toISOString().split('T')[0]} to ${latestDate.toISOString().split('T')[0]}`)
-        console.log(`📊 Transaction type breakdown:`, transactionsToAdd.reduce((acc: any, t) => {
-          acc[t.transaction_type] = (acc[t.transaction_type] || 0) + 1
-          return acc
-        }, {}))
-      }
-
-      if (pageCount >= maxPages && nextToken) {
-        console.log(`⚠️ Reached max page limit (${maxPages}). More data may be available.`)
-      }
-
-    } catch (apiError) {
-      console.error('Error fetching from Amazon SP-API:', apiError)
-      // Fall back to demo data if API fails
-      console.log('Falling back to demo data...')
-    }
-
-    // If no real data was fetched (API error or empty response), generate demo data
-    if (transactionsToAdd.length === 0) {
-      console.log('Generating demo transaction data...')
-
-      // Generate sample transactions for the last 30 days with realistic data
-    for (let i = 0; i < 30; i++) {
-      const transactionDate = new Date(now)
-      transactionDate.setDate(now.getDate() - i)
-      
-      // Calculate delivery date (2-4 days after order)
-      const deliveryDate = new Date(transactionDate)
-      deliveryDate.setDate(deliveryDate.getDate() + Math.floor(Math.random() * 3) + 2)
-      
-      // Simulate various transaction types with proper gross/net amounts
-      const transactionTypes = [
-        { type: 'Order', grossAmount: Math.random() * 500 + 50, description: 'Product Sale' },
-        { type: 'FBAInventoryFee', grossAmount: 0, netAmount: -(Math.random() * 20 + 5), description: 'FBA Storage Fee' },
-        { type: 'Refund', grossAmount: -(Math.random() * 100 + 25), description: 'Customer Refund' },
-        { type: 'ShippingCharge', grossAmount: Math.random() * 15 + 5, description: 'Shipping Revenue' }
-      ]
-
-      const randomTransaction = transactionTypes[Math.floor(Math.random() * transactionTypes.length)]
-      const isOrder = randomTransaction.type === 'Order'
-      
-      // Calculate realistic costs for orders
-      const grossAmount = randomTransaction.grossAmount
-      const shippingCost = isOrder ? Math.random() * 8 + 2 : 0
-      const adsCost = isOrder ? grossAmount * (Math.random() * 0.15) : 0 // 0-15% of gross
-      const fees = isOrder ? grossAmount * 0.15 : 0 // 15% Amazon fees
-      const returnRate = 0.01 + Math.random() * 0.04 // 1-5% return rate
-      const chargebackRate = 0.002 + Math.random() * 0.008 // 0.2-1% chargeback rate
-      const netAmount = randomTransaction.netAmount || (grossAmount - fees - shippingCost - adsCost)
-      
-      // Use deterministic transaction ID based on account, date, and index
-      const transactionId = `AMZ-${amazonAccountId.slice(0, 8)}-${transactionDate.toISOString().split('T')[0]}-${i}`
-      
-      transactionsToAdd.push({
-        user_id: user.id,
-        amazon_account_id: amazonAccountId,
-        account_id: amazonAccount.account_id,
-        transaction_id: transactionId,
-        transaction_type: randomTransaction.type,
-        amount: netAmount,
-        gross_amount: grossAmount,
-        delivery_date: isOrder ? deliveryDate.toISOString().split('T')[0] : null,
-        shipping_cost: shippingCost,
-        ads_cost: adsCost,
-        return_rate: returnRate,
-        chargeback_rate: chargebackRate,
-        currency_code: 'USD',
-        transaction_date: transactionDate.toISOString(),
-        settlement_id: `S${Math.floor(transactionDate.getTime() / 1000)}`,
-        marketplace_name: amazonAccount.marketplace_name,
-        description: randomTransaction.description
-      })
-    }
-
-    // Generate payouts based on frequency
-    const payoutDates = []
-    const payoutFrequency = amazonAccount.payout_frequency || 'bi-weekly'
-    
-    if (payoutFrequency === 'daily') {
-      // Generate next 14 daily payouts
-      for (let i = 0; i < 14; i++) {
-        const payoutDate = new Date(now)
-        payoutDate.setDate(now.getDate() + i)
-        payoutDates.push(payoutDate)
-      }
-    } else {
-      // Generate bi-weekly payouts (current and next upcoming only)
-      for (let i = 0; i < 2; i++) {
-        const payoutDate = new Date(now)
-        payoutDate.setDate(now.getDate() + (i * 14))
-        payoutDates.push(payoutDate)
-      }
-    }
-
-    for (const [index, payoutDate] of payoutDates.entries()) {
-      const isConfirmed = index === 0 // First payout is confirmed
-      const payoutDateStr = payoutDate.toISOString().split('T')[0]
-      
-      // Use date-based settlement ID so re-syncing doesn't create duplicates
-      const settlementId = `SETTLEMENT-${amazonAccountId.slice(0, 8)}-${payoutDateStr}`
-      
-      // Generate consistent amounts based on the date (for demo purposes)
-      const seed = new Date(payoutDateStr).getTime()
-      const totalAmount = 1000 + (seed % 3000)
-      
-      payoutsToAdd.push({
-        user_id: user.id,
-        amazon_account_id: amazonAccountId,
-        settlement_id: settlementId,
-        payout_date: payoutDateStr,
-        total_amount: totalAmount,
-        currency_code: 'USD',
-        status: isConfirmed ? 'confirmed' : 'estimated',
-        payout_type: 'bi-weekly',
-        marketplace_name: amazonAccount.marketplace_name,
-        transaction_count: Math.floor((seed % 50)) + 20,
-        fees_total: totalAmount * 0.15,
-        orders_total: totalAmount * 1.2,
-        refunds_total: totalAmount * 0.05,
-        other_total: totalAmount * 0.02
-      })
-    }
-    } // Close the if (transactionsToAdd.length === 0) block
-
-    // Insert transactions (with conflict resolution)
-    if (transactionsToAdd.length > 0) {
-      const { error: transactionError } = await supabase
-        .from('amazon_transactions')
-        .upsert(transactionsToAdd, { 
-          onConflict: 'amazon_account_id,transaction_id',
-          ignoreDuplicates: true 
-        })
-
-      if (transactionError) {
-        console.error('Error inserting transactions:', transactionError)
-      }
-    }
-
-    // Before inserting actual payouts, check for existing forecasted payouts
-    // and update them with actual data while preserving forecast for comparison
-    if (payoutsToAdd.length > 0) {
-      for (const payout of payoutsToAdd) {
-        // Find any existing forecasted payout for this date
-        const { data: existingForecasts } = await supabase
-          .from('amazon_payouts')
+    // Define background sync task
+    const syncTask = async () => {
+      console.log(`[Background Sync] Starting sync for account ${amazonAccountId}`)
+      try {
+        // Get the Amazon account with encrypted credentials
+        const { data: amazonAccount, error: accountError } = await supabase
+          .from('amazon_accounts')
           .select('*')
-          .eq('amazon_account_id', payout.amazon_account_id)
-          .eq('payout_date', payout.payout_date)
-          .eq('status', 'forecasted')
-          .maybeSingle()
+          .eq('id', amazonAccountId)
+          .eq('user_id', user.id)
+          .single()
 
-        if (existingForecasts) {
-          // We found a forecasted payout - replace it with actual data
-          const forecastAmount = Number(existingForecasts.total_amount)
-          const actualAmount = Number(payout.total_amount)
-          const accuracy = actualAmount > 0 
-            ? (100 - Math.abs(((actualAmount - forecastAmount) / actualAmount) * 100))
-            : 0
-
-          console.log(`Replacing forecast for ${payout.payout_date}: Forecast=$${forecastAmount}, Actual=$${actualAmount}, Accuracy=${accuracy.toFixed(2)}%`)
-
-          // Update the existing record with actual data + forecast comparison
-          await supabase
-            .from('amazon_payouts')
-            .update({
-              ...payout,
-              original_forecast_amount: forecastAmount,
-              forecast_replaced_at: new Date().toISOString(),
-              forecast_accuracy_percentage: accuracy,
-              status: payout.status // Use actual status (confirmed/estimated)
-            })
-            .eq('id', existingForecasts.id)
-        } else {
-          // No forecast exists, just insert the actual payout
-          await supabase
-            .from('amazon_payouts')
-            .upsert(payout, { 
-              onConflict: 'amazon_account_id,settlement_id',
-              ignoreDuplicates: false 
-            })
+        if (accountError || !amazonAccount) {
+          console.error('[Background Sync] Amazon account not found')
+          return
         }
+
+        console.log(`[Background Sync] Syncing Amazon account: ${amazonAccount.account_name} (${amazonAccount.payout_frequency} payouts)`)
+
+        // Check rate limiting - Amazon Financial Events API: 0.5 requests/second (120 second minimum between calls)
+        const lastSync = amazonAccount.last_sync ? new Date(amazonAccount.last_sync) : null
+        const timeSinceLastSync = lastSync ? (Date.now() - lastSync.getTime()) / 1000 : Infinity
+        const RATE_LIMIT_SECONDS = 120 // 2 minutes minimum between syncs
+        
+        if (timeSinceLastSync < RATE_LIMIT_SECONDS) {
+          const waitTime = Math.ceil(RATE_LIMIT_SECONDS - timeSinceLastSync)
+          console.log(`[Background Sync] ⏱️ Rate limit: Last sync was ${Math.floor(timeSinceLastSync)}s ago. Must wait ${waitTime}s more.`)
+          return
+        }
+
+        // Check if access token needs refresh (expires within 5 minutes OR is null)
+        const tokenExpiresAt = amazonAccount.token_expires_at ? new Date(amazonAccount.token_expires_at) : null
+        const needsRefresh = !amazonAccount.encrypted_access_token || !tokenExpiresAt || (tokenExpiresAt.getTime() - Date.now()) < 300000
+
+        let accessToken = amazonAccount.encrypted_access_token
+
+        if (needsRefresh) {
+          console.log('[Background Sync] Access token missing, expired, or expiring soon - refreshing...')
+          const { data: refreshData, error: refreshError } = await supabase.functions.invoke('refresh-amazon-token', {
+            body: { amazon_account_id: amazonAccountId }
+          })
+
+          if (refreshError || !refreshData?.access_token) {
+            console.error('[Background Sync] Failed to refresh token:', refreshError)
+            throw new Error(`Failed to refresh Amazon access token: ${refreshError?.message || 'Unknown error'}`)
+          }
+
+          accessToken = refreshData.access_token
+          console.log('[Background Sync] ✅ Token refreshed successfully')
+        } else {
+          // Decrypt existing access token
+          console.log('[Background Sync] Using existing access token, decrypting...')
+          const { data: decryptedToken } = await supabase
+            .rpc('decrypt_banking_credential', { encrypted_text: accessToken })
+          accessToken = decryptedToken
+          console.log('[Background Sync] ✅ Token decrypted successfully')
+        }
+
+        // Determine region and API endpoint
+        const region = MARKETPLACE_REGIONS[amazonAccount.marketplace_id] || 'US'
+        const apiEndpoint = AMAZON_SPAPI_ENDPOINTS[region]
+
+        console.log(`[Background Sync] Using ${region} endpoint: ${apiEndpoint}`)
+
+        const now = new Date()
+        const transactionsToAdd = []
+        const payoutsToAdd = []
+
+        // Fetch financial events from Amazon SP-API with pagination
+        try {
+          const financialEventsUrl = `${apiEndpoint}/finances/v0/financialEvents`
+          
+          // Use incremental sync: fetch from last sync date, or last 30 days if first sync
+          const startDate = new Date()
+          if (amazonAccount.last_sync) {
+            // Incremental: fetch from last sync with 1 day overlap to catch any delayed data
+            startDate.setTime(new Date(amazonAccount.last_sync).getTime() - (24 * 60 * 60 * 1000))
+            console.log(`[Background Sync] 📅 Incremental sync from: ${startDate.toISOString()}`)
+          } else {
+            // Initial sync: last 30 days only
+            startDate.setDate(startDate.getDate() - 30)
+            console.log(`[Background Sync] 📅 Initial sync - fetching last 30 days from: ${startDate.toISOString()}`)
+          }
+
+          let nextToken: string | undefined = undefined
+          let pageCount = 0
+          const maxPages = 50 // Safety limit to prevent infinite loops
+
+          console.log('[Background Sync] Fetching financial events with pagination...')
+
+          do {
+            pageCount++
+            console.log(`[Background Sync] 📄 Fetching page ${pageCount}... (${transactionsToAdd.length} transactions so far)`)
+
+            // Build URL with pagination token if available
+            let url = `${financialEventsUrl}?PostedAfter=${startDate.toISOString()}&MarketplaceId=${amazonAccount.marketplace_id}&MaxResultsPerPage=100`
+            if (nextToken) {
+              url += `&NextToken=${encodeURIComponent(nextToken)}`
+            }
+
+            const financialResponse = await fetch(url, {
+              headers: {
+                'x-amz-access-token': accessToken,
+                'Content-Type': 'application/json',
+              }
+            })
+
+            if (!financialResponse.ok) {
+              const errorText = await financialResponse.text()
+              console.error('[Background Sync] Financial events API error:', errorText)
+              throw new Error(`Financial events API failed: ${financialResponse.status} - ${errorText}`)
+            }
+
+            const financialData = await financialResponse.json()
+            
+            // Extract NextToken for pagination
+            nextToken = financialData.payload?.NextToken
+
+            // Log what event types are available in this response
+            const eventTypes = financialData.payload?.FinancialEvents || {}
+            console.log('[Background Sync] 📦 Available event types:', Object.keys(eventTypes))
+            console.log('[Background Sync] 📊 Event counts:', {
+              shipments: (eventTypes.ShipmentEventList || []).length,
+              refunds: (eventTypes.RefundEventList || []).length,
+              reimbursements: (eventTypes.ShipmentSettleEventList || []).length,
+              serviceFees: (eventTypes.ServiceFeeEventList || []).length,
+              guaranteeClaims: (eventTypes.SAFETReimbursementEventList || []).length,
+              chargebacks: (eventTypes.ChargebackEventList || []).length,
+              adjustments: (eventTypes.AdjustmentEventList || []).length
+            })
+
+            // Parse shipment events (Orders/Sales)
+            const shipmentEvents = financialData.payload?.FinancialEvents?.ShipmentEventList || []
+            console.log(`[Background Sync] Processing ${shipmentEvents.length} shipment events...`)
+            for (const shipment of shipmentEvents) {
+              const orderId = shipment.AmazonOrderId
+              const shipmentDate = shipment.PostedDate
+              
+              // Try to extract delivery date from shipment data
+              const deliveryDate = shipment.EarliestDeliveryDate || shipment.LatestDeliveryDate || null
+              
+              console.log(`[Background Sync] Shipment ${orderId}: Posted=${shipmentDate}, Delivery=${deliveryDate || 'N/A'}`)
+              
+              // Process each item in the shipment
+              for (const item of (shipment.ShipmentItemList || [])) {
+                const revenue = item.ItemChargeList?.reduce((sum: number, charge: any) => 
+                  sum + (charge.ChargeAmount?.CurrencyAmount || 0), 0) || 0
+                
+                const fees = item.ItemFeeList?.reduce((sum: number, fee: any) => 
+                  sum + (fee.FeeAmount?.CurrencyAmount || 0), 0) || 0
+
+                if (revenue !== 0 || fees !== 0) {
+                  transactionsToAdd.push({
+                    user_id: user.id,
+                    amazon_account_id: amazonAccountId,
+                    account_id: amazonAccount.account_id,
+                    transaction_id: `${orderId}-${item.SellerSKU}`,
+                    transaction_type: 'Order',
+                    amount: revenue + fees, // Net amount
+                    gross_amount: revenue,
+                    delivery_date: deliveryDate,
+                    currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
+                    transaction_date: shipmentDate,
+                    order_id: orderId,
+                    sku: item.SellerSKU,
+                    marketplace_name: amazonAccount.marketplace_name,
+                    raw_data: item,
+                  })
+                }
+              }
+            }
+
+            // Parse refund events
+            const refundEvents = financialData.payload?.FinancialEvents?.RefundEventList || []
+            console.log(`[Background Sync] Processing ${refundEvents.length} refund events...`)
+            for (const refund of refundEvents) {
+              const orderId = refund.AmazonOrderId
+              const refundDate = refund.PostedDate
+              
+              for (const item of (refund.ShipmentItemList || [])) {
+                const refundAmount = item.ItemChargeList?.reduce((sum: number, charge: any) => 
+                  sum + (charge.ChargeAmount?.CurrencyAmount || 0), 0) || 0
+
+                if (refundAmount !== 0) {
+                  transactionsToAdd.push({
+                    user_id: user.id,
+                    amazon_account_id: amazonAccountId,
+                    account_id: amazonAccount.account_id,
+                    transaction_id: `REFUND-${orderId}-${item.SellerSKU}`,
+                    transaction_type: 'Refund',
+                    amount: -Math.abs(refundAmount),
+                    gross_amount: -Math.abs(refundAmount),
+                    currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
+                    transaction_date: refundDate,
+                    order_id: orderId,
+                    sku: item.SellerSKU,
+                    marketplace_name: amazonAccount.marketplace_name,
+                    raw_data: item,
+                  })
+                }
+              }
+            }
+
+            // Parse reimbursement events (Amazon reimbursements for lost/damaged inventory)
+            const reimbursementEvents = financialData.payload?.FinancialEvents?.ShipmentSettleEventList || []
+            console.log(`[Background Sync] Processing ${reimbursementEvents.length} reimbursement settlement events...`)
+            for (const settlement of reimbursementEvents) {
+              const settlementDate = settlement.PostedDate
+              const settlementId = settlement.SettlementId
+              
+              for (const item of (settlement.ShipmentItemList || [])) {
+                const reimbursementAmount = item.ItemChargeList?.reduce((sum: number, charge: any) => 
+                  sum + (charge.ChargeAmount?.CurrencyAmount || 0), 0) || 0
+
+                if (reimbursementAmount !== 0) {
+                  transactionsToAdd.push({
+                    user_id: user.id,
+                    amazon_account_id: amazonAccountId,
+                    account_id: amazonAccount.account_id,
+                    transaction_id: `REIMBURSE-${settlementId}-${item.SellerSKU}`,
+                    transaction_type: 'Reimbursement',
+                    amount: reimbursementAmount,
+                    gross_amount: reimbursementAmount,
+                    currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
+                    transaction_date: settlementDate,
+                    settlement_id: settlementId,
+                    sku: item.SellerSKU,
+                    marketplace_name: amazonAccount.marketplace_name,
+                    raw_data: item,
+                  })
+                }
+              }
+            }
+
+            // Parse service fee events (subscription fees, etc.)
+            const serviceFeeEvents = financialData.payload?.FinancialEvents?.ServiceFeeEventList || []
+            console.log(`[Background Sync] Processing ${serviceFeeEvents.length} service fee events...`)
+            for (const fee of serviceFeeEvents) {
+              const feeAmount = fee.FeeList?.reduce((sum: number, f: any) => 
+                sum + (f.FeeAmount?.CurrencyAmount || 0), 0) || 0
+
+              if (feeAmount !== 0) {
+                transactionsToAdd.push({
+                  user_id: user.id,
+                  amazon_account_id: amazonAccountId,
+                  account_id: amazonAccount.account_id,
+                  transaction_id: `FEE-${fee.SellerSKU || 'SERVICE'}-${fee.PostedDate}`,
+                  transaction_type: 'ServiceFee',
+                  amount: -Math.abs(feeAmount), // Fees are negative
+                  gross_amount: -Math.abs(feeAmount),
+                  currency_code: fee.FeeList?.[0]?.FeeAmount?.CurrencyCode || 'USD',
+                  transaction_date: fee.PostedDate,
+                  sku: fee.SellerSKU,
+                  marketplace_name: amazonAccount.marketplace_name,
+                  fee_description: fee.FeeDescription,
+                  fee_type: fee.FeeType,
+                  raw_data: fee,
+                })
+              }
+            }
+
+            // Parse adjustment events (manual adjustments, corrections)
+            const adjustmentEvents = financialData.payload?.FinancialEvents?.AdjustmentEventList || []
+            console.log(`[Background Sync] Processing ${adjustmentEvents.length} adjustment events...`)
+            for (const adjustment of adjustmentEvents) {
+              const adjustmentAmount = adjustment.AdjustmentAmount?.CurrencyAmount || 0
+
+              if (adjustmentAmount !== 0) {
+                transactionsToAdd.push({
+                  user_id: user.id,
+                  amazon_account_id: amazonAccountId,
+                  account_id: amazonAccount.account_id,
+                  transaction_id: `ADJ-${adjustment.AdjustmentType}-${adjustment.PostedDate}`,
+                  transaction_type: 'Adjustment',
+                  amount: adjustmentAmount,
+                  gross_amount: adjustmentAmount,
+                  currency_code: adjustment.AdjustmentAmount?.CurrencyCode || 'USD',
+                  transaction_date: adjustment.PostedDate,
+                  marketplace_name: amazonAccount.marketplace_name,
+                  raw_data: adjustment,
+                })
+              }
+            }
+
+            // Parse SAFE-T claim reimbursements
+            const safetEvents = financialData.payload?.FinancialEvents?.SAFETReimbursementEventList || []
+            console.log(`[Background Sync] Processing ${safetEvents.length} SAFE-T reimbursement events...`)
+            for (const safet of safetEvents) {
+              const reimbursementAmount = safet.ReimbursedAmount?.CurrencyAmount || 0
+
+              if (reimbursementAmount !== 0) {
+                transactionsToAdd.push({
+                  user_id: user.id,
+                  amazon_account_id: amazonAccountId,
+                  account_id: amazonAccount.account_id,
+                  transaction_id: `SAFET-${safet.SAFETClaimId}`,
+                  transaction_type: 'SAFETReimbursement',
+                  amount: reimbursementAmount,
+                  gross_amount: reimbursementAmount,
+                  currency_code: safet.ReimbursedAmount?.CurrencyCode || 'USD',
+                  transaction_date: safet.PostedDate,
+                  marketplace_name: amazonAccount.marketplace_name,
+                  raw_data: safet,
+                })
+              }
+            }
+
+            console.log(`[Background Sync] ✓ Page ${pageCount}: Added ${transactionsToAdd.length} transactions so far`)
+
+            // Amazon rate limit: 0.6 seconds per request (safer than 0.5)
+            // Wait 2.4 seconds between pagination requests to stay well under rate limits
+            if (nextToken && pageCount < maxPages) {
+              console.log('[Background Sync] ⏱️ Waiting 2.4 seconds before next page (rate limit compliance)...')
+              await new Promise(resolve => setTimeout(resolve, 2400))
+            }
+
+          } while (nextToken && pageCount < maxPages)
+
+          if (pageCount >= maxPages && nextToken) {
+            console.log(`[Background Sync] ⚠️ Reached max pages (${maxPages}). More data may be available.`)
+          }
+
+          console.log(`[Background Sync] ✅ Fetched all pages: ${pageCount} pages total`)
+
+        } catch (error) {
+          console.error('[Background Sync] Error fetching financial events:', error)
+          throw error
+        }
+
+        // Insert or update transactions in database with upsert
+        console.log(`[Background Sync] Upserting ${transactionsToAdd.length} transactions...`)
+        if (transactionsToAdd.length > 0) {
+          const { error: txError } = await supabase
+            .from('amazon_transactions')
+            .upsert(transactionsToAdd, {
+              onConflict: 'transaction_id',
+              ignoreDuplicates: false
+            })
+
+          if (txError) {
+            console.error('[Background Sync] Error upserting transactions:', txError)
+            throw txError
+          }
+          console.log(`[Background Sync] ✅ ${transactionsToAdd.length} transactions upserted`)
+        }
+
+        // Get current transaction count for this account
+        const { count: totalTransactions } = await supabase
+          .from('amazon_transactions')
+          .select('*', { count: 'exact', head: true })
+          .eq('amazon_account_id', amazonAccountId)
+
+        // Determine if initial sync is complete (more than 0 transactions and no next page)
+        const shouldComplete = (totalTransactions ?? 0) > 0 && !nextToken
+
+        // Update account sync status
+        await supabase
+          .from('amazon_accounts')
+          .update({
+            last_sync: now.toISOString(),
+            transaction_count: totalTransactions || 0,
+            initial_sync_complete: shouldComplete || amazonAccount.initial_sync_complete,
+            updated_at: now.toISOString()
+          })
+          .eq('id', amazonAccountId)
+          .eq('user_id', user.id)
+
+        console.log(`[Background Sync] ✅ Sync complete: ${totalTransactions} total transactions`)
+        console.log(`[Background Sync] Added ${transactionsToAdd.length} transactions, ${payoutsToAdd.length} payouts`)
+      } catch (error) {
+        console.error('[Background Sync] Error during sync:', error)
+        // Update account with error status
+        await supabase
+          .from('amazon_accounts')
+          .update({ 
+            last_sync_error: error instanceof Error ? error.message : 'Unknown error',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', amazonAccountId)
+          .eq('user_id', user.id)
       }
     }
 
-    // Update last sync time and transaction count
-    // Mark initial sync as complete after first successful sync attempt (even if 0 transactions)
-    // This handles new accounts or accounts with no recent activity
-    const { data: currentAccount } = await supabase
-      .from('amazon_accounts')
-      .select('transaction_count, initial_sync_complete')
-      .eq('id', amazonAccountId)
-      .single();
-    
-    const totalTransactions = (currentAccount?.transaction_count || 0) + transactionsToAdd.length;
-    // Mark as complete if: already complete, has any transactions, or this is not the first sync
-    const shouldComplete = currentAccount?.initial_sync_complete || totalTransactions > 0 || currentAccount !== null;
-    
-    await supabase
-      .from('amazon_accounts')
-      .update({ 
-        last_sync: now.toISOString(),
-        transaction_count: totalTransactions,
-        initial_sync_complete: shouldComplete
-      })
-      .eq('id', amazonAccountId)
-      .eq('user_id', user.id);
+    // Start background task using EdgeRuntime.waitUntil
+    // @ts-ignore - EdgeRuntime is available in Deno Deploy
+    if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
+      // @ts-ignore
+      EdgeRuntime.waitUntil(syncTask())
+      console.log(`✅ Sync started in background for account ${amazonAccountId}`)
+    } else {
+      // Fallback for local development - run immediately but don't wait
+      syncTask().catch(err => console.error('Background sync error:', err))
+    }
 
-    console.log(`📊 Sync complete: ${totalTransactions} total transactions. Initial sync complete: ${shouldComplete}`);
-    console.log(`Added in this sync: ${transactionsToAdd.length} transactions, ${payoutsToAdd.length} payouts`);
-
+    // Return immediate response to frontend
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
-        message: 'Amazon data synced successfully',
-        transactionsAdded: transactionsToAdd.length,
-        payoutsAdded: payoutsToAdd.length,
-        totalTransactions: totalTransactions,
-        initialSyncComplete: shouldComplete
+        message: 'Amazon data sync started in background',
+        accountId: amazonAccountId,
+        status: 'processing'
       }),
       { 
-        status: 200,
+        status: 202, // 202 Accepted - indicates processing has started
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
