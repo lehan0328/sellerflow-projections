@@ -298,9 +298,16 @@ serve(async (req) => {
       const dataAvailability = amazonPayouts.length >= 3 ? 'sufficient' : 'limited';
       const modelingMode = advancedModelingEnabled && amazonPayouts.length >= 3 ? 'ADVANCED' : 'BASIC';
       
+      // Determine payout frequency and forecast periods
+      const payoutFrequency = amazonAccount.payout_frequency || 'bi-weekly';
+      const forecastDescription = payoutFrequency === 'daily' 
+        ? '90 daily payouts (3 months)' 
+        : '6 bi-weekly periods (3 months)';
+      
       const analysisPrompt = `${modelingMode} FORECASTING MODE
       
-Analyze Amazon Seller data and forecast next 3 months (6 bi-weekly periods) for ${amazonAccount.account_name} (${amazonAccount.marketplace_name}).
+Analyze Amazon Seller data and forecast next 3 months (${forecastDescription}) for ${amazonAccount.account_name} (${amazonAccount.marketplace_name}).
+PAYOUT FREQUENCY: ${payoutFrequency.toUpperCase()}
 ${advancedModelingEnabled && amazonPayouts.length >= 3 ? `
 ⚡ ADVANCED MATHEMATICAL MODELING ACTIVE ⚡
 Apply these techniques to the historical data:

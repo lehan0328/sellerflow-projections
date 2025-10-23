@@ -36,9 +36,14 @@ export const useAmazonTransactions = () => {
     }
 
     try {
+      // Fetch only last 60 days of transactions
+      const sixtyDaysAgo = new Date();
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+      
       const { data, error } = await supabase
         .from("amazon_transactions")
         .select("*")
+        .gte("transaction_date", sixtyDaysAgo.toISOString())
         .order("transaction_date", { ascending: false });
 
       if (error) {
