@@ -170,21 +170,29 @@ export const ForecastSettings = () => {
         await refetchPayouts();
       } else {
         // Automatically regenerate forecasts when enabled
-        const loadingToast = toast.loading("Generating forecasts...");
+        const loadingToast = toast.loading("Generating forecasts... Please wait up to 30 seconds.");
         
-        // Generate new forecasts using mathematical model
-        const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
-          body: { userId: currentUser.id }
-        });
+        try {
+          // Generate new forecasts using mathematical model
+          const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
+            body: { userId: currentUser.id }
+          });
 
-        toast.dismiss(loadingToast);
+          toast.dismiss(loadingToast);
 
-        if (error) {
-          console.error('❌ Forecast generation error:', error);
-          toast.error("Forecasts enabled but generation failed");
-        } else if (data?.success) {
-          toast.success("Forecasts enabled and generated!");
-          await refetchPayouts();
+          if (error) {
+            console.error('❌ Forecast generation error:', error);
+            toast.error(`Forecast generation failed: ${error.message || 'Unknown error'}`);
+          } else if (data?.success) {
+            toast.success("Forecasts enabled and generated!");
+            await refetchPayouts();
+          } else {
+            toast.warning("Forecasts may still be processing. Refresh the page in a moment.");
+          }
+        } catch (err) {
+          toast.dismiss(loadingToast);
+          console.error('❌ Unexpected error:', err);
+          toast.error("An error occurred while generating forecasts");
         }
       }
       
@@ -359,38 +367,46 @@ export const ForecastSettings = () => {
       } else {
         // Automatically regenerate forecasts
         console.log('🔄 Starting forecast regeneration...');
-        const loadingToast = toast.loading("Regenerating forecasts...");
+        const loadingToast = toast.loading("Regenerating forecasts... Please wait up to 30 seconds.");
         
-        // Delete old forecasts
-        const { error: deleteError } = await supabase
-          .from('amazon_payouts')
-          .delete()
-          .eq('user_id', currentUser.id)
-          .eq('status', 'forecasted');
+        try {
+          // Delete old forecasts
+          const { error: deleteError } = await supabase
+            .from('amazon_payouts')
+            .delete()
+            .eq('user_id', currentUser.id)
+            .eq('status', 'forecasted');
 
-        if (deleteError) {
-          console.error('❌ Error deleting old forecasts:', deleteError);
-        } else {
-          console.log('✅ Old forecasts deleted');
-        }
+          if (deleteError) {
+            console.error('❌ Error deleting old forecasts:', deleteError);
+          } else {
+            console.log('✅ Old forecasts deleted');
+          }
 
-        // Generate new forecasts using mathematical model
-        console.log('🤖 Calling forecast-amazon-payouts-math function...');
-        const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
-          body: { userId: currentUser.id }
-        });
+          // Generate new forecasts using mathematical model
+          console.log('🤖 Calling forecast-amazon-payouts-math function...');
+          const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
+            body: { userId: currentUser.id }
+          });
 
-        console.log('📊 Forecast response:', { data, error });
-        
-        // Dismiss loading toast
-        toast.dismiss(loadingToast);
+          console.log('📊 Forecast response:', { data, error });
+          
+          // Always dismiss loading toast
+          toast.dismiss(loadingToast);
 
-        if (error) {
-          console.error('❌ Forecast regeneration error:', error);
-          toast.error("Settings saved but forecast regeneration failed");
-        } else if (data?.success) {
-          console.log('✅ Forecasts regenerated successfully');
-          toast.success("Settings saved and forecasts updated!");
+          if (error) {
+            console.error('❌ Forecast regeneration error:', error);
+            toast.error(`Forecast regeneration failed: ${error.message || 'Unknown error'}`);
+          } else if (data?.success) {
+            console.log('✅ Forecasts regenerated successfully');
+            toast.success("Settings saved and forecasts updated!");
+          } else {
+            toast.warning("Forecasts may still be processing. Refresh the page in a moment.");
+          }
+        } catch (err) {
+          toast.dismiss(loadingToast);
+          console.error('❌ Unexpected error during regeneration:', err);
+          toast.error("An error occurred during forecast regeneration");
         }
       }
       
