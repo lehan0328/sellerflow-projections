@@ -181,9 +181,13 @@ export const VendorForm = ({ open, onOpenChange, onAddVendor, existingVendors = 
             open={showAddCategory}
             onOpenChange={setShowAddCategory}
             onAddCategory={async (name) => {
-              await addCategory(name);
-              await refetchCategories();
-              handleInputChange("category", name);
+              const newCategory = await addCategory(name);
+              if (newCategory) {
+                // Wait a moment for the categories list to update
+                setTimeout(() => {
+                  handleInputChange("category", name);
+                }, 100);
+              }
             }}
             type="expense"
           />
