@@ -127,11 +127,29 @@ serve(async (req) => {
           transactionData.bank_account_id = accountId;
         }
 
-        const { error: insertError } = await supabase
+        // Check if transaction already exists
+        const { data: existingTx } = await supabase
           .from('bank_transactions')
-          .upsert(transactionData, {
-            onConflict: 'plaid_transaction_id,' + (accountType === 'credit' ? 'credit_card_id' : 'bank_account_id'),
-          });
+          .select('id')
+          .eq('plaid_transaction_id', transaction.transaction_id)
+          .eq(accountType === 'credit' ? 'credit_card_id' : 'bank_account_id', accountId)
+          .single();
+
+        let insertError = null;
+        if (existingTx) {
+          // Update existing transaction
+          const { error } = await supabase
+            .from('bank_transactions')
+            .update(transactionData)
+            .eq('id', existingTx.id);
+          insertError = error;
+        } else {
+          // Insert new transaction
+          const { error } = await supabase
+            .from('bank_transactions')
+            .insert(transactionData);
+          insertError = error;
+        }
 
         if (insertError) {
           console.error('Error inserting transaction:', insertError);
