@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Clock, Plus } from "lucide-react";
+import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Clock, Plus, Loader2 } from "lucide-react";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useState } from "react";
@@ -226,6 +226,33 @@ export function AmazonPayouts() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Sync Progress Indicator */}
+        {amazonAccounts.some(acc => acc.sync_status === 'syncing') && (
+          <div className="p-4 rounded-lg border border-blue-500 bg-blue-50 dark:bg-blue-950">
+            <div className="flex items-center gap-4">
+              <Loader2 className="h-5 w-5 animate-spin text-blue-600 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                {amazonAccounts.filter(acc => acc.sync_status === 'syncing').map(account => (
+                  <div key={account.id} className="space-y-1">
+                    <p className="font-semibold text-blue-900 dark:text-blue-100 text-sm">
+                      Syncing: {account.account_name}
+                    </p>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      {account.sync_message || 'Starting sync...'}
+                    </p>
+                    <div className="mt-2 bg-blue-200 dark:bg-blue-900 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${account.sync_progress || 0}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Amazon Account Connection Status */}
         {amazonAccounts.length > 0 && (
           <div className="mb-4 p-4 rounded-lg border bg-card">
