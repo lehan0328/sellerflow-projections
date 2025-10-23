@@ -260,6 +260,18 @@ export const useBankAccounts = () => {
           fetchAccounts();
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bank_transactions',
+        },
+        () => {
+          // Refetch accounts when transactions change to recalculate available balance
+          fetchAccounts();
+        }
+      )
       .subscribe();
 
     return () => {

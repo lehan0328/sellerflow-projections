@@ -166,11 +166,24 @@ serve(async (req) => {
       })
       .eq('id', accountData)
 
+    console.log('✅ Amazon account setup complete, starting initial sync...')
+
+    // Trigger initial sync in background
+    supabase.functions.invoke('sync-amazon-data', {
+      body: { amazonAccountId: accountData }
+    }).then(({ data: syncData, error: syncError }) => {
+      if (syncError) {
+        console.error('❌ Initial sync failed:', syncError)
+      } else {
+        console.log('✅ Initial sync completed:', syncData)
+      }
+    }).catch(console.error)
+
     return new Response(
       JSON.stringify({
         success: true,
         account_id: accountData,
-        message: 'Amazon account connected successfully',
+        message: 'Amazon account connected successfully. Initial sync started.',
       }),
       {
         status: 200,

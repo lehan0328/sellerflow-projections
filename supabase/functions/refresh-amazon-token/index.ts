@@ -43,11 +43,14 @@ serve(async (req) => {
     const { amazon_account_id } = await req.json()
 
     if (!amazon_account_id) {
+      console.error('❌ Missing amazon_account_id in request')
       return new Response(
         JSON.stringify({ error: 'Amazon account ID is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    console.log('🔄 Starting token refresh for account:', amazon_account_id)
 
     // Get Amazon account with encrypted credentials
     const { data: account, error: accountError } = await supabase
@@ -57,11 +60,14 @@ serve(async (req) => {
       .single()
 
     if (accountError || !account) {
+      console.error('❌ Amazon account not found:', accountError)
       return new Response(
         JSON.stringify({ error: 'Amazon account not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    console.log('✅ Found Amazon account:', account.account_name, 'Marketplace:', account.marketplace_id)
 
     // Decrypt credentials (they're stored using encryption functions)
     const { data: decryptedRefreshToken } = await supabase
@@ -74,8 +80,15 @@ serve(async (req) => {
       .rpc('decrypt_banking_credential', { encrypted_text: account.encrypted_client_secret })
 
     if (!decryptedRefreshToken || !decryptedClientId || !decryptedClientSecret) {
+      console.error('❌ Failed to decrypt credentials:', { 
+        hasRefreshToken: !!decryptedRefreshToken, 
+        hasClientId: !!decryptedClientId, 
+        hasSecret: !!decryptedClientSecret 
+      })
       throw new Error('Failed to decrypt Amazon credentials')
     }
+
+    console.log('✅ Credentials decrypted successfully')
 
     // Determine region and endpoint
     const region = MARKETPLACE_REGIONS[account.marketplace_id] || 'US'

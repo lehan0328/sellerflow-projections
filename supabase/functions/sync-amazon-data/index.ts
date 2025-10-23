@@ -87,30 +87,32 @@ serve(async (req) => {
 
     console.log(`Syncing Amazon account: ${amazonAccount.account_name} (${amazonAccount.payout_frequency} payouts)`)
 
-    // Check if access token needs refresh (expires within 5 minutes)
+    // Check if access token needs refresh (expires within 5 minutes OR is null)
     const tokenExpiresAt = amazonAccount.token_expires_at ? new Date(amazonAccount.token_expires_at) : null
-    const needsRefresh = !tokenExpiresAt || (tokenExpiresAt.getTime() - Date.now()) < 300000
+    const needsRefresh = !amazonAccount.encrypted_access_token || !tokenExpiresAt || (tokenExpiresAt.getTime() - Date.now()) < 300000
 
     let accessToken = amazonAccount.encrypted_access_token
 
     if (needsRefresh) {
-      console.log('Access token expired or expiring soon, refreshing...')
+      console.log('Access token missing, expired, or expiring soon - refreshing...')
       const { data: refreshData, error: refreshError } = await supabase.functions.invoke('refresh-amazon-token', {
         body: { amazon_account_id: amazonAccountId }
       })
 
       if (refreshError || !refreshData?.access_token) {
         console.error('Failed to refresh token:', refreshError)
-        throw new Error('Failed to refresh Amazon access token')
+        throw new Error(`Failed to refresh Amazon access token: ${refreshError?.message || 'Unknown error'}`)
       }
 
       accessToken = refreshData.access_token
-      console.log('Token refreshed successfully')
+      console.log('✅ Token refreshed successfully')
     } else {
       // Decrypt existing access token
+      console.log('Using existing access token, decrypting...')
       const { data: decryptedToken } = await supabase
         .rpc('decrypt_banking_credential', { encrypted_text: accessToken })
       accessToken = decryptedToken
+      console.log('✅ Token decrypted successfully')
     }
 
     // Determine region and API endpoint
