@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Building2, CreditCard, AlertCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { Building2, CreditCard, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -178,22 +178,13 @@ export function PlaidAccountConfirmationDialog({
                           </p>
                         </div>
                         {isSelected && (
-                          <Badge variant={priorities[account.account_id] ? "secondary" : "outline"}>
-                            Priority: {priorities[account.account_id] || 3}
-                          </Badge>
-                        )}
-                        {isSelected && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                          <Badge 
+                            variant={priorities[account.account_id] ? "secondary" : "outline"}
+                            className="cursor-pointer hover:bg-secondary/80 transition-colors"
                             onClick={() => toggleExpanded(account.account_id)}
-                            className="h-8 w-8 p-0"
                           >
-                            {isExpanded ? 
-                              <ChevronDown className="h-4 w-4" /> : 
-                              <ChevronRight className="h-4 w-4" />
-                            }
-                          </Button>
+                            Priority: {priorities[account.account_id] || 3} {isExpanded ? '▼' : '▶'}
+                          </Badge>
                         )}
                       </div>
                       
