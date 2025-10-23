@@ -98,7 +98,7 @@ const adminOnlySections = [
 
 export function SidebarNavigation({ activeSection, onSectionChange, isAdmin }: SidebarNavigationProps) {
   return (
-    <nav className="space-y-1">
+    <nav className="space-y-1 relative z-10">
       {navigationItems.map((item) => {
         // Hide admin-only sections from staff users
         if (!isAdmin && adminOnlySections.includes(item.id)) {
@@ -111,7 +111,7 @@ export function SidebarNavigation({ activeSection, onSectionChange, isAdmin }: S
             key={item.id}
             variant={activeSection === item.id ? "secondary" : "ghost"}
             className={cn(
-              "w-full justify-start",
+              "w-full justify-start relative z-10",
               activeSection === item.id && "bg-secondary text-secondary-foreground"
             )}
             onClick={() => onSectionChange(item.id)}

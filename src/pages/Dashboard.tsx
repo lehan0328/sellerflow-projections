@@ -2054,10 +2054,10 @@ const Dashboard = () => {
       
       case "settings":
         return (
-          <div className="grid gap-6 lg:grid-cols-4">
+          <div className="grid gap-6 lg:grid-cols-4 relative z-10">
             {/* Sidebar Navigation */}
             <div className="lg:col-span-1">
-              <Card>
+              <Card className="relative z-10">
                 <CardHeader>
                   <CardTitle className="text-sm font-medium">Settings</CardTitle>
                 </CardHeader>
@@ -2072,7 +2072,7 @@ const Dashboard = () => {
             </div>
 
             {/* Main Content */}
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-3 relative z-10">
               {renderSettingsContent()}
             </div>
           </div>
