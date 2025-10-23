@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { ManualBankAccountDialog } from "./manual-bank-account-dialog";
+import { PlaidAccountConfirmationDialog } from "./plaid-account-confirmation-dialog";
 import { usePlaidLink } from "react-plaid-link";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
@@ -59,6 +60,9 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
     const saved = localStorage.getItem('useAvailableBalance');
     return saved !== null ? saved !== 'true' : false; // Default to false (use available balance)
   });
+  const [plaidMetadata, setPlaidMetadata] = useState<any>(null);
+  const [plaidPublicToken, setPlaidPublicToken] = useState<string | null>(null);
+  const [showPlaidConfirmation, setShowPlaidConfirmation] = useState(false);
 
   // Use prop value if provided, otherwise use local state
   const useActualBalance = useAvailableBalance === undefined ? localUseActualBalance : !useAvailableBalance;
@@ -89,51 +93,13 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
 
   const config = {
     token: linkToken,
-    onSuccess: async (publicToken: string, metadata: any) => {
-      try {
-        const { error } = await supabase.functions.invoke('exchange-plaid-token', {
-          body: { publicToken, metadata }
-        });
-        
-        if (error) throw error;
-        
-        // Check if institution might have imported all accounts (Bank of America, Chase, etc.)
-        const knownBulkInstitutions = ['Bank of America', 'Chase', 'Wells Fargo'];
-        const isKnownBulkInstitution = knownBulkInstitutions.some(name => 
-          metadata.institution.name.includes(name)
-        );
-        
-        if (isKnownBulkInstitution && metadata.accounts.length > 1) {
-          toast.success("Bank accounts connected!", {
-            description: `${metadata.institution.name} imported ${metadata.accounts.length} accounts. You can delete unwanted accounts from the list below.`,
-            duration: 8000,
-          });
-        } else {
-          toast.success("Bank account connected successfully!");
-        }
-        
-        // Trigger initial transaction sync for the newly connected account(s)
-        toast.info("Syncing transactions...", { duration: 3000 });
-        for (const account of metadata.accounts) {
-          try {
-            await supabase.functions.invoke('sync-plaid-transactions', {
-              body: { 
-                accountId: account.id,
-                isInitialSync: true,
-                accountType: 'bank'
-              }
-            });
-          } catch (syncError) {
-            console.error('Initial sync error for account:', account.id, syncError);
-          }
-        }
-        toast.success("Transactions synced!");
-        
-        refetch();
-      } catch (error: any) {
-        console.error('Error exchanging token:', error);
-        toast.error(error.message || "Failed to connect account");
-      }
+    onSuccess: (publicToken: string, metadata: any) => {
+      console.log('Plaid onSuccess - showing confirmation dialog', metadata);
+      setPlaidPublicToken(publicToken);
+      setPlaidMetadata(metadata);
+      setShowPlaidConfirmation(true);
+      setLinkToken(null);
+      setIsConnecting(false);
     },
     onExit: (err: any) => {
       if (err) {
@@ -289,6 +255,55 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
     if (balance > 10000) return "default";
     if (balance > 1000) return "secondary";
     return "destructive";
+  };
+
+  const handleConfirmPlaidAccounts = async (selectedAccountIds: string[], priorities?: Record<string, number>) => {
+    if (!plaidPublicToken || !plaidMetadata) return;
+    
+    try {
+      console.log('Exchanging Plaid token with selected accounts:', selectedAccountIds);
+      const { error } = await supabase.functions.invoke('exchange-plaid-token', {
+        body: { 
+          publicToken: plaidPublicToken, 
+          metadata: plaidMetadata,
+          selectedAccountIds,
+          priorities
+        }
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Bank accounts connected!");
+      
+      // Trigger initial transaction sync for the newly connected account(s)
+      toast.info("Syncing transactions...", { duration: 3000 });
+      const selectedAccounts = plaidMetadata.accounts.filter((acc: any) => 
+        selectedAccountIds.includes(acc.id)
+      );
+      
+      for (const account of selectedAccounts) {
+        try {
+          await supabase.functions.invoke('sync-plaid-transactions', {
+            body: { 
+              accountId: account.id,
+              isInitialSync: true,
+              accountType: 'bank'
+            }
+          });
+        } catch (syncError) {
+          console.error('Initial sync error for account:', account.id, syncError);
+        }
+      }
+      toast.success("Transactions synced!");
+      
+      refetch();
+      setShowPlaidConfirmation(false);
+      setPlaidPublicToken(null);
+      setPlaidMetadata(null);
+    } catch (error: any) {
+      console.error('Error exchanging token:', error);
+      toast.error(error.message || "Failed to connect account");
+    }
   };
 
   const handleCleanupDuplicates = async () => {
@@ -587,6 +602,14 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <PlaidAccountConfirmationDialog
+          open={showPlaidConfirmation}
+          onOpenChange={setShowPlaidConfirmation}
+          accounts={plaidMetadata?.accounts || []}
+          institutionName={plaidMetadata?.institution?.name || ''}
+          onConfirm={handleConfirmPlaidAccounts}
+        />
       </CardContent>
     </Card>
   );
