@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     // Get all active Amazon accounts with last sync time
     const { data: amazonAccounts, error: fetchError } = await supabase
       .from('amazon_accounts')
-      .select('id, user_id, account_name, marketplace_name, last_sync')
+      .select('id, user_id, account_name, marketplace_name, last_sync, created_at')
       .eq('is_active', true)
 
     if (fetchError) {
@@ -46,20 +46,27 @@ Deno.serve(async (req) => {
     // Sync each account
     const syncResults = []
     for (const account of amazonAccounts) {
-      // Check if last sync was less than 6 hours ago
+      // Determine sync frequency based on account age
       if (account.last_sync) {
         const lastSyncTime = new Date(account.last_sync).getTime()
+        const accountCreatedTime = new Date(account.created_at || account.last_sync).getTime()
         const now = Date.now()
-        const hoursSinceSync = (now - lastSyncTime) / (1000 * 60 * 60)
+        const minutesSinceSync = (now - lastSyncTime) / (1000 * 60)
+        const hoursSinceCreation = (now - accountCreatedTime) / (1000 * 60 * 60)
         
-        if (hoursSinceSync < 6) {
-          console.log(`Skipping ${account.account_name} - last synced ${hoursSinceSync.toFixed(1)} hours ago`)
+        // First 6 hours: sync every 10 minutes
+        // After 6 hours: sync every hour
+        const isInIntensivePeriod = hoursSinceCreation < 6
+        const minMinutesBetweenSync = isInIntensivePeriod ? 10 : 60
+        
+        if (minutesSinceSync < minMinutesBetweenSync) {
+          console.log(`Skipping ${account.account_name} - last synced ${minutesSinceSync.toFixed(1)} minutes ago (threshold: ${minMinutesBetweenSync} minutes)`)
           syncResults.push({
             accountId: account.id,
             accountName: account.account_name,
             success: true,
             skipped: true,
-            reason: `Last synced ${hoursSinceSync.toFixed(1)} hours ago`
+            reason: `Last synced ${minutesSinceSync.toFixed(1)} minutes ago (${isInIntensivePeriod ? 'intensive period' : 'standard period'})`
           })
           continue
         }
