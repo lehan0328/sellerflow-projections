@@ -167,7 +167,6 @@ serve(async (req) => {
     // Store accounts in database - ONLY process accounts the user selected
     const bankAccountIds: string[] = [];
     const creditCardIds: string[] = [];
-    const selectedAccountIds = metadata.accounts.map((a: any) => a.id);
     
     console.log('User selected accounts:', selectedAccountIds);
     console.log('Total accounts available:', accountsData.accounts.length);
@@ -288,13 +287,14 @@ serve(async (req) => {
           throw insertError;
         }
         
-      console.log('✅ Credit card stored successfully:', cardData.id);
+        creditCardIds.push(cardData.id);
+        console.log('✅ Credit card stored successfully:', cardData.id);
       
-      // Show priority dialog for newly connected card
-      if (metadata.accounts.length === 1) {
-        // Only show for single card connection to avoid blocking other cards
-        console.log('📋 Showing priority dialog for newly connected card');
-      }
+        // Show priority dialog for newly connected card
+        if (metadata.accounts.length === 1) {
+          // Only show for single card connection to avoid blocking other cards
+          console.log('📋 Showing priority dialog for newly connected card');
+        }
       } else {
         const currentBalance = account.balances.current || 0;
         const now = new Date().toISOString();
