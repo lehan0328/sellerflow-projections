@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -56,6 +57,8 @@ export function AmazonManagement() {
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
   const [selectedMarketplace, setSelectedMarketplace] = useState('ATVPDKIKX0DER'); // Default to US
   const [manualFormOpen, setManualFormOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
   const [manualFormData, setManualFormData] = useState<AmazonAccountFormData>({
     seller_id: '',
     marketplace_id: 'ATVPDKIKX0DER',
@@ -162,9 +165,16 @@ export function AmazonManagement() {
     }
   };
 
-  const handleRemoveAccount = async (accountId: string) => {
-    if (confirm('Are you sure you want to remove this Amazon account? This will also remove all associated transaction data.')) {
-      await removeAmazonAccount(accountId);
+  const handleRemoveAccount = (accountId: string) => {
+    setAccountToDelete(accountId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteAccount = async () => {
+    if (accountToDelete) {
+      await removeAmazonAccount(accountToDelete);
+      setDeleteDialogOpen(false);
+      setAccountToDelete(null);
     }
   };
 
@@ -624,6 +634,24 @@ export function AmazonManagement() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Amazon Account</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this Amazon account? This will also remove all associated transaction data and payout forecasts. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setAccountToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteAccount} className="bg-destructive hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
