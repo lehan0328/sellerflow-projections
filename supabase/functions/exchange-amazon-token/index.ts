@@ -41,6 +41,8 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  console.log('=== EXCHANGE AMAZON TOKEN FUNCTION STARTED ===');
+
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -49,6 +51,7 @@ serve(async (req) => {
 
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
+      console.error('No authorization header');
       return new Response(
         JSON.stringify({ error: 'No authorization header' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -59,15 +62,29 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
     
     if (authError || !user) {
+      console.error('Auth error:', authError);
       return new Response(
         JSON.stringify({ error: 'Invalid token' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
+    console.log('User authenticated:', user.id);
+
     const { code, selling_partner_id, marketplace_id, account_name } = await req.json()
+    console.log('Request body:', { 
+      hasCode: !!code, 
+      selling_partner_id, 
+      marketplace_id, 
+      account_name 
+    });
 
     if (!code || !selling_partner_id || !marketplace_id) {
+      console.error('Missing parameters:', { 
+        hasCode: !!code, 
+        hasSellerId: !!selling_partner_id, 
+        hasMarketplace: !!marketplace_id 
+      });
       return new Response(
         JSON.stringify({ error: 'Missing required parameters' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -78,7 +95,13 @@ serve(async (req) => {
     const clientId = Deno.env.get('AMAZON_APP_ID')
     const clientSecret = Deno.env.get('AMAZON_CLIENT_SECRET')
 
+    console.log('Credentials check:', { 
+      hasClientId: !!clientId, 
+      hasClientSecret: !!clientSecret 
+    });
+
     if (!clientId || !clientSecret) {
+      console.error('Amazon credentials missing');
       return new Response(
         JSON.stringify({ error: 'Amazon credentials not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -88,6 +111,8 @@ serve(async (req) => {
     // Determine region from marketplace
     const region = MARKETPLACE_REGIONS[marketplace_id] || 'US'
     const tokenEndpoint = AMAZON_TOKEN_ENDPOINTS[region]
+
+    console.log('Token exchange details:', { region, tokenEndpoint, marketplace_id });
 
     // Exchange authorization code for tokens
     const tokenResponse = await fetch(tokenEndpoint, {
@@ -103,14 +128,19 @@ serve(async (req) => {
       }),
     })
 
+    console.log('Token response status:', tokenResponse.status);
+
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text()
-      console.error('Amazon token exchange failed:', errorText)
-      throw new Error('Failed to exchange authorization code')
+      console.error('Amazon token exchange failed:', { 
+        status: tokenResponse.status, 
+        errorText 
+      });
+      throw new Error(`Failed to exchange authorization code: ${errorText}`)
     }
 
     const tokenData = await tokenResponse.json()
-    console.log('Token exchange successful')
+    console.log('Token exchange successful, has refresh token:', !!tokenData.refresh_token)
 
     // Get marketplace name from marketplace_id
     const marketplaceNames: Record<string, string> = {

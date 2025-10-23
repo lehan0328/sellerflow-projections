@@ -44,6 +44,12 @@ const AmazonOAuthCallback = () => {
           throw new Error('You must be logged in to connect Amazon');
         }
 
+        console.log('Calling exchange-amazon-token with:', {
+          code: spapi_oauth_code?.substring(0, 10) + '...',
+          selling_partner_id,
+          marketplace_id: state,
+        });
+
         // Exchange the authorization code for access/refresh tokens
         const { data: exchangeData, error: exchangeError } = await supabase.functions.invoke('exchange-amazon-token', {
           body: {
@@ -54,8 +60,11 @@ const AmazonOAuthCallback = () => {
           }
         });
 
+        console.log('Exchange response:', { exchangeData, exchangeError });
+
         if (exchangeError || !exchangeData?.success) {
-          throw new Error(exchangeError?.message || 'Failed to connect Amazon account');
+          console.error('Exchange failed:', { exchangeError, exchangeData });
+          throw new Error(exchangeError?.message || exchangeData?.error || 'Failed to connect Amazon account');
         }
         
         setStatus('success');
