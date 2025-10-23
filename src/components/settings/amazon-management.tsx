@@ -553,6 +553,14 @@ export function AmazonManagement() {
                           <p className="text-xs text-muted-foreground mb-2">
                             This will open Amazon Seller Central where you can safely authorize Auren to access your seller data. No credentials stored locally.
                           </p>
+                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3">
+                            <p className="text-xs font-semibold text-amber-900 mb-2">⚠️ Before connecting:</p>
+                            <p className="text-xs text-amber-800 mb-2">Add this OAuth Redirect URL in your Amazon Developer Console (App Settings):</p>
+                            <div className="bg-white p-2 rounded border border-amber-300">
+                              <code className="text-xs text-blue-600 break-all font-mono">{window.location.origin}/amazon-oauth-callback</code>
+                            </div>
+                            <p className="text-xs text-amber-700 mt-2">Without this, you'll get error "MD5101: Invalid redirect URL"</p>
+                          </div>
                         </div>
                       </div>
                     </div>
