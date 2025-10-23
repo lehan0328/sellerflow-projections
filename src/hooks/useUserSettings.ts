@@ -31,9 +31,7 @@ export const useUserSettings = () => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       if (!data) {
         // If no settings exist, create default settings
@@ -41,8 +39,35 @@ export const useUserSettings = () => {
         return;
       }
 
+      // Check if Amazon accounts are ready for forecasting
+      const { data: amazonAccounts } = await supabase
+        .from('amazon_accounts')
+        .select('id, initial_sync_complete, transaction_count, created_at')
+        .eq('user_id', user.id)
+        .eq('is_active', true);
+
+      const hasAmazonAccount = amazonAccounts && amazonAccounts.length > 0;
+      let canEnableForecasts = false;
+
+      if (hasAmazonAccount) {
+        // Check if any account meets the requirements:
+        // 1. Has 50+ transactions (initial_sync_complete)
+        // 2. Was created at least 24 hours ago
+        const now = new Date();
+        canEnableForecasts = amazonAccounts.some(acc => {
+          const createdAt = new Date(acc.created_at);
+          const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+          return acc.initial_sync_complete && 
+                 (acc.transaction_count || 0) >= 50 && 
+                 hoursSinceCreation >= 24;
+        });
+      }
+
+      // Override forecasts_enabled if requirements aren't met
+      const actualForecastsEnabled = data.forecasts_enabled && canEnableForecasts;
+
       setTotalCash(Number(data.total_cash));
-      setForecastsEnabled(data.forecasts_enabled ?? false);
+      setForecastsEnabled(actualForecastsEnabled ?? false);
       
       // Load chart preferences if they exist
       setChartPreferences({

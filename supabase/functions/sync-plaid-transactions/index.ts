@@ -33,6 +33,23 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
+    // Check if user subscription is expired
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('trial_end')
+      .eq('user_id', user.id)
+      .single();
+
+    const trialEnd = profile?.trial_end ? new Date(profile.trial_end) : null;
+    const isExpired = trialEnd && trialEnd < new Date();
+
+    if (isExpired) {
+      return new Response(
+        JSON.stringify({ error: 'Account expired. Please renew subscription to sync transactions.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Create client with user's auth token
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       global: {

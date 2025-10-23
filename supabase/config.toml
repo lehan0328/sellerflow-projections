@@ -168,3 +168,6 @@ verify_jwt = false
 [functions.scheduled-amazon-sync]
 verify_jwt = false
 
+[functions.regenerate-all-forecasts]
+verify_jwt = false
+

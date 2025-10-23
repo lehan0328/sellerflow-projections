@@ -155,6 +155,45 @@ export const ForecastSettings = () => {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) throw new Error("Not authenticated");
 
+      // If enabling, verify Amazon account requirements
+      if (enabled) {
+        const { data: amazonAccounts } = await supabase
+          .from('amazon_accounts')
+          .select('id, initial_sync_complete, transaction_count, created_at')
+          .eq('user_id', currentUser.id)
+          .eq('is_active', true);
+
+        if (!amazonAccounts || amazonAccounts.length === 0) {
+          toast.error("Connect an Amazon account before enabling forecasts");
+          setTogglingForecast(false);
+          return;
+        }
+
+        const now = new Date();
+        const readyAccount = amazonAccounts.find(acc => {
+          const createdAt = new Date(acc.created_at);
+          const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+          return acc.initial_sync_complete && 
+                 (acc.transaction_count || 0) >= 50 && 
+                 hoursSinceCreation >= 24;
+        });
+
+        if (!readyAccount) {
+          const newestAccount = amazonAccounts[0];
+          const createdAt = new Date(newestAccount.created_at);
+          const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+          const hoursRemaining = Math.ceil(24 - hoursSinceCreation);
+          
+          if (hoursSinceCreation < 24) {
+            toast.error(`Amazon account must be active for 24 hours before enabling forecasts. ${hoursRemaining} hours remaining.`);
+          } else if (!newestAccount.initial_sync_complete || (newestAccount.transaction_count || 0) < 50) {
+            toast.error(`Amazon account needs 50+ transactions before enabling forecasts. Current: ${newestAccount.transaction_count || 0} transactions.`);
+          }
+          setTogglingForecast(false);
+          return;
+        }
+      }
+
       console.log('🔄 Toggling forecasts to:', enabled);
       setSyncProgress(10);
 
@@ -658,7 +697,7 @@ export const ForecastSettings = () => {
                   <TooltipTrigger asChild>
                     <div className="flex items-center gap-2">
                       <Label htmlFor="forecast-toggle" className="text-sm">
-                        Mathematical Forecasts {forecastsEnabled ? 'Enabled' : 'Disabled'}
+                        Mathematical Forecasts {(forecastsEnabled && hasAmazonStore) ? 'Enabled' : 'Disabled'}
                       </Label>
                       <Switch
                         id="forecast-toggle"
