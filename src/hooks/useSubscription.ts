@@ -64,7 +64,7 @@ export const PRICING_PLANS = {
     yearly_price_id: "price_1SEHZVB28kMY3Use9bH8xPlg",
     features: [
       "Under $100k monthly Amazon payout",
-      "4 bank/credit card connections",
+      "3 bank/credit card connections",
       "1 Amazon connection",
       "✨ Smart Purchase Planning",
       "✨ Safe Spending Power",
@@ -91,7 +91,7 @@ export const PRICING_PLANS = {
     yearly_price_id: "price_1SEHZfB28kMY3UseZKmLEcPk",
     features: [
       "Under $200k monthly Amazon payout",
-      "7 bank/credit card connections",
+      "4 bank/credit card connections",
       "1 Amazon connection",
       "✨ Smart Purchase Planning",
       "✨ Safe Spending Power",

@@ -23,7 +23,8 @@ interface CurrentUsage {
 }
 
 // Map subscription tiers to plan limits
-// CRITICAL: These MUST match the features in PRICING_PLANS
+// CRITICAL: These limits MUST match PRICING_PLANS marketing features exactly
+// Source of truth: /pricing page - Starter: 2, Growing: 3, Professional: 4
 const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
   starter: {
     bankConnections: 2,
@@ -35,7 +36,7 @@ const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
     revenueMax: 20000
   },
   growing: {
-    bankConnections: 4, // Fixed: was 3, should be 4
+    bankConnections: 3, // Matches pricing page
     amazonConnections: 1,
     teamMembers: 2, // 2 additional users
     name: 'Growing',
@@ -44,7 +45,7 @@ const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
     revenueMax: 100000
   },
   professional: {
-    bankConnections: 7, // Fixed: was 4, should be 7
+    bankConnections: 4, // Matches pricing page
     amazonConnections: 1,
     teamMembers: 5, // 5 additional users
     name: 'Professional', 

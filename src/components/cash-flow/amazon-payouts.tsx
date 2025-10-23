@@ -219,6 +219,43 @@ export function AmazonPayouts() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Amazon Account Connection Status */}
+        {amazonAccounts.length > 0 && (
+          <div className="mb-4 p-4 rounded-lg border bg-card">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-semibold">Connected Amazon Accounts</h4>
+              <Badge variant="outline" className="text-xs">
+                {amazonAccounts.length} {amazonAccounts.length === 1 ? 'Account' : 'Accounts'}
+              </Badge>
+            </div>
+            <div className="space-y-2">
+              {amazonAccounts.map((account) => (
+                <div key={account.id} className="flex items-center justify-between text-sm p-2 rounded bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{account.account_name}</span>
+                    <span className="text-muted-foreground">({account.marketplace_name})</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {account.initial_sync_complete ? (
+                      <Badge variant="outline" className="text-xs bg-green-500/10 text-green-700 border-green-500/20">
+                        Synced
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-700 border-yellow-500/20">
+                        Syncing...
+                      </Badge>
+                    )}
+                    <span className="text-xs text-muted-foreground">
+                      {account.transaction_count || 0} transactions
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
         {amazonPayouts.length === 0 ? <div className="space-y-4">
             {amazonAccounts.length > 0 && <Alert className="border-blue-500/30 bg-blue-500/5">
                 <Clock className="h-4 w-4 text-blue-600" />
