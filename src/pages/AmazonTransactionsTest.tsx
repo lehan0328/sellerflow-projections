@@ -41,9 +41,10 @@ const AmazonTransactionsTest = () => {
             Showing all available fields from Amazon SP-API
           </p>
         </CardHeader>
-        <CardContent>
-          <div className="h-[600px] w-full overflow-auto rounded-md border">
-            <Table className="min-w-max">
+        <CardContent className="p-0">
+          <div className="h-[600px] w-full overflow-x-auto overflow-y-auto">
+            <div className="min-w-[2000px]">
+              <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
@@ -129,6 +130,7 @@ const AmazonTransactionsTest = () => {
                   ))}
                 </TableBody>
               </Table>
+            </div>
           </div>
 
           {amazonTransactions.length === 0 && (
