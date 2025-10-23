@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Sparkles, TrendingUp, Info, AlertTriangle, AlertCircle, Loader2 } from "lucide-react";
+import { Sparkles, TrendingUp, Info, AlertTriangle, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -596,6 +596,53 @@ export const ForecastSettings = () => {
                 >
                   <TrendingUp className="h-4 w-4" />
                   View Advanced Forecast
+                </Button>
+              )}
+              {forecastsEnabled && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    setSyncProgress(10);
+                    toast.loading("Regenerating forecasts...");
+                    try {
+                      const { data: { user: currentUser } } = await supabase.auth.getUser();
+                      if (!currentUser) throw new Error("Not authenticated");
+                      
+                      setSyncProgress(30);
+                      // Delete old forecasts
+                      await supabase
+                        .from('amazon_payouts')
+                        .delete()
+                        .eq('user_id', currentUser.id)
+                        .eq('status', 'forecasted');
+                      
+                      setSyncProgress(50);
+                      // Generate new forecasts
+                      const { error } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
+                        body: { userId: currentUser.id }
+                      });
+                      
+                      if (error) throw error;
+                      
+                      setSyncProgress(80);
+                      await refetchPayouts();
+                      setSyncProgress(100);
+                      toast.dismiss();
+                      toast.success("Forecasts regenerated successfully!");
+                      setTimeout(() => setSyncProgress(0), 500);
+                    } catch (error) {
+                      console.error("Regeneration error:", error);
+                      toast.dismiss();
+                      toast.error("Failed to regenerate forecasts");
+                      setSyncProgress(0);
+                    }
+                  }}
+                  disabled={togglingForecast || syncProgress > 0}
+                  className="flex items-center gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Regenerate
                 </Button>
               )}
               <div className="flex items-center gap-2">
