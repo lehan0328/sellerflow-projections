@@ -165,6 +165,26 @@ export function AmazonManagement() {
     }
   };
 
+  const canSyncAccount = (lastSync: string | null): { canSync: boolean; message: string } => {
+    if (!lastSync) return { canSync: true, message: 'Ready to sync' };
+    
+    const lastSyncTime = new Date(lastSync).getTime();
+    const now = Date.now();
+    const timeSinceSync = (now - lastSyncTime) / 1000; // seconds
+    const RATE_LIMIT_SECONDS = 120; // 2 minutes
+    
+    if (timeSinceSync < RATE_LIMIT_SECONDS) {
+      const waitTime = Math.ceil(RATE_LIMIT_SECONDS - timeSinceSync);
+      const minutes = Math.ceil(waitTime / 60);
+      return { 
+        canSync: false, 
+        message: `Rate limited. Wait ${minutes} min to avoid Amazon API quota.` 
+      };
+    }
+    
+    return { canSync: true, message: 'Ready to sync' };
+  };
+
   const handleRemoveAccount = (accountId: string) => {
     setAccountToDelete(accountId);
     setDeleteDialogOpen(true);
@@ -568,6 +588,12 @@ export function AmazonManagement() {
                     <p className="text-xs text-muted-foreground">
                       Last sync: {new Date(account.last_sync).toLocaleString()}
                     </p>
+                    {!canSyncAccount(account.last_sync).canSync && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                        <span>⏱️</span>
+                        {canSyncAccount(account.last_sync).message}
+                      </p>
+                    )}
                   </div>
                 </div>
                 
@@ -576,7 +602,8 @@ export function AmazonManagement() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleSyncAccount(account.id)}
-                    disabled={isSyncing === account.id}
+                    disabled={isSyncing === account.id || !canSyncAccount(account.last_sync).canSync}
+                    title={canSyncAccount(account.last_sync).message}
                   >
                     <RefreshCw className={`h-4 w-4 ${isSyncing === account.id ? 'animate-spin' : ''}`} />
                   </Button>

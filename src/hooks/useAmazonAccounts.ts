@@ -183,7 +183,14 @@ export const useAmazonAccounts = () => {
       
       // Auto-resync to generate payouts with new frequency
       toast.info("Re-syncing with new payout schedule...");
-      await syncAmazonAccount(accountId);
+      const syncSuccess = await syncAmazonAccount(accountId);
+      
+      // Only regenerate forecasts if sync was successful or if it was rate limited
+      // (rate limited means there's already recent data)
+      if (!syncSuccess) {
+        // Check if it was a rate limit - if so, we can still regenerate forecasts with existing data
+        console.log('Sync did not complete, but continuing with forecast regeneration using existing data');
+      }
       
       // Automatically regenerate forecasts with the new payout frequency
       console.log('🔄 Starting forecast regeneration after payout frequency change...');

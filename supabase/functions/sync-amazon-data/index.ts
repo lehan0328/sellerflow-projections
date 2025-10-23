@@ -87,6 +87,26 @@ serve(async (req) => {
 
     console.log(`Syncing Amazon account: ${amazonAccount.account_name} (${amazonAccount.payout_frequency} payouts)`)
 
+    // Check rate limiting - Amazon Financial Events API: 0.5 requests/second (120 second minimum between calls)
+    const lastSync = amazonAccount.last_sync ? new Date(amazonAccount.last_sync) : null
+    const timeSinceLastSync = lastSync ? (Date.now() - lastSync.getTime()) / 1000 : Infinity
+    const RATE_LIMIT_SECONDS = 120 // 2 minutes minimum between syncs
+    
+    if (timeSinceLastSync < RATE_LIMIT_SECONDS) {
+      const waitTime = Math.ceil(RATE_LIMIT_SECONDS - timeSinceLastSync)
+      console.log(`⏱️ Rate limit: Last sync was ${Math.floor(timeSinceLastSync)}s ago. Must wait ${waitTime}s more.`)
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          message: `Please wait ${waitTime} seconds before syncing again to avoid Amazon API quota limits.`,
+          nextSyncAvailable: new Date(Date.now() + (waitTime * 1000)).toISOString(),
+          waitSeconds: waitTime
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Check if access token needs refresh (expires within 5 minutes OR is null)
     const tokenExpiresAt = amazonAccount.token_expires_at ? new Date(amazonAccount.token_expires_at) : null
     const needsRefresh = !amazonAccount.encrypted_access_token || !tokenExpiresAt || (tokenExpiresAt.getTime() - Date.now()) < 300000
