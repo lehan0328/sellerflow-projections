@@ -1370,17 +1370,17 @@ export const CashFlowCalendar = ({
                           activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                         />
                       )}
-                      {showCreditCardLine && (
+                       {showCreditCardLine && (
                         <Line
                           type="monotone"
                           dataKey="creditCardCredit"
                           stroke={creditCardColor}
                           strokeWidth={2}
                           dot={(props: any) => {
-                            const { cx, cy, payload } = props;
+                            const { cx, cy, payload, index } = props;
                             if (payload.hasCreditCardTransaction) {
                               return (
-                                <g>
+                                <g key={`credit-dot-${index}`}>
                                   <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />
                                   <circle 
                                     cx={cx} 
@@ -1393,7 +1393,7 @@ export const CashFlowCalendar = ({
                                 </g>
                               );
                             }
-                            return <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
+                            return <circle key={`credit-empty-${index}`} cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
                           }}
                           activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                         />
@@ -1559,23 +1559,23 @@ export const CashFlowCalendar = ({
                           stroke={cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor}
                           strokeWidth={2}
                           dot={(props: any) => {
-                            const { cx, cy, payload } = props;
+                            const { cx, cy, payload, index } = props;
                             
                             // Always render an invisible dot to enable hovering on all dates
                             // Larger radius (16px) for better hover detection
                             if (!payload.transactions || payload.transactions.length === 0) {
-                              return <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
+                              return <circle key={`cash-empty-${index}`} cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
                             }
                             
                             // Don't show dots for forecasted Amazon payouts but keep hover area
                             if (payload.hasAmazonForecast) {
-                              return <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
+                              return <circle key={`cash-forecast-${index}`} cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
                             }
                             
                             if (payload.hasAmazonPayout) {
                               // Confirmed payout - orange with large hover area
                               return (
-                                <g>
+                                <g key={`cash-payout-${index}`}>
                                   <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />
                                   <circle cx={cx} cy={cy} r={6} fill="#f97316" stroke="#ea580c" strokeWidth={2} />
                                   <circle cx={cx} cy={cy} r={3} fill="#fff" />
@@ -1584,7 +1584,7 @@ export const CashFlowCalendar = ({
                             }
                             const fillColor = cashFlowColor.startsWith('hsl') ? '#3b82f6' : cashFlowColor;
                             return (
-                              <g>
+                              <g key={`cash-dot-${index}`}>
                                 <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />
                                 <circle cx={cx} cy={cy} r={4} fill={fillColor} cursor="pointer" />
                               </g>
@@ -1610,10 +1610,10 @@ export const CashFlowCalendar = ({
                           stroke={creditCardColor}
                           strokeWidth={2}
                           dot={(props: any) => {
-                            const { cx, cy, payload } = props;
+                            const { cx, cy, payload, index } = props;
                             if (payload.hasCreditCardTransaction) {
                               return (
-                                <g>
+                                <g key={`credit-balance-${index}`}>
                                   <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />
                                   <circle 
                                     cx={cx} 
@@ -1626,7 +1626,7 @@ export const CashFlowCalendar = ({
                                 </g>
                               );
                             }
-                            return <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
+                            return <circle key={`credit-balance-empty-${index}`} cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
                           }}
                           activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                         />
@@ -1652,9 +1652,9 @@ export const CashFlowCalendar = ({
                             strokeWidth={2}
                             strokeDasharray="3 3"
                             dot={(props: any) => {
-                              const { cx, cy } = props;
+                              const { cx, cy, index } = props;
                               // Invisible hover area for forecast line
-                              return <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
+                              return <circle key={`forecast-${index}`} cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
                             }}
                             activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                             name="Projected Cash Balance (with AI Forecasts)"
