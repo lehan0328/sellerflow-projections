@@ -1,5 +1,6 @@
 import { useAmazonTransactions } from "@/hooks/useAmazonTransactions";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
+import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ import { useEffect } from "react";
 const AmazonTransactionsTest = () => {
   const { amazonTransactions, isLoading, refetch } = useAmazonTransactions();
   const { amazonAccounts } = useAmazonAccounts();
+  const { amazonPayouts, isLoading: payoutsLoading } = useAmazonPayouts();
   const navigate = useNavigate();
 
   // Auto-refresh every 3 seconds while syncing
@@ -82,6 +84,161 @@ const AmazonTransactionsTest = () => {
       </div>
 
       <ForecastExplainer />
+
+      {/* Amazon Account Status & Sync Progress */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Amazon Account Status & Sync Progress</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {amazonAccounts.length === 0 ? (
+            <p className="text-muted-foreground">No Amazon accounts connected</p>
+          ) : (
+            <div className="space-y-4">
+              {amazonAccounts.map((account) => (
+                <div key={account.id} className="p-4 border rounded-lg space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="font-semibold">{account.account_name}</h4>
+                      <p className="text-sm text-muted-foreground">{account.marketplace_name}</p>
+                    </div>
+                    <Badge variant={
+                      account.sync_status === 'syncing' ? 'default' :
+                      account.sync_status === 'error' ? 'destructive' :
+                      account.initial_sync_complete ? 'outline' : 'secondary'
+                    }>
+                      {account.sync_status === 'syncing' ? 'Syncing' :
+                       account.sync_status === 'error' ? 'Error' :
+                       account.initial_sync_complete ? '✓ Synced' : 'Backfilling...'}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Payout Frequency</p>
+                      <p className="font-semibold capitalize">{account.payout_frequency}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Last Sync</p>
+                      <p className="font-semibold">
+                        {account.last_sync ? new Date(account.last_sync).toLocaleString() : 'Never'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Transactions</p>
+                      <p className="font-semibold">{account.transaction_count || 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Backfill Complete</p>
+                      <p className="font-semibold">{account.initial_sync_complete ? 'Yes' : 'No'}</p>
+                    </div>
+                  </div>
+
+                  {account.sync_status === 'syncing' && (
+                    <div>
+                      <div className="flex items-center justify-between text-sm mb-1">
+                        <span className="text-muted-foreground">
+                          {account.sync_message || 'Starting sync...'}
+                        </span>
+                        <span className="font-semibold">{account.sync_progress || 0}%</span>
+                      </div>
+                      <div className="bg-muted rounded-full h-2">
+                        <div 
+                          className="bg-primary h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${account.sync_progress || 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {account.last_sync_error && (
+                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
+                      {account.last_sync_error}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Amazon Payouts Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Amazon Payouts</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Scheduled and forecasted payouts from Amazon
+          </p>
+        </CardHeader>
+        <CardContent>
+          {payoutsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : amazonPayouts.length === 0 ? (
+            <p className="text-muted-foreground">No payouts found</p>
+          ) : (
+            <div className="space-y-3">
+              {amazonPayouts.slice(0, 10).map((payout) => (
+                <div key={payout.id} className="p-4 border rounded-lg">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-semibold">
+                        {new Date(payout.payout_date).toLocaleDateString('en-US', { 
+                          weekday: 'short', 
+                          month: 'short', 
+                          day: 'numeric', 
+                          year: 'numeric' 
+                        })}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {payout.amazon_accounts?.account_name || 'Unknown Account'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-bold">
+                        ${payout.total_amount.toFixed(2)}
+                      </p>
+                      <Badge variant={
+                        payout.status === 'confirmed' ? 'default' :
+                        payout.status === 'estimated' ? 'secondary' :
+                        payout.status === 'forecasted' ? 'outline' : 'destructive'
+                      }>
+                        {payout.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mt-3 pt-3 border-t">
+                    <div>
+                      <p className="text-muted-foreground">Type</p>
+                      <p className="font-medium capitalize">{payout.payout_type.replace('-', ' ')}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Orders</p>
+                      <p className="font-medium">${payout.orders_total?.toFixed(2) || '0.00'}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Fees</p>
+                      <p className="font-medium text-red-600">${payout.fees_total?.toFixed(2) || '0.00'}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Refunds</p>
+                      <p className="font-medium text-red-600">${payout.refunds_total?.toFixed(2) || '0.00'}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {amazonPayouts.length > 10 && (
+                <p className="text-sm text-muted-foreground text-center pt-2">
+                  Showing 10 of {amazonPayouts.length} payouts
+                </p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {syncingAccount && (
         <Card className="border-blue-500 bg-blue-50 dark:bg-blue-950">
