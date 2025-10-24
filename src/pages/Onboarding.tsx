@@ -490,20 +490,11 @@ export default function Onboarding() {
                     
                     console.log('Amazon OAuth URL:', authUrl);
                     
-                    toast.info('Opening Amazon Seller Central in a new tab...');
-                    console.log('Step 4: Opening Amazon in new tab...');
+                    toast.info('Redirecting to Amazon Seller Central...');
+                    console.log('Step 4: Redirecting to Amazon...');
                     
-                    // Open in new tab to avoid iframe blocking (X-Frame-Options: DENY)
-                    const newWindow = window.open(authUrl, '_blank', 'noopener,noreferrer');
-                    
-                    if (!newWindow) {
-                      console.error('Failed to open popup window');
-                      toast.error('Please allow popups for this site to connect to Amazon.');
-                      return;
-                    }
-                    
-                    console.log('Step 5: New tab opened successfully');
-                    toast.success('Amazon authorization opened in new tab. Please complete the authorization process.');
+                    // Open in same window to preserve session and avoid popup blockers
+                    window.location.href = authUrl;
                   } catch (error) {
                     console.error('Error in Amazon connection flow:', error);
                     toast.error('Failed to initiate Amazon connection. Please try again.');

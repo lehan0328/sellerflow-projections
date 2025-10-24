@@ -196,6 +196,7 @@ export type Database = {
           initial_sync_complete: boolean | null
           is_active: boolean
           last_sync: string | null
+          last_sync_error: string | null
           marketplace_id: string
           marketplace_name: string
           payout_frequency: string
@@ -224,6 +225,7 @@ export type Database = {
           initial_sync_complete?: boolean | null
           is_active?: boolean
           last_sync?: string | null
+          last_sync_error?: string | null
           marketplace_id: string
           marketplace_name: string
           payout_frequency?: string
@@ -252,6 +254,7 @@ export type Database = {
           initial_sync_complete?: boolean | null
           is_active?: boolean
           last_sync?: string | null
+          last_sync_error?: string | null
           marketplace_id?: string
           marketplace_name?: string
           payout_frequency?: string
