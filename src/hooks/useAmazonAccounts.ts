@@ -94,6 +94,30 @@ export const useAmazonAccounts = () => {
     }
 
     try {
+      // Check 3-hour rate limit for real Amazon connections (not sample data)
+      if (credentials.seller_id !== 'SAMPLE123456') {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('last_amazon_connection')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profile?.last_amazon_connection) {
+          const lastConnection = new Date(profile.last_amazon_connection);
+          const now = new Date();
+          const hoursSinceLastConnection = (now.getTime() - lastConnection.getTime()) / (1000 * 60 * 60);
+          
+          if (hoursSinceLastConnection < 3) {
+            const remainingMinutes = Math.ceil((3 - hoursSinceLastConnection) * 60);
+            const remainingHours = Math.floor(remainingMinutes / 60);
+            const remainingMins = remainingMinutes % 60;
+            
+            toast.error(`Please wait ${remainingHours}h ${remainingMins}m before connecting another Amazon account`);
+            return false;
+          }
+        }
+      }
+
       // First insert the account record directly
       const { data: accountData, error: insertError } = await supabase
         .from("amazon_accounts")
@@ -116,6 +140,14 @@ export const useAmazonAccounts = () => {
         console.error("Error adding Amazon account:", insertError);
         toast.error("Failed to add Amazon account");
         return false;
+      }
+
+      // Update last_amazon_connection timestamp for real connections
+      if (credentials.seller_id !== 'SAMPLE123456') {
+        await supabase
+          .from('profiles')
+          .update({ last_amazon_connection: new Date().toISOString() })
+          .eq('user_id', user.id);
       }
 
       toast.success("Amazon account added successfully!");

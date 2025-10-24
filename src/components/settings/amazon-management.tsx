@@ -64,6 +64,9 @@ export function AmazonManagement() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
   const [showSyncingBanner, setShowSyncingBanner] = useState(false);
+  const [lastConnectionTime, setLastConnectionTime] = useState<Date | null>(null);
+  const [canConnect, setCanConnect] = useState(true);
+  const [timeRemaining, setTimeRemaining] = useState<string>("");
   const [manualFormData, setManualFormData] = useState<AmazonAccountFormData>({
     seller_id: '',
     marketplace_id: 'ATVPDKIKX0DER',
@@ -74,6 +77,59 @@ export function AmazonManagement() {
     client_secret: '',
     payout_frequency: 'bi-weekly',
   });
+
+  // Check rate limit on mount
+  useEffect(() => {
+    const checkRateLimit = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('last_amazon_connection')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profile?.last_amazon_connection) {
+        const lastConn = new Date(profile.last_amazon_connection);
+        setLastConnectionTime(lastConn);
+        updateRateLimitStatus(lastConn);
+      }
+    };
+
+    checkRateLimit();
+  }, []);
+
+  // Update rate limit status every second
+  useEffect(() => {
+    if (!lastConnectionTime) {
+      setCanConnect(true);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      updateRateLimitStatus(lastConnectionTime);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [lastConnectionTime]);
+
+  const updateRateLimitStatus = (lastConn: Date) => {
+    const now = new Date();
+    const hoursSinceLastConnection = (now.getTime() - lastConn.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursSinceLastConnection >= 3) {
+      setCanConnect(true);
+      setTimeRemaining("");
+    } else {
+      setCanConnect(false);
+      const remainingMs = (3 * 60 * 60 * 1000) - (now.getTime() - lastConn.getTime());
+      const hours = Math.floor(remainingMs / (1000 * 60 * 60));
+      const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((remainingMs % (1000 * 60)) / 1000);
+      setTimeRemaining(`${hours}h ${minutes}m ${seconds}s`);
+    }
+  };
 
   // Check for syncing parameter from URL
   useEffect(() => {
@@ -373,9 +429,10 @@ export function AmazonManagement() {
             <div className="flex gap-2">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button>
+                  <Button disabled={!canConnect}>
                     <Plus className="h-4 w-4 mr-2" />
                     Connect Amazon Account
+                    {!canConnect && ` (${timeRemaining})`}
                   </Button>
                 </DialogTrigger>
               <DialogContent className="max-w-md">
@@ -383,6 +440,20 @@ export function AmazonManagement() {
                   <DialogTitle>Connect to Amazon Seller Central</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
+                  {!canConnect && (
+                    <div className="bg-destructive/10 border border-destructive/30 p-3 rounded-lg">
+                      <div className="flex items-start space-x-2">
+                        <ExternalLink className="h-4 w-4 text-destructive mt-0.5" />
+                        <div className="text-sm">
+                          <p className="font-medium text-destructive mb-1">Rate Limit Active</p>
+                          <p className="text-xs text-muted-foreground">
+                            You can connect another Amazon account in {timeRemaining}. This prevents API abuse.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   <p className="text-sm text-muted-foreground">
                     You'll be redirected to Amazon Seller Central to authorize access to your account data.
                   </p>
@@ -425,9 +496,10 @@ export function AmazonManagement() {
             
             <Dialog open={manualFormOpen} onOpenChange={setManualFormOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" disabled={!canConnect}>
                   <Settings className="h-4 w-4 mr-2" />
                   Manual Add (Test)
+                  {!canConnect && ` (${timeRemaining})`}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
