@@ -300,7 +300,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const sortedEvents = [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   // Start from bank balance + all events occurring today or earlier
-  let tpcRunning = bankAccountBalance;
+  let tpcRunning = displayBankBalance; // Use the toggled balance (available or current)
   for (const e of sortedEvents) {
     const k = keyFor(e.date);
     if (k <= todayKey) {
