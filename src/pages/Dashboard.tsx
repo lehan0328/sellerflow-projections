@@ -1,11 +1,13 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { addDays, isToday, isBefore, startOfDay, format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Building2, CreditCard as CreditCardIcon, TrendingUp, TrendingDown, Calendar, CheckCircle, User } from "lucide-react";
+import { RefreshCw, Building2, CreditCard as CreditCardIcon, TrendingUp, TrendingDown, Calendar, CheckCircle, User, Database, Trash2, AlertTriangle, Shield, Users, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
@@ -97,6 +99,7 @@ const Dashboard = () => {
   const queryClient = useQueryClient();
   const [companyName, setCompanyName] = useState('');
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
+  const [clearDataConfirmation, setClearDataConfirmation] = useState(false);
   
   // Fetch user profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -147,6 +150,21 @@ const Dashboard = () => {
     },
   });
 
+  // Check if user is website admin
+  const { data: isWebsiteAdmin = false } = useQuery({
+    queryKey: ['is-website-admin', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return false;
+      const { data, error } = await supabase.rpc('is_website_admin');
+      if (error) {
+        console.error('Error checking website admin status:', error);
+        return false;
+      }
+      return data || false;
+    },
+    enabled: !!user?.id,
+  });
+
   // Set currency and company from profile data
   useEffect(() => {
     if (profile?.currency) {
@@ -160,6 +178,66 @@ const Dashboard = () => {
   // Handle profile field changes
   const handleProfileChange = (field: string, value: string) => {
     updateProfileMutation.mutate({ [field]: value });
+  };
+
+  const handleClearAllData = async () => {
+    console.log('🗑️ Dashboard - calling resetAccount');
+    await resetAccount();
+  };
+
+  const handleRestoreAdminAccess = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('restore-admin-access');
+      
+      if (error) throw error;
+      
+      if (data?.success) {
+        toast({
+          title: "Success",
+          description: "Admin access restored successfully! Refreshing...",
+        });
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        throw new Error(data?.error || "Failed to restore admin access");
+      }
+    } catch (error) {
+      console.error("Error restoring admin access:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to restore admin access",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleGenerateAdminTestData = async () => {
+    try {
+      toast({
+        title: "Generating test data...",
+        description: "This may take a moment",
+      });
+      const { data, error } = await supabase.functions.invoke('generate-admin-test-data');
+      
+      if (error) throw error;
+      
+      if (data?.success) {
+        toast({
+          title: "Success",
+          description: `Created ${data.data.users_created} users, ${data.data.support_tickets} tickets, ${data.data.referral_codes} referral codes`,
+        });
+      } else {
+        throw new Error(data?.error || "Failed to generate test data");
+      }
+    } catch (error) {
+      console.error("Error generating test data:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to generate test data",
+        variant: "destructive",
+      });
+    }
   };
   
   // Handle section change with special logic for team-management
@@ -270,7 +348,7 @@ const Dashboard = () => {
   const { amazonPayouts } = useAmazonPayouts();
   
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
-  const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance } = useUserSettings();
+  const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance, resetAccount } = useUserSettings();
 
   // Real-time updates for bank account balance changes
   useEffect(() => {
@@ -1721,6 +1799,150 @@ const Dashboard = () => {
         return <ForecastSettings />;
       case 'export':
         return <DataExport />;
+      case 'data-management':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Database className="h-5 w-5" />
+                <span>Data Management</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isWebsiteAdmin && (
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Restore Admin Access</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        If you lost admin access after clearing data, use this to restore your admin and owner roles.
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleRestoreAdminAccess}
+                        className="border-blue-300 dark:border-blue-700"
+                      >
+                        <Shield className="mr-2 h-4 w-4" />
+                        Restore Admin Access
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {isWebsiteAdmin && (
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <Database className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-green-900 dark:text-green-100 mb-1">Generate Admin Test Data</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Create sample users, support tickets, and referrals for testing the admin dashboard. This data persists after clearing your own account.
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleGenerateAdminTestData}
+                        className="border-green-300 dark:border-green-700"
+                      >
+                        <Users className="mr-2 h-4 w-4" />
+                        Generate Test Data
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {isWebsiteAdmin && (
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <ShoppingCart className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Generate Sample Amazon Data</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Create a sample Amazon account with 6 months of historical payouts and transactions for testing forecasts and insights.
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate('/sample-data')}
+                        className="border-blue-300 dark:border-blue-700"
+                      >
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Generate Amazon Data
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-destructive mb-1">Danger Zone</h4>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Clear all your financial data including vendors, income, and transactions. This action cannot be undone.
+                    </p>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Clear All Data
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>⚠️ Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription asChild>
+                            <div className="space-y-4">
+                              <p className="text-destructive font-semibold">This action cannot be undone!</p>
+                              <div>
+                                <p className="mb-2">This will permanently delete all of your:</p>
+                                <ul className="list-disc list-inside mt-2 space-y-1 mb-3">
+                                  <li>Vendor purchase orders</li>
+                                  <li>Income transactions</li>
+                                  <li>Transaction history</li>
+                                  <li>All financial data</li>
+                                </ul>
+                                <p className="font-semibold">You will start from zero balance with no records.</p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id="confirm-clear"
+                                  checked={clearDataConfirmation}
+                                  onCheckedChange={(checked) => setClearDataConfirmation(checked === true)}
+                                />
+                                <Label
+                                  htmlFor="confirm-clear"
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                >
+                                  I understand this action cannot be undone and will delete all my data
+                                </Label>
+                              </div>
+                            </div>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel onClick={() => setClearDataConfirmation(false)}>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => {
+                              handleClearAllData();
+                              setClearDataConfirmation(false);
+                            }}
+                            disabled={!clearDataConfirmation}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Yes, Clear All Data
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
       default:
         return (
           <Card>
