@@ -519,9 +519,6 @@ export const CashFlowCalendar = ({
 
   // Generate chart data based on selected time range
   const generateChartData = () => {
-    const accountStartDate = new Date('2025-09-29');
-    accountStartDate.setHours(0, 0, 0, 0);
-    
     // Calculate date range based on selected time range (starting from today)
     const monthsToShow = parseInt(chartTimeRange);
     const today = new Date();
@@ -553,20 +550,17 @@ export const CashFlowCalendar = ({
       const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0);
       const dailyChange = dailyInflow - dailyOutflow;
       
-      // Update running total from account start date onwards
+      // Update running total for all days (including forecasted payouts)
+      runningTotal += dailyChange;
+      cumulativeInflow += dailyInflow;
+      cumulativeOutflow += dailyOutflow;
+      
       const dayToCheck = new Date(day);
       dayToCheck.setHours(0, 0, 0, 0);
       
       // Get projected balance from safe spending calculation if available
       const dateKey = format(day, 'yyyy-MM-dd');
       const projectedBalance = projectedBalanceMap.size > 0 ? projectedBalanceMap.get(dateKey) : undefined;
-      
-      if (dayToCheck >= accountStartDate) {
-        // Include mathematical forecasted payouts as actual income in the cash balance
-        runningTotal += dailyChange; // Includes both confirmed and forecasted
-        cumulativeInflow += dailyInflow;
-        cumulativeOutflow += dailyOutflow;
-      }
       
       // Check if this day has an Amazon payout
       const hasAmazonPayout = dayEvents.some(e => e.source === 'Amazon' && e.type === 'inflow');
