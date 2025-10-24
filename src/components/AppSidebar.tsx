@@ -174,14 +174,10 @@ export function AppSidebar({
                           <span className="flex items-center gap-2">
                             {section.id === 'ai-forecast' && (
                               <Badge 
-                                variant={forecastsEnabled ? "default" : "secondary"} 
-                                className={`text-[10px] font-bold px-1.5 py-0 h-[18px] ${
-                                  forecastsEnabled 
-                                    ? "bg-emerald-500 hover:bg-emerald-600 text-white" 
-                                    : "bg-gray-400 hover:bg-gray-500 text-white"
-                                }`}
+                                variant="default"
+                                className="text-[10px] font-bold px-1.5 py-0 h-[18px] bg-emerald-500 hover:bg-emerald-600 text-white"
                               >
-                                {forecastsEnabled ? "ON" : "OFF"}
+                                ON
                               </Badge>
                             )}
                             {'showMatchCount' in section && section.showMatchCount && matchCount > 0 && <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
