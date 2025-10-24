@@ -130,10 +130,13 @@ export function AmazonPayouts() {
       }
     }
 
+    toast.success('Syncing Amazon data...');
+    
     for (const account of amazonAccounts) {
       setIsSyncing(account.id);
       try {
         await syncAmazonAccount(account.id);
+        toast.success(`Sync started for ${account.account_name}`);
       } catch (error) {
         console.error(`Failed to sync account ${account.id}:`, error);
         toast.error(`Failed to sync ${account.account_name}`);
