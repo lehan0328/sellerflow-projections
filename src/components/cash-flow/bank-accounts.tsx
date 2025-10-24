@@ -388,6 +388,17 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
               </p>
             </div>
             <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                setEditingAccount(null);
+                setDialogOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Add Manual
+            </Button>
+            <Button 
               variant="default" 
               size="sm" 
               onClick={handleConnectPlaid}

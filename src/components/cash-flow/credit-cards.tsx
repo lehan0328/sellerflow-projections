@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CreditCardPriorityDialog } from "./credit-card-priority-dialog";
 import { PlaidAccountConfirmationDialog } from "./plaid-account-confirmation-dialog";
+import { ManualCreditCardDialog } from "./manual-credit-card-dialog";
 
 interface CreditCardFormData {
   nickname: string;
@@ -55,6 +56,8 @@ export function CreditCards() {
   const [newCardForPriority, setNewCardForPriority] = useState<{ id: string; name: string } | null>(null);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [pendingPlaidData, setPendingPlaidData] = useState<{ publicToken: string; metadata: any } | null>(null);
+  const [showManualDialog, setShowManualDialog] = useState(false);
+  const [manualEditingCard, setManualEditingCard] = useState<any>(null);
   const [formData, setFormData] = useState<CreditCardFormData>({
     nickname: '',
     annual_fee: 0,
@@ -263,6 +266,17 @@ export function CreditCards() {
             <div className="text-sm text-muted-foreground">
               Total Available: <span className="font-semibold text-finance-positive">{formatCurrency(totalAvailableCredit)}</span>
             </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                setManualEditingCard(null);
+                setShowManualDialog(true);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Manual
+            </Button>
             <Button 
               variant="default" 
               size="sm" 
@@ -638,6 +652,16 @@ export function CreditCards() {
             onConfirm={handleConfirmAccounts}
           />
         )}
+
+        {/* Manual Credit Card Dialog */}
+        <ManualCreditCardDialog
+          open={showManualDialog}
+          onOpenChange={setShowManualDialog}
+          card={manualEditingCard}
+          onSuccess={() => {
+            window.location.reload();
+          }}
+        />
       </CardContent>
     </Card>
   );
