@@ -106,9 +106,38 @@ export function AmazonPayouts() {
     }
   };
   const handleSyncAllAccounts = async () => {
+    if (amazonAccounts.length === 0) return;
+    
+    // Check if any account is currently syncing or rate limited
+    const syncingAccount = amazonAccounts.find(acc => acc.sync_status === 'syncing');
+    if (syncingAccount) {
+      toast.error('Sync already in progress. Please wait...');
+      return;
+    }
+
+    // Check for rate limit messages
+    const rateLimitedAccount = amazonAccounts.find(acc => 
+      acc.sync_message?.includes('Rate limited')
+    );
+    
+    if (rateLimitedAccount && rateLimitedAccount.sync_message) {
+      // Extract wait time from message
+      const waitMatch = rateLimitedAccount.sync_message.match(/Wait (\d+)s/);
+      if (waitMatch) {
+        const waitSeconds = parseInt(waitMatch[1]);
+        toast.error(`Rate limited. Please wait ${Math.ceil(waitSeconds / 60)} more minutes before syncing.`);
+        return;
+      }
+    }
+
     for (const account of amazonAccounts) {
       setIsSyncing(account.id);
-      await syncAmazonAccount(account.id);
+      try {
+        await syncAmazonAccount(account.id);
+      } catch (error) {
+        console.error(`Failed to sync account ${account.id}:`, error);
+        toast.error(`Failed to sync ${account.account_name}`);
+      }
     }
     setIsSyncing(null);
   };
@@ -211,9 +240,20 @@ export function AmazonPayouts() {
                 minute: '2-digit'
               }) : 'Never'}
                 </div>
-                <Button variant="outline" size="sm" onClick={handleSyncAllAccounts} disabled={isSyncing !== null}>
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-                  Sync
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleSyncAllAccounts} 
+                  disabled={
+                    isSyncing !== null || 
+                    amazonAccounts.some(acc => 
+                      acc.sync_status === 'syncing' || 
+                      acc.sync_message?.includes('Rate limited')
+                    )
+                  }
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing || amazonAccounts.some(acc => acc.sync_status === 'syncing') ? 'animate-spin' : ''}`} />
+                  {amazonAccounts.some(acc => acc.sync_message?.includes('Rate limited')) ? 'Rate Limited' : 'Sync'}
                 </Button>
                 <Button
                   variant="ghost"

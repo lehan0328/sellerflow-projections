@@ -24,14 +24,28 @@ serve(async (req) => {
       throw new Error('Plaid credentials not configured');
     }
 
-    const authHeader = req.headers.get('Authorization')!;
+    // Get auth header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
+    }
+    
     const token = authHeader.replace('Bearer ', '');
     
+    // Create admin client to verify user
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !user) {
-      throw new Error('Unauthorized');
+    
+    if (authError) {
+      console.error('Auth error:', authError);
+      throw new Error('Authentication failed: ' + authError.message);
     }
+    
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    console.log('Authenticated user:', user.id);
 
     // Check if user subscription is expired
     const { data: profile } = await supabaseAdmin
