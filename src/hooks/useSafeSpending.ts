@@ -617,16 +617,18 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
             
             console.log(`🛒 Opportunity #${allBuyingOpportunities.length + 1} at ${currentDay.date}:`, {
               lowPointBalance: lowPointBalance.toFixed(2),
+              calendarBalance: lowPointBalance.toFixed(2), // This should match what calendar shows
               reserve: reserve.toFixed(2),
               opportunityAmount: opportunityAmount.toFixed(2),
               earliestAvailableDate,
               lowPointDate: currentDay.date,
-              nextDayBalance: nextDay.balance.toFixed(2)
+              nextDayBalance: nextDay.balance.toFixed(2),
+              calculation: `${lowPointBalance.toFixed(2)} - ${reserve.toFixed(2)} = ${opportunityAmount.toFixed(2)}`
             });
             
             allBuyingOpportunities.push({
               date: currentDay.date,
-              balance: opportunityAmount, // Already has reserve deducted above
+              balance: opportunityAmount, // This is what can safely be spent (low point balance - reserve)
               available_date: earliestAvailableDate
             });
           }
@@ -755,11 +757,23 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       
       console.log('🎯 ALL BALANCES:', dailyBalances.slice(0, 20).map(d => `${d.date}: $${d.balance.toFixed(2)}`).join('\n'));
       
-      if (filteredOpportunities.length > 0) {
-        console.log('🛒 VALID BUYING OPPORTUNITIES:', filteredOpportunities.map((o, i) => 
-          `#${i + 1} ${o.date}: $${o.balance.toFixed(2)} (available: ${o.available_date || 'N/A'})`
-        ).join(', '));
-      }
+      console.log('\n═══════════════════════════════════════════');
+      console.log('📊 FINAL OPPORTUNITIES LIST:');
+      console.log('═══════════════════════════════════════════');
+      finalOpportunities.forEach((opp, index) => {
+        console.log(`\nOpportunity #${index + 1}:`);
+        console.log(`  📅 Low Point Date: ${opp.date}`);
+        console.log(`  💰 Safe to Spend: $${opp.balance.toFixed(2)}`);
+        console.log(`  ✅ Available From: ${opp.available_date || 'N/A'}`);
+        
+        // Find the calendar balance for this date
+        const calendarData = dailyBalances.find(d => d.date === opp.date);
+        if (calendarData) {
+          console.log(`  📈 Calendar Balance: $${calendarData.balance.toFixed(2)}`);
+          console.log(`  🧮 Calculation: ${calendarData.balance.toFixed(2)} - ${reserve.toFixed(2)} = ${opp.balance.toFixed(2)}`);
+        }
+      });
+      console.log('\n═══════════════════════════════════════════\n');
 
       console.log('🎯🎯🎯 SAFE SPENDING & BUYING OPPORTUNITY 🎯🎯🎯');
       console.log('Current Bank Balance:', bankBalance);
