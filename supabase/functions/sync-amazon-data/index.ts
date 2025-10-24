@@ -213,43 +213,45 @@ serve(async (req) => {
           // INCREMENTAL: Fetch only new data from last 24 hours
           syncMode = 'incremental'
           startDate = new Date(new Date(amazonAccount.last_sync).getTime() - (24 * 60 * 60 * 1000))
-          console.log('[SYNC] Incremental mode - fetching recent data from:', startDate.toISOString())
+          endDate = null // No end date - fetch up to now
+          console.log('[SYNC] Incremental mode - fetching from:', startDate.toISOString())
         } else {
-          // BACKFILL: Find oldest transaction and go backward in time
-          const { data: oldestTx } = await supabase
+          // BACKFILL: Continuous fetching without date gaps
+          syncMode = 'backfill'
+          const now = new Date()
+          const targetDate = new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000)) // 1 year ago
+          
+          // Find newest transaction to determine where to continue from
+          const { data: newestTx } = await supabase
             .from('amazon_transactions')
             .select('transaction_date')
             .eq('amazon_account_id', amazonAccountId)
-            .order('transaction_date', { ascending: true })
+            .order('transaction_date', { ascending: false })
             .limit(1)
             .single()
           
-          syncMode = 'backfill'
-          const now = new Date()
-          const targetDate = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000)) // 90 days ago
-          
-          if (oldestTx?.transaction_date) {
-            // We have data - fetch older data before our oldest transaction
-            endDate = new Date(new Date(oldestTx.transaction_date).getTime() - (1000)) // 1 second before oldest
-            startDate = new Date(endDate.getTime() - (30 * 24 * 60 * 60 * 1000)) // 30 days before that
+          if (newestTx?.transaction_date) {
+            // Continue from newest transaction forward to now
+            startDate = new Date(new Date(newestTx.transaction_date).getTime() + 1000) // 1 second after newest
+            endDate = null // Fetch up to now
             
-            console.log('[SYNC] Backfill mode - fetching historical data')
-            console.log('[SYNC] Oldest existing transaction:', new Date(oldestTx.transaction_date).toISOString())
-            console.log('[SYNC] Fetching from:', startDate.toISOString(), 'to:', endDate.toISOString())
+            console.log('[SYNC] Backfill mode - continuing from newest transaction')
+            console.log('[SYNC] Newest existing:', new Date(newestTx.transaction_date).toISOString())
+            console.log('[SYNC] Fetching from:', startDate.toISOString(), 'to: NOW')
             
-            // Check if we've reached the target (90 days back)
-            if (startDate < targetDate) {
-              console.log('[SYNC] Reached 90-day target, marking backfill complete')
+            // Check if we're caught up (within 1 day of now)
+            if (startDate > new Date(now.getTime() - (24 * 60 * 60 * 1000))) {
+              console.log('[SYNC] Caught up to current data, marking backfill complete')
               await supabase
                 .from('amazon_accounts')
                 .update({ initial_sync_complete: true })
                 .eq('id', amazonAccountId)
             }
           } else {
-            // No data yet - start from 30 days ago
-            endDate = now
-            startDate = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000))
-            console.log('[SYNC] First backfill - fetching last 30 days from:', startDate.toISOString())
+            // No data yet - start from 90 days ago to now
+            startDate = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000))
+            endDate = null
+            console.log('[SYNC] First backfill - fetching last 90 days from:', startDate.toISOString())
           }
         }
 
@@ -279,17 +281,19 @@ serve(async (req) => {
               .eq('id', amazonAccountId)
           }
 
-          // Build URL based on sync mode
+          // Build URL - Amazon SP-API requires dates in ISO format
           let url = `${financialEventsUrl}?PostedAfter=${startDate.toISOString()}&MarketplaceId=${amazonAccount.marketplace_id}&MaxResultsPerPage=100`
           
-          // In backfill mode, add PostedBefore to fetch older data
-          if (syncMode === 'backfill' && endDate) {
+          // Don't use PostedBefore unless we have a specific end date (it can cause issues)
+          if (endDate) {
             url += `&PostedBefore=${endDate.toISOString()}`
           }
           
           if (nextToken) {
             url += `&NextToken=${encodeURIComponent(nextToken)}`
           }
+          
+          console.log(`[SYNC] Fetching: ${url.substring(0, 150)}...`)
 
           const response = await fetch(url, {
             headers: {
@@ -316,15 +320,21 @@ serve(async (req) => {
             settlements: (events.ShipmentSettleEventList || []).length
           })
           
-          // Debug: Log settlement data if available
-          if ((events.ShipmentSettleEventList || []).length > 0) {
-            console.log('[SYNC] ✓ Found settlement events:', (events.ShipmentSettleEventList || []).length)
-            console.log('[SYNC] Settlement data sample:', JSON.stringify(events.ShipmentSettleEventList[0]).substring(0, 500))
-          } else {
-            console.log('[SYNC] ℹ️ No ShipmentSettleEventList returned by Amazon API.')
-            console.log('[SYNC] Note: Settlement data often requires 14+ days of transaction history.')
-            console.log('[SYNC] Will generate forecast payouts based on transaction patterns instead.')
+          // Log event details for debugging
+          const eventCounts = {
+            shipments: (events.ShipmentEventList || []).length,
+            refunds: (events.RefundEventList || []).length,
+            adjustments: (events.AdjustmentEventList || []).length,
+            settlements: (events.ShipmentSettleEventList || []).length,
+            serviceFees: (events.ServiceFeeEventList || []).length,
+            other: Object.keys(events).filter(k => !['ShipmentEventList', 'RefundEventList', 'AdjustmentEventList', 'ShipmentSettleEventList', 'ServiceFeeEventList'].includes(k)).length
           }
+          
+          if (eventCounts.settlements > 0) {
+            console.log('[SYNC] ✓ Found settlement events:', eventCounts.settlements)
+          }
+          
+          console.log('[SYNC] Events in this page:', eventCounts)
 
           // Process settlement events (Payouts)
           for (const settlement of (events.ShipmentSettleEventList || [])) {
@@ -458,6 +468,7 @@ serve(async (req) => {
         } while (nextToken)
 
         console.log(`[SYNC] Pagination complete. Transactions: ${transactionsToAdd.length}, Payouts: ${payoutsToAdd.length}`)
+        console.log(`[SYNC] Date range covered: ${startDate.toISOString()} to ${endDate ? endDate.toISOString() : 'NOW'}`)
 
         // Update progress
         await supabase
