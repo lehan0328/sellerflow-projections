@@ -63,10 +63,10 @@ serve(async (req) => {
       const payoutDate = new Date(today);
       payoutDate.setDate(payoutDate.getDate() - (i * 14)); // Bi-weekly
       
-      // Randomize payout amounts between $5,000 - $15,000
-      const ordersTotal = Math.floor(Math.random() * 10000) + 5000;
+      // Randomize payout amounts between $50,000 - $99,000 (5-figure range)
+      const ordersTotal = Math.floor(Math.random() * 49000) + 50000;
       const feesTotal = Math.floor(ordersTotal * 0.15); // 15% fees
-      const refundsTotal = Math.floor(Math.random() * 500);
+      const refundsTotal = Math.floor(Math.random() * 2000) + 500;
       const totalAmount = ordersTotal - feesTotal - refundsTotal;
 
       const settlementId = `SETTLEMENT-${i + 1}-${Date.now()}`;
@@ -89,8 +89,8 @@ serve(async (req) => {
         payout_type: 'bi-weekly',
       });
 
-      // Generate sample transactions for this payout with realistic data
-      const numTransactions = Math.floor(Math.random() * 30) + 20;
+      // Generate sample transactions for this payout with realistic data (more transactions for larger volume)
+      const numTransactions = Math.floor(Math.random() * 100) + 150;
       for (let j = 0; j < numTransactions; j++) {
         const transactionDate = new Date(payoutDate);
         transactionDate.setDate(transactionDate.getDate() - Math.floor(Math.random() * 14));
@@ -101,7 +101,7 @@ serve(async (req) => {
         
         const isOrder = Math.random() > 0.3;
         const grossAmount = isOrder 
-          ? Math.floor(Math.random() * 150) + 20
+          ? Math.floor(Math.random() * 300) + 50
           : 0;
         
         // Calculate realistic costs for orders

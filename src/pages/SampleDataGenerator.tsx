@@ -54,8 +54,8 @@ export default function SampleDataGenerator() {
               <ul className="list-disc list-inside ml-2 space-y-1">
                 <li>1 sample Amazon seller account</li>
                 <li>12 bi-weekly payouts over 6 months</li>
-                <li>200+ transaction records</li>
-                <li>Realistic sales amounts ($5k-$15k per payout)</li>
+                <li>1,800+ transaction records</li>
+                <li>Realistic 5-figure sales amounts ($50k-$99k per payout)</li>
               </ul>
             </div>
 
