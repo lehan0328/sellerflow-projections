@@ -538,6 +538,7 @@ export const CashFlowCalendar = ({
     }
     
     let runningTotal = bankAccountBalance; // Cash balance including forecasted payouts
+    let forecastTotal = bankAccountBalance; // Separate line showing forecasted payouts
     let cumulativeInflow = 0;
     let cumulativeOutflow = 0;
     
@@ -554,6 +555,11 @@ export const CashFlowCalendar = ({
       runningTotal += dailyChange;
       cumulativeInflow += dailyInflow;
       cumulativeOutflow += dailyOutflow;
+      
+      // Calculate forecasted payout line (only includes forecasted Amazon payouts)
+      const forecastedInflow = dayEvents.filter(e => e.source === 'Amazon-Forecasted' && e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
+      const forecastedChange = forecastedInflow - dailyOutflow;
+      forecastTotal += forecastedChange;
       
       const dayToCheck = new Date(day);
       dayToCheck.setHours(0, 0, 0, 0);
@@ -608,6 +614,7 @@ export const CashFlowCalendar = ({
         fullDate: day,
         cashFlow: runningTotal,
         cashBalance: runningTotal,
+        forecastPayout: hasAmazonForecast ? forecastTotal : null, // Purple line for forecasted payouts
         totalResources: runningTotal + availableCreditForDay,
         availableCredit: runningTotal + availableCreditForDay,
         creditCardBalance: availableCreditForDay,
@@ -1625,7 +1632,7 @@ export const CashFlowCalendar = ({
                           activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                         />
                       )}
-                      {showReserveLine && (
+                       {showReserveLine && (
                         <Line
                           type="monotone"
                           dataKey="reserveAmount"
@@ -1635,8 +1642,29 @@ export const CashFlowCalendar = ({
                           dot={false}
                           activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                         />
-                      )}
-                       {showForecastLine && (
+                       )}
+                       {/* Purple line for forecasted Amazon payouts */}
+                       <Line
+                         type="monotone"
+                         dataKey="forecastPayout"
+                         stroke="#9333ea"
+                         strokeWidth={2}
+                         dot={(props: any) => {
+                           const { cx, cy, payload, index } = props;
+                           if (payload.hasAmazonForecast) {
+                             return (
+                               <g key={`forecast-payout-${index}`}>
+                                 <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />
+                                 <circle cx={cx} cy={cy} r={6} fill="#9333ea" stroke="#7e22ce" strokeWidth={2} />
+                                 <circle cx={cx} cy={cy} r={3} fill="#fff" />
+                               </g>
+                             );
+                           }
+                           return null;
+                         }}
+                         activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
+                       />
+                        {showForecastLine && (
                         <>
                           {/* Projected Balance line - Cash + Forecasts (Purple) - includes mathematical forecasted payouts */}
                           <Line
