@@ -318,7 +318,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
             currency_code: currencyCode,
             status: fundTransferStatus === 'Successful' ? 'confirmed' : 'pending',
             payout_type: amazonAccount.payout_frequency || 'bi-weekly',
-            raw_data: group
+            marketplace_name: amazonAccount.marketplace_name,
+            raw_settlement_data: group
           })
         }
       }
