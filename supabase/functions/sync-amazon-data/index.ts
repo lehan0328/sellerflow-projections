@@ -501,7 +501,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           currency_code: settlement.Currency || 'USD',
           status: 'confirmed',
           payout_type: amazonAccount.payout_frequency || 'bi-weekly',
-          raw_data: settlement
+          marketplace_name: amazonAccount.marketplace_name,
+          raw_settlement_data: settlement
         })
       }
 
