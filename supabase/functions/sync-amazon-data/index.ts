@@ -364,12 +364,23 @@ serve(async (req) => {
 
         // Save transactions in batches
         if (transactionsToAdd.length > 0) {
-          console.log(`[SYNC] Saving ${transactionsToAdd.length} transactions...`)
+          // Deduplicate transactions before inserting (to avoid "cannot affect row a second time" errors)
+          const uniqueTransactions = transactionsToAdd.reduce((acc, tx) => {
+            const key = `${tx.transaction_id}-${tx.posted_date}`
+            if (!acc.has(key)) {
+              acc.set(key, tx)
+            }
+            return acc
+          }, new Map())
+          
+          const deduplicatedTransactions = Array.from(uniqueTransactions.values())
+          console.log(`[SYNC] Saving ${deduplicatedTransactions.length} unique transactions (${transactionsToAdd.length - deduplicatedTransactions.length} duplicates removed)...`)
+          
           const batchSize = 100
           let savedCount = 0
           
-          for (let i = 0; i < transactionsToAdd.length; i += batchSize) {
-            const batch = transactionsToAdd.slice(i, i + batchSize)
+          for (let i = 0; i < deduplicatedTransactions.length; i += batchSize) {
+            const batch = deduplicatedTransactions.slice(i, i + batchSize)
             const { error: insertError } = await supabase
               .from('amazon_transactions')
               .upsert(batch, { onConflict: 'transaction_id' })
