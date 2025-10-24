@@ -316,7 +316,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
             fees_total: 0,
             refunds_total: 0,
             currency_code: currencyCode,
-            status: fundTransferStatus === 'Successful' ? 'confirmed' : 'pending',
+            status: fundTransferStatus === 'Successful' ? 'confirmed' : 'forecasted',
             payout_type: amazonAccount.payout_frequency || 'bi-weekly',
             marketplace_name: amazonAccount.marketplace_name,
             raw_settlement_data: group
