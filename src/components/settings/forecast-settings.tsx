@@ -57,7 +57,7 @@ export const ForecastSettings = () => {
   
   const hasAmazonStore = amazonAccounts && amazonAccounts.length > 0;
   
-  // Check if any Amazon account is less than 24 hours old
+  // Check if any Amazon account is less than 3 hours old
   const newestAmazonAccount = useMemo(() => {
     if (!amazonAccounts || amazonAccounts.length === 0) return null;
     return amazonAccounts.reduce((newest, account) => {
@@ -72,8 +72,8 @@ export const ForecastSettings = () => {
     return (Date.now() - new Date(newestAmazonAccount.created_at).getTime()) / (1000 * 60 * 60); // in hours
   }, [newestAmazonAccount]);
   
-  const canEnableForecasts = amazonAccountAge >= 24;
-  const hoursUntilForecastAvailable = Math.max(0, Math.ceil(24 - amazonAccountAge));
+  const canEnableForecasts = amazonAccountAge >= 3;
+  const hoursUntilForecastAvailable = Math.max(0, Math.ceil(3 - amazonAccountAge));
   const [payoutModel, setPayoutModel] = useState<'bi-weekly' | 'daily'>('bi-weekly');
   
   // Check if user has 3+ confirmed payouts for advanced modeling
@@ -87,12 +87,12 @@ export const ForecastSettings = () => {
     return activeAccount?.payout_frequency || 'bi-weekly';
   }, [amazonAccounts]);
 
-  // Calculate if 24 hours have passed since disabling
+  // Calculate if 3 hours have passed since disabling
   const canReEnable = !disabledAt || 
-    (new Date().getTime() - new Date(disabledAt).getTime()) >= 24 * 60 * 60 * 1000;
+    (new Date().getTime() - new Date(disabledAt).getTime()) >= 3 * 60 * 60 * 1000;
   
   const hoursUntilReEnable = disabledAt 
-    ? Math.max(0, 24 - Math.floor((new Date().getTime() - new Date(disabledAt).getTime()) / (60 * 60 * 1000)))
+    ? Math.max(0, 3 - Math.floor((new Date().getTime() - new Date(disabledAt).getTime()) / (60 * 60 * 1000)))
     : 0;
 
   // Sync payoutModel with userSelectedPayoutModel whenever it changes
@@ -193,17 +193,17 @@ export const ForecastSettings = () => {
           const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
           return acc.initial_sync_complete && 
                  (acc.transaction_count || 0) >= 50 && 
-                 hoursSinceCreation >= 24;
+                 hoursSinceCreation >= 3;
         });
 
         if (!readyAccount) {
           const newestAccount = amazonAccounts[0];
           const createdAt = new Date(newestAccount.created_at);
           const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
-          const hoursRemaining = Math.ceil(24 - hoursSinceCreation);
+          const hoursRemaining = Math.ceil(3 - hoursSinceCreation);
           
-          if (hoursSinceCreation < 24) {
-            toast.error(`Amazon account must be active for 24 hours before enabling forecasts. ${hoursRemaining} hours remaining.`);
+          if (hoursSinceCreation < 3) {
+            toast.error(`Amazon account must be active for 3 hours before enabling forecasts. ${hoursRemaining} hours remaining.`);
           } else if (!newestAccount.initial_sync_complete || (newestAccount.transaction_count || 0) < 50) {
             toast.error(`Amazon account needs 50+ transactions before enabling forecasts. Current: ${newestAccount.transaction_count || 0} transactions.`);
           }
@@ -733,7 +733,7 @@ export const ForecastSettings = () => {
                     <TooltipContent>
                       <p>Forecast available in {hoursUntilForecastAvailable} hours</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        24-hour data collection period required
+                        3-hour data collection period required
                       </p>
                     </TooltipContent>
                   ) : null}
@@ -771,7 +771,7 @@ export const ForecastSettings = () => {
                   Forecasts will be available in {hoursUntilForecastAvailable} hours
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  We need 24 hours to collect enough Amazon data for accurate forecasting
+                  We need 3 hours to collect enough Amazon data for accurate forecasting
                 </p>
               </div>
             ) : (
@@ -1004,7 +1004,7 @@ export const ForecastSettings = () => {
               <li>Only show confirmed Amazon payouts going forward</li>
             </ul>
             <p className="font-semibold text-orange-600 dark:text-orange-400">
-              You will need to wait 24 hours before you can re-enable AI forecasts.
+              You will need to wait 3 hours before you can re-enable AI forecasts.
             </p>
           </AlertDialogDescription>
         </AlertDialogHeader>

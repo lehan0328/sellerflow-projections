@@ -260,23 +260,21 @@ serve(async (req) => {
         let nextToken: string | undefined = undefined
         let pageCount = 0
         
-        // Dynamic pagination: more pages for backfill, fewer for incremental syncs
-        const maxPages = syncMode === 'backfill' ? 500 : 30 // 50k for backfill, 3k for regular
-        
-        console.log(`[SYNC] Starting pagination (max ${maxPages} pages, ~${maxPages * 100} transactions for ${syncMode} mode)...`)
+        // No artificial limits - extract ALL transactions until API stops returning data
+        console.log(`[SYNC] Starting pagination in ${syncMode} mode - will fetch ALL available data...`)
 
         do {
           pageCount++
-          console.log(`[SYNC] Page ${pageCount}/${maxPages} (${transactionsToAdd.length} transactions)`)
           
-          // Update progress every 2 pages
-          if (pageCount % 2 === 0) {
-            const progressPercentage = Math.min(15 + (pageCount / maxPages) * 70, 85)
+          // Log progress every 10 pages to avoid spam
+          if (pageCount % 10 === 0) {
+            console.log(`[SYNC] Page ${pageCount} (${transactionsToAdd.length} transactions so far)`)
+            const progressPercentage = Math.min(10 + Math.floor(pageCount / 2), 85)
             await supabase
               .from('amazon_accounts')
               .update({ 
                 sync_progress: Math.round(progressPercentage),
-                sync_message: `Fetching page ${pageCount}/${maxPages}... ${transactionsToAdd.length} found`
+                sync_message: `Fetching page ${pageCount}... ${transactionsToAdd.length} transactions`
               })
               .eq('id', amazonAccountId)
           }
@@ -456,19 +454,11 @@ serve(async (req) => {
             }
           }
 
-          // Break if max pages reached
-          if (pageCount >= maxPages) {
-            console.log(`[SYNC] Reached page limit (${maxPages} pages, ~${pageCount * 100} transactions). Mode: ${syncMode}`)
-            if (syncMode === 'backfill' && nextToken) {
-              console.log('[SYNC] More data available. Will continue in next sync cycle.')
-            }
-            break
-          }
-
-        } while (nextToken)
-
-        console.log(`[SYNC] Pagination complete. Transactions: ${transactionsToAdd.length}, Payouts: ${payoutsToAdd.length}`)
-        console.log(`[SYNC] Date range covered: ${startDate.toISOString()} to ${endDate ? endDate.toISOString() : 'NOW'}`)
+        } while (nextToken) // Continue until Amazon stops returning data
+        
+        console.log(`[SYNC] Pagination complete after ${pageCount} pages`)
+        console.log(`[SYNC] Extracted: ${transactionsToAdd.length} transactions, ${payoutsToAdd.length} payouts`)
+        console.log(`[SYNC] Date range: ${startDate.toISOString()} to ${endDate ? endDate.toISOString() : 'NOW'}`)
 
         // Update progress
         await supabase
