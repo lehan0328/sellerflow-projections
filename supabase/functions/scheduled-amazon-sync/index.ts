@@ -25,11 +25,12 @@ Deno.serve(async (req) => {
 
     console.log('Starting scheduled Amazon sync for all active accounts...')
 
-    // Get all active Amazon accounts
+    // Get all active Amazon accounts that need syncing
     const { data: amazonAccounts, error: fetchError } = await supabase
       .from('amazon_accounts')
-      .select('id, user_id, account_name, marketplace_name, last_sync, created_at')
+      .select('id, user_id, account_name, marketplace_name, last_sync, sync_status, created_at')
       .eq('is_active', true)
+      .or('sync_status.eq.idle,sync_status.eq.syncing') // Include stuck "syncing" accounts
 
     if (fetchError) {
       console.error('Error fetching Amazon accounts:', fetchError)
@@ -58,19 +59,29 @@ Deno.serve(async (req) => {
         const now = new Date()
         const minutesSinceSync = (now.getTime() - lastSyncDate.getTime()) / (1000 * 60)
         
-        // Sync every 5 minutes (matching cron schedule)
-        const minMinutesBetweenSync = 4.5 // Slightly less than 5 to avoid timing issues
-        
-        if (minutesSinceSync < minMinutesBetweenSync) {
-          console.log(`Skipping ${account.account_name} - last synced ${minutesSinceSync.toFixed(1)} minutes ago`)
-          syncResults.push({
-            accountId: account.id,
-            accountName: account.account_name,
-            success: true,
-            skipped: true,
-            reason: `Last synced ${minutesSinceSync.toFixed(1)} minutes ago`
-          })
-          continue
+        // If stuck in "syncing" status for >2 minutes, reset it
+        if (account.sync_status === 'syncing' && minutesSinceSync > 2) {
+          console.log(`Resetting stuck sync for ${account.account_name}`)
+          await supabase
+            .from('amazon_accounts')
+            .update({ sync_status: 'idle' })
+            .eq('id', account.id)
+        }
+        // Otherwise, sync every 5 minutes (matching cron schedule)
+        else {
+          const minMinutesBetweenSync = 4.5 // Slightly less than 5 to avoid timing issues
+          
+          if (minutesSinceSync < minMinutesBetweenSync) {
+            console.log(`Skipping ${account.account_name} - last synced ${minutesSinceSync.toFixed(1)} minutes ago`)
+            syncResults.push({
+              accountId: account.id,
+              accountName: account.account_name,
+              success: true,
+              skipped: true,
+              reason: `Last synced ${minutesSinceSync.toFixed(1)} minutes ago`
+            })
+            continue
+          }
         }
       }
 
