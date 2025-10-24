@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -279,10 +280,13 @@ export function AmazonPayouts() {
                           <span className="font-medium truncate">{account.account_name}</span>
                           <span className="text-muted-foreground text-xs">({account.marketplace_name})</span>
                         </div>
-                        {showWarning && (
-                          <p className="text-xs text-amber-600 mt-0.5">
-                            Syncing for {hoursSinceSync}h - Amazon may have no recent activity
-                          </p>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {account.sync_message || 'No sync data'}
+                        </div>
+                        {account.sync_progress && account.sync_progress < 100 && account.sync_status !== 'idle' && (
+                          <div className="mt-1">
+                            <Progress value={account.sync_progress} className="h-1" />
+                          </div>
                         )}
                       </div>
                     </div>

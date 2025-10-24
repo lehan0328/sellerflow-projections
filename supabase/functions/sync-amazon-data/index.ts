@@ -210,7 +210,7 @@ serve(async (req) => {
         let endDate: Date | null = null
         
         if (amazonAccount.initial_sync_complete) {
-          // INCREMENTAL: Fetch only new data from last 24 hours
+          // INCREMENTAL: Fetch only new data from last sync
           syncMode = 'incremental'
           startDate = new Date(new Date(amazonAccount.last_sync).getTime() - (24 * 60 * 60 * 1000))
           endDate = null // No end date - fetch up to now
@@ -239,13 +239,32 @@ serve(async (req) => {
             console.log('[SYNC] Newest existing:', new Date(newestTx.transaction_date).toISOString())
             console.log('[SYNC] Fetching from:', startDate.toISOString(), 'to: NOW')
             
-            // Check if we're caught up (within 1 day of now)
-            if (startDate > new Date(now.getTime() - (24 * 60 * 60 * 1000))) {
-              console.log('[SYNC] Caught up to current data, marking backfill complete')
-              await supabase
-                .from('amazon_accounts')
-                .update({ initial_sync_complete: true })
-                .eq('id', amazonAccountId)
+            // DON'T mark complete until we reach target date or API stops returning data
+            // Check if oldest transaction is within target range
+            const { data: oldestTx } = await supabase
+              .from('amazon_transactions')
+              .select('transaction_date')
+              .eq('amazon_account_id', amazonAccountId)
+              .order('transaction_date', { ascending: true })
+              .limit(1)
+              .single()
+            
+            if (oldestTx?.transaction_date) {
+              const oldestDate = new Date(oldestTx.transaction_date)
+              const daysOfHistory = Math.floor((now.getTime() - oldestDate.getTime()) / (24 * 60 * 60 * 1000))
+              console.log(`[SYNC] Current history: ${daysOfHistory} days (target: 365 days)`)
+              
+              // Only mark complete if we have 365+ days OR startDate is caught up
+              if (daysOfHistory >= 365 || startDate > new Date(now.getTime() - (24 * 60 * 60 * 1000))) {
+                console.log('[SYNC] Marking backfill as complete')
+                await supabase
+                  .from('amazon_accounts')
+                  .update({ 
+                    initial_sync_complete: true,
+                    backfill_complete: true
+                  })
+                  .eq('id', amazonAccountId)
+              }
             }
           } else {
             // No data yet - start from 90 days ago to now
@@ -560,21 +579,39 @@ serve(async (req) => {
         // Update completion status
         const now = new Date()
         
-        // Build status message based on sync mode
+        // Get date range for status message
+        const { data: oldestTx } = await supabase
+          .from('amazon_transactions')
+          .select('transaction_date')
+          .eq('amazon_account_id', amazonAccountId)
+          .order('transaction_date', { ascending: true })
+          .limit(1)
+          .single()
+        
+        const { data: newestTx } = await supabase
+          .from('amazon_transactions')
+          .select('transaction_date')
+          .eq('amazon_account_id', amazonAccountId)
+          .order('transaction_date', { ascending: false })
+          .limit(1)
+          .single()
+        
         let statusMessage = `✓ Sync complete! ${totalTransactions} total transactions`
-        if (syncMode === 'backfill') {
-          const { data: oldestTx } = await supabase
-            .from('amazon_transactions')
-            .select('transaction_date')
-            .eq('amazon_account_id', amazonAccountId)
-            .order('transaction_date', { ascending: true })
-            .limit(1)
-            .single()
+        let daysOfHistory = 0
+        
+        if (oldestTx?.transaction_date && newestTx?.transaction_date) {
+          const oldestDate = new Date(oldestTx.transaction_date)
+          const newestDate = new Date(newestTx.transaction_date)
+          daysOfHistory = Math.floor((newestDate.getTime() - oldestDate.getTime()) / (24 * 60 * 60 * 1000))
           
-          if (oldestTx?.transaction_date) {
-            const oldestDate = new Date(oldestTx.transaction_date)
-            const daysBack = Math.floor((Date.now() - oldestDate.getTime()) / (24 * 60 * 60 * 1000))
-            statusMessage = `✓ Backfilling... ${daysBack} days of history (${totalTransactions} transactions)`
+          // Format dates for display
+          const oldestDateStr = oldestDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          const newestDateStr = newestDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          
+          if (syncMode === 'backfill' && daysOfHistory < 365) {
+            statusMessage = `⏳ Backfilling: ${daysOfHistory} days (${oldestDateStr} - ${newestDateStr}) | ${totalTransactions} transactions | Target: 365 days`
+          } else {
+            statusMessage = `✓ ${daysOfHistory} days synced (${oldestDateStr} - ${newestDateStr}) | ${totalTransactions} transactions`
           }
         }
         
@@ -584,14 +621,14 @@ serve(async (req) => {
             last_sync: now.toISOString(),
             transaction_count: totalTransactions || 0,
             sync_status: 'idle',
-            sync_progress: 100,
+            sync_progress: syncMode === 'backfill' && daysOfHistory < 365 ? Math.floor((daysOfHistory / 365) * 100) : 100,
             sync_message: statusMessage,
             last_sync_error: null,
             updated_at: now.toISOString()
           })
           .eq('id', amazonAccountId)
 
-        console.log(`[SYNC] ✓ Complete - ${totalTransactions} total transactions`)
+        console.log(`[SYNC] ✓ Complete - ${totalTransactions} transactions across ${daysOfHistory} days`)
 
       } catch (error) {
         console.error('[SYNC] Error:', error)
