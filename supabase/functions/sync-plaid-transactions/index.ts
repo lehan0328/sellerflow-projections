@@ -197,10 +197,43 @@ serve(async (req) => {
 
     console.log(`Successfully synced ${insertedCount} transactions`);
 
-    // Update last_sync timestamp (balance auto-updates via trigger)
+    // Fetch current balance from Plaid to update the account
+    const balanceResponse = await fetch(`https://${PLAID_ENV}.plaid.com/accounts/balance/get`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        client_id: PLAID_CLIENT_ID,
+        secret: PLAID_SECRET,
+        access_token: accessToken,
+        options: {
+          account_ids: account.plaid_account_id ? [account.plaid_account_id] : undefined,
+        },
+      }),
+    });
+
+    const balanceData = await balanceResponse.json();
+    console.log('📊 Fetched balance from Plaid:', balanceData);
+    
+    // Update account balance and last_sync
+    const updateData: any = { last_sync: new Date().toISOString() };
+    
+    if (balanceData.accounts && balanceData.accounts.length > 0) {
+      const accountBalance = balanceData.accounts[0].balances;
+      if (accountBalance.current !== null && accountBalance.current !== undefined) {
+        updateData.balance = accountBalance.current;
+        console.log('💰 Updating account balance to:', accountBalance.current);
+      }
+      if (accountBalance.available !== null && accountBalance.available !== undefined) {
+        updateData.available_balance = accountBalance.available;
+        console.log('💵 Updating available balance to:', accountBalance.available);
+      }
+    }
+    
     await supabase
       .from(tableName)
-      .update({ last_sync: new Date().toISOString() })
+      .update(updateData)
       .eq('id', accountId);
 
     return new Response(

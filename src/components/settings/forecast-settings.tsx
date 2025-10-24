@@ -117,14 +117,6 @@ export const ForecastSettings = () => {
         .select('forecast_confidence_threshold, forecasts_enabled, forecasts_disabled_at, advanced_modeling_enabled, default_reserve_lag_days')
         .eq('user_id', user!.id)
         .maybeSingle();
-      
-      // If no Amazon accounts connected, disable forecasts
-      if (!hasAmazonStore && data?.forecasts_enabled) {
-        await supabase
-          .from('user_settings')
-          .update({ forecasts_enabled: false })
-          .eq('user_id', user!.id);
-      }
 
       console.log('🔍 Fetched settings:', data);
       
