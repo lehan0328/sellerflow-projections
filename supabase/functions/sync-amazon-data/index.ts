@@ -592,11 +592,24 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       }
     }
 
-    // Get updated transaction count
-    const { count: transactionCount } = await supabase
+    // Get updated transaction count from both tables
+    const { count: recentTransactionCount } = await supabase
       .from('amazon_transactions')
       .select('*', { count: 'exact', head: true })
       .eq('amazon_account_id', amazonAccountId)
+
+    const { data: rollupData } = await supabase
+      .from('amazon_daily_rollups')
+      .select('order_count, refund_count')
+      .eq('amazon_account_id', amazonAccountId)
+
+    const rollupTransactionCount = rollupData?.reduce((sum, row) => 
+      sum + (row.order_count || 0) + (row.refund_count || 0), 0
+    ) || 0
+
+    const totalTransactionCount = (recentTransactionCount || 0) + rollupTransactionCount
+
+    console.log(`[SYNC] Transaction count: ${recentTransactionCount} recent + ${rollupTransactionCount} rollups = ${totalTransactionCount} total`)
 
     // Mark this day as complete and clear next_token
     await supabase
@@ -605,7 +618,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         last_synced_to: endDate.toISOString(),
         sync_next_token: null,
         last_sync: new Date().toISOString(),
-        transaction_count: transactionCount || 0
+        transaction_count: totalTransactionCount
       })
       .eq('id', amazonAccountId)
 
