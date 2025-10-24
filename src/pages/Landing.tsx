@@ -15,6 +15,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { FloatingChatWidget } from "@/components/floating-chat-widget";
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { useAuth } from "@/hooks/useAuth";
+import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
+import { useUserSettings } from "@/hooks/useUserSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -30,11 +32,35 @@ const Landing = () => {
     theme,
     setTheme
   } = useTheme();
+  const { amazonPayouts } = useAmazonPayouts();
+  const { forecastsEnabled } = useUserSettings();
   const [isYearly, setIsYearly] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showEnterpriseCustomizer, setShowEnterpriseCustomizer] = useState(false);
   const [showStickyCTA, setShowStickyCTA] = useState(false);
   const [isStartingTrial, setIsStartingTrial] = useState(false);
+
+  // Calculate forecast stats
+  const forecastStats = (() => {
+    if (!user || !forecastsEnabled) return null;
+    
+    const forecasted = amazonPayouts.filter(p => p.status === 'forecasted');
+    if (forecasted.length === 0) return null;
+    
+    const totalForecasted = forecasted.reduce((sum, p) => sum + p.total_amount, 0);
+    const next7Days = new Date();
+    next7Days.setDate(next7Days.getDate() + 7);
+    const next7DaysStr = next7Days.toISOString().split('T')[0];
+    const next7DaysTotal = forecasted
+      .filter(p => p.payout_date <= next7DaysStr)
+      .reduce((sum, p) => sum + p.total_amount, 0);
+
+    return {
+      totalForecasted,
+      next7DaysTotal,
+      forecastCount: forecasted.length
+    };
+  })();
 
   // Redirect authenticated users to dashboard
   useEffect(() => {
@@ -636,6 +662,30 @@ const Landing = () => {
                   <span>SOC 2 compliant</span>
                 </div>
               </div>
+
+              {/* Live Forecast Stats - Only show when logged in with forecasts enabled */}
+              {forecastStats && (
+                <div className="mt-6 p-4 rounded-xl bg-primary/5 border border-primary/20 animate-fade-in">
+                  <div className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    <span>Your Active Forecasts</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-foreground">${forecastStats.totalForecasted.toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Total Forecasted</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-foreground">${forecastStats.next7DaysTotal.toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Next 7 Days</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-foreground">{forecastStats.forecastCount}</div>
+                      <div className="text-xs text-muted-foreground mt-1">Forecasts</div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Right Video Preview */}

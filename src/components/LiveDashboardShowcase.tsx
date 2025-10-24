@@ -1,11 +1,44 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Monitor, ExternalLink } from "lucide-react";
+import { Monitor, ExternalLink, TrendingUp, DollarSign, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
+import { useUserSettings } from "@/hooks/useUserSettings";
+import { useEffect, useState } from "react";
 
 export const LiveDashboardShowcase = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { amazonPayouts, totalUpcoming, isLoading } = useAmazonPayouts();
+  const { forecastsEnabled } = useUserSettings();
+  const [forecastStats, setForecastStats] = useState({
+    totalForecasted: 0,
+    next7Days: 0,
+    forecastCount: 0
+  });
+
+  useEffect(() => {
+    if (!user || !forecastsEnabled) return;
+
+    const forecasted = amazonPayouts.filter(p => p.status === 'forecasted');
+    const totalForecasted = forecasted.reduce((sum, p) => sum + p.total_amount, 0);
+    
+    const next7Days = new Date();
+    next7Days.setDate(next7Days.getDate() + 7);
+    const next7DaysStr = next7Days.toISOString().split('T')[0];
+    
+    const next7DaysTotal = forecasted
+      .filter(p => p.payout_date <= next7DaysStr)
+      .reduce((sum, p) => sum + p.total_amount, 0);
+
+    setForecastStats({
+      totalForecasted,
+      next7Days: next7DaysTotal,
+      forecastCount: forecasted.length
+    });
+  }, [amazonPayouts, user, forecastsEnabled]);
 
   return (
     <div className="relative max-w-6xl mx-auto">
@@ -18,6 +51,27 @@ export const LiveDashboardShowcase = () => {
         <p className="text-muted-foreground mb-4">
           The dashboard interface that thousands of Amazon sellers use daily
         </p>
+        
+        {user && forecastsEnabled && !isLoading && forecastStats.forecastCount > 0 && (
+          <div className="flex items-center justify-center gap-6 my-6 text-sm">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <span className="font-semibold">${forecastStats.totalForecasted.toLocaleString()}</span>
+              <span className="text-muted-foreground">Forecasted</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary" />
+              <span className="font-semibold">${forecastStats.next7Days.toLocaleString()}</span>
+              <span className="text-muted-foreground">Next 7 Days</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-primary" />
+              <span className="font-semibold">{forecastStats.forecastCount}</span>
+              <span className="text-muted-foreground">Forecasts</span>
+            </div>
+          </div>
+        )}
+        
         <Button 
           variant="outline" 
           onClick={() => navigate('/contact')}
