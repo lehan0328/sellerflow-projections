@@ -115,8 +115,9 @@ Deno.serve(async (req) => {
           })
         }
 
-        // Add delay between syncs to avoid rate limiting (30 seconds)
-        await new Promise(resolve => setTimeout(resolve, 30000))
+        // Add delay between accounts to avoid rate limiting (3 minutes = 180 seconds)
+        // This ensures we respect Amazon's 2-minute rate limit per account
+        await new Promise(resolve => setTimeout(resolve, 180000))
       } catch (error) {
         console.error(`Exception syncing account ${account.id}:`, error)
         syncResults.push({
