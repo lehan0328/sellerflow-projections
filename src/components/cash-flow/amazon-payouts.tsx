@@ -292,8 +292,8 @@ export function AmazonPayouts() {
                           ✓ Synced
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-700 border-yellow-500/20">
-                          Syncing...
+                        <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-700 border-amber-500/20">
+                          Backfilling...
                         </Badge>
                       )}
                       <span className="text-xs text-muted-foreground whitespace-nowrap">
