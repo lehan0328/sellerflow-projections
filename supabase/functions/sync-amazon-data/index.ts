@@ -254,6 +254,7 @@ serve(async (req) => {
         }
 
         const transactionsToAdd: any[] = []
+        const payoutsToAdd: any[] = []
         let nextToken: string | undefined = undefined
         let pageCount = 0
         const maxPages = 5 // Limit to ~450-500 transactions per sync (5 pages × 100 per page)
@@ -309,8 +310,54 @@ serve(async (req) => {
           console.log('[SYNC] Event counts:', {
             shipments: (events.ShipmentEventList || []).length,
             refunds: (events.RefundEventList || []).length,
-            adjustments: (events.AdjustmentEventList || []).length
+            adjustments: (events.AdjustmentEventList || []).length,
+            settlements: (events.ShipmentSettleEventList || []).length
           })
+
+          // Process settlement events (Payouts)
+          for (const settlement of (events.ShipmentSettleEventList || [])) {
+            const settlementId = settlement.SettlementId
+            const postedDate = settlement.PostedDate
+            
+            // Calculate total amounts from settlement
+            let totalAmount = 0
+            let ordersTotal = 0
+            let feesTotal = 0
+            let refundsTotal = 0
+            
+            for (const item of (settlement.ShipmentItemList || [])) {
+              // Sum order amounts
+              for (const charge of (item.ItemChargeList || [])) {
+                const amount = parseFloat(charge.ChargeAmount?.CurrencyAmount || '0')
+                totalAmount += amount
+                ordersTotal += amount
+              }
+              
+              // Sum fees (negative)
+              for (const fee of (item.ItemFeeList || [])) {
+                const feeAmount = parseFloat(fee.FeeAmount?.CurrencyAmount || '0')
+                totalAmount += feeAmount
+                feesTotal += Math.abs(feeAmount)
+              }
+            }
+            
+            // Add settlement/payout record
+            payoutsToAdd.push({
+              user_id: actualUserId,
+              account_id: amazonAccount.account_id,
+              amazon_account_id: amazonAccountId,
+              settlement_id: settlementId,
+              payout_date: postedDate,
+              total_amount: totalAmount,
+              orders_total: ordersTotal,
+              fees_total: -feesTotal,
+              refunds_total: refundsTotal,
+              currency_code: settlement.Currency || 'USD',
+              status: 'confirmed',
+              payout_type: amazonAccount.payout_frequency || 'bi-weekly',
+              raw_data: settlement
+            })
+          }
 
           // Process shipment events (Orders)
           for (const shipment of (events.ShipmentEventList || [])) {
@@ -395,16 +442,40 @@ serve(async (req) => {
 
         } while (nextToken)
 
-        console.log(`[SYNC] Pagination complete. Total transactions: ${transactionsToAdd.length}`)
+        console.log(`[SYNC] Pagination complete. Transactions: ${transactionsToAdd.length}, Payouts: ${payoutsToAdd.length}`)
 
         // Update progress
         await supabase
           .from('amazon_accounts')
           .update({ 
             sync_progress: 90,
-            sync_message: `Saving ${transactionsToAdd.length} transactions...`
+            sync_message: `Saving ${transactionsToAdd.length} transactions and ${payoutsToAdd.length} payouts...`
           })
           .eq('id', amazonAccountId)
+
+        // Save payouts first
+        if (payoutsToAdd.length > 0) {
+          const uniquePayouts = payoutsToAdd.reduce((acc, payout) => {
+            const key = payout.settlement_id
+            if (!acc.has(key)) {
+              acc.set(key, payout)
+            }
+            return acc
+          }, new Map())
+          
+          const deduplicatedPayouts = Array.from(uniquePayouts.values())
+          console.log(`[SYNC] Saving ${deduplicatedPayouts.length} unique payouts...`)
+          
+          const { error: payoutError } = await supabase
+            .from('amazon_payouts')
+            .upsert(deduplicatedPayouts, { onConflict: 'settlement_id' })
+          
+          if (payoutError) {
+            console.error('[SYNC] Payout insert error:', payoutError)
+          } else {
+            console.log(`[SYNC] ✓ Saved ${deduplicatedPayouts.length} payouts`)
+          }
+        }
 
         // Save transactions in batches
         if (transactionsToAdd.length > 0) {
