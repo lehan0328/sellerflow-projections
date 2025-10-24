@@ -592,13 +592,20 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       }
     }
 
+    // Get updated transaction count
+    const { count: transactionCount } = await supabase
+      .from('amazon_transactions')
+      .select('*', { count: 'exact', head: true })
+      .eq('amazon_account_id', amazonAccountId)
+
     // Mark this day as complete and clear next_token
     await supabase
       .from('amazon_accounts')
       .update({ 
         last_synced_to: endDate.toISOString(),
         sync_next_token: null,
-        last_sync: new Date().toISOString()
+        last_sync: new Date().toISOString(),
+        transaction_count: transactionCount || 0
       })
       .eq('id', amazonAccountId)
 
