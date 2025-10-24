@@ -339,7 +339,7 @@ export const ForecastSettings = () => {
 
       setForecastsEnabled(false);
       setDisabledAt(new Date().toISOString());
-      toast.success("AI forecasts disabled. All forecasted payouts removed.");
+      toast.success("Mathematical forecasts disabled. All forecasted payouts removed.");
       
       // Reload to reflect changes
       setTimeout(() => {
@@ -956,7 +956,7 @@ export const ForecastSettings = () => {
             )}
             {!forecastsEnabled && (
               <TooltipContent>
-                <p>Enable AI forecasts to adjust settings</p>
+                <p>Enable mathematical forecasts to adjust settings</p>
               </TooltipContent>
             )}
           </Tooltip>
@@ -969,7 +969,7 @@ export const ForecastSettings = () => {
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-orange-500" />
-            Disable AI Forecasts?
+            Disable Mathematical Forecasts?
           </AlertDialogTitle>
           <AlertDialogDescription className="space-y-3 text-left">
             <p>
@@ -981,7 +981,7 @@ export const ForecastSettings = () => {
               <li>Only show confirmed Amazon payouts going forward</li>
             </ul>
             <p className="font-semibold text-orange-600 dark:text-orange-400">
-              You will need to wait 3 hours before you can re-enable AI forecasts.
+              You will need to wait 3 hours before you can re-enable mathematical forecasts.
             </p>
           </AlertDialogDescription>
         </AlertDialogHeader>

@@ -67,7 +67,7 @@ export const AmazonForecastAccuracy = () => {
             Forecast Accuracy Archive
           </CardTitle>
           <CardDescription>
-            Track how well AI forecasts match actual Amazon payouts
+            Track how well mathematical forecasts match actual Amazon payouts
           </CardDescription>
         </CardHeader>
         <CardContent>

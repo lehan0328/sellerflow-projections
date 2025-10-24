@@ -100,7 +100,7 @@ export const CashFlowCalendar = ({
   const [showTotalResourcesLine, setShowTotalResourcesLine] = useState(chartPreferences.showTotalResourcesLine);
   const [showCreditCardLine, setShowCreditCardLine] = useState(chartPreferences.showCreditCardLine);
   const [showReserveLine, setShowReserveLine] = useState(chartPreferences.showReserveLine);
-  const [showForecastLine, setShowForecastLine] = useState(true);
+  const [showForecastLine, setShowForecastLine] = useState(false);
   const [cashFlowColor, setCashFlowColor] = useState(chartPreferences.cashFlowColor);
   const [totalResourcesColor, setTotalResourcesColor] = useState(chartPreferences.totalResourcesColor);
   const [creditCardColor, setCreditCardColor] = useState(chartPreferences.creditCardColor);
@@ -562,7 +562,7 @@ export const CashFlowCalendar = ({
       const projectedBalance = projectedBalanceMap.size > 0 ? projectedBalanceMap.get(dateKey) : undefined;
       
       if (dayToCheck >= accountStartDate) {
-        // Include AI forecasted payouts as actual income in the cash balance
+        // Include mathematical forecasted payouts as actual income in the cash balance
         runningTotal += dailyChange; // Includes both confirmed and forecasted
         cumulativeInflow += dailyInflow;
         cumulativeOutflow += dailyOutflow;
@@ -1644,7 +1644,7 @@ export const CashFlowCalendar = ({
                       )}
                        {showForecastLine && (
                         <>
-                          {/* Projected Balance line - Cash + Forecasts (Purple) - includes AI forecasted payouts */}
+                          {/* Projected Balance line - Cash + Forecasts (Purple) - includes mathematical forecasted payouts */}
                           <Line
                             type="monotone"
                             dataKey="projectedBalance"
@@ -1657,7 +1657,7 @@ export const CashFlowCalendar = ({
                               return <circle key={`forecast-${index}`} cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />;
                             }}
                             activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
-                            name="Projected Cash Balance (with AI Forecasts)"
+                            name="Projected Cash Balance (with Mathematical Forecasts)"
                           />
                          </>
                        )}
