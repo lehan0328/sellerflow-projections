@@ -204,15 +204,53 @@ serve(async (req) => {
         // Fetch transactions
         const financialEventsUrl = `${apiEndpoint}/finances/v0/financialEvents`
         
-        // Use incremental sync
-        const startDate = new Date()
-        if (amazonAccount.last_sync && amazonAccount.initial_sync_complete) {
-          startDate.setTime(new Date(amazonAccount.last_sync).getTime() - (24 * 60 * 60 * 1000))
-          console.log('[SYNC] Incremental sync from:', startDate.toISOString())
+        // Determine sync strategy: backfill (going backward) or incremental (going forward)
+        let syncMode: 'backfill' | 'incremental' = 'incremental'
+        let startDate: Date
+        let endDate: Date | null = null
+        
+        if (amazonAccount.initial_sync_complete) {
+          // INCREMENTAL: Fetch only new data from last 24 hours
+          syncMode = 'incremental'
+          startDate = new Date(new Date(amazonAccount.last_sync).getTime() - (24 * 60 * 60 * 1000))
+          console.log('[SYNC] Incremental mode - fetching recent data from:', startDate.toISOString())
         } else {
-          // Initial: last 30 days
-          startDate.setDate(startDate.getDate() - 30)
-          console.log('[SYNC] Initial sync - last 30 days from:', startDate.toISOString())
+          // BACKFILL: Find oldest transaction and go backward in time
+          const { data: oldestTx } = await supabase
+            .from('amazon_transactions')
+            .select('transaction_date')
+            .eq('amazon_account_id', amazonAccountId)
+            .order('transaction_date', { ascending: true })
+            .limit(1)
+            .single()
+          
+          syncMode = 'backfill'
+          const now = new Date()
+          const targetDate = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000)) // 90 days ago
+          
+          if (oldestTx?.transaction_date) {
+            // We have data - fetch older data before our oldest transaction
+            endDate = new Date(new Date(oldestTx.transaction_date).getTime() - (1000)) // 1 second before oldest
+            startDate = new Date(endDate.getTime() - (30 * 24 * 60 * 60 * 1000)) // 30 days before that
+            
+            console.log('[SYNC] Backfill mode - fetching historical data')
+            console.log('[SYNC] Oldest existing transaction:', new Date(oldestTx.transaction_date).toISOString())
+            console.log('[SYNC] Fetching from:', startDate.toISOString(), 'to:', endDate.toISOString())
+            
+            // Check if we've reached the target (90 days back)
+            if (startDate < targetDate) {
+              console.log('[SYNC] Reached 90-day target, marking backfill complete')
+              await supabase
+                .from('amazon_accounts')
+                .update({ initial_sync_complete: true })
+                .eq('id', amazonAccountId)
+            }
+          } else {
+            // No data yet - start from 30 days ago
+            endDate = now
+            startDate = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000))
+            console.log('[SYNC] First backfill - fetching last 30 days from:', startDate.toISOString())
+          }
         }
 
         const transactionsToAdd: any[] = []
@@ -238,8 +276,14 @@ serve(async (req) => {
               .eq('id', amazonAccountId)
           }
 
-          // Build URL
+          // Build URL based on sync mode
           let url = `${financialEventsUrl}?PostedAfter=${startDate.toISOString()}&MarketplaceId=${amazonAccount.marketplace_id}&MaxResultsPerPage=100`
+          
+          // In backfill mode, add PostedBefore to fetch older data
+          if (syncMode === 'backfill' && endDate) {
+            url += `&PostedBefore=${endDate.toISOString()}`
+          }
+          
           if (nextToken) {
             url += `&NextToken=${encodeURIComponent(nextToken)}`
           }
@@ -404,15 +448,33 @@ serve(async (req) => {
 
         // Update completion status
         const now = new Date()
+        
+        // Build status message based on sync mode
+        let statusMessage = `✓ Sync complete! ${totalTransactions} total transactions`
+        if (syncMode === 'backfill') {
+          const { data: oldestTx } = await supabase
+            .from('amazon_transactions')
+            .select('transaction_date')
+            .eq('amazon_account_id', amazonAccountId)
+            .order('transaction_date', { ascending: true })
+            .limit(1)
+            .single()
+          
+          if (oldestTx?.transaction_date) {
+            const oldestDate = new Date(oldestTx.transaction_date)
+            const daysBack = Math.floor((Date.now() - oldestDate.getTime()) / (24 * 60 * 60 * 1000))
+            statusMessage = `✓ Backfilling... ${daysBack} days of history (${totalTransactions} transactions)`
+          }
+        }
+        
         await supabase
           .from('amazon_accounts')
           .update({
             last_sync: now.toISOString(),
             transaction_count: totalTransactions || 0,
-            initial_sync_complete: (totalTransactions || 0) > 0,
             sync_status: 'idle',
             sync_progress: 100,
-            sync_message: `✓ Sync complete! ${totalTransactions} total transactions`,
+            sync_message: statusMessage,
             last_sync_error: null,
             updated_at: now.toISOString()
           })
