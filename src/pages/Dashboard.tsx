@@ -1863,11 +1863,6 @@ const Dashboard = () => {
           </Card>
         );
       case 'data-management':
-        // Debug log for troubleshooting
-        console.log('Data Management - Profile:', profile);
-        console.log('Data Management - isWebsiteAdmin:', isWebsiteAdmin);
-        console.log('Data Management - plan_override:', profile?.plan_override);
-        
         return (
           <Card>
             <CardHeader>
@@ -1921,28 +1916,26 @@ const Dashboard = () => {
                   </div>
                 </div>
               )}
-              {(isWebsiteAdmin || (profile?.plan_override === 'professional')) && (
-                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <div className="flex items-start space-x-3">
-                    <ShoppingCart className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Generate Sample Amazon Data</h4>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        Create a sample Amazon account with 6 months of historical payouts and transactions (1,800+ records with 5-figure amounts) for testing forecasts and insights.
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => navigate('/sample-data')}
-                        className="border-blue-300 dark:border-blue-700"
-                      >
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Generate Amazon Data
-                      </Button>
-                    </div>
+              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <ShoppingCart className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Generate Sample Amazon Data</h4>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Create a sample Amazon account with 6 months of historical payouts and transactions (1,800+ records with 5-figure amounts) for testing forecasts and insights.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigate('/sample-data')}
+                      className="border-blue-300 dark:border-blue-700"
+                    >
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      Generate Amazon Data
+                    </Button>
                   </div>
                 </div>
-              )}
+              </div>
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
                 <div className="flex items-start space-x-3">
                   <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
