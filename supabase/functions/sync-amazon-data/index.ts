@@ -755,8 +755,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       
       console.log(`[SYNC] Detected average payout frequency: ${avgDaysBetween.toFixed(1)} days`)
       
-      // If average is < 7 days, it's a daily payout account
-      const isDaily = avgDaysBetween < 7
+      // If average is < 14 days, it's a daily payout account (bi-weekly is locked at 14 days)
+      const isDaily = avgDaysBetween < 14
       const payoutFreq = isDaily ? 'daily' : 'bi-weekly'
       
       if (isDaily !== amazonAccount.uses_daily_payouts || payoutFreq !== amazonAccount.payout_frequency) {
