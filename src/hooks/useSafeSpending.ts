@@ -704,16 +704,23 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       const safeSpendingLimit = Math.max(0, calculatedSafeSpending);
       
       // Find earliest date when you can make purchases for safe spending
-      // This is the first date from today UP TO the lowest point where you have enough buffer
+      // If we have enough cash TODAY, set available date to today
+      // Otherwise, find the first date where balance supports the spending
       let safeSpendingAvailableDate: string | undefined;
       
-      // Find the earliest date before the lowest point where spending won't drop us below minimum
-      // We need: current balance - safe spending >= minimum balance that will occur
-      for (let i = 0; i <= minDayIndex; i++) {
-        // Check if we can afford to spend the safe spending amount and still reach the minimum balance
-        if (dailyBalances[i].balance - calculatedSafeSpending >= minBalance) {
-          safeSpendingAvailableDate = dailyBalances[i].date;
-          break;
+      if (dailyBalances.length > 0) {
+        // Check if we can afford to spend today
+        if (dailyBalances[0].balance >= (calculatedSafeSpending + reserve)) {
+          // We have enough cash today
+          safeSpendingAvailableDate = dailyBalances[0].date;
+        } else {
+          // Find the first date when we'll have enough
+          for (let i = 0; i <= minDayIndex; i++) {
+            if (dailyBalances[i].balance >= (calculatedSafeSpending + reserve)) {
+              safeSpendingAvailableDate = dailyBalances[i].date;
+              break;
+            }
+          }
         }
       }
       
@@ -724,8 +731,19 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         available_date: safeSpendingAvailableDate
       };
       
-      // Prepend safe spending opportunity to the list
-      const allOpportunitiesWithSafeSpending = [safeSpendingOpportunity, ...filteredOpportunities];
+      // Only prepend safe spending opportunity if it's different from the first filtered opportunity
+      // to avoid showing duplicate opportunities
+      let allOpportunitiesWithSafeSpending: Array<{ date: string; balance: number; available_date?: string }>;
+      
+      if (filteredOpportunities.length > 0 && 
+          Math.abs(filteredOpportunities[0].balance - safeSpendingLimit) < 0.01) {
+        // First opportunity is essentially the same as safe spending - don't duplicate it
+        console.log('⚠️ First opportunity matches safe spending - using filtered opportunities only');
+        allOpportunitiesWithSafeSpending = filteredOpportunities;
+      } else {
+        // Safe spending is unique - prepend it
+        allOpportunitiesWithSafeSpending = [safeSpendingOpportunity, ...filteredOpportunities];
+      }
       
       // If we have no forecast data, only show safe spending opportunity
       const finalOpportunities = hasForecastData ? allOpportunitiesWithSafeSpending : [safeSpendingOpportunity];
@@ -734,16 +752,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       }
       
       const nextBuyingOpportunity = finalOpportunities.length > 0 ? finalOpportunities[0] : null;
-      
-      // Find the earliest date before the lowest point where spending won't drop us below minimum
-      // We need: current balance - safe spending >= minimum balance that will occur
-      for (let i = 0; i <= minDayIndex; i++) {
-        // Check if we can afford to spend the safe spending amount and still reach the minimum balance
-        if (dailyBalances[i].balance - calculatedSafeSpending >= minBalance) {
-          safeSpendingAvailableDate = dailyBalances[i].date;
-          break;
-        }
-      }
       
       console.log('🎯 ALL BALANCES:', dailyBalances.slice(0, 20).map(d => `${d.date}: $${d.balance.toFixed(2)}`).join('\n'));
       
