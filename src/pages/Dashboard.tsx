@@ -1863,6 +1863,11 @@ const Dashboard = () => {
           </Card>
         );
       case 'data-management':
+        // Debug log for troubleshooting
+        console.log('Data Management - Profile:', profile);
+        console.log('Data Management - isWebsiteAdmin:', isWebsiteAdmin);
+        console.log('Data Management - plan_override:', profile?.plan_override);
+        
         return (
           <Card>
             <CardHeader>
