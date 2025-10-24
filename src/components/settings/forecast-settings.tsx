@@ -363,7 +363,12 @@ export const ForecastSettings = () => {
             await refetchPayouts();
             await fetchSettings();
             setSyncProgress(100);
-            toast.success("Forecasts enabled and generated successfully!");
+            toast.success("Forecasts enabled! Refreshing to display forecasts...");
+            
+            // Auto-refresh to ensure all charts and components show the new forecasts
+            setTimeout(() => {
+              window.location.reload();
+            }, 1500);
           } else {
             console.warn('⚠️ Forecast generation completed but forecasts not visible. Checking edge function response:', data);
             setSyncProgress(0);
