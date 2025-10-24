@@ -129,6 +129,17 @@ export const LimitEnforcementModal = ({
   const handleDeleteAmazonAccount = async (accountId: string) => {
     setIsDeleting(true);
     try {
+      console.log('[LimitEnforcementModal] Deleting Amazon account:', accountId);
+      
+      // Delete all associated data first
+      await Promise.all([
+        supabase.from('amazon_daily_rollups').delete().eq('amazon_account_id', accountId),
+        supabase.from('amazon_transactions').delete().eq('amazon_account_id', accountId),
+        supabase.from('amazon_payouts').delete().eq('amazon_account_id', accountId),
+        supabase.from('amazon_transactions_daily_summary').delete().eq('amazon_account_id', accountId),
+      ]);
+
+      // Delete the account
       const { error } = await supabase
         .from('amazon_accounts')
         .delete()
@@ -136,10 +147,16 @@ export const LimitEnforcementModal = ({
 
       if (error) throw error;
 
+      console.log('[LimitEnforcementModal] Amazon account deleted successfully');
       toast.success('Amazon account deleted successfully');
+      
+      // Refresh all related data
       await refetchAmazonAccounts();
       queryClient.invalidateQueries({ queryKey: ['plan-limits'] });
+      queryClient.invalidateQueries({ queryKey: ['amazon-payouts'] });
+      queryClient.invalidateQueries({ queryKey: ['amazon-transactions'] });
     } catch (error: any) {
+      console.error('[LimitEnforcementModal] Delete error:', error);
       toast.error('Failed to delete Amazon account: ' + error.message);
     } finally {
       setIsDeleting(false);

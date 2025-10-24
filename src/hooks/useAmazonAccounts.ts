@@ -46,6 +46,7 @@ export const useAmazonAccounts = () => {
     }
 
     try {
+      console.log('[fetchAmazonAccounts] Fetching active Amazon accounts for user:', user.id);
       const { data, error } = await supabase
         .from("amazon_accounts")
         .select(`
@@ -62,8 +63,11 @@ export const useAmazonAccounts = () => {
           created_at,
           updated_at
         `)
+        .eq("user_id", user.id)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
+      
+      console.log('[fetchAmazonAccounts] Query result:', { count: data?.length, error });
 
       if (error) {
         console.error("Error fetching Amazon accounts:", error);
@@ -248,7 +252,19 @@ export const useAmazonAccounts = () => {
     }
 
     try {
-      // Delete all associated transactions first
+      console.log('[removeAmazonAccount] Deleting Amazon account:', accountId);
+      
+      // Delete all associated daily rollups
+      const { error: rollupsError } = await supabase
+        .from("amazon_daily_rollups")
+        .delete()
+        .eq("amazon_account_id", accountId);
+
+      if (rollupsError) {
+        console.error("Error deleting Amazon rollups:", rollupsError);
+      }
+
+      // Delete all associated transactions
       const { error: transactionError } = await supabase
         .from("amazon_transactions")
         .delete()
@@ -272,6 +288,16 @@ export const useAmazonAccounts = () => {
         return false;
       }
 
+      // Delete all associated daily summaries
+      const { error: summaryError } = await supabase
+        .from("amazon_transactions_daily_summary")
+        .delete()
+        .eq("amazon_account_id", accountId);
+
+      if (summaryError) {
+        console.error("Error deleting Amazon summaries:", summaryError);
+      }
+
       // Now delete the account
       const { error } = await supabase
         .from("amazon_accounts")
@@ -285,7 +311,10 @@ export const useAmazonAccounts = () => {
         return false;
       }
 
+      console.log('[removeAmazonAccount] Amazon account deleted successfully');
       toast.success("Amazon account and all associated data removed successfully!");
+      
+      // Force refresh the accounts list
       await fetchAmazonAccounts();
       return true;
     } catch (error) {

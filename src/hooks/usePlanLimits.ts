@@ -102,11 +102,18 @@ export const usePlanLimits = () => {
       if (!user) return;
 
       const [bankAccounts, creditCards, amazonAccounts, userRoles] = await Promise.all([
-        supabase.from('bank_accounts').select('id', { count: 'exact' }).eq('is_active', true),
-        supabase.from('credit_cards').select('id', { count: 'exact' }).eq('is_active', true),
-        supabase.from('amazon_accounts').select('id', { count: 'exact' }).eq('is_active', true),
+        supabase.from('bank_accounts').select('id', { count: 'exact' }).eq('user_id', user.id).eq('is_active', true),
+        supabase.from('credit_cards').select('id', { count: 'exact' }).eq('user_id', user.id).eq('is_active', true),
+        supabase.from('amazon_accounts').select('id', { count: 'exact' }).eq('user_id', user.id).eq('is_active', true),
         supabase.from('user_roles').select('user_id', { count: 'exact' }).neq('user_id', user.id)
       ]);
+      
+      console.log('[usePlanLimits] Usage counts:', {
+        bankAccounts: bankAccounts.count,
+        creditCards: creditCards.count,
+        amazonAccounts: amazonAccounts.count,
+        teamMembers: userRoles.count
+      });
 
       // Financial connections = bank accounts + credit cards
       const financialConnections = (bankAccounts.count || 0) + (creditCards.count || 0);

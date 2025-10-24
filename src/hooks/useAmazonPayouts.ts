@@ -43,6 +43,8 @@ export const useAmazonPayouts = () => {
     }
 
     try {
+      console.log('[fetchAmazonPayouts] Fetching Amazon payouts for user:', user.id);
+      
       // Check if forecasts are enabled
       const { data: settings } = await supabase
         .from('user_settings')
@@ -61,12 +63,17 @@ export const useAmazonPayouts = () => {
         .from("amazon_payouts")
         .select(`
           *,
-          amazon_accounts(
+          amazon_accounts!inner(
             account_name,
-            marketplace_name
+            marketplace_name,
+            is_active
           )
         `)
+        .eq("user_id", user.id)
+        .eq("amazon_accounts.is_active", true)
         .order("payout_date", { ascending: true });
+      
+      console.log('[fetchAmazonPayouts] Query result:', { count: data?.length, error });
 
       if (error) {
         console.error("Error fetching Amazon payouts:", error);
