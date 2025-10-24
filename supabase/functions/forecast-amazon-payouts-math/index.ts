@@ -256,16 +256,13 @@ function generateBiWeeklyForecasts(
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Calculate average and variance from historical data for future projections
+  // Calculate average from RECENT historical data (last 14 days of actual transactions)
   const eligibleValues = Array.from(dailyEligibleMap.values());
-  const totalEligible = eligibleValues.reduce((sum, amt) => sum + amt, 0);
-  const avgDailyEligible = totalEligible > 0 ? totalEligible / dailyEligibleMap.size : 714; // ~10k per 14 days
+  const recentValues = eligibleValues.slice(-14); // Last 14 days only
+  const totalRecent = recentValues.reduce((sum, amt) => sum + amt, 0);
+  const avgDailyEligible = totalRecent > 0 ? totalRecent / recentValues.length : 500; // ~7k per 14 days default
   
-  // Calculate standard deviation for realistic variance
-  const variance = eligibleValues.length > 0 
-    ? eligibleValues.reduce((sum, val) => sum + Math.pow(val - avgDailyEligible, 2), 0) / eligibleValues.length
-    : Math.pow(avgDailyEligible * 0.25, 2); // Default to 25% variance
-  const stdDev = Math.sqrt(variance);
+  console.log(`📊 Recent avg daily eligible: $${avgDailyEligible.toFixed(2)} (from ${recentValues.length} days)`);
 
   // Generate 6 bi-weekly settlement forecasts (3 months)
   for (let i = 0; i < 6; i++) {
@@ -285,12 +282,11 @@ function generateBiWeeklyForecasts(
       }
     });
 
-    // If no transactions in this period (future forecast), use average with smooth decay
+    // If no transactions in this period (future forecast), project from recent trends
     if (eligibleInPeriod === 0) {
-      // Apply gentle decay: further out forecasts are slightly lower (more conservative)
-      // Decay factor: 1.0 for first forecast, gradually down to 0.85 by 6th forecast
-      const decayFactor = 1.0 - (i * 0.025); // -2.5% per period
-      eligibleInPeriod = avgDailyEligible * 14 * decayFactor;
+      // Use recent average, assuming consistent sales patterns
+      eligibleInPeriod = avgDailyEligible * 14;
+      console.log(`🔮 Forecasting period ${i+1}: $${eligibleInPeriod.toFixed(2)} (${avgDailyEligible.toFixed(2)}/day × 14)`);
     }
 
     // Calculate Reserve(s_k) ≈ sum of Net_i for deliveries in last L days
@@ -306,9 +302,9 @@ function generateBiWeeklyForecasts(
       }
     });
 
-    // If no reserve calculated (future period), estimate as consistent 30% of eligible
+    // If no reserve calculated (future period), estimate as 20% of eligible (more realistic)
     if (reserveAmount === 0) {
-      reserveAmount = eligibleInPeriod * 0.30; // Consistent 30% reserve
+      reserveAmount = eligibleInPeriod * 0.20; // 20% reserve for future periods
     }
 
     reserveAmount *= reserveMultiplier;
@@ -333,8 +329,8 @@ function generateBiWeeklyForecasts(
       eligible_in_period: eligibleInPeriod,
       reserve_amount: reserveAmount,
       adjustments: 0,
-      orders_total: eligibleInPeriod * 1.3,
-      fees_total: eligibleInPeriod * 0.15,
+      orders_total: eligibleInPeriod / 0.85, // Reverse calc: eligible is ~85% of gross after fees
+      fees_total: (eligibleInPeriod / 0.85) * 0.15, // 15% of gross orders
       refunds_total: 0,
       other_total: 0,
       status: 'forecasted',
@@ -420,8 +416,8 @@ function generateDailyForecasts(
       total_amount: dailyIncrement, // Daily increment shown on calendar
       reserve_amount: settlementReserve / 14, // Distribute reserve proportionally
       adjustments: 0,
-      orders_total: totalEligible / 14, // Distribute orders proportionally
-      fees_total: (totalEligible * 0.15) / 14,
+      orders_total: (totalEligible / 14) / 0.85, // Reverse calc from net eligible
+      fees_total: ((totalEligible / 14) / 0.85) * 0.15, // 15% of gross
       refunds_total: 0,
       other_total: 0,
       status: 'forecasted',
@@ -469,8 +465,8 @@ function generateDailyForecasts(
         total_amount: futureDaily,
         reserve_amount: settlementReserve / 14,
         adjustments: 0,
-        orders_total: totalEligible / 14,
-        fees_total: (totalEligible * 0.15) / 14,
+        orders_total: (totalEligible / 14) / 0.85,
+        fees_total: ((totalEligible / 14) / 0.85) * 0.15,
         refunds_total: 0,
         other_total: 0,
         status: 'forecasted',
