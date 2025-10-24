@@ -189,26 +189,76 @@ export const ForecastSettings = () => {
         }
       }
 
-      console.log('🔄 Toggling forecasts to:', enabled);
+      console.log('🔄 [TOGGLE] Starting toggle to:', enabled, '| User ID:', currentUser.id);
       setSyncProgress(10);
 
-      // Update forecasts_enabled in database
-      const { error: updateError } = await supabase
-        .from('user_settings')
-        .update({ forecasts_enabled: enabled })
-        .eq('user_id', currentUser.id);
-
-      if (updateError) throw updateError;
-      setSyncProgress(20);
-
-      // Verify the update
-      const { data: verifyData } = await supabase
-        .from('user_settings')
-        .select('forecasts_enabled')
+      // Get current profile for account_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
         .eq('user_id', currentUser.id)
         .single();
       
-      console.log('✅ Database updated, verified value:', verifyData?.forecasts_enabled);
+      console.log('👤 [TOGGLE] Profile account_id:', profile?.account_id);
+
+      // CRITICAL: Update forecasts_enabled BEFORE generating forecasts
+      console.log('💾 [TOGGLE] Attempting database update...');
+      const { data: updateData, error: updateError } = await supabase
+        .from('user_settings')
+        .update({ 
+          forecasts_enabled: enabled,
+          forecasts_disabled_at: enabled ? null : new Date().toISOString(),
+          updated_at: new Date().toISOString() // Force timestamp update
+        })
+        .eq('user_id', currentUser.id)
+        .select('forecasts_enabled, forecasts_disabled_at, account_id')
+        .single();
+
+      console.log('📦 [TOGGLE] Update response:', { updateData, updateError });
+
+      if (updateError) {
+        console.error('❌ [TOGGLE] Failed to update forecasts_enabled:', updateError);
+        throw new Error(`Database update failed: ${updateError.message}`);
+      }
+      
+      if (!updateData) {
+        console.error('❌ [TOGGLE] No data returned from update');
+        throw new Error('Update succeeded but no data returned - check RLS policies');
+      }
+      
+      console.log('✅ [TOGGLE] Database updated successfully:', updateData);
+      setSyncProgress(20);
+
+      // Verify the update actually persisted with a fresh query
+      await new Promise(resolve => setTimeout(resolve, 500)); // Wait for DB to settle
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('user_settings')
+        .select('forecasts_enabled, forecasts_disabled_at, account_id, updated_at')
+        .eq('user_id', currentUser.id)
+        .single();
+      
+      console.log('🔍 [TOGGLE] Verification query:', { verifyData, verifyError });
+      
+      if (verifyError) {
+        console.error('❌ [TOGGLE] Verification query failed:', verifyError);
+        throw new Error(`Verification failed: ${verifyError.message}`);
+      }
+      
+      if (!verifyData) {
+        console.error('❌ [TOGGLE] No settings found for user');
+        throw new Error('User settings not found - may need to be created first');
+      }
+      
+      if (verifyData.forecasts_enabled !== enabled) {
+        console.error('❌ [TOGGLE] Value mismatch after update!', {
+          expected: enabled,
+          actual: verifyData.forecasts_enabled,
+          fullData: verifyData
+        });
+        throw new Error(`Setting did not persist: expected ${enabled}, got ${verifyData.forecasts_enabled}`);
+      }
+      
+      console.log('✅ [TOGGLE] Verified value in DB matches expected:', verifyData);
 
       setForecastsEnabled(enabled);
       setSyncProgress(30);

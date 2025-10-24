@@ -317,6 +317,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           continue
         }
         
+        // Handle non-OK responses
         if (!response.ok) {
           const errorText = await response.text()
           console.error('[SYNC] API error:', errorText)
@@ -346,6 +347,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         break // Success - exit retry loop
       }
 
+      // CRITICAL FIX: Only parse JSON after successful response check
       const data = await response.json()
       nextToken = data.payload?.NextToken
       
