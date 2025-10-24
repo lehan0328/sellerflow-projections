@@ -101,16 +101,24 @@ export function BankAccountManagement() {
   const handleSyncAccount = async (accountId: string) => {
     setIsSyncing(accountId);
     try {
-      const { data, error } = await supabase.functions.invoke('sync-plaid-accounts', {
-        body: { accountId, accountType: 'bank_account' }
+      // Call the sync-plaid-transactions edge function to get fresh balance from Plaid
+      const { data, error } = await supabase.functions.invoke('sync-plaid-transactions', {
+        body: { 
+          accountId, 
+          accountType: 'bank_account',
+          isInitialSync: false 
+        }
       });
 
       if (error) throw error;
 
-      toast.success(data.message || "Account synced successfully");
+      toast.success("Account synced - balance updated from bank");
+      
+      // Force refetch of accounts
+      window.location.reload();
     } catch (error) {
       console.error("Error syncing account:", error);
-      toast.error("Failed to sync account");
+      toast.error("Failed to sync account. Please try again.");
     } finally {
       setIsSyncing(null);
     }
