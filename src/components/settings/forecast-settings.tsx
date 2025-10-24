@@ -241,8 +241,7 @@ export const ForecastSettings = () => {
           if (error) {
             toast.dismiss(loadingToastId);
             console.error('❌ Forecast generation error:', error);
-            toast.error(`Forecast generation failed: ${error.message || 'Unknown error'}`);
-            setForecastsEnabled(false);
+            toast.error(`Forecast generation failed: ${error.message || 'Unknown error'}. Use Regenerate button to try again.`);
             setSyncProgress(0);
             return;
           }
@@ -294,14 +293,12 @@ export const ForecastSettings = () => {
             toast.success("Forecasts enabled and generated!");
           } else {
             setSyncProgress(0);
-            toast.error("Forecast generation timed out. Please try again.");
-            setForecastsEnabled(false);
+            toast.warning("Forecast generation timed out. Use the Regenerate button to try again.");
           }
         } catch (err) {
           toast.dismiss(loadingToastId);
           console.error('❌ Unexpected error:', err);
-          toast.error("An error occurred while generating forecasts");
-          setForecastsEnabled(false);
+          toast.error("An error occurred while generating forecasts. Use the Regenerate button to try again.");
           setSyncProgress(0);
         }
       }
