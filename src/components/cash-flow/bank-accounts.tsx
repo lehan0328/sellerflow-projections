@@ -150,17 +150,20 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
   const handleSyncTransactions = async (accountId: string, stripeAccountId: string) => {
     setSyncingAccounts(prev => new Set(prev).add(accountId));
     try {
-      const { data, error } = await supabase.functions.invoke('sync-stripe-transactions', {
+      const { data, error } = await supabase.functions.invoke('sync-plaid-transactions', {
         body: { 
-          accountId: stripeAccountId, 
-          bankAccountId: accountId 
+          accountId: stripeAccountId,
+          isInitialSync: false,
+          accountType: 'bank'
         }
       });
 
       if (error) throw error;
 
-      toast.success(`Synced ${data.total} transactions (${data.inserted} new, ${data.updated} updated)`);
-      refetch();
+      toast.success(`Synced ${data.count || 0} transactions. Balance updated!`);
+      
+      // Force refetch to show updated balance
+      await refetch();
     } catch (error: any) {
       console.error('Error syncing transactions:', error);
       toast.error("Failed to sync transactions: " + error.message);
@@ -501,8 +504,8 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
                     {account.account_type}
                   </Badge>
                 </div>
-                {/* Show sync button for Stripe-connected accounts */}
-                {account.plaid_account_id && account.plaid_account_id.startsWith('fca_') && (
+                {/* Show sync button for all Plaid-connected accounts */}
+                {account.plaid_account_id && (
                   <Button 
                     variant="outline" 
                     size="sm"

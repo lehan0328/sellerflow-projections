@@ -285,13 +285,12 @@ function generateBiWeeklyForecasts(
       }
     });
 
-    // If no transactions in this period (future forecast), use average with realistic variance
+    // If no transactions in this period (future forecast), use average with smooth decay
     if (eligibleInPeriod === 0) {
-      // Add variance: use normal distribution approximation
-      // Each forecast gets a different variance factor based on position
-      const varianceFactor = Math.sin(i * 0.7 + 2.3) * 0.5 + 1.0; // Ranges from ~0.5 to ~1.5
-      const randomVariance = (Math.random() - 0.5) * stdDev * 0.5; // ±25% of std dev
-      eligibleInPeriod = Math.max(0, (avgDailyEligible * 14 * varianceFactor) + randomVariance);
+      // Apply gentle decay: further out forecasts are slightly lower (more conservative)
+      // Decay factor: 1.0 for first forecast, gradually down to 0.85 by 6th forecast
+      const decayFactor = 1.0 - (i * 0.025); // -2.5% per period
+      eligibleInPeriod = avgDailyEligible * 14 * decayFactor;
     }
 
     // Calculate Reserve(s_k) ≈ sum of Net_i for deliveries in last L days
@@ -307,10 +306,9 @@ function generateBiWeeklyForecasts(
       }
     });
 
-    // If no reserve calculated (future period), estimate as 25-35% of eligible
+    // If no reserve calculated (future period), estimate as consistent 30% of eligible
     if (reserveAmount === 0) {
-      const reserveRate = 0.25 + (Math.random() * 0.1); // 25-35%
-      reserveAmount = eligibleInPeriod * reserveRate;
+      reserveAmount = eligibleInPeriod * 0.30; // Consistent 30% reserve
     }
 
     reserveAmount *= reserveMultiplier;
