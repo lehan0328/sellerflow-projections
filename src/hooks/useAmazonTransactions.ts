@@ -43,11 +43,12 @@ export const useAmazonTransactions = () => {
     }
 
     try {
-      // Fetch ALL transactions (no date filter for test page)
+      // Fetch recent transactions with limit to prevent timeout
       const { data, error } = await supabase
         .from("amazon_transactions")
         .select("*")
-        .order("transaction_date", { ascending: false });
+        .order("transaction_date", { ascending: false })
+        .limit(1000); // Limit to most recent 1000 transactions
 
       if (error) {
         console.error("Error fetching Amazon transactions:", error);
