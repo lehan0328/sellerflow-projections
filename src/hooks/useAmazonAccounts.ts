@@ -317,7 +317,10 @@ export const useAmazonAccounts = () => {
 
       // Call the edge function to sync Amazon data (background processing)
       const { data, error } = await supabase.functions.invoke("sync-amazon-data", {
-        body: { amazonAccountId: accountId }
+        body: { 
+          amazonAccountId: accountId,
+          userId: user.id 
+        }
       });
 
       if (error) {

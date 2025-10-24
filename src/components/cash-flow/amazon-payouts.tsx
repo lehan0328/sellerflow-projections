@@ -308,7 +308,7 @@ export function AmazonPayouts() {
               <Alert className="mt-3 bg-blue-500/5 border-blue-500/20">
                 <Clock className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-xs text-muted-foreground">
-                  Initial sync can take up to 24 hours. If no transactions appear, your Amazon account may have no recent sales activity.
+                  Initial sync in progress. Data will appear when ready (usually within minutes).
                 </AlertDescription>
               </Alert>
             )}
@@ -316,12 +316,6 @@ export function AmazonPayouts() {
         )}
         
         {amazonPayouts.length === 0 ? <div className="space-y-4">
-            {amazonAccounts.length > 0 && <Alert className="border-blue-500/30 bg-blue-500/5">
-                <Clock className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-sm text-muted-foreground">
-                  Amazon data sync can take up to 24 hours after connecting your account. Please check back later.
-                </AlertDescription>
-              </Alert>}
             <div className="text-center py-8">
               <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold text-foreground mb-2">No Amazon payouts found</h3>
