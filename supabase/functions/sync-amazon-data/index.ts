@@ -336,7 +336,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
               })
               .eq('id', amazonAccountId)
             
-            // Break out of pagination loop to move to next date
+            // Break out of BOTH loops - skip JSON parsing
             nextToken = undefined
             break
           }
@@ -347,7 +347,13 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         break // Success - exit retry loop
       }
 
-      // CRITICAL FIX: Only parse JSON after successful response check
+      // Skip JSON parsing if response body was already consumed (e.g., in TTL error handling)
+      // Check if we exited due to TTL error
+      if (!nextToken && !response.ok) {
+        break // Exit pagination loop without parsing
+      }
+
+      // Parse JSON only for successful responses
       const data = await response.json()
       nextToken = data.payload?.NextToken
       

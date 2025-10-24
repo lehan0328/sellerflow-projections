@@ -112,8 +112,19 @@ serve(async (req) => {
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text()
-      console.error('Token refresh failed:', errorText)
-      throw new Error('Failed to refresh access token')
+      console.error('❌ Token refresh failed:', tokenResponse.status, errorText)
+      
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to refresh access token',
+          status: tokenResponse.status,
+          details: errorText
+        }),
+        {
+          status: tokenResponse.status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
     const tokenData = await tokenResponse.json()
