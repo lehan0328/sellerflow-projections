@@ -17,6 +17,11 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { PendingNotificationsPanel } from "./pending-notifications-panel";
 
+// Utility function for consistent currency formatting
+const formatCurrency = (amount: number): string => {
+  return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 interface CashFlowEvent {
   id: string;
   type: 'inflow' | 'outflow' | 'credit-payment' | 'purchase-order';
@@ -986,7 +991,7 @@ export const CashFlowCalendar = ({
                     <span className="text-xs font-medium text-green-700 dark:text-green-400">Cash Balance</span>
                   </div>
                   <p className="text-xl font-bold text-green-700 dark:text-green-300">
-                    ${bankAccountBalance.toLocaleString()}
+                    ${formatCurrency(bankAccountBalance)}
                   </p>
                 </div>
                 <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
@@ -995,7 +1000,7 @@ export const CashFlowCalendar = ({
                     <span className="text-xs font-medium text-blue-700 dark:text-blue-400">Available Credit</span>
                   </div>
                   <p className="text-xl font-bold text-blue-700 dark:text-blue-300">
-                    ${totalAvailableCredit.toLocaleString()}
+                    ${formatCurrency(totalAvailableCredit)}
                   </p>
                 </div>
                 <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
@@ -1075,23 +1080,23 @@ export const CashFlowCalendar = ({
                               {isToday(day) ? (
                                 <>
                                   {/* TODAY: Cash, Pending (income), Credit */}
-                                  <div className="text-[10px] text-green-600 dark:text-green-400 font-medium w-full">
-                                    Cash: ${bankAccountBalance.toLocaleString()}
-                                  </div>
+                                   <div className="text-[10px] text-green-600 dark:text-green-400 font-medium w-full">
+                                     Cash: ${formatCurrency(bankAccountBalance)}
+                                   </div>
                                   {(() => {
                                     const pendingIncome = getPendingIncomeForToday(day);
                                     if (pendingIncome > 0) {
                                       return (
-                                        <div className="text-[10px] text-orange-600 dark:text-orange-400 font-medium w-full">
-                                          Pending: ${pendingIncome.toLocaleString()}
-                                        </div>
+                                         <div className="text-[10px] text-orange-600 dark:text-orange-400 font-medium w-full">
+                                           Pending: ${formatCurrency(pendingIncome)}
+                                         </div>
                                       );
                                     }
                                     return null;
                                   })()}
-                                   <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium w-full">
-                                     Credit: ${getAvailableCreditForDay(day).toLocaleString()}
-                                   </div>
+                                    <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium w-full">
+                                      Credit: ${formatCurrency(getAvailableCreditForDay(day))}
+                                    </div>
                                 </>
                               ) : (
                                 <>
@@ -1100,13 +1105,13 @@ export const CashFlowCalendar = ({
                                     <div className="text-[9px] text-green-600 dark:text-green-400 font-medium">
                                       Total Projected Cash
                                     </div>
-                                    <div className="text-[11px] text-green-700 dark:text-green-300 font-bold">
-                                      ${getTotalCashForDay(day).toLocaleString()}
-                                    </div>
-                                  </div>
-                                   <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium w-full">
-                                     Credit: ${getAvailableCreditForDay(day).toLocaleString()}
+                                     <div className="text-[11px] text-green-700 dark:text-green-300 font-bold">
+                                       ${formatCurrency(getTotalCashForDay(day))}
+                                     </div>
                                    </div>
+                                    <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium w-full">
+                                      Credit: ${formatCurrency(getAvailableCreditForDay(day))}
+                                    </div>
                                  </>
                                )}
                              </>
@@ -1124,7 +1129,7 @@ export const CashFlowCalendar = ({
                         {/* Overdue - show on current day and past dates */}
                         {(isToday(day) || isPast) && overdueVendors > 0 && (
                           <div className="text-red-600 dark:text-red-400 font-medium truncate">
-                            Overdue - ${overdueVendors.toLocaleString()}
+                            Overdue - ${formatCurrency(overdueVendors)}
                           </div>
                         )}
                       </div>
@@ -1154,7 +1159,7 @@ export const CashFlowCalendar = ({
                                   : (dayEvents[0].vendor || dayEvents[0].description)}
                           </span>
                           <span className={`ml-1 ${dayEvents[0].type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
-                            {dayEvents[0].type === 'inflow' ? '+' : '-'}${dayEvents[0].amount.toLocaleString()}
+                            {dayEvents[0].type === 'inflow' ? '+' : '-'}${formatCurrency(dayEvents[0].amount)}
                           </span>
                         </div>
                       </div>
@@ -1254,7 +1259,7 @@ export const CashFlowCalendar = ({
                                 creditCardCredit: "Available Credit:",
                                 reserve: "Reserve Amount:",
                               };
-                              return [labels[name] || name, `$${value.toLocaleString()}`];
+                              return [labels[name] || name, `$${formatCurrency(value)}`];
                             }}
                             itemSorter={(item) => {
                               const order = [
@@ -1284,11 +1289,11 @@ export const CashFlowCalendar = ({
                                 {/* Balance Section */}
                                 <div className="space-y-1">
                                   <p className="font-bold text-base">
-                                    Projected Balance: <span className="text-primary">${data.cashFlow.toLocaleString()}</span>
+                                    Projected Balance: <span className="text-primary">${formatCurrency(data.cashFlow)}</span>
                                   </p>
                                   {data.dailyChange !== 0 && (
                                     <p className={`font-medium ${data.dailyChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                      Daily Net: {data.dailyChange > 0 ? '+' : ''}${Math.abs(data.dailyChange).toLocaleString()}
+                                      Daily Net: {data.dailyChange > 0 ? '+' : ''}${formatCurrency(Math.abs(data.dailyChange))}
                                     </p>
                                   )}
                                 </div>
@@ -1467,7 +1472,7 @@ export const CashFlowCalendar = ({
                                 creditCardCredit: "Available Credit:",
                                 reserve: "Reserve Amount:",
                               };
-                              return [labels[name] || name, `$${value.toLocaleString()}`];
+                              return [labels[name] || name, `$${formatCurrency(value)}`];
                             }}
                             itemSorter={(item) => {
                               const order = [
@@ -1523,12 +1528,12 @@ export const CashFlowCalendar = ({
                               {hasTransactions && (
                                 <div className="space-y-1.5 border-t pt-2">
                                   <p className="font-semibold text-xs uppercase text-muted-foreground">Daily Activity</p>
-                                  {data.inflow > 0 && (
-                                    <p className="text-green-600 font-medium">↑ Inflows: +${data.inflow.toLocaleString()}</p>
-                                  )}
-                                  {data.outflow > 0 && (
-                                    <p className="text-red-600 font-medium">↓ Outflows: -${data.outflow.toLocaleString()}</p>
-                                  )}
+                                   {data.inflow > 0 && (
+                                     <p className="text-green-600 font-medium">↑ Inflows: +${formatCurrency(data.inflow)}</p>
+                                   )}
+                                   {data.outflow > 0 && (
+                                     <p className="text-red-600 font-medium">↓ Outflows: -${formatCurrency(data.outflow)}</p>
+                                   )}
                                 </div>
                               )}
 
