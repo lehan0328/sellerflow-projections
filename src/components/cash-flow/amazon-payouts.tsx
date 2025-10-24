@@ -377,6 +377,18 @@ export function AmazonPayouts() {
             const daysUntil = getDaysUntil(payout.payout_date);
             return daysUntil >= 0 && (showForecasts ? true : payout.status !== 'forecasted');
           });
+          
+          // Separate forecasted and actual payouts for better display
+          const forecastedPayouts = filteredPayouts.filter(p => p.status === 'forecasted');
+          const actualPayouts = filteredPayouts.filter(p => p.status !== 'forecasted');
+          
+          console.log('🛒 Amazon Payouts Component - Displaying:', {
+            total: filteredPayouts.length,
+            forecasted: forecastedPayouts.length,
+            actual: actualPayouts.length,
+            showForecasts
+          });
+          
           const payoutsByDate = filteredPayouts.reduce((acc, payout) => {
             const dateKey = payout.payout_date;
             if (!acc[dateKey]) {
@@ -398,10 +410,16 @@ export function AmazonPayouts() {
             const isUpcoming = daysUntil <= 7;
             const isForecasted = aggregatedPayout.status === 'forecasted';
             
-            return <div key={aggregatedPayout.payout_date} className={`rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card ${isUpcoming ? 'border-primary/30 bg-primary/5' : ''}`}>
+            return <div key={aggregatedPayout.payout_date} className={`rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card ${isUpcoming ? 'border-primary/30 bg-primary/5' : ''} ${isForecasted ? 'border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/30' : ''}`}>
                     <div className="flex items-center justify-between">
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
+                          {isForecasted && (
+                            <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700">
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              AI Forecast
+                            </Badge>
+                          )}
                           <Badge variant={getStatusColor(aggregatedPayout.status)} className="text-xs">
                             {aggregatedPayout.status}
                           </Badge>
@@ -429,13 +447,19 @@ export function AmazonPayouts() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-lg text-finance-positive">
+                        <p className={`font-bold text-lg ${isForecasted ? 'text-purple-600 dark:text-purple-400' : 'text-finance-positive'}`}>
                           {formatCurrency(aggregatedPayout.total_amount)}
                         </p>
-                        {isUpcoming && <div className="flex items-center text-xs text-primary">
+                        {isUpcoming && !isForecasted && <div className="flex items-center text-xs text-primary">
                             <TrendingUp className="mr-1 h-3 w-3" />
                             Upcoming
                           </div>}
+                        {isForecasted && (
+                          <div className="flex items-center text-xs text-purple-600 dark:text-purple-400">
+                            <Sparkles className="mr-1 h-3 w-3" />
+                            Predicted
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>;
