@@ -256,7 +256,83 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       })
       .eq('id', amazonAccountId)
 
-    // Fetch transactions for this day
+    // First, fetch settlement groups (actual payouts)
+    const eventGroupsUrl = `${apiEndpoint}/finances/v0/financialEventGroups`
+    const settlementsToAdd: any[] = []
+    
+    console.log('[SYNC] Fetching settlement groups...')
+    let groupNextToken: string | undefined = undefined
+    let groupPageCount = 0
+    
+    do {
+      groupPageCount++
+      let groupUrl = `${eventGroupsUrl}?FinancialEventGroupStartedAfter=${startDate.toISOString()}&FinancialEventGroupStartedBefore=${endDate.toISOString()}&MaxResultsPerPage=100`
+      
+      if (groupNextToken) {
+        groupUrl += `&NextToken=${encodeURIComponent(groupNextToken)}`
+      }
+      
+      console.log(`[SYNC] Fetching settlement groups page ${groupPageCount}...`)
+      
+      const groupResponse = await fetch(groupUrl, {
+        headers: {
+          'x-amz-access-token': accessToken,
+          'Content-Type': 'application/json',
+        }
+      })
+      
+      if (!groupResponse.ok) {
+        const errorText = await groupResponse.text()
+        console.error('[SYNC] Settlement groups API error:', errorText)
+        break
+      }
+      
+      const groupData = await groupResponse.json()
+      const groups = groupData.payload?.FinancialEventGroupList || []
+      groupNextToken = groupData.payload?.NextToken
+      
+      console.log(`[SYNC] Found ${groups.length} settlement groups`)
+      
+      for (const group of groups) {
+        const settlementId = group.FinancialEventGroupId
+        const startDate = group.FinancialEventGroupStart
+        const endDate = group.FinancialEventGroupEnd
+        const processingStatus = group.ProcessingStatus
+        const fundTransferStatus = group.FundTransferStatus
+        
+        // Only process completed settlements
+        if (processingStatus === 'Closed' && group.OriginalTotal) {
+          const totalAmount = parseFloat(group.OriginalTotal?.CurrencyAmount || '0')
+          const currencyCode = group.OriginalTotal?.CurrencyCode || 'USD'
+          
+          settlementsToAdd.push({
+            user_id: actualUserId,
+            account_id: amazonAccount.account_id,
+            amazon_account_id: amazonAccountId,
+            settlement_id: settlementId,
+            payout_date: endDate || startDate,
+            total_amount: totalAmount,
+            orders_total: totalAmount, // Will be broken down from events
+            fees_total: 0,
+            refunds_total: 0,
+            currency_code: currencyCode,
+            status: fundTransferStatus === 'Successful' ? 'confirmed' : 'pending',
+            payout_type: amazonAccount.payout_frequency || 'bi-weekly',
+            raw_data: group
+          })
+        }
+      }
+      
+      // Rate limiting delay between pages
+      if (groupNextToken) {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+      
+    } while (groupNextToken && groupPageCount < 50)
+    
+    console.log(`[SYNC] Found ${settlementsToAdd.length} settlements from groups`)
+    
+    // Now fetch transactions for this day
     const financialEventsUrl = `${apiEndpoint}/finances/v0/financialEvents`
     const transactionsToAdd: any[] = []
     const payoutsToAdd: any[] = []
@@ -505,7 +581,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     } while (nextToken)
     
     console.log(`[SYNC] Pagination complete after ${pageCount} pages`)
-    console.log(`[SYNC] Extracted: ${transactionsToAdd.length} transactions, ${payoutsToAdd.length} payouts`)
+    console.log(`[SYNC] Extracted: ${transactionsToAdd.length} transactions, ${payoutsToAdd.length} payouts from events, ${settlementsToAdd.length} settlements from groups`)
 
     // Determine if this day's data should go to rollups or detailed transactions
     const thirtyDaysAgo = new Date()
@@ -583,7 +659,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       }
     }
 
-    // Save payouts
+    // Save payouts from events
     if (payoutsToAdd.length > 0) {
       const uniquePayouts = payoutsToAdd.reduce((acc, payout) => {
         const key = payout.settlement_id
@@ -600,7 +676,28 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         .upsert(deduplicatedPayouts, { onConflict: 'settlement_id' })
       
       if (!payoutError) {
-        console.log(`[SYNC] ✓ Saved ${deduplicatedPayouts.length} payouts`)
+        console.log(`[SYNC] ✓ Saved ${deduplicatedPayouts.length} payouts from events`)
+      }
+    }
+    
+    // Save settlements from groups
+    if (settlementsToAdd.length > 0) {
+      const uniqueSettlements = settlementsToAdd.reduce((acc, settlement) => {
+        const key = settlement.settlement_id
+        if (!acc.has(key)) {
+          acc.set(key, settlement)
+        }
+        return acc
+      }, new Map())
+      
+      const deduplicatedSettlements = Array.from(uniqueSettlements.values())
+      
+      const { error: settlementError } = await supabase
+        .from('amazon_payouts')
+        .upsert(deduplicatedSettlements, { onConflict: 'settlement_id' })
+      
+      if (!settlementError) {
+        console.log(`[SYNC] ✓ Saved ${deduplicatedSettlements.length} settlements from groups`)
       }
     }
 
