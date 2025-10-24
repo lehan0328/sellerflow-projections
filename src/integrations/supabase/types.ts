@@ -187,6 +187,8 @@ export type Database = {
         Row: {
           account_id: string | null
           account_name: string
+          backfill_complete: boolean | null
+          backfill_target_date: string | null
           created_at: string
           encrypted_access_token: string | null
           encrypted_client_id: string | null
@@ -199,6 +201,7 @@ export type Database = {
           last_sync_error: string | null
           marketplace_id: string
           marketplace_name: string
+          oldest_transaction_date: string | null
           payout_frequency: string
           payout_model: string
           reserve_lag_days: number
@@ -216,6 +219,8 @@ export type Database = {
         Insert: {
           account_id?: string | null
           account_name: string
+          backfill_complete?: boolean | null
+          backfill_target_date?: string | null
           created_at?: string
           encrypted_access_token?: string | null
           encrypted_client_id?: string | null
@@ -228,6 +233,7 @@ export type Database = {
           last_sync_error?: string | null
           marketplace_id: string
           marketplace_name: string
+          oldest_transaction_date?: string | null
           payout_frequency?: string
           payout_model?: string
           reserve_lag_days?: number
@@ -245,6 +251,8 @@ export type Database = {
         Update: {
           account_id?: string | null
           account_name?: string
+          backfill_complete?: boolean | null
+          backfill_target_date?: string | null
           created_at?: string
           encrypted_access_token?: string | null
           encrypted_client_id?: string | null
@@ -257,6 +265,7 @@ export type Database = {
           last_sync_error?: string | null
           marketplace_id?: string
           marketplace_name?: string
+          oldest_transaction_date?: string | null
           payout_frequency?: string
           payout_model?: string
           reserve_lag_days?: number
