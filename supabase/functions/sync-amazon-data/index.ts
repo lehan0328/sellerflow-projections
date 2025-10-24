@@ -696,7 +696,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         .from('amazon_payouts')
         .upsert(deduplicatedSettlements, { onConflict: 'settlement_id' })
       
-      if (!settlementError) {
+      if (settlementError) {
+        console.error('[SYNC] Settlement insert error:', settlementError)
+      } else {
         console.log(`[SYNC] ✓ Saved ${deduplicatedSettlements.length} settlements from groups`)
       }
     }
