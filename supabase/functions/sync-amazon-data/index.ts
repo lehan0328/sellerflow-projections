@@ -730,6 +730,48 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
 
     console.log(`[SYNC] Transaction count: ${recentTransactionCount} recent + ${rollupTransactionCount} rollups = ${totalTransactionCount} total`)
 
+    // Detect payout frequency based on settlement date spread
+    const { data: recentPayouts } = await supabase
+      .from('amazon_payouts')
+      .select('payout_date, status')
+      .eq('amazon_account_id', amazonAccountId)
+      .in('status', ['confirmed', 'forecasted'])
+      .order('payout_date', { ascending: true })
+      .limit(30)
+
+    if (recentPayouts && recentPayouts.length >= 3) {
+      // Calculate average days between payouts
+      const sortedDates = recentPayouts
+        .map(p => new Date(p.payout_date))
+        .sort((a, b) => a.getTime() - b.getTime())
+      
+      const daysBetween: number[] = []
+      for (let i = 1; i < sortedDates.length; i++) {
+        const diff = (sortedDates[i].getTime() - sortedDates[i-1].getTime()) / (1000 * 60 * 60 * 24)
+        daysBetween.push(diff)
+      }
+      
+      const avgDaysBetween = daysBetween.reduce((a, b) => a + b, 0) / daysBetween.length
+      
+      console.log(`[SYNC] Detected average payout frequency: ${avgDaysBetween.toFixed(1)} days`)
+      
+      // If average is < 7 days, it's a daily payout account
+      const isDaily = avgDaysBetween < 7
+      const payoutFreq = isDaily ? 'daily' : 'bi-weekly'
+      
+      if (isDaily !== amazonAccount.uses_daily_payouts || payoutFreq !== amazonAccount.payout_frequency) {
+        console.log(`[SYNC] Updating payout model to: ${payoutFreq}`)
+        await supabase
+          .from('amazon_accounts')
+          .update({ 
+            uses_daily_payouts: isDaily,
+            payout_frequency: payoutFreq,
+            payout_model: payoutFreq
+          })
+          .eq('id', amazonAccountId)
+      }
+    }
+
     // Mark this day as complete and clear next_token
     await supabase
       .from('amazon_accounts')
