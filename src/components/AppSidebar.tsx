@@ -175,9 +175,13 @@ export function AppSidebar({
                             {section.id === 'ai-forecast' && (
                               <Badge 
                                 variant="default"
-                                className="text-[10px] font-bold px-1.5 py-0 h-[18px] bg-emerald-500 hover:bg-emerald-600 text-white"
+                                className={`text-[10px] font-bold px-1.5 py-0 h-[18px] ${
+                                  forecastsEnabled 
+                                    ? "bg-emerald-500 hover:bg-emerald-600 text-white" 
+                                    : "bg-gray-400 hover:bg-gray-500 text-white"
+                                }`}
                               >
-                                ON
+                                {forecastsEnabled ? "ON" : "OFF"}
                               </Badge>
                             )}
                             {'showMatchCount' in section && section.showMatchCount && matchCount > 0 && <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
