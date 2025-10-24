@@ -50,21 +50,21 @@ export const useUserSettings = () => {
       let canEnableForecasts = false;
 
       if (hasAmazonAccount) {
-        // Check if any account meets the requirements:
-        // 1. Has 50+ transactions (initial_sync_complete)
-        // 2. Was created at least 24 hours ago
-        const now = new Date();
-        canEnableForecasts = amazonAccounts.some(acc => {
-          const createdAt = new Date(acc.created_at);
-          const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
-          return acc.initial_sync_complete && 
-                 (acc.transaction_count || 0) >= 50 && 
-                 hoursSinceCreation >= 24;
-        });
-      }
+      // Check if any account meets the requirements:
+      // 1. Has 50+ transactions (initial_sync_complete)
+      // 2. Was created at least 24 hours ago
+      const now = new Date();
+      canEnableForecasts = amazonAccounts.some(acc => {
+        const createdAt = new Date(acc.created_at);
+        const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+        return acc.initial_sync_complete && 
+               (acc.transaction_count || 0) >= 50 && 
+               hoursSinceCreation >= 24;
+      });
+    }
 
-      // Override forecasts_enabled if requirements aren't met
-      const actualForecastsEnabled = data.forecasts_enabled && canEnableForecasts;
+    // Use database value directly - trust the backend validation
+    const actualForecastsEnabled = data.forecasts_enabled ?? false;
 
       setTotalCash(Number(data.total_cash));
       setForecastsEnabled(actualForecastsEnabled ?? false);

@@ -72,7 +72,8 @@ export const ForecastSettings = () => {
     return (Date.now() - new Date(newestAmazonAccount.created_at).getTime()) / (1000 * 60 * 60); // in hours
   }, [newestAmazonAccount]);
   
-  const canEnableForecasts = amazonAccountAge >= 3;
+  // Always allow forecast toggle if Amazon account exists
+  const canEnableForecasts = hasAmazonStore;
   const hoursUntilForecastAvailable = Math.max(0, Math.ceil(3 - amazonAccountAge));
   const [payoutModel, setPayoutModel] = useState<'bi-weekly' | 'daily'>('bi-weekly');
   
@@ -173,40 +174,16 @@ export const ForecastSettings = () => {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) throw new Error("Not authenticated");
 
-      // If enabling, verify Amazon account requirements
+      // If enabling, just verify Amazon account exists
       if (enabled) {
         const { data: amazonAccounts } = await supabase
           .from('amazon_accounts')
-          .select('id, initial_sync_complete, transaction_count, created_at')
+          .select('id')
           .eq('user_id', currentUser.id)
           .eq('is_active', true);
 
         if (!amazonAccounts || amazonAccounts.length === 0) {
           toast.error("Connect an Amazon account before enabling forecasts");
-          setTogglingForecast(false);
-          return;
-        }
-
-        const now = new Date();
-        const readyAccount = amazonAccounts.find(acc => {
-          const createdAt = new Date(acc.created_at);
-          const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
-          return acc.initial_sync_complete && 
-                 (acc.transaction_count || 0) >= 50 && 
-                 hoursSinceCreation >= 3;
-        });
-
-        if (!readyAccount) {
-          const newestAccount = amazonAccounts[0];
-          const createdAt = new Date(newestAccount.created_at);
-          const hoursSinceCreation = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
-          const hoursRemaining = Math.ceil(3 - hoursSinceCreation);
-          
-          if (hoursSinceCreation < 3) {
-            toast.error(`Amazon account must be active for 3 hours before enabling forecasts. ${hoursRemaining} hours remaining.`);
-          } else if (!newestAccount.initial_sync_complete || (newestAccount.transaction_count || 0) < 50) {
-            toast.error(`Amazon account needs 50+ transactions before enabling forecasts. Current: ${newestAccount.transaction_count || 0} transactions.`);
-          }
           setTogglingForecast(false);
           return;
         }
