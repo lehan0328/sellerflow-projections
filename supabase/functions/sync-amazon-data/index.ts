@@ -174,14 +174,14 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     if (tokenExpiresAt <= now || !accessToken) {
       console.log('[SYNC] Refreshing token...')
       const { data: refreshData, error: refreshError } = await supabase.functions.invoke('refresh-amazon-token', {
-        body: { amazonAccountId }
+        body: { amazon_account_id: amazonAccountId }
       })
 
       if (refreshError) {
         throw new Error(`Token refresh failed: ${refreshError.message}`)
       }
 
-      accessToken = refreshData.accessToken
+      accessToken = refreshData.access_token
       console.log('[SYNC] Token refreshed successfully')
     }
 
