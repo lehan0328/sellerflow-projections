@@ -547,6 +547,80 @@ export type Database = {
           },
         ]
       }
+      amazon_transactions_daily_summary: {
+        Row: {
+          account_id: string | null
+          adjustments_total: number | null
+          amazon_account_id: string
+          created_at: string | null
+          currency_code: string | null
+          fees_total: number | null
+          id: string
+          marketplace_name: string | null
+          net_amount: number | null
+          orders_count: number | null
+          orders_total: number | null
+          refunds_count: number | null
+          refunds_total: number | null
+          settlement_id: string | null
+          transaction_count: number | null
+          transaction_date: string
+          unlock_date: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          adjustments_total?: number | null
+          amazon_account_id: string
+          created_at?: string | null
+          currency_code?: string | null
+          fees_total?: number | null
+          id?: string
+          marketplace_name?: string | null
+          net_amount?: number | null
+          orders_count?: number | null
+          orders_total?: number | null
+          refunds_count?: number | null
+          refunds_total?: number | null
+          settlement_id?: string | null
+          transaction_count?: number | null
+          transaction_date: string
+          unlock_date?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          adjustments_total?: number | null
+          amazon_account_id?: string
+          created_at?: string | null
+          currency_code?: string | null
+          fees_total?: number | null
+          id?: string
+          marketplace_name?: string | null
+          net_amount?: number | null
+          orders_count?: number | null
+          orders_total?: number | null
+          refunds_count?: number | null
+          refunds_total?: number | null
+          settlement_id?: string | null
+          transaction_count?: number | null
+          transaction_date?: string
+          unlock_date?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "amazon_transactions_daily_summary_amazon_account_id_fkey"
+            columns: ["amazon_account_id"]
+            isOneToOne: false
+            referencedRelation: "amazon_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_accounts: {
         Row: {
           account_id: string | null

@@ -293,17 +293,41 @@ serve(async (req) => {
           
           console.log(`[SYNC] Fetching: ${url.substring(0, 150)}...`)
 
-          const response = await fetch(url, {
-            headers: {
-              'x-amz-access-token': accessToken,
-              'Content-Type': 'application/json',
-            }
-          })
+          // Rate limit handling with exponential backoff
+          let retryAttempts = 0
+          let response: any
+          const maxRetries = 5
+          
+          while (retryAttempts <= maxRetries) {
+            response = await fetch(url, {
+              headers: {
+                'x-amz-access-token': accessToken,
+                'Content-Type': 'application/json',
+              }
+            })
 
-          if (!response.ok) {
-            const errorText = await response.text()
-            console.error('[SYNC] API error:', errorText)
-            throw new Error(`API failed: ${response.status} - ${errorText}`)
+            // Handle rate limiting (429) and server errors (503)
+            if (response.status === 429 || response.status === 503) {
+              retryAttempts++
+              if (retryAttempts > maxRetries) {
+                throw new Error(`Max retries exceeded after ${maxRetries} attempts`)
+              }
+              
+              // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+              const waitTime = Math.pow(2, retryAttempts) * 1000
+              console.log(`[SYNC] Rate limited (${response.status}). Retry ${retryAttempts}/${maxRetries} in ${waitTime}ms...`)
+              
+              await new Promise(resolve => setTimeout(resolve, waitTime))
+              continue
+            }
+            
+            if (!response.ok) {
+              const errorText = await response.text()
+              console.error('[SYNC] API error:', errorText)
+              throw new Error(`API failed: ${response.status} - ${errorText}`)
+            }
+            
+            break // Success - exit retry loop
           }
 
           const data = await response.json()

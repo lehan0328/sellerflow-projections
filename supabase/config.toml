@@ -171,3 +171,6 @@ verify_jwt = false
 [functions.regenerate-all-forecasts]
 verify_jwt = false
 
+[functions.aggregate-old-transactions]
+verify_jwt = false
+

@@ -84,8 +84,13 @@ serve(async (req) => {
       .eq('user_id', userId)
       .eq('status', 'forecasted');
 
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    // Use 12 months of data for better seasonal analysis
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+    
+    // Cutoff for detailed vs aggregated data (30 days ago)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const allForecasts: any[] = [];
 
@@ -94,13 +99,13 @@ serve(async (req) => {
       console.log(`\n[FORECAST] Processing account: ${amazonAccount.account_name} (${amazonAccount.marketplace_name})`);
       console.log(`[FORECAST] Account ID: ${amazonAccount.id}`);
       
-      // Fetch Amazon payouts for this specific account from last 3 months
+      // Fetch Amazon payouts for this specific account from last 12 months
       const { data: amazonPayouts, error: payoutsError } = await supabase
         .from('amazon_payouts')
         .select('*')
         .eq('amazon_account_id', amazonAccount.id)
         .eq('status', 'confirmed') // Only use confirmed payouts for baseline
-        .gte('payout_date', threeMonthsAgo.toISOString().split('T')[0])
+        .gte('payout_date', twelveMonthsAgo.toISOString().split('T')[0])
         .order('payout_date', { ascending: false });
 
       if (payoutsError) {
@@ -156,14 +161,38 @@ serve(async (req) => {
         continue; // Skip AI analysis for this account
       }
 
-      // Fetch Amazon transactions for this specific account from last 3 months
-      const { data: amazonTransactions, error: transactionsError } = await supabase
+      // Fetch recent detailed transactions (last 30 days) for accurate forecasting
+      const { data: recentTransactions, error: recentTxError } = await supabase
         .from('amazon_transactions')
         .select('*')
         .eq('amazon_account_id', amazonAccount.id)
-        .gte('transaction_date', threeMonthsAgo.toISOString())
-        .order('transaction_date', { ascending: false })
-        .limit(1000);
+        .gte('transaction_date', thirtyDaysAgo.toISOString())
+        .order('transaction_date', { ascending: false });
+      
+      // Fetch aggregated historical data (30 days - 12 months ago) for seasonal patterns
+      const { data: historicalSummary, error: historicalError } = await supabase
+        .from('amazon_transactions_daily_summary')
+        .select('*')
+        .eq('amazon_account_id', amazonAccount.id)
+        .gte('transaction_date', twelveMonthsAgo.toISOString().split('T')[0])
+        .lt('transaction_date', thirtyDaysAgo.toISOString().split('T')[0])
+        .order('transaction_date', { ascending: false });
+      
+      // Combine recent detailed + historical aggregated for full picture
+      const amazonTransactions = recentTransactions || [];
+      
+      // Convert daily summaries to transaction-like format for compatibility
+      const historicalTransactions = (historicalSummary || []).map(summary => ({
+        transaction_date: summary.transaction_date,
+        transaction_type: 'Daily Summary',
+        amount: summary.net_amount,
+        gross_amount: summary.orders_total,
+        marketplace_name: summary.marketplace_name,
+        currency_code: summary.currency_code,
+        settlement_id: summary.settlement_id
+      }));
+      
+      const transactionsError = recentTxError || historicalError;
 
       if (transactionsError) {
         console.error(`[FORECAST] Error fetching transactions for account ${amazonAccount.id}:`, transactionsError);
