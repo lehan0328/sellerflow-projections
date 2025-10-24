@@ -675,7 +675,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       
       const { error: payoutError } = await supabase
         .from('amazon_payouts')
-        .upsert(deduplicatedPayouts, { onConflict: 'settlement_id' })
+        .upsert(deduplicatedPayouts, { onConflict: 'amazon_account_id,settlement_id' })
       
       if (!payoutError) {
         console.log(`[SYNC] ✓ Saved ${deduplicatedPayouts.length} payouts from events`)
@@ -696,7 +696,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       
       const { error: settlementError } = await supabase
         .from('amazon_payouts')
-        .upsert(deduplicatedSettlements, { onConflict: 'settlement_id' })
+        .upsert(deduplicatedSettlements, { onConflict: 'amazon_account_id,settlement_id' })
       
       if (settlementError) {
         console.error('[SYNC] Settlement insert error:', settlementError)
