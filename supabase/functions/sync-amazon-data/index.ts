@@ -313,6 +313,13 @@ serve(async (req) => {
             adjustments: (events.AdjustmentEventList || []).length,
             settlements: (events.ShipmentSettleEventList || []).length
           })
+          
+          // Debug: Log settlement data if available
+          if ((events.ShipmentSettleEventList || []).length > 0) {
+            console.log('[SYNC] Settlement data sample:', JSON.stringify(events.ShipmentSettleEventList[0]).substring(0, 500))
+          } else {
+            console.log('[SYNC] ⚠️ No settlement events found. These may be available later or require different API call.')
+          }
 
           // Process settlement events (Payouts)
           for (const settlement of (events.ShipmentSettleEventList || [])) {

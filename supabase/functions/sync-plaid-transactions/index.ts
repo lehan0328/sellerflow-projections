@@ -84,10 +84,13 @@ serve(async (req) => {
     }
 
     // Get transactions from Plaid
-    // For initial sync, get last 30 days. For regular sync, get last 7 days
+    // For initial sync, get last 30 days. For regular sync, get last 14 days
     const today = new Date();
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + 1); // Add 1 day to ensure we get all of today's transactions
+    
     const startDate = new Date(today);
-    startDate.setDate(today.getDate() - (isInitialSync ? 30 : 7));
+    startDate.setDate(today.getDate() - (isInitialSync ? 30 : 14));
     
     const response = await fetch(`https://${PLAID_ENV}.plaid.com/transactions/get`, {
       method: 'POST',
@@ -99,7 +102,7 @@ serve(async (req) => {
         secret: PLAID_SECRET,
         access_token: accessToken,
         start_date: startDate.toISOString().split('T')[0],
-        end_date: today.toISOString().split('T')[0],
+        end_date: endDate.toISOString().split('T')[0],
         options: {
           account_ids: account.plaid_account_id ? [account.plaid_account_id] : undefined,
         },
