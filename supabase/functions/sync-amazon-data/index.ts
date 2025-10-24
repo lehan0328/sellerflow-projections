@@ -257,9 +257,11 @@ serve(async (req) => {
         const payoutsToAdd: any[] = []
         let nextToken: string | undefined = undefined
         let pageCount = 0
-        const maxPages = 5 // Limit to ~450-500 transactions per sync (5 pages × 100 per page)
         
-        console.log('[SYNC] Starting pagination (max 5 pages per sync)...')
+        // Dynamic pagination: more pages for backfill, fewer for incremental syncs
+        const maxPages = syncMode === 'backfill' ? 500 : 30 // 50k for backfill, 3k for regular
+        
+        console.log(`[SYNC] Starting pagination (max ${maxPages} pages, ~${maxPages * 100} transactions for ${syncMode} mode)...`)
 
         do {
           pageCount++
@@ -316,9 +318,12 @@ serve(async (req) => {
           
           // Debug: Log settlement data if available
           if ((events.ShipmentSettleEventList || []).length > 0) {
+            console.log('[SYNC] ✓ Found settlement events:', (events.ShipmentSettleEventList || []).length)
             console.log('[SYNC] Settlement data sample:', JSON.stringify(events.ShipmentSettleEventList[0]).substring(0, 500))
           } else {
-            console.log('[SYNC] ⚠️ No settlement events found. These may be available later or require different API call.')
+            console.log('[SYNC] ℹ️ No ShipmentSettleEventList returned by Amazon API.')
+            console.log('[SYNC] Note: Settlement data often requires 14+ days of transaction history.')
+            console.log('[SYNC] Will generate forecast payouts based on transaction patterns instead.')
           }
 
           // Process settlement events (Payouts)
@@ -443,7 +448,10 @@ serve(async (req) => {
 
           // Break if max pages reached
           if (pageCount >= maxPages) {
-            console.log(`[SYNC] Reached page limit (${maxPages}). Will continue in next sync (5 min).`)
+            console.log(`[SYNC] Reached page limit (${maxPages} pages, ~${pageCount * 100} transactions). Mode: ${syncMode}`)
+            if (syncMode === 'backfill' && nextToken) {
+              console.log('[SYNC] More data available. Will continue in next sync cycle.')
+            }
             break
           }
 

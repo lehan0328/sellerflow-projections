@@ -172,13 +172,23 @@ const AmazonTransactionsTest = () => {
           </p>
         </CardHeader>
         <CardContent>
-          {payoutsLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          ) : amazonPayouts.length === 0 ? (
-            <p className="text-muted-foreground">No payouts found</p>
-          ) : (
+      {payoutsLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+      ) : amazonPayouts.length === 0 ? (
+        <div className="space-y-3">
+          <p className="text-muted-foreground">No settlement/payout data available yet</p>
+          <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded">
+            <h4 className="font-semibold mb-2 text-blue-900 dark:text-blue-100">ℹ️ Why No Payouts?</h4>
+            <ul className="text-sm text-blue-800 dark:text-blue-200 list-disc list-inside space-y-1">
+              <li>Amazon's Financial Events API requires 14+ days of transaction history to return settlement data</li>
+              <li>New accounts may not have settlement events available yet</li>
+              <li>Forecast payouts will be generated automatically once sufficient transaction history exists</li>
+            </ul>
+          </div>
+        </div>
+      ) : (
             <div className="space-y-3">
               {amazonPayouts.slice(0, 10).map((payout) => (
                 <div key={payout.id} className="p-4 border rounded-lg">
