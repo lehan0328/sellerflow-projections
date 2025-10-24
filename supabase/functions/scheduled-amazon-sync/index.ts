@@ -56,22 +56,19 @@ Deno.serve(async (req) => {
       if (account.last_sync) {
         const lastSyncDate = new Date(account.last_sync)
         const now = new Date()
-        const hoursSinceSync = (now.getTime() - lastSyncDate.getTime()) / (1000 * 60 * 60)
+        const minutesSinceSync = (now.getTime() - lastSyncDate.getTime()) / (1000 * 60)
         
-        // For accounts less than 7 days old (intensive period): sync every 2 hours
-        // For older accounts: sync every 12 hours
-        const accountAgeInDays = (now.getTime() - new Date(account.created_at).getTime()) / (1000 * 60 * 60 * 24)
-        const isInIntensivePeriod = accountAgeInDays <= 7
-        const minHoursBetweenSync = isInIntensivePeriod ? 2 : 12
+        // Sync every 5 minutes (matching cron schedule)
+        const minMinutesBetweenSync = 4.5 // Slightly less than 5 to avoid timing issues
         
-        if (hoursSinceSync < minHoursBetweenSync) {
-          console.log(`Skipping ${account.account_name} - last synced ${hoursSinceSync.toFixed(1)} hours ago`)
+        if (minutesSinceSync < minMinutesBetweenSync) {
+          console.log(`Skipping ${account.account_name} - last synced ${minutesSinceSync.toFixed(1)} minutes ago`)
           syncResults.push({
             accountId: account.id,
             accountName: account.account_name,
             success: true,
             skipped: true,
-            reason: `Last synced ${hoursSinceSync.toFixed(1)} hours ago`
+            reason: `Last synced ${minutesSinceSync.toFixed(1)} minutes ago`
           })
           continue
         }
@@ -118,8 +115,8 @@ Deno.serve(async (req) => {
           })
         }
 
-        // Add delay between syncs to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        // Add delay between syncs to avoid rate limiting (30 seconds)
+        await new Promise(resolve => setTimeout(resolve, 30000))
       } catch (error) {
         console.error(`Exception syncing account ${account.id}:`, error)
         syncResults.push({

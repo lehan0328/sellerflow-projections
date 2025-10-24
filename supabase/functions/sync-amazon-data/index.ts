@@ -134,7 +134,7 @@ serve(async (req) => {
         // Check rate limiting
         const lastSync = amazonAccount.last_sync ? new Date(amazonAccount.last_sync) : null
         const timeSinceLastSync = lastSync ? (Date.now() - lastSync.getTime()) / 1000 : Infinity
-        const RATE_LIMIT_SECONDS = 120
+        const RATE_LIMIT_SECONDS = 240 // 4 minutes between syncs (cron runs every 5 min)
         
         if (timeSinceLastSync < RATE_LIMIT_SECONDS) {
           const waitTime = Math.ceil(RATE_LIMIT_SECONDS - timeSinceLastSync)
@@ -218,22 +218,22 @@ serve(async (req) => {
         const transactionsToAdd: any[] = []
         let nextToken: string | undefined = undefined
         let pageCount = 0
-        const maxPages = 200
+        const maxPages = 5 // Limit to ~450-500 transactions per sync (5 pages × 100 per page)
         
-        console.log('[SYNC] Starting pagination...')
+        console.log('[SYNC] Starting pagination (max 5 pages per sync)...')
 
         do {
           pageCount++
           console.log(`[SYNC] Page ${pageCount}/${maxPages} (${transactionsToAdd.length} transactions)`)
           
-          // Update progress every 5 pages
-          if (pageCount % 5 === 0) {
+          // Update progress every 2 pages
+          if (pageCount % 2 === 0) {
             const progressPercentage = Math.min(15 + (pageCount / maxPages) * 70, 85)
             await supabase
               .from('amazon_accounts')
               .update({ 
                 sync_progress: Math.round(progressPercentage),
-                sync_message: `Fetching page ${pageCount}... ${transactionsToAdd.length} found`
+                sync_message: `Fetching page ${pageCount}/${maxPages}... ${transactionsToAdd.length} found`
               })
               .eq('id', amazonAccountId)
           }
@@ -345,7 +345,7 @@ serve(async (req) => {
 
           // Break if max pages reached
           if (pageCount >= maxPages) {
-            console.log(`[SYNC] ⚠️ Max pages (${maxPages}) reached. More data available.`)
+            console.log(`[SYNC] Reached page limit (${maxPages}). Will continue in next sync (5 min).`)
             break
           }
 
