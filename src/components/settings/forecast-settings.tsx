@@ -273,7 +273,11 @@ export const ForecastSettings = () => {
             
             if (fetchError) {
               console.error('❌ Error checking for forecasts:', fetchError);
-              continue;
+              toast.dismiss(loadingToastId);
+              toast.error(`Permission error: ${fetchError.message}. Check RLS policies on amazon_payouts table.`);
+              setSyncProgress(0);
+              setTogglingForecast(false);
+              return;
             }
             
             if (forecasts && forecasts.length > 0) {
@@ -290,10 +294,11 @@ export const ForecastSettings = () => {
             await refetchPayouts();
             await fetchSettings();
             setSyncProgress(100);
-            toast.success("Forecasts enabled and generated!");
+            toast.success("Forecasts enabled and generated successfully!");
           } else {
+            console.warn('⚠️ Forecast generation completed but forecasts not visible. Checking edge function response:', data);
             setSyncProgress(0);
-            toast.warning("Forecast generation timed out. Use the Regenerate button to try again.");
+            toast.error("Forecasts generated but not visible. This may be an RLS permission issue. Check the console for details.");
           }
         } catch (err) {
           toast.dismiss(loadingToastId);
@@ -730,23 +735,23 @@ export const ForecastSettings = () => {
           )}
           <CardDescription>
             {forecastsEnabled && canEnableForecasts ? (
-               <>
-                Adjust the conservatism of your Amazon payout forecasts
+              <div className="space-y-2">
+                <div>Adjust the conservatism of your Amazon payout forecasts</div>
                 {!loading && (
-                  <div className="mt-2 text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground">
                     Current safety net: <span className="font-semibold">{savedSafetyLevel.label} {savedSafetyLevel.discount}</span>
                   </div>
                 )}
-              </>
+              </div>
             ) : !canEnableForecasts ? (
               <div className="mt-2 space-y-1">
-                <p className="text-sm text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                <div className="text-sm text-blue-600 dark:text-blue-400 flex items-center gap-2">
                   <AlertCircle className="h-4 w-4" />
                   Forecasts will be available in {hoursUntilForecastAvailable} hours
-                </p>
-                <p className="text-xs text-muted-foreground">
+                </div>
+                <div className="text-xs text-muted-foreground">
                   We need 3 hours to collect enough Amazon data for accurate forecasting
-                </p>
+                </div>
               </div>
             ) : (
               <div className="mt-2 space-y-1">
