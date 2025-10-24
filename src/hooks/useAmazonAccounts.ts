@@ -445,10 +445,21 @@ export const useAmazonAccounts = () => {
             toast.success(message);
           }
           
-          // If sync status changed to 'error', show error toast
+          // If sync status changed to 'error', show error toast with details
           if (payload.eventType === 'UPDATE' && payload.new.sync_status === 'error') {
             const account = payload.new as any;
-            toast.error(`${account.account_name}: Sync failed - ${account.last_sync_error || 'Unknown error'}`);
+            const errorMsg = account.last_sync_error || account.sync_message || 'Unknown error';
+            toast.error(`${account.account_name}: ${errorMsg}`, {
+              duration: 10000, // Show for 10 seconds
+            });
+          }
+          
+          // Show info when sync starts
+          if (payload.eventType === 'UPDATE' && 
+              payload.old.sync_status !== 'syncing' && 
+              payload.new.sync_status === 'syncing') {
+            const account = payload.new as any;
+            toast.info(`Syncing ${account.account_name}...`);
           }
           
           fetchAmazonAccounts();

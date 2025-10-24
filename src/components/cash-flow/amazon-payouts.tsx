@@ -267,6 +267,22 @@ export function AmazonPayouts() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Sync Error Alert */}
+        {amazonAccounts.some(acc => acc.sync_status === 'error' || acc.last_sync_error) && (
+          <Alert variant="destructive">
+            <AlertDescription className="space-y-2">
+              {amazonAccounts
+                .filter(acc => acc.sync_status === 'error' || acc.last_sync_error)
+                .map(account => (
+                  <div key={account.id} className="space-y-1">
+                    <p className="font-semibold">{account.account_name}</p>
+                    <p className="text-sm">{account.last_sync_error || account.sync_message || 'Sync error occurred'}</p>
+                  </div>
+                ))}
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {/* Sync Progress Indicator */}
         {amazonAccounts.some(acc => acc.sync_status === 'syncing') && (
           <div className="p-4 rounded-lg border border-blue-500 bg-blue-50 dark:bg-blue-950">
@@ -278,6 +294,15 @@ export function AmazonPayouts() {
                     <p className="font-semibold text-blue-900 dark:text-blue-100 text-sm">
                       Syncing: {account.account_name}
                     </p>
+                    <p className="text-xs text-blue-700 dark:text-blue-200">
+                      {account.sync_message || 'Fetching data from Amazon...'}
+                    </p>
+                    <p className="text-xs text-blue-600 dark:text-blue-300 font-mono">
+                      Transactions: {account.transaction_count?.toLocaleString() || 0}
+                    </p>
+                    {account.sync_progress !== undefined && (
+                      <Progress value={account.sync_progress} className="h-2 bg-blue-200" />
+                    )}
                     <p className="text-xs text-blue-700 dark:text-blue-300">
                       {account.sync_message || 'Starting sync...'}
                     </p>

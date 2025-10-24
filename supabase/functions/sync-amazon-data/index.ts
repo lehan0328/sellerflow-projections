@@ -320,6 +320,26 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         if (!response.ok) {
           const errorText = await response.text()
           console.error('[SYNC] API error:', errorText)
+          
+          // Handle TTL expiration specifically - reset token and continue with next date
+          if (errorText.includes('Time to live') || errorText.includes('TTL exceeded')) {
+            console.log('[SYNC] NextToken expired - resetting and moving to next date')
+            
+            // Clear the expired token
+            await supabase
+              .from('amazon_accounts')
+              .update({ 
+                sync_next_token: null,
+                last_synced_to: endDate.toISOString(), // Mark this date as done
+                sync_message: 'Token expired - continuing next date...'
+              })
+              .eq('id', amazonAccountId)
+            
+            // Break out of pagination loop to move to next date
+            nextToken = undefined
+            break
+          }
+          
           throw new Error(`API failed: ${response.status} - ${errorText}`)
         }
         
@@ -606,13 +626,35 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
 
   } catch (error) {
     console.error('[SYNC] Error in background task:', error)
-    await supabase
-      .from('amazon_accounts')
-      .update({ 
-        sync_status: 'error',
-        sync_message: error.message,
-        last_sync_error: error.message
-      })
-      .eq('id', amazonAccountId)
+    const errorMessage = error.message || String(error)
+    
+    // For TTL expiration, try to continue with next sync automatically
+    if (errorMessage.includes('Time to live') || errorMessage.includes('TTL exceeded')) {
+      console.log('[SYNC] TTL error - clearing token and will retry automatically')
+      await supabase
+        .from('amazon_accounts')
+        .update({ 
+          sync_status: 'idle',
+          sync_next_token: null,
+          sync_message: 'Sync paused - will auto-retry',
+          last_sync_error: 'Token expired during sync - will resume automatically'
+        })
+        .eq('id', amazonAccountId)
+      
+      // Auto-retry in 5 seconds with fresh token
+      setTimeout(() => {
+        console.log('[SYNC] Auto-retrying after TTL expiration')
+        syncAmazonData(supabase, amazonAccount, actualUserId)
+      }, 5000)
+    } else {
+      await supabase
+        .from('amazon_accounts')
+        .update({ 
+          sync_status: 'error',
+          sync_message: errorMessage.substring(0, 200),
+          last_sync_error: errorMessage.substring(0, 500)
+        })
+        .eq('id', amazonAccountId)
+    }
   }
 }
