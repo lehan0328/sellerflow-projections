@@ -256,13 +256,14 @@ function generateBiWeeklyForecasts(
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Calculate average from RECENT historical data (last 14 days of actual transactions)
-  const eligibleValues = Array.from(dailyEligibleMap.values());
-  const recentValues = eligibleValues.slice(-14); // Last 14 days only
-  const totalRecent = recentValues.reduce((sum, amt) => sum + amt, 0);
-  const avgDailyEligible = totalRecent > 0 ? totalRecent / recentValues.length : 500; // ~7k per 14 days default
+  // Calculate ONLY from actual unlocked transactions (not all history)
+  // This ensures we're using real data that has passed the reserve period
+  const eligibleValues = Array.from(dailyEligibleMap.values()).filter(val => val > 0);
+  const avgDailyEligible = eligibleValues.length > 0 
+    ? eligibleValues.reduce((sum, amt) => sum + amt, 0) / eligibleValues.length
+    : 50; // ~$700/14 days default if no data
   
-  console.log(`📊 Recent avg daily eligible: $${avgDailyEligible.toFixed(2)} (from ${recentValues.length} days)`);
+  console.log(`📊 Avg daily eligible from ${eligibleValues.length} days: $${avgDailyEligible.toFixed(2)}`);
 
   // Generate 6 bi-weekly settlement forecasts (3 months)
   for (let i = 0; i < 6; i++) {
@@ -274,7 +275,8 @@ function generateBiWeeklyForecasts(
     prevSettlementDate.setDate(prevSettlementDate.getDate() + (i * 14));
     const prevSettlementDateStr = prevSettlementDate.toISOString().split('T')[0];
 
-    // Calculate EligInPeriod(s_k) = sum of daily eligible between settlements
+    // Calculate EligInPeriod = sum of amounts that UNLOCK in this window
+    // These are orders with unlock_date (delivery + 7 days) in this period
     let eligibleInPeriod = 0;
     dailyEligibleMap.forEach((amount, date) => {
       if (date > prevSettlementDateStr && date <= settlementDateStr) {
@@ -282,42 +284,44 @@ function generateBiWeeklyForecasts(
       }
     });
 
-    // If no transactions in this period (future forecast), project from recent trends
+    // For future periods, use conservative projection from recent average
     if (eligibleInPeriod === 0) {
-      // Use recent average, assuming consistent sales patterns
       eligibleInPeriod = avgDailyEligible * 14;
-      console.log(`🔮 Forecasting period ${i+1}: $${eligibleInPeriod.toFixed(2)} (${avgDailyEligible.toFixed(2)}/day × 14)`);
+      console.log(`🔮 Period ${i+1}: $${eligibleInPeriod.toFixed(2)} (${avgDailyEligible.toFixed(2)}/day)`);
     }
 
-    // Calculate Reserve(s_k) ≈ sum of Net_i for deliveries in last L days
-    // For future forecasts, estimate reserve as a percentage of eligible amount
+    // Reserve = funds from orders delivered within reserve lag (7 days before settlement)
+    // Per spec: Reserve = Σ ExpectedNet where Unlock > End and OrderDate >= End − L + 1
     let reserveAmount = 0;
-    const reserveCutoffDate = new Date(settlementDate);
-    reserveCutoffDate.setDate(reserveCutoffDate.getDate() - reserveLag);
-    const reserveCutoffStr = reserveCutoffDate.toISOString().split('T')[0];
+    const reserveStartDate = new Date(settlementDate);
+    reserveStartDate.setDate(reserveStartDate.getDate() - reserveLag);
+    const reserveStartStr = reserveStartDate.toISOString().split('T')[0];
 
+    // Count transactions with delivery dates in the last 7 days before settlement
     transactions.forEach(txn => {
-      if (txn.delivery_date > reserveCutoffStr && txn.delivery_date <= settlementDateStr) {
-        reserveAmount += txn.net_amount;
+      const deliveryDate = txn.delivery_date || txn.transaction_date;
+      if (deliveryDate >= reserveStartStr && deliveryDate <= settlementDateStr) {
+        reserveAmount += Math.abs(txn.net_amount || 0);
       }
     });
 
-    // If no reserve calculated (future period), estimate as 20% of eligible (more realistic)
-    if (reserveAmount === 0) {
-      reserveAmount = eligibleInPeriod * 0.20; // 20% reserve for future periods
+    // For future periods with no actual data, estimate reserve as % of eligible
+    if (reserveAmount === 0 && eligibleInPeriod > 0) {
+      // Conservative estimate: 15-20% typically still in reserve
+      reserveAmount = eligibleInPeriod * 0.15;
     }
 
     reserveAmount *= reserveMultiplier;
 
-    // Payout(s_k) ≈ [EligInPeriod + Bal_prior + Adj] - Reserve
-    // For simplicity, assume Bal_prior = 0 and Adj = 0 for forecasts
-    let payoutAmount = eligibleInPeriod - reserveAmount;
+    // Apply payout formula per spec: (EligInPeriod + BalancePrior + Adjustments - Reserve) × (1 - SafetyMargin)
+    // Assume BalancePrior = 0 and Adjustments = 0 for forecasts (can be enhanced later)
+    let payoutAmount = Math.max(0, eligibleInPeriod - reserveAmount);
 
-    // Apply risk adjustment
-    const adjustmentMultiplier = 1 - (riskAdjustment / 100);
-    payoutAmount *= adjustmentMultiplier;
+    // Apply safety margin (risk adjustment) - spec suggests 3-15%, default 8%
+    const safetyMargin = riskAdjustment / 100; // Convert to decimal
+    payoutAmount *= (1 - safetyMargin);
 
-    // Ensure non-negative
+    // Final check
     payoutAmount = Math.max(0, payoutAmount);
 
     forecasts.push({

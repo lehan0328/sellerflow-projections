@@ -363,12 +363,14 @@ export const ForecastSettings = () => {
             await refetchPayouts();
             await fetchSettings();
             setSyncProgress(100);
-            toast.success("Forecasts enabled! Refreshing to display forecasts...");
+            toast.success("Forecasts generated using spec-based calculations!", {
+              description: "Using bi-weekly settlement cycle with 7-day reserve lag per Amazon Forecasting Spec v2"
+            });
             
             // Auto-refresh to ensure all charts and components show the new forecasts
             setTimeout(() => {
               window.location.reload();
-            }, 1500);
+            }, 2000);
           } else {
             console.warn('⚠️ Forecast generation completed but forecasts not visible. Checking edge function response:', data);
             setSyncProgress(0);
