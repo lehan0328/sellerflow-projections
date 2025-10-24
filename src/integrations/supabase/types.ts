@@ -1646,6 +1646,7 @@ export type Database = {
           id: string
           is_account_owner: boolean
           last_name: string | null
+          last_sample_data_generated: string | null
           max_team_members: number
           monthly_revenue: string | null
           payment_failure_date: string | null
@@ -1670,6 +1671,7 @@ export type Database = {
           id?: string
           is_account_owner?: boolean
           last_name?: string | null
+          last_sample_data_generated?: string | null
           max_team_members?: number
           monthly_revenue?: string | null
           payment_failure_date?: string | null
@@ -1694,6 +1696,7 @@ export type Database = {
           id?: string
           is_account_owner?: boolean
           last_name?: string | null
+          last_sample_data_generated?: string | null
           max_team_members?: number
           monthly_revenue?: string | null
           payment_failure_date?: string | null

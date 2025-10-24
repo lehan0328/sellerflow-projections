@@ -39,10 +39,10 @@ serve(async (req) => {
 
     console.log('[SAMPLE] User authenticated:', user.id);
 
-    // Get user's account_id
+    // Get user's account_id and last sample data generation time
     const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
-      .select('account_id')
+      .select('account_id, last_sample_data_generated')
       .eq('user_id', user.id)
       .single();
 
@@ -54,6 +54,27 @@ serve(async (req) => {
     if (!profile?.account_id) {
       console.error('[SAMPLE] No account_id in profile');
       throw new Error("Account not found");
+    }
+
+    // Check 3-hour rate limit (180 minutes)
+    if (profile.last_sample_data_generated) {
+      const lastGenerated = new Date(profile.last_sample_data_generated);
+      const now = new Date();
+      const hoursSinceLastGeneration = (now.getTime() - lastGenerated.getTime()) / (1000 * 60 * 60);
+      
+      if (hoursSinceLastGeneration < 3) {
+        const remainingMinutes = Math.ceil((3 - hoursSinceLastGeneration) * 60);
+        const remainingHours = Math.floor(remainingMinutes / 60);
+        const remainingMins = remainingMinutes % 60;
+        
+        console.log('[SAMPLE] Rate limit hit:', {
+          lastGenerated: lastGenerated.toISOString(),
+          hoursSince: hoursSinceLastGeneration,
+          remainingMinutes
+        });
+        
+        throw new Error(`Please wait ${remainingHours}h ${remainingMins}m before generating sample data again. Last generated: ${lastGenerated.toLocaleString()}`);
+      }
     }
 
     const accountId = profile.account_id;
@@ -224,6 +245,19 @@ serve(async (req) => {
     }
 
     console.log('[SAMPLE] ✓ All data inserted successfully');
+
+    // Update last_sample_data_generated timestamp
+    const { error: updateError } = await supabaseClient
+      .from('profiles')
+      .update({ last_sample_data_generated: new Date().toISOString() })
+      .eq('user_id', user.id);
+
+    if (updateError) {
+      console.error('[SAMPLE] Error updating profile timestamp:', updateError);
+      // Don't throw - data was created successfully
+    } else {
+      console.log('[SAMPLE] ✓ Updated rate limit timestamp');
+    }
 
     return new Response(
       JSON.stringify({
