@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { addDays, isToday, isBefore, startOfDay, format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Building2, CreditCard as CreditCardIcon, TrendingUp, TrendingDown, Calendar, CheckCircle, User, Database, Trash2, AlertTriangle, Shield, Users, ShoppingCart } from "lucide-react";
+import { RefreshCw, Building2, CreditCard as CreditCardIcon, TrendingUp, TrendingDown, Calendar, CheckCircle, User, Database, Trash2, AlertTriangle, Shield, Users, ShoppingCart, Palette, Sun, Moon, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useTheme } from "next-themes";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
@@ -100,6 +101,7 @@ const Dashboard = () => {
   const [companyName, setCompanyName] = useState('');
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   const [clearDataConfirmation, setClearDataConfirmation] = useState(false);
+  const { theme, setTheme } = useTheme();
   
   // Fetch user profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -237,6 +239,17 @@ const Dashboard = () => {
         description: error instanceof Error ? error.message : "Failed to generate test data",
         variant: "destructive",
       });
+    }
+  };
+
+  const getThemeIcon = (themeType: string) => {
+    switch (themeType) {
+      case 'light':
+        return <Sun className="h-4 w-4" />;
+      case 'dark':
+        return <Moon className="h-4 w-4" />;
+      default:
+        return <Monitor className="h-4 w-4" />;
     }
   };
   
@@ -1799,6 +1812,56 @@ const Dashboard = () => {
         return <ForecastSettings />;
       case 'export':
         return <DataExport />;
+      case 'appearance':
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Palette className="h-5 w-5" />
+                <span>Appearance</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-base">Theme</Label>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Select the theme for the application
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    variant={theme === 'light' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setTheme('light')}
+                    className="justify-start"
+                  >
+                    {getThemeIcon('light')}
+                    <span className="ml-2">Light</span>
+                  </Button>
+                  <Button
+                    variant={theme === 'dark' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setTheme('dark')}
+                    className="justify-start"
+                  >
+                    {getThemeIcon('dark')}
+                    <span className="ml-2">Dark</span>
+                  </Button>
+                  <Button
+                    variant={theme === 'system' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setTheme('system')}
+                    className="justify-start"
+                  >
+                    {getThemeIcon('system')}
+                    <span className="ml-2">System</span>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
       case 'data-management':
         return (
           <Card>
