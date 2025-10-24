@@ -144,16 +144,19 @@ serve(async (req) => {
           
           simpleForecasts.push({
             user_id: userId,
+            account_id: amazonAccount.account_id,
             amazon_account_id: amazonAccount.id,
+            settlement_id: `forecast_${amazonAccount.id}_${forecastDate.toISOString().split('T')[0]}`,
             payout_date: forecastDate.toISOString().split('T')[0],
             total_amount: Math.max(0, adjustedAmount),
-            orders_total: adjustedAmount * 1.3, // Approximate orders before fees
-            fees_total: adjustedAmount * 0.15, // Approximate 15% fees
+            orders_total: adjustedAmount * 1.3,
+            fees_total: adjustedAmount * 0.15,
             refunds_total: 0,
             other_total: 0,
+            currency_code: 'USD',
             status: 'forecasted',
-            confidence_score: 0.60, // Lower confidence for estimates
-            forecast_method: 'baseline_estimate'
+            payout_type: payoutFrequency,
+            marketplace_name: amazonAccount.marketplace_name
           });
         }
         
@@ -235,9 +238,6 @@ serve(async (req) => {
       }
       monthlyTransactions[monthKey].net_amount += amount;
       });
-
-      // All transactions are already from last 3 months
-      const recentTransactions = amazonTransactions || [];
 
       console.log(`[FORECAST] Data fetched for ${amazonAccount.account_name}`, {
       payoutCount: amazonPayouts?.length || 0,
