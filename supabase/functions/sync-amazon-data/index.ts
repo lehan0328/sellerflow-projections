@@ -120,6 +120,18 @@ serve(async (req) => {
       }
     }
 
+    // Prevent duplicate syncs - check if already syncing
+    if (amazonAccount.sync_status === 'syncing') {
+      console.log('[SYNC] Already syncing. Ignoring duplicate request.')
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          message: 'Sync already in progress. Please wait for it to complete.' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Set initial sync status
     console.log('[SYNC] Setting status to syncing...')
     await supabase
@@ -206,9 +218,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       
       console.log('[SYNC] Incremental mode - fetching from:', startDate.toISOString())
     } else {
-      // First sync - start from 90 days ago
+      // First sync - start from 365 days ago to get full year of history
       startDate = new Date()
-      startDate.setDate(startDate.getDate() - 90)
+      startDate.setDate(startDate.getDate() - 365)
       startDate.setHours(0, 0, 0, 0)
       
       endDate = new Date(startDate)

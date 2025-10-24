@@ -32,12 +32,12 @@ serve(async (req) => {
 
     console.log('[COMPACT] Starting Amazon data compaction...')
 
-    // Calculate the 30-day cutoff
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    thirtyDaysAgo.setHours(0, 0, 0, 0)
+    // Calculate the 60-day cutoff (keep transactions for last 60 days)
+    const sixtyDaysAgo = new Date()
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
+    sixtyDaysAgo.setHours(0, 0, 0, 0)
 
-    console.log('[COMPACT] Cutoff date:', thirtyDaysAgo.toISOString())
+    console.log('[COMPACT] Cutoff date:', sixtyDaysAgo.toISOString())
 
     // Get all active Amazon accounts
     const { data: accounts, error: accountsError } = await supabase
@@ -62,7 +62,7 @@ serve(async (req) => {
         .from('amazon_transactions')
         .select('*')
         .eq('amazon_account_id', account.id)
-        .lt('transaction_date', thirtyDaysAgo.toISOString())
+        .lt('transaction_date', sixtyDaysAgo.toISOString())
         .eq('is_compacted', false)
         .order('transaction_date', { ascending: true })
 
@@ -186,7 +186,7 @@ serve(async (req) => {
       accounts_processed: accounts?.length || 0,
       rollups_created: totalCompacted,
       transactions_deleted: totalDeleted,
-      cutoff_date: thirtyDaysAgo.toISOString(),
+      cutoff_date: sixtyDaysAgo.toISOString(),
       timestamp: new Date().toISOString()
     }
 
