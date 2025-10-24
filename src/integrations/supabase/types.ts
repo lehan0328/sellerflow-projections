@@ -199,15 +199,18 @@ export type Database = {
           is_active: boolean
           last_sync: string | null
           last_sync_error: string | null
+          last_synced_to: string | null
           marketplace_id: string
           marketplace_name: string
           oldest_transaction_date: string | null
           payout_frequency: string
           payout_model: string
+          rate_limited_until: string | null
           reserve_lag_days: number
           reserve_multiplier: number
           seller_id: string
           sync_message: string | null
+          sync_next_token: string | null
           sync_progress: number | null
           sync_status: string | null
           token_expires_at: string | null
@@ -231,15 +234,18 @@ export type Database = {
           is_active?: boolean
           last_sync?: string | null
           last_sync_error?: string | null
+          last_synced_to?: string | null
           marketplace_id: string
           marketplace_name: string
           oldest_transaction_date?: string | null
           payout_frequency?: string
           payout_model?: string
+          rate_limited_until?: string | null
           reserve_lag_days?: number
           reserve_multiplier?: number
           seller_id: string
           sync_message?: string | null
+          sync_next_token?: string | null
           sync_progress?: number | null
           sync_status?: string | null
           token_expires_at?: string | null
@@ -263,15 +269,18 @@ export type Database = {
           is_active?: boolean
           last_sync?: string | null
           last_sync_error?: string | null
+          last_synced_to?: string | null
           marketplace_id?: string
           marketplace_name?: string
           oldest_transaction_date?: string | null
           payout_frequency?: string
           payout_model?: string
+          rate_limited_until?: string | null
           reserve_lag_days?: number
           reserve_multiplier?: number
           seller_id?: string
           sync_message?: string | null
+          sync_next_token?: string | null
           sync_progress?: number | null
           sync_status?: string | null
           token_expires_at?: string | null
@@ -338,6 +347,77 @@ export type Database = {
           },
           {
             foreignKeyName: "amazon_daily_draws_amazon_account_id_fkey"
+            columns: ["amazon_account_id"]
+            isOneToOne: false
+            referencedRelation: "amazon_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      amazon_daily_rollups: {
+        Row: {
+          account_id: string | null
+          adjustment_count: number | null
+          amazon_account_id: string
+          created_at: string
+          currency_code: string
+          fee_count: number | null
+          id: string
+          marketplace_name: string | null
+          order_count: number | null
+          refund_count: number | null
+          rollup_date: string
+          total_fees: number | null
+          total_net: number | null
+          total_orders: number | null
+          total_refunds: number | null
+          total_revenue: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          adjustment_count?: number | null
+          amazon_account_id: string
+          created_at?: string
+          currency_code?: string
+          fee_count?: number | null
+          id?: string
+          marketplace_name?: string | null
+          order_count?: number | null
+          refund_count?: number | null
+          rollup_date: string
+          total_fees?: number | null
+          total_net?: number | null
+          total_orders?: number | null
+          total_refunds?: number | null
+          total_revenue?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          adjustment_count?: number | null
+          amazon_account_id?: string
+          created_at?: string
+          currency_code?: string
+          fee_count?: number | null
+          id?: string
+          marketplace_name?: string | null
+          order_count?: number | null
+          refund_count?: number | null
+          rollup_date?: string
+          total_fees?: number | null
+          total_net?: number | null
+          total_orders?: number | null
+          total_refunds?: number | null
+          total_revenue?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "amazon_daily_rollups_amazon_account_id_fkey"
             columns: ["amazon_account_id"]
             isOneToOne: false
             referencedRelation: "amazon_accounts"
@@ -464,6 +544,7 @@ export type Database = {
           fee_type: string | null
           gross_amount: number | null
           id: string
+          is_compacted: boolean | null
           marketplace_name: string | null
           net_amount: number | null
           order_id: string | null
@@ -493,6 +574,7 @@ export type Database = {
           fee_type?: string | null
           gross_amount?: number | null
           id?: string
+          is_compacted?: boolean | null
           marketplace_name?: string | null
           net_amount?: number | null
           order_id?: string | null
@@ -522,6 +604,7 @@ export type Database = {
           fee_type?: string | null
           gross_amount?: number | null
           id?: string
+          is_compacted?: boolean | null
           marketplace_name?: string | null
           net_amount?: number | null
           order_id?: string | null

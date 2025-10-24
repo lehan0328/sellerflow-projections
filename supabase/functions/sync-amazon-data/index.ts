@@ -85,9 +85,44 @@ serve(async (req) => {
       actualUserId = user.id
     }
 
+    // Fetch Amazon account details
+    const { data: amazonAccount, error: accountError } = await supabase
+      .from('amazon_accounts')
+      .select('*')
+      .eq('id', amazonAccountId)
+      .single()
+
+    if (accountError || !amazonAccount) {
+      console.error('[SYNC] Account not found:', accountError)
+      return new Response(
+        JSON.stringify({ error: 'Amazon account not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log('[SYNC] Account found:', amazonAccount.account_name)
+
+    // Check for rate limiting
+    if (amazonAccount.rate_limited_until) {
+      const rateLimitExpiry = new Date(amazonAccount.rate_limited_until)
+      const now = new Date()
+      if (rateLimitExpiry > now) {
+        const waitSeconds = Math.ceil((rateLimitExpiry.getTime() - now.getTime()) / 1000)
+        console.log(`[SYNC] Rate limited. Wait ${waitSeconds}s`)
+        return new Response(
+          JSON.stringify({ 
+            error: 'Rate limited', 
+            waitSeconds,
+            message: `Rate limited by Amazon. Please wait ${waitSeconds} seconds.`
+          }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
+
     // Set initial sync status
     console.log('[SYNC] Setting status to syncing...')
-    const { error: statusError } = await supabase
+    await supabase
       .from('amazon_accounts')
       .update({ 
         sync_status: 'syncing', 
@@ -97,588 +132,487 @@ serve(async (req) => {
       })
       .eq('id', amazonAccountId)
 
-    if (statusError) {
-      console.error('[SYNC] Failed to update status:', statusError)
-    }
-
-    // Start background sync
-    const syncTask = async () => {
-      try {
-        console.log('[SYNC] Background task started')
-        
-        // Update progress
-        await supabase
-          .from('amazon_accounts')
-          .update({ 
-            sync_progress: 5,
-            sync_message: 'Fetching account details...'
-          })
-          .eq('id', amazonAccountId)
-        
-        // Get Amazon account
-        const { data: amazonAccount, error: accountError } = await supabase
-          .from('amazon_accounts')
-          .select('*')
-          .eq('id', amazonAccountId)
-          .single()
-
-        if (accountError || !amazonAccount) {
-          console.error('[SYNC] Account not found:', accountError)
-          throw new Error(`Amazon account not found: ${accountError?.message}`)
-        }
-
-        console.log('[SYNC] Account found:', amazonAccount.account_name)
-        console.log('[SYNC] Seller ID:', amazonAccount.seller_id)
-        console.log('[SYNC] Marketplace:', amazonAccount.marketplace_name)
-        
-        // Check rate limiting
-        const lastSync = amazonAccount.last_sync ? new Date(amazonAccount.last_sync) : null
-        const timeSinceLastSync = lastSync ? (Date.now() - lastSync.getTime()) / 1000 : Infinity
-        const RATE_LIMIT_SECONDS = 240 // 4 minutes between syncs (cron runs every 5 min)
-        
-        if (timeSinceLastSync < RATE_LIMIT_SECONDS) {
-          const waitTime = Math.ceil(RATE_LIMIT_SECONDS - timeSinceLastSync)
-          console.log(`[SYNC] Rate limited. Wait ${waitTime}s`)
-          await supabase
-            .from('amazon_accounts')
-            .update({
-              sync_status: 'idle',
-              sync_progress: 0,
-              sync_message: `Rate limited. Try again in ${waitTime}s`,
-              last_sync_error: `Must wait ${waitTime} seconds between syncs`
-            })
-            .eq('id', amazonAccountId)
-          return
-        }
-
-        // Get or refresh access token
-        console.log('[SYNC] Checking access token...')
-        await supabase
-          .from('amazon_accounts')
-          .update({ 
-            sync_progress: 10,
-            sync_message: 'Refreshing access token...'
-          })
-          .eq('id', amazonAccountId)
-
-        const tokenExpiresAt = amazonAccount.token_expires_at ? new Date(amazonAccount.token_expires_at) : null
-        const needsRefresh = !amazonAccount.encrypted_access_token || !tokenExpiresAt || (tokenExpiresAt.getTime() - Date.now()) < 300000
-
-        let accessToken = amazonAccount.encrypted_access_token
-
-        if (needsRefresh) {
-          console.log('[SYNC] Refreshing token...')
-          const { data: refreshData, error: refreshError } = await supabase.functions.invoke('refresh-amazon-token', {
-            body: { amazon_account_id: amazonAccountId }
-          })
-
-          if (refreshError || !refreshData?.access_token) {
-            console.error('[SYNC] Token refresh failed:', refreshError)
-            throw new Error(`Token refresh failed: ${refreshError?.message || 'Unknown error'}`)
-          }
-
-          accessToken = refreshData.access_token
-          console.log('[SYNC] Token refreshed successfully')
-        } else {
-          console.log('[SYNC] Using existing token, decrypting...')
-          const { data: decryptedToken } = await supabase
-            .rpc('decrypt_banking_credential', { encrypted_text: accessToken })
-          accessToken = decryptedToken
-          console.log('[SYNC] Token decrypted')
-        }
-
-        // Determine API endpoint
-        const region = MARKETPLACE_REGIONS[amazonAccount.marketplace_id] || 'US'
-        const apiEndpoint = AMAZON_SPAPI_ENDPOINTS[region]
-        console.log('[SYNC] Using endpoint:', apiEndpoint)
-
-        // Update progress
-        await supabase
-          .from('amazon_accounts')
-          .update({ 
-            sync_progress: 15,
-            sync_message: 'Connecting to Amazon API...'
-          })
-          .eq('id', amazonAccountId)
-
-        // Fetch transactions
-        const financialEventsUrl = `${apiEndpoint}/finances/v0/financialEvents`
-        
-        // Determine sync strategy: backfill (going backward) or incremental (going forward)
-        let syncMode: 'backfill' | 'incremental' = 'incremental'
-        let startDate: Date
-        let endDate: Date | null = null
-        
-        if (amazonAccount.initial_sync_complete) {
-          // INCREMENTAL: Fetch only new data from last sync
-          syncMode = 'incremental'
-          startDate = new Date(new Date(amazonAccount.last_sync).getTime() - (24 * 60 * 60 * 1000))
-          endDate = null // No end date - fetch up to now
-          console.log('[SYNC] Incremental mode - fetching from:', startDate.toISOString())
-        } else {
-          // BACKFILL: Continuous fetching without date gaps
-          syncMode = 'backfill'
-          const now = new Date()
-          const targetDate = new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000)) // 1 year ago
-          
-          // Find newest transaction to determine where to continue from
-          const { data: newestTx } = await supabase
-            .from('amazon_transactions')
-            .select('transaction_date')
-            .eq('amazon_account_id', amazonAccountId)
-            .order('transaction_date', { ascending: false })
-            .limit(1)
-            .single()
-          
-          if (newestTx?.transaction_date) {
-            // Continue from newest transaction forward to now
-            startDate = new Date(new Date(newestTx.transaction_date).getTime() + 1000) // 1 second after newest
-            endDate = null // Fetch up to now
-            
-            console.log('[SYNC] Backfill mode - continuing from newest transaction')
-            console.log('[SYNC] Newest existing:', new Date(newestTx.transaction_date).toISOString())
-            console.log('[SYNC] Fetching from:', startDate.toISOString(), 'to: NOW')
-            
-            // DON'T mark complete until we reach target date or API stops returning data
-            // Check if oldest transaction is within target range
-            const { data: oldestTx } = await supabase
-              .from('amazon_transactions')
-              .select('transaction_date')
-              .eq('amazon_account_id', amazonAccountId)
-              .order('transaction_date', { ascending: true })
-              .limit(1)
-              .single()
-            
-            if (oldestTx?.transaction_date) {
-              const oldestDate = new Date(oldestTx.transaction_date)
-              const daysOfHistory = Math.floor((now.getTime() - oldestDate.getTime()) / (24 * 60 * 60 * 1000))
-              console.log(`[SYNC] Current history: ${daysOfHistory} days (target: 365 days)`)
-              
-              // Only mark complete if we have 365+ days OR startDate is caught up
-              if (daysOfHistory >= 365 || startDate > new Date(now.getTime() - (24 * 60 * 60 * 1000))) {
-                console.log('[SYNC] Marking backfill as complete')
-                await supabase
-                  .from('amazon_accounts')
-                  .update({ 
-                    initial_sync_complete: true,
-                    backfill_complete: true
-                  })
-                  .eq('id', amazonAccountId)
-              }
-            }
-          } else {
-            // No data yet - start from 90 days ago to now
-            startDate = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000))
-            endDate = null
-            console.log('[SYNC] First backfill - fetching last 90 days from:', startDate.toISOString())
-          }
-        }
-
-        const transactionsToAdd: any[] = []
-        const payoutsToAdd: any[] = []
-        let nextToken: string | undefined = undefined
-        let pageCount = 0
-        
-        // No artificial limits - extract ALL transactions until API stops returning data
-        console.log(`[SYNC] Starting pagination in ${syncMode} mode - will fetch ALL available data...`)
-
-        do {
-          pageCount++
-          
-          // Log progress every 10 pages to avoid spam
-          if (pageCount % 10 === 0) {
-            console.log(`[SYNC] Page ${pageCount} (${transactionsToAdd.length} transactions so far)`)
-            const progressPercentage = Math.min(10 + Math.floor(pageCount / 2), 85)
-            await supabase
-              .from('amazon_accounts')
-              .update({ 
-                sync_progress: Math.round(progressPercentage),
-                sync_message: `Fetching page ${pageCount}... ${transactionsToAdd.length} transactions`
-              })
-              .eq('id', amazonAccountId)
-          }
-
-          // Build URL - Amazon SP-API requires dates in ISO format
-          let url = `${financialEventsUrl}?PostedAfter=${startDate.toISOString()}&MarketplaceId=${amazonAccount.marketplace_id}&MaxResultsPerPage=100`
-          
-          // Don't use PostedBefore unless we have a specific end date (it can cause issues)
-          if (endDate) {
-            url += `&PostedBefore=${endDate.toISOString()}`
-          }
-          
-          if (nextToken) {
-            url += `&NextToken=${encodeURIComponent(nextToken)}`
-          }
-          
-          console.log(`[SYNC] Fetching: ${url.substring(0, 150)}...`)
-
-          // Rate limit handling with exponential backoff
-          let retryAttempts = 0
-          let response: any
-          const maxRetries = 5
-          
-          while (retryAttempts <= maxRetries) {
-            response = await fetch(url, {
-              headers: {
-                'x-amz-access-token': accessToken,
-                'Content-Type': 'application/json',
-              }
-            })
-
-            // Handle rate limiting (429) and server errors (503)
-            if (response.status === 429 || response.status === 503) {
-              retryAttempts++
-              if (retryAttempts > maxRetries) {
-                throw new Error(`Max retries exceeded after ${maxRetries} attempts`)
-              }
-              
-              // Exponential backoff: 2s, 4s, 8s, 16s, 32s
-              const waitTime = Math.pow(2, retryAttempts) * 1000
-              console.log(`[SYNC] Rate limited (${response.status}). Retry ${retryAttempts}/${maxRetries} in ${waitTime}ms...`)
-              
-              await new Promise(resolve => setTimeout(resolve, waitTime))
-              continue
-            }
-            
-            if (!response.ok) {
-              const errorText = await response.text()
-              console.error('[SYNC] API error:', errorText)
-              throw new Error(`API failed: ${response.status} - ${errorText}`)
-            }
-            
-            break // Success - exit retry loop
-          }
-
-          const data = await response.json()
-          nextToken = data.payload?.NextToken
-
-          // Process events
-          const events = data.payload?.FinancialEvents || {}
-          console.log('[SYNC] Event counts:', {
-            shipments: (events.ShipmentEventList || []).length,
-            refunds: (events.RefundEventList || []).length,
-            adjustments: (events.AdjustmentEventList || []).length,
-            settlements: (events.ShipmentSettleEventList || []).length
-          })
-          
-          // Log event details for debugging
-          const eventCounts = {
-            shipments: (events.ShipmentEventList || []).length,
-            refunds: (events.RefundEventList || []).length,
-            adjustments: (events.AdjustmentEventList || []).length,
-            settlements: (events.ShipmentSettleEventList || []).length,
-            serviceFees: (events.ServiceFeeEventList || []).length,
-            other: Object.keys(events).filter(k => !['ShipmentEventList', 'RefundEventList', 'AdjustmentEventList', 'ShipmentSettleEventList', 'ServiceFeeEventList'].includes(k)).length
-          }
-          
-          if (eventCounts.settlements > 0) {
-            console.log('[SYNC] ✓ Found settlement events:', eventCounts.settlements)
-          }
-          
-          console.log('[SYNC] Events in this page:', eventCounts)
-
-          // Process settlement events (Payouts)
-          for (const settlement of (events.ShipmentSettleEventList || [])) {
-            const settlementId = settlement.SettlementId
-            const postedDate = settlement.PostedDate
-            
-            // Calculate total amounts from settlement
-            let totalAmount = 0
-            let ordersTotal = 0
-            let feesTotal = 0
-            let refundsTotal = 0
-            
-            for (const item of (settlement.ShipmentItemList || [])) {
-              // Sum order amounts
-              for (const charge of (item.ItemChargeList || [])) {
-                const amount = parseFloat(charge.ChargeAmount?.CurrencyAmount || '0')
-                totalAmount += amount
-                ordersTotal += amount
-              }
-              
-              // Sum fees (negative)
-              for (const fee of (item.ItemFeeList || [])) {
-                const feeAmount = parseFloat(fee.FeeAmount?.CurrencyAmount || '0')
-                totalAmount += feeAmount
-                feesTotal += Math.abs(feeAmount)
-              }
-            }
-            
-            // Add settlement/payout record
-            payoutsToAdd.push({
-              user_id: actualUserId,
-              account_id: amazonAccount.account_id,
-              amazon_account_id: amazonAccountId,
-              settlement_id: settlementId,
-              payout_date: postedDate,
-              total_amount: totalAmount,
-              orders_total: ordersTotal,
-              fees_total: -feesTotal,
-              refunds_total: refundsTotal,
-              currency_code: settlement.Currency || 'USD',
-              status: 'confirmed',
-              payout_type: amazonAccount.payout_frequency || 'bi-weekly',
-              raw_data: settlement
-            })
-          }
-
-          // Process shipment events (Orders)
-          for (const shipment of (events.ShipmentEventList || [])) {
-            const orderId = shipment.AmazonOrderId
-            const shipmentDate = shipment.PostedDate
-            
-            for (const item of (shipment.ShipmentItemList || [])) {
-              let totalAmount = 0
-              let grossAmount = 0
-              
-              // Calculate amounts
-              for (const charge of (item.ItemChargeList || [])) {
-                const amount = parseFloat(charge.ChargeAmount?.CurrencyAmount || '0')
-                totalAmount += amount
-                if (charge.ChargeType === 'Principal') {
-                  grossAmount += amount
-                }
-              }
-              
-              for (const fee of (item.ItemFeeList || [])) {
-                const feeAmount = parseFloat(fee.FeeAmount?.CurrencyAmount || '0')
-                totalAmount += feeAmount
-              }
-
-              transactionsToAdd.push({
-                user_id: actualUserId,
-                account_id: amazonAccount.account_id,
-                amazon_account_id: amazonAccountId,
-                transaction_id: `${orderId}-${item.SellerSKU || 'unknown'}-${shipmentDate}`,
-                order_id: orderId,
-                transaction_type: 'Order',
-                transaction_date: shipmentDate,
-                amount: totalAmount,
-                gross_amount: grossAmount,
-                currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
-                sku: item.SellerSKU,
-                marketplace_name: amazonAccount.marketplace_name,
-                raw_data: shipment
-              })
-            }
-          }
-
-          // Process refund events
-          for (const refund of (events.RefundEventList || [])) {
-            const orderId = refund.AmazonOrderId
-            const refundDate = refund.PostedDate
-            
-            for (const item of (refund.ShipmentItemAdjustmentList || [])) {
-              let totalAmount = 0
-              
-              for (const charge of (item.ItemChargeAdjustmentList || [])) {
-                totalAmount += parseFloat(charge.ChargeAmount?.CurrencyAmount || '0')
-              }
-              
-              for (const fee of (item.ItemFeeAdjustmentList || [])) {
-                totalAmount += parseFloat(fee.FeeAmount?.CurrencyAmount || '0')
-              }
-
-              transactionsToAdd.push({
-                user_id: actualUserId,
-                account_id: amazonAccount.account_id,
-                amazon_account_id: amazonAccountId,
-                transaction_id: `${orderId}-refund-${item.SellerSKU || 'unknown'}-${refundDate}`,
-                order_id: orderId,
-                transaction_type: 'Refund',
-                transaction_date: refundDate,
-                amount: totalAmount,
-                gross_amount: totalAmount,
-                currency_code: item.ItemChargeAdjustmentList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
-                sku: item.SellerSKU,
-                marketplace_name: amazonAccount.marketplace_name,
-                raw_data: refund
-              })
-            }
-          }
-
-        } while (nextToken) // Continue until Amazon stops returning data
-        
-        console.log(`[SYNC] Pagination complete after ${pageCount} pages`)
-        console.log(`[SYNC] Extracted: ${transactionsToAdd.length} transactions, ${payoutsToAdd.length} payouts`)
-        console.log(`[SYNC] Date range: ${startDate.toISOString()} to ${endDate ? endDate.toISOString() : 'NOW'}`)
-
-        // Update progress
-        await supabase
-          .from('amazon_accounts')
-          .update({ 
-            sync_progress: 90,
-            sync_message: `Saving ${transactionsToAdd.length} transactions and ${payoutsToAdd.length} payouts...`
-          })
-          .eq('id', amazonAccountId)
-
-        // Save payouts first
-        if (payoutsToAdd.length > 0) {
-          const uniquePayouts = payoutsToAdd.reduce((acc, payout) => {
-            const key = payout.settlement_id
-            if (!acc.has(key)) {
-              acc.set(key, payout)
-            }
-            return acc
-          }, new Map())
-          
-          const deduplicatedPayouts = Array.from(uniquePayouts.values())
-          console.log(`[SYNC] Saving ${deduplicatedPayouts.length} unique payouts...`)
-          
-          const { error: payoutError } = await supabase
-            .from('amazon_payouts')
-            .upsert(deduplicatedPayouts, { onConflict: 'settlement_id' })
-          
-          if (payoutError) {
-            console.error('[SYNC] Payout insert error:', payoutError)
-          } else {
-            console.log(`[SYNC] ✓ Saved ${deduplicatedPayouts.length} payouts`)
-          }
-        }
-
-        // Save transactions in batches
-        if (transactionsToAdd.length > 0) {
-          // Deduplicate transactions before inserting (to avoid "cannot affect row a second time" errors)
-          const uniqueTransactions = transactionsToAdd.reduce((acc, tx) => {
-            const key = `${tx.transaction_id}-${tx.posted_date}`
-            if (!acc.has(key)) {
-              acc.set(key, tx)
-            }
-            return acc
-          }, new Map())
-          
-          const deduplicatedTransactions = Array.from(uniqueTransactions.values())
-          console.log(`[SYNC] Saving ${deduplicatedTransactions.length} unique transactions (${transactionsToAdd.length - deduplicatedTransactions.length} duplicates removed)...`)
-          
-          const batchSize = 100
-          let savedCount = 0
-          
-          for (let i = 0; i < deduplicatedTransactions.length; i += batchSize) {
-            const batch = deduplicatedTransactions.slice(i, i + batchSize)
-            const { error: insertError } = await supabase
-              .from('amazon_transactions')
-              .upsert(batch, { onConflict: 'transaction_id' })
-            
-            if (insertError) {
-              console.error('[SYNC] Batch insert error:', insertError)
-            } else {
-              savedCount += batch.length
-              console.log(`[SYNC] Saved ${savedCount}/${transactionsToAdd.length}`)
-            }
-          }
-        }
-
-        // Get final transaction count
-        const { count: totalTransactions } = await supabase
-          .from('amazon_transactions')
-          .select('*', { count: 'exact', head: true })
-          .eq('amazon_account_id', amazonAccountId)
-
-        console.log(`[SYNC] Total transactions in DB: ${totalTransactions}`)
-
-        // Update completion status
-        const now = new Date()
-        
-        // Get date range for status message
-        const { data: oldestTx } = await supabase
-          .from('amazon_transactions')
-          .select('transaction_date')
-          .eq('amazon_account_id', amazonAccountId)
-          .order('transaction_date', { ascending: true })
-          .limit(1)
-          .single()
-        
-        const { data: newestTx } = await supabase
-          .from('amazon_transactions')
-          .select('transaction_date')
-          .eq('amazon_account_id', amazonAccountId)
-          .order('transaction_date', { ascending: false })
-          .limit(1)
-          .single()
-        
-        let statusMessage = `✓ Sync complete! ${totalTransactions} total transactions`
-        let daysOfHistory = 0
-        
-        if (oldestTx?.transaction_date && newestTx?.transaction_date) {
-          const oldestDate = new Date(oldestTx.transaction_date)
-          const newestDate = new Date(newestTx.transaction_date)
-          daysOfHistory = Math.floor((newestDate.getTime() - oldestDate.getTime()) / (24 * 60 * 60 * 1000))
-          
-          // Format dates for display
-          const oldestDateStr = oldestDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-          const newestDateStr = newestDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-          
-          if (syncMode === 'backfill' && daysOfHistory < 365) {
-            statusMessage = `⏳ Backfilling: ${daysOfHistory} days (${oldestDateStr} - ${newestDateStr}) | ${totalTransactions} transactions | Target: 365 days`
-          } else {
-            statusMessage = `✓ ${daysOfHistory} days synced (${oldestDateStr} - ${newestDateStr}) | ${totalTransactions} transactions`
-          }
-        }
-        
-        await supabase
-          .from('amazon_accounts')
-          .update({
-            last_sync: now.toISOString(),
-            transaction_count: totalTransactions || 0,
-            sync_status: 'idle',
-            sync_progress: syncMode === 'backfill' && daysOfHistory < 365 ? Math.floor((daysOfHistory / 365) * 100) : 100,
-            sync_message: statusMessage,
-            last_sync_error: null,
-            updated_at: now.toISOString()
-          })
-          .eq('id', amazonAccountId)
-
-        console.log(`[SYNC] ✓ Complete - ${totalTransactions} transactions across ${daysOfHistory} days`)
-
-      } catch (error) {
-        console.error('[SYNC] Error:', error)
-        await supabase
-          .from('amazon_accounts')
-          .update({ 
-            sync_status: 'error',
-            sync_progress: 0,
-            sync_message: 'Sync failed - check logs',
-            last_sync_error: error instanceof Error ? error.message : 'Unknown error',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', amazonAccountId)
-      }
-    }
-
-    // Start background task
-    // @ts-ignore
-    if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
-      // @ts-ignore
-      EdgeRuntime.waitUntil(syncTask())
-      console.log('[SYNC] Background task dispatched')
-    } else {
-      syncTask().catch(err => console.error('[SYNC] Background error:', err))
-    }
+    // Start background sync task
+    console.log('[SYNC] Background task dispatched')
+    syncAmazonData(supabase, amazonAccount, actualUserId)
 
     return new Response(
-      JSON.stringify({
+      JSON.stringify({ 
         success: true,
-        message: 'Sync started',
-        accountId: amazonAccountId
+        message: 'Sync started in background' 
       }),
-      { 
-        status: 202,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
-    console.error('[SYNC] Fatal error:', error)
-    
+    console.error('[SYNC] Error:', error)
     return new Response(
-      JSON.stringify({ 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
+
+async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: string) {
+  const amazonAccountId = amazonAccount.id
+  
+  try {
+    console.log('[SYNC] Background task started')
+    
+    // Get marketplace region
+    const region = MARKETPLACE_REGIONS[amazonAccount.marketplace_id] || 'US'
+    const apiEndpoint = AMAZON_SPAPI_ENDPOINTS[region]
+    console.log('[SYNC] Marketplace:', amazonAccount.marketplace_name)
+    console.log('[SYNC] Seller ID:', amazonAccount.seller_id)
+
+    // Refresh access token if needed
+    console.log('[SYNC] Checking access token...')
+    const tokenExpiresAt = new Date(amazonAccount.token_expires_at || 0)
+    const now = new Date()
+    let accessToken = amazonAccount.encrypted_access_token
+
+    if (tokenExpiresAt <= now || !accessToken) {
+      console.log('[SYNC] Refreshing token...')
+      const { data: refreshData, error: refreshError } = await supabase.functions.invoke('refresh-amazon-token', {
+        body: { amazonAccountId }
+      })
+
+      if (refreshError) {
+        throw new Error(`Token refresh failed: ${refreshError.message}`)
+      }
+
+      accessToken = refreshData.accessToken
+      console.log('[SYNC] Token refreshed successfully')
+    }
+
+    console.log('[SYNC] Using endpoint:', apiEndpoint)
+
+    // Determine sync window based on last_synced_to
+    let startDate: Date
+    let endDate: Date
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    yesterday.setHours(23, 59, 59, 999)
+
+    if (amazonAccount.last_synced_to) {
+      // Continue from last successful sync
+      startDate = new Date(amazonAccount.last_synced_to)
+      startDate.setDate(startDate.getDate() + 1)
+      startDate.setHours(0, 0, 0, 0)
+      
+      // Sync one day at a time
+      endDate = new Date(startDate)
+      endDate.setHours(23, 59, 59, 999)
+      
+      console.log('[SYNC] Incremental mode - fetching from:', startDate.toISOString())
+    } else {
+      // First sync - start from 90 days ago
+      startDate = new Date()
+      startDate.setDate(startDate.getDate() - 90)
+      startDate.setHours(0, 0, 0, 0)
+      
+      endDate = new Date(startDate)
+      endDate.setHours(23, 59, 59, 999)
+      
+      console.log('[SYNC] Initial sync - starting from:', startDate.toISOString())
+    }
+
+    // Don't sync future dates
+    if (startDate > yesterday) {
+      console.log('[SYNC] Already caught up to yesterday')
+      await supabase
+        .from('amazon_accounts')
+        .update({ 
+          sync_status: 'idle',
+          sync_progress: 100,
+          sync_message: 'Synced',
+          last_sync: new Date().toISOString()
+        })
+        .eq('id', amazonAccountId)
+      return
+    }
+
+    // Cap end date to yesterday
+    if (endDate > yesterday) {
+      endDate = new Date(yesterday)
+    }
+
+    await supabase
+      .from('amazon_accounts')
+      .update({ 
+        sync_message: `Syncing ${startDate.toLocaleDateString()}...`
+      })
+      .eq('id', amazonAccountId)
+
+    // Fetch transactions for this day
+    const financialEventsUrl = `${apiEndpoint}/finances/v0/financialEvents`
+    const transactionsToAdd: any[] = []
+    const payoutsToAdd: any[] = []
+    let nextToken: string | undefined = amazonAccount.sync_next_token || undefined
+    let pageCount = 0
+    
+    console.log('[SYNC] Starting pagination for 1-day window...')
+    console.log('[SYNC] Fetching: ', `${startDate.toISOString()} to ${endDate.toISOString()}`)
+
+    do {
+      pageCount++
+      
+      if (pageCount % 5 === 0) {
+        console.log(`[SYNC] Page ${pageCount} (${transactionsToAdd.length} transactions so far)`)
+        await supabase
+          .from('amazon_accounts')
+          .update({ 
+            sync_progress: Math.min(10 + pageCount * 2, 85),
+            sync_message: `Fetching page ${pageCount}...`
+          })
+          .eq('id', amazonAccountId)
+      }
+
+      // Build URL
+      let url = `${financialEventsUrl}?PostedAfter=${startDate.toISOString()}&PostedBefore=${endDate.toISOString()}&MarketplaceId=${amazonAccount.marketplace_id}&MaxResultsPerPage=100`
+      
+      if (nextToken) {
+        url += `&NextToken=${encodeURIComponent(nextToken)}`
+      }
+      
+      console.log(`[SYNC] Fetching: ${url.substring(0, 150)}...`)
+
+      // Rate limit handling with exponential backoff
+      let retryAttempts = 0
+      let response: any
+      const maxRetries = 5
+      
+      while (retryAttempts <= maxRetries) {
+        response = await fetch(url, {
+          headers: {
+            'x-amz-access-token': accessToken,
+            'Content-Type': 'application/json',
+          }
+        })
+
+        // Handle rate limiting (429) and server errors (503)
+        if (response.status === 429 || response.status === 503) {
+          retryAttempts++
+          if (retryAttempts > maxRetries) {
+            // Set rate limit timer
+            const rateLimitUntil = new Date(Date.now() + (60 * 1000)) // 1 minute
+            await supabase
+              .from('amazon_accounts')
+              .update({ 
+                rate_limited_until: rateLimitUntil.toISOString(),
+                sync_status: 'rate_limited',
+                sync_message: `Rate limited. Wait 60s`,
+                sync_next_token: nextToken // Save token to resume later
+              })
+              .eq('id', amazonAccountId)
+            
+            throw new Error(`Rate limited by Amazon. Will retry automatically.`)
+          }
+          
+          // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+          const waitTime = Math.pow(2, retryAttempts) * 1000
+          console.log(`[SYNC] Rate limited (${response.status}). Retry ${retryAttempts}/${maxRetries} in ${waitTime}ms...`)
+          
+          await new Promise(resolve => setTimeout(resolve, waitTime))
+          continue
+        }
+        
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('[SYNC] API error:', errorText)
+          throw new Error(`API failed: ${response.status} - ${errorText}`)
+        }
+        
+        break // Success - exit retry loop
+      }
+
+      const data = await response.json()
+      nextToken = data.payload?.NextToken
+      
+      // Save nextToken for resumption
+      if (nextToken) {
+        await supabase
+          .from('amazon_accounts')
+          .update({ sync_next_token: nextToken })
+          .eq('id', amazonAccountId)
+      }
+
+      // Process events
+      const events = data.payload?.FinancialEvents || {}
+      
+      console.log('[SYNC] Event counts:', {
+        shipments: (events.ShipmentEventList || []).length,
+        refunds: (events.RefundEventList || []).length,
+        adjustments: (events.AdjustmentEventList || []).length,
+        settlements: (events.ShipmentSettleEventList || []).length
+      })
+
+      // Process settlement events (Payouts)
+      for (const settlement of (events.ShipmentSettleEventList || [])) {
+        const settlementId = settlement.SettlementId
+        const postedDate = settlement.PostedDate
+        
+        let totalAmount = 0
+        let ordersTotal = 0
+        let feesTotal = 0
+        let refundsTotal = 0
+        
+        for (const item of (settlement.ShipmentItemList || [])) {
+          for (const charge of (item.ItemChargeList || [])) {
+            const amount = parseFloat(charge.ChargeAmount?.CurrencyAmount || '0')
+            totalAmount += amount
+            ordersTotal += amount
+          }
+          
+          for (const fee of (item.ItemFeeList || [])) {
+            const feeAmount = parseFloat(fee.FeeAmount?.CurrencyAmount || '0')
+            totalAmount += feeAmount
+            feesTotal += Math.abs(feeAmount)
+          }
+        }
+        
+        payoutsToAdd.push({
+          user_id: actualUserId,
+          account_id: amazonAccount.account_id,
+          amazon_account_id: amazonAccountId,
+          settlement_id: settlementId,
+          payout_date: postedDate,
+          total_amount: totalAmount,
+          orders_total: ordersTotal,
+          fees_total: -feesTotal,
+          refunds_total: refundsTotal,
+          currency_code: settlement.Currency || 'USD',
+          status: 'confirmed',
+          payout_type: amazonAccount.payout_frequency || 'bi-weekly',
+          raw_data: settlement
+        })
+      }
+
+      // Process shipment events (Orders)
+      for (const shipment of (events.ShipmentEventList || [])) {
+        const orderId = shipment.AmazonOrderId
+        const shipmentDate = shipment.PostedDate
+        
+        for (const item of (shipment.ShipmentItemList || [])) {
+          let totalAmount = 0
+          let grossAmount = 0
+          
+          for (const charge of (item.ItemChargeList || [])) {
+            const amount = parseFloat(charge.ChargeAmount?.CurrencyAmount || '0')
+            totalAmount += amount
+            if (charge.ChargeType === 'Principal') {
+              grossAmount += amount
+            }
+          }
+          
+          for (const fee of (item.ItemFeeList || [])) {
+            const feeAmount = parseFloat(fee.FeeAmount?.CurrencyAmount || '0')
+            totalAmount += feeAmount
+          }
+
+          transactionsToAdd.push({
+            user_id: actualUserId,
+            account_id: amazonAccount.account_id,
+            amazon_account_id: amazonAccountId,
+            transaction_id: `${orderId}-${item.SellerSKU || 'unknown'}-${shipmentDate}`,
+            order_id: orderId,
+            transaction_type: 'Order',
+            transaction_date: shipmentDate,
+            amount: totalAmount,
+            gross_amount: grossAmount,
+            currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
+            sku: item.SellerSKU,
+            marketplace_name: amazonAccount.marketplace_name,
+            raw_data: shipment
+          })
+        }
+      }
+
+      // Process refund events
+      for (const refund of (events.RefundEventList || [])) {
+        const orderId = refund.AmazonOrderId
+        const refundDate = refund.PostedDate
+        
+        for (const item of (refund.ShipmentItemAdjustmentList || [])) {
+          let totalAmount = 0
+          
+          for (const charge of (item.ItemChargeAdjustmentList || [])) {
+            totalAmount += parseFloat(charge.ChargeAmount?.CurrencyAmount || '0')
+          }
+          
+          for (const fee of (item.ItemFeeAdjustmentList || [])) {
+            totalAmount += parseFloat(fee.FeeAmount?.CurrencyAmount || '0')
+          }
+
+          transactionsToAdd.push({
+            user_id: actualUserId,
+            account_id: amazonAccount.account_id,
+            amazon_account_id: amazonAccountId,
+            transaction_id: `${orderId}-refund-${item.SellerSKU || 'unknown'}-${refundDate}`,
+            order_id: orderId,
+            transaction_type: 'Refund',
+            transaction_date: refundDate,
+            amount: totalAmount,
+            gross_amount: totalAmount,
+            currency_code: item.ItemChargeAdjustmentList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
+            sku: item.SellerSKU,
+            marketplace_name: amazonAccount.marketplace_name,
+            raw_data: refund
+          })
+        }
+      }
+
+    } while (nextToken)
+    
+    console.log(`[SYNC] Pagination complete after ${pageCount} pages`)
+    console.log(`[SYNC] Extracted: ${transactionsToAdd.length} transactions, ${payoutsToAdd.length} payouts`)
+
+    // Determine if this day's data should go to rollups or detailed transactions
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    const isOldData = endDate < thirtyDaysAgo
+
+    if (isOldData && transactionsToAdd.length > 0) {
+      // Aggregate into daily rollups
+      console.log('[SYNC] Data is >30 days old - aggregating into rollups')
+      
+      const rollup = {
+        user_id: actualUserId,
+        account_id: amazonAccount.account_id,
+        amazon_account_id: amazonAccountId,
+        rollup_date: startDate.toISOString().split('T')[0],
+        total_orders: 0,
+        total_revenue: 0,
+        total_fees: 0,
+        total_refunds: 0,
+        total_net: 0,
+        order_count: 0,
+        refund_count: 0,
+        adjustment_count: 0,
+        fee_count: 0,
+        currency_code: transactionsToAdd[0]?.currency_code || 'USD',
+        marketplace_name: amazonAccount.marketplace_name
+      }
+
+      for (const tx of transactionsToAdd) {
+        if (tx.transaction_type === 'Order') {
+          rollup.order_count++
+          rollup.total_revenue += parseFloat(tx.amount || 0)
+        } else if (tx.transaction_type === 'Refund') {
+          rollup.refund_count++
+          rollup.total_refunds += parseFloat(tx.amount || 0)
+        }
+        rollup.total_net += parseFloat(tx.amount || 0)
+      }
+
+      await supabase
+        .from('amazon_daily_rollups')
+        .upsert(rollup, { onConflict: 'amazon_account_id,rollup_date' })
+
+      console.log('[SYNC] ✓ Saved daily rollup')
+    } else {
+      // Save detailed transactions
+      console.log('[SYNC] Data is <30 days old - saving detailed transactions')
+      
+      if (transactionsToAdd.length > 0) {
+        const uniqueTransactions = transactionsToAdd.reduce((acc, tx) => {
+          const key = tx.transaction_id
+          if (!acc.has(key)) {
+            acc.set(key, tx)
+          }
+          return acc
+        }, new Map())
+        
+        const deduplicatedTransactions = Array.from(uniqueTransactions.values())
+        console.log(`[SYNC] Saving ${deduplicatedTransactions.length} unique transactions (${transactionsToAdd.length - deduplicatedTransactions.length} duplicates removed)...`)
+        
+        // Save in batches of 100
+        const batchSize = 100
+        for (let i = 0; i < deduplicatedTransactions.length; i += batchSize) {
+          const batch = deduplicatedTransactions.slice(i, i + batchSize)
+          const { error: txError } = await supabase
+            .from('amazon_transactions')
+            .upsert(batch, { onConflict: 'transaction_id', ignoreDuplicates: true })
+          
+          if (txError) {
+            console.error('[SYNC] Transaction insert error:', txError)
+          } else {
+            console.log(`[SYNC] Saved ${Math.min(i + batchSize, deduplicatedTransactions.length)}/${deduplicatedTransactions.length}`)
+          }
+        }
+      }
+    }
+
+    // Save payouts
+    if (payoutsToAdd.length > 0) {
+      const uniquePayouts = payoutsToAdd.reduce((acc, payout) => {
+        const key = payout.settlement_id
+        if (!acc.has(key)) {
+          acc.set(key, payout)
+        }
+        return acc
+      }, new Map())
+      
+      const deduplicatedPayouts = Array.from(uniquePayouts.values())
+      
+      const { error: payoutError } = await supabase
+        .from('amazon_payouts')
+        .upsert(deduplicatedPayouts, { onConflict: 'settlement_id' })
+      
+      if (!payoutError) {
+        console.log(`[SYNC] ✓ Saved ${deduplicatedPayouts.length} payouts`)
+      }
+    }
+
+    // Mark this day as complete and clear next_token
+    await supabase
+      .from('amazon_accounts')
+      .update({ 
+        last_synced_to: endDate.toISOString(),
+        sync_next_token: null,
+        last_sync: new Date().toISOString()
+      })
+      .eq('id', amazonAccountId)
+
+    // Check if we're fully caught up
+    if (endDate >= yesterday) {
+      console.log('[SYNC] ✓ Fully caught up!')
+      await supabase
+        .from('amazon_accounts')
+        .update({ 
+          sync_status: 'idle',
+          sync_progress: 100,
+          sync_message: 'Synced',
+          initial_sync_complete: true
+        })
+        .eq('id', amazonAccountId)
+    } else {
+      // Continue syncing next day
+      console.log('[SYNC] More days to sync - will continue...')
+      await supabase
+        .from('amazon_accounts')
+        .update({ 
+          sync_status: 'idle',
+          sync_progress: 50,
+          sync_message: 'In progress - more data to sync'
+        })
+        .eq('id', amazonAccountId)
+      
+      // Trigger next day sync
+      setTimeout(() => {
+        syncAmazonData(supabase, amazonAccount, actualUserId)
+      }, 2000)
+    }
+
+  } catch (error) {
+    console.error('[SYNC] Error in background task:', error)
+    await supabase
+      .from('amazon_accounts')
+      .update({ 
+        sync_status: 'error',
+        sync_message: error.message,
+        last_sync_error: error.message
+      })
+      .eq('id', amazonAccountId)
+  }
+}

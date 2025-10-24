@@ -1,5 +1,8 @@
 project_id = "ruvdqtqyfzaxlobmxgaj"
 
+[functions.compact-amazon-data]
+verify_jwt = false
+
 [functions.daily-account-check]
 verify_jwt = false
 
