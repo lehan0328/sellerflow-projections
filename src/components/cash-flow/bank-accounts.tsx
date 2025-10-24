@@ -363,15 +363,6 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
             <CardTitle>Bank Accounts</CardTitle>
           </div>
           <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleSyncAllAccounts}
-              disabled={syncingAccounts.size > 0}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${syncingAccounts.size > 0 ? 'animate-spin' : ''}`} />
-              Sync All
-            </Button>
             <div className="flex items-center gap-2 mr-4">
               <div className="flex items-center gap-1">
                 <Label htmlFor="balance-toggle" className="text-xs text-muted-foreground cursor-pointer">
