@@ -283,25 +283,48 @@ export const ForecastSettings = () => {
         setSyncProgress(40);
         
         try {
+          // CRITICAL: Delete ALL old forecasts FIRST before generating new ones
+          console.log('🗑️ [TOGGLE] Deleting old forecasts before generation...');
+          const { error: deleteError } = await supabase
+            .from('amazon_payouts')
+            .delete()
+            .eq('user_id', currentUser.id)
+            .eq('status', 'forecasted');
+          
+          if (deleteError) {
+            console.error('❌ [TOGGLE] Failed to delete old forecasts:', deleteError);
+          } else {
+            console.log('✅ [TOGGLE] Old forecasts deleted');
+          }
+          
+          setSyncProgress(45);
+          
           // Generate new forecasts using mathematical model
+          console.log('🔄 [TOGGLE] Calling forecast generation edge function...');
           const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
             body: { userId: currentUser.id }
           });
 
+          console.log('📨 [TOGGLE] Edge function response:', { data, error });
+
           if (error) {
             toast.dismiss(loadingToastId);
-            console.error('❌ Forecast generation error:', error);
+            console.error('❌ [TOGGLE] Forecast generation error:', error);
             toast.error(`Forecast generation failed: ${error.message || 'Unknown error'}. Use Regenerate button to try again.`);
             setSyncProgress(0);
             return;
           }
 
+          console.log('📊 [TOGGLE] Starting forecast polling...');
           setSyncProgress(50);
 
-          // Poll for forecasts to appear in the database
+          // Poll for NEW forecasts to appear in the database
+          // Wait at least 3 seconds before first check to let edge function start
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          
           let forecastsFound = false;
           let attempts = 0;
-          const maxAttempts = 15; // 15 attempts * 2 seconds = 30 seconds max
+          const maxAttempts = 20; // 20 attempts * 2 seconds = 40 seconds max
           
           while (!forecastsFound && attempts < maxAttempts) {
             attempts++;
@@ -313,16 +336,20 @@ export const ForecastSettings = () => {
             // Wait 2 seconds between checks
             await new Promise(resolve => setTimeout(resolve, 2000));
             
-            // Check if forecasts exist
+            // Check if NEW forecasts exist (created in last 2 minutes)
+            const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
             const { data: forecasts, error: fetchError } = await supabase
               .from('amazon_payouts')
-              .select('id')
+              .select('id, created_at')
               .eq('user_id', currentUser.id)
               .eq('status', 'forecasted')
+              .gte('created_at', twoMinutesAgo)
               .limit(1);
             
+            console.log(`🔍 [TOGGLE] Poll ${attempts}/${maxAttempts}: Found ${forecasts?.length || 0} NEW forecasts`);
+            
             if (fetchError) {
-              console.error('❌ Error checking for forecasts:', fetchError);
+              console.error('❌ [TOGGLE] Error checking for forecasts:', fetchError);
               toast.dismiss(loadingToastId);
               toast.error(`Permission error: ${fetchError.message}. Check RLS policies on amazon_payouts table.`);
               setSyncProgress(0);
@@ -332,7 +359,7 @@ export const ForecastSettings = () => {
             
             if (forecasts && forecasts.length > 0) {
               forecastsFound = true;
-              console.log('✅ Forecasts found in database!');
+              console.log('✅ [TOGGLE] NEW forecasts found in database!', forecasts);
               break;
             }
           }
