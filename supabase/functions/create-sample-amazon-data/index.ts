@@ -12,6 +12,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('[SAMPLE] Function invoked');
+    
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
@@ -22,19 +24,62 @@ serve(async (req) => {
       }
     );
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) throw new Error("Not authenticated");
+    console.log('[SAMPLE] Getting authenticated user...');
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    
+    if (authError) {
+      console.error('[SAMPLE] Auth error:', authError);
+      throw new Error(`Authentication failed: ${authError.message}`);
+    }
+    
+    if (!user) {
+      console.error('[SAMPLE] No user found');
+      throw new Error("Not authenticated");
+    }
+
+    console.log('[SAMPLE] User authenticated:', user.id);
 
     // Get user's account_id
-    const { data: profile } = await supabaseClient
+    const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('account_id')
       .eq('user_id', user.id)
       .single();
 
-    if (!profile?.account_id) throw new Error("Account not found");
+    if (profileError) {
+      console.error('[SAMPLE] Profile error:', profileError);
+      throw new Error(`Failed to get profile: ${profileError.message}`);
+    }
+
+    if (!profile?.account_id) {
+      console.error('[SAMPLE] No account_id in profile');
+      throw new Error("Account not found");
+    }
 
     const accountId = profile.account_id;
+    console.log('[SAMPLE] Account ID:', accountId);
+
+    // Check if sample account already exists
+    const { data: existing } = await supabaseClient
+      .from('amazon_accounts')
+      .select('id')
+      .eq('seller_id', 'SAMPLE123456')
+      .eq('user_id', user.id)
+      .single();
+
+    if (existing) {
+      console.log('[SAMPLE] Sample account already exists, deleting old data...');
+      
+      // Delete old sample data
+      await supabaseClient
+        .from('amazon_accounts')
+        .delete()
+        .eq('id', existing.id);
+      
+      console.log('[SAMPLE] Old sample data deleted');
+    }
+
+    console.log('[SAMPLE] Creating sample Amazon account...');
 
     // Create sample Amazon account
     const { data: amazonAccount, error: accountError } = await supabaseClient
@@ -48,16 +93,26 @@ serve(async (req) => {
         account_name: 'Sample Amazon Store',
         payout_frequency: 'bi-weekly',
         is_active: true,
+        last_synced_to: new Date().toISOString(),
+        sync_status: 'idle',
+        initial_sync_complete: true,
       })
       .select()
       .single();
 
-    if (accountError) throw accountError;
+    if (accountError) {
+      console.error('[SAMPLE] Error creating Amazon account:', accountError);
+      throw new Error(`Failed to create Amazon account: ${accountError.message}`);
+    }
+
+    console.log('[SAMPLE] Amazon account created:', amazonAccount.id);
 
     // Generate 6 months of historical payout data
     const payouts = [];
     const transactions = [];
     const today = new Date();
+    
+    console.log('[SAMPLE] Generating 12 payouts with transactions...');
     
     for (let i = 0; i < 12; i++) {
       const payoutDate = new Date(today);
@@ -69,7 +124,7 @@ serve(async (req) => {
       const refundsTotal = Math.floor(Math.random() * 2000) + 500;
       const totalAmount = ordersTotal - feesTotal - refundsTotal;
 
-      const settlementId = `SETTLEMENT-${i + 1}-${Date.now()}`;
+      const settlementId = `SETTLEMENT-${i + 1}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
       payouts.push({
         user_id: user.id,
@@ -79,17 +134,17 @@ serve(async (req) => {
         payout_date: payoutDate.toISOString().split('T')[0],
         total_amount: totalAmount,
         orders_total: ordersTotal,
-        fees_total: feesTotal,
-        refunds_total: refundsTotal,
+        fees_total: -feesTotal,
+        refunds_total: -refundsTotal,
         other_total: 0,
-        transaction_count: Math.floor(Math.random() * 100) + 50,
+        transaction_count: Math.floor(Math.random() * 100) + 150,
         status: 'confirmed',
         currency_code: 'USD',
         marketplace_name: 'Amazon.com',
         payout_type: 'bi-weekly',
       });
 
-      // Generate sample transactions for this payout with realistic data (more transactions for larger volume)
+      // Generate sample transactions for this payout with realistic data
       const numTransactions = Math.floor(Math.random() * 100) + 150;
       for (let j = 0; j < numTransactions; j++) {
         const transactionDate = new Date(payoutDate);
@@ -106,10 +161,10 @@ serve(async (req) => {
         
         // Calculate realistic costs for orders
         const shippingCost = isOrder ? Math.random() * 8 + 2 : 0;
-        const adsCost = isOrder ? grossAmount * (Math.random() * 0.15) : 0; // 0-15% of gross
-        const fees = isOrder ? grossAmount * 0.15 : -Math.floor(Math.random() * 30) - 5; // 15% fees or negative for FBA fees
-        const returnRate = 0.01 + Math.random() * 0.04; // 1-5% return rate
-        const chargebackRate = 0.002 + Math.random() * 0.008; // 0.2-1% chargeback rate
+        const adsCost = isOrder ? grossAmount * (Math.random() * 0.15) : 0;
+        const fees = isOrder ? grossAmount * 0.15 : -Math.floor(Math.random() * 30) - 5;
+        const returnRate = 0.01 + Math.random() * 0.04;
+        const chargebackRate = 0.002 + Math.random() * 0.008;
         const netAmount = isOrder ? (grossAmount - fees - shippingCost - adsCost) : fees;
 
         transactions.push({
@@ -117,7 +172,7 @@ serve(async (req) => {
           account_id: accountId,
           amazon_account_id: amazonAccount.id,
           settlement_id: settlementId,
-          transaction_id: `TXN-${i}-${j}-${Date.now()}`,
+          transaction_id: `TXN-${i}-${j}-${Date.now()}-${Math.random().toString(36).substring(7)}`,
           transaction_date: transactionDate.toISOString(),
           delivery_date: isOrder ? deliveryDate.toISOString().split('T')[0] : null,
           transaction_type: isOrder ? 'Order' : 'FBAFee',
@@ -136,12 +191,21 @@ serve(async (req) => {
       }
     }
 
+    console.log('[SAMPLE] Generated', payouts.length, 'payouts and', transactions.length, 'transactions');
+    console.log('[SAMPLE] Inserting payouts...');
+
     // Insert payouts
     const { error: payoutsError } = await supabaseClient
       .from('amazon_payouts')
       .insert(payouts);
 
-    if (payoutsError) throw payoutsError;
+    if (payoutsError) {
+      console.error('[SAMPLE] Error inserting payouts:', payoutsError);
+      throw new Error(`Failed to insert payouts: ${payoutsError.message}`);
+    }
+
+    console.log('[SAMPLE] ✓ Payouts inserted');
+    console.log('[SAMPLE] Inserting', transactions.length, 'transactions in batches...');
 
     // Insert transactions in batches
     const batchSize = 100;
@@ -151,8 +215,15 @@ serve(async (req) => {
         .from('amazon_transactions')
         .insert(batch);
       
-      if (txError) throw txError;
+      if (txError) {
+        console.error(`[SAMPLE] Error inserting batch ${i}-${i+batchSize}:`, txError);
+        throw new Error(`Failed to insert transactions batch: ${txError.message}`);
+      }
+      
+      console.log(`[SAMPLE] ✓ Inserted batch ${Math.min(i + batchSize, transactions.length)}/${transactions.length}`);
     }
+
+    console.log('[SAMPLE] ✓ All data inserted successfully');
 
     return new Response(
       JSON.stringify({
@@ -170,11 +241,12 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error("Error creating sample data:", error);
+    console.error("[SAMPLE] Error creating sample data:", error);
     return new Response(
       JSON.stringify({
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -160,6 +160,7 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
       if (error) throw error;
 
       toast.success(`Synced ${data.total} transactions (${data.inserted} new, ${data.updated} updated)`);
+      refetch();
     } catch (error: any) {
       console.error('Error syncing transactions:', error);
       toast.error("Failed to sync transactions: " + error.message);
@@ -169,6 +170,20 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
         newSet.delete(accountId);
         return newSet;
       });
+    }
+  };
+
+  const handleSyncAllAccounts = async () => {
+    if (accounts.length === 0) {
+      toast.error("No bank accounts to sync");
+      return;
+    }
+
+    // Sync all accounts with Plaid data
+    for (const account of accounts) {
+      if (account.plaid_account_id) {
+        await handleSyncTransactions(account.id, account.plaid_account_id);
+      }
     }
   };
 
@@ -346,9 +361,17 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
           <div className="flex items-center space-x-2">
             <Building2 className="h-5 w-5 text-primary" />
             <CardTitle>Bank Accounts</CardTitle>
-            <span className="text-xs text-muted-foreground ml-2">• Syncs every 3 hours</span>
           </div>
           <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleSyncAllAccounts}
+              disabled={syncingAccounts.size > 0}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${syncingAccounts.size > 0 ? 'animate-spin' : ''}`} />
+              Sync All
+            </Button>
             <div className="flex items-center gap-2 mr-4">
               <div className="flex items-center gap-1">
                 <Label htmlFor="balance-toggle" className="text-xs text-muted-foreground cursor-pointer">
