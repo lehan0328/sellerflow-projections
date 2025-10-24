@@ -609,21 +609,20 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         })
         .eq('id', amazonAccountId)
     } else {
-      // Continue syncing next day
-      console.log('[SYNC] More days to sync - will continue...')
+      // Continue syncing next day recursively (immediate, no setTimeout)
+      console.log('[SYNC] More days to sync - continuing immediately...')
       await supabase
         .from('amazon_accounts')
         .update({ 
-          sync_status: 'idle',
+          sync_status: 'syncing',
           sync_progress: 50,
-          sync_message: 'In progress - more data to sync'
+          sync_message: 'Continuing sync...'
         })
         .eq('id', amazonAccountId)
       
-      // Trigger next day sync
-      setTimeout(() => {
-        syncAmazonData(supabase, amazonAccount, actualUserId)
-      }, 2000)
+      // Wait 2 seconds for rate limiting, then continue
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      await syncAmazonData(supabase, amazonAccount, actualUserId)
     }
 
   } catch (error) {
@@ -643,11 +642,10 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         })
         .eq('id', amazonAccountId)
       
-      // Auto-retry in 5 seconds with fresh token
-      setTimeout(() => {
-        console.log('[SYNC] Auto-retrying after TTL expiration')
-        syncAmazonData(supabase, amazonAccount, actualUserId)
-      }, 5000)
+      // Auto-retry immediately with fresh token (no setTimeout)
+      await new Promise(resolve => setTimeout(resolve, 5000))
+      console.log('[SYNC] Auto-retrying after TTL expiration')
+      await syncAmazonData(supabase, amazonAccount, actualUserId)
     } else {
       await supabase
         .from('amazon_accounts')
