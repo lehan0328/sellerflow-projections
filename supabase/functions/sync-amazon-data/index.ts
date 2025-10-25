@@ -325,7 +325,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
             fees_total: 0,
             refunds_total: 0,
             currency_code: currencyCode,
-            status: fundTransferStatus === 'Successful' ? 'confirmed' : 'forecasted',
+            status: 'confirmed', // Always use confirmed for real Amazon settlements (not AI predictions)
             payout_type: amazonAccount.payout_frequency || 'bi-weekly',
             marketplace_name: amazonAccount.marketplace_name,
             raw_settlement_data: group
@@ -710,6 +710,19 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       }, new Map())
       
       const deduplicatedSettlements = Array.from(uniqueSettlements.values())
+      
+      // Delete any forecasted payouts that overlap with real settlements
+      const settlementDates = deduplicatedSettlements.map(s => s.payout_date)
+      if (settlementDates.length > 0) {
+        await supabase
+          .from('amazon_payouts')
+          .delete()
+          .eq('amazon_account_id', amazonAccountId)
+          .eq('status', 'forecasted')
+          .in('payout_date', settlementDates)
+        
+        console.log(`[SYNC] Cleared forecasted payouts for ${settlementDates.length} settlement dates`)
+      }
       
       const { error: settlementError } = await supabase
         .from('amazon_payouts')
