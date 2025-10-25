@@ -238,39 +238,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
 
     console.log('[SYNC] Settlements window: Full year (365 days) for seasonal analysis')
 
-    // Don't sync future dates - cap to yesterday
-    if (startDate > yesterday) {
-      console.log('[SYNC] Already caught up to yesterday')
-      await supabase
-        .from('amazon_accounts')
-        .update({ 
-          sync_status: 'idle',
-          sync_progress: 100,
-          sync_message: 'Synced',
-          last_sync: new Date().toISOString(),
-          initial_sync_complete: true
-        })
-        .eq('id', amazonAccountId)
-      return
-    }
-
-    // Cap end date to yesterday
-    if (endDate > yesterday) {
-      endDate = new Date(yesterday)
-    }
-    
-    // Log sync window clearly
-    console.log(`[SYNC] Sync window: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
-
-    await supabase
-      .from('amazon_accounts')
-      .update({ 
-        sync_message: `Syncing ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}...`,
-        sync_progress: Math.min(5, (Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24) * 0.5)
-      })
-      .eq('id', amazonAccountId)
-
     // First, fetch settlement groups (actual payouts) - ALWAYS fetch full year for seasonal patterns
+    // This runs regardless of transaction sync status to capture open settlements
     const eventGroupsUrl = `${apiEndpoint}/finances/v0/financialEventGroups`
     const settlementsToAdd: any[] = []
     
@@ -381,6 +350,56 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     } while (groupNextToken && groupPageCount < 50)
     
     console.log(`[SYNC] Found ${settlementsToAdd.length} settlements from groups`)
+    
+    // Don't sync future transaction dates - cap to yesterday
+    if (startDate > yesterday) {
+      console.log('[SYNC] Already caught up to yesterday for transactions')
+      
+      // Still save settlements if we found any
+      if (settlementsToAdd.length > 0) {
+        console.log(`[SYNC] Saving ${settlementsToAdd.length} settlements...`)
+        const { error: settlementsError } = await supabase
+          .from('amazon_payouts')
+          .upsert(settlementsToAdd, { 
+            onConflict: 'settlement_id,user_id',
+            ignoreDuplicates: false 
+          })
+        
+        if (settlementsError) {
+          console.error('[SYNC] Error saving settlements:', settlementsError)
+        } else {
+          console.log('[SYNC] Settlements saved successfully')
+        }
+      }
+      
+      await supabase
+        .from('amazon_accounts')
+        .update({ 
+          sync_status: 'idle',
+          sync_progress: 100,
+          sync_message: 'Synced',
+          last_sync: new Date().toISOString(),
+          initial_sync_complete: true
+        })
+        .eq('id', amazonAccountId)
+      return
+    }
+
+    // Cap end date to yesterday
+    if (endDate > yesterday) {
+      endDate = new Date(yesterday)
+    }
+    
+    // Log sync window clearly
+    console.log(`[SYNC] Sync window: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
+
+    await supabase
+      .from('amazon_accounts')
+      .update({ 
+        sync_message: `Syncing ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}...`,
+        sync_progress: Math.min(5, (Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24) * 0.5)
+      })
+      .eq('id', amazonAccountId)
     
     // Now fetch transactions for this day
     const financialEventsUrl = `${apiEndpoint}/finances/v0/financialEvents`
