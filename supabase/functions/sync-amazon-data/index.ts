@@ -311,9 +311,23 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       for (const group of groups) {
         const settlementId = group.FinancialEventGroupId
         const startDate = group.FinancialEventGroupStart
-        const endDate = group.FinancialEventGroupEnd
+        let endDate = group.FinancialEventGroupEnd
         const processingStatus = group.ProcessingStatus
         const fundTransferStatus = group.FundTransferStatus
+        
+        // For open settlements without endDate, calculate it based on payout frequency
+        if (!endDate && processingStatus === 'Open') {
+          const start = new Date(startDate);
+          if (amazonAccount.payout_frequency === 'bi-weekly' || amazonAccount.payout_model === 'bi-weekly') {
+            // Bi-weekly settlements close 14 days after start
+            start.setDate(start.getDate() + 14);
+            endDate = start.toISOString().split('T')[0];
+            console.log(`[SYNC] Calculated end date for open bi-weekly settlement: ${startDate} -> ${endDate}`);
+          } else if (amazonAccount.payout_frequency === 'daily' || amazonAccount.payout_model === 'daily') {
+            // Daily payouts close same day
+            endDate = startDate;
+          }
+        }
         
         // Process both Closed (confirmed) and Open (estimated) settlements from Amazon
         if (group.OriginalTotal) {
