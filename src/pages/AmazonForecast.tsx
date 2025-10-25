@@ -81,43 +81,58 @@ export default function AmazonForecast() {
     fetchTransactions();
   }, []);
 
-  // Calculate historical metrics
+  // Calculate historical metrics with forecasts
   const historicalData = useMemo(() => {
-    const monthlyData: Record<string, { revenue: number; payouts: number; count: number }> = {};
+    const monthlyData: Record<string, { revenue: number; actualPayouts: number; forecastedPayouts: number; count: number }> = {};
     
     // Last 12 months
     for (let i = 11; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
       const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      monthlyData[key] = { revenue: 0, payouts: 0, count: 0 };
+      monthlyData[key] = { revenue: 0, actualPayouts: 0, forecastedPayouts: 0, count: 0 };
     }
 
-    // Aggregate revenue from Amazon transactions (order amounts before fees)
+    // Aggregate revenue from Amazon transactions (order amounts - only positive amounts)
     amazonTransactions.forEach(txn => {
-      const date = new Date(txn.transaction_date);
-      const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      if (monthlyData[key]) {
-        monthlyData[key].revenue += Number(txn.amount || 0);
+      const amount = Number(txn.amount || 0);
+      if (amount > 0) { // Only count positive revenue
+        const date = new Date(txn.transaction_date);
+        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (monthlyData[key]) {
+          monthlyData[key].revenue += amount;
+        }
       }
     });
 
-    // Aggregate payouts (net after fees, returns, etc.) - only confirmed payouts, exclude sample data
+    // Aggregate actual payouts - only confirmed payouts, exclude sample data
     amazonPayouts
       .filter(payout => payout.status === 'confirmed' && payout.marketplace_name !== 'Amazon.com')
       .forEach(payout => {
         const date = new Date(payout.payout_date);
         const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
         if (monthlyData[key]) {
-          monthlyData[key].payouts += Number(payout.total_amount || 0);
+          monthlyData[key].actualPayouts += Number(payout.total_amount || 0);
           monthlyData[key].count += 1;
+        }
+      });
+
+    // Aggregate forecasted payouts - for future periods
+    amazonPayouts
+      .filter(payout => payout.status === 'forecasted' && payout.marketplace_name !== 'Amazon.com')
+      .forEach(payout => {
+        const date = new Date(payout.payout_date);
+        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (monthlyData[key]) {
+          monthlyData[key].forecastedPayouts += Number(payout.total_amount || 0);
         }
       });
 
     return Object.entries(monthlyData).map(([month, data]) => ({
       month,
       revenue: data.revenue,
-      payouts: data.payouts,
+      actualPayouts: data.actualPayouts,
+      forecastedPayouts: data.forecastedPayouts,
       count: data.count
     }));
   }, [amazonPayouts, amazonTransactions]);
@@ -353,7 +368,7 @@ export default function AmazonForecast() {
       {/* Historical Trends */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle>Revenue & Payouts - Full Year</CardTitle>
+          <CardTitle>Forecast vs Actual Payouts - Full Year</CardTitle>
           <div className="flex gap-2">
             <Button
               variant={chartType === 'bar' ? 'default' : 'outline'}
@@ -406,13 +421,19 @@ export default function AmazonForecast() {
                 <Bar 
                   dataKey="revenue" 
                   fill="#10b981" 
-                  name="Revenue (Before Fees)"
+                  name="Revenue"
                   radius={[8, 8, 0, 0]}
                 />
                 <Bar 
-                  dataKey="payouts" 
+                  dataKey="forecastedPayouts" 
+                  fill="#f59e0b" 
+                  name="Forecasted Payouts"
+                  radius={[8, 8, 0, 0]}
+                />
+                <Bar 
+                  dataKey="actualPayouts" 
                   fill="#8b5cf6" 
-                  name="Payouts"
+                  name="Actual Payouts"
                   radius={[8, 8, 0, 0]}
                 />
               </BarChart>
@@ -447,16 +468,26 @@ export default function AmazonForecast() {
                   dataKey="revenue" 
                   stroke="#10b981" 
                   strokeWidth={3}
-                  name="Revenue (Before Fees)"
+                  name="Revenue"
                   dot={{ fill: '#10b981', r: 4 }}
                   activeDot={{ r: 6 }}
                 />
                 <Line 
                   type="monotone"
-                  dataKey="payouts" 
+                  dataKey="forecastedPayouts" 
+                  stroke="#f59e0b" 
+                  strokeWidth={3}
+                  strokeDasharray="5 5"
+                  name="Forecasted Payouts"
+                  dot={{ fill: '#f59e0b', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+                <Line 
+                  type="monotone"
+                  dataKey="actualPayouts" 
                   stroke="#8b5cf6" 
                   strokeWidth={3}
-                  name="Payouts"
+                  name="Actual Payouts"
                   dot={{ fill: '#8b5cf6', r: 4 }}
                   activeDot={{ r: 6 }}
                 />
