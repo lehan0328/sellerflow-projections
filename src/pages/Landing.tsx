@@ -69,12 +69,19 @@ const Landing = () => {
     }
   }, [user, navigate]);
 
-  // Track scroll for sticky CTA
+  // Track scroll for sticky CTA (optimized to prevent forced reflows)
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      setShowStickyCTA(window.scrollY > 600);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setShowStickyCTA(window.scrollY > 600);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   const [enterpriseTier, setEnterpriseTier] = useState<"tier1" | "tier2" | "tier3">("tier1");
@@ -549,12 +556,12 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-4 pb-12 lg:pt-6 lg:pb-16">
+      <section className="relative overflow-hidden pt-4 pb-12 lg:pt-6 lg:pb-16" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
         {/* Grid Pattern Background */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
         
         {/* Animated Gradient Orbs */}
-        <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden" style={{ willChange: 'transform' }}>
           <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/30 rounded-full blur-[100px] animate-float" />
           <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] bg-accent/20 rounded-full blur-[120px] animate-float" style={{
           animationDelay: '2s',
@@ -797,7 +804,7 @@ const Landing = () => {
       </section>
 
       {/* Safe Spending Power & Opportunities Section */}
-      <section className="py-20 bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden">
+      <section className="py-20 bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:32px_32px]" />
         
@@ -1100,7 +1107,7 @@ const Landing = () => {
       </section>
 
       {/* Social Proof Section */}
-      <section className="py-12 bg-muted/50 border-y">
+      <section className="py-12 bg-muted/50 border-y" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
         <div className="container mx-auto px-4">
           <div className="text-center space-y-6">
             <p className="text-sm text-muted-foreground font-semibold">USED BY 7- AND 8-FIGURE SELLERS</p>
@@ -1136,7 +1143,7 @@ const Landing = () => {
       </section>
 
       {/* Benefits Section */}
-      <section className="py-20 bg-background">
+      <section className="py-20 bg-background" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
@@ -1205,7 +1212,7 @@ const Landing = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 bg-muted/30">
+      <section className="py-20 bg-muted/30" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
@@ -1311,7 +1318,7 @@ const Landing = () => {
       </section>
 
       {/* Comparison Section */}
-      <section className="py-20">
+      <section className="py-20" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
@@ -1355,7 +1362,7 @@ const Landing = () => {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 bg-muted/30">
+      <section id="pricing" className="py-20 bg-muted/30" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
@@ -1456,7 +1463,7 @@ const Landing = () => {
       </section>
 
       {/* Proof Section - Mini Case Study */}
-      <section className="py-20 bg-muted/30">
+      <section className="py-20 bg-muted/30" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <Card className="shadow-elevated overflow-hidden">
@@ -1507,7 +1514,7 @@ const Landing = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 bg-background">
+      <section id="testimonials" className="py-20 bg-background" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
@@ -1550,7 +1557,7 @@ const Landing = () => {
       </section>
 
       {/* Blog Preview Section */}
-      <section className="py-20 bg-muted/30">
+      <section className="py-20 bg-muted/30" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <BookOpen className="h-12 w-12 mx-auto text-primary" />
@@ -1590,7 +1597,7 @@ const Landing = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-muted/30">
+      <section className="py-20 bg-muted/30" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
@@ -1812,7 +1819,7 @@ const Landing = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-primary text-primary-foreground">
+      <section className="py-20 bg-gradient-primary text-primary-foreground" style={{ contain: 'layout style' }}>
         <div className="container mx-auto px-4 text-center space-y-8">
           <h2 className="text-3xl lg:text-4xl font-bold">
             Start Forecasting Your Cashflow Today
