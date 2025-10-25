@@ -413,7 +413,7 @@ export function AmazonPayouts() {
                         </Badge>
                       )}
                       <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {account.transaction_count || 0} txns
+                        {account.transaction_count || 0} transactions
                       </span>
                     </div>
                   </div>
