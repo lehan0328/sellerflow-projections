@@ -482,6 +482,92 @@ export function AmazonPayouts() {
           </div>
         )}
         
+        {/* Open Settlements - Always visible at top */}
+        {(() => {
+          const openSettlements = amazonPayouts.filter(p => {
+            // Open settlements have no end date in raw_settlement_data
+            const rawData = p.raw_settlement_data;
+            return p.status === 'estimated' && !rawData?.FinancialEventGroupEnd;
+          });
+
+          if (openSettlements.length === 0) return null;
+
+          return (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Open Settlements (In Progress)
+              </h3>
+              {openSettlements.map(payout => {
+                const daysUntil = getDaysUntil(payout.payout_date);
+                const rawData = payout.raw_settlement_data;
+                const startDate = rawData?.FinancialEventGroupStart ? new Date(rawData.FinancialEventGroupStart) : null;
+                const estimatedEnd = startDate ? new Date(startDate.getTime() + 14 * 24 * 60 * 60 * 1000) : null;
+
+                return (
+                  <div key={payout.id} className="rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30 p-4 transition-all hover:shadow-card">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="secondary" className="text-xs bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Open
+                          </Badge>
+                          <Badge variant={getTypeColor(payout.payout_type)} className="text-xs">
+                            {payout.payout_type.replace("-", " ")}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {payout.amazon_accounts?.marketplace_name || payout.marketplace_name}
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                            <span className="flex items-center">
+                              <Calendar className="mr-1 h-3 w-3" />
+                              {startDate && estimatedEnd ? (
+                                `Period: ${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${estimatedEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} (Est.)`
+                              ) : (
+                                `Settlement Date: ${formatDate(payout.payout_date)}`
+                              )}
+                            </span>
+                            <span className={`font-medium ${daysUntil === 0 ? 'text-finance-positive' : daysUntil <= 3 && daysUntil >= 0 ? 'text-warning' : 'text-muted-foreground'}`}>
+                              Est. Payout: {daysUntil === 0 ? 'Today' : daysUntil > 0 ? `in ${daysUntil} days` : `${Math.abs(daysUntil)} days ago`}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                            <span>{payout.transaction_count} transactions</span>
+                            {rawData?.BeginningBalance?.CurrencyAmount !== undefined && (
+                              <>
+                                <span>•</span>
+                                <span>Opening: {formatCurrency(rawData.BeginningBalance.CurrencyAmount)}</span>
+                              </>
+                            )}
+                            {rawData?.ProcessingStatus && (
+                              <>
+                                <span>•</span>
+                                <span>Status: {rawData.ProcessingStatus}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-lg text-amber-600 dark:text-amber-400">
+                          {formatCurrency(payout.total_amount)}
+                        </p>
+                        <div className="flex items-center text-xs text-amber-600 dark:text-amber-400">
+                          <Clock className="mr-1 h-3 w-3" />
+                          Accumulating
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
         {/* Date Range Filter */}
         <div className="flex items-center gap-3 p-4 rounded-lg border bg-card">
           <Label className="text-sm font-medium whitespace-nowrap">Settlement Period:</Label>
@@ -510,11 +596,11 @@ export function AmazonPayouts() {
             This Month
           </Button>
           <div className="text-xs text-muted-foreground">
-            {amazonPayouts.filter(p => 
-              (p.status === 'confirmed' || p.status === 'estimated') && 
-              p.payout_date >= startDateFilter && 
-              p.payout_date <= endDateFilter
-            ).length} settlements
+            {amazonPayouts.filter(p => {
+              const rawData = p.raw_settlement_data;
+              const isClosed = p.status === 'confirmed' || rawData?.FinancialEventGroupEnd;
+              return isClosed && p.payout_date >= startDateFilter && p.payout_date <= endDateFilter;
+            }).length} closed settlements
           </div>
         </div>
         
@@ -531,44 +617,40 @@ export function AmazonPayouts() {
               </Button>
             </div>
           </div> : (() => {
-          // Show all settlements (confirmed and estimated) within date range
+          // Show only CLOSED settlements (confirmed or estimated with end date) within date range
           const filteredPayouts = amazonPayouts.filter(payout => {
-            // Only show confirmed and estimated settlements (not forecasted)
-            if (payout.status !== 'confirmed' && payout.status !== 'estimated') return false;
+            // Exclude open settlements (they're shown separately above)
+            const rawData = payout.raw_settlement_data;
+            const isOpen = payout.status === 'estimated' && !rawData?.FinancialEventGroupEnd;
+            if (isOpen) return false;
+            
+            // Only show confirmed settlements or estimated with end date
+            const isClosed = payout.status === 'confirmed' || rawData?.FinancialEventGroupEnd;
+            if (!isClosed) return false;
             
             // Filter by date range
             const payoutDate = payout.payout_date;
             return payoutDate >= startDateFilter && payoutDate <= endDateFilter;
           });
           
-          // Separate forecasted and actual payouts for better display
-          const forecastedPayouts = filteredPayouts.filter(p => p.status === 'forecasted');
-          const actualPayouts = filteredPayouts.filter(p => p.status !== 'forecasted');
-          
-          console.log('🛒 Amazon Payouts Component - Displaying:', {
+          console.log('🛒 Amazon Payouts Component - Displaying Closed Settlements:', {
             total: filteredPayouts.length,
-            forecasted: forecastedPayouts.length,
-            actual: actualPayouts.length,
-            showForecasts
+            dateRange: { start: startDateFilter, end: endDateFilter }
           });
           
-          const payoutsByDate = filteredPayouts.reduce((acc, payout) => {
-            const dateKey = payout.payout_date;
-            if (!acc[dateKey]) {
-              acc[dateKey] = {
+          // Group by unique combination of payout_date AND settlement_id to keep them separate
+          const payoutsByKey = filteredPayouts.reduce((acc, payout) => {
+            const key = `${payout.payout_date}-${payout.settlement_id}`;
+            if (!acc[key]) {
+              acc[key] = {
                 ...payout,
-                total_amount: 0,
-                transaction_count: 0,
-                payouts: []
+                payouts: [payout]
               };
             }
-            acc[dateKey].total_amount += payout.total_amount;
-            acc[dateKey].transaction_count += payout.transaction_count;
-            acc[dateKey].payouts.push(payout);
             return acc;
           }, {} as Record<string, any>);
           
-          return Object.values(payoutsByDate).map(aggregatedPayout => {
+          return Object.values(payoutsByKey).map(aggregatedPayout => {
             const daysUntil = getDaysUntil(aggregatedPayout.payout_date);
             const isUpcoming = daysUntil <= 7;
             const isForecasted = aggregatedPayout.status === 'forecasted';
