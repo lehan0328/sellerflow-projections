@@ -107,8 +107,8 @@ serve(async (req) => {
       .eq('status', 'forecasted');
 
     const allForecasts: any[] = [];
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
     for (const account of accountsReadyForForecast) {
       console.log(`\n[MATH-FORECAST] Processing ${account.account_name} (${account.payout_model} model)`);
@@ -116,25 +116,20 @@ serve(async (req) => {
       const reserveLag = account.reserve_lag_days || defaultReserveLag;
       const reserveMultiplier = account.reserve_multiplier || 1.0;
 
-      // Fetch transactions from last 3 months
+      // Fetch transactions from last 60 days for accurate trend analysis
       const { data: transactions } = await supabase
         .from('amazon_transactions')
         .select('*')
         .eq('amazon_account_id', account.id)
-        .gte('transaction_date', threeMonthsAgo.toISOString())
+        .gte('transaction_date', sixtyDaysAgo.toISOString())
         .order('transaction_date', { ascending: true });
 
-      if (!transactions || transactions.length === 0) {
-        console.log('[MATH-FORECAST] No transaction data, using baseline estimates');
-        const baselineForecasts = generateBaselineForecasts(
-          account,
-          userId,
-          riskAdjustment,
-          account.payout_model
-        );
-        allForecasts.push(...baselineForecasts);
+      if (!transactions || transactions.length < 30) {
+        console.log(`[MATH-FORECAST] Insufficient transaction data (${transactions?.length || 0}/30), skipping forecast`);
         continue;
       }
+
+      console.log(`[MATH-FORECAST] Using ${transactions.length} transactions from last 60 days`);
 
       // Calculate Net_i for each order and unlock dates
       const processedTransactions = transactions
@@ -256,14 +251,27 @@ function generateBiWeeklyForecasts(
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Calculate ONLY from actual unlocked transactions (not all history)
-  // This ensures we're using real data that has passed the reserve period
-  const eligibleValues = Array.from(dailyEligibleMap.values()).filter(val => val > 0);
-  const avgDailyEligible = eligibleValues.length > 0 
-    ? eligibleValues.reduce((sum, amt) => sum + amt, 0) / eligibleValues.length
-    : 50; // ~$700/14 days default if no data
+  // Calculate trend from last 60 days of actual transaction data
+  const sortedDates = Array.from(dailyEligibleMap.keys()).sort();
+  const recentDates = sortedDates.slice(-60); // Last 60 days
   
-  console.log(`📊 Avg daily eligible from ${eligibleValues.length} days: $${avgDailyEligible.toFixed(2)}`);
+  // Split into two periods for trend analysis
+  const midPoint = Math.floor(recentDates.length / 2);
+  const firstHalf = recentDates.slice(0, midPoint);
+  const secondHalf = recentDates.slice(midPoint);
+  
+  const firstHalfAvg = firstHalf.length > 0
+    ? firstHalf.reduce((sum, date) => sum + (dailyEligibleMap.get(date) || 0), 0) / firstHalf.length
+    : 0;
+  const secondHalfAvg = secondHalf.length > 0
+    ? secondHalf.reduce((sum, date) => sum + (dailyEligibleMap.get(date) || 0), 0) / secondHalf.length
+    : 0;
+  
+  // Calculate trend (positive = growing, negative = declining)
+  const trendMultiplier = firstHalfAvg > 0 ? secondHalfAvg / firstHalfAvg : 1.0;
+  const avgDailyEligible = secondHalfAvg || firstHalfAvg || 50;
+  
+  console.log(`📊 60-day trend analysis: First half avg $${firstHalfAvg.toFixed(2)}, Second half avg $${secondHalfAvg.toFixed(2)}, Trend: ${((trendMultiplier - 1) * 100).toFixed(1)}%`);
 
   // Generate 6 bi-weekly settlement forecasts (3 months)
   for (let i = 0; i < 6; i++) {
@@ -284,10 +292,21 @@ function generateBiWeeklyForecasts(
       }
     });
 
-    // For future periods, use conservative projection from recent average
+    // For future periods, project forward using trend
     if (eligibleInPeriod === 0) {
-      eligibleInPeriod = avgDailyEligible * 14;
-      console.log(`🔮 Period ${i+1}: $${eligibleInPeriod.toFixed(2)} (${avgDailyEligible.toFixed(2)}/day)`);
+      // Apply trend multiplier for each future period (compound growth/decline)
+      const periodTrendMultiplier = Math.pow(trendMultiplier, i + 1);
+      eligibleInPeriod = avgDailyEligible * 14 * periodTrendMultiplier;
+      
+      // Cap extreme projections at ±20% per period
+      const maxMultiplier = Math.pow(1.20, i + 1);
+      const minMultiplier = Math.pow(0.80, i + 1);
+      eligibleInPeriod = Math.max(
+        avgDailyEligible * 14 * minMultiplier,
+        Math.min(avgDailyEligible * 14 * maxMultiplier, eligibleInPeriod)
+      );
+      
+      console.log(`🔮 Period ${i+1}: $${eligibleInPeriod.toFixed(2)} (trend-adjusted: ${((periodTrendMultiplier - 1) * 100).toFixed(1)}%)`);
     }
 
     // Reserve = funds from orders delivered within reserve lag (7 days before settlement)
@@ -363,19 +382,43 @@ function generateDailyForecasts(
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Calculate total eligible amount in the current settlement bucket (next 14 days)
+  // Calculate trend from last 60 days
   const sortedDates = Array.from(dailyEligibleMap.keys()).sort();
+  const recentDates = sortedDates.slice(-60);
+  
+  const midPoint = Math.floor(recentDates.length / 2);
+  const firstHalf = recentDates.slice(0, midPoint);
+  const secondHalf = recentDates.slice(midPoint);
+  
+  const firstHalfAvg = firstHalf.length > 0
+    ? firstHalf.reduce((sum, date) => sum + (dailyEligibleMap.get(date) || 0), 0) / firstHalf.length
+    : 0;
+  const secondHalfAvg = secondHalf.length > 0
+    ? secondHalf.reduce((sum, date) => sum + (dailyEligibleMap.get(date) || 0), 0) / secondHalf.length
+    : 0;
+  
+  const trendMultiplier = firstHalfAvg > 0 ? secondHalfAvg / firstHalfAvg : 1.0;
+  const avgDailyEligible = secondHalfAvg || firstHalfAvg;
+
+  console.log(`📊 Daily model trend: ${((trendMultiplier - 1) * 100).toFixed(1)}% (${avgDailyEligible.toFixed(2)}/day)`);
+
   const settlementDate = new Date(today);
   settlementDate.setDate(settlementDate.getDate() + 14);
   const settlementDateStr = settlementDate.toISOString().split('T')[0];
   
-  // Calculate lump sum (total eligible in settlement period minus reserve)
+  // Calculate lump sum from actual unlocked transactions in next 14 days
   let totalEligible = 0;
   sortedDates.forEach(date => {
     if (date <= settlementDateStr && date > today.toISOString().split('T')[0]) {
       totalEligible += dailyEligibleMap.get(date) || 0;
     }
   });
+  
+  // If no actual data for future period, project using trend
+  if (totalEligible === 0) {
+    totalEligible = avgDailyEligible * 14 * trendMultiplier;
+    console.log(`🔮 Using projected eligible: $${totalEligible.toFixed(2)} (trend-adjusted)`);
+  }
 
   // Calculate reserve for settlement period
   let settlementReserve = 0;
@@ -438,7 +481,7 @@ function generateDailyForecasts(
     });
   }
 
-  // Generate additional forecasts for next cycles (15-90 days)
+  // Generate additional forecasts for next cycles (15-90 days) with trend applied
   const numberOfAdditionalCycles = Math.floor((90 - 14) / 14);
   
   for (let cycle = 1; cycle <= numberOfAdditionalCycles; cycle++) {
@@ -449,9 +492,14 @@ function generateDailyForecasts(
     const cycleSettlementDateStr = cycleSettlementDate.toISOString().split('T')[0];
     const cycleSettlementId = `settlement-${account.id}-${cycleSettlementDateStr}`;
     
-    // Use average from current cycle for future cycles
-    const futureDaily = dailyIncrement;
+    // Apply trend multiplier for each future cycle (compound growth/decline)
+    const cycleTrendMultiplier = Math.pow(trendMultiplier, cycle + 1);
+    // Cap at ±20% per cycle
+    const cappedMultiplier = Math.max(0.8, Math.min(1.2, cycleTrendMultiplier));
+    const futureDaily = dailyIncrement * cappedMultiplier;
     let futureCumulative = 0;
+    
+    console.log(`🔮 Cycle ${cycle + 1}: trend ${((cappedMultiplier - 1) * 100).toFixed(1)}%, daily $${futureDaily.toFixed(2)}`);
     
     for (let i = cycleStartDay; i <= cycleEndDay; i++) {
       const forecastDate = new Date(today);
@@ -491,46 +539,5 @@ function generateDailyForecasts(
   return forecasts;
 }
 
-function generateBaselineForecasts(
-  account: any,
-  userId: string,
-  riskAdjustment: number,
-  payoutModel: string
-): any[] {
-  const forecasts: any[] = [];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const defaultAmount = payoutModel === 'daily' ? 150 : 2000;
-  const maxForecasts = payoutModel === 'daily' ? 90 : 6;
-  const incrementDays = payoutModel === 'daily' ? 1 : 14;
-
-  for (let i = 0; i < maxForecasts; i++) {
-    const forecastDate = new Date(today);
-    forecastDate.setDate(forecastDate.getDate() + ((i + 1) * incrementDays));
-    
-    const adjustmentMultiplier = 1 - (riskAdjustment / 100);
-    const adjustedAmount = defaultAmount * adjustmentMultiplier;
-
-    forecasts.push({
-      user_id: userId,
-      account_id: account.account_id,
-      amazon_account_id: account.id,
-      payout_date: forecastDate.toISOString().split('T')[0],
-      total_amount: Math.max(0, adjustedAmount),
-      orders_total: adjustedAmount * 1.3,
-      fees_total: adjustedAmount * 0.15,
-      refunds_total: 0,
-      other_total: 0,
-      status: 'forecasted',
-      payout_type: payoutModel,
-      marketplace_name: account.marketplace_name,
-      settlement_id: `forecast_baseline_${account.id}_${i}`,
-      transaction_count: 0,
-      currency_code: 'USD',
-      modeling_method: 'baseline_estimate'
-    });
-  }
-
-  return forecasts;
-}
+// Function removed - no longer using baseline/duplicate forecasts
+// Forecasts are now always generated from actual transaction data
