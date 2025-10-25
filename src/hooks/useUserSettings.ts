@@ -329,6 +329,9 @@ export const useUserSettings = () => {
       const dependentDeletes = [
         { name: 'bank_transactions', promise: supabase.from('bank_transactions').delete().eq('account_id', accountId) },
         { name: 'amazon_transactions', promise: supabase.from('amazon_transactions').delete().eq('account_id', accountId) },
+        { name: 'amazon_transactions_daily_summary', promise: supabase.from('amazon_transactions_daily_summary').delete().eq('account_id', accountId) },
+        { name: 'amazon_daily_rollups', promise: supabase.from('amazon_daily_rollups').delete().eq('account_id', accountId) },
+        { name: 'amazon_daily_draws', promise: supabase.from('amazon_daily_draws').delete().eq('account_id', accountId) },
         { name: 'amazon_payouts', promise: supabase.from('amazon_payouts').delete().eq('account_id', accountId) },
         { name: 'transactions', promise: supabase.from('transactions').delete().eq('account_id', accountId) },
         { name: 'cash_flow_events', promise: supabase.from('cash_flow_events').delete().eq('account_id', accountId) },
@@ -336,6 +339,7 @@ export const useUserSettings = () => {
         { name: 'documents_metadata', promise: supabase.from('documents_metadata').delete().eq('account_id', accountId) },
         { name: 'notification_history', promise: supabase.from('notification_history').delete().eq('account_id', accountId) },
         { name: 'deleted_transactions', promise: supabase.from('deleted_transactions').delete().eq('user_id', user.id) },
+        { name: 'forecast_accuracy_log', promise: supabase.from('forecast_accuracy_log').delete().eq('account_id', accountId) },
       ];
 
       const dependentResults = await Promise.allSettled(dependentDeletes.map(op => op.promise));
@@ -364,14 +368,10 @@ export const useUserSettings = () => {
         { name: 'customers', promise: supabase.from('customers').delete().eq('account_id', accountId) },
         { name: 'recurring_expenses', promise: supabase.from('recurring_expenses').delete().eq('account_id', accountId) },
         { name: 'scenarios', promise: supabase.from('scenarios').delete().eq('account_id', accountId) },
-        { name: 'categories', promise: supabase.from('categories').delete().eq('account_id', accountId).eq('is_default', false) },
+        { name: 'categories', promise: supabase.from('categories').delete().eq('account_id', accountId) },
         { name: 'notification_preferences', promise: supabase.from('notification_preferences').delete().eq('account_id', accountId) },
         { name: 'trial_addon_usage', promise: supabase.from('trial_addon_usage').delete().eq('user_id', user.id) },
-        { name: 'support_tickets', promise: supabase.from('support_tickets').delete().eq('user_id', user.id) },
-        { name: 'referrals_referrer', promise: supabase.from('referrals').delete().eq('referrer_id', user.id) },
-        { name: 'referrals_referred', promise: supabase.from('referrals').delete().eq('referred_user_id', user.id) },
-        { name: 'referral_codes', promise: supabase.from('referral_codes').delete().eq('user_id', user.id) },
-        { name: 'referral_rewards', promise: supabase.from('referral_rewards').delete().eq('user_id', user.id) },
+        { name: 'purchased_addons', promise: supabase.from('purchased_addons').delete().eq('user_id', user.id) },
       ];
 
       const results = await Promise.allSettled(parentDeletes.map(op => op.promise));
@@ -438,14 +438,25 @@ export const useUserSettings = () => {
         }
       }
 
-      // Reset user_settings using user_id
+      // Reset user_settings to defaults
       const { error: upsertError } = await supabase
         .from('user_settings')
         .update({
           total_cash: 0,
           safe_spending_percentage: 20,
           safe_spending_reserve: 0,
-          chart_show_forecast_line: false
+          forecasts_enabled: false,
+          use_available_balance: true,
+          chart_show_cashflow_line: true,
+          chart_show_resources_line: true,
+          chart_show_credit_line: true,
+          chart_show_reserve_line: true,
+          chart_show_forecast_line: false,
+          chart_cashflow_color: 'hsl(221, 83%, 53%)',
+          chart_resources_color: '#10b981',
+          chart_credit_color: '#f59e0b',
+          chart_reserve_color: '#ef4444',
+          chart_forecast_color: '#a855f7',
         })
         .eq('user_id', user.id);
 
@@ -456,11 +467,10 @@ export const useUserSettings = () => {
 
       console.log('✅ Reset user_settings');
       setTotalCash(0);
+      setForecastsEnabled(false);
       
-      // Clear localStorage flags to allow fresh setup
-      localStorage.removeItem('balance_start_0');
-      localStorage.removeItem('vendors_cleaned');
-      localStorage.removeItem('transactions_cleaned_v2');
+      // Clear all localStorage flags to allow fresh setup
+      localStorage.clear();
       
       toast({
         title: "Success",
