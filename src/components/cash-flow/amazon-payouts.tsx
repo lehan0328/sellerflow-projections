@@ -596,41 +596,81 @@ export function AmazonPayouts() {
                               {aggregatedPayout.payouts.length} accounts
                             </Badge>}
                         </div>
-                         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                           <span className="flex items-center">
-                             <Calendar className="mr-1 h-3 w-3" />
+                         <div className="space-y-1">
+                           <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                             <span className="flex items-center">
+                               <Calendar className="mr-1 h-3 w-3" />
+                               {(() => {
+                                 // Show settlement period with more details
+                                 const firstPayout = aggregatedPayout.payouts[0];
+                                 const rawData = firstPayout?.raw_settlement_data;
+                                 
+                                 if (rawData?.FinancialEventGroupStart) {
+                                   const startDate = new Date(rawData.FinancialEventGroupStart);
+                                   const endDate = rawData.FinancialEventGroupEnd 
+                                     ? new Date(rawData.FinancialEventGroupEnd)
+                                     : null;
+                                   
+                                   const formatShort = (date: Date) => date.toLocaleDateString('en-US', { 
+                                     month: 'short', 
+                                     day: 'numeric',
+                                     year: 'numeric'
+                                   });
+                                   
+                                   if (endDate) {
+                                     return `Period: ${formatShort(startDate)} - ${formatShort(endDate)}`;
+                                   } else {
+                                     // Calculate estimated end date for open settlements (14 days for bi-weekly)
+                                     const estimatedEnd = new Date(startDate);
+                                     estimatedEnd.setDate(estimatedEnd.getDate() + 14);
+                                     return `Period: ${formatShort(startDate)} - ${formatShort(estimatedEnd)} (Open)`;
+                                   }
+                                 }
+                                 
+                                 return `Settlement Date: ${formatDate(aggregatedPayout.payout_date)}`;
+                               })()}
+                             </span>
+                             <span className={`font-medium ${daysUntil === 0 ? 'text-finance-positive' : daysUntil <= 3 && daysUntil >= 0 ? 'text-warning' : daysUntil < 0 ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
+                               Payout: {daysUntil === 0 ? 'Today' : daysUntil > 0 ? `in ${daysUntil} days` : `${Math.abs(daysUntil)} days ago`}
+                             </span>
+                           </div>
+                           <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                              {(() => {
-                               // Show settlement period if available
                                const firstPayout = aggregatedPayout.payouts[0];
                                const rawData = firstPayout?.raw_settlement_data;
+                               const details = [];
                                
-                               if (rawData?.FinancialEventGroupStart) {
-                                 const startDate = new Date(rawData.FinancialEventGroupStart);
-                                 const endDate = rawData.FinancialEventGroupEnd 
-                                   ? new Date(rawData.FinancialEventGroupEnd)
-                                   : null;
-                                 
-                                 const formatShort = (date: Date) => date.toLocaleDateString('en-US', { 
-                                   month: 'short', 
-                                   day: 'numeric' 
-                                 });
-                                 
-                                 if (endDate) {
-                                   return `${formatShort(startDate)} - ${formatShort(endDate)} → Payout: ${formatDate(aggregatedPayout.payout_date)}`;
-                                 } else {
-                                   return `${formatShort(startDate)} - Open → Est. Payout: ${formatDate(aggregatedPayout.payout_date)}`;
-                                 }
+                               // Transaction count
+                               details.push(`${aggregatedPayout.transaction_count} transactions`);
+                               
+                               // Beginning balance
+                               if (rawData?.BeginningBalance?.CurrencyAmount !== undefined) {
+                                 details.push(`Opening: ${formatCurrency(rawData.BeginningBalance.CurrencyAmount)}`);
                                }
                                
-                               return `Payout: ${formatDate(aggregatedPayout.payout_date)}`;
+                               // Fund transfer status
+                               if (rawData?.FundTransferStatus) {
+                                 details.push(`Transfer: ${rawData.FundTransferStatus}`);
+                               }
+                               
+                               // Account tail
+                               if (rawData?.AccountTail) {
+                                 details.push(`Account: •••${rawData.AccountTail}`);
+                               }
+                               
+                               // Processing status
+                               if (rawData?.ProcessingStatus) {
+                                 details.push(`Status: ${rawData.ProcessingStatus}`);
+                               }
+                               
+                               return details.map((detail, i) => (
+                                 <span key={i} className="flex items-center">
+                                   {i > 0 && <span className="mx-2">•</span>}
+                                   {detail}
+                                 </span>
+                               ));
                              })()}
-                           </span>
-                           <span className={`font-medium ${daysUntil === 0 ? 'text-finance-positive' : daysUntil <= 3 && daysUntil >= 0 ? 'text-warning' : daysUntil < 0 ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
-                             {daysUntil === 0 ? 'Today' : daysUntil > 0 ? `in ${daysUntil} days` : `${Math.abs(daysUntil)} days ago`}
-                           </span>
-                           <span className="text-xs text-muted-foreground">
-                             {aggregatedPayout.transaction_count} transactions
-                           </span>
+                           </div>
                          </div>
                       </div>
                       <div className="text-right">
