@@ -764,6 +764,10 @@ const Landing = () => {
                       const playBtn = e.currentTarget.parentElement?.querySelector('.play-overlay');
                       if (playBtn) playBtn.classList.add('hidden');
                     }}
+                    onError={(e) => {
+                      // Silently handle video loading errors without logging to console
+                      e.currentTarget.style.display = 'none';
+                    }}
                   />
                   
                   {/* Large Play Button Overlay */}

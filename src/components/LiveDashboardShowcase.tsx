@@ -94,6 +94,10 @@ export const LiveDashboardShowcase = () => {
               autoPlay
               muted
               loop
+              onError={(e) => {
+                // Silently handle video loading errors without logging to console
+                e.currentTarget.style.display = 'none';
+              }}
             />
           </div>
         </div>

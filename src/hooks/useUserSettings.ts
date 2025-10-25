@@ -83,9 +83,10 @@ export const useUserSettings = () => {
         forecastColor: data.chart_forecast_color ?? '#a855f7',
       });
     } catch (error: any) {
-      console.error('Error fetching user settings:', error);
-      // Don't show toast if user is simply not authenticated (signed out)
+      // Don't log or show toast if user is simply not authenticated (signed out)
+      // This is an expected state on public pages
       if (error?.message !== 'User not authenticated') {
+        console.error('Error fetching user settings:', error);
         toast({
           title: "Error",
           description: "Failed to load user settings",
