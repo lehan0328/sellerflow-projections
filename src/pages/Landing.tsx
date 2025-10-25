@@ -69,19 +69,12 @@ const Landing = () => {
     }
   }, [user, navigate]);
 
-  // Track scroll for sticky CTA (optimized to prevent forced reflows)
+  // Track scroll for sticky CTA
   useEffect(() => {
-    let ticking = false;
     const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          setShowStickyCTA(window.scrollY > 600);
-          ticking = false;
-        });
-        ticking = true;
-      }
+      setShowStickyCTA(window.scrollY > 600);
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
   const [enterpriseTier, setEnterpriseTier] = useState<"tier1" | "tier2" | "tier3">("tier1");
@@ -556,12 +549,12 @@ const Landing = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-4 pb-12 lg:pt-6 lg:pb-16" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
+      <section className="relative overflow-hidden pt-4 pb-12 lg:pt-6 lg:pb-16">
         {/* Grid Pattern Background */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
         
         {/* Animated Gradient Orbs */}
-        <div className="absolute inset-0 overflow-hidden" style={{ willChange: 'transform' }}>
+        <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/30 rounded-full blur-[100px] animate-float" />
           <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] bg-accent/20 rounded-full blur-[120px] animate-float" style={{
           animationDelay: '2s',
@@ -764,10 +757,6 @@ const Landing = () => {
                       const playBtn = e.currentTarget.parentElement?.querySelector('.play-overlay');
                       if (playBtn) playBtn.classList.add('hidden');
                     }}
-                    onError={(e) => {
-                      // Silently handle video loading errors without logging to console
-                      e.currentTarget.style.display = 'none';
-                    }}
                   />
                   
                   {/* Large Play Button Overlay */}
@@ -808,7 +797,7 @@ const Landing = () => {
       </section>
 
       {/* Safe Spending Power & Opportunities Section */}
-      <section className="py-20 bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
+      <section className="py-20 bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:32px_32px]" />
         
@@ -1111,7 +1100,7 @@ const Landing = () => {
       </section>
 
       {/* Social Proof Section */}
-      <section className="py-12 bg-muted/50 border-y" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
+      <section className="py-12 bg-muted/50 border-y">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-6">
             <p className="text-sm text-muted-foreground font-semibold">USED BY 7- AND 8-FIGURE SELLERS</p>
@@ -1147,7 +1136,7 @@ const Landing = () => {
       </section>
 
       {/* Benefits Section */}
-      <section className="py-20 bg-background" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
+      <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
@@ -1216,7 +1205,7 @@ const Landing = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 bg-muted/30" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
+      <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
@@ -1322,7 +1311,7 @@ const Landing = () => {
       </section>
 
       {/* Comparison Section */}
-      <section className="py-20" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
+      <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
@@ -1366,7 +1355,7 @@ const Landing = () => {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 bg-muted/30" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
+      <section id="pricing" className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
@@ -1377,11 +1366,7 @@ const Landing = () => {
             </p>
             <div className="flex items-center justify-center gap-4 mt-6 bg-muted/50 backdrop-blur-sm border rounded-lg p-4 max-w-md mx-auto">
               <span className={`text-sm ${!isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>Monthly</span>
-              <button 
-                onClick={() => setIsYearly(!isYearly)} 
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isYearly ? 'bg-primary' : 'bg-border'}`}
-                aria-label={`Switch to ${isYearly ? 'monthly' : 'yearly'} billing`}
-              >
+              <button onClick={() => setIsYearly(!isYearly)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isYearly ? 'bg-primary' : 'bg-border'}`}>
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-md transition-transform ${isYearly ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
               <span className={`text-sm ${isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>
@@ -1471,7 +1456,7 @@ const Landing = () => {
       </section>
 
       {/* Proof Section - Mini Case Study */}
-      <section className="py-20 bg-muted/30" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
+      <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <Card className="shadow-elevated overflow-hidden">
@@ -1522,7 +1507,7 @@ const Landing = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 bg-background" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
+      <section id="testimonials" className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
@@ -1565,7 +1550,7 @@ const Landing = () => {
       </section>
 
       {/* Blog Preview Section */}
-      <section className="py-20 bg-muted/30" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
+      <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <BookOpen className="h-12 w-12 mx-auto text-primary" />
@@ -1605,7 +1590,7 @@ const Landing = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-muted/30" style={{ contain: 'layout style', contentVisibility: 'auto' }}>
+      <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold">
@@ -1788,7 +1773,7 @@ const Landing = () => {
 
               <h3 className="text-2xl font-bold text-foreground">How Auren Solves Cash Flow Challenges for Marketplace Sellers</h3>
               <p className="leading-relaxed">
-                <strong className="text-foreground">Auren</strong> was built specifically to solve the <strong className="text-foreground">cash flow management challenges</strong> faced by Amazon FBA and marketplace sellers. By connecting directly to your <a href="/docs/amazon-integration" className="text-primary underline hover:text-primary/80">Amazon Seller Central account</a>,
+                <strong className="text-foreground">Auren</strong> was built specifically to solve the <strong className="text-foreground">cash flow management challenges</strong> faced by Amazon FBA and marketplace sellers. By connecting directly to your <a href="/docs/amazon-integration" className="text-primary hover:underline">Amazon Seller Central account</a>,
                 Auren forecasts every future payout using your real settlement data. Our AI-powered system maps sales, refunds, reserves, and fees to
                 generate a clear <strong className="text-foreground">90-day cash flow timeline</strong> — helping you understand exactly when funds will hit your bank and when your next big expense is due.
               </p>
@@ -1797,13 +1782,13 @@ const Landing = () => {
               <p className="leading-relaxed">
                 Predictable cash flow isn&apos;t just about avoiding overdrafts — it&apos;s about <strong className="text-foreground">unlocking sustainable growth</strong>. With accurate <strong className="text-foreground">Amazon payout forecasting</strong>,
                 sellers can confidently plan new inventory orders, time product launches, and scale advertising budgets without worrying about short-term liquidity.
-                Instead of reacting to cash flow surprises, you can make proactive financial decisions that keep your eCommerce business growing sustainably. Learn more about <a href="/features" className="text-primary underline hover:text-primary/80">all our forecasting features</a>.
+                Instead of reacting to cash flow surprises, you can make proactive financial decisions that keep your eCommerce business growing sustainably. Learn more about <a href="/features" className="text-primary hover:underline">all our forecasting features</a>.
               </p>
 
               <h3 className="text-2xl font-bold text-foreground">Advanced Features for Amazon FBA & Multi-Channel Sellers</h3>
               <p className="leading-relaxed">
                 Whether you&apos;re an FBA wholesaler, private-label brand, or multi-marketplace seller, Auren&apos;s <strong className="text-foreground">cash flow forecasting dashboard</strong>
-                shows your <em className="text-foreground">daily available cash</em> and <em className="text-foreground">expected Amazon payouts</em> at a glance. You can even run <a href="/features/scenario-planning" className="text-primary underline hover:text-primary/80">what-if scenarios</a>
+                shows your <em className="text-foreground">daily available cash</em> and <em className="text-foreground">expected Amazon payouts</em> at a glance. You can even run <a href="/features/scenario-planning" className="text-primary hover:underline">what-if scenarios</a>
                 to test how changes in sales volume, ad spend, or restocks affect your future cash position. Our <strong className="text-foreground">AI-powered insights</strong> help you optimize spending and maximize profitability.
               </p>
 
@@ -1812,7 +1797,7 @@ const Landing = () => {
                 By automating your <strong className="text-foreground">seller cash flow tracking</strong>, Auren helps you replace complex spreadsheets with clarity and confidence. Our platform integrates with
                 your bank accounts, credit cards, and Amazon seller accounts to provide real-time visibility into your financial health.
                 Join hundreds of sellers using Auren to take control of their finances, prevent cash gaps,
-                and scale confidently on Amazon and beyond. Start your <Link to="/pricing" className="text-primary underline hover:text-primary/80">free 7-day trial</Link> today — no credit card required.
+                and scale confidently on Amazon and beyond. Start your <Link to="/pricing" className="text-primary hover:underline">free 7-day trial</Link> today — no credit card required.
               </p>
             </div>
 
@@ -1827,7 +1812,7 @@ const Landing = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-primary text-primary-foreground" style={{ contain: 'layout style' }}>
+      <section className="py-20 bg-gradient-primary text-primary-foreground">
         <div className="container mx-auto px-4 text-center space-y-8">
           <h2 className="text-3xl lg:text-4xl font-bold">
             Start Forecasting Your Cashflow Today
