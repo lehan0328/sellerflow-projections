@@ -359,10 +359,31 @@ export const useUserSettings = () => {
 
       // Delete parent records (bank accounts, vendors, etc.)
       console.log('🗑️ Step 2: Deleting parent records...');
+      // Reset Amazon accounts sync status instead of deleting them
+      const { data: amazonAccounts } = await supabase
+        .from('amazon_accounts')
+        .select('id')
+        .eq('account_id', accountId);
+
+      if (amazonAccounts && amazonAccounts.length > 0) {
+        for (const account of amazonAccounts) {
+          await supabase
+            .from('amazon_accounts')
+            .update({
+              last_synced_to: null,
+              initial_sync_complete: false,
+              sync_status: 'idle',
+              sync_progress: 0,
+              sync_message: 'Ready to sync'
+            })
+            .eq('id', account.id);
+        }
+        console.log(`✅ Reset ${amazonAccounts.length} Amazon account(s) sync status`);
+      }
+
       const parentDeletes = [
         { name: 'bank_accounts', promise: supabase.from('bank_accounts').delete().eq('account_id', accountId) },
         { name: 'credit_cards', promise: supabase.from('credit_cards').delete().eq('account_id', accountId) },
-        { name: 'amazon_accounts', promise: supabase.from('amazon_accounts').delete().eq('account_id', accountId) },
         { name: 'income', promise: supabase.from('income').delete().eq('account_id', accountId) },
         { name: 'vendors', promise: supabase.from('vendors').delete().eq('account_id', accountId) },
         { name: 'customers', promise: supabase.from('customers').delete().eq('account_id', accountId) },

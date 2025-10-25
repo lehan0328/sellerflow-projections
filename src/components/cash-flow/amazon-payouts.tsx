@@ -145,6 +145,37 @@ export function AmazonPayouts() {
     setIsSyncing(null);
   };
 
+  const handleForceFullResync = async () => {
+    if (amazonAccounts.length === 0) return;
+    
+    try {
+      toast.loading('Resetting sync status...');
+      
+      for (const account of amazonAccounts) {
+        const { error } = await supabase
+          .from('amazon_accounts')
+          .update({
+            last_synced_to: null,
+            initial_sync_complete: false,
+            sync_status: 'idle',
+            sync_progress: 0,
+            sync_message: 'Ready to sync - will fetch full history'
+          })
+          .eq('id', account.id);
+        
+        if (error) throw error;
+      }
+      
+      toast.dismiss();
+      toast.success('Sync status reset! Click "Sync" to fetch full payout history.');
+      refetch();
+    } catch (error: any) {
+      console.error('Failed to reset sync:', error);
+      toast.dismiss();
+      toast.error('Failed to reset sync status');
+    }
+  };
+
   const handleConnectAmazon = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -257,6 +288,19 @@ export function AmazonPayouts() {
                 >
                   <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing || amazonAccounts.some(acc => acc.sync_status === 'syncing') ? 'animate-spin' : ''}`} />
                   {amazonAccounts.some(acc => acc.sync_message?.includes('Rate limited')) ? 'Rate Limited' : 'Sync'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleForceFullResync}
+                  disabled={
+                    isSyncing !== null || 
+                    amazonAccounts.some(acc => acc.sync_status === 'syncing')
+                  }
+                  title="Reset sync and fetch full payout history"
+                >
+                  <Loader2 className="h-4 w-4 mr-2" />
+                  Full Resync
                 </Button>
                 <Button
                   variant="ghost"
