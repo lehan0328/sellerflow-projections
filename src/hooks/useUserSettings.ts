@@ -305,20 +305,30 @@ export const useUserSettings = () => {
 
   const resetAccount = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw new Error('Authentication failed');
+      }
       if (!user) throw new Error('User not authenticated');
 
       console.log('🗑️ Starting account reset for user:', user.id);
 
       // Get user's account_id first
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('account_id')
         .eq('user_id', user.id)
         .maybeSingle();
 
+      if (profileError) {
+        console.error('Profile lookup error:', profileError);
+        throw new Error(`Failed to lookup account: ${profileError.message}`);
+      }
+
       if (!profile?.account_id) {
-        throw new Error('Account not found');
+        console.error('No account_id found for user:', user.id);
+        throw new Error('Account not found. Please contact support.');
       }
 
       const accountId = profile.account_id;
@@ -343,19 +353,27 @@ export const useUserSettings = () => {
       ];
 
       const dependentResults = await Promise.allSettled(dependentDeletes.map(op => op.promise));
+      let failedDeletions: string[] = [];
+      
       dependentResults.forEach((result, index) => {
         const opName = dependentDeletes[index].name;
         if (result.status === 'fulfilled') {
           const { error } = result.value;
           if (error) {
             console.error(`❌ Failed to delete ${opName}:`, error);
+            failedDeletions.push(opName);
           } else {
             console.log(`✅ Deleted ${opName}`);
           }
         } else {
           console.error(`❌ Delete operation failed for ${opName}:`, result.reason);
+          failedDeletions.push(opName);
         }
       });
+
+      if (failedDeletions.length > 0) {
+        console.warn(`⚠️ Some dependent records failed to delete: ${failedDeletions.join(', ')}`);
+      }
 
       // Delete parent records (bank accounts, vendors, etc.)
       console.log('🗑️ Step 2: Deleting parent records...');
@@ -417,6 +435,7 @@ export const useUserSettings = () => {
       ];
 
       const results = await Promise.allSettled(parentDeletes.map(op => op.promise));
+      let parentFailures: string[] = [];
       
       // Log results
       results.forEach((result, index) => {
@@ -425,13 +444,19 @@ export const useUserSettings = () => {
           const { error } = result.value;
           if (error) {
             console.error(`❌ Failed to delete ${opName}:`, error);
+            parentFailures.push(opName);
           } else {
             console.log(`✅ Deleted ${opName}`);
           }
         } else {
           console.error(`❌ Delete operation failed for ${opName}:`, result.reason);
+          parentFailures.push(opName);
         }
       });
+
+      if (parentFailures.length > 0) {
+        console.warn(`⚠️ Some parent records failed to delete: ${parentFailures.join(', ')}`);
+      }
 
       // Fetch existing user roles to preserve them
       const { data: existingRoles } = await supabase
@@ -504,7 +529,7 @@ export const useUserSettings = () => {
 
       if (upsertError) {
         console.error('Failed to reset user settings:', upsertError);
-        throw upsertError;
+        throw new Error(`Failed to reset user settings: ${upsertError.message}`);
       }
 
       console.log('✅ Reset user_settings');

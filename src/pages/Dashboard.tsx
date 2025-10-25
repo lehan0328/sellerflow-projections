@@ -183,8 +183,21 @@ const Dashboard = () => {
   };
 
   const handleClearAllData = async () => {
-    console.log('🗑️ Dashboard - calling resetAccount');
-    await resetAccount();
+    try {
+      console.log('🗑️ Dashboard - calling resetAccount');
+      toast({
+        title: "Clearing data...",
+        description: "This may take a moment",
+      });
+      await resetAccount();
+    } catch (error) {
+      console.error('Error clearing data:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to clear account data. Please try again or contact support.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleResetReserve = async () => {
