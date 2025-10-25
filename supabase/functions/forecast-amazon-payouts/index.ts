@@ -282,6 +282,45 @@ serve(async (req) => {
     const historicalData = Object.values(monthlyData).sort((a: any, b: any) => 
       a.month.localeCompare(b.month)
     );
+
+    // Calculate seasonal multipliers from historical data
+    const seasonalMultipliers: Record<number, number> = {}; // month (1-12) -> multiplier
+    if (historicalData.length >= 6) {
+      // Calculate average payout across all months
+      const avgMonthlyPayout = historicalData.reduce((sum: number, m: any) => sum + m.avg_amount, 0) / historicalData.length;
+      
+      // Calculate multiplier for each calendar month based on historical performance
+      const monthPerformance: Record<number, number[]> = {}; // month -> [amounts]
+      
+      historicalData.forEach((m: any) => {
+        const monthNum = parseInt(m.month.split('-')[1]); // Extract month (1-12)
+        if (!monthPerformance[monthNum]) {
+          monthPerformance[monthNum] = [];
+        }
+        monthPerformance[monthNum].push(m.avg_amount);
+      });
+      
+      // Calculate average for each month and derive multiplier
+      Object.keys(monthPerformance).forEach(monthStr => {
+        const monthNum = parseInt(monthStr);
+        const amounts = monthPerformance[monthNum];
+        const monthAvg = amounts.reduce((sum, amt) => sum + amt, 0) / amounts.length;
+        seasonalMultipliers[monthNum] = avgMonthlyPayout > 0 ? monthAvg / avgMonthlyPayout : 1.0;
+      });
+      
+      console.log('[FORECAST] Seasonal multipliers calculated:', seasonalMultipliers);
+      console.log('[FORECAST] Example: Q4 months typically show higher multipliers (Oct=10, Nov=11, Dec=12)');
+    } else {
+      console.log('[FORECAST] Insufficient data for seasonal analysis (need 6+ months)');
+      // Default multipliers - slight boost for Q4
+      for (let i = 1; i <= 12; i++) {
+        if (i >= 10 && i <= 12) {
+          seasonalMultipliers[i] = 1.15; // Q4 boost
+        } else {
+          seasonalMultipliers[i] = 1.0;
+        }
+      }
+    }
     
     // Calculate weighted average payout for baseline (prioritize recent payouts)
     // Recent payouts are more indicative of current business performance
@@ -640,12 +679,21 @@ Return ONLY this JSON (no markdown):
             calculationMethod = 'baseline_with_variation';
           }
           
-          // Apply risk adjustment: -5 = +5%, 0 = no adjustment, 5 = -5%, 10 = -10%
-          const riskMultiplier = 1 - (riskAdjustment / 100);
-          const predictedAmount = Math.round(basePrediction * riskMultiplier);
+          // Apply seasonal adjustment based on historical month performance
+          const forecastMonth = currentDate.getMonth() + 1; // 1-12
+          const seasonalMultiplier = seasonalMultipliers[forecastMonth] || 1.0;
+          const seasonallyAdjusted = basePrediction * seasonalMultiplier;
           
           if (dayCount <= 3 || dayCount % 14 === 0 || (payoutFrequency === 'bi-weekly')) {
-            console.log(`[FORECAST] ${amazonAccount.account_name} - ${payoutFrequency === 'daily' ? 'Day' : 'Period'} ${dayCount} after ${riskAdjustment}% risk adjustment: ${basePrediction.toFixed(2)} * ${riskMultiplier.toFixed(2)} = ${predictedAmount}`);
+            console.log(`[FORECAST] ${amazonAccount.account_name} - Month ${forecastMonth} seasonal adjustment: ${basePrediction.toFixed(2)} * ${seasonalMultiplier.toFixed(2)} = ${seasonallyAdjusted.toFixed(2)}`);
+          }
+          
+          // Apply risk adjustment: -5 = +5%, 0 = no adjustment, 5 = -5%, 10 = -10%
+          const riskMultiplier = 1 - (riskAdjustment / 100);
+          const predictedAmount = Math.round(seasonallyAdjusted * riskMultiplier);
+          
+          if (dayCount <= 3 || dayCount % 14 === 0 || (payoutFrequency === 'bi-weekly')) {
+            console.log(`[FORECAST] ${amazonAccount.account_name} - ${payoutFrequency === 'daily' ? 'Day' : 'Period'} ${dayCount} final: base ${basePrediction.toFixed(2)} → seasonal ${seasonallyAdjusted.toFixed(2)} → risk-adjusted ${predictedAmount}`);
           }
           
           const forecastPayout = {
@@ -678,6 +726,8 @@ Return ONLY this JSON (no markdown):
                 baseline_amount: baselineAmount,
                 demo_multiplier: 1,
                 base_prediction: basePrediction,
+                seasonal_multiplier: seasonalMultiplier,
+                seasonally_adjusted: seasonallyAdjusted,
                 risk_multiplier: 1 - (riskAdjustment / 100)
               }
             }
