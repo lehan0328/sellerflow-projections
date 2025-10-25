@@ -112,6 +112,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       console.log('🏦 [SAFE SPENDING] Total Bank Balance:', bankBalance);
       console.log('🏦 [SAFE SPENDING] useAvailableBalance toggle:', useAvailableBalance);
       console.log('🔒 Account ID:', profile.account_id);
+      console.log('🔄 [SAFE SPENDING] Reserve amount:', reserve);
       
       console.log('🔄 [SAFE SPENDING] Using balance type:', useAvailableBalance ? 'Available' : 'Current', 'Balance:', bankBalance);
 
@@ -519,10 +520,16 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       const minDayIndex = dailyBalances.findIndex(d => d.balance === minBalance);
       const minDay = dailyBalances[minDayIndex];
       
-      console.log(`🔍 Lowest Projected Balance Search:`);
-      console.log(`  - Searched ${dailyBalances.length} days (${todayStr} to ${futureDateStr})`);
-      console.log(`  - Found lowest: $${minBalance.toFixed(2)} on ${minDay.date}`);
-      console.log(`  - This is ${Math.round((new Date(minDay.date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24))} days from today`);
+      console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+      console.log(`🔍 LOWEST PROJECTED BALANCE CALCULATION:`);
+      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+      console.log(`  Starting Balance: $${bankBalance.toFixed(2)}`);
+      console.log(`  Reserve Amount: $${reserve.toFixed(2)}`);
+      console.log(`  Searched ${dailyBalances.length} days (${todayStr} to ${futureDateStr})`);
+      console.log(`  Found lowest projected: $${minBalance.toFixed(2)} on ${minDay.date}`);
+      console.log(`  This is ${Math.round((new Date(minDay.date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24))} days from today`);
+      console.log(`  Safe to spend: $${minBalance.toFixed(2)} - $${reserve.toFixed(2)} = $${(minBalance - reserve).toFixed(2)}`);
+      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
       
       console.log('\n🔍 SCANNING FOR BUYING OPPORTUNITIES...');
       console.log('📊 First 30 days of balances:');

@@ -63,9 +63,79 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
   const [plaidMetadata, setPlaidMetadata] = useState<any>(null);
   const [plaidPublicToken, setPlaidPublicToken] = useState<string | null>(null);
   const [showPlaidConfirmation, setShowPlaidConfirmation] = useState(false);
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(() => {
+    const saved = localStorage.getItem('autoSyncBankAccounts');
+    return saved === 'true';
+  });
+  const [isAutoSyncing, setIsAutoSyncing] = useState(false);
 
   // Use prop value if provided, otherwise use local state
   const useActualBalance = useAvailableBalance === undefined ? localUseActualBalance : !useAvailableBalance;
+
+  // Auto-sync all connected accounts
+  const handleAutoSyncAll = async () => {
+    const plaidAccounts = accounts.filter(acc => acc.plaid_account_id);
+    if (plaidAccounts.length === 0) {
+      toast.error('No connected accounts to sync');
+      return;
+    }
+
+    setIsAutoSyncing(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const account of plaidAccounts) {
+      try {
+        await handleSyncTransactions(account.id, account.plaid_account_id!);
+        successCount++;
+        // Add delay between syncs to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (error) {
+        console.error(`Failed to sync ${account.account_name}:`, error);
+        errorCount++;
+      }
+    }
+
+    setIsAutoSyncing(false);
+    
+    if (errorCount === 0) {
+      toast.success(`Successfully synced ${successCount} account(s)`);
+    } else {
+      toast.error(`Synced ${successCount}, failed ${errorCount} account(s)`);
+    }
+  };
+
+  const toggleAutoSync = (enabled: boolean) => {
+    setAutoSyncEnabled(enabled);
+    localStorage.setItem('autoSyncBankAccounts', enabled.toString());
+    
+    if (enabled) {
+      toast.success('Auto-sync enabled - accounts will sync automatically');
+      handleAutoSyncAll();
+    } else {
+      toast.info('Auto-sync disabled');
+    }
+  };
+
+  // Auto-sync on mount if enabled
+  useEffect(() => {
+    if (autoSyncEnabled && accounts.length > 0) {
+      const plaidAccounts = accounts.filter(acc => acc.plaid_account_id);
+      if (plaidAccounts.length > 0) {
+        // Check if any account needs syncing (last sync > 1 hour ago)
+        const needsSync = plaidAccounts.some(acc => {
+          const lastSync = new Date(acc.last_sync);
+          const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+          return lastSync < oneHourAgo;
+        });
+
+        if (needsSync) {
+          console.log('Auto-syncing accounts...');
+          handleAutoSyncAll();
+        }
+      }
+    }
+  }, [autoSyncEnabled, accounts.length]);
   
   const handleToggle = (checked: boolean) => {
     setPendingBalanceToggle(checked);
@@ -383,6 +453,20 @@ export function BankAccounts({ useAvailableBalance, onToggleBalance }: { useAvai
               <Label htmlFor="balance-toggle" className="text-xs text-muted-foreground cursor-pointer">
                 Current
               </Label>
+            </div>
+            <div className="flex items-center gap-2 mr-4 border-l pl-4">
+              <Label htmlFor="auto-sync-toggle" className="text-xs text-muted-foreground cursor-pointer">
+                Auto-Sync
+              </Label>
+              <Switch
+                id="auto-sync-toggle"
+                checked={autoSyncEnabled}
+                onCheckedChange={toggleAutoSync}
+                disabled={isAutoSyncing}
+              />
+              {isAutoSyncing && (
+                <RefreshCw className="h-3 w-3 animate-spin text-muted-foreground" />
+              )}
             </div>
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Total Balance</p>
