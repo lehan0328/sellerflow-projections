@@ -289,26 +289,54 @@ export function AmazonPayouts() {
                   <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing || amazonAccounts.some(acc => acc.sync_status === 'syncing') ? 'animate-spin' : ''}`} />
                   {amazonAccounts.some(acc => acc.sync_message?.includes('Rate limited')) ? 'Rate Limited' : 'Sync'}
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleForceFullResync}
-                  disabled={
-                    isSyncing !== null || 
-                    amazonAccounts.some(acc => acc.sync_status === 'syncing')
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleForceFullResync}
+                disabled={
+                  isSyncing !== null || 
+                  amazonAccounts.some(acc => acc.sync_status === 'syncing')
+                }
+                title="Reset sync and fetch full payout history"
+              >
+                <Loader2 className="h-4 w-4 mr-2" />
+                Full Resync
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const account = amazonAccounts[0];
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session) return;
+                    
+                    toast.loading('Fixing account settings...');
+                    const { error } = await supabase.functions.invoke('fix-amazon-account-settings', {
+                      body: { accountId: account.id, payoutModel: 'bi-weekly' },
+                      headers: { Authorization: `Bearer ${session.access_token}` },
+                    });
+                    
+                    toast.dismiss();
+                    if (error) throw error;
+                    toast.success('Account updated to bi-weekly. Click "Sync" to refresh.');
+                    refetch();
+                  } catch (error) {
+                    toast.dismiss();
+                    toast.error('Failed to update account');
                   }
-                  title="Reset sync and fetch full payout history"
-                >
-                  <Loader2 className="h-4 w-4 mr-2" />
-                  Full Resync
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/amazon-transactions-test")}
-                >
-                  Test Data
-                </Button>
+                }}
+                title="Fix to bi-weekly and reset stuck sync"
+              >
+                Fix Account
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/amazon-transactions-test")}
+              >
+                Test Data
+              </Button>
               </>}
           </div>
         </div>
