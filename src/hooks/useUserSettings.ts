@@ -375,49 +375,18 @@ export const useUserSettings = () => {
         console.warn(`⚠️ Some dependent records failed to delete: ${failedDeletions.join(', ')}`);
       }
 
-      // Delete parent records (bank accounts, vendors, etc.)
       console.log('🗑️ Step 2: Deleting parent records...');
-      // Reset Amazon accounts sync status and trigger full resync
-      const { data: amazonAccounts } = await supabase
+      
+      // Option: Delete Amazon accounts entirely (user wants this wiped)
+      const { error: amazonDeleteError } = await supabase
         .from('amazon_accounts')
-        .select('id')
+        .delete()
         .eq('account_id', accountId);
 
-      if (amazonAccounts && amazonAccounts.length > 0) {
-        console.log(`🔄 Resetting ${amazonAccounts.length} Amazon account(s)...`);
-        
-        for (const account of amazonAccounts) {
-          // Reset sync status to force full historical sync
-          const { error: resetError } = await supabase
-            .from('amazon_accounts')
-            .update({
-              last_synced_to: null,
-              initial_sync_complete: false,
-              sync_status: 'idle',
-              sync_progress: 0,
-              sync_message: 'Ready for full sync'
-            })
-            .eq('id', account.id);
-
-          if (resetError) {
-            console.error('Failed to reset Amazon account:', resetError);
-            continue;
-          }
-
-          // Immediately trigger a full sync
-          try {
-            console.log(`🚀 Triggering sync for account ${account.id}...`);
-            await supabase.functions.invoke('sync-amazon-data', {
-              body: { 
-                accountId: account.id,
-                userId: user.id
-              }
-            });
-          } catch (syncError) {
-            console.error('Failed to trigger sync:', syncError);
-          }
-        }
-        console.log(`✅ Reset and triggered sync for ${amazonAccounts.length} Amazon account(s)`);
+      if (amazonDeleteError) {
+        console.error('Failed to delete Amazon accounts:', amazonDeleteError);
+      } else {
+        console.log('✅ Deleted Amazon accounts');
       }
 
       const parentDeletes = [
@@ -461,7 +430,7 @@ export const useUserSettings = () => {
       // User roles are managed by database triggers, no need to manually preserve them
       console.log('✅ User roles managed by database triggers')
 
-      // Reset user_settings to defaults
+      // Reset user_settings to defaults including reserve amount
       const { error: upsertError } = await supabase
         .from('user_settings')
         .update({
@@ -488,7 +457,7 @@ export const useUserSettings = () => {
         throw new Error(`Failed to reset user settings: ${upsertError.message}`);
       }
 
-      console.log('✅ Reset user_settings');
+      console.log('✅ Reset user_settings including reserve amount');
       setTotalCash(0);
       setForecastsEnabled(false);
       
