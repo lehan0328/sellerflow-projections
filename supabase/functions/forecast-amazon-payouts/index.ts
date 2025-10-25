@@ -370,12 +370,24 @@ serve(async (req) => {
         // If Amazon has an open settlement (estimated), start forecasts AFTER that date
         let lastPayoutDate;
         let hasOpenSettlement = false;
+        let openSettlementAmount = 0;
         
         if (estimatedPayouts && estimatedPayouts.length > 0) {
           // Amazon already provided the next payout estimate, start from there
           lastPayoutDate = new Date(estimatedPayouts[0].payout_date);
           hasOpenSettlement = true;
-          console.log(`[FORECAST] Found Amazon open settlement for ${amazonAccount.account_name}, will start forecasts after ${estimatedPayouts[0].payout_date}`);
+          openSettlementAmount = Number(estimatedPayouts[0].total_amount || 0);
+          console.log(`[FORECAST] Found Amazon open settlement for ${amazonAccount.account_name}:`);
+          console.log(`  - Date: ${estimatedPayouts[0].payout_date}`);
+          console.log(`  - Amount: $${openSettlementAmount}`);
+          console.log(`  - Will start forecasts after this date`);
+          
+          // For DAILY payouts, we need to be careful not to double-count
+          // The open settlement represents accumulated sales up to that date
+          if (payoutFrequency === 'daily') {
+            console.log(`  - NOTE: For daily payouts, open settlement covers period up to ${estimatedPayouts[0].payout_date}`);
+            console.log(`  - Future forecasts will use baseline from transactions AFTER this open settlement`);
+          }
         } else {
           // No open settlement, start from last confirmed payout
           lastPayoutDate = new Date(amazonPayouts[0].payout_date);
@@ -536,38 +548,69 @@ serve(async (req) => {
           let calculationMethod = 'baseline';
           
           if (payoutFrequency === 'daily') {
-            // For first 14 days: use recent sales trend if available
+            // For daily payouts: Add realistic day-to-day variation
+            // Each day should have unique characteristics based on actual sales patterns
+            
+            // Use a combination of:
+            // 1. Day of week pattern (weekdays vs weekends)
+            // 2. Random variation to simulate natural fluctuations
+            // 3. Sales trend if available
+            
+            const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 6 = Saturday
+            
+            // Day of week multiplier (weekends typically lower sales)
+            let dayMultiplier = 1.0;
+            if (dayOfWeek === 0) { // Sunday
+              dayMultiplier = 0.75;
+            } else if (dayOfWeek === 6) { // Saturday
+              dayMultiplier = 0.85;
+            } else if (dayOfWeek === 1) { // Monday (often higher)
+              dayMultiplier = 1.05;
+            }
+            
+            // Add significant random variation (80-120% of baseline)
+            const randomVariation = 0.80 + (Math.random() * 0.40);
+            
+            // For first 14 days: incorporate recent sales trend
             if (dayCount <= 14 && last14DaysSales.length > 0) {
-              // Project sales forward based on recent trend
               const avgRecentSales = last14DaysSales.reduce((a, b) => a + b, 0) / last14DaysSales.length;
-              const projectedSales = avgRecentSales + (recentSalesTrend * dayCount);
-              
-              // Payout is typically ~90% of sales (after fees)
-              basePrediction = projectedSales * 0.90;
-              calculationMethod = 'recent_sales_trend';
+              const trendAdjustment = 1 + (recentSalesTrend / avgRecentSales) * dayCount * 0.1;
+              basePrediction = baselineAmount * dayMultiplier * randomVariation * Math.max(0.5, Math.min(1.5, trendAdjustment));
+              calculationMethod = 'daily_with_trend';
               
               if (dayCount === 1) {
-                console.log(`[FORECAST] ${amazonAccount.account_name} - Using recent sales trend for first 14 days:`, {
-                  avgRecentSales: avgRecentSales.toFixed(2),
-                  dailyTrend: recentSalesTrend.toFixed(2),
-                  payoutMultiplier: 0.90
+                console.log(`[FORECAST] ${amazonAccount.account_name} - Daily forecast with trend:`, {
+                  baseline: baselineAmount.toFixed(2),
+                  dayOfWeek,
+                  dayMultiplier,
+                  randomVariation: randomVariation.toFixed(3),
+                  trendAdjustment: trendAdjustment.toFixed(3)
                 });
               }
             } else {
-              // Days 15-90: use historical daily average with variation for realism
-              const variation = 0.92 + (Math.random() * 0.16); // 92-108% variation
-              basePrediction = baselineAmount * variation;
-              calculationMethod = 'historical_avg_with_variation';
+              // Days 15-90: use baseline with day-of-week and random variation
+              basePrediction = baselineAmount * dayMultiplier * randomVariation;
+              calculationMethod = 'daily_pattern';
             }
             
-            if (dayCount === 1 || dayCount === 15) {
-              console.log(`[FORECAST] ${amazonAccount.account_name} - Day ${dayCount} prediction method: ${calculationMethod}, amount: ${basePrediction.toFixed(2)}`);
+            if (dayCount === 1 || dayCount === 15 || dayCount === 30) {
+              console.log(`[FORECAST] ${amazonAccount.account_name} - Day ${dayCount} (${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayOfWeek]}):`, {
+                method: calculationMethod,
+                dayMultiplier: dayMultiplier.toFixed(2),
+                amount: basePrediction.toFixed(2)
+              });
             }
           } else {
-            // Add 5-10% variation for realism on bi-weekly
-            const variation = 0.95 + (Math.random() * 0.15);
-            basePrediction = baselineAmount * variation;
-            calculationMethod = 'baseline_with_variation';
+            // Bi-weekly: Add more significant variation between periods (85-115%)
+            const periodVariation = 0.85 + (Math.random() * 0.30);
+            basePrediction = baselineAmount * periodVariation;
+            calculationMethod = 'biweekly_with_variation';
+            
+            console.log(`[FORECAST] ${amazonAccount.account_name} - Period ${dayCount}:`, {
+              baseline: baselineAmount.toFixed(2),
+              variation: periodVariation.toFixed(3),
+              predicted: basePrediction.toFixed(2)
+            });
           }
           
           // Apply seasonal adjustment based on historical month performance
