@@ -90,44 +90,15 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         .eq('account_id', profile.account_id)
         .eq('is_active', true);
 
-      // Fetch pending transactions to calculate true available balance
-      const { data: pendingTransactions, error: pendingError } = await supabase
-        .from('bank_transactions')
-        .select('bank_account_id, amount')
-        .eq('pending', true)
-        .eq('archived', false);
-
-      if (pendingError) {
-        console.error('❌ [SAFE SPENDING] Error fetching pending transactions:', pendingError);
-      }
-
-      // Calculate pending totals per account (debits reduce available balance)
-      const pendingByAccount = (pendingTransactions || []).reduce((acc, txn) => {
-        if (!acc[txn.bank_account_id]) {
-          acc[txn.bank_account_id] = 0;
-        }
-        // Negative amounts are debits (money out), positive are credits (money in)
-        // Deduct debits from available balance
-        acc[txn.bank_account_id] += txn.amount;
-        return acc;
-      }, {} as Record<string, number>);
-
-      console.log('💳 [SAFE SPENDING] Pending transactions by account:', pendingByAccount);
-
       const bankBalance = bankAccounts?.reduce((sum, acc) => {
-        const pendingAmount = pendingByAccount[acc.id] || 0;
-        const baseAvailable = acc.available_balance ?? acc.balance;
-        
-        // When using available balance mode, subtract pending transactions
-        const trueAvailable = useAvailableBalance 
-          ? baseAvailable - pendingAmount
-          : acc.balance;
-        
+        // When using available_balance mode, trust the bank's available_balance
+        // as it already accounts for pending transactions (from Plaid)
+        // When using current balance mode, just use the balance as-is
         const balanceToUse = useAvailableBalance 
-          ? trueAvailable
+          ? (acc.available_balance ?? acc.balance)
           : acc.balance;
         
-        console.log(`💳 [SAFE SPENDING] Account ${acc.account_name}: Base: $${acc.balance}, Available: $${baseAvailable}, Pending: $${pendingAmount}, True Available: $${trueAvailable}, Using: $${balanceToUse}`);
+        console.log(`💳 [SAFE SPENDING] Account ${acc.account_name}: Balance: $${acc.balance}, Available: $${acc.available_balance}, Using: $${balanceToUse}`);
         
         return sum + Number(balanceToUse || 0);
       }, 0) || 0;
@@ -136,9 +107,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         name: acc.account_name,
         balance: acc.balance,
         available: acc.available_balance,
-        pending: pendingByAccount[acc.id] || 0,
-        trueAvailable: (acc.available_balance ?? acc.balance) - (pendingByAccount[acc.id] || 0),
-        using: useAvailableBalance ? (acc.available_balance ?? acc.balance) - (pendingByAccount[acc.id] || 0) : acc.balance
+        using: useAvailableBalance ? (acc.available_balance ?? acc.balance) : acc.balance
       })));
       console.log('🏦 [SAFE SPENDING] Total Bank Balance:', bankBalance);
       console.log('🏦 [SAFE SPENDING] useAvailableBalance toggle:', useAvailableBalance);
