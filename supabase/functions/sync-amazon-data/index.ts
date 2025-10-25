@@ -206,6 +206,11 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     yesterday.setDate(yesterday.getDate() - 1)
     yesterday.setHours(23, 59, 59, 999)
 
+    // For settlements, always fetch full year for seasonal patterns
+    let settlementsStartDate = new Date()
+    settlementsStartDate.setDate(settlementsStartDate.getDate() - 365)
+    settlementsStartDate.setHours(0, 0, 0, 0)
+
     if (amazonAccount.last_synced_to) {
       // Continue from last successful sync
       startDate = new Date(amazonAccount.last_synced_to)
@@ -216,18 +221,20 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       endDate = new Date(startDate)
       endDate.setHours(23, 59, 59, 999)
       
-      console.log('[SYNC] Incremental mode - fetching from:', startDate.toISOString())
+      console.log('[SYNC] Incremental mode - fetching transactions from:', startDate.toISOString())
     } else {
-      // First sync - start from 365 days ago to get full year of history
+      // First sync - only get last 60 days of detailed transactions
       startDate = new Date()
-      startDate.setDate(startDate.getDate() - 365)
+      startDate.setDate(startDate.getDate() - 60)
       startDate.setHours(0, 0, 0, 0)
       
       endDate = new Date(startDate)
       endDate.setHours(23, 59, 59, 999)
       
-      console.log('[SYNC] Initial sync - starting from:', startDate.toISOString())
+      console.log('[SYNC] Initial sync - fetching transactions from last 60 days:', startDate.toISOString())
     }
+
+    console.log('[SYNC] Settlements window: Full year (365 days) for seasonal analysis')
 
     // Don't sync future dates
     if (startDate > yesterday) {
@@ -257,17 +264,18 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       })
       .eq('id', amazonAccountId)
 
-    // First, fetch settlement groups (actual payouts)
+    // First, fetch settlement groups (actual payouts) - ALWAYS fetch full year for seasonal patterns
     const eventGroupsUrl = `${apiEndpoint}/finances/v0/financialEventGroups`
     const settlementsToAdd: any[] = []
     
-    console.log('[SYNC] Fetching settlement groups...')
+    console.log('[SYNC] Fetching settlement groups (full year for seasonal patterns)...')
     let groupNextToken: string | undefined = undefined
     let groupPageCount = 0
     
     do {
       groupPageCount++
-      let groupUrl = `${eventGroupsUrl}?FinancialEventGroupStartedAfter=${startDate.toISOString()}&FinancialEventGroupStartedBefore=${endDate.toISOString()}&MaxResultsPerPage=100`
+      // Use settlementsStartDate (365 days) for settlements, not startDate
+      let groupUrl = `${eventGroupsUrl}?FinancialEventGroupStartedAfter=${settlementsStartDate.toISOString()}&FinancialEventGroupStartedBefore=${yesterday.toISOString()}&MaxResultsPerPage=100`
       
       if (groupNextToken) {
         groupUrl += `&NextToken=${encodeURIComponent(groupNextToken)}`
