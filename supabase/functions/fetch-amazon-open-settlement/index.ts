@@ -121,17 +121,28 @@ Deno.serve(async (req) => {
       
       for (const group of groups) {
         if (group.FinancialEventGroupId) {
-          const settlementDate = group.FinancialEventGroupEnd ? 
+          // Get settlement end date (closing date)
+          const settlementEndDate = group.FinancialEventGroupEnd ? 
             new Date(group.FinancialEventGroupEnd) : null
           
-          const status = settlementDate && settlementDate <= new Date() ? 'confirmed' : 'estimated'
-          const type = settlementDate && settlementDate <= new Date() ? 'settlement' : 'open_settlement'
+          // Calculate payout date: Amazon pays 1 day AFTER settlement closes
+          let payoutDate: string
+          if (settlementEndDate) {
+            const payoutDateObj = new Date(settlementEndDate)
+            payoutDateObj.setDate(payoutDateObj.getDate() + 1) // Add 1 day for bank deposit
+            payoutDate = payoutDateObj.toISOString().split('T')[0]
+          } else {
+            payoutDate = new Date().toISOString().split('T')[0]
+          }
+          
+          const status = settlementEndDate && settlementEndDate <= new Date() ? 'confirmed' : 'estimated'
+          const type = settlementEndDate && settlementEndDate <= new Date() ? 'settlement' : 'open_settlement'
           
           settlementsToAdd.push({
             user_id: user.id,
             amazon_account_id: amazonAccountId,
             settlement_id: group.FinancialEventGroupId,
-            payout_date: settlementDate ? settlementDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            payout_date: payoutDate, // Now uses closing date + 1
             total_amount: parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0'),
             currency: group.ConvertedTotal?.CurrencyCode || group.OriginalTotal?.CurrencyCode || 'USD',
             status: status,
