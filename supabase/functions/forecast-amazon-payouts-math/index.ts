@@ -115,6 +115,28 @@ serve(async (req) => {
 
       const reserveLag = account.reserve_lag_days || defaultReserveLag;
       const reserveMultiplier = account.reserve_multiplier || 1.0;
+      
+      // Check if there's an open settlement for this account
+      const { data: openSettlement } = await supabase
+        .from('amazon_payouts')
+        .select('payout_date')
+        .eq('amazon_account_id', account.id)
+        .eq('status', 'estimated')
+        .order('payout_date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      // Use open settlement's end date if available, otherwise use today
+      let forecastStartDate = new Date();
+      forecastStartDate.setHours(0, 0, 0, 0);
+      
+      if (openSettlement?.payout_date) {
+        forecastStartDate = new Date(openSettlement.payout_date);
+        forecastStartDate.setHours(0, 0, 0, 0);
+        console.log(`[MATH-FORECAST] Found open settlement ending ${openSettlement.payout_date}. Forecasts will start 14 days from this date.`);
+      } else {
+        console.log(`[MATH-FORECAST] No open settlement found. Forecasts will start from today.`);
+      }
 
       // Fetch transactions from last 60 days for accurate trend analysis
       const { data: transactions } = await supabase
@@ -191,7 +213,8 @@ serve(async (req) => {
           reserveLag,
           reserveMultiplier,
           minReserveFloor,
-          riskAdjustment
+          riskAdjustment,
+          forecastStartDate
         );
         allForecasts.push(...forecasts);
       } else {
@@ -203,7 +226,8 @@ serve(async (req) => {
           processedTransactions,
           reserveLag,
           minReserveFloor,
-          riskAdjustment
+          riskAdjustment,
+          forecastStartDate
         );
         allForecasts.push(...forecasts);
       }
@@ -245,10 +269,11 @@ function generateBiWeeklyForecasts(
   reserveLag: number,
   reserveMultiplier: number,
   minReserve: number,
-  riskAdjustment: number
+  riskAdjustment: number,
+  startDate?: Date
 ): any[] {
   const forecasts: any[] = [];
-  const today = new Date();
+  const today = startDate || new Date();
   today.setHours(0, 0, 0, 0);
 
   // Calculate trend from last 60 days of actual transaction data
@@ -376,10 +401,11 @@ function generateDailyForecasts(
   transactions: any[],
   reserveLag: number,
   minReserveFloor: number,
-  riskAdjustment: number
+  riskAdjustment: number,
+  startDate?: Date
 ): any[] {
   const forecasts: any[] = [];
-  const today = new Date();
+  const today = startDate || new Date();
   today.setHours(0, 0, 0, 0);
 
   // Calculate trend from last 60 days

@@ -60,6 +60,10 @@ export const useAmazonAccounts = () => {
           payout_frequency,
           transaction_count,
           initial_sync_complete,
+          sync_status,
+          sync_progress,
+          sync_message,
+          last_sync_error,
           created_at,
           updated_at
         `)
@@ -77,7 +81,8 @@ export const useAmazonAccounts = () => {
 
       setAmazonAccounts((data || []).map(account => ({
         ...account,
-        payout_frequency: account.payout_frequency as 'daily' | 'bi-weekly'
+        payout_frequency: account.payout_frequency as 'daily' | 'bi-weekly',
+        sync_status: account.sync_status as 'idle' | 'syncing' | 'completed' | 'error' | undefined
       })));
     } catch (error) {
       console.error("Error fetching Amazon accounts:", error);

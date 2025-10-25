@@ -398,18 +398,24 @@ export function AmazonPayouts() {
                     <p className="text-xs text-blue-600 dark:text-blue-300 font-mono">
                       Transactions: {account.transaction_count?.toLocaleString() || 0}
                     </p>
-                    {account.sync_progress !== undefined && (
-                      <Progress value={account.sync_progress} className="h-2 bg-blue-200" />
+                    {account.sync_progress !== undefined && account.sync_progress > 0 && (
+                      <div className="mt-2 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-blue-700 dark:text-blue-300">
+                            {account.sync_message || 'Starting sync...'}
+                          </p>
+                          <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                            {account.sync_progress}%
+                          </span>
+                        </div>
+                        <div className="bg-blue-200 dark:bg-blue-900 rounded-full h-2.5 overflow-hidden">
+                          <div 
+                            className="bg-blue-600 dark:bg-blue-500 h-full rounded-full transition-all duration-500 ease-out"
+                            style={{ width: `${account.sync_progress || 0}%` }}
+                          />
+                        </div>
+                      </div>
                     )}
-                    <p className="text-xs text-blue-700 dark:text-blue-300">
-                      {account.sync_message || 'Starting sync...'}
-                    </p>
-                    <div className="mt-2 bg-blue-200 dark:bg-blue-900 rounded-full h-2">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${account.sync_progress || 0}%` }}
-                      />
-                    </div>
                   </div>
                 ))}
               </div>
