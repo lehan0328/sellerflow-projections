@@ -580,6 +580,11 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         }
       }
 
+      // Rate limiting delay between transaction pages - prevent Amazon throttling
+      if (nextToken) {
+        await new Promise(resolve => setTimeout(resolve, 500)) // 0.5 second delay
+      }
+
     } while (nextToken)
     
     console.log(`[SYNC] Pagination complete after ${pageCount} pages`)
