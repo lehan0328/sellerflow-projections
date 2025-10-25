@@ -262,7 +262,7 @@ export default function Onboarding() {
         // If enabled, generate initial forecasts
         if (forecastingEnabled) {
           toast.loading("Setting up your forecasts...");
-          const { error: forecastError } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
+          const { error: forecastError } = await supabase.functions.invoke('forecast-amazon-payouts', {
             body: { userId: user.id }
           });
           
@@ -406,7 +406,7 @@ export default function Onboarding() {
                 
                 <div className="max-w-md mx-auto pt-2">
                   <Label htmlFor="payout-frequency" className="text-left block mb-1.5 text-sm">
-                    Payout Schedule
+                    Initial Payout Schedule
                   </Label>
                   <Select 
                     value={amazonFormData.payout_frequency} 
@@ -423,7 +423,7 @@ export default function Onboarding() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground mt-2">
-                    This helps us forecast your payouts accurately. You can change this later in settings.
+                    After connecting, we'll automatically detect your actual payout schedule from your history. This initial selection helps us get started.
                   </p>
                 </div>
               </div>
@@ -618,7 +618,7 @@ export default function Onboarding() {
                   <div>
                     <h3 className="font-semibold text-lg mb-2">Mathematical Payout Forecasting</h3>
                     <p className="text-sm text-muted-foreground mb-3">
-                      Our forecasting system uses sophisticated mathematical models to predict your Amazon payouts based on:
+                      Our forecasting system analyzes your recent transaction data to predict future payouts:
                     </p>
                   </div>
                 </div>
@@ -626,11 +626,11 @@ export default function Onboarding() {
                 <div className="space-y-2 ml-9 text-sm">
                   <div className="flex items-start gap-2">
                     <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <span><strong>Transaction History:</strong> Analyzes your sales, fees, and settlement patterns</span>
+                    <span><strong>Recent Transaction Analysis:</strong> Uses last 30 days of sales, fees, and activity as the primary data source</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <span><strong>Reserve Modeling:</strong> Calculates held reserves based on Amazon's DD+7 schedule</span>
+                    <span><strong>Open Settlement Data:</strong> Integrates Amazon's pending payout estimates when available</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
@@ -644,7 +644,7 @@ export default function Onboarding() {
 
                 <div className="mt-4 p-4 bg-white/50 dark:bg-black/20 rounded border border-blue-300 dark:border-blue-700">
                   <p className="text-sm text-muted-foreground font-medium">
-                    <strong>Note:</strong> You can enable or disable forecasts anytime from Settings. The system works best when you have at least 3 confirmed payouts for accurate predictions.
+                    <strong>Note:</strong> Forecasts are generated from your actual transaction data. The system works best with at least 30 days of recent sales activity for accurate predictions.
                   </p>
                 </div>
               </div>

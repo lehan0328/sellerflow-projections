@@ -382,26 +382,65 @@ serve(async (req) => {
           console.log(`[FORECAST] No open settlement found, starting from last confirmed payout: ${amazonPayouts[0].payout_date}`);
         }
         
-        // Calculate baseline amount based on frequency
+        // Calculate baseline amount from TRANSACTIONS (not payouts)
         let baselineAmount;
-      if (payoutFrequency === 'daily') {
-          // For daily: calculate average payout per day from historical data
-          // Formula: total payout over set days / # of days for those payouts = payout per day
-          const oldestPayoutDate = new Date(amazonPayouts[amazonPayouts.length - 1].payout_date);
-          const newestPayoutDate = new Date(amazonPayouts[0].payout_date);
-          const daysDiff = Math.ceil((newestPayoutDate.getTime() - oldestPayoutDate.getTime()) / (1000 * 60 * 60 * 24));
-          const totalPayoutAmount = nonForecastedPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
-          baselineAmount = daysDiff > 0 ? totalPayoutAmount / daysDiff : simpleAvg;
-          
-          console.log(`[FORECAST] Daily payout calculation for ${amazonAccount.account_name}:`, {
-            totalPayoutAmount,
-            daysDiff,
-            averagePerDay: baselineAmount,
-            dateRange: `${oldestPayoutDate.toISOString().split('T')[0]} to ${newestPayoutDate.toISOString().split('T')[0]}`
-          });
+        
+        if (!amazonTransactions || amazonTransactions.length === 0) {
+          // Fallback: if no transaction data, use payout history
+          console.log(`[FORECAST] No transaction data, falling back to payout history for ${amazonAccount.account_name}`);
+          if (payoutFrequency === 'daily') {
+            const oldestPayoutDate = new Date(amazonPayouts[amazonPayouts.length - 1].payout_date);
+            const newestPayoutDate = new Date(amazonPayouts[0].payout_date);
+            const daysDiff = Math.ceil((newestPayoutDate.getTime() - oldestPayoutDate.getTime()) / (1000 * 60 * 60 * 24));
+            const totalPayoutAmount = nonForecastedPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
+            baselineAmount = daysDiff > 0 ? totalPayoutAmount / daysDiff : simpleAvg;
+          } else {
+            baselineAmount = avgPayoutAmount;
+          }
         } else {
-          // For bi-weekly: use weighted average
-          baselineAmount = avgPayoutAmount;
+          // PRIMARY METHOD: Calculate from recent transactions
+          console.log(`[FORECAST] Calculating baseline from ${amazonTransactions.length} recent transactions`);
+          
+          // Sum all recent transaction amounts (orders - fees - refunds)
+          let totalOrders = 0;
+          let totalFees = 0;
+          let totalRefunds = 0;
+          
+          amazonTransactions.forEach(txn => {
+            const amount = Number(txn.amount || 0);
+            if (txn.transaction_type === 'Order' || txn.transaction_type === 'Sale') {
+              totalOrders += amount;
+            } else if (txn.transaction_type?.includes('Fee')) {
+              totalFees += Math.abs(amount);
+            } else if (txn.transaction_type === 'Refund') {
+              totalRefunds += Math.abs(amount);
+            }
+          });
+          
+          const netTransactionValue = totalOrders - totalFees - totalRefunds;
+          
+          // Calculate daily average from transaction data
+          const oldestTxDate = new Date(amazonTransactions[amazonTransactions.length - 1].transaction_date);
+          const newestTxDate = new Date(amazonTransactions[0].transaction_date);
+          const transactionDays = Math.max(1, Math.ceil((newestTxDate.getTime() - oldestTxDate.getTime()) / (1000 * 60 * 60 * 24)));
+          const dailyAverage = netTransactionValue / transactionDays;
+          
+          console.log(`[FORECAST] Transaction-based calculation for ${amazonAccount.account_name}:`, {
+            totalOrders,
+            totalFees,
+            totalRefunds,
+            netTransactionValue,
+            transactionDays,
+            dailyAverage,
+            dateRange: `${oldestTxDate.toISOString().split('T')[0]} to ${newestTxDate.toISOString().split('T')[0]}`
+          });
+          
+          if (payoutFrequency === 'daily') {
+            baselineAmount = dailyAverage;
+          } else {
+            // For bi-weekly: multiply daily average by 14
+            baselineAmount = dailyAverage * 14;
+          }
         }
         
         // Generate forecasts for 3 months based on frequency
