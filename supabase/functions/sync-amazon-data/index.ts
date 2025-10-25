@@ -329,6 +329,12 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           }
         }
         
+        // Calculate actual payout date: Amazon pays 1 day after settlement closes
+        let payoutDate = endDate || startDate;
+        const payoutDateObj = new Date(payoutDate);
+        payoutDateObj.setDate(payoutDateObj.getDate() + 1); // Add 1 day for bank deposit
+        payoutDate = payoutDateObj.toISOString().split('T')[0];
+        
         // Process both Closed (confirmed) and Open (estimated) settlements from Amazon
         if (group.OriginalTotal) {
           const totalAmount = parseFloat(group.OriginalTotal?.CurrencyAmount || '0')
@@ -342,12 +348,14 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
             settlementStatus = 'estimated'; // Amazon's pending settlement
           }
           
+          console.log(`[SYNC] Settlement ${settlementId}: closes ${endDate || startDate}, pays ${payoutDate} (status: ${settlementStatus})`);
+          
           settlementsToAdd.push({
             user_id: actualUserId,
             account_id: amazonAccount.account_id,
             amazon_account_id: amazonAccountId,
             settlement_id: settlementId,
-            payout_date: endDate || startDate,
+            payout_date: payoutDate,
             total_amount: totalAmount,
             orders_total: totalAmount, // Will be broken down from events
             fees_total: 0,
