@@ -79,7 +79,15 @@ export const useAmazonPayouts = () => {
       // Filter payouts based on settings
       const filteredPayouts = (data || []).filter((payout) => {
         // Always show Amazon's real settlements (confirmed and estimated/open)
-        if (payout.status === 'confirmed' || payout.status === 'estimated') return true;
+        if (payout.status === 'confirmed' || payout.status === 'estimated') {
+          console.log('[fetchAmazonPayouts] Keeping real settlement:', {
+            id: payout.id,
+            status: payout.status,
+            date: payout.payout_date,
+            amount: payout.total_amount
+          });
+          return true;
+        }
         
         // Only filter our mathematical forecasts based on settings
         if (!forecastsEnabled && payout.status === 'forecasted') return false;
@@ -101,6 +109,9 @@ export const useAmazonPayouts = () => {
         
         return true;
       });
+
+      console.log('[fetchAmazonPayouts] Filtered payouts:', filteredPayouts.length, 'total');
+      console.log('[fetchAmazonPayouts] Open settlements:', filteredPayouts.filter(p => p.status === 'estimated').length);
 
       setAmazonPayouts(filteredPayouts.map(payout => ({
         ...payout,
