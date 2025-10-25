@@ -775,27 +775,49 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       .limit(30)
 
     if (confirmedSettlements && confirmedSettlements.length >= 2) {
-      // Calculate average days between confirmed settlements
-      const sortedDates = confirmedSettlements
-        .map(p => new Date(p.payout_date))
+      // Get unique dates (some dates may have multiple settlements due to adjustments)
+      const uniqueDates = [...new Set(confirmedSettlements.map(p => p.payout_date))]
+        .map(date => new Date(date))
         .sort((a, b) => a.getTime() - b.getTime())
       
+      // Calculate days between consecutive unique settlement dates
       const daysBetween: number[] = []
-      for (let i = 1; i < sortedDates.length; i++) {
-        const diff = (sortedDates[i].getTime() - sortedDates[i-1].getTime()) / (1000 * 60 * 60 * 24)
+      for (let i = 1; i < uniqueDates.length; i++) {
+        const diff = (uniqueDates[i].getTime() - uniqueDates[i-1].getTime()) / (1000 * 60 * 60 * 24)
         daysBetween.push(diff)
       }
       
+      // Find the most common interval (mode) to identify the payout pattern
+      const intervalCounts = daysBetween.reduce((acc, days) => {
+        // Round to nearest day and group similar intervals (13-15 days = bi-weekly)
+        const roundedDays = Math.round(days)
+        const key = roundedDays >= 13 && roundedDays <= 15 ? 14 : roundedDays
+        acc[key] = (acc[key] || 0) + 1
+        return acc
+      }, {} as Record<number, number>)
+      
+      // Get the most common interval
+      const mostCommonInterval = Object.entries(intervalCounts)
+        .sort(([, a], [, b]) => b - a)[0]?.[0]
+      
       const avgDaysBetween = daysBetween.reduce((a, b) => a + b, 0) / daysBetween.length
       
-      console.log(`[SYNC] Detected average payout frequency from ${confirmedSettlements.length} confirmed settlements: ${avgDaysBetween.toFixed(1)} days`)
+      console.log(`[SYNC] Payout frequency analysis:`, {
+        totalSettlements: confirmedSettlements.length,
+        uniqueDates: uniqueDates.length,
+        mostCommonInterval: `${mostCommonInterval} days (${intervalCounts[mostCommonInterval]} times)`,
+        avgInterval: `${avgDaysBetween.toFixed(1)} days`,
+        allIntervals: intervalCounts
+      })
       
-      // If average is >= 14 days, it's bi-weekly. Otherwise it's daily.
-      const isBiWeekly = avgDaysBetween >= 14
+      // If the most common interval is 14 days, or if there are multiple settlements ~14 days apart, it's bi-weekly
+      const biWeeklyCount = intervalCounts[14] || 0
+      const hasBiWeeklyPattern = biWeeklyCount >= 2 || mostCommonInterval === '14'
+      const isBiWeekly = hasBiWeeklyPattern
       const payoutFreq = isBiWeekly ? 'bi-weekly' : 'daily'
       
       if (!isBiWeekly !== amazonAccount.uses_daily_payouts || payoutFreq !== amazonAccount.payout_frequency) {
-        console.log(`[SYNC] Updating payout model to: ${payoutFreq} (avg ${avgDaysBetween.toFixed(1)} days between settlements)`)
+        console.log(`[SYNC] Updating payout model to: ${payoutFreq}`)
         await supabase
           .from('amazon_accounts')
           .update({ 

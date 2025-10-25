@@ -460,12 +460,15 @@ export function AmazonPayouts() {
               </Button>
             </div>
           </div> : (() => {
-          // Group payouts by date and aggregate amounts, exclude past dates
+          // Group payouts by date and aggregate amounts
           const filteredPayouts = amazonPayouts.filter(payout => {
             const daysUntil = getDaysUntil(payout.payout_date);
-            // Always show Amazon's real data (confirmed + estimated), only filter mathematical forecasts
-            if (payout.status === 'confirmed' || payout.status === 'estimated') return daysUntil >= 0;
-            // Filter mathematical forecasts based on toggle
+            // Always show Amazon's open settlement (estimated) even if date is slightly past
+            // because it represents an ongoing period that hasn't closed yet
+            if (payout.status === 'estimated') return true;
+            // Show confirmed settlements if they're today or future
+            if (payout.status === 'confirmed') return daysUntil >= 0;
+            // Filter mathematical forecasts based on toggle and only show future dates
             return daysUntil >= 0 && showForecasts;
           });
           
