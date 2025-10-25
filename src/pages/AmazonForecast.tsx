@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useIncome } from "@/hooks/useIncome";
+import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { 
   TrendingUp, 
   ArrowLeft,
@@ -39,6 +40,7 @@ export default function AmazonForecast() {
   const navigate = useNavigate();
   const { amazonPayouts } = useAmazonPayouts();
   const { incomeItems } = useIncome();
+  const { amazonAccounts } = useAmazonAccounts();
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Check if user has 3+ confirmed payouts
@@ -160,6 +162,54 @@ export default function AmazonForecast() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {/* No Amazon Account Alert */}
+      {amazonAccounts.length === 0 && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+              <div className="space-y-2">
+                <h3 className="font-semibold text-amber-900">No Amazon Account Connected</h3>
+                <p className="text-sm text-amber-800">
+                  To use Amazon Payout Forecasting, you need to first connect your Amazon Seller Central account.
+                </p>
+                <Button 
+                  onClick={() => navigate('/dashboard')} 
+                  variant="outline" 
+                  className="mt-2 border-amber-600 text-amber-900 hover:bg-amber-100"
+                >
+                  Go to Dashboard to Connect Amazon
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* No Payouts Alert */}
+      {amazonAccounts.length > 0 && amazonPayouts.length === 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="space-y-2">
+                <h3 className="font-semibold text-blue-900">No Payout Data Available</h3>
+                <p className="text-sm text-blue-800">
+                  Your Amazon account is connected, but we haven't synced any payout data yet. Please sync your Amazon account to retrieve payout information before generating forecasts.
+                </p>
+                <Button 
+                  onClick={() => navigate('/dashboard')} 
+                  variant="outline" 
+                  className="mt-2 border-blue-600 text-blue-900 hover:bg-blue-100"
+                >
+                  Go to Dashboard to Sync
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Forecast Settings */}
       <ForecastSettings />
 
