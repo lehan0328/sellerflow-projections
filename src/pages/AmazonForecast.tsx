@@ -45,6 +45,7 @@ export default function AmazonForecast() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
   const [amazonTransactions, setAmazonTransactions] = useState<any[]>([]);
+  const [isDeletingSampleData, setIsDeletingSampleData] = useState(false);
 
   // Check if user has 3+ confirmed payouts
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
@@ -57,16 +58,18 @@ export default function AmazonForecast() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Get transactions from last 12 months
+        // Get transactions from last 12 months - only Order type transactions for revenue
         const twelveMonthsAgo = new Date();
         twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
         const { data, error } = await supabase
-          .from('amazon_transactions_daily_summary')
-          .select('settlement_date, orders_total')
+          .from('amazon_transactions')
+          .select('transaction_date, amount, transaction_type')
           .eq('user_id', user.id)
-          .gte('settlement_date', twelveMonthsAgo.toISOString())
-          .order('settlement_date', { ascending: true });
+          .eq('transaction_type', 'Order')
+          .neq('marketplace_name', 'Amazon.com')
+          .gte('transaction_date', twelveMonthsAgo.toISOString())
+          .order('transaction_date', { ascending: true });
 
         if (error) throw error;
         setAmazonTransactions(data || []);
@@ -90,24 +93,26 @@ export default function AmazonForecast() {
       monthlyData[key] = { revenue: 0, payouts: 0, count: 0 };
     }
 
-    // Aggregate revenue from Amazon transactions (order totals before fees)
+    // Aggregate revenue from Amazon transactions (order amounts before fees)
     amazonTransactions.forEach(txn => {
-      const date = new Date(txn.settlement_date);
+      const date = new Date(txn.transaction_date);
       const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
       if (monthlyData[key]) {
-        monthlyData[key].revenue += Number(txn.orders_total || 0);
+        monthlyData[key].revenue += Number(txn.amount || 0);
       }
     });
 
-    // Aggregate payouts (net after fees, returns, etc.)
-    amazonPayouts.forEach(payout => {
-      const date = new Date(payout.payout_date);
-      const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      if (monthlyData[key]) {
-        monthlyData[key].payouts += Number(payout.total_amount || 0);
-        monthlyData[key].count += 1;
-      }
-    });
+    // Aggregate payouts (net after fees, returns, etc.) - only confirmed payouts, exclude sample data
+    amazonPayouts
+      .filter(payout => payout.status === 'confirmed' && payout.marketplace_name !== 'Amazon.com')
+      .forEach(payout => {
+        const date = new Date(payout.payout_date);
+        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (monthlyData[key]) {
+          monthlyData[key].payouts += Number(payout.total_amount || 0);
+          monthlyData[key].count += 1;
+        }
+      });
 
     return Object.entries(monthlyData).map(([month, data]) => ({
       month,
@@ -151,15 +156,39 @@ export default function AmazonForecast() {
     }
   };
 
+  const deleteSampleData = async () => {
+    setIsDeletingSampleData(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-sample-amazon-data");
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success(`Sample data deleted: ${data.deleted.payouts} payouts, ${data.deleted.transactions} transactions`);
+        setTimeout(() => window.location.reload(), 1500);
+      }
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast.error(error.message || "Failed to delete sample data");
+    } finally {
+      setIsDeletingSampleData(false);
+    }
+  };
+
   // Calculate key metrics
   const metrics = useMemo(() => {
-    const totalPayouts = amazonPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
-    const avgPayout = amazonPayouts.length > 0 ? totalPayouts / amazonPayouts.length : 0;
-    const lastPayout = amazonPayouts.length > 0 ? Number(amazonPayouts[0].total_amount || 0) : 0;
+    // Filter to only confirmed payouts and exclude sample data
+    const confirmedPayouts = amazonPayouts.filter(
+      p => p.status === 'confirmed' && p.marketplace_name !== 'Amazon.com'
+    );
+    
+    const totalPayouts = confirmedPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+    const avgPayout = confirmedPayouts.length > 0 ? totalPayouts / confirmedPayouts.length : 0;
+    const lastPayout = confirmedPayouts.length > 0 ? Number(confirmedPayouts[0].total_amount || 0) : 0;
     
     // Calculate growth rate
-    const recentPayouts = amazonPayouts.slice(0, 3).map(p => Number(p.total_amount || 0));
-    const olderPayouts = amazonPayouts.slice(3, 6).map(p => Number(p.total_amount || 0));
+    const recentPayouts = confirmedPayouts.slice(0, 3).map(p => Number(p.total_amount || 0));
+    const olderPayouts = confirmedPayouts.slice(3, 6).map(p => Number(p.total_amount || 0));
     const recentAvg = recentPayouts.length > 0 ? recentPayouts.reduce((a, b) => a + b, 0) / recentPayouts.length : 0;
     const olderAvg = olderPayouts.length > 0 ? olderPayouts.reduce((a, b) => a + b, 0) / olderPayouts.length : 0;
     const growthRate = olderAvg > 0 ? ((recentAvg - olderAvg) / olderAvg) * 100 : 0;
@@ -169,7 +198,7 @@ export default function AmazonForecast() {
       avgPayout,
       lastPayout,
       growthRate,
-      payoutCount: amazonPayouts.length
+      payoutCount: confirmedPayouts.length
     };
   }, [amazonPayouts]);
 
@@ -250,7 +279,21 @@ export default function AmazonForecast() {
       )}
 
       {/* Forecast Settings */}
-      <ForecastSettings />
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1">
+          <ForecastSettings />
+        </div>
+        {amazonPayouts.some(p => p.marketplace_name === 'Amazon.com') && (
+          <Button 
+            onClick={deleteSampleData} 
+            disabled={isDeletingSampleData}
+            variant="outline"
+            className="border-red-300 text-red-700 hover:bg-red-50"
+          >
+            {isDeletingSampleData ? 'Deleting...' : 'Delete Sample Data'}
+          </Button>
+        )}
+      </div>
 
       {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-4">
