@@ -773,6 +773,21 @@ export const PurchaseOrderForm = ({
               }}
               type="expense"
             />
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+              <Textarea 
+                id="description" 
+                placeholder="Brief description of the purchase order..." 
+                value={formData.description} 
+                onChange={e => setFormData(prev => ({
+                  ...prev,
+                  description: e.target.value
+                }))} 
+                className="min-h-[80px] resize-none"
+              />
+            </div>
             
             {/* PO Date */}
             <div className="space-y-2">
