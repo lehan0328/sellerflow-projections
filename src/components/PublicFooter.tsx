@@ -30,14 +30,14 @@ export const PublicFooter = () => {
             </div>
           </div>
           <div className="space-y-4">
-            <h4 className="font-semibold">Product</h4>
+            <h3 className="font-semibold">Product</h3>
             <ul className="space-y-2 text-muted-foreground">
               <li><Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
               <li><Link to="/features" className="hover:text-foreground transition-colors">All Features</Link></li>
             </ul>
           </div>
           <div className="space-y-4">
-            <h4 className="font-semibold">Resources</h4>
+            <h3 className="font-semibold">Resources</h3>
             <ul className="space-y-2 text-muted-foreground">
               <li><Link to="/blog" className="hover:text-foreground transition-colors">Blog</Link></li>
               <li><Link to="/docs" className="hover:text-foreground transition-colors">Documentation</Link></li>
@@ -46,7 +46,7 @@ export const PublicFooter = () => {
             </ul>
           </div>
           <div className="space-y-4">
-            <h4 className="font-semibold">Company</h4>
+            <h3 className="font-semibold">Company</h3>
             <ul className="space-y-2 text-muted-foreground">
               <li><Link to="/contact" className="hover:text-foreground transition-colors">Contact Us</Link></li>
               <li><Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
