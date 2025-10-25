@@ -1373,7 +1373,11 @@ const Landing = () => {
             </p>
             <div className="flex items-center justify-center gap-4 mt-6 bg-muted/50 backdrop-blur-sm border rounded-lg p-4 max-w-md mx-auto">
               <span className={`text-sm ${!isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>Monthly</span>
-              <button onClick={() => setIsYearly(!isYearly)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isYearly ? 'bg-primary' : 'bg-border'}`}>
+              <button 
+                onClick={() => setIsYearly(!isYearly)} 
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isYearly ? 'bg-primary' : 'bg-border'}`}
+                aria-label={`Switch to ${isYearly ? 'monthly' : 'yearly'} billing`}
+              >
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-background shadow-md transition-transform ${isYearly ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
               <span className={`text-sm ${isYearly ? 'font-semibold' : 'text-muted-foreground'}`}>

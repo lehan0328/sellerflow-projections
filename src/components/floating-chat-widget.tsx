@@ -71,6 +71,7 @@ export const FloatingChatWidget = () => {
               setShowTooltip(false);
             }}
             className="h-14 w-14 rounded-full shadow-2xl bg-gradient-primary hover:scale-110 transition-all duration-300"
+            aria-label="Open AI chat assistant"
           >
             <MessageCircle className="h-6 w-6" />
           </Button>
@@ -94,6 +95,7 @@ export const FloatingChatWidget = () => {
               size="sm"
               onClick={() => setIsOpen(false)}
               className="h-8 w-8 p-0"
+              aria-label="Close chat assistant"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -139,6 +141,7 @@ export const FloatingChatWidget = () => {
                   size="icon"
                   disabled={isLoading || !message.trim()}
                   className="bg-gradient-primary hover-scale"
+                  aria-label="Send message"
                 >
                   <Send className="h-4 w-4" />
                 </Button>
