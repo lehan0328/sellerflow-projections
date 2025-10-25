@@ -485,9 +485,19 @@ export function AmazonPayouts() {
         {/* Open Settlements - Always visible at top */}
         {(() => {
           const openSettlements = amazonPayouts.filter(p => {
-            // Open settlements have no end date in raw_settlement_data
+            // Open settlements must have:
+            // 1. Status = estimated
+            // 2. No end date in raw_settlement_data
+            // 3. ProcessingStatus = Open
+            // 4. Amount > 0 (exclude empty open settlements)
             const rawData = p.raw_settlement_data;
-            return p.status === 'estimated' && !rawData?.FinancialEventGroupEnd;
+            const hasEndDate = rawData?.FinancialEventGroupEnd;
+            const processingStatus = rawData?.ProcessingStatus;
+            
+            return p.status === 'estimated' && 
+                   !hasEndDate && 
+                   processingStatus === 'Open' &&
+                   p.total_amount > 0;
           });
 
           if (openSettlements.length === 0) return null;
@@ -570,37 +580,58 @@ export function AmazonPayouts() {
 
         {/* Date Range Filter */}
         <div className="flex items-center gap-3 p-4 rounded-lg border bg-card">
-          <Label className="text-sm font-medium whitespace-nowrap">Settlement Period:</Label>
-          <Input
-            type="date"
-            value={startDateFilter}
-            onChange={(e) => setStartDateFilter(e.target.value)}
-            className="w-auto"
-          />
-          <span className="text-muted-foreground">to</span>
-          <Input
-            type="date"
-            value={endDateFilter}
-            onChange={(e) => setEndDateFilter(e.target.value)}
-            className="w-auto"
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const now = new Date();
-              setStartDateFilter(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]);
-              setEndDateFilter(new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]);
-            }}
-          >
-            This Month
-          </Button>
-          <div className="text-xs text-muted-foreground">
-            {amazonPayouts.filter(p => {
-              const rawData = p.raw_settlement_data;
-              const isClosed = p.status === 'confirmed' || rawData?.FinancialEventGroupEnd;
-              return isClosed && p.payout_date >= startDateFilter && p.payout_date <= endDateFilter;
-            }).length} closed settlements
+          <div className="flex items-center gap-3 flex-1">
+            <Label className="text-sm font-medium whitespace-nowrap">Settlement Period:</Label>
+            <Input
+              type="date"
+              value={startDateFilter}
+              onChange={(e) => setStartDateFilter(e.target.value)}
+              className="w-auto"
+            />
+            <span className="text-muted-foreground">to</span>
+            <Input
+              type="date"
+              value={endDateFilter}
+              onChange={(e) => setEndDateFilter(e.target.value)}
+              className="w-auto"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const now = new Date();
+                setStartDateFilter(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]);
+                setEndDateFilter(new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]);
+              }}
+            >
+              This Month
+            </Button>
+          </div>
+          <div className="flex items-center gap-4 border-l pl-4">
+            <div className="text-right">
+              <div className="text-xs text-muted-foreground">Closed Settlements</div>
+              <div className="text-sm font-medium">
+                {amazonPayouts.filter(p => {
+                  const rawData = p.raw_settlement_data;
+                  const isClosed = p.status === 'confirmed' || rawData?.FinancialEventGroupEnd;
+                  return isClosed && p.payout_date >= startDateFilter && p.payout_date <= endDateFilter;
+                }).length}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-muted-foreground">Total Paid Out</div>
+              <div className="text-lg font-bold text-finance-positive">
+                {formatCurrency(
+                  amazonPayouts
+                    .filter(p => {
+                      const rawData = p.raw_settlement_data;
+                      const isClosed = p.status === 'confirmed' || rawData?.FinancialEventGroupEnd;
+                      return isClosed && p.payout_date >= startDateFilter && p.payout_date <= endDateFilter;
+                    })
+                    .reduce((sum, p) => sum + p.total_amount, 0)
+                )}
+              </div>
+            </div>
           </div>
         </div>
         
