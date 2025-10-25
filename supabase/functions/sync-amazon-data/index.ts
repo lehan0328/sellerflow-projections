@@ -224,16 +224,16 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       
       console.log('[SYNC] Incremental mode - fetching 30 days of transactions from:', startDate.toISOString())
     } else {
-      // First sync - get last 60 days of detailed transactions
+      // First sync - get last 90 days of detailed transactions (3 full months)
       startDate = new Date()
-      startDate.setDate(startDate.getDate() - 60)
+      startDate.setDate(startDate.getDate() - 90)
       startDate.setHours(0, 0, 0, 0)
       
-      // Fetch all 60 days in one go for initial sync
+      // Fetch all 90 days in one go for initial sync
       endDate = new Date()
       endDate.setHours(23, 59, 59, 999)
       
-      console.log('[SYNC] Initial sync - fetching 60 days of transactions:', startDate.toISOString(), 'to', endDate.toISOString())
+      console.log('[SYNC] Initial sync - fetching 90 days of transactions:', startDate.toISOString(), 'to', endDate.toISOString())
     }
 
     console.log('[SYNC] Settlements window: Full year (365 days) for seasonal analysis')

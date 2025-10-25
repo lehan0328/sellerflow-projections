@@ -52,6 +52,8 @@ export default function AmazonForecast() {
   const hasEnoughData = confirmedPayouts.length >= 3;
 
   // Fetch Amazon transactions for revenue calculation
+  const [rollupData, setRollupData] = useState<any[]>([]);
+  
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
@@ -62,23 +64,37 @@ export default function AmazonForecast() {
         const twelveMonthsAgo = new Date();
         twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
-        const { data, error } = await supabase
-          .from('amazon_transactions')
-          .select('transaction_date, amount, transaction_type, marketplace_name')
-          .eq('user_id', user.id)
-          .eq('transaction_type', 'Order')
-          .gte('transaction_date', twelveMonthsAgo.toISOString())
-          .order('transaction_date', { ascending: true });
+        const [transactionsRes, rollupsRes] = await Promise.all([
+          // Fetch detailed transactions (recent data)
+          supabase
+            .from('amazon_transactions')
+            .select('transaction_date, amount, transaction_type, marketplace_name')
+            .eq('user_id', user.id)
+            .eq('transaction_type', 'Order')
+            .gte('transaction_date', twelveMonthsAgo.toISOString())
+            .order('transaction_date', { ascending: true }),
+          
+          // Fetch rollup data (older aggregated data)
+          supabase
+            .from('amazon_daily_rollups')
+            .select('rollup_date, total_revenue, order_count')
+            .eq('user_id', user.id)
+            .gte('rollup_date', twelveMonthsAgo.toISOString().split('T')[0])
+            .order('rollup_date', { ascending: true })
+        ]);
 
-        if (error) throw error;
-        setAmazonTransactions(data || []);
+        if (transactionsRes.error) throw transactionsRes.error;
+        if (rollupsRes.error) console.log('[AmazonForecast] No rollup data:', rollupsRes.error);
+        
+        setAmazonTransactions(transactionsRes.data || []);
+        setRollupData(rollupsRes.data || []);
       } catch (error) {
         console.error('Error fetching Amazon transactions:', error);
       }
     };
 
     fetchTransactions();
-  }, []);
+  }, [amazonAccounts]); // Refetch when Amazon accounts change (after sync)
 
   // Calculate historical metrics with forecasts
   const historicalData = useMemo(() => {
@@ -93,6 +109,7 @@ export default function AmazonForecast() {
     }
 
     // Aggregate revenue from Amazon transactions (order amounts - only positive amounts)
+    console.log('[AmazonForecast] Processing transactions:', amazonTransactions.length);
     amazonTransactions.forEach(txn => {
       const amount = Number(txn.amount || 0);
       if (amount > 0) { // Only count positive revenue
@@ -100,6 +117,20 @@ export default function AmazonForecast() {
         const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
         if (monthlyData[key]) {
           monthlyData[key].revenue += amount;
+        }
+      }
+    });
+
+    // Add rollup data (aggregated historical data)
+    console.log('[AmazonForecast] Processing rollups:', rollupData.length);
+    rollupData.forEach(rollup => {
+      const revenue = Number(rollup.total_revenue || 0);
+      if (revenue > 0) {
+        const date = new Date(rollup.rollup_date);
+        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (monthlyData[key]) {
+          monthlyData[key].revenue += revenue;
+          console.log(`[AmazonForecast] Added rollup ${revenue} to ${key}, new total: ${monthlyData[key].revenue}`);
         }
       }
     });
@@ -134,7 +165,7 @@ export default function AmazonForecast() {
       forecastedPayouts: data.forecastedPayouts,
       count: data.count
     }));
-  }, [amazonPayouts, amazonTransactions]);
+  }, [amazonPayouts, amazonTransactions, rollupData]);
 
   const generateForecast = async () => {
     setIsGenerating(true);
