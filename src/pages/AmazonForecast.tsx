@@ -51,8 +51,8 @@ export default function AmazonForecast() {
   const historicalData = useMemo(() => {
     const monthlyData: Record<string, { sales: number; payouts: number; count: number }> = {};
     
-    // Last 6 months
-    for (let i = 5; i >= 0; i--) {
+    // Last 12 months
+    for (let i = 11; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
       const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
@@ -271,33 +271,27 @@ export default function AmazonForecast() {
       {/* Historical Trends */}
       <Card>
         <CardHeader>
-          <CardTitle>Historical Payout Trends (Last 6 Months)</CardTitle>
+          <CardTitle>Revenue & Payouts - Full Year</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={400}>
-            <ComposedChart data={historicalData}>
+            <BarChart data={historicalData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
-              <YAxis yAxisId="left" />
-              <YAxis yAxisId="right" orientation="right" />
+              <YAxis />
               <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
               <Legend />
-              <Area 
-                yAxisId="left"
-                type="monotone" 
+              <Bar 
                 dataKey="sales" 
-                fill="#10b981" 
-                fillOpacity={0.3}
-                stroke="#10b981" 
-                name="Sales"
+                fill="hsl(var(--chart-1))" 
+                name="Revenue (Before Fees)"
               />
               <Bar 
-                yAxisId="right"
                 dataKey="payouts" 
-                fill="#8b5cf6" 
+                fill="hsl(var(--chart-2))" 
                 name="Payouts"
               />
-            </ComposedChart>
+            </BarChart>
           </ResponsiveContainer>
         </CardContent>
       </Card>
