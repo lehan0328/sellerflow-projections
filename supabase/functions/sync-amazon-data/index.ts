@@ -336,37 +336,53 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         payoutDate = payoutDateObj.toISOString().split('T')[0];
         
         // Process both Closed (confirmed) and Open (estimated) settlements from Amazon
-        if (group.OriginalTotal) {
-          const totalAmount = parseFloat(group.OriginalTotal?.CurrencyAmount || '0')
-          const currencyCode = group.OriginalTotal?.CurrencyCode || 'USD'
+        let totalAmount = parseFloat(group.OriginalTotal?.CurrencyAmount || '0')
+        const currencyCode = group.OriginalTotal?.CurrencyCode || 'USD'
+        
+        // For open settlements, if OriginalTotal is not available or is 0, calculate from transactions
+        if (processingStatus === 'Open' && totalAmount === 0) {
+          console.log(`[SYNC] Open settlement ${settlementId} has no OriginalTotal, calculating from transactions...`);
           
-          // Determine status based on Amazon's processing status
-          let settlementStatus = 'estimated';
-          if (processingStatus === 'Closed') {
-            settlementStatus = 'confirmed';
-          } else if (processingStatus === 'Open') {
-            settlementStatus = 'estimated'; // Amazon's pending settlement
+          // Fetch transactions for this settlement period
+          const { data: settlementTransactions } = await supabase
+            .from('amazon_transactions')
+            .select('amount, transaction_type')
+            .eq('amazon_account_id', amazonAccountId)
+            .gte('posted_date', startDate)
+            .lte('posted_date', endDate || startDate);
+          
+          if (settlementTransactions && settlementTransactions.length > 0) {
+            totalAmount = settlementTransactions.reduce((sum, tx) => sum + parseFloat(tx.amount || '0'), 0);
+            console.log(`[SYNC] Calculated open settlement total from ${settlementTransactions.length} transactions: $${totalAmount.toFixed(2)}`);
           }
-          
-          console.log(`[SYNC] Settlement ${settlementId}: closes ${endDate || startDate}, pays ${payoutDate} (status: ${settlementStatus})`);
-          
-          settlementsToAdd.push({
-            user_id: actualUserId,
-            account_id: amazonAccount.account_id,
-            amazon_account_id: amazonAccountId,
-            settlement_id: settlementId,
-            payout_date: payoutDate,
-            total_amount: totalAmount,
-            orders_total: totalAmount, // Will be broken down from events
-            fees_total: 0,
-            refunds_total: 0,
-            currency_code: currencyCode,
-            status: settlementStatus,
-            payout_type: amazonAccount.payout_frequency || 'bi-weekly',
-            marketplace_name: amazonAccount.marketplace_name,
-            raw_settlement_data: group
-          })
         }
+        
+        // Determine status based on Amazon's processing status
+        let settlementStatus = 'estimated';
+        if (processingStatus === 'Closed') {
+          settlementStatus = 'confirmed';
+        } else if (processingStatus === 'Open') {
+          settlementStatus = 'estimated'; // Amazon's pending settlement
+        }
+        
+        console.log(`[SYNC] Settlement ${settlementId}: closes ${endDate || startDate}, pays ${payoutDate} (status: ${settlementStatus}, amount: $${totalAmount.toFixed(2)})`);
+        
+        settlementsToAdd.push({
+          user_id: actualUserId,
+          account_id: amazonAccount.account_id,
+          amazon_account_id: amazonAccountId,
+          settlement_id: settlementId,
+          payout_date: payoutDate,
+          total_amount: totalAmount,
+          orders_total: totalAmount, // Will be broken down from events
+          fees_total: 0,
+          refunds_total: 0,
+          currency_code: currencyCode,
+          status: settlementStatus,
+          payout_type: amazonAccount.payout_frequency || 'bi-weekly',
+          marketplace_name: amazonAccount.marketplace_name,
+          raw_settlement_data: group
+        })
       }
       
       // Rate limiting delay between pages
