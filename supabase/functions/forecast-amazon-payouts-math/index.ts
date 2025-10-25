@@ -473,7 +473,7 @@ function generateDailyForecasts(
       settlement_id: settlementId,
       transaction_count: Math.round(transactions.length / 14),
       currency_code: 'USD',
-      modeling_method: 'daily_distribution_dd7',
+      modeling_method: 'mathematical_daily',
       eligible_in_period: isSettlementDay ? adjustedLumpSum : 0, // Show lump sum only on settlement day
       available_for_daily_transfer: dailyIncrement,
       total_daily_draws: 0,
@@ -527,7 +527,7 @@ function generateDailyForecasts(
         settlement_id: cycleSettlementId,
         transaction_count: Math.round(transactions.length / 14),
         currency_code: 'USD',
-        modeling_method: 'daily_distribution_projected',
+        modeling_method: 'mathematical_daily',
         eligible_in_period: isSettlementDay ? (futureDaily * 14) : 0,
         available_for_daily_transfer: futureDaily,
         total_daily_draws: 0,
