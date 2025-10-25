@@ -467,18 +467,11 @@ serve(async (req) => {
           
           if (currentDate > threeMonthsOut) break;
           
-          // Use baseline amount for daily (already calculated per day)
-          // For bi-weekly, use AI predictions if available
+          // Use baseline amount for calculations
           let basePrediction = baselineAmount;
           let calculationMethod = 'baseline';
           
-          if (payoutFrequency === 'bi-weekly' && forecast.predictions && forecast.predictions[biweeklyPeriodIndex]) {
-            const aiPrediction = forecast.predictions[biweeklyPeriodIndex].predicted_amount || baselineAmount;
-            basePrediction = aiPrediction;
-            calculationMethod = 'ai_prediction';
-            
-            console.log(`[FORECAST] ${amazonAccount.account_name} - Period ${biweeklyPeriodIndex + 1} AI prediction: ${aiPrediction}`);
-          } else if (payoutFrequency === 'daily') {
+          if (payoutFrequency === 'daily') {
             // For first 14 days: use recent sales trend if available
             if (dayCount <= 14 && last14DaysSales.length > 0) {
               // Project sales forward based on recent trend
@@ -547,9 +540,9 @@ serve(async (req) => {
             refunds_total: 0,
             other_total: 0,
             raw_settlement_data: {
-              forecast_metadata: {
-                confidence: forecast.predictions?.[biweeklyPeriodIndex]?.confidence || 0.90,
-                risk_adjustment: riskAdjustment,
+                forecast_metadata: {
+                  confidence: 0.85,
+                  risk_adjustment: riskAdjustment,
                 risk_level: riskAdjustment === -5 ? 'aggressive' : riskAdjustment === 0 ? 'medium' : riskAdjustment === 5 ? 'safe' : 'very_safe',
                 upper_bound: Math.round(predictedAmount * 1.2),
                 lower_bound: Math.round(predictedAmount * 0.8),
