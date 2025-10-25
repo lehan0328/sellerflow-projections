@@ -1596,6 +1596,8 @@ const Dashboard = () => {
   }, [recurringExpenses]);
 
   // Convert Amazon payouts to calendar events (always include all payouts)
+  console.log('[Dashboard] Converting Amazon payouts to calendar events. Total payouts:', amazonPayouts.length);
+  
   const amazonPayoutEvents: CashFlowEvent[] = amazonPayouts
     .map(payout => {
       // Open settlements (status='estimated') are in-progress and will update daily
@@ -1622,6 +1624,8 @@ const Dashboard = () => {
         date: new Date(payout.payout_date)
       };
     });
+  
+  console.log('[Dashboard] Amazon payout events created:', amazonPayoutEvents.length);
 
   // Combine all events for calendar - only include real user data
   const allCalendarEvents = [...calendarEvents, ...vendorPaymentEvents, ...vendorEvents, ...incomeEvents, ...creditCardEvents, ...forecastedCreditCardEvents, ...recurringEvents, ...amazonPayoutEvents];
