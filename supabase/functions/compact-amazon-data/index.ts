@@ -9,7 +9,7 @@ const corsHeaders = {
 /**
  * Compaction job for Amazon data
  * Runs nightly to:
- * 1. Aggregate transactions older than 30 days into daily_rollups
+ * 1. Aggregate transactions older than 180 days into daily_rollups
  * 2. Mark aggregated transactions for deletion
  * 3. Delete marked transactions to conserve storage
  */
@@ -32,9 +32,9 @@ serve(async (req) => {
 
     console.log('[COMPACT] Starting Amazon data compaction...')
 
-    // Calculate the 60-day cutoff (keep transactions for last 60 days)
+    // Calculate the 180-day cutoff (keep transactions for last 180 days)
     const sixtyDaysAgo = new Date()
-    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60)
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 180)
     sixtyDaysAgo.setHours(0, 0, 0, 0)
 
     console.log('[COMPACT] Cutoff date:', sixtyDaysAgo.toISOString())
