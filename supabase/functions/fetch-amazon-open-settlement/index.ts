@@ -164,6 +164,19 @@ Deno.serve(async (req) => {
     
     // Save settlements
     if (settlementsToAdd.length > 0) {
+      // Delete any forecasted payouts that overlap with real settlements
+      const settlementDates = settlementsToAdd.map(s => s.payout_date)
+      if (settlementDates.length > 0) {
+        await supabase
+          .from('amazon_payouts')
+          .delete()
+          .eq('amazon_account_id', amazonAccountId)
+          .eq('status', 'forecasted')
+          .in('payout_date', settlementDates)
+        
+        console.log(`[FETCH] Cleared forecasted payouts for ${settlementDates.length} settlement dates`)
+      }
+      
       const { error: settlementsError } = await supabase
         .from('amazon_payouts')
         .upsert(settlementsToAdd, { 

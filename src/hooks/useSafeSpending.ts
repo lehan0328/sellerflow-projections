@@ -165,7 +165,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           .from('amazon_payouts')
           .select('*')
           .eq('account_id', profile.account_id)
-          .gt('payout_date', todayStr)  // ONLY future payouts (exclude today and past)
+          .gte('payout_date', todayStr)  // Include today and future payouts
           .lte('payout_date', futureDateStr),
         
         supabase
