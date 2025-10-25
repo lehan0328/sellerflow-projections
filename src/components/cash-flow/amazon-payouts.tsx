@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -58,6 +59,14 @@ export function AmazonPayouts() {
   const [showConnectDialog, setShowConnectDialog] = useState(false);
   const [selectedMarketplace, setSelectedMarketplace] = useState("ATVPDKIKX0DER");
   const [showSettledPayouts, setShowSettledPayouts] = useState(false);
+  
+  // Date range filter - default to current month
+  const now = new Date();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  
+  const [startDateFilter, setStartDateFilter] = useState(firstDayOfMonth.toISOString().split('T')[0]);
+  const [endDateFilter, setEndDateFilter] = useState(lastDayOfMonth.toISOString().split('T')[0]);
   
   // Count settled payouts
   const settledPayoutsCount = amazonPayouts.filter(p => 
@@ -473,6 +482,42 @@ export function AmazonPayouts() {
           </div>
         )}
         
+        {/* Date Range Filter */}
+        <div className="flex items-center gap-3 p-4 rounded-lg border bg-card">
+          <Label className="text-sm font-medium whitespace-nowrap">Settlement Period:</Label>
+          <Input
+            type="date"
+            value={startDateFilter}
+            onChange={(e) => setStartDateFilter(e.target.value)}
+            className="w-auto"
+          />
+          <span className="text-muted-foreground">to</span>
+          <Input
+            type="date"
+            value={endDateFilter}
+            onChange={(e) => setEndDateFilter(e.target.value)}
+            className="w-auto"
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const now = new Date();
+              setStartDateFilter(new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]);
+              setEndDateFilter(new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]);
+            }}
+          >
+            This Month
+          </Button>
+          <div className="text-xs text-muted-foreground">
+            {amazonPayouts.filter(p => 
+              (p.status === 'confirmed' || p.status === 'estimated') && 
+              p.payout_date >= startDateFilter && 
+              p.payout_date <= endDateFilter
+            ).length} settlements
+          </div>
+        </div>
+        
         {amazonPayouts.length === 0 ? <div className="space-y-4">
             <div className="text-center py-8">
               <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -486,16 +531,14 @@ export function AmazonPayouts() {
               </Button>
             </div>
           </div> : (() => {
-          // Only show actual Amazon settlements (confirmed and estimated), not mathematical forecasts
+          // Show all settlements (confirmed and estimated) within date range
           const filteredPayouts = amazonPayouts.filter(payout => {
-            const daysUntil = getDaysUntil(payout.payout_date);
-            // Only show confirmed and estimated settlements
-            if (payout.status === 'confirmed' || payout.status === 'estimated') {
-              // Show if today or future date
-              return daysUntil >= 0;
-            }
-            // Hide all forecasted payouts from this view (they belong in Advanced Forecast only)
-            return false;
+            // Only show confirmed and estimated settlements (not forecasted)
+            if (payout.status !== 'confirmed' && payout.status !== 'estimated') return false;
+            
+            // Filter by date range
+            const payoutDate = payout.payout_date;
+            return payoutDate >= startDateFilter && payoutDate <= endDateFilter;
           });
           
           // Separate forecasted and actual payouts for better display
@@ -553,18 +596,42 @@ export function AmazonPayouts() {
                               {aggregatedPayout.payouts.length} accounts
                             </Badge>}
                         </div>
-                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                          <span className="flex items-center">
-                            <Calendar className="mr-1 h-3 w-3" />
-                            {formatDate(aggregatedPayout.payout_date)}
-                          </span>
-                          <span className={`font-medium ${daysUntil === 0 ? 'text-finance-positive' : daysUntil <= 3 ? 'text-warning' : 'text-muted-foreground'}`}>
-                            {daysUntil === 0 ? 'Today' : `in ${daysUntil} days`}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {aggregatedPayout.transaction_count} transactions
-                          </span>
-                        </div>
+                         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                           <span className="flex items-center">
+                             <Calendar className="mr-1 h-3 w-3" />
+                             {(() => {
+                               // Show settlement period if available
+                               const firstPayout = aggregatedPayout.payouts[0];
+                               const rawData = firstPayout?.raw_settlement_data;
+                               
+                               if (rawData?.FinancialEventGroupStart) {
+                                 const startDate = new Date(rawData.FinancialEventGroupStart);
+                                 const endDate = rawData.FinancialEventGroupEnd 
+                                   ? new Date(rawData.FinancialEventGroupEnd)
+                                   : null;
+                                 
+                                 const formatShort = (date: Date) => date.toLocaleDateString('en-US', { 
+                                   month: 'short', 
+                                   day: 'numeric' 
+                                 });
+                                 
+                                 if (endDate) {
+                                   return `${formatShort(startDate)} - ${formatShort(endDate)} → Payout: ${formatDate(aggregatedPayout.payout_date)}`;
+                                 } else {
+                                   return `${formatShort(startDate)} - Open → Est. Payout: ${formatDate(aggregatedPayout.payout_date)}`;
+                                 }
+                               }
+                               
+                               return `Payout: ${formatDate(aggregatedPayout.payout_date)}`;
+                             })()}
+                           </span>
+                           <span className={`font-medium ${daysUntil === 0 ? 'text-finance-positive' : daysUntil <= 3 && daysUntil >= 0 ? 'text-warning' : daysUntil < 0 ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
+                             {daysUntil === 0 ? 'Today' : daysUntil > 0 ? `in ${daysUntil} days` : `${Math.abs(daysUntil)} days ago`}
+                           </span>
+                           <span className="text-xs text-muted-foreground">
+                             {aggregatedPayout.transaction_count} transactions
+                           </span>
+                         </div>
                       </div>
                       <div className="text-right">
                         <p className={`font-bold text-lg ${isForecasted ? 'text-purple-600 dark:text-purple-400' : 'text-finance-positive'}`}>
