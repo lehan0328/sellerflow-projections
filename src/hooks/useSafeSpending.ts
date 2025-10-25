@@ -84,6 +84,16 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       console.log('🔄 [SAFE SPENDING] Using reserve from database:', reserve);
       console.log('🔄 [SAFE SPENDING] Forecasts enabled:', forecastsEnabled);
 
+      // If forecasts are disabled, delete any existing forecasted payouts
+      if (!forecastsEnabled) {
+        console.log('🗑️ [SAFE SPENDING] Forecasts disabled - deleting forecasted payouts');
+        await supabase
+          .from('amazon_payouts')
+          .delete()
+          .eq('account_id', profile.account_id)
+          .eq('status', 'forecasted');
+      }
+
       // Get bank account balance - use available_balance or balance based on toggle
       // IMPORTANT: Filter by account_id to ensure account separation
       const { data: bankAccounts } = await supabase
