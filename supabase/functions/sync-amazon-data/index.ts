@@ -339,22 +339,10 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         let totalAmount = parseFloat(group.OriginalTotal?.CurrencyAmount || '0')
         const currencyCode = group.OriginalTotal?.CurrencyCode || 'USD'
         
-        // For open settlements, if OriginalTotal is not available or is 0, calculate from transactions
-        if (processingStatus === 'Open' && totalAmount === 0) {
-          console.log(`[SYNC] Open settlement ${settlementId} has no OriginalTotal, calculating from transactions...`);
-          
-          // Fetch transactions for this settlement period
-          const { data: settlementTransactions } = await supabase
-            .from('amazon_transactions')
-            .select('amount, transaction_type')
-            .eq('amazon_account_id', amazonAccountId)
-            .gte('posted_date', startDate)
-            .lte('posted_date', endDate || startDate);
-          
-          if (settlementTransactions && settlementTransactions.length > 0) {
-            totalAmount = settlementTransactions.reduce((sum, tx) => sum + parseFloat(tx.amount || '0'), 0);
-            console.log(`[SYNC] Calculated open settlement total from ${settlementTransactions.length} transactions: $${totalAmount.toFixed(2)}`);
-          }
+        // For open settlements, use AccumulatingBalance if OriginalTotal is not available
+        if (processingStatus === 'Open' && totalAmount === 0 && group.AccumulatingBalance) {
+          totalAmount = parseFloat(group.AccumulatingBalance.CurrencyAmount || '0');
+          console.log(`[SYNC] Open settlement ${settlementId} using AccumulatingBalance: $${totalAmount.toFixed(2)}`);
         }
         
         // Determine status based on Amazon's processing status
