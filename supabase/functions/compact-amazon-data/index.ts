@@ -9,9 +9,10 @@ const corsHeaders = {
 /**
  * Compaction job for Amazon data
  * Runs nightly to:
- * 1. Aggregate transactions older than 180 days into daily_rollups
+ * 1. Aggregate transactions older than 30 days into daily_rollups
  * 2. Mark aggregated transactions for deletion
  * 3. Delete marked transactions to conserve storage
+ * NOTE: Payouts are NEVER deleted - only transactions
  */
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -32,12 +33,13 @@ serve(async (req) => {
 
     console.log('[COMPACT] Starting Amazon data compaction...')
 
-    // Calculate the 180-day cutoff (keep transactions for last 180 days)
-    const sixtyDaysAgo = new Date()
-    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 180)
-    sixtyDaysAgo.setHours(0, 0, 0, 0)
+    // Calculate the 30-day cutoff (keep recent transactions, archive older ones)
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    thirtyDaysAgo.setHours(0, 0, 0, 0)
 
-    console.log('[COMPACT] Cutoff date:', sixtyDaysAgo.toISOString())
+    console.log('[COMPACT] Cutoff date:', thirtyDaysAgo.toISOString())
+    console.log('[COMPACT] NOTE: Only archiving transactions - payouts are preserved forever')
 
     // Get all active Amazon accounts
     const { data: accounts, error: accountsError } = await supabase
@@ -62,7 +64,7 @@ serve(async (req) => {
         .from('amazon_transactions')
         .select('*')
         .eq('amazon_account_id', account.id)
-        .lt('transaction_date', sixtyDaysAgo.toISOString())
+        .lt('transaction_date', thirtyDaysAgo.toISOString())
         .eq('is_compacted', false)
         .order('transaction_date', { ascending: true })
 
@@ -186,7 +188,7 @@ serve(async (req) => {
       accounts_processed: accounts?.length || 0,
       rollups_created: totalCompacted,
       transactions_deleted: totalDeleted,
-      cutoff_date: sixtyDaysAgo.toISOString(),
+      cutoff_date: thirtyDaysAgo.toISOString(),
       timestamp: new Date().toISOString()
     }
 

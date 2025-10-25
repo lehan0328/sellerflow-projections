@@ -25,12 +25,13 @@ serve(async (req) => {
 
     console.log('[AGGREGATE] Starting transaction aggregation job...')
 
-    // Get cutoff date (180 days ago) - only archive very old data
+    // Get cutoff date (60 days ago) - archive older data
     const cutoffDate = new Date()
-    cutoffDate.setDate(cutoffDate.getDate() - 180)
+    cutoffDate.setDate(cutoffDate.getDate() - 60)
     const cutoffDateStr = cutoffDate.toISOString().split('T')[0]
 
     console.log('[AGGREGATE] Aggregating transactions older than:', cutoffDateStr)
+    console.log('[AGGREGATE] NOTE: Payouts are never deleted - only transactions')
 
     // Get all Amazon accounts
     const { data: accounts, error: accountsError } = await supabase
