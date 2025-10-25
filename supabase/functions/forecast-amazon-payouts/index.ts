@@ -107,6 +107,15 @@ serve(async (req) => {
         .eq('status', 'confirmed') // Only use confirmed payouts for baseline
         .gte('payout_date', twelveMonthsAgo.toISOString().split('T')[0])
         .order('payout_date', { ascending: false });
+      
+      // Also check for Amazon's open settlements (estimated payouts)
+      const { data: estimatedPayouts } = await supabase
+        .from('amazon_payouts')
+        .select('*')
+        .eq('amazon_account_id', amazonAccount.id)
+        .eq('status', 'estimated') // Amazon's open settlements
+        .order('payout_date', { ascending: false })
+        .limit(1);
 
       if (payoutsError) {
         console.error(`[FORECAST] Error fetching payouts for account ${amazonAccount.id}:`, payoutsError);
@@ -356,7 +365,22 @@ serve(async (req) => {
       // Generate mathematical forecasts without AI
       {
         const payoutFrequency = amazonAccount.payout_frequency || 'bi-weekly';
-        const lastPayoutDate = new Date(amazonPayouts[0].payout_date);
+        
+        // Determine starting date for forecasts
+        // If Amazon has an open settlement (estimated), start forecasts AFTER that date
+        let lastPayoutDate;
+        let hasOpenSettlement = false;
+        
+        if (estimatedPayouts && estimatedPayouts.length > 0) {
+          // Amazon already provided the next payout estimate, start from there
+          lastPayoutDate = new Date(estimatedPayouts[0].payout_date);
+          hasOpenSettlement = true;
+          console.log(`[FORECAST] Found Amazon open settlement for ${amazonAccount.account_name}, will start forecasts after ${estimatedPayouts[0].payout_date}`);
+        } else {
+          // No open settlement, start from last confirmed payout
+          lastPayoutDate = new Date(amazonPayouts[0].payout_date);
+          console.log(`[FORECAST] No open settlement found, starting from last confirmed payout: ${amazonPayouts[0].payout_date}`);
+        }
         
         // Calculate baseline amount based on frequency
         let baselineAmount;
