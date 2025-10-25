@@ -192,6 +192,43 @@ export function AmazonPayouts() {
     }
   };
 
+  const handleFetchOpenSettlement = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error('Please log in to fetch open settlement.');
+        return;
+      }
+
+      if (amazonAccounts.length === 0) {
+        toast.error('No Amazon accounts connected.');
+        return;
+      }
+
+      setIsSyncing('fetching-settlement');
+      toast.info('Fetching open settlement...');
+
+      const { data, error } = await supabase.functions.invoke('fetch-amazon-open-settlement', {
+        body: { amazonAccountId: amazonAccounts[0].id },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) {
+        toast.error(`Failed to fetch settlement: ${error.message}`);
+      } else {
+        toast.success(`Found ${data.settlementsFound} settlements`);
+        await refetch();
+      }
+    } catch (error) {
+      toast.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSyncing(null);
+    }
+  };
+
   const handleConnectAmazon = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -326,6 +363,16 @@ export function AmazonPayouts() {
               >
                 <Loader2 className="h-4 w-4 mr-2" />
                 Full Resync
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleFetchOpenSettlement}
+                disabled={isSyncing !== null}
+                title="Fetch open settlement from Amazon"
+              >
+                <ShoppingCart className={`h-4 w-4 mr-2 ${isSyncing === 'fetching-settlement' ? 'animate-pulse' : ''}`} />
+                Fetch Settlement
               </Button>
               <Button
                 variant="ghost"
