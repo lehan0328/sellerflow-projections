@@ -362,7 +362,7 @@ function generateBiWeeklyForecasts(
       settlement_id: `forecast_${account.id}_${i}`,
       transaction_count: 0,
       currency_code: 'USD',
-      modeling_method: 'mathematical_biweekly'
+      modeling_method: 'mathematical'
     });
   }
 
@@ -473,7 +473,7 @@ function generateDailyForecasts(
       settlement_id: settlementId,
       transaction_count: Math.round(transactions.length / 14),
       currency_code: 'USD',
-      modeling_method: 'mathematical_daily',
+      modeling_method: 'mathematical',
       eligible_in_period: isSettlementDay ? adjustedLumpSum : 0, // Show lump sum only on settlement day
       available_for_daily_transfer: dailyIncrement,
       total_daily_draws: 0,
@@ -527,7 +527,7 @@ function generateDailyForecasts(
         settlement_id: cycleSettlementId,
         transaction_count: Math.round(transactions.length / 14),
         currency_code: 'USD',
-        modeling_method: 'mathematical_daily',
+        modeling_method: 'mathematical',
         eligible_in_period: isSettlementDay ? (futureDaily * 14) : 0,
         available_for_daily_transfer: futureDaily,
         total_daily_draws: 0,
