@@ -509,10 +509,15 @@ export function AmazonPayouts() {
                 Open Settlements (In Progress)
               </h3>
               {openSettlements.map(payout => {
-                const daysUntil = getDaysUntil(payout.payout_date);
                 const rawData = payout.raw_settlement_data;
                 const startDate = rawData?.FinancialEventGroupStart ? new Date(rawData.FinancialEventGroupStart) : null;
+                
+                // For bi-weekly, settlement period is 14 days
                 const estimatedEnd = startDate ? new Date(startDate.getTime() + 14 * 24 * 60 * 60 * 1000) : null;
+                
+                // Amazon payouts arrive 1 day after settlement closes
+                const estimatedPayoutDate = estimatedEnd ? new Date(estimatedEnd.getTime() + 1 * 24 * 60 * 60 * 1000) : null;
+                const daysUntil = estimatedPayoutDate ? getDaysUntil(estimatedPayoutDate.toISOString().split('T')[0]) : 0;
 
                 return (
                   <div key={payout.id} className="rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30 p-4 transition-all hover:shadow-card">
@@ -537,11 +542,11 @@ export function AmazonPayouts() {
                               {startDate && estimatedEnd ? (
                                 `Period: ${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${estimatedEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} (Est.)`
                               ) : (
-                                `Settlement Date: ${formatDate(payout.payout_date)}`
+                                `Started: ${payout.payout_date}`
                               )}
                             </span>
                             <span className={`font-medium ${daysUntil === 0 ? 'text-finance-positive' : daysUntil <= 3 && daysUntil >= 0 ? 'text-warning' : 'text-muted-foreground'}`}>
-                              Est. Payout: {daysUntil === 0 ? 'Today' : daysUntil > 0 ? `in ${daysUntil} days` : `${Math.abs(daysUntil)} days ago`}
+                              Est. Payout: {daysUntil === 0 ? 'Today' : daysUntil > 0 ? `in ${daysUntil} days` : `${Math.abs(daysUntil)} days overdue`}
                             </span>
                           </div>
                           <div className="flex items-center space-x-4 text-xs text-muted-foreground">
@@ -556,6 +561,12 @@ export function AmazonPayouts() {
                               <>
                                 <span>•</span>
                                 <span>Status: {rawData.ProcessingStatus}</span>
+                              </>
+                            )}
+                            {estimatedPayoutDate && (
+                              <>
+                                <span>•</span>
+                                <span>Closes & pays: {estimatedPayoutDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                               </>
                             )}
                           </div>
@@ -682,8 +693,14 @@ export function AmazonPayouts() {
           }, {} as Record<string, any>);
           
           return Object.values(payoutsByKey).map(aggregatedPayout => {
-            const daysUntil = getDaysUntil(aggregatedPayout.payout_date);
-            const isUpcoming = daysUntil <= 7;
+            const firstPayout = aggregatedPayout.payouts[0];
+            const rawData = firstPayout?.raw_settlement_data;
+            const endDate = rawData?.FinancialEventGroupEnd ? new Date(rawData.FinancialEventGroupEnd) : null;
+            
+            // Amazon payouts arrive 1 day after settlement closes
+            const actualPayoutDate = endDate ? new Date(endDate.getTime() + 1 * 24 * 60 * 60 * 1000) : new Date(aggregatedPayout.payout_date);
+            const daysUntil = getDaysUntil(actualPayoutDate.toISOString().split('T')[0]);
+            const isUpcoming = daysUntil <= 7 && daysUntil >= 0;
             const isForecasted = aggregatedPayout.status === 'forecasted';
             
             return <div key={aggregatedPayout.payout_date} className={`rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card ${isUpcoming ? 'border-primary/30 bg-primary/5' : ''} ${isForecasted ? 'border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/30' : ''}`}>
@@ -710,43 +727,45 @@ export function AmazonPayouts() {
                             </Badge>}
                         </div>
                          <div className="space-y-1">
-                           <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                             <span className="flex items-center">
-                               <Calendar className="mr-1 h-3 w-3" />
-                               {(() => {
-                                 // Show settlement period with more details
-                                 const firstPayout = aggregatedPayout.payouts[0];
-                                 const rawData = firstPayout?.raw_settlement_data;
-                                 
-                                 if (rawData?.FinancialEventGroupStart) {
-                                   const startDate = new Date(rawData.FinancialEventGroupStart);
-                                   const endDate = rawData.FinancialEventGroupEnd 
-                                     ? new Date(rawData.FinancialEventGroupEnd)
-                                     : null;
-                                   
-                                   const formatShort = (date: Date) => date.toLocaleDateString('en-US', { 
-                                     month: 'short', 
-                                     day: 'numeric',
-                                     year: 'numeric'
-                                   });
-                                   
-                                   if (endDate) {
-                                     return `Period: ${formatShort(startDate)} - ${formatShort(endDate)}`;
-                                   } else {
-                                     // Calculate estimated end date for open settlements (14 days for bi-weekly)
-                                     const estimatedEnd = new Date(startDate);
-                                     estimatedEnd.setDate(estimatedEnd.getDate() + 14);
-                                     return `Period: ${formatShort(startDate)} - ${formatShort(estimatedEnd)} (Open)`;
-                                   }
-                                 }
-                                 
-                                 return `Settlement Date: ${formatDate(aggregatedPayout.payout_date)}`;
-                               })()}
-                             </span>
-                             <span className={`font-medium ${daysUntil === 0 ? 'text-finance-positive' : daysUntil <= 3 && daysUntil >= 0 ? 'text-warning' : daysUntil < 0 ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
-                               Payout: {daysUntil === 0 ? 'Today' : daysUntil > 0 ? `in ${daysUntil} days` : `${Math.abs(daysUntil)} days ago`}
-                             </span>
-                           </div>
+                             <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                              <span className="flex items-center">
+                                <Calendar className="mr-1 h-3 w-3" />
+                                {(() => {
+                                  // Show settlement period with more details
+                                  const firstPayout = aggregatedPayout.payouts[0];
+                                  const rawData = firstPayout?.raw_settlement_data;
+                                  
+                                  if (rawData?.FinancialEventGroupStart) {
+                                    const startDate = new Date(rawData.FinancialEventGroupStart);
+                                    const endDate = rawData.FinancialEventGroupEnd 
+                                      ? new Date(rawData.FinancialEventGroupEnd)
+                                      : null;
+                                    
+                                    const formatShort = (date: Date) => date.toLocaleDateString('en-US', { 
+                                      month: 'short', 
+                                      day: 'numeric',
+                                      year: 'numeric'
+                                    });
+                                    
+                                    if (endDate) {
+                                      // Calculate actual payout arrival date (end date + 1 day)
+                                      const payoutArrival = new Date(endDate.getTime() + 1 * 24 * 60 * 60 * 1000);
+                                      return `Period: ${formatShort(startDate)} - ${formatShort(endDate)} → Arrived: ${formatShort(payoutArrival)}`;
+                                    } else {
+                                      // Calculate estimated end date for open settlements (14 days for bi-weekly)
+                                      const estimatedEnd = new Date(startDate);
+                                      estimatedEnd.setDate(estimatedEnd.getDate() + 14);
+                                      return `Period: ${formatShort(startDate)} - ${formatShort(estimatedEnd)} (Open)`;
+                                    }
+                                  }
+                                  
+                                  return `Settlement Date: ${formatDate(aggregatedPayout.payout_date)}`;
+                                })()}
+                              </span>
+                              <span className={`font-medium ${daysUntil === 0 ? 'text-finance-positive' : daysUntil <= 3 && daysUntil >= 0 ? 'text-warning' : daysUntil < 0 ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
+                                {daysUntil === 0 ? 'Arrived Today' : daysUntil > 0 ? `Arrives in ${daysUntil} days` : `Arrived ${Math.abs(daysUntil)} days ago`}
+                              </span>
+                            </div>
                            <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                              {(() => {
                                const firstPayout = aggregatedPayout.payouts[0];
