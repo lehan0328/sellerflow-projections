@@ -317,32 +317,6 @@ export function AmazonPayouts() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={async () => {
-                  try {
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (!session) return;
-                    
-                    toast.loading('Fixing payout types...');
-                    const { error } = await supabase.functions.invoke('fix-payout-types', {
-                      headers: { Authorization: `Bearer ${session.access_token}` },
-                    });
-                    
-                    toast.dismiss();
-                    if (error) throw error;
-                    toast.success('Fixed! All settlements now show as bi-weekly.');
-                    refetch();
-                  } catch (error) {
-                    toast.dismiss();
-                    toast.error('Failed to fix payout types');
-                  }
-                }}
-                title="Fix settlements to show correct bi-weekly type"
-              >
-                Fix Bi-Weekly
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
                 onClick={handleForceFullResync}
                 disabled={
                   isSyncing !== null || 
