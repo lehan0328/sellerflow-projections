@@ -35,6 +35,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AmazonForecastAccuracy } from "@/components/cash-flow/amazon-forecast-accuracy";
 import { ForecastSettings } from "@/components/settings/forecast-settings";
+import { BarChart3 } from "lucide-react";
 
 export default function AmazonForecast() {
   const navigate = useNavigate();
@@ -42,6 +43,7 @@ export default function AmazonForecast() {
   const { incomeItems } = useIncome();
   const { amazonAccounts } = useAmazonAccounts();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
 
   // Check if user has 3+ confirmed payouts
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
@@ -270,28 +272,116 @@ export default function AmazonForecast() {
 
       {/* Historical Trends */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>Revenue & Payouts - Full Year</CardTitle>
+          <div className="flex gap-2">
+            <Button
+              variant={chartType === 'bar' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setChartType('bar')}
+              className="gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Bar
+            </Button>
+            <Button
+              variant={chartType === 'line' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setChartType('line')}
+              className="gap-2"
+            >
+              <LineChart className="h-4 w-4" />
+              Line
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={historicalData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip formatter={(value) => `$${Number(value).toLocaleString()}`} />
-              <Legend />
-              <Bar 
-                dataKey="sales" 
-                fill="hsl(var(--chart-1))" 
-                name="Revenue (Before Fees)"
-              />
-              <Bar 
-                dataKey="payouts" 
-                fill="hsl(var(--chart-2))" 
-                name="Payouts"
-              />
-            </BarChart>
+            {chartType === 'bar' ? (
+              <BarChart data={historicalData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fill: '#6b7280' }}
+                  tickLine={{ stroke: '#e5e7eb' }}
+                />
+                <YAxis 
+                  tick={{ fill: '#6b7280' }}
+                  tickLine={{ stroke: '#e5e7eb' }}
+                  tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                />
+                <Tooltip 
+                  formatter={(value) => `$${Number(value).toLocaleString()}`}
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                <Legend 
+                  wrapperStyle={{ paddingTop: '20px' }}
+                  iconType="circle"
+                />
+                <Bar 
+                  dataKey="sales" 
+                  fill="#10b981" 
+                  name="Revenue (Before Fees)"
+                  radius={[8, 8, 0, 0]}
+                />
+                <Bar 
+                  dataKey="payouts" 
+                  fill="#8b5cf6" 
+                  name="Payouts"
+                  radius={[8, 8, 0, 0]}
+                />
+              </BarChart>
+            ) : (
+              <RechartsLineChart data={historicalData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fill: '#6b7280' }}
+                  tickLine={{ stroke: '#e5e7eb' }}
+                />
+                <YAxis 
+                  tick={{ fill: '#6b7280' }}
+                  tickLine={{ stroke: '#e5e7eb' }}
+                  tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                />
+                <Tooltip 
+                  formatter={(value) => `$${Number(value).toLocaleString()}`}
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                <Legend 
+                  wrapperStyle={{ paddingTop: '20px' }}
+                  iconType="circle"
+                />
+                <Line 
+                  type="monotone"
+                  dataKey="sales" 
+                  stroke="#10b981" 
+                  strokeWidth={3}
+                  name="Revenue (Before Fees)"
+                  dot={{ fill: '#10b981', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+                <Line 
+                  type="monotone"
+                  dataKey="payouts" 
+                  stroke="#8b5cf6" 
+                  strokeWidth={3}
+                  name="Payouts"
+                  dot={{ fill: '#8b5cf6', r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </RechartsLineChart>
+            )}
           </ResponsiveContainer>
         </CardContent>
       </Card>
