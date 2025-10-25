@@ -405,7 +405,7 @@ const Dashboard = () => {
   const { amazonPayouts } = useAmazonPayouts();
   
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
-  const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance, resetAccount } = useUserSettings();
+  const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance, resetAccount, forecastsEnabled } = useUserSettings();
 
   // Real-time updates for bank account balance changes
   useEffect(() => {
@@ -1595,10 +1595,17 @@ const Dashboard = () => {
     return events;
   }, [recurringExpenses]);
 
-  // Convert Amazon payouts to calendar events (always include all payouts)
-  console.log('[Dashboard] Converting Amazon payouts to calendar events. Total payouts:', amazonPayouts.length);
+  // Convert Amazon payouts to calendar events (filter out forecasts if disabled)
+  console.log('[Dashboard] Converting Amazon payouts to calendar events. Total payouts:', amazonPayouts.length, 'Forecasts enabled:', forecastsEnabled);
   
   const amazonPayoutEvents: CashFlowEvent[] = amazonPayouts
+    .filter(payout => {
+      // Only show forecasted payouts if forecasts are enabled
+      if ((payout.status as string) === 'forecasted' && !forecastsEnabled) {
+        return false;
+      }
+      return true;
+    })
     .map(payout => {
       // Open settlements (status='estimated') are in-progress and will update daily
       const isOpenSettlement = (payout.status as string) === 'estimated';
