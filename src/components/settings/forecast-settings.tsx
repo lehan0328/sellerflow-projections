@@ -49,7 +49,6 @@ export const ForecastSettings = () => {
   const [confidenceThreshold, setConfidenceThreshold] = useState(8); // Working value (can be changed)
   const [savedConfidenceThreshold, setSavedConfidenceThreshold] = useState(8); // Saved value (only changes after save)
   const [forecastsEnabled, setForecastsEnabled] = useState(true);
-  const [disabledAt, setDisabledAt] = useState<string | null>(null);
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
   const [togglingForecast, setTogglingForecast] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
@@ -88,14 +87,6 @@ export const ForecastSettings = () => {
     return activeAccount?.payout_frequency || 'bi-weekly';
   }, [amazonAccounts]);
 
-  // Calculate if 3 hours have passed since disabling
-  const canReEnable = !disabledAt || 
-    (new Date().getTime() - new Date(disabledAt).getTime()) >= 3 * 60 * 60 * 1000;
-  
-  const hoursUntilReEnable = disabledAt 
-    ? Math.max(0, 3 - Math.floor((new Date().getTime() - new Date(disabledAt).getTime()) / (60 * 60 * 1000)))
-    : 0;
-
   // Sync payoutModel with userSelectedPayoutModel whenever it changes
   useEffect(() => {
     if (userSelectedPayoutModel) {
@@ -114,7 +105,7 @@ export const ForecastSettings = () => {
     try {
       const { data, error } = await supabase
         .from('user_settings')
-        .select('forecast_confidence_threshold, forecasts_enabled, forecasts_disabled_at, advanced_modeling_enabled, default_reserve_lag_days')
+        .select('forecast_confidence_threshold, forecasts_enabled, advanced_modeling_enabled, default_reserve_lag_days')
         .eq('user_id', user!.id)
         .maybeSingle();
 
@@ -147,7 +138,6 @@ export const ForecastSettings = () => {
 
       // Set forecast enabled state
       setForecastsEnabled(data?.forecasts_enabled ?? true);
-      setDisabledAt(data?.forecasts_disabled_at || null);
       setAdvancedModelingEnabled(data?.advanced_modeling_enabled ?? false);
     } catch (error) {
       console.error('Error fetching forecast settings:', error);
@@ -199,11 +189,10 @@ export const ForecastSettings = () => {
         .from('user_settings')
         .update({ 
           forecasts_enabled: enabled,
-          forecasts_disabled_at: enabled ? null : new Date().toISOString(),
           updated_at: new Date().toISOString() // Force timestamp update
         })
         .eq('user_id', currentUser.id)
-        .select('forecasts_enabled, forecasts_disabled_at, account_id')
+        .select('forecasts_enabled, account_id')
         .single();
 
       console.log('📦 [TOGGLE] Update response:', { updateData, updateError });
@@ -225,7 +214,7 @@ export const ForecastSettings = () => {
       await new Promise(resolve => setTimeout(resolve, 500)); // Wait for DB to settle
       const { data: verifyData, error: verifyError } = await supabase
         .from('user_settings')
-        .select('forecasts_enabled, forecasts_disabled_at, account_id, updated_at')
+        .select('forecasts_enabled, account_id, updated_at')
         .eq('user_id', currentUser.id)
         .single();
       
@@ -416,7 +405,6 @@ export const ForecastSettings = () => {
       }
 
       setForecastsEnabled(false);
-      setDisabledAt(new Date().toISOString());
       toast.success("Mathematical forecasts disabled. All forecasted payouts removed.");
       
       // Reload to reflect changes
@@ -776,7 +764,7 @@ export const ForecastSettings = () => {
                         id="forecast-toggle"
                         checked={forecastsEnabled && hasAmazonStore && canEnableForecasts}
                         onCheckedChange={handleToggleForecast}
-                        disabled={togglingForecast || !hasAmazonStore || !canEnableForecasts || (!forecastsEnabled && !canReEnable)}
+                        disabled={togglingForecast || !hasAmazonStore || !canEnableForecasts}
                       />
                     </div>
                   </TooltipTrigger>
@@ -835,11 +823,6 @@ export const ForecastSettings = () => {
                   <AlertTriangle className="h-4 w-4" />
                   Mathematical forecasts are currently disabled
                 </p>
-                {!canReEnable && (
-                  <p className="text-xs text-muted-foreground">
-                    You can re-enable forecasts in {hoursUntilReEnable} hours
-                  </p>
-                )}
               </div>
             )}
           </CardDescription>
@@ -1059,7 +1042,7 @@ export const ForecastSettings = () => {
               <li>Only show confirmed Amazon payouts going forward</li>
             </ul>
             <p className="font-semibold text-orange-600 dark:text-orange-400">
-              You will need to wait 3 hours before you can re-enable mathematical forecasts.
+              You can re-enable mathematical forecasts anytime from the settings.
             </p>
           </AlertDialogDescription>
         </AlertDialogHeader>
