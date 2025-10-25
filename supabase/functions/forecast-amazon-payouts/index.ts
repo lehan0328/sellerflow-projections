@@ -354,11 +354,12 @@ serve(async (req) => {
       console.log(`[FORECAST] Using mathematical forecasting for ${amazonAccount.account_name} (AI generation removed)`);
 
       // Generate mathematical forecasts without AI
-      const payoutFrequency = amazonAccount.payout_frequency || 'bi-weekly';
-      const lastPayoutDate = new Date(amazonPayouts[0].payout_date);
-      
-      // Calculate baseline amount based on frequency
-      let baselineAmount;
+      {
+        const payoutFrequency = amazonAccount.payout_frequency || 'bi-weekly';
+        const lastPayoutDate = new Date(amazonPayouts[0].payout_date);
+        
+        // Calculate baseline amount based on frequency
+        let baselineAmount;
       if (payoutFrequency === 'daily') {
           // For daily: calculate average payout per day from historical data
           // Formula: total payout over set days / # of days for those payouts = payout per day
