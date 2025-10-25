@@ -309,10 +309,18 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         const processingStatus = group.ProcessingStatus
         const fundTransferStatus = group.FundTransferStatus
         
-        // Only process completed settlements
-        if (processingStatus === 'Closed' && group.OriginalTotal) {
+        // Process both Closed (confirmed) and Open (estimated) settlements from Amazon
+        if (group.OriginalTotal) {
           const totalAmount = parseFloat(group.OriginalTotal?.CurrencyAmount || '0')
           const currencyCode = group.OriginalTotal?.CurrencyCode || 'USD'
+          
+          // Determine status based on Amazon's processing status
+          let settlementStatus = 'estimated';
+          if (processingStatus === 'Closed') {
+            settlementStatus = 'confirmed';
+          } else if (processingStatus === 'Open') {
+            settlementStatus = 'estimated'; // Amazon's pending settlement
+          }
           
           settlementsToAdd.push({
             user_id: actualUserId,
@@ -325,7 +333,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
             fees_total: 0,
             refunds_total: 0,
             currency_code: currencyCode,
-            status: 'confirmed', // Always use confirmed for real Amazon settlements (not AI predictions)
+            status: settlementStatus,
             payout_type: amazonAccount.payout_frequency || 'bi-weekly',
             marketplace_name: amazonAccount.marketplace_name,
             raw_settlement_data: group

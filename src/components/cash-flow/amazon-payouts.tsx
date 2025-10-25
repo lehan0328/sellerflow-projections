@@ -447,7 +447,10 @@ export function AmazonPayouts() {
           // Group payouts by date and aggregate amounts, exclude past dates
           const filteredPayouts = amazonPayouts.filter(payout => {
             const daysUntil = getDaysUntil(payout.payout_date);
-            return daysUntil >= 0 && (showForecasts ? true : payout.status !== 'forecasted');
+            // Always show Amazon's real data (confirmed + estimated), only filter mathematical forecasts
+            if (payout.status === 'confirmed' || payout.status === 'estimated') return daysUntil >= 0;
+            // Filter mathematical forecasts based on toggle
+            return daysUntil >= 0 && showForecasts;
           });
           
           // Separate forecasted and actual payouts for better display
