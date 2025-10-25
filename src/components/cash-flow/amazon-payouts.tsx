@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -7,7 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Clock, Plus, Loader2 } from "lucide-react";
+import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Clock, Plus, Loader2, History as HistoryIcon } from "lucide-react";
+import { AmazonSettledPayouts } from "./amazon-settled-payouts";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useState } from "react";
@@ -56,6 +57,12 @@ export function AmazonPayouts() {
   const [showForecasts, setShowForecasts] = useState(true);
   const [showConnectDialog, setShowConnectDialog] = useState(false);
   const [selectedMarketplace, setSelectedMarketplace] = useState("ATVPDKIKX0DER");
+  const [showSettledPayouts, setShowSettledPayouts] = useState(false);
+  
+  // Count settled payouts
+  const settledPayoutsCount = amazonPayouts.filter(p => 
+    p.status === 'confirmed' || p.status === 'estimated'
+  ).length;
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -254,6 +261,15 @@ export function AmazonPayouts() {
               <CardTitle>Amazon Payouts</CardTitle>
             </div>
             
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowSettledPayouts(true)}
+            >
+              <HistoryIcon className="h-4 w-4 mr-2" />
+              View Settlements ({settledPayoutsCount})
+            </Button>
+            
             <Button variant="outline" size="sm" onClick={() => navigate('/settings')}>
               <Settings className="h-4 w-4 mr-2" />
               Manage
@@ -301,34 +317,6 @@ export function AmazonPayouts() {
               >
                 <Loader2 className="h-4 w-4 mr-2" />
                 Full Resync
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const account = amazonAccounts[0];
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (!session) return;
-                    
-                    toast.loading('Fixing account settings...');
-                    const { error } = await supabase.functions.invoke('fix-amazon-account-settings', {
-                      body: { accountId: account.id, payoutModel: 'bi-weekly' },
-                      headers: { Authorization: `Bearer ${session.access_token}` },
-                    });
-                    
-                    toast.dismiss();
-                    if (error) throw error;
-                    toast.success('Account updated to bi-weekly. Click "Sync" to refresh.');
-                    refetch();
-                  } catch (error) {
-                    toast.dismiss();
-                    toast.error('Failed to update account');
-                  }
-                }}
-                title="Fix to bi-weekly and reset stuck sync"
-              >
-                Fix Account
               </Button>
               <Button
                 variant="ghost"
@@ -618,5 +606,10 @@ export function AmazonPayouts() {
           </div>
         </DialogContent>
       </Dialog>
+      
+      <AmazonSettledPayouts 
+        open={showSettledPayouts} 
+        onOpenChange={setShowSettledPayouts}
+      />
     </Card>;
 }

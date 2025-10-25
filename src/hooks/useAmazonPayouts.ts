@@ -54,11 +54,6 @@ export const useAmazonPayouts = () => {
 
       const forecastsEnabled = settings?.forecasts_enabled ?? true;
 
-      // Only fetch payouts from today onwards (archive past payouts)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayStr = today.toISOString().split('T')[0];
-
       const { data, error } = await supabase
         .from("amazon_payouts")
         .select(`
