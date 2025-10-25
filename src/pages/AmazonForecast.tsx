@@ -44,41 +44,78 @@ export default function AmazonForecast() {
   const { amazonAccounts } = useAmazonAccounts();
   const [isGenerating, setIsGenerating] = useState(false);
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
+  const [amazonTransactions, setAmazonTransactions] = useState<any[]>([]);
 
   // Check if user has 3+ confirmed payouts
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
   const hasEnoughData = confirmedPayouts.length >= 3;
 
+  // Fetch Amazon transactions for revenue calculation
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Get transactions from last 12 months
+        const twelveMonthsAgo = new Date();
+        twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+        const { data, error } = await supabase
+          .from('amazon_transactions_daily_summary')
+          .select('settlement_date, order_total')
+          .eq('user_id', user.id)
+          .gte('settlement_date', twelveMonthsAgo.toISOString())
+          .order('settlement_date', { ascending: true });
+
+        if (error) throw error;
+        setAmazonTransactions(data || []);
+      } catch (error) {
+        console.error('Error fetching Amazon transactions:', error);
+      }
+    };
+
+    fetchTransactions();
+  }, []);
+
   // Calculate historical metrics
   const historicalData = useMemo(() => {
-    const monthlyData: Record<string, { sales: number; payouts: number; count: number }> = {};
+    const monthlyData: Record<string, { revenue: number; payouts: number; count: number }> = {};
     
     // Last 12 months
     for (let i = 11; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
       const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      monthlyData[key] = { sales: 0, payouts: 0, count: 0 };
+      monthlyData[key] = { revenue: 0, payouts: 0, count: 0 };
     }
 
-    // Aggregate Amazon payouts
+    // Aggregate revenue from Amazon transactions (order totals before fees)
+    amazonTransactions.forEach(txn => {
+      const date = new Date(txn.settlement_date);
+      const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      if (monthlyData[key]) {
+        monthlyData[key].revenue += Number(txn.order_total || 0);
+      }
+    });
+
+    // Aggregate payouts (net after fees, returns, etc.)
     amazonPayouts.forEach(payout => {
       const date = new Date(payout.payout_date);
       const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
       if (monthlyData[key]) {
         monthlyData[key].payouts += Number(payout.total_amount || 0);
-        monthlyData[key].sales += Number(payout.orders_total || 0);
         monthlyData[key].count += 1;
       }
     });
 
     return Object.entries(monthlyData).map(([month, data]) => ({
       month,
-      sales: data.sales,
+      revenue: data.revenue,
       payouts: data.payouts,
       count: data.count
     }));
-  }, [amazonPayouts]);
+  }, [amazonPayouts, amazonTransactions]);
 
   const generateForecast = async () => {
     setIsGenerating(true);
@@ -324,7 +361,7 @@ export default function AmazonForecast() {
                   iconType="circle"
                 />
                 <Bar 
-                  dataKey="sales" 
+                  dataKey="revenue" 
                   fill="#10b981" 
                   name="Revenue (Before Fees)"
                   radius={[8, 8, 0, 0]}
@@ -364,7 +401,7 @@ export default function AmazonForecast() {
                 />
                 <Line 
                   type="monotone"
-                  dataKey="sales" 
+                  dataKey="revenue" 
                   stroke="#10b981" 
                   strokeWidth={3}
                   name="Revenue (Before Fees)"
