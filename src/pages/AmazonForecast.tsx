@@ -63,7 +63,7 @@ export default function AmazonForecast() {
 
         const { data, error } = await supabase
           .from('amazon_transactions_daily_summary')
-          .select('settlement_date, order_total')
+          .select('settlement_date, orders_total')
           .eq('user_id', user.id)
           .gte('settlement_date', twelveMonthsAgo.toISOString())
           .order('settlement_date', { ascending: true });
@@ -95,7 +95,7 @@ export default function AmazonForecast() {
       const date = new Date(txn.settlement_date);
       const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
       if (monthlyData[key]) {
-        monthlyData[key].revenue += Number(txn.order_total || 0);
+        monthlyData[key].revenue += Number(txn.orders_total || 0);
       }
     });
 
