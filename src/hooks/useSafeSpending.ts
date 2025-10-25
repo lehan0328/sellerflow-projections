@@ -72,15 +72,17 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         return;
       }
 
-      // ALWAYS fetch the latest reserve from database to ensure accuracy
+      // ALWAYS fetch the latest reserve AND forecast settings from database to ensure accuracy
       const { data: settings } = await supabase
         .from('user_settings')
-        .select('safe_spending_reserve')
+        .select('safe_spending_reserve, forecasts_enabled')
         .eq('user_id', session.user.id)
         .maybeSingle();
 
       const reserve = Number(settings?.safe_spending_reserve || 0);
+      const forecastsEnabled = settings?.forecasts_enabled ?? true;
       console.log('🔄 [SAFE SPENDING] Using reserve from database:', reserve);
+      console.log('🔄 [SAFE SPENDING] Forecasts enabled:', forecastsEnabled);
 
       // Get bank account balance - use available_balance or balance based on toggle
       // IMPORTANT: Filter by account_id to ensure account separation
@@ -184,15 +186,32 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         creditCards: creditCardsResult.data?.length || 0
       });
 
-      console.log('🛒 Amazon Payouts Details:', amazonResult.data?.map(p => ({
+      console.log('🛒 Amazon Payouts Details (before filtering):', amazonResult.data?.map(p => ({
         date: p.payout_date,
         amount: p.total_amount,
         status: p.status,
         marketplace: p.marketplace_name
       })) || 'No payouts fetched');
       
-      const totalAmazonRevenue = (amazonResult.data || []).reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
-      console.log('🛒 Total forecasted Amazon revenue (next 90 days):', 
+      // Filter Amazon payouts based on forecast settings
+      const filteredAmazonPayouts = (amazonResult.data || []).filter((payout) => {
+        // Always show Amazon's real settlements (confirmed and estimated/open)
+        if (payout.status === 'confirmed' || payout.status === 'estimated') {
+          return true;
+        }
+        
+        // Only include forecasted payouts if forecasts are enabled
+        if (payout.status === 'forecasted' && !forecastsEnabled) {
+          console.log('🚫 [SAFE SPENDING] Excluding forecasted payout:', payout.payout_date, payout.total_amount);
+          return false;
+        }
+        
+        return true;
+      });
+      
+      console.log('🛒 Amazon Payouts after filtering:', filteredAmazonPayouts.length, 'payouts');
+      const totalAmazonRevenue = filteredAmazonPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+      console.log('🛒 Total Amazon revenue (next 90 days):', 
         '$' + totalAmazonRevenue.toLocaleString());
 
       console.log('🔍 VENDOR DATA:', vendorsResult.data?.map(v => ({
@@ -223,7 +242,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         (incomeResult.data && incomeResult.data.length > 0) ||
         (recurringResult.data && recurringResult.data.length > 0) ||
         (vendorsResult.data && vendorsResult.data.some(v => v.status !== 'paid' && Number(v.total_owed || 0) > 0)) ||
-        (amazonResult.data && amazonResult.data.length > 0) ||
+        (filteredAmazonPayouts && filteredAmazonPayouts.length > 0) ||
         (creditCardsResult.data && creditCardsResult.data.some(c => c.balance > 0 && c.payment_due_date))
       );
 
@@ -329,8 +348,8 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           }
         });
 
-        // Include ALL Amazon payouts (confirmed AND forecasted)
-        amazonResult.data?.forEach((payout) => {
+        // Include ALL Amazon payouts (confirmed, estimated, and forecasted if enabled)
+        filteredAmazonPayouts?.forEach((payout) => {
           const payoutDate = parseLocalDate(payout.payout_date);
           
           // Skip ALL past Amazon payouts (anything before today)
