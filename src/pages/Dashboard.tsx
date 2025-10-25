@@ -1597,16 +1597,31 @@ const Dashboard = () => {
 
   // Convert Amazon payouts to calendar events (always include all payouts)
   const amazonPayoutEvents: CashFlowEvent[] = amazonPayouts
-    .map(payout => ({
-      id: `amazon-payout-${payout.id}`,
-      type: 'inflow' as const,
-      amount: payout.total_amount,
-      description: (payout.status as string) === 'forecasted' 
+    .map(payout => {
+      // Open settlements (status='estimated') are in-progress and will update daily
+      const isOpenSettlement = (payout.status as string) === 'estimated';
+      const description = (payout.status as string) === 'forecasted' 
         ? `Amazon Payout (Forecasted) - ${payout.marketplace_name}`
-        : `Amazon Payout - ${payout.marketplace_name} (${payout.status})`,
-      source: (payout.status as string) === 'forecasted' ? 'Amazon-Forecasted' : 'Amazon',
-      date: new Date(payout.payout_date)
-    }));
+        : isOpenSettlement
+          ? `Amazon Settlement (In Progress) - ${payout.marketplace_name}`
+          : `Amazon Payout - ${payout.marketplace_name}`;
+      
+      console.log('[Calendar] Adding Amazon payout:', {
+        date: payout.payout_date,
+        amount: payout.total_amount,
+        status: payout.status,
+        isOpen: isOpenSettlement
+      });
+      
+      return {
+        id: `amazon-payout-${payout.id}`,
+        type: 'inflow' as const,
+        amount: payout.total_amount,
+        description,
+        source: (payout.status as string) === 'forecasted' ? 'Amazon-Forecasted' : 'Amazon',
+        date: new Date(payout.payout_date)
+      };
+    });
 
   // Combine all events for calendar - only include real user data
   const allCalendarEvents = [...calendarEvents, ...vendorPaymentEvents, ...vendorEvents, ...incomeEvents, ...creditCardEvents, ...forecastedCreditCardEvents, ...recurringEvents, ...amazonPayoutEvents];
