@@ -217,21 +217,23 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       startDate.setDate(startDate.getDate() + 1)
       startDate.setHours(0, 0, 0, 0)
       
-      // Sync one day at a time
+      // Instead of one day at a time, fetch 30 days per sync for faster backfill
       endDate = new Date(startDate)
+      endDate.setDate(endDate.getDate() + 30)
       endDate.setHours(23, 59, 59, 999)
       
-      console.log('[SYNC] Incremental mode - fetching transactions from:', startDate.toISOString())
+      console.log('[SYNC] Incremental mode - fetching 30 days of transactions from:', startDate.toISOString())
     } else {
-      // First sync - only get last 60 days of detailed transactions
+      // First sync - get last 60 days of detailed transactions
       startDate = new Date()
       startDate.setDate(startDate.getDate() - 60)
       startDate.setHours(0, 0, 0, 0)
       
-      endDate = new Date(startDate)
+      // Fetch all 60 days in one go for initial sync
+      endDate = new Date()
       endDate.setHours(23, 59, 59, 999)
       
-      console.log('[SYNC] Initial sync - fetching transactions from last 60 days:', startDate.toISOString())
+      console.log('[SYNC] Initial sync - fetching 60 days of transactions:', startDate.toISOString(), 'to', endDate.toISOString())
     }
 
     console.log('[SYNC] Settlements window: Full year (365 days) for seasonal analysis')
@@ -263,8 +265,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     await supabase
       .from('amazon_accounts')
       .update({ 
-        sync_message: `Syncing ${startDate.toISOString().split('T')[0]}...`,
-        sync_progress: Math.min(5, (Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24) * 2)
+        sync_message: `Syncing ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}...`,
+        sync_progress: Math.min(5, (Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24) * 0.5)
       })
       .eq('id', amazonAccountId)
 
@@ -895,14 +897,17 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         .eq('id', amazonAccountId)
     } else {
       // Mark as ready for next sync (scheduled job will continue)
-      console.log('[SYNC] ✓ Day complete - ready for next sync')
+      console.log('[SYNC] ✓ Batch complete - ready for next sync')
       const daysRemaining = Math.ceil((yesterday.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24))
+      const totalDays = Math.ceil((yesterday.getTime() - new Date(amazonAccount.last_synced_to || startDate).getTime()) / (1000 * 60 * 60 * 24))
+      const progress = totalDays > 0 ? Math.min(95, Math.round((1 - (daysRemaining / totalDays)) * 100)) : 5
+      
       await supabase
         .from('amazon_accounts')
         .update({ 
           sync_status: 'idle',
-          sync_progress: Math.min(95, 100 - (daysRemaining * 2)),
-          sync_message: `Synced through ${endDate.toLocaleDateString()} - ${daysRemaining} days remaining`
+          sync_progress: progress,
+          sync_message: `Synced through ${endDate.toISOString().split('T')[0]} (${daysRemaining}d remaining)`
         })
         .eq('id', amazonAccountId)
     }
