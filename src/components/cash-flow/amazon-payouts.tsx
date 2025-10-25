@@ -540,13 +540,13 @@ export function AmazonPayouts() {
                             <span className="flex items-center">
                               <Calendar className="mr-1 h-3 w-3" />
                               {startDate && estimatedEnd ? (
-                                `Period: ${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${estimatedEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} (Est.)`
+                                `Period: ${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${estimatedEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
                               ) : (
                                 `Started: ${payout.payout_date}`
                               )}
                             </span>
                             <span className={`font-medium ${daysUntil === 0 ? 'text-finance-positive' : daysUntil <= 3 && daysUntil >= 0 ? 'text-warning' : 'text-muted-foreground'}`}>
-                              Est. Payout: {daysUntil === 0 ? 'Today' : daysUntil > 0 ? `in ${daysUntil} days` : `${Math.abs(daysUntil)} days overdue`}
+                              Payout: {daysUntil === 0 ? 'Today' : daysUntil > 0 ? `in ${daysUntil} days` : `${Math.abs(daysUntil)} days overdue`}
                             </span>
                           </div>
                           <div className="flex items-center space-x-4 text-xs text-muted-foreground">
@@ -562,7 +562,7 @@ export function AmazonPayouts() {
                             {estimatedPayoutDate && (
                               <>
                                 {(rawData?.BeginningBalance?.CurrencyAmount !== undefined || rawData?.ProcessingStatus) && <span>•</span>}
-                                <span>Closes & pays: {estimatedPayoutDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                <span className="font-medium text-green-600 dark:text-green-400">Closes & Pays: {estimatedPayoutDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} (Confirmed)</span>
                               </>
                             )}
                           </div>
