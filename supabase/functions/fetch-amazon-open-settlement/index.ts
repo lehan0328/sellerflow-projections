@@ -59,8 +59,25 @@ Deno.serve(async (req) => {
     console.log('[FETCH] Fetching open settlement for account:', amazonAccount.account_name)
     console.log('[FETCH] API endpoint:', apiEndpoint)
 
-    // Fetch access token (simplified - assumes token is valid)
+    // Refresh access token if needed
     let accessToken = amazonAccount.encrypted_access_token
+    const tokenExpiresAt = amazonAccount.token_expires_at ? new Date(amazonAccount.token_expires_at) : null
+    const now = new Date()
+    
+    if (!accessToken || !tokenExpiresAt || tokenExpiresAt <= now) {
+      console.log('[FETCH] Token expired or missing, refreshing...')
+      
+      const { data: tokenData, error: tokenError } = await supabase.functions.invoke('refresh-amazon-token', {
+        body: { amazonAccountId }
+      })
+      
+      if (tokenError || !tokenData?.accessToken) {
+        throw new Error('Failed to refresh Amazon access token')
+      }
+      
+      accessToken = tokenData.accessToken
+      console.log('[FETCH] Token refreshed successfully')
+    }
 
     // Fetch financial event groups (settlements) - last 365 days
     const oneYearAgo = new Date()
