@@ -100,7 +100,7 @@ serve(async (req) => {
     }
 
     // Generate forecasts
-    const { error: forecastError } = await supabaseClient.functions.invoke('forecast-amazon-payouts-math', {
+    const { error: forecastError } = await supabaseClient.functions.invoke('forecast-amazon-payouts', {
       body: { userId: userId }
     });
 

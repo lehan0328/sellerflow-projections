@@ -72,7 +72,7 @@ serve(async (req) => {
 
     // Invoke forecast generation
     console.log('[ENABLE-FORECASTS] Generating forecasts...');
-    const { error: forecastError } = await supabaseClient.functions.invoke('forecast-amazon-payouts-math', {
+    const { error: forecastError } = await supabaseClient.functions.invoke('forecast-amazon-payouts', {
       body: { userId: user.id }
     });
 

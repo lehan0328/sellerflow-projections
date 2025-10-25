@@ -293,7 +293,7 @@ export const ForecastSettings = () => {
           
           // Generate new forecasts using mathematical model
           console.log('🔄 [TOGGLE] Calling forecast generation edge function...');
-          const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
+          const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts', {
             body: { userId: currentUser.id }
           });
 

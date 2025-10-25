@@ -98,7 +98,7 @@ serve(async (req) => {
 
         // Generate new forecasts
         const { data: forecastData, error: forecastError } = await supabaseAdmin.functions.invoke(
-          'forecast-amazon-payouts-math',
+          'forecast-amazon-payouts',
           {
             body: { userId: userSetting.user_id }
           }
