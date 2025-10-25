@@ -550,22 +550,18 @@ export function AmazonPayouts() {
                             </span>
                           </div>
                           <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                            <span>{payout.transaction_count} transactions</span>
                             {rawData?.BeginningBalance?.CurrencyAmount !== undefined && (
-                              <>
-                                <span>•</span>
-                                <span>Opening: {formatCurrency(rawData.BeginningBalance.CurrencyAmount)}</span>
-                              </>
+                              <span>Opening: {formatCurrency(rawData.BeginningBalance.CurrencyAmount)}</span>
                             )}
                             {rawData?.ProcessingStatus && (
                               <>
-                                <span>•</span>
+                                {rawData?.BeginningBalance?.CurrencyAmount !== undefined && <span>•</span>}
                                 <span>Status: {rawData.ProcessingStatus}</span>
                               </>
                             )}
                             {estimatedPayoutDate && (
                               <>
-                                <span>•</span>
+                                {(rawData?.BeginningBalance?.CurrencyAmount !== undefined || rawData?.ProcessingStatus) && <span>•</span>}
                                 <span>Closes & pays: {estimatedPayoutDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                               </>
                             )}
@@ -766,43 +762,40 @@ export function AmazonPayouts() {
                                 {daysUntil === 0 ? 'Arrived Today' : daysUntil > 0 ? `Arrives in ${daysUntil} days` : `Arrived ${Math.abs(daysUntil)} days ago`}
                               </span>
                             </div>
-                           <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                             {(() => {
-                               const firstPayout = aggregatedPayout.payouts[0];
-                               const rawData = firstPayout?.raw_settlement_data;
-                               const details = [];
-                               
-                               // Transaction count
-                               details.push(`${aggregatedPayout.transaction_count} transactions`);
-                               
-                               // Beginning balance
-                               if (rawData?.BeginningBalance?.CurrencyAmount !== undefined) {
-                                 details.push(`Opening: ${formatCurrency(rawData.BeginningBalance.CurrencyAmount)}`);
-                               }
-                               
-                               // Fund transfer status
-                               if (rawData?.FundTransferStatus) {
-                                 details.push(`Transfer: ${rawData.FundTransferStatus}`);
-                               }
-                               
-                               // Account tail
-                               if (rawData?.AccountTail) {
-                                 details.push(`Account: •••${rawData.AccountTail}`);
-                               }
-                               
-                               // Processing status
-                               if (rawData?.ProcessingStatus) {
-                                 details.push(`Status: ${rawData.ProcessingStatus}`);
-                               }
-                               
-                               return details.map((detail, i) => (
-                                 <span key={i} className="flex items-center">
-                                   {i > 0 && <span className="mx-2">•</span>}
-                                   {detail}
-                                 </span>
-                               ));
-                             })()}
-                           </div>
+                            <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                              {(() => {
+                                const firstPayout = aggregatedPayout.payouts[0];
+                                const rawData = firstPayout?.raw_settlement_data;
+                                const details = [];
+                                
+                                // Beginning balance
+                                if (rawData?.BeginningBalance?.CurrencyAmount !== undefined) {
+                                  details.push(`Opening: ${formatCurrency(rawData.BeginningBalance.CurrencyAmount)}`);
+                                }
+                                
+                                // Fund transfer status
+                                if (rawData?.FundTransferStatus) {
+                                  details.push(`Transfer: ${rawData.FundTransferStatus}`);
+                                }
+                                
+                                // Account tail
+                                if (rawData?.AccountTail) {
+                                  details.push(`Account: •••${rawData.AccountTail}`);
+                                }
+                                
+                                // Processing status
+                                if (rawData?.ProcessingStatus) {
+                                  details.push(`Status: ${rawData.ProcessingStatus}`);
+                                }
+                                
+                                return details.map((detail, i) => (
+                                  <span key={i} className="flex items-center">
+                                    {i > 0 && <span className="mx-2">•</span>}
+                                    {detail}
+                                  </span>
+                                ));
+                              })()}
+                            </div>
                          </div>
                       </div>
                       <div className="text-right">
