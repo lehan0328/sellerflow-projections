@@ -1784,7 +1784,7 @@ const Landing = () => {
 
               <h3 className="text-2xl font-bold text-foreground">How Auren Solves Cash Flow Challenges for Marketplace Sellers</h3>
               <p className="leading-relaxed">
-                <strong className="text-foreground">Auren</strong> was built specifically to solve the <strong className="text-foreground">cash flow management challenges</strong> faced by Amazon FBA and marketplace sellers. By connecting directly to your <a href="/docs/amazon-integration" className="text-primary hover:underline">Amazon Seller Central account</a>,
+                <strong className="text-foreground">Auren</strong> was built specifically to solve the <strong className="text-foreground">cash flow management challenges</strong> faced by Amazon FBA and marketplace sellers. By connecting directly to your <a href="/docs/amazon-integration" className="text-primary underline hover:text-primary/80">Amazon Seller Central account</a>,
                 Auren forecasts every future payout using your real settlement data. Our AI-powered system maps sales, refunds, reserves, and fees to
                 generate a clear <strong className="text-foreground">90-day cash flow timeline</strong> — helping you understand exactly when funds will hit your bank and when your next big expense is due.
               </p>
@@ -1793,13 +1793,13 @@ const Landing = () => {
               <p className="leading-relaxed">
                 Predictable cash flow isn&apos;t just about avoiding overdrafts — it&apos;s about <strong className="text-foreground">unlocking sustainable growth</strong>. With accurate <strong className="text-foreground">Amazon payout forecasting</strong>,
                 sellers can confidently plan new inventory orders, time product launches, and scale advertising budgets without worrying about short-term liquidity.
-                Instead of reacting to cash flow surprises, you can make proactive financial decisions that keep your eCommerce business growing sustainably. Learn more about <a href="/features" className="text-primary hover:underline">all our forecasting features</a>.
+                Instead of reacting to cash flow surprises, you can make proactive financial decisions that keep your eCommerce business growing sustainably. Learn more about <a href="/features" className="text-primary underline hover:text-primary/80">all our forecasting features</a>.
               </p>
 
               <h3 className="text-2xl font-bold text-foreground">Advanced Features for Amazon FBA & Multi-Channel Sellers</h3>
               <p className="leading-relaxed">
                 Whether you&apos;re an FBA wholesaler, private-label brand, or multi-marketplace seller, Auren&apos;s <strong className="text-foreground">cash flow forecasting dashboard</strong>
-                shows your <em className="text-foreground">daily available cash</em> and <em className="text-foreground">expected Amazon payouts</em> at a glance. You can even run <a href="/features/scenario-planning" className="text-primary hover:underline">what-if scenarios</a>
+                shows your <em className="text-foreground">daily available cash</em> and <em className="text-foreground">expected Amazon payouts</em> at a glance. You can even run <a href="/features/scenario-planning" className="text-primary underline hover:text-primary/80">what-if scenarios</a>
                 to test how changes in sales volume, ad spend, or restocks affect your future cash position. Our <strong className="text-foreground">AI-powered insights</strong> help you optimize spending and maximize profitability.
               </p>
 
@@ -1808,7 +1808,7 @@ const Landing = () => {
                 By automating your <strong className="text-foreground">seller cash flow tracking</strong>, Auren helps you replace complex spreadsheets with clarity and confidence. Our platform integrates with
                 your bank accounts, credit cards, and Amazon seller accounts to provide real-time visibility into your financial health.
                 Join hundreds of sellers using Auren to take control of their finances, prevent cash gaps,
-                and scale confidently on Amazon and beyond. Start your <Link to="/pricing" className="text-primary hover:underline">free 7-day trial</Link> today — no credit card required.
+                and scale confidently on Amazon and beyond. Start your <Link to="/pricing" className="text-primary underline hover:text-primary/80">free 7-day trial</Link> today — no credit card required.
               </p>
             </div>
 
