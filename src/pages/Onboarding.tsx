@@ -405,25 +405,21 @@ export default function Onboarding() {
                 </div>
                 
                 <div className="max-w-md mx-auto pt-2">
-                  <Label htmlFor="payout-frequency" className="text-left block mb-1.5 text-sm">
-                    Initial Payout Schedule
+                  <Label className="text-left block mb-2 text-sm font-medium">
+                    Payout Schedule (Auto-Detected)
                   </Label>
-                  <Select 
-                    value={amazonFormData.payout_frequency} 
-                    onValueChange={(value: 'daily' | 'bi-weekly') => 
-                      setAmazonFormData({...amazonFormData, payout_frequency: value})
-                    }
-                  >
-                    <SelectTrigger id="payout-frequency" className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="bi-weekly">Bi-Weekly (Every 14 days)</SelectItem>
-                      <SelectItem value="daily">Daily</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2 p-4 bg-muted/30 rounded-lg border border-border/50">
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className="h-2 w-2 rounded-full bg-primary" />
+                      <span className="font-medium">Bi-Weekly (Every 14 days)</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className="h-2 w-2 rounded-full bg-primary" />
+                      <span className="font-medium">Daily</span>
+                    </div>
+                  </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    After connecting, we'll automatically detect your actual payout schedule from your history. This initial selection helps us get started.
+                    We'll automatically detect your actual payout schedule from your Amazon payout history after connecting.
                   </p>
                 </div>
               </div>
