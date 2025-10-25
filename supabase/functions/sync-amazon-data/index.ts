@@ -236,7 +236,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
 
     console.log('[SYNC] Settlements window: Full year (365 days) for seasonal analysis')
 
-    // Don't sync future dates
+    // Don't sync future dates - cap to yesterday
     if (startDate > yesterday) {
       console.log('[SYNC] Already caught up to yesterday')
       await supabase
@@ -256,11 +256,15 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     if (endDate > yesterday) {
       endDate = new Date(yesterday)
     }
+    
+    // Log sync window clearly
+    console.log(`[SYNC] Sync window: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
 
     await supabase
       .from('amazon_accounts')
       .update({ 
-        sync_message: `Syncing ${startDate.toLocaleDateString()}...`
+        sync_message: `Syncing ${startDate.toISOString().split('T')[0]}...`,
+        sync_progress: Math.min(5, (Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24) * 2)
       })
       .eq('id', amazonAccountId)
 

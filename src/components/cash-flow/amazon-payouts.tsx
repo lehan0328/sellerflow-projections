@@ -308,6 +308,32 @@ export function AmazonPayouts() {
               <Button
                 variant="outline"
                 size="sm"
+                onClick={async () => {
+                  try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session) return;
+                    
+                    toast.loading('Fixing payout types...');
+                    const { error } = await supabase.functions.invoke('fix-payout-types', {
+                      headers: { Authorization: `Bearer ${session.access_token}` },
+                    });
+                    
+                    toast.dismiss();
+                    if (error) throw error;
+                    toast.success('Fixed! All settlements now show as bi-weekly.');
+                    refetch();
+                  } catch (error) {
+                    toast.dismiss();
+                    toast.error('Failed to fix payout types');
+                  }
+                }}
+                title="Fix settlements to show correct bi-weekly type"
+              >
+                Fix Bi-Weekly
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleForceFullResync}
                 disabled={
                   isSyncing !== null || 
@@ -460,16 +486,16 @@ export function AmazonPayouts() {
               </Button>
             </div>
           </div> : (() => {
-          // Group payouts by date and aggregate amounts
+          // Only show actual Amazon settlements (confirmed and estimated), not mathematical forecasts
           const filteredPayouts = amazonPayouts.filter(payout => {
             const daysUntil = getDaysUntil(payout.payout_date);
-            // Always show Amazon's open settlement (estimated) even if date is slightly past
-            // because it represents an ongoing period that hasn't closed yet
-            if (payout.status === 'estimated') return true;
-            // Show confirmed settlements if they're today or future
-            if (payout.status === 'confirmed') return daysUntil >= 0;
-            // Filter mathematical forecasts based on toggle and only show future dates
-            return daysUntil >= 0 && showForecasts;
+            // Only show confirmed and estimated settlements
+            if (payout.status === 'confirmed' || payout.status === 'estimated') {
+              // Show if today or future date
+              return daysUntil >= 0;
+            }
+            // Hide all forecasted payouts from this view (they belong in Advanced Forecast only)
+            return false;
           });
           
           // Separate forecasted and actual payouts for better display
