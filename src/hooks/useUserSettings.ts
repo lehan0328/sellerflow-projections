@@ -458,52 +458,8 @@ export const useUserSettings = () => {
         console.warn(`⚠️ Some parent records failed to delete: ${parentFailures.join(', ')}`);
       }
 
-      // Fetch existing user roles to preserve them
-      const { data: existingRoles } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('account_id', accountId);
-
-      console.log('📋 Existing roles to preserve:', existingRoles);
-
-      // Preserve all existing roles after clearing data
-      if (existingRoles && existingRoles.length > 0) {
-        const roleUpserts = existingRoles.map(r => ({
-          user_id: user.id,
-          account_id: accountId,
-          role: r.role
-        }));
-
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .upsert(roleUpserts, {
-            onConflict: 'user_id,account_id,role'
-          });
-
-        if (roleError) {
-          console.error('Failed to preserve user roles:', roleError);
-        } else {
-          console.log('✅ Preserved all user roles:', existingRoles.map(r => r.role).join(', '));
-        }
-      } else {
-        // No existing roles, ensure at least owner role
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .upsert({
-            user_id: user.id,
-            account_id: accountId,
-            role: 'owner'
-          }, {
-            onConflict: 'user_id,account_id,role'
-          });
-
-        if (roleError) {
-          console.error('Failed to ensure owner role:', roleError);
-        } else {
-          console.log('✅ Ensured owner role exists');
-        }
-      }
+      // User roles are managed by database triggers, no need to manually preserve them
+      console.log('✅ User roles managed by database triggers')
 
       // Reset user_settings to defaults
       const { error: upsertError } = await supabase
