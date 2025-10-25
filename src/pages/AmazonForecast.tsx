@@ -83,14 +83,14 @@ export default function AmazonForecast() {
 
   // Calculate historical metrics with forecasts
   const historicalData = useMemo(() => {
-    const monthlyData: Record<string, { revenue: number; actualPayouts: number; forecastedPayouts: number; count: number }> = {};
+    const monthlyData: Record<string, { revenue: number; actualPayouts: number; count: number }> = {};
     
     // Last 12 months
     for (let i = 11; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
       const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      monthlyData[key] = { revenue: 0, actualPayouts: 0, forecastedPayouts: 0, count: 0 };
+      monthlyData[key] = { revenue: 0, actualPayouts: 0, count: 0 };
     }
 
     // Aggregate revenue from Amazon transactions (order amounts - only positive amounts)
@@ -117,22 +117,13 @@ export default function AmazonForecast() {
         }
       });
 
-    // Aggregate forecasted payouts - for future periods
-    amazonPayouts
-      .filter(payout => payout.status === 'forecasted' && payout.marketplace_name !== 'Amazon.com')
-      .forEach(payout => {
-        const date = new Date(payout.payout_date);
-        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        if (monthlyData[key]) {
-          monthlyData[key].forecastedPayouts += Number(payout.total_amount || 0);
-        }
-      });
+    // NOTE: Forecasted payouts should only exist when forecasts are enabled
+    // They are excluded from this historical view to show only actual data
 
     return Object.entries(monthlyData).map(([month, data]) => ({
       month,
       revenue: data.revenue,
       actualPayouts: data.actualPayouts,
-      forecastedPayouts: data.forecastedPayouts,
       count: data.count
     }));
   }, [amazonPayouts, amazonTransactions]);
@@ -425,12 +416,6 @@ export default function AmazonForecast() {
                   radius={[8, 8, 0, 0]}
                 />
                 <Bar 
-                  dataKey="forecastedPayouts" 
-                  fill="#f59e0b" 
-                  name="Forecasted Payouts"
-                  radius={[8, 8, 0, 0]}
-                />
-                <Bar 
                   dataKey="actualPayouts" 
                   fill="#8b5cf6" 
                   name="Actual Payouts"
@@ -470,16 +455,6 @@ export default function AmazonForecast() {
                   strokeWidth={3}
                   name="Revenue"
                   dot={{ fill: '#10b981', r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line 
-                  type="monotone"
-                  dataKey="forecastedPayouts" 
-                  stroke="#f59e0b" 
-                  strokeWidth={3}
-                  strokeDasharray="5 5"
-                  name="Forecasted Payouts"
-                  dot={{ fill: '#f59e0b', r: 4 }}
                   activeDot={{ r: 6 }}
                 />
                 <Line 
