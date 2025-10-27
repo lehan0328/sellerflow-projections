@@ -144,14 +144,26 @@ serve(async (req) => {
       })
       .eq('id', amazonAccountId)
 
-    // Start background sync task
+    // Start background sync task with timeout handling
     console.log('[SYNC] Background task dispatched')
-    syncAmazonData(supabase, amazonAccount, actualUserId)
+    
+    // Don't await - let it run in background, but add timeout protection
+    syncAmazonData(supabase, amazonAccount, actualUserId).catch(error => {
+      console.error('[SYNC] Background task failed:', error)
+      supabase
+        .from('amazon_accounts')
+        .update({ 
+          sync_status: 'error',
+          sync_message: `Sync failed: ${error.message}`.substring(0, 200),
+          last_sync_error: error.message.substring(0, 500)
+        })
+        .eq('id', amazonAccountId)
+    })
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: 'Sync started in background' 
+        message: 'Sync started in background - syncing in batches' 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
@@ -235,9 +247,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       startDate.setDate(startDate.getDate() + 1)
       startDate.setHours(0, 0, 0, 0)
       
-      // Fetch 30 days at a time for backfill
+      // Fetch 7 days at a time for backfill (reduced to avoid timeouts)
       endDate = new Date(startDate)
-      endDate.setDate(endDate.getDate() + 30)
+      endDate.setDate(endDate.getDate() + 7)
       
       // Don't go beyond yesterday
       if (endDate > yesterday) {
@@ -251,9 +263,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       startDate.setDate(startDate.getDate() + 1)
       startDate.setHours(0, 0, 0, 0)
       
-      // Fetch up to 30 days
+      // Fetch up to 7 days (reduced to avoid timeouts)
       endDate = new Date(startDate)
-      endDate.setDate(endDate.getDate() + 30)
+      endDate.setDate(endDate.getDate() + 7)
       
       // Don't go beyond yesterday
       if (endDate > yesterday) {
@@ -1134,10 +1146,10 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         })
         .eq('id', amazonAccountId)
     } else {
-      // Mark as ready for next sync (scheduled job will continue)
-      console.log('[SYNC] ✓ Batch complete - ready for next sync')
+      // Mark as ready for next sync and auto-trigger continuation
+      console.log('[SYNC] ✓ Batch complete - auto-continuing...')
       const daysRemaining = Math.ceil((yesterday.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24))
-      const totalDays = Math.ceil((yesterday.getTime() - new Date(amazonAccount.last_synced_to || startDate).getTime()) / (1000 * 60 * 60 * 24))
+      const totalDays = Math.ceil((yesterday.getTime() - new Date(amazonAccount.last_synced_to || transactionStartDate).getTime()) / (1000 * 60 * 60 * 24))
       const progress = totalDays > 0 ? Math.min(95, Math.round((1 - (daysRemaining / totalDays)) * 100)) : 5
       
       await supabase
@@ -1145,9 +1157,16 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         .update({ 
           sync_status: 'idle',
           sync_progress: progress,
-          sync_message: `Synced through ${endDate.toISOString().split('T')[0]} (${daysRemaining}d remaining)`
+          sync_message: `Synced ${endDate.toISOString().split('T')[0]} (~${daysRemaining}d left, ${totalTransactionCount} txns)`
         })
         .eq('id', amazonAccountId)
+      
+      // Auto-trigger next batch after short delay
+      console.log('[SYNC] Triggering next batch in 2s...')
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Recursively call ourselves to continue syncing
+      await syncAmazonData(supabase, amazonAccount, actualUserId)
     }
 
   } catch (error) {
