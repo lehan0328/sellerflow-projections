@@ -235,7 +235,16 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     const lastSyncDate = amazonAccount.last_synced_to ? new Date(amazonAccount.last_synced_to) : null
     const isLastSyncInFuture = lastSyncDate && lastSyncDate >= yesterday
     
-    if (!lastSyncDate || isLastSyncInFuture) {
+    // CRITICAL: If we have a continuation token, we're still paginating the SAME date range
+    if (amazonAccount.sync_next_token && lastSyncDate) {
+      // Continue paginating the same day we were on
+      startDate = new Date(lastSyncDate)
+      // For continuation, use the same date we were syncing (NOT +1 day)
+      endDate = new Date(lastSyncDate)
+      endDate.setDate(endDate.getDate() + 1)
+      
+      console.log('[SYNC] 🔄 CONTINUATION - same date range:', startDate.toISOString(), 'to', endDate.toISOString(), '(has nextToken)')
+    } else if (!lastSyncDate || isLastSyncInFuture) {
       // First sync OR last_synced_to is today/future (invalid) - fetch last 90 days
       startDate = new Date(transactionStartDate)
       endDate = new Date(yesterday)
@@ -470,8 +479,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     console.log('[SYNC] Starting pagination for 1-day window...')
     console.log('[SYNC] Fetching: ', `${startDate.toISOString()} to ${endDate.toISOString()}`)
 
-    // Limit pages per execution to prevent timeouts (100 pages ~= 10k transactions)
-    const MAX_PAGES_PER_RUN = 100
+    // Increase limit significantly for high-volume sellers (500 pages ~= 50k transactions)
+    const MAX_PAGES_PER_RUN = 500
     let totalSavedThisRun = 0 // Track total saved in this run
     
     do {
@@ -493,17 +502,28 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       // Safety: Stop if we've processed too many pages in one run
       if (pageCount >= MAX_PAGES_PER_RUN) {
         console.log(`[SYNC] ⚠️ Reached page limit (${MAX_PAGES_PER_RUN}), saving nextToken for continuation...`)
-        // Save the nextToken so we can resume from here
+        
+        // Calculate accurate progress based on transaction count
+        const { count: totalTransactions } = await supabase
+          .from('amazon_transactions')
+          .select('*', { count: 'exact', head: true })
+          .eq('amazon_account_id', amazonAccountId)
+        
+        const estimatedTotal = 50000 // Rough estimate for large sellers
+        const progressPct = Math.min(Math.floor((totalTransactions || 0) / estimatedTotal * 100), 95)
+        
+        // Save the nextToken AND the sync window so we can resume from here
         await supabase
           .from('amazon_accounts')
           .update({ 
             sync_next_token: nextToken,
             sync_status: 'idle',
-            sync_message: `Paused at page ${pageCount} (${totalSavedThisRun} saved)`,
+            sync_progress: progressPct,
+            sync_message: `Paused: ${totalTransactions} txns (${progressPct}%)`,
             last_sync: new Date().toISOString()
           })
           .eq('id', amazonAccountId)
-        console.log(`[SYNC] ✓ Saved continuation token. Cron will resume shortly.`)
+        console.log(`[SYNC] ✓ Saved continuation token. Cron will resume shortly. Progress: ${progressPct}%`)
         break
       }
 
@@ -1138,17 +1158,21 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       }
     }
 
-    // Mark this day as complete - only clear next_token if we finished all pages
-    // If we broke due to MAX_PAGES_PER_RUN, the token is already saved above
+    // Mark this day as complete - ONLY update last_synced_to if pagination is complete
+    // If we broke due to MAX_PAGES_PER_RUN, do NOT advance last_synced_to
     const updateData: any = { 
-      last_synced_to: endDate.toISOString(),
       last_sync: new Date().toISOString(),
       transaction_count: totalTransactionCount
     };
     
-    // Only clear next_token if we completed all pages (pageCount < MAX_PAGES_PER_RUN or no nextToken)
+    // Only update last_synced_to and clear next_token if we completed ALL pages for this date range
     if (pageCount < MAX_PAGES_PER_RUN && !nextToken) {
       updateData.sync_next_token = null
+      updateData.last_synced_to = endDate.toISOString() // Only advance when fully complete
+      console.log('[SYNC] ✓ Date complete, advancing last_synced_to to:', endDate.toISOString())
+    } else if (pageCount >= MAX_PAGES_PER_RUN && nextToken) {
+      // Paused mid-day - keep last_synced_to the same so we resume the same date
+      console.log('[SYNC] ⏸ Paused mid-pagination - keeping last_synced_to at:', amazonAccount.last_synced_to)
     }
     
     // Don't update if we already saved continuation token
