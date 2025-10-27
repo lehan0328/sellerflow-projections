@@ -54,6 +54,17 @@ export default function Onboarding() {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
+  // Handle step navigation from URL params (for Amazon OAuth return)
+  useEffect(() => {
+    const step = searchParams.get('step');
+    if (step === 'bank') {
+      setCurrentStep('bank');
+      // Clear the param to avoid confusion
+      searchParams.delete('step');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
   const [amazonFormData, setAmazonFormData] = useState({
     seller_id: '',
     marketplace_id: '',
@@ -473,7 +484,8 @@ export default function Onboarding() {
                     const region = marketplace?.region || 'NA';
                     const consentBaseUrl = SELLER_CENTRAL_CONSENT_URLS[region];
                     
-                    const redirectUri = `${window.location.origin}/amazon-oauth-callback`;
+                    // Include onboarding flag in redirect URI so callback knows to return to onboarding
+                    const redirectUri = `${window.location.origin}/amazon-oauth-callback?from=onboarding`;
                     console.log('Step 3: Building authorization URL...');
                     console.log('Redirect URI:', redirectUri);
                     console.log('Selected marketplace:', selectedMarketplace);
@@ -482,6 +494,7 @@ export default function Onboarding() {
                     
                     // Construct Amazon authorization URL with region-specific consent URL
                     // IMPORTANT: Use application_id (SP-API App ID), not client_id
+                    // State contains marketplace_id (needed by backend)
                     const authUrl = `${consentBaseUrl}?application_id=${applicationId}&state=${selectedMarketplace}&redirect_uri=${encodeURIComponent(redirectUri)}`;
                     
                     console.log('Amazon OAuth URL:', authUrl);
@@ -639,8 +652,11 @@ export default function Onboarding() {
                 </div>
 
                 <div className="mt-4 p-4 bg-white/50 dark:bg-black/20 rounded border border-blue-300 dark:border-blue-700">
-                  <p className="text-sm text-muted-foreground font-medium">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Note:</strong> Forecasts are generated from your actual transaction data. The system works best with at least 30 days of recent sales activity for accurate predictions.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    💡 <strong>Advanced features</strong> like volume-weighted daily distributions will automatically unlock once your Amazon account completes its initial sync.
                   </p>
                 </div>
               </div>

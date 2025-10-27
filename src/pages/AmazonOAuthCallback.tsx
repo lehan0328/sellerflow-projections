@@ -71,17 +71,33 @@ const AmazonOAuthCallback = () => {
         }
         
         setStatus('success');
-        setMessage('Amazon account connected successfully! Redirecting to settings...');
         
-        toast({
-          title: "Success",
-          description: "Your Amazon seller account has been connected. Syncing data now...",
-        });
+        // Check if coming from onboarding
+        const fromOnboarding = searchParams.get('from') === 'onboarding';
+        
+        if (fromOnboarding) {
+          setMessage('Amazon account connected successfully! Continuing onboarding...');
+          toast({
+            title: "Success",
+            description: "Your Amazon seller account has been connected. Continuing onboarding...",
+          });
+          
+          // Redirect back to onboarding bank step
+          setTimeout(() => {
+            navigate('/onboarding?step=bank');
+          }, 1500);
+        } else {
+          setMessage('Amazon account connected successfully! Redirecting to settings...');
+          toast({
+            title: "Success",
+            description: "Your Amazon seller account has been connected. Syncing data now...",
+          });
 
-        // Redirect to settings Amazon section immediately
-        setTimeout(() => {
-          navigate('/settings?tab=integrations&section=amazon&syncing=true');
-        }, 1500);
+          // Redirect to settings Amazon section immediately
+          setTimeout(() => {
+            navigate('/settings?tab=integrations&section=amazon&syncing=true');
+          }, 1500);
+        }
 
       } catch (error) {
         console.error('Amazon OAuth error:', error);
