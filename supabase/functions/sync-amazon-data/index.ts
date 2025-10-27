@@ -228,7 +228,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     
     // Define the target historical window (90 days BACK from today)
     const transactionStartDate = new Date()
-    transactionStartDate.setDate(transactionStartDate.getDate() - 730) // 2 years for high-volume accounts
+    transactionStartDate.setDate(transactionStartDate.getDate() - 90) // 90 days for standard sync
     transactionStartDate.setHours(0, 0, 0, 0)
 
     // Check if last_synced_to is valid and in the past
@@ -236,13 +236,13 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     const isLastSyncInFuture = lastSyncDate && lastSyncDate >= yesterday
     
     if (!lastSyncDate || isLastSyncInFuture) {
-      // First sync OR last_synced_to is today/future (invalid) - fetch last 730 days (2 years)
+      // First sync OR last_synced_to is today/future (invalid) - fetch last 90 days
       startDate = new Date(transactionStartDate)
       endDate = new Date(yesterday)
       
-      console.log('[SYNC] Initial/Reset sync - fetching 2 YEARS of historical transactions:', startDate.toISOString(), 'to', endDate.toISOString())
+      console.log('[SYNC] Initial/Reset sync - fetching 90 days of historical transactions:', startDate.toISOString(), 'to', endDate.toISOString())
     } else if (lastSyncDate < transactionStartDate) {
-      // Last sync was more than 2 years ago - resume from where we left off
+      // Last sync was more than 90 days ago - resume from where we left off
       startDate = new Date(lastSyncDate)
       startDate.setDate(startDate.getDate() + 1)
       startDate.setHours(0, 0, 0, 0)
@@ -492,7 +492,18 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       
       // Safety: Stop if we've processed too many pages in one run
       if (pageCount >= MAX_PAGES_PER_RUN) {
-        console.log(`[SYNC] Reached page limit (${MAX_PAGES_PER_RUN}), saving progress...`)
+        console.log(`[SYNC] ⚠️ Reached page limit (${MAX_PAGES_PER_RUN}), saving nextToken for continuation...`)
+        // Save the nextToken so we can resume from here
+        await supabase
+          .from('amazon_accounts')
+          .update({ 
+            sync_next_token: nextToken,
+            sync_status: 'idle',
+            sync_message: `Paused at page ${pageCount} (${totalSavedThisRun} saved)`,
+            last_sync: new Date().toISOString()
+          })
+          .eq('id', amazonAccountId)
+        console.log(`[SYNC] ✓ Saved continuation token. Cron will resume shortly.`)
         break
       }
 
@@ -1127,24 +1138,29 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       }
     }
 
-    // Mark this day as complete and clear next_token
-    // Only mark initial_sync_complete when we're truly caught up to yesterday
+    // Mark this day as complete - only clear next_token if we finished all pages
+    // If we broke due to MAX_PAGES_PER_RUN, the token is already saved above
     const updateData: any = { 
       last_synced_to: endDate.toISOString(),
-      sync_next_token: null,
       last_sync: new Date().toISOString(),
       transaction_count: totalTransactionCount
     };
     
-    // Don't set initial_sync_complete here - only when fully caught up below
+    // Only clear next_token if we completed all pages (pageCount < MAX_PAGES_PER_RUN or no nextToken)
+    if (pageCount < MAX_PAGES_PER_RUN && !nextToken) {
+      updateData.sync_next_token = null
+    }
     
-    await supabase
-      .from('amazon_accounts')
-      .update(updateData)
-      .eq('id', amazonAccountId)
+    // Don't update if we already saved continuation token
+    if (!(pageCount >= MAX_PAGES_PER_RUN && nextToken)) {
+      await supabase
+        .from('amazon_accounts')
+        .update(updateData)
+        .eq('id', amazonAccountId)
+    }
 
-    // Check if we're fully caught up
-    if (endDate >= yesterday) {
+    // Check if we're fully caught up (no nextToken and at yesterday)
+    if (endDate >= yesterday && !nextToken && pageCount < MAX_PAGES_PER_RUN) {
       console.log('[SYNC] ✓ Fully caught up!')
       await supabase
         .from('amazon_accounts')
@@ -1155,8 +1171,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           initial_sync_complete: true
         })
         .eq('id', amazonAccountId)
-    } else {
-      // Mark as ready for next sync (let cron job handle continuation to avoid timeouts)
+    } else if (pageCount < MAX_PAGES_PER_RUN) {
+      // Completed this batch but not caught up yet
       console.log('[SYNC] ✓ Batch complete - waiting for next scheduled run')
       const daysRemaining = Math.ceil((yesterday.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24))
       const totalDays = Math.ceil((yesterday.getTime() - new Date(amazonAccount.last_synced_to || transactionStartDate).getTime()) / (1000 * 60 * 60 * 24))
@@ -1173,6 +1189,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         })
         .eq('id', amazonAccountId)
     }
+    // If we hit MAX_PAGES_PER_RUN, status was already set to 'idle' with nextToken saved above
 
   } catch (error) {
     console.error('[SYNC] Error in background task:', error)

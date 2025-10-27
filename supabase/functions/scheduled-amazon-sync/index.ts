@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     // Get all active Amazon accounts that need syncing
     const { data: amazonAccounts, error: fetchError } = await supabase
       .from('amazon_accounts')
-      .select('id, user_id, account_name, marketplace_name, last_sync, sync_status, sync_progress, initial_sync_complete, created_at')
+      .select('id, user_id, account_name, marketplace_name, last_sync, sync_status, sync_progress, initial_sync_complete, sync_next_token, created_at')
       .eq('is_active', true)
       .in('sync_status', ['idle', 'syncing']) // Include stuck "syncing" accounts
 
@@ -50,6 +50,13 @@ Deno.serve(async (req) => {
 
     console.log(`Found ${amazonAccounts.length} active Amazon accounts to sync`)
 
+    // Prioritize accounts with continuation tokens (they were interrupted mid-sync)
+    amazonAccounts.sort((a, b) => {
+      if (a.sync_next_token && !b.sync_next_token) return -1
+      if (!a.sync_next_token && b.sync_next_token) return 1
+      return 0
+    })
+
     // Sync each account
     const syncResults = []
     for (const account of amazonAccounts) {
@@ -59,8 +66,23 @@ Deno.serve(async (req) => {
         const now = new Date()
         const minutesSinceSync = (now.getTime() - lastSyncDate.getTime()) / (1000 * 60)
         
+        // PRIORITY: If account has sync_next_token, it needs to continue ASAP (every 30 seconds)
+        if (account.sync_next_token) {
+          if (minutesSinceSync < 0.5) { // 30 seconds
+            console.log(`⏭️ Continuation ready for ${account.account_name} - but synced ${minutesSinceSync.toFixed(1)}m ago, waiting...`)
+            syncResults.push({
+              accountId: account.id,
+              accountName: account.account_name,
+              success: true,
+              skipped: true,
+              reason: `Continuation pending - last synced ${minutesSinceSync.toFixed(1)} minutes ago`
+            })
+            continue
+          }
+          console.log(`🔄 CONTINUING INTERRUPTED SYNC for ${account.account_name} (has nextToken)`)
+        }
         // Auto-unstuck: If stuck in "syncing" for >10 minutes, force reset to idle
-        if (account.sync_status === 'syncing' && minutesSinceSync > 10) {
+        else if (account.sync_status === 'syncing' && minutesSinceSync > 10) {
           console.log(`🔧 AUTO-UNSTUCK: Resetting ${account.account_name} (stuck ${minutesSinceSync.toFixed(1)}m)`)
           await supabase
             .from('amazon_accounts')
