@@ -113,6 +113,42 @@ serve(async (req) => {
     for (const account of accountsReadyForForecast) {
       console.log(`\n[MATH-FORECAST] Processing ${account.account_name} (${account.payout_model} model)`);
 
+      // Fetch historical confirmed payouts to establish realistic caps
+      const { data: historicalPayouts } = await supabase
+        .from('amazon_payouts')
+        .select('total_amount')
+        .eq('amazon_account_id', account.id)
+        .eq('status', 'confirmed')
+        .order('total_amount', { ascending: false });
+      
+      let historicalMaxPayout = 0;
+      let historicalAvgPayout = 0;
+      
+      if (historicalPayouts && historicalPayouts.length > 0) {
+        historicalMaxPayout = Number(historicalPayouts[0].total_amount || 0);
+        const totalPayouts = historicalPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+        historicalAvgPayout = totalPayouts / historicalPayouts.length;
+        
+        console.log(`📊 Historical payout stats: Max=$${historicalMaxPayout.toFixed(2)}, Avg=$${historicalAvgPayout.toFixed(2)}, Count=${historicalPayouts.length}`);
+      } else {
+        console.log('⚠️ No historical confirmed payouts found, using default caps');
+      }
+      
+      // Set realistic cap based on safety net level and historical max
+      // Conservative: 1.2x historical max, Moderate: 1.4x, Aggressive: 1.6x
+      let forecastCapMultiplier = 1.4; // Moderate default
+      if (riskAdjustment === 15) {
+        forecastCapMultiplier = 1.2; // Conservative (most safe)
+      } else if (riskAdjustment === 3) {
+        forecastCapMultiplier = 1.6; // Aggressive
+      }
+      
+      const forecastCap = historicalMaxPayout > 0 
+        ? historicalMaxPayout * forecastCapMultiplier 
+        : 999999; // No cap if no historical data
+      
+      console.log(`🔒 Forecast cap set to $${forecastCap.toFixed(2)} (${forecastCapMultiplier}x historical max)`);
+
       const reserveLag = account.reserve_lag_days || defaultReserveLag;
       const reserveMultiplier = account.reserve_multiplier || 1.0;
       
@@ -214,7 +250,8 @@ serve(async (req) => {
           reserveMultiplier,
           minReserveFloor,
           riskAdjustment,
-          forecastStartDate
+          forecastStartDate,
+          forecastCap
         );
         allForecasts.push(...forecasts);
       } else {
@@ -273,7 +310,8 @@ function generateBiWeeklyForecasts(
   reserveMultiplier: number,
   minReserve: number,
   riskAdjustment: number,
-  startDate?: Date
+  startDate?: Date,
+  forecastCap?: number
 ): any[] {
   const forecasts: any[] = [];
   const today = startDate || new Date();
@@ -295,14 +333,28 @@ function generateBiWeeklyForecasts(
     ? secondHalf.reduce((sum, date) => sum + (dailyEligibleMap.get(date) || 0), 0) / secondHalf.length
     : 0;
   
+  // Calculate MEDIAN instead of average to avoid outlier influence
+  const calculateMedian = (dates: string[]) => {
+    const values = dates.map(d => dailyEligibleMap.get(d) || 0).sort((a, b) => a - b);
+    if (values.length === 0) return 0;
+    const mid = Math.floor(values.length / 2);
+    return values.length % 2 === 0 ? (values[mid - 1] + values[mid]) / 2 : values[mid];
+  };
+  
+  const firstHalfMedian = calculateMedian(firstHalf);
+  const secondHalfMedian = calculateMedian(secondHalf);
+  
+  // Use median for more stable baseline
+  const avgDailyEligible = secondHalfMedian || firstHalfMedian || 50;
+  
   // Calculate trend (positive = growing, negative = declining)
   // CRITICAL: Cap trend to realistic bounds to prevent exponential explosion
-  let rawTrendMultiplier = firstHalfAvg > 0 ? secondHalfAvg / firstHalfAvg : 1.0;
-  // Cap trend between -20% to +20% per period to prevent unrealistic projections
-  const trendMultiplier = Math.max(0.80, Math.min(1.20, rawTrendMultiplier));
-  const avgDailyEligible = secondHalfAvg || firstHalfAvg || 50;
+  let rawTrendMultiplier = firstHalfMedian > 0 ? secondHalfMedian / firstHalfMedian : 1.0;
   
-  console.log(`📊 60-day trend analysis: First half avg $${firstHalfAvg.toFixed(2)}, Second half avg $${secondHalfAvg.toFixed(2)}, Raw trend: ${((rawTrendMultiplier - 1) * 100).toFixed(1)}%, Capped to: ${((trendMultiplier - 1) * 100).toFixed(1)}%`);
+  // More conservative trend caps: -10% to +10% per period max
+  const trendMultiplier = Math.max(0.90, Math.min(1.10, rawTrendMultiplier));
+  
+  console.log(`📊 60-day trend analysis: First half median $${firstHalfMedian.toFixed(2)}, Second half median $${secondHalfMedian.toFixed(2)}, Raw trend: ${((rawTrendMultiplier - 1) * 100).toFixed(1)}%, Capped to: ${((trendMultiplier - 1) * 100).toFixed(1)}%`);
 
   // Generate 6 bi-weekly settlement forecasts (3 months)
   for (let i = 0; i < 6; i++) {
@@ -326,15 +378,15 @@ function generateBiWeeklyForecasts(
     // For future periods, project forward using trend
     if (eligibleInPeriod === 0) {
       // Apply linear trend growth per period (not exponential to prevent explosion)
-      // If trend is +20%, period 1 = 1.20x, period 2 = 1.40x, period 3 = 1.60x, etc.
+      // More conservative: max 50% increase over 6 periods
       const linearTrendMultiplier = 1 + ((trendMultiplier - 1) * (i + 1));
       eligibleInPeriod = avgDailyEligible * 14 * linearTrendMultiplier;
       
-      // Additional safety cap: max 2x of current avg, min 0.5x
+      // Additional safety cap: max 1.5x of current avg, min 0.7x
       const basePeriodAmount = avgDailyEligible * 14;
       eligibleInPeriod = Math.max(
-        basePeriodAmount * 0.5,
-        Math.min(basePeriodAmount * 2.0, eligibleInPeriod)
+        basePeriodAmount * 0.7,
+        Math.min(basePeriodAmount * 1.5, eligibleInPeriod)
       );
       
       console.log(`🔮 Period ${i+1}: $${eligibleInPeriod.toFixed(2)} (linear trend: ${((linearTrendMultiplier - 1) * 100).toFixed(1)}%)`);
@@ -370,6 +422,12 @@ function generateBiWeeklyForecasts(
     // Apply safety margin (risk adjustment) - spec suggests 3-15%, default 8%
     const safetyMargin = riskAdjustment / 100; // Convert to decimal
     payoutAmount *= (1 - safetyMargin);
+
+    // Apply historical cap to prevent unrealistic forecasts
+    if (forecastCap && payoutAmount > forecastCap) {
+      console.log(`⚠️ Capping forecast from $${payoutAmount.toFixed(2)} to $${forecastCap.toFixed(2)} (historical max cap)`);
+      payoutAmount = forecastCap;
+    }
 
     // Final check
     payoutAmount = Math.max(0, payoutAmount);
