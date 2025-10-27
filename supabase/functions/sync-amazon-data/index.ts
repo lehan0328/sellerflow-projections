@@ -220,7 +220,13 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       // Instead of one day at a time, fetch 30 days per sync for faster backfill
       endDate = new Date(startDate)
       endDate.setDate(endDate.getDate() + 30)
-      endDate.setHours(23, 59, 59, 999)
+      
+      // Amazon requires date to be no later than 2 minutes from now
+      const now = new Date()
+      now.setMinutes(now.getMinutes() - 5)
+      if (endDate > now) {
+        endDate = now
+      }
       
       console.log('[SYNC] Incremental mode - fetching 30 days of transactions from:', startDate.toISOString())
     } else {
@@ -230,8 +236,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       startDate.setHours(0, 0, 0, 0)
       
       // Fetch all 90 days in one go for initial sync
+      // Amazon requires date to be no later than 2 minutes from now, so use current time minus 5 minutes
       endDate = new Date()
-      endDate.setHours(23, 59, 59, 999)
+      endDate.setMinutes(endDate.getMinutes() - 5)
       
       console.log('[SYNC] Initial sync - fetching 90 days of transactions:', startDate.toISOString(), 'to', endDate.toISOString())
     }
