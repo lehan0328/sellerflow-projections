@@ -636,7 +636,8 @@ export const ForecastSettings = () => {
             console.log('✅ Forecasts regenerated successfully');
             await refetchPayouts();
             await fetchSettings();
-            toast.success("Settings saved and forecasts updated!");
+            toast.success("Settings saved and forecasts updated! Refreshing...");
+            setTimeout(() => window.location.reload(), 1500);
           } else {
             toast.error("Forecast generation timed out. Please try again.");
           }
