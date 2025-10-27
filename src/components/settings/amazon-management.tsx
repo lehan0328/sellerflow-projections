@@ -739,17 +739,7 @@ export function AmazonManagement() {
                         {account.transaction_count || 0} transactions
                       </Badge>
                       {(() => {
-                        const createdAt = new Date(account.created_at);
-                        const hoursElapsed = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
-                        const hoursRemaining = Math.max(0, 24 - hoursElapsed);
-                        
-                        if (hoursRemaining > 0) {
-                          return (
-                            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
-                              ⏱️ Forecast available in {Math.ceil(hoursRemaining)}h
-                            </Badge>
-                          );
-                        } else if (account.initial_sync_complete) {
+                        if (account.initial_sync_complete) {
                           return (
                             <Badge className="text-xs bg-green-100 text-green-800">
                               ✓ Forecast ready
