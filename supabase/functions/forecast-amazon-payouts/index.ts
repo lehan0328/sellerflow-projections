@@ -386,14 +386,14 @@ serve(async (req) => {
           if (payoutFrequency === 'bi-weekly') {
             console.log(`  - BI-WEEKLY: Will use open settlement as first payout, then generate additional forecasts`);
             
-            // Create the open settlement as a forecasted payout
+            // Create the open settlement as a forecasted payout with unique ID
             openSettlementPayout = {
               user_id: userId,
               account_id: amazonAccount.account_id,
               amazon_account_id: amazonAccount.id,
               payout_date: estimatedPayouts[0].payout_date,
               total_amount: openSettlementAmount,
-              settlement_id: estimatedPayouts[0].settlement_id,
+              settlement_id: `forecast_open_${amazonAccount.id}_${estimatedPayouts[0].payout_date}`,
               marketplace_name: amazonAccount.marketplace_name || 'Amazon',
               status: 'forecasted',
               payout_type: payoutFrequency,
