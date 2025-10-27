@@ -314,7 +314,9 @@ serve(async (req) => {
         const monthNum = parseInt(monthStr);
         const amounts = monthPerformance[monthNum];
         const monthAvg = amounts.reduce((sum, amt) => sum + amt, 0) / amounts.length;
-        seasonalMultipliers[monthNum] = avgMonthlyPayout > 0 ? monthAvg / avgMonthlyPayout : 1.0;
+        const rawMultiplier = avgMonthlyPayout > 0 ? monthAvg / avgMonthlyPayout : 1.0;
+        // Cap seasonal variation to ±15% for realistic forecasts (prevent wild swings)
+        seasonalMultipliers[monthNum] = Math.max(0.85, Math.min(1.15, rawMultiplier));
       });
       
       console.log('[FORECAST] Seasonal multipliers calculated:', seasonalMultipliers);
