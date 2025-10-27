@@ -1226,23 +1226,6 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         })
         .eq('id', amazonAccountId)
     }
-    
-    console.log('[BACKGROUND] ✓ Sync completed')
-  } catch (error) {
-    console.error('[BACKGROUND] Fatal error:', error)
-    
-    try {
-      await supabase
-        .from('amazon_accounts')
-        .update({ 
-          sync_status: 'idle',
-          sync_message: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          last_sync: new Date().toISOString()
-        })
-        .eq('id', amazonAccountId)
-    } catch (updateError) {
-      console.error('[BACKGROUND] Failed to update error status:', updateError)
-    }
   }
 }
 
