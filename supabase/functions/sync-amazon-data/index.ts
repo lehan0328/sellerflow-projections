@@ -406,7 +406,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       .from('amazon_accounts')
       .update({ 
         sync_message: `Syncing ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}...`,
-        sync_progress: Math.min(5, (Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24) * 0.5)
+        sync_progress: Math.floor(Math.min(5, (Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24) * 0.5))
       })
       .eq('id', amazonAccountId)
     
@@ -471,7 +471,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       
       // Update progress every 3 pages for better visibility
       if (pageCount % 3 === 0) {
-        const progressPct = Math.min(10 + (pageCount / MAX_PAGES_PER_RUN) * 75, 85)
+        const progressPct = Math.floor(Math.min(10 + (pageCount / MAX_PAGES_PER_RUN) * 75, 85))
         console.log(`[SYNC] Page ${pageCount}/${MAX_PAGES_PER_RUN} (${totalSavedThisRun} saved, ${transactionsToAdd.length} pending)`)
         await supabase
           .from('amazon_accounts')
@@ -501,12 +501,12 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           .update({ 
             sync_next_token: nextToken,
             sync_status: 'idle',
-            sync_progress: progressPct,
-            sync_message: `Paused: ${totalTransactions} txns (${progressPct}%)`,
+            sync_progress: Math.floor(progressPct),
+            sync_message: `Paused: ${totalTransactions} txns (${Math.floor(progressPct)}%)`,
             last_sync: new Date().toISOString()
           })
           .eq('id', amazonAccountId)
-        console.log(`[SYNC] ✓ Saved continuation token. Cron will resume shortly. Progress: ${progressPct}%`)
+        console.log(`[SYNC] ✓ Saved continuation token. Cron will resume shortly. Progress: ${Math.floor(progressPct)}%`)
         break
       }
 
