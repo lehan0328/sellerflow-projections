@@ -599,22 +599,6 @@ const Landing = () => {
         <div className="absolute inset-0 backdrop-blur-[1px]" />
         
         <div className="container relative mx-auto px-4">
-          {/* Amazon Partner Badge */}
-          <div className="flex justify-center mb-8 animate-fade-in">
-            <a 
-              href="https://sellercentral.amazon.com/selling-partner-appstore/dp/amzn1.sp.solution.da3e84d1-5ad4-4667-941b-e2727cdfd92c"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20"
-            >
-              <img 
-                src={amazonPartnerBadge} 
-                alt="Amazon Selling Partner Software Partner" 
-                className="h-32 w-auto"
-              />
-            </a>
-          </div>
-
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left Content */}
             <div className="space-y-8 z-10">
@@ -747,10 +731,25 @@ const Landing = () => {
             animationDelay: '400ms'
           }}>
               {/* Signature Features Highlights */}
-              <div className="bg-card/50 backdrop-blur-sm border border-primary/10 rounded-2xl p-6 mb-6">
+              <div className="relative bg-card/50 backdrop-blur-sm border border-primary/10 rounded-2xl p-6 mb-6">
                 <div className="text-center mb-4">
                   <span className="text-sm font-semibold text-primary">✨ See Signature Features in Video Below</span>
                 </div>
+                
+                {/* Amazon Partner Badge - Bottom Right Corner */}
+                <a 
+                  href="https://sellercentral.amazon.com/selling-partner-appstore/dp/amzn1.sp.solution.da3e84d1-5ad4-4667-941b-e2727cdfd92c"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute bottom-3 right-3 transition-all duration-300 hover:scale-105 hover:shadow-lg z-10"
+                >
+                  <img 
+                    src={amazonPartnerBadge} 
+                    alt="Amazon Selling Partner Software Partner" 
+                    className="h-16 w-auto opacity-80 hover:opacity-100 transition-opacity"
+                  />
+                </a>
+                
                 <div className="grid grid-cols-1 gap-3">
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
