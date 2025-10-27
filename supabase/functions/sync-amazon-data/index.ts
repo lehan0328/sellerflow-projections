@@ -507,19 +507,57 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         if (response.status === 429 || response.status === 503) {
           retryAttempts++
           if (retryAttempts > maxRetries) {
-            // Set rate limit timer
-            const rateLimitUntil = new Date(Date.now() + (60 * 1000)) // 1 minute
+            // Save any remaining transactions before pausing
+            if (transactionsToAdd.length > 0) {
+              console.log(`[SYNC] Saving final batch of ${transactionsToAdd.length} transactions before rate limit pause...`)
+              
+              const uniqueTransactions = transactionsToAdd.reduce((acc, tx) => {
+                const key = tx.transaction_id
+                if (!acc.has(key)) {
+                  acc.set(key, tx)
+                }
+                return acc
+              }, new Map())
+              
+              const deduplicatedTransactions = Array.from(uniqueTransactions.values())
+              
+              const batchSize = 100
+              for (let i = 0; i < deduplicatedTransactions.length; i += batchSize) {
+                const batch = deduplicatedTransactions.slice(i, i + batchSize)
+                await supabase
+                  .from('amazon_transactions')
+                  .upsert(batch, { onConflict: 'transaction_id', ignoreDuplicates: true })
+              }
+              
+              // Update transaction count
+              const { count } = await supabase
+                .from('amazon_transactions')
+                .select('*', { count: 'exact', head: true })
+                .eq('amazon_account_id', amazonAccountId)
+              
+              await supabase
+                .from('amazon_accounts')
+                .update({ transaction_count: count || 0 })
+                .eq('id', amazonAccountId)
+              
+              console.log('[SYNC] ✓ Final batch saved')
+            }
+            
+            // Set rate limit timer and save progress
+            const rateLimitUntil = new Date(Date.now() + (120 * 1000)) // 2 minutes
             await supabase
               .from('amazon_accounts')
               .update({ 
                 rate_limited_until: rateLimitUntil.toISOString(),
-                sync_status: 'rate_limited',
-                sync_message: `Rate limited. Wait 60s`,
-                sync_next_token: nextToken // Save token to resume later
+                sync_status: 'idle',
+                sync_message: `Rate limited. Synced ${pageCount} pages. Will auto-resume.`,
+                sync_next_token: nextToken, // Save token to resume later
+                last_sync: new Date().toISOString()
               })
               .eq('id', amazonAccountId)
             
-            throw new Error(`Rate limited by Amazon. Will retry automatically.`)
+            console.log(`[SYNC] Rate limited after ${pageCount} pages. Progress saved. Will resume automatically.`)
+            return // Exit gracefully, not as error
           }
           
           // Exponential backoff: 2s, 4s, 8s, 16s, 32s
@@ -724,6 +762,50 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
             raw_data: refund
           })
         }
+      }
+
+      // Save transactions in batches every 10 pages to avoid losing data on rate limit
+      if (transactionsToAdd.length >= 500) {
+        console.log(`[SYNC] Saving batch of ${transactionsToAdd.length} transactions...`)
+        
+        const uniqueTransactions = transactionsToAdd.reduce((acc, tx) => {
+          const key = tx.transaction_id
+          if (!acc.has(key)) {
+            acc.set(key, tx)
+          }
+          return acc
+        }, new Map())
+        
+        const deduplicatedTransactions = Array.from(uniqueTransactions.values())
+        
+        const batchSize = 100
+        for (let i = 0; i < deduplicatedTransactions.length; i += batchSize) {
+          const batch = deduplicatedTransactions.slice(i, i + batchSize)
+          const { error: txError } = await supabase
+            .from('amazon_transactions')
+            .upsert(batch, { onConflict: 'transaction_id', ignoreDuplicates: true })
+          
+          if (txError) {
+            console.error('[SYNC] Transaction batch save error:', txError)
+          } else {
+            console.log(`[SYNC] ✓ Saved batch ${Math.floor(i / batchSize) + 1}`)
+          }
+        }
+        
+        // Update transaction count
+        const { count } = await supabase
+          .from('amazon_transactions')
+          .select('*', { count: 'exact', head: true })
+          .eq('amazon_account_id', amazonAccountId)
+        
+        await supabase
+          .from('amazon_accounts')
+          .update({ transaction_count: count || 0 })
+          .eq('id', amazonAccountId)
+        
+        // Clear the array
+        transactionsToAdd.length = 0
+        console.log('[SYNC] ✓ Batch saved and cleared')
       }
 
       // Rate limiting delay between transaction pages - prevent Amazon throttling
