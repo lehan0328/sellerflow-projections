@@ -62,7 +62,9 @@ const FlexReport = () => {
     creditUtilization: true,
     vendorPayments: true,
     vendorCount: true,
-    amazonRevenue: true
+    amazonRevenue: true,
+    totalPayouts: true,
+    payoutGrowthRate: true
   });
 
   const [showPercentageChange, setShowPercentageChange] = useState(false);
@@ -126,6 +128,27 @@ const FlexReport = () => {
     return isWithinInterval(payoutDate, { start: addDays(today, -30), end: today });
   }).reduce((sum, payout) => sum + Number(payout.total_amount), 0) || 0;
 
+  // Total Amazon payouts (confirmed only)
+  const totalPayouts = amazonPayouts?.filter(p => p.status === 'confirmed')
+    .reduce((sum, p) => sum + Number(p.total_amount || 0), 0) || 0;
+
+  // Calculate Amazon payout growth rate (1 year comparison)
+  const oneYearAgo = addDays(today, -365);
+  const sixMonthsAgo = addDays(today, -182);
+  
+  const recentPayouts = amazonPayouts?.filter(p => 
+    p.status === 'confirmed' && 
+    new Date(p.payout_date) >= sixMonthsAgo
+  ).reduce((sum, p) => sum + Number(p.total_amount || 0), 0) || 0;
+  
+  const olderPayouts = amazonPayouts?.filter(p => 
+    p.status === 'confirmed' && 
+    new Date(p.payout_date) >= oneYearAgo && 
+    new Date(p.payout_date) < sixMonthsAgo
+  ).reduce((sum, p) => sum + Number(p.total_amount || 0), 0) || 0;
+  
+  const payoutGrowthRate = olderPayouts > 0 ? ((recentPayouts - olderPayouts) / olderPayouts) * 100 : 0;
+
   // Received income (last 30 days)
   const last30DaysStart = addDays(today, -30);
   const receivedIncome = incomeItems.filter(income => 
@@ -167,7 +190,9 @@ const FlexReport = () => {
     upcomingIncome: calculatePercentageChange(receivedIncome, previous30DaysIncome),
     purchaseOrders: 0, // Could calculate if we track creation dates
     vendorCount: 0, // Could calculate if we track vendor creation dates
-    amazonRevenue: calculatePercentageChange(amazonRevenue30Days, previous30DaysAmazonRevenue)
+    amazonRevenue: calculatePercentageChange(amazonRevenue30Days, previous30DaysAmazonRevenue),
+    totalPayouts: 0, // Cumulative value
+    payoutGrowthRate: payoutGrowthRate // Already calculated as percentage
   };
 
   // Calculate highest projected balance within 180 days
@@ -597,7 +622,7 @@ const FlexReport = () => {
                 </button>
               </div>
 
-              {/* Amazon Revenue */}
+              {/* Total Amazon Payouts */}
               <div className="group bg-gradient-to-br from-amber-50 via-amber-100/80 to-amber-50 rounded-2xl p-4 border-2 border-amber-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-amber-50 border-2 border-amber-600 rounded-full">
                   <div className="w-1 h-1 bg-amber-600 rounded-full"></div>
@@ -607,20 +632,51 @@ const FlexReport = () => {
                   <div className="p-2 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <ShoppingCart className="w-4 h-4 text-white" />
                   </div>
-                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Amazon Revenue (30d)</p>
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Total Amazon Payouts</p>
                 </div>
-                <p className={`text-2xl font-black text-amber-700 drop-shadow-sm transition-all duration-300 ${!visibility.amazonRevenue ? 'blur-lg' : ''}`}>{formatCurrency(amazonRevenue30Days)}</p>
+                <p className={`text-2xl font-black text-amber-700 drop-shadow-sm transition-all duration-300 ${!visibility.totalPayouts ? 'blur-lg' : ''}`}>{formatCurrency(totalPayouts)}</p>
                 {showPercentageChange && (
-                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.amazonRevenue >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.amazonRevenue >= 0 ? '' : 'rotate-180'}`} />
-                    <span className="text-[10px] font-bold">{Math.abs(percentageChanges.amazonRevenue)}%</span>
+                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 bg-blue-100 text-blue-700">
+                    <span className="text-[10px] font-bold">All-Time</span>
                   </div>
                 )}
                 <button
-                  onClick={() => toggleVisibility('amazonRevenue')}
+                  onClick={() => toggleVisibility('totalPayouts')}
                   className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-amber-100/50 transition-colors z-10"
                 >
-                  {visibility.amazonRevenue ? (
+                  {visibility.totalPayouts ? (
+                    <Eye className="w-4 h-4 text-blue-600" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 text-slate-400" />
+                  )}
+                </button>
+              </div>
+
+              {/* Payout Growth Rate */}
+              <div className="group bg-gradient-to-br from-green-50 via-green-100/80 to-green-50 rounded-2xl p-4 border-2 border-green-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-green-50 border-2 border-green-600 rounded-full">
+                  <div className="w-1 h-1 bg-green-600 rounded-full"></div>
+                  <span className="text-[10px] font-black text-green-700 uppercase tracking-wider">Verified</span>
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-2 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <TrendingUp className="w-4 h-4 text-white" />
+                  </div>
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Payout Growth Rate (1y)</p>
+                </div>
+                <p className={`text-2xl font-black ${payoutGrowthRate >= 0 ? 'text-green-700' : 'text-red-700'} drop-shadow-sm transition-all duration-300 ${!visibility.payoutGrowthRate ? 'blur-lg' : ''}`}>
+                  {payoutGrowthRate >= 0 ? '+' : ''}{payoutGrowthRate.toFixed(1)}%
+                </p>
+                {showPercentageChange && (
+                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 bg-blue-100 text-blue-700">
+                    <span className="text-[10px] font-bold">vs. Previous 6m</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => toggleVisibility('payoutGrowthRate')}
+                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-green-100/50 transition-colors z-10"
+                >
+                  {visibility.payoutGrowthRate ? (
                     <Eye className="w-4 h-4 text-blue-600" />
                   ) : (
                     <EyeOff className="w-4 h-4 text-slate-400" />
