@@ -228,8 +228,7 @@ export default function Analytics() {
     const totalCreditUsed = creditCards.reduce((sum, c) => sum + (c.balance || 0), 0);
     const creditUtilization = totalCreditLimit > 0 ? (totalCreditUsed / totalCreditLimit) * 100 : 0;
 
-    // Amazon revenue - track gross order totals (before fees) for plan tier tracking
-    // Only count Order/Shipment transactions, not fees or refunds
+    // Amazon gross revenue - sum gross_amount from order/shipment transactions
     // Filter by selected date range
     const amazonDateRange = getDateRange(amazonRevenueRange);
     const amazonRevenue = amazonTransactions
@@ -242,7 +241,7 @@ export default function Analytics() {
         const txDate = new Date(tx.transaction_date);
         return txDate >= amazonDateRange.start && txDate <= amazonDateRange.end;
       })
-      .reduce((sum, tx) => sum + (tx.gross_amount || tx.amount || 0), 0);
+      .reduce((sum, tx) => sum + (tx.gross_amount || 0), 0);
 
     // Total expenses from vendors + purchase orders
     const vendorExpenses = vendors.reduce((sum, v) => sum + (v.totalOwed || 0), 0);
@@ -636,8 +635,7 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">${metrics.amazonRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Gross order revenue (before Amazon fees)</p>
-            <p className="text-xs text-muted-foreground mt-1 font-semibold">⚡ Used for plan tier tracking</p>
+            <p className="text-xs text-muted-foreground">Amazon gross revenue from orders</p>
           </CardContent>
         </Card>
 
