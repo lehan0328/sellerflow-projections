@@ -496,35 +496,33 @@ export function AmazonPayouts() {
                           ✓ Synced
                         </Badge>
                       ) : account.sync_status === 'syncing' && account.transaction_count === 0 && hoursSinceSync && hoursSinceSync >= 0.5 ? (
-                        <>
-                          <Badge variant="outline" className="text-xs bg-red-500/10 text-red-700 border-red-500/20">
-                            Stuck
-                          </Badge>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-6 text-xs"
-                            onClick={async () => {
-                              await supabase
-                                .from('amazon_accounts')
-                                .update({ 
-                                  sync_status: 'idle',
-                                  sync_message: 'Ready',
-                                  sync_progress: 0
-                                })
-                                .eq('id', account.id);
-                              toast.success('Sync reset. Try syncing again.');
-                              refetchAccounts();
-                            }}
-                          >
-                            Reset
-                          </Button>
-                        </>
+                        <Badge variant="outline" className="text-xs bg-red-500/10 text-red-700 border-red-500/20">
+                          Stuck
+                        </Badge>
                       ) : (
                         <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-700 border-amber-500/20">
                           Backfilling...
                         </Badge>
                       )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-6 text-xs"
+                        onClick={async () => {
+                          await supabase
+                            .from('amazon_accounts')
+                            .update({ 
+                              sync_status: 'idle',
+                              sync_message: 'Ready',
+                              sync_progress: 0
+                            })
+                            .eq('id', account.id);
+                          toast.success('Sync reset. Try syncing again.');
+                          refetchAccounts();
+                        }}
+                      >
+                        Reset
+                      </Button>
                       <span className="text-xs text-muted-foreground whitespace-nowrap">
                         {account.transaction_count || 0} transactions
                       </span>
