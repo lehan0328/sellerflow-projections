@@ -1682,6 +1682,22 @@ const Landing = () => {
             
             <Card className="shadow-card">
               <CardHeader>
+                <CardTitle>What features are coming next?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground leading-relaxed mb-3">
+                  We're continuously expanding Auren's capabilities. Coming soon:
+                </p>
+                <ul className="list-disc list-inside text-muted-foreground space-y-2">
+                  <li><strong>Auren Inventory</strong> - Smart restock management with AI-powered forecasting and low stock alerts</li>
+                  <li><strong>Reimbursement Tracker</strong> - Automatically identify and claim FBA reimbursements from Amazon</li>
+                  <li><strong>Walmart & Shopify</strong> - Multi-platform cash flow tracking</li>
+                </ul>
+              </CardContent>
+            </Card>
+            
+            <Card className="shadow-card">
+              <CardHeader>
                 <CardTitle>What happens after my free trial?</CardTitle>
               </CardHeader>
               <CardContent>
