@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import aurenFullLogo from "@/assets/auren-full-logo.png";
+import amazonPartnerBadge from "@/assets/amazon-partner-badge.png";
 import avatar1 from "@/assets/avatar-1.jpg";
 import avatar2 from "@/assets/avatar-2.jpg";
 import avatar3 from "@/assets/avatar-3.jpg";
@@ -598,6 +599,22 @@ const Landing = () => {
         <div className="absolute inset-0 backdrop-blur-[1px]" />
         
         <div className="container relative mx-auto px-4">
+          {/* Amazon Partner Badge */}
+          <div className="flex justify-center mb-8 animate-fade-in">
+            <a 
+              href="https://sellercentral.amazon.com/selling-partner-appstore/dp/amzn1.sp.solution.da3e84d1-5ad4-4667-941b-e2727cdfd92c"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-primary/20"
+            >
+              <img 
+                src={amazonPartnerBadge} 
+                alt="Amazon Selling Partner Software Partner" 
+                className="h-32 w-auto"
+              />
+            </a>
+          </div>
+
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left Content */}
             <div className="space-y-8 z-10">
