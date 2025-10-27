@@ -764,8 +764,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         }
       }
 
-      // Save transactions in batches every 10 pages to avoid losing data on rate limit
-      if (transactionsToAdd.length >= 500) {
+      // Save transactions in batches every 100 to avoid losing data
+      if (transactionsToAdd.length >= 100) {
         console.log(`[SYNC] Saving batch of ${transactionsToAdd.length} transactions...`)
         
         const uniqueTransactions = transactionsToAdd.reduce((acc, tx) => {

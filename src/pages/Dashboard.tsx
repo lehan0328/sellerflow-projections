@@ -2623,6 +2623,7 @@ const Dashboard = () => {
         return <Analytics />;
       
       case "ai-forecast":
+      case "amazon-forecast":
         return <AmazonForecast />;
       
       case "document-storage":

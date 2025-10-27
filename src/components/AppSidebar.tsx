@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2, Lock, Sparkles, Settings } from "lucide-react";
+import { Home, TrendingUp, CreditCard, Repeat, Wallet, Users, Calculator, BarChart3, FolderOpen, MessageSquare, Calendar, FileBarChart, Building2, Brain, Bell, Clock, Link2, Lock, Sparkles, Settings, ShoppingCart } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useSupportMessageCount } from "@/hooks/useSupportMessageCount";
@@ -22,10 +22,6 @@ const overviewSections = [{
   id: "overview",
   title: "Overview",
   icon: Home
-}, {
-  id: "ai-forecast",
-  title: "Advanced Forecast",
-  icon: Sparkles
 }, {
   id: "match-transactions",
   title: "Match Transactions",
@@ -56,6 +52,12 @@ const transactionSections = [{
   id: "financials",
   title: "Financials",
   icon: Wallet
+}];
+
+const amazonSections = [{
+  id: "amazon-forecast",
+  title: "Amazon Forecast",
+  icon: ShoppingCart
 }];
 const resourceSections = [{
   id: "settings",
@@ -172,18 +174,6 @@ export function AppSidebar({
                       {!isCollapsed && <span className="flex items-center justify-between w-full pr-1">
                           <span>{section.title}</span>
                           <span className="flex items-center gap-2">
-                            {section.id === 'ai-forecast' && (
-                              <Badge 
-                                variant="default"
-                                className={`text-[10px] font-bold px-1.5 py-0 h-[18px] ${
-                                  forecastsEnabled 
-                                    ? "bg-emerald-500 hover:bg-emerald-600 text-white" 
-                                    : "bg-gray-400 hover:bg-gray-500 text-white"
-                                }`}
-                              >
-                                {forecastsEnabled ? "ON" : "OFF"}
-                              </Badge>
-                            )}
                             {'showMatchCount' in section && section.showMatchCount && matchCount > 0 && <span className="bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
                                 {matchCount}
                               </span>}
@@ -196,15 +186,6 @@ export function AppSidebar({
                       {isCollapsed && 'showBadge' in section && section.showBadge && unreadCount > 0 && <div className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
                           {unreadCount}
                         </div>}
-                      {isCollapsed && section.id === 'ai-forecast' && (
-                        <div className={`absolute -top-1 -right-1 rounded-full w-5 h-5 flex items-center justify-center text-[9px] font-bold ${
-                          forecastsEnabled 
-                            ? "bg-emerald-500 text-white" 
-                            : "bg-gray-400 text-white"
-                        }`}>
-                          {forecastsEnabled ? "ON" : "OFF"}
-                        </div>
-                      )}
                       {isCollapsed && 'showMatchCount' in section && section.showMatchCount && matchCount > 0 && <div className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
                           {matchCount}
                         </div>}
@@ -238,6 +219,58 @@ export function AppSidebar({
                       `}>
                       <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive ? "animate-pulse" : ""} ${isCollapsed ? "mx-auto" : ""}`} />
                       {!isCollapsed && <span>{section.title}</span>}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>;
+            })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <Separator className="my-0.5" />
+
+        {/* Amazon Connection Section */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-2 py-0.5">
+            Amazon Connection
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className={`space-y-0 ${isCollapsed ? "px-0" : "px-1"}`}>
+              {amazonSections.map(section => {
+              const Icon = section.icon;
+              const isActive = activeSection === section.id;
+              return <SidebarMenuItem key={section.id}>
+                    <SidebarMenuButton onClick={() => onSectionChange(section.id)} className={`
+                        relative rounded-lg transition-all duration-200
+                        ${isCollapsed ? "justify-center h-12 w-12" : ""}
+                        ${isActive ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" : "hover:bg-accent/50 hover:translate-x-1"}
+                      `}>
+                      <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive ? "animate-pulse" : ""} ${isCollapsed ? "mx-auto" : ""}`} />
+                      {!isCollapsed && <span className="flex items-center justify-between w-full pr-1">
+                          <span>{section.title}</span>
+                          <span className="flex items-center gap-2">
+                            {section.id === 'amazon-forecast' && (
+                              <Badge 
+                                variant="default"
+                                className={`text-[10px] font-bold px-1.5 py-0 h-[18px] ${
+                                  forecastsEnabled 
+                                    ? "bg-emerald-500 hover:bg-emerald-600 text-white" 
+                                    : "bg-gray-400 hover:bg-gray-500 text-white"
+                                }`}
+                              >
+                                {forecastsEnabled ? "ON" : "OFF"}
+                              </Badge>
+                            )}
+                          </span>
+                        </span>}
+                      {isCollapsed && section.id === 'amazon-forecast' && (
+                        <div className={`absolute -top-1 -right-1 rounded-full w-5 h-5 flex items-center justify-center text-[9px] font-bold ${
+                          forecastsEnabled 
+                            ? "bg-emerald-500 text-white" 
+                            : "bg-gray-400 text-white"
+                        }`}>
+                          {forecastsEnabled ? "ON" : "OFF"}
+                        </div>
+                      )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>;
             })}
