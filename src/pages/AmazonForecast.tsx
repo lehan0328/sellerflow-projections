@@ -45,45 +45,67 @@ export default function AmazonForecast() {
   const { amazonAccounts } = useAmazonAccounts();
   const [isGenerating, setIsGenerating] = useState(false);
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
+  const [amazonTransactions, setAmazonTransactions] = useState<any[]>([]);
   const [isDeletingSampleData, setIsDeletingSampleData] = useState(false);
 
   // Check if user has 3+ confirmed payouts
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
   const hasEnoughData = confirmedPayouts.length >= 3;
 
-  // Fetch Amazon daily rollup data for revenue calculation (aggregated by day)
+  // Fetch Amazon data: transactions for past 90 days, daily rollups for older data
   const [rollupData, setRollupData] = useState<any[]>([]);
   
   useEffect(() => {
-    const fetchRollupData = async () => {
+    const fetchRevenueData = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Get daily rollup data from last 12 months (aggregated revenue by day)
         const twelveMonthsAgo = new Date();
         twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+        
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-        const { data, error } = await supabase
+        // Fetch transactions for the last 90 days (detailed data)
+        const transactionsRes = await supabase
+          .from('amazon_transactions')
+          .select('transaction_date, amount, gross_amount, transaction_type')
+          .eq('user_id', user.id)
+          .eq('transaction_type', 'Order')
+          .gte('transaction_date', ninetyDaysAgo.toISOString())
+          .order('transaction_date', { ascending: true });
+
+        // Fetch daily rollups for data older than 90 days (up to 12 months)
+        const rollupsRes = await supabase
           .from('amazon_daily_rollups')
           .select('rollup_date, total_revenue, order_count')
           .eq('user_id', user.id)
           .gte('rollup_date', twelveMonthsAgo.toISOString().split('T')[0])
+          .lt('rollup_date', ninetyDaysAgo.toISOString().split('T')[0])
           .order('rollup_date', { ascending: true });
 
-        if (error) {
-          console.log('[AmazonForecast] No rollup data:', error);
+        if (transactionsRes.error) {
+          console.error('[AmazonForecast] Error fetching transactions:', transactionsRes.error);
+          setAmazonTransactions([]);
+        } else {
+          setAmazonTransactions(transactionsRes.data || []);
+          console.log('[AmazonForecast] Fetched transactions (last 90 days):', transactionsRes.data?.length || 0);
+        }
+
+        if (rollupsRes.error) {
+          console.log('[AmazonForecast] No rollup data:', rollupsRes.error);
           setRollupData([]);
         } else {
-          setRollupData(data || []);
-          console.log('[AmazonForecast] Fetched daily rollups:', data?.length || 0);
+          setRollupData(rollupsRes.data || []);
+          console.log('[AmazonForecast] Fetched daily rollups (>90 days old):', rollupsRes.data?.length || 0);
         }
       } catch (error) {
-        console.error('Error fetching Amazon rollup data:', error);
+        console.error('Error fetching Amazon revenue data:', error);
       }
     };
 
-    fetchRollupData();
+    fetchRevenueData();
   }, [amazonAccounts]); // Refetch when Amazon accounts change (after sync)
 
   // Calculate historical metrics with forecasts
@@ -98,8 +120,8 @@ export default function AmazonForecast() {
       monthlyData[key] = { revenue: 0, actualPayouts: 0, forecastedPayouts: 0, count: 0 };
     }
 
-    // Aggregate revenue from daily rollups (aggregated by day for efficiency)
-    console.log('[AmazonForecast] Processing daily rollups:', rollupData.length);
+    // Aggregate revenue from daily rollups (data older than 90 days)
+    console.log('[AmazonForecast] Processing daily rollups (>90 days):', rollupData.length);
     rollupData.forEach(rollup => {
       const revenue = Number(rollup.total_revenue || 0);
       if (revenue > 0) {
@@ -107,6 +129,20 @@ export default function AmazonForecast() {
         const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
         if (monthlyData[key]) {
           monthlyData[key].revenue += revenue;
+        }
+      }
+    });
+
+    // Aggregate revenue from transactions (last 90 days - detailed data)
+    console.log('[AmazonForecast] Processing transactions (last 90 days):', amazonTransactions.length);
+    amazonTransactions.forEach(txn => {
+      // Use gross_amount if available, fallback to amount
+      const amount = Number(txn.gross_amount || txn.amount || 0);
+      if (amount > 0) {
+        const date = new Date(txn.transaction_date);
+        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (monthlyData[key]) {
+          monthlyData[key].revenue += amount;
         }
       }
     });
@@ -141,7 +177,7 @@ export default function AmazonForecast() {
       forecastedPayouts: data.forecastedPayouts,
       count: data.count
     }));
-  }, [amazonPayouts, rollupData]);
+  }, [amazonPayouts, amazonTransactions, rollupData]);
 
   const generateForecast = async () => {
     setIsGenerating(true);
