@@ -102,7 +102,16 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-plaid-link-token');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please log in to connect accounts");
+        setIsLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-plaid-link-token', {
+        body: { userId: user.id }
+      });
       
       if (error) throw error;
       
