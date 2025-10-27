@@ -447,7 +447,7 @@ export function AmazonPayouts() {
             <div className="space-y-2">
               {amazonAccounts.map((account) => {
                 const hoursSinceSync = account.last_sync 
-                  ? Math.floor((Date.now() - new Date(account.last_sync).getTime()) / (1000 * 60 * 60))
+                  ? (Date.now() - new Date(account.last_sync).getTime()) / (1000 * 60 * 60)
                   : null;
                 const hasRecentSync = hoursSinceSync !== null && hoursSinceSync < 24;
                 const showWarning = !account.initial_sync_complete && hoursSinceSync !== null && hoursSinceSync > 24;
@@ -491,7 +491,7 @@ export function AmazonPayouts() {
                         <Badge variant="outline" className="text-xs bg-green-500/10 text-green-700 border-green-500/20">
                           ✓ Synced
                         </Badge>
-                      ) : account.sync_status === 'syncing' && account.transaction_count === 0 && hoursSinceSync && hoursSinceSync > 1 ? (
+                      ) : account.sync_status === 'syncing' && account.transaction_count === 0 && hoursSinceSync && hoursSinceSync >= 0.5 ? (
                         <>
                           <Badge variant="outline" className="text-xs bg-red-500/10 text-red-700 border-red-500/20">
                             Stuck
