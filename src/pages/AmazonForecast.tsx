@@ -48,7 +48,7 @@ export default function AmazonForecast() {
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
   const [amazonTransactions, setAmazonTransactions] = useState<any[]>([]);
   const [isDeletingSampleData, setIsDeletingSampleData] = useState(false);
-  const [growthTimeframe, setGrowthTimeframe] = useState<'30d' | '60d' | '90d' | '6m' | '1y'>('90d');
+  const [growthTimeframe, setGrowthTimeframe] = useState<'30d' | '60d' | '90d' | '6m' | '1y'>('1y');
 
   // Check if user has 3+ confirmed payouts
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
