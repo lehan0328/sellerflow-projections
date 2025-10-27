@@ -366,16 +366,6 @@ export function AmazonPayouts() {
                 Full Resync
               </Button>
               <Button
-                variant="outline"
-                size="sm"
-                onClick={handleFetchOpenSettlement}
-                disabled={isSyncing !== null}
-                title="Fetch open settlement from Amazon"
-              >
-                <ShoppingCart className={`h-4 w-4 mr-2 ${isSyncing === 'fetching-settlement' ? 'animate-pulse' : ''}`} />
-                Fetch Settlement
-              </Button>
-              <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate("/amazon-transactions-test")}
