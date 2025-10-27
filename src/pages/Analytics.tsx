@@ -137,6 +137,53 @@ export default function Analytics() {
   const [customStartDate, setCustomStartDate] = useState<Date>(defaultStartDate);
   const [customEndDate, setCustomEndDate] = useState<Date>(defaultEndDate);
 
+  // Helper to get date range
+  const getDateRange = (rangeType: string) => {
+    const now = new Date();
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+    
+    switch (rangeType) {
+      case "last-30-days":
+        return {
+          start: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+          end: now
+        };
+      case "custom":
+        return { 
+          start: new Date(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate(), 0, 0, 0, 0),
+          end: new Date(customEndDate.getFullYear(), customEndDate.getMonth(), customEndDate.getDate(), 23, 59, 59, 999)
+        };
+      case "this-month":
+        return { start: startOfThisMonth, end: endOfThisMonth };
+      case "last-month":
+        return { 
+          start: new Date(now.getFullYear(), now.getMonth() - 1, 1), 
+          end: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999) 
+        };
+      case "last-2-months":
+        return { start: new Date(now.getFullYear(), now.getMonth() - 2, 1), end: endOfThisMonth };
+      case "last-3-months":
+        return { start: new Date(now.getFullYear(), now.getMonth() - 3, 1), end: endOfThisMonth };
+      case "last-6-months":
+        return { start: new Date(now.getFullYear(), now.getMonth() - 6, 1), end: endOfThisMonth };
+      case "ytd":
+        return { start: startOfYear, end: endOfThisMonth };
+      case "all-time":
+        return {
+          start: new Date(2020, 0, 1), // Far enough back to capture all data
+          end: now
+        };
+      default:
+        return { 
+          start: new Date(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate(), 0, 0, 0, 0),
+          end: new Date(customEndDate.getFullYear(), customEndDate.getMonth(), customEndDate.getDate(), 23, 59, 59, 999)
+        };
+    }
+  };
+
   // Calculate key metrics
   const metrics = useMemo(() => {
     // Total cash inflow from bank transactions (credits)
@@ -273,52 +320,6 @@ export default function Analytics() {
     }));
   }, [incomeItems, amazonPayouts, dbTransactions]);
 
-  // Helper to get date range
-  const getDateRange = (rangeType: string) => {
-    const now = new Date();
-    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
-    
-    switch (rangeType) {
-      case "last-30-days":
-        return {
-          start: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
-          end: now
-        };
-      case "custom":
-        return { 
-          start: new Date(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate(), 0, 0, 0, 0),
-          end: new Date(customEndDate.getFullYear(), customEndDate.getMonth(), customEndDate.getDate(), 23, 59, 59, 999)
-        };
-      case "this-month":
-        return { start: startOfThisMonth, end: endOfThisMonth };
-      case "last-month":
-        return { 
-          start: new Date(now.getFullYear(), now.getMonth() - 1, 1), 
-          end: new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999) 
-        };
-      case "last-2-months":
-        return { start: new Date(now.getFullYear(), now.getMonth() - 2, 1), end: endOfThisMonth };
-      case "last-3-months":
-        return { start: new Date(now.getFullYear(), now.getMonth() - 3, 1), end: endOfThisMonth };
-      case "last-6-months":
-        return { start: new Date(now.getFullYear(), now.getMonth() - 6, 1), end: endOfThisMonth };
-      case "ytd":
-        return { start: startOfYear, end: endOfThisMonth };
-      case "all-time":
-        return {
-          start: new Date(2020, 0, 1), // Far enough back to capture all data
-          end: now
-        };
-      default:
-        return { 
-          start: new Date(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate(), 0, 0, 0, 0),
-          end: new Date(customEndDate.getFullYear(), customEndDate.getMonth(), customEndDate.getDate(), 23, 59, 59, 999)
-        };
-    }
-  };
 
   // Income breakdown by source (filtered by date range)
   const incomeBySource = useMemo(() => {
