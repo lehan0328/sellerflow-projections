@@ -47,14 +47,11 @@ async function performBackgroundSync(
       .single()
 
     if (accountError || !amazonAccount) {
-      console.error('[SYNC] Account not found:', accountError)
-      return new Response(
-        JSON.stringify({ error: 'Amazon account not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      console.error('[BACKGROUND] Account not found:', accountError)
+      return
     }
 
-    console.log('[SYNC] Account found:', amazonAccount.account_name)
+    console.log('[BACKGROUND] Account found:', amazonAccount.account_name)
 
     // Check for rate limiting
     let now = new Date()
@@ -62,32 +59,19 @@ async function performBackgroundSync(
       const rateLimitExpiry = new Date(amazonAccount.rate_limited_until)
       if (rateLimitExpiry > now) {
         const waitSeconds = Math.ceil((rateLimitExpiry.getTime() - now.getTime()) / 1000)
-        console.log(`[SYNC] Rate limited. Wait ${waitSeconds}s`)
-        return new Response(
-          JSON.stringify({ 
-            error: 'Rate limited', 
-            waitSeconds,
-            message: `Rate limited by Amazon. Please wait ${waitSeconds} seconds.`
-          }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+        console.log(`[BACKGROUND] Rate limited. Wait ${waitSeconds}s`)
+        return
       }
     }
 
-    // Prevent duplicate syncs - check if already syncing
+    // Prevent duplicate syncs
     if (amazonAccount.sync_status === 'syncing') {
-      console.log('[SYNC] Already syncing. Ignoring duplicate request.')
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          message: 'Sync already in progress. Please wait for it to complete.' 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      console.log('[BACKGROUND] Already syncing, skipping')
+      return
     }
 
     // Set initial sync status
-    console.log('[SYNC] Setting status to syncing...')
+    console.log('[BACKGROUND] Setting status to syncing...')
     await supabase
       .from('amazon_accounts')
       .update({ 
@@ -98,38 +82,21 @@ async function performBackgroundSync(
       })
       .eq('id', amazonAccountId)
 
-    // Start background sync task with timeout handling
-    console.log('[SYNC] Background task dispatched')
-    
-    // Don't await - let it run in background, but add timeout protection
-    syncAmazonData(supabase, amazonAccount, actualUserId).catch(error => {
-      console.error('[SYNC] Background task failed:', error)
-      supabase
-        .from('amazon_accounts')
-        .update({ 
-          sync_status: 'error',
-          sync_message: `Sync failed: ${error.message}`.substring(0, 200),
-          last_sync_error: error.message.substring(0, 500)
-        })
-        .eq('id', amazonAccountId)
-    })
-
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        message: 'Sync started in background - syncing in batches' 
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    // Perform the actual sync
+    await syncAmazonData(supabase, amazonAccount, actualUserId)
 
   } catch (error) {
-    console.error('[SYNC] Error:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    console.error('[BACKGROUND] Error:', error)
+    await supabase
+      .from('amazon_accounts')
+      .update({ 
+        sync_status: 'error',
+        sync_message: `Error: ${error instanceof Error ? error.message : 'Unknown'}`.substring(0, 200),
+        last_sync_error: error instanceof Error ? error.message.substring(0, 500) : 'Unknown error'
+      })
+      .eq('id', amazonAccountId)
   }
-})
+}
 
 async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: string) {
   const amazonAccountId = amazonAccount.id
