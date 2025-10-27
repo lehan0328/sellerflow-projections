@@ -59,17 +59,21 @@ Deno.serve(async (req) => {
         const now = new Date()
         const minutesSinceSync = (now.getTime() - lastSyncDate.getTime()) / (1000 * 60)
         
-        // If stuck in "syncing" status for >2 minutes, reset it
-        if (account.sync_status === 'syncing' && minutesSinceSync > 2) {
-          console.log(`Resetting stuck sync for ${account.account_name}`)
+        // Auto-unstuck: If stuck in "syncing" for >10 minutes, force reset to idle
+        if (account.sync_status === 'syncing' && minutesSinceSync > 10) {
+          console.log(`🔧 AUTO-UNSTUCK: Resetting ${account.account_name} (stuck ${minutesSinceSync.toFixed(1)}m)`)
           await supabase
             .from('amazon_accounts')
-            .update({ sync_status: 'idle' })
+            .update({ 
+              sync_status: 'idle',
+              sync_message: 'Auto-restarting after timeout...'
+            })
             .eq('id', account.id)
+          // Continue to sync this account immediately after unstuck
         }
-        // For accounts in backfill mode (progress < 95%), sync every 5 minutes for high-volume accounts
+        // For accounts in backfill mode (progress < 95%), sync every 2 minutes aggressively
         else if (!account.initial_sync_complete || (account.sync_progress && account.sync_progress < 95)) {
-          const minMinutesBetweenSync = 5 // Aggressive sync every 5 minutes during backfill
+          const minMinutesBetweenSync = 2 // Super aggressive for high-volume backfill
           
           if (minutesSinceSync < minMinutesBetweenSync) {
             console.log(`Backfill in progress for ${account.account_name} - last synced ${minutesSinceSync.toFixed(1)} minutes ago`)
@@ -82,7 +86,7 @@ Deno.serve(async (req) => {
             })
             continue
           }
-          console.log(`Continuing backfill for ${account.account_name} (${account.sync_progress || 0}% complete)`)
+          console.log(`📥 Continuing backfill for ${account.account_name} (${account.sync_progress || 0}% complete)`)
         }
         // For completed accounts, sync every 6 hours (matching cron schedule)
         else {

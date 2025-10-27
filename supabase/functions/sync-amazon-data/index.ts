@@ -228,7 +228,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     
     // Define the target historical window (90 days BACK from today)
     const transactionStartDate = new Date()
-    transactionStartDate.setDate(transactionStartDate.getDate() - 90)
+    transactionStartDate.setDate(transactionStartDate.getDate() - 730) // 2 years for high-volume accounts
     transactionStartDate.setHours(0, 0, 0, 0)
 
     // Check if last_synced_to is valid and in the past
@@ -236,13 +236,13 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     const isLastSyncInFuture = lastSyncDate && lastSyncDate >= yesterday
     
     if (!lastSyncDate || isLastSyncInFuture) {
-      // First sync OR last_synced_to is today/future (invalid) - fetch last 90 days
+      // First sync OR last_synced_to is today/future (invalid) - fetch last 730 days (2 years)
       startDate = new Date(transactionStartDate)
       endDate = new Date(yesterday)
       
-      console.log('[SYNC] Initial/Reset sync - fetching 90 days of historical transactions:', startDate.toISOString(), 'to', endDate.toISOString())
+      console.log('[SYNC] Initial/Reset sync - fetching 2 YEARS of historical transactions:', startDate.toISOString(), 'to', endDate.toISOString())
     } else if (lastSyncDate < transactionStartDate) {
-      // Last sync was more than 90 days ago - resume from where we left off
+      // Last sync was more than 2 years ago - resume from where we left off
       startDate = new Date(lastSyncDate)
       startDate.setDate(startDate.getDate() + 1)
       startDate.setHours(0, 0, 0, 0)
