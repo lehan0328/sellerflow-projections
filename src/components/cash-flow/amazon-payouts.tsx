@@ -52,7 +52,8 @@ export function AmazonPayouts() {
   } = useAmazonPayouts();
   const {
     amazonAccounts,
-    syncAmazonAccount
+    syncAmazonAccount,
+    refetch: refetchAccounts
   } = useAmazonAccounts();
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
   const [showForecasts, setShowForecasts] = useState(true);
@@ -480,11 +481,36 @@ export function AmazonPayouts() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                     <div className="flex items-center gap-2 flex-shrink-0">
                       {account.initial_sync_complete ? (
                         <Badge variant="outline" className="text-xs bg-green-500/10 text-green-700 border-green-500/20">
                           ✓ Synced
                         </Badge>
+                      ) : account.sync_status === 'syncing' && account.transaction_count === 0 && hoursSinceSync && hoursSinceSync > 1 ? (
+                        <>
+                          <Badge variant="outline" className="text-xs bg-red-500/10 text-red-700 border-red-500/20">
+                            Stuck
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-6 text-xs"
+                            onClick={async () => {
+                              await supabase
+                                .from('amazon_accounts')
+                                .update({ 
+                                  sync_status: 'idle',
+                                  sync_message: 'Ready',
+                                  sync_progress: 0
+                                })
+                                .eq('id', account.id);
+                              toast.success('Sync reset. Try syncing again.');
+                              refetchAccounts();
+                            }}
+                          >
+                            Reset
+                          </Button>
+                        </>
                       ) : (
                         <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-700 border-amber-500/20">
                           Backfilling...

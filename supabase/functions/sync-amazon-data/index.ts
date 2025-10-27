@@ -703,10 +703,23 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         rollup.total_net += parseFloat(tx.amount || 0)
       }
 
-      await supabase
+      const { error: rollupError } = await supabase
         .from('amazon_daily_rollups')
         .upsert(rollup, { onConflict: 'amazon_account_id,rollup_date' })
 
+      if (rollupError) {
+        console.error('[SYNC] Rollup insert error:', rollupError)
+        await supabase
+          .from('amazon_accounts')
+          .update({ 
+            sync_status: 'error',
+            sync_message: `Rollup insert failed: ${rollupError.message}`,
+            sync_progress: 0
+          })
+          .eq('id', amazonAccountId)
+        throw new Error(`Failed to insert daily rollup: ${rollupError.message}`)
+      }
+      
       console.log('[SYNC] ✓ Saved daily rollup')
     } else {
       // Save detailed transactions
@@ -734,6 +747,16 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           
           if (txError) {
             console.error('[SYNC] Transaction insert error:', txError)
+            // Update status to error and stop sync
+            await supabase
+              .from('amazon_accounts')
+              .update({ 
+                sync_status: 'error',
+                sync_message: `Transaction insert failed: ${txError.message}`,
+                sync_progress: 0
+              })
+              .eq('id', amazonAccountId)
+            throw new Error(`Failed to insert transactions: ${txError.message}`)
           } else {
             console.log(`[SYNC] Saved ${Math.min(i + batchSize, deduplicatedTransactions.length)}/${deduplicatedTransactions.length}`)
           }
