@@ -428,14 +428,14 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       return response
     }
 
-    console.log('[SYNC] Settlements window:', isInitialSettlementSync ? '2 years (initial)' : `Incremental from ${settlementsStartDate.toISOString()}`)
+    console.log('[SYNC] Settlements window:', isInitialSync ? '2 years (initial)' : `Incremental from ${settlementsStartDate.toISOString()}`)
 
     // Fetch settlement groups with smart rate limiting
     const eventGroupsUrl = `${apiEndpoint}/finances/v0/financialEventGroups`
     const settlementsToAdd: any[] = []
     
     // For incremental syncs, use FinancialEventGroupEnd filter
-    const settlementFilterField = isInitialSettlementSync ? 
+    const settlementFilterField = isInitialSync ? 
       'FinancialEventGroupStartedAfter' : 
       'FinancialEventGroupEndAfter'
     
