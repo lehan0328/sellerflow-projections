@@ -568,8 +568,8 @@ export function AmazonPayouts() {
                 // For bi-weekly, settlement period is 14 days
                 const estimatedEnd = startDate ? new Date(startDate.getTime() + 14 * 24 * 60 * 60 * 1000) : null;
                 
-                // Amazon payouts arrive 1 day after settlement closes
-                const estimatedPayoutDate = estimatedEnd ? new Date(estimatedEnd.getTime() + 1 * 24 * 60 * 60 * 1000) : null;
+                // Use the close date for the payout date
+                const estimatedPayoutDate = estimatedEnd;
                 const daysUntil = estimatedPayoutDate ? getDaysUntil(estimatedPayoutDate.toISOString().split('T')[0]) : 0;
 
                 return (
