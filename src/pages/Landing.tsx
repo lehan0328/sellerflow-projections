@@ -746,7 +746,7 @@ const Landing = () => {
                   <img 
                     src={amazonPartnerBadge} 
                     alt="Amazon Selling Partner Software Partner" 
-                    className="h-20 w-auto opacity-80 hover:opacity-100 transition-opacity"
+                    className="h-24 w-auto opacity-80 hover:opacity-100 transition-opacity"
                   />
                 </a>
                 
