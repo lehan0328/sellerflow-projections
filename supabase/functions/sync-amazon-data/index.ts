@@ -472,6 +472,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
 
     // Limit pages per execution to prevent timeouts (100 pages ~= 10k transactions)
     const MAX_PAGES_PER_RUN = 100
+    let totalSavedThisRun = 0 // Track total saved in this run
     
     do {
       pageCount++
@@ -479,12 +480,12 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       // Update progress every 3 pages for better visibility
       if (pageCount % 3 === 0) {
         const progressPct = Math.min(10 + (pageCount / MAX_PAGES_PER_RUN) * 75, 85)
-        console.log(`[SYNC] Page ${pageCount}/${MAX_PAGES_PER_RUN} (${transactionsToAdd.length} transactions)`)
+        console.log(`[SYNC] Page ${pageCount}/${MAX_PAGES_PER_RUN} (${totalSavedThisRun} saved, ${transactionsToAdd.length} pending)`)
         await supabase
           .from('amazon_accounts')
           .update({ 
             sync_progress: progressPct,
-            sync_message: `Page ${pageCount}: ${transactionsToAdd.length} txns`
+            sync_message: `Page ${pageCount}: ${totalSavedThisRun} saved`
           })
           .eq('id', amazonAccountId)
       }
@@ -815,7 +816,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           }
         }
         
-        // Update transaction count
+        // Update transaction count and track total saved
         const { count } = await supabase
           .from('amazon_transactions')
           .select('*', { count: 'exact', head: true })
@@ -826,9 +827,11 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           .update({ transaction_count: count || 0 })
           .eq('id', amazonAccountId)
         
+        totalSavedThisRun += deduplicatedTransactions.length
+        console.log(`[SYNC] ✓ Batch saved. Total this run: ${totalSavedThisRun}, DB count: ${count}`)
+        
         // Clear the array
         transactionsToAdd.length = 0
-        console.log('[SYNC] ✓ Batch saved and cleared')
       }
 
       // Rate limiting delay between transaction pages - prevent Amazon throttling
