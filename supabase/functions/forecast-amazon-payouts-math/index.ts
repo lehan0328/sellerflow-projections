@@ -275,7 +275,7 @@ serve(async (req) => {
         allForecasts.push(...forecasts);
       } else {
         // (B) Daily payout model
-        const forecasts = generateDailyForecasts(
+        const forecasts = await generateDailyForecasts(
           account,
           userId,
           dailyEligibleMap,
@@ -483,7 +483,7 @@ function generateBiWeeklyForecasts(
   return forecasts;
 }
 
-function generateDailyForecasts(
+async function generateDailyForecasts(
   account: any,
   userId: string,
   dailyEligibleMap: Map<string, number>,
@@ -495,7 +495,7 @@ function generateDailyForecasts(
   startDate?: Date,
   recentAvgPayout?: number,
   historicalAvgPayout?: number
-): any[] {
+): Promise<any[]> {
   const forecasts: any[] = [];
   const today = startDate || new Date();
   today.setHours(0, 0, 0, 0);

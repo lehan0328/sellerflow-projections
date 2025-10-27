@@ -54,8 +54,8 @@ export const ForecastSettings = () => {
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
   const [togglingForecast, setTogglingForecast] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
-  const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(false);
-  const [savedAdvancedModelingEnabled, setSavedAdvancedModelingEnabled] = useState(false);
+  const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(true); // Default to ON
+  const [savedAdvancedModelingEnabled, setSavedAdvancedModelingEnabled] = useState(true);
   
   const hasAmazonStore = amazonAccounts && amazonAccounts.length > 0;
   
@@ -79,17 +79,13 @@ export const ForecastSettings = () => {
   const hoursUntilForecastAvailable = Math.max(0, Math.ceil(3 - amazonAccountAge));
   const [payoutModel, setPayoutModel] = useState<'bi-weekly' | 'daily'>('bi-weekly');
   
-  // Check if user has 3+ confirmed payouts for advanced modeling
-  const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
-  const hasEnoughDataForAdvanced = confirmedPayouts.length >= 3;
-  
   // Check if Amazon accounts are fully synced
   const hasFullySyncedAmazonAccount = useMemo(() => {
     return amazonAccounts?.some(acc => acc.is_active && acc.initial_sync_complete) ?? false;
   }, [amazonAccounts]);
   
-  // Advanced modeling requires both: sync complete AND 3+ confirmed payouts
-  const canEnableAdvancedModeling = hasFullySyncedAmazonAccount && hasEnoughDataForAdvanced;
+  // Advanced modeling only requires sync completion (no payout count requirement)
+  const canEnableAdvancedModeling = hasFullySyncedAmazonAccount;
   
   // Use the payout frequency from the user's Amazon account settings instead of auto-detecting
   const userSelectedPayoutModel = useMemo(() => {
@@ -506,7 +502,7 @@ export const ForecastSettings = () => {
             account_id: profile.account_id,
             forecast_confidence_threshold: confidenceThreshold,
             forecasts_enabled: forecastsEnabled,
-            advanced_modeling_enabled: advancedModelingEnabled,
+            advanced_modeling_enabled: advancedModelingEnabled ?? true, // Default to ON
             default_reserve_lag_days: 7, // DD+7 standard
           })
           .select('forecast_confidence_threshold')
@@ -1043,16 +1039,6 @@ export const ForecastSettings = () => {
                 <div>
                   <p className="font-medium">Requires full Amazon sync</p>
                   <p className="text-[10px] mt-0.5">Your Amazon account needs to complete its initial sync with 50+ transactions before advanced modeling is available.</p>
-                </div>
-              </div>
-            )}
-            
-            {hasFullySyncedAmazonAccount && !hasEnoughDataForAdvanced && (
-              <div className="p-2 bg-amber-100 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-medium">Requires 3+ confirmed payouts</p>
-                  <p className="text-[10px] mt-0.5">Currently have {confirmedPayouts.length} confirmed payout{confirmedPayouts.length !== 1 ? 's' : ''}. Advanced modeling needs historical data to generate accurate volume-weighted distributions.</p>
                 </div>
               </div>
             )}
