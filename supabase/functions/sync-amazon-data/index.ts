@@ -64,12 +64,12 @@ async function performBackgroundSync(
       }
     }
 
-    // Auto-unstuck: If stuck in "syncing" for >10 minutes, force reset
+    // Auto-unstuck: If stuck in "syncing" for >3 minutes, force reset (matches cron interval)
     if (amazonAccount.sync_status === 'syncing' && amazonAccount.last_sync) {
       const lastSyncDate = new Date(amazonAccount.last_sync)
       const minutesSinceSync = (now.getTime() - lastSyncDate.getTime()) / (1000 * 60)
       
-      if (minutesSinceSync > 10) {
+      if (minutesSinceSync > 3) {
         console.log(`[BACKGROUND] Auto-unstuck: Account stuck ${minutesSinceSync.toFixed(1)}m, resetting...`)
         await supabase
           .from('amazon_accounts')

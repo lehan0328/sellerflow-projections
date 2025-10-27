@@ -67,8 +67,8 @@ Deno.serve(async (req) => {
         const minutesSinceSync = (now.getTime() - lastSyncDate.getTime()) / (1000 * 60)
         
         // CRITICAL: Check for stuck syncs FIRST before checking continuation tokens
-        // Auto-unstuck: If stuck in "syncing" for >10 minutes, force reset to idle
-        if (account.sync_status === 'syncing' && minutesSinceSync > 10) {
+        // Auto-unstuck: If stuck in "syncing" for >3 minutes, force reset to idle (matches cron interval)
+        if (account.sync_status === 'syncing' && minutesSinceSync > 3) {
           console.log(`🔧 AUTO-UNSTUCK: Resetting ${account.account_name} (stuck ${minutesSinceSync.toFixed(1)}m)`)
           await supabase
             .from('amazon_accounts')
