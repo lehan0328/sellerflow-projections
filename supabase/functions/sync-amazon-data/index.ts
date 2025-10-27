@@ -1042,8 +1042,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         const deduplicatedTransactions = Array.from(uniqueTransactions.values())
         console.log(`[SYNC] Saving ${deduplicatedTransactions.length} unique transactions (${transactionsToAdd.length - deduplicatedTransactions.length} duplicates removed)...`)
         
-        // Save in batches of 100
-        const batchSize = 100
+        // Save in batches of 1000 (optimized from 100 for better performance)
+        const batchSize = 1000
         for (let i = 0; i < deduplicatedTransactions.length; i += batchSize) {
           const batch = deduplicatedTransactions.slice(i, i + batchSize)
           const { error: txError } = await supabase
