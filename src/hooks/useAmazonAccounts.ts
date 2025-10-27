@@ -442,11 +442,14 @@ export const useAmazonAccounts = () => {
         (payload) => {
           console.log('Amazon account updated:', payload);
           
-          // If sync status changed to 'completed', show success toast with transaction count
-          if (payload.eventType === 'UPDATE' && payload.new.sync_status === 'completed') {
+          // If sync status changed to 'idle' with initial_sync_complete or progress 100, it completed successfully
+          if (payload.eventType === 'UPDATE' && 
+              payload.old.sync_status === 'syncing' && 
+              payload.new.sync_status === 'idle' && 
+              payload.new.sync_message?.includes('Synced')) {
             const account = payload.new as any;
             const txCount = account.transaction_count || 0;
-            const message = account.sync_message || `Sync complete! ${txCount} total transactions`;
+            const message = `Sync complete! ${(txCount / 1000).toFixed(1)}K total transactions`;
             toast.success(message);
           }
           

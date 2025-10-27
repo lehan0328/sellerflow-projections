@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -705,28 +704,12 @@ export function AmazonManagement() {
                     </p>
                     
                     <div className="flex items-center gap-2">
-                      <Label htmlFor={`frequency-${account.id}`} className="text-xs text-muted-foreground">
+                      <Label className="text-xs text-muted-foreground">
                         Payout Schedule:
                       </Label>
-                      <div className="flex items-center gap-2 p-2 rounded-md border bg-muted/30">
-                        <span className={`text-xs transition-colors ${
-                          account.payout_frequency === 'bi-weekly' ? 'text-foreground font-medium' : 'text-muted-foreground'
-                        }`}>
-                          Bi-Weekly
-                        </span>
-                        <Switch
-                          id={`frequency-${account.id}`}
-                          checked={account.payout_frequency === 'daily'}
-                          onCheckedChange={(checked) => 
-                            updatePayoutFrequency(account.id, checked ? 'daily' : 'bi-weekly')
-                          }
-                        />
-                        <span className={`text-xs transition-colors ${
-                          account.payout_frequency === 'daily' ? 'text-foreground font-medium' : 'text-muted-foreground'
-                        }`}>
-                          Daily
-                        </span>
-                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {account.payout_frequency === 'daily' ? '📅 Daily' : '📆 Bi-Weekly'} (Auto-detected)
+                      </Badge>
                     </div>
                     
                     <p className="text-xs text-muted-foreground flex items-center gap-1">

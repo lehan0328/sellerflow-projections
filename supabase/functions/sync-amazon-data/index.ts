@@ -1113,8 +1113,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         .update({ 
           sync_status: 'idle',
           sync_progress: 100,
-          sync_message: 'Synced',
-          initial_sync_complete: true
+          sync_message: `Synced - ${(totalTransactionCount / 1000).toFixed(1)}K transactions`,
+          initial_sync_complete: true,
+          last_sync_error: null
         })
         .eq('id', amazonAccountId)
     } else if (pageCount < MAX_PAGES_PER_RUN) {
