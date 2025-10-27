@@ -100,9 +100,10 @@ async function performBackgroundSync(
 
 async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: string) {
   const amazonAccountId = amazonAccount.id
+  const syncStartTime = Date.now() // Track sync start time for timeout
   
   try {
-    console.log('[SYNC] Background task started')
+    console.log('[SYNC] Background task started at:', new Date().toISOString())
     
     // Get marketplace region
     const region = MARKETPLACE_REGIONS[amazonAccount.marketplace_id] || 'US'
@@ -407,6 +408,47 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     
     do {
       pageCount++
+      
+      // Timeout protection - stop if running too long
+      const elapsedTime = Date.now() - syncStartTime
+      const MAX_SYNC_DURATION_MS = 3600000 // 1 hour
+      if (elapsedTime > MAX_SYNC_DURATION_MS) {
+        console.log(`[SYNC] ⏱️ Timeout reached after ${pageCount} pages. Saving progress...`)
+        
+        // Save any pending transactions
+        if (transactionsToAdd.length > 0) {
+          const uniqueTransactions = transactionsToAdd.reduce((acc, tx) => {
+            const key = tx.transaction_id
+            if (!acc.has(key)) {
+              acc.set(key, tx)
+            }
+            return acc
+          }, new Map())
+          
+          const deduplicatedTransactions = Array.from(uniqueTransactions.values())
+          const batchSize = 100
+          for (let i = 0; i < deduplicatedTransactions.length; i += batchSize) {
+            const batch = deduplicatedTransactions.slice(i, i + batchSize)
+            await supabase
+              .from('amazon_transactions')
+              .upsert(batch, { onConflict: 'transaction_id', ignoreDuplicates: true })
+          }
+        }
+        
+        // Update status and save token for continuation
+        await supabase
+          .from('amazon_accounts')
+          .update({ 
+            sync_status: 'idle',
+            sync_message: `Timeout after ${pageCount} pages. Will continue next run.`,
+            sync_next_token: nextToken,
+            last_sync: new Date().toISOString()
+          })
+          .eq('id', amazonAccountId)
+        
+        console.log('[SYNC] Progress saved. Sync will continue on next run.')
+        return
+      }
       
       // Update progress every 3 pages for better visibility
       if (pageCount % 3 === 0) {
@@ -770,18 +812,30 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         }
         
         // Update transaction count and track total saved
-        const { count } = await supabase
+        const { count, error: countError } = await supabase
           .from('amazon_transactions')
           .select('*', { count: 'exact', head: true })
           .eq('amazon_account_id', amazonAccountId)
         
-        await supabase
+        if (countError) {
+          console.error('[SYNC] Error counting transactions:', countError)
+        }
+        
+        console.log(`[SYNC] Count query result: ${count}, error: ${countError}`)
+        
+        // Update the account's transaction count
+        const { error: updateError } = await supabase
           .from('amazon_accounts')
           .update({ transaction_count: count || 0 })
           .eq('id', amazonAccountId)
         
+        if (updateError) {
+          console.error('[SYNC] Error updating transaction count:', updateError)
+        }
+        
         totalSavedThisRun += deduplicatedTransactions.length
-        console.log(`[SYNC] ✓ Batch saved. Total this run: ${totalSavedThisRun}, DB count: ${count}`)
+        console.log(`[SYNC] ✓ Batch saved. Total this run: ${totalSavedThisRun}, DB count: ${count || 0}`)
+        
         
         // Clear the array
         transactionsToAdd.length = 0
@@ -970,15 +1024,23 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     }
 
     // Get updated transaction count from both tables
-    const { count: recentTransactionCount } = await supabase
+    const { count: recentTransactionCount, error: countError } = await supabase
       .from('amazon_transactions')
       .select('*', { count: 'exact', head: true })
       .eq('amazon_account_id', amazonAccountId)
+    
+    if (countError) {
+      console.error('[SYNC] Error counting recent transactions:', countError)
+    }
 
-    const { data: rollupData } = await supabase
+    const { data: rollupData, error: rollupError } = await supabase
       .from('amazon_daily_rollups')
       .select('order_count, refund_count')
       .eq('amazon_account_id', amazonAccountId)
+    
+    if (rollupError) {
+      console.error('[SYNC] Error fetching rollup data:', rollupError)
+    }
 
     const rollupTransactionCount = rollupData?.reduce((sum, row) => 
       sum + (row.order_count || 0) + (row.refund_count || 0), 0
@@ -986,7 +1048,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
 
     const totalTransactionCount = (recentTransactionCount || 0) + rollupTransactionCount
 
-    console.log(`[SYNC] Transaction count: ${recentTransactionCount} recent + ${rollupTransactionCount} rollups = ${totalTransactionCount} total`)
+    console.log(`[SYNC] Transaction count: ${recentTransactionCount || 0} recent + ${rollupTransactionCount} rollups = ${totalTransactionCount} total`)
 
     // Detect payout frequency based on CONFIRMED settlement dates only
     const { data: confirmedSettlements } = await supabase
