@@ -463,6 +463,11 @@ export function AmazonPayouts() {
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5">
                           {account.sync_message || 'No sync data'}
+                          {account.sync_status === 'syncing' && !account.initial_sync_complete && (
+                            <div className="text-amber-600 font-medium mt-1">
+                              ⏱ Initial sync may take 2-4 hours due to Amazon rate limits (0.5 req/sec)
+                            </div>
+                          )}
                         </div>
                         {account.sync_progress && account.sync_progress < 100 && account.sync_status !== 'idle' && (
                           <div className="mt-1">
@@ -517,10 +522,11 @@ export function AmazonPayouts() {
               })}
             </div>
             {amazonAccounts.some(a => !a.initial_sync_complete) && (
-              <Alert className="mt-3 bg-blue-500/5 border-blue-500/20">
-                <Clock className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-xs text-muted-foreground">
-                  Initial sync in progress. Data will appear when ready (usually within minutes).
+              <Alert className="mt-3 bg-amber-500/5 border-amber-500/20">
+                <Clock className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-xs">
+                  <strong>Initial sync may take 2-4 hours</strong> due to Amazon's strict rate limiting (0.5 requests/second).
+                  The sync will continue in the background. You can close this page and return later to check progress.
                 </AlertDescription>
               </Alert>
             )}
