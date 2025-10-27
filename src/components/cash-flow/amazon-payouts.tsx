@@ -465,7 +465,7 @@ export function AmazonPayouts() {
                           {account.sync_message || 'No sync data'}
                           {account.sync_status === 'syncing' && !account.initial_sync_complete && (
                             <div className="text-amber-600 font-medium mt-1">
-                              ⏱ Initial sync may take 2-4 hours due to Amazon rate limits (0.5 req/sec)
+                              ⏱ Initial sync may take 4-6 hours due to Amazon rate limits (0.5 req/sec = 1 page every 2 seconds)
                             </div>
                           )}
                         </div>
@@ -525,7 +525,8 @@ export function AmazonPayouts() {
               <Alert className="mt-3 bg-amber-500/5 border-amber-500/20">
                 <Clock className="h-4 w-4 text-amber-600" />
                 <AlertDescription className="text-xs">
-                  <strong>Initial sync may take 2-4 hours</strong> due to Amazon's strict rate limiting (0.5 requests/second).
+                  <strong>Initial sync may take 4-6 hours</strong> due to Amazon's strict rate limiting (0.5 requests/second).
+                  We pace requests conservatively at 1 page every 2 seconds to prevent API bans.
                   The sync will continue in the background. You can close this page and return later to check progress.
                 </AlertDescription>
               </Alert>

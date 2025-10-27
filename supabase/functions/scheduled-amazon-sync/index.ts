@@ -80,9 +80,9 @@ Deno.serve(async (req) => {
             .eq('id', account.id)
           // Continue to sync this account immediately after unstuck
         }
-        // PRIORITY: If account has sync_next_token, it needs to continue ASAP (every 30 seconds)
+        // PRIORITY: If account has sync_next_token, it needs to continue (but not too frequently)
         else if (account.sync_next_token) {
-          if (minutesSinceSync < 0.5) { // 30 seconds
+          if (minutesSinceSync < 2) { // Wait at least 2 minutes between continuation syncs
             console.log(`⏭️ Continuation ready for ${account.account_name} - but synced ${minutesSinceSync.toFixed(1)}m ago, waiting...`)
             syncResults.push({
               accountId: account.id,
@@ -95,9 +95,9 @@ Deno.serve(async (req) => {
           }
           console.log(`🔄 CONTINUING INTERRUPTED SYNC for ${account.account_name} (has nextToken)`)
         }
-        // For accounts in backfill mode (progress < 95%), sync every 2 minutes aggressively
+        // For accounts in backfill mode (progress < 95%), sync conservatively
         else if (!account.initial_sync_complete || (account.sync_progress && account.sync_progress < 95)) {
-          const minMinutesBetweenSync = 2 // Super aggressive for high-volume backfill
+          const minMinutesBetweenSync = 3 // Conservative to respect Amazon rate limits
           
           if (minutesSinceSync < minMinutesBetweenSync) {
             console.log(`Backfill in progress for ${account.account_name} - last synced ${minutesSinceSync.toFixed(1)} minutes ago`)

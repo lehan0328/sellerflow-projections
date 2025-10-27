@@ -381,9 +381,10 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         })
       }
       
-      // Minimal delay between pages to avoid NextToken expiration
+      // Amazon SP-API rate limit: 0.5 requests/second for financial data
+      // Wait 2 seconds between requests to stay well under the limit
       if (groupNextToken) {
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise(resolve => setTimeout(resolve, 2000))
       }
       
     } while (groupNextToken && groupPageCount < 100)
@@ -893,9 +894,10 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         transactionsToAdd.length = 0
       }
 
-      // Minimal delay between transaction pages (background task = no timeout concern)
+      // Amazon SP-API rate limit: 0.5 requests/second for financial data
+      // Wait 2 seconds between requests to stay well under the limit
       if (nextToken) {
-        await new Promise(resolve => setTimeout(resolve, 200)) // 0.2 second delay
+        await new Promise(resolve => setTimeout(resolve, 2000))
       }
 
     } while (nextToken)
