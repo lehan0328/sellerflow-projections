@@ -264,6 +264,11 @@ export const ForecastSettings = () => {
         await refetchPayouts();
         setSyncProgress(100);
         toast.success("Forecasts disabled and removed");
+        
+        // Auto-refresh to ensure all charts and components reflect the change
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       } else {
         // Automatically regenerate forecasts when enabled
         const loadingToastId = `forecast-generation-${Date.now()}`;
