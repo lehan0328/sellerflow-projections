@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     // Get all active Amazon accounts that need syncing
     const { data: amazonAccounts, error: fetchError } = await supabase
       .from('amazon_accounts')
-      .select('id, user_id, account_name, marketplace_name, last_sync, sync_status, created_at')
+      .select('id, user_id, account_name, marketplace_name, last_sync, sync_status, sync_progress, initial_sync_complete, created_at')
       .eq('is_active', true)
       .in('sync_status', ['idle', 'syncing']) // Include stuck "syncing" accounts
 
@@ -67,7 +67,24 @@ Deno.serve(async (req) => {
             .update({ sync_status: 'idle' })
             .eq('id', account.id)
         }
-        // Otherwise, sync every 6 hours (matching cron schedule)
+        // For accounts in backfill mode (progress < 95%), sync every 5 minutes for high-volume accounts
+        else if (!account.initial_sync_complete || (account.sync_progress && account.sync_progress < 95)) {
+          const minMinutesBetweenSync = 5 // Aggressive sync every 5 minutes during backfill
+          
+          if (minutesSinceSync < minMinutesBetweenSync) {
+            console.log(`Backfill in progress for ${account.account_name} - last synced ${minutesSinceSync.toFixed(1)} minutes ago`)
+            syncResults.push({
+              accountId: account.id,
+              accountName: account.account_name,
+              success: true,
+              skipped: true,
+              reason: `Backfilling - last synced ${minutesSinceSync.toFixed(1)} minutes ago`
+            })
+            continue
+          }
+          console.log(`Continuing backfill for ${account.account_name} (${account.sync_progress || 0}% complete)`)
+        }
+        // For completed accounts, sync every 6 hours (matching cron schedule)
         else {
           const minHoursBetweenSync = 5.5 // Slightly less than 6 hours to avoid timing issues
           
@@ -128,9 +145,9 @@ Deno.serve(async (req) => {
           })
         }
 
-        // Add delay between accounts to avoid rate limiting (3 minutes = 180 seconds)
-        // This ensures we respect Amazon's 2-minute rate limit per account
-        await new Promise(resolve => setTimeout(resolve, 180000))
+        // Add delay between accounts to avoid rate limiting (30 seconds)
+        // Reduced from 3 minutes since we're now doing 1-day batches
+        await new Promise(resolve => setTimeout(resolve, 30000))
       } catch (error) {
         console.error(`Exception syncing account ${account.id}:`, error)
         syncResults.push({

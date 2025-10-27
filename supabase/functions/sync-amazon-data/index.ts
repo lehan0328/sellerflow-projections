@@ -247,9 +247,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       startDate.setDate(startDate.getDate() + 1)
       startDate.setHours(0, 0, 0, 0)
       
-      // Fetch 7 days at a time for backfill (reduced to avoid timeouts)
+      // Fetch 1 day at a time for backfill (optimized for high-volume accounts)
       endDate = new Date(startDate)
-      endDate.setDate(endDate.getDate() + 7)
+      endDate.setDate(endDate.getDate() + 1)
       
       // Don't go beyond yesterday
       if (endDate > yesterday) {
@@ -263,9 +263,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       startDate.setDate(startDate.getDate() + 1)
       startDate.setHours(0, 0, 0, 0)
       
-      // Fetch up to 7 days (reduced to avoid timeouts)
+      // Fetch 1 day at a time (optimized for high-volume accounts)
       endDate = new Date(startDate)
-      endDate.setDate(endDate.getDate() + 7)
+      endDate.setDate(endDate.getDate() + 1)
       
       // Don't go beyond yesterday
       if (endDate > yesterday) {
@@ -401,12 +401,12 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         })
       }
       
-      // Rate limiting delay between pages
+      // Rate limiting delay between pages (reduced for faster sync)
       if (groupNextToken) {
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await new Promise(resolve => setTimeout(resolve, 500))
       }
       
-    } while (groupNextToken && groupPageCount < 50)
+    } while (groupNextToken && groupPageCount < 100)
     
     console.log(`[SYNC] Found ${settlementsToAdd.length} settlements from groups`)
     
@@ -470,18 +470,29 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     console.log('[SYNC] Starting pagination for 1-day window...')
     console.log('[SYNC] Fetching: ', `${startDate.toISOString()} to ${endDate.toISOString()}`)
 
+    // Limit pages per execution to prevent timeouts (100 pages ~= 10k transactions)
+    const MAX_PAGES_PER_RUN = 100
+    
     do {
       pageCount++
       
-      if (pageCount % 5 === 0) {
-        console.log(`[SYNC] Page ${pageCount} (${transactionsToAdd.length} transactions so far)`)
+      // Update progress every 3 pages for better visibility
+      if (pageCount % 3 === 0) {
+        const progressPct = Math.min(10 + (pageCount / MAX_PAGES_PER_RUN) * 75, 85)
+        console.log(`[SYNC] Page ${pageCount}/${MAX_PAGES_PER_RUN} (${transactionsToAdd.length} transactions)`)
         await supabase
           .from('amazon_accounts')
           .update({ 
-            sync_progress: Math.min(10 + pageCount * 2, 85),
-            sync_message: `Fetching page ${pageCount}...`
+            sync_progress: progressPct,
+            sync_message: `Page ${pageCount}: ${transactionsToAdd.length} txns`
           })
           .eq('id', amazonAccountId)
+      }
+      
+      // Safety: Stop if we've processed too many pages in one run
+      if (pageCount >= MAX_PAGES_PER_RUN) {
+        console.log(`[SYNC] Reached page limit (${MAX_PAGES_PER_RUN}), saving progress...`)
+        break
       }
 
       // Build URL
@@ -776,8 +787,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         }
       }
 
-      // Save transactions in batches every 100 to avoid losing data
-      if (transactionsToAdd.length >= 100) {
+      // Save transactions in batches every 50 to avoid losing data (more frequent for high-volume)
+      if (transactionsToAdd.length >= 50) {
         console.log(`[SYNC] Saving batch of ${transactionsToAdd.length} transactions...`)
         
         const uniqueTransactions = transactionsToAdd.reduce((acc, tx) => {
@@ -1146,27 +1157,22 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         })
         .eq('id', amazonAccountId)
     } else {
-      // Mark as ready for next sync and auto-trigger continuation
-      console.log('[SYNC] ✓ Batch complete - auto-continuing...')
+      // Mark as ready for next sync (let cron job handle continuation to avoid timeouts)
+      console.log('[SYNC] ✓ Batch complete - waiting for next scheduled run')
       const daysRemaining = Math.ceil((yesterday.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24))
       const totalDays = Math.ceil((yesterday.getTime() - new Date(amazonAccount.last_synced_to || transactionStartDate).getTime()) / (1000 * 60 * 60 * 24))
       const progress = totalDays > 0 ? Math.min(95, Math.round((1 - (daysRemaining / totalDays)) * 100)) : 5
+      
+      console.log(`[SYNC] Progress: ${progress}% (${totalDays - daysRemaining}/${totalDays} days, ${totalTransactionCount} transactions)`)
       
       await supabase
         .from('amazon_accounts')
         .update({ 
           sync_status: 'idle',
           sync_progress: progress,
-          sync_message: `Synced ${endDate.toISOString().split('T')[0]} (~${daysRemaining}d left, ${totalTransactionCount} txns)`
+          sync_message: `${endDate.toISOString().split('T')[0]} (${daysRemaining}d left, ${(totalTransactionCount / 1000).toFixed(1)}K txns)`
         })
         .eq('id', amazonAccountId)
-      
-      // Auto-trigger next batch after short delay
-      console.log('[SYNC] Triggering next batch in 2s...')
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Recursively call ourselves to continue syncing
-      await syncAmazonData(supabase, amazonAccount, actualUserId)
     }
 
   } catch (error) {
