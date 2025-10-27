@@ -6,20 +6,27 @@ export default function OAuthRedirect() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('OAuth redirect - Full URL:', window.location.href);
+    console.log('OAuth redirect - Search params:', window.location.search);
+    
     // Get the OAuth state ID from URL parameters
     const params = new URLSearchParams(window.location.search);
     const oauthStateId = params.get('oauth_state_id');
 
+    console.log('OAuth state ID received:', oauthStateId);
+
     if (oauthStateId) {
-      // Store the OAuth state ID in sessionStorage so Plaid Link can pick it up
-      sessionStorage.setItem('plaid_oauth_state_id', oauthStateId);
-      console.log('OAuth redirect received, state ID:', oauthStateId);
+      // Store the full redirect URI in sessionStorage for Plaid Link
+      const receivedRedirectUri = window.location.href;
+      sessionStorage.setItem('plaid_oauth_redirect_uri', receivedRedirectUri);
+      console.log('Stored redirect URI:', receivedRedirectUri);
       
-      // Redirect back to settings page where Plaid Link will handle the OAuth flow
-      navigate('/settings', { replace: true });
+      // Navigate to onboarding (where the Plaid flow was initiated)
+      navigate('/onboarding', { replace: true });
     } else {
-      console.error('No OAuth state ID received');
-      navigate('/settings', { replace: true });
+      console.error('No OAuth state ID received in URL');
+      // Still try to navigate back in case this is a different OAuth flow
+      navigate('/onboarding', { replace: true });
     }
   }, [navigate]);
 

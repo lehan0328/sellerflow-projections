@@ -79,8 +79,10 @@ export default function Onboarding() {
   // Plaid Link configuration
   const plaidConfig = {
     token: linkToken,
-    receivedRedirectUri: window.location.href,
+    receivedRedirectUri: sessionStorage.getItem('plaid_oauth_redirect_uri') || undefined,
     onSuccess: async (public_token: string, metadata: any) => {
+      // Clear the stored redirect URI
+      sessionStorage.removeItem('plaid_oauth_redirect_uri');
       try {
         console.log("Plaid Link success:", metadata);
         
