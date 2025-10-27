@@ -2626,7 +2626,7 @@ const Dashboard = () => {
         return <AmazonForecast />;
       
       case "amazon-payouts":
-        return <AmazonForecast />;
+        return <AmazonPayouts />;
       
       case "document-storage":
         return <DocumentStorage />;
