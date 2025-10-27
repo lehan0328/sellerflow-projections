@@ -2595,21 +2595,10 @@ const Dashboard = () => {
                 >
                   Credit Cards
                 </button>
-                <button
-                  onClick={() => setFinancialsView("amazon-payouts")}
-                  className={`px-4 py-2 rounded-md transition-all ${
-                    financialsView === "amazon-payouts"
-                      ? "bg-background shadow-sm font-semibold text-primary"
-                      : "hover:bg-background/50 text-muted-foreground"
-                  }`}
-                >
-                  Amazon Payouts
-                </button>
               </div>
             </div>
             {financialsView === "bank-accounts" && <BankAccounts useAvailableBalance={useAvailableBalance} onToggleBalance={setUseAvailableBalance} />}
             {financialsView === "credit-cards" && <CreditCards />}
-            {financialsView === "amazon-payouts" && <AmazonPayouts />}
           </div>
         );
       
