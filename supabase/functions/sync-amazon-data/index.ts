@@ -305,11 +305,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           }
         }
         
-        // Calculate actual payout date: Amazon pays 1 day after settlement closes
+        // Use the settlement close date as the payout date
         let payoutDate = endDate || startDate;
-        const payoutDateObj = new Date(payoutDate);
-        payoutDateObj.setDate(payoutDateObj.getDate() + 1); // Add 1 day for bank deposit
-        payoutDate = payoutDateObj.toISOString().split('T')[0];
         
         // Process both Closed (confirmed) and Open (estimated) settlements from Amazon
         let totalAmount = parseFloat(group.OriginalTotal?.CurrencyAmount || '0')
