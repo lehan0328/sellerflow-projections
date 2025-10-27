@@ -368,9 +368,13 @@ function generateBiWeeklyForecasts(
   const firstHalfMedian = calculateMedian(firstHalf);
   const secondHalfMedian = calculateMedian(secondHalf);
   
-  // Use recent 90-day average as baseline if available, otherwise use historical average
-  const baselinePayout = (recentAvgPayout && recentAvgPayout > 0) ? recentAvgPayout : (historicalAvgPayout || 0);
-  const avgDailyEligible = secondHalfMedian || firstHalfMedian || (baselinePayout / 14) || 50;
+  // NEW: Use payout-per-day rate if available, otherwise fall back to traditional average
+  // This is more accurate since it accounts for varying settlement period lengths
+  const avgDailyEligible = secondHalfMedian || firstHalfMedian || 
+    (avgDailyPayoutRate && avgDailyPayoutRate > 0 ? avgDailyPayoutRate : 
+      ((recentAvgPayout || historicalAvgPayout || 0) / 14)) || 50;
+  
+  console.log(`📊 Daily rate baseline: $${avgDailyEligible.toFixed(2)}/day (using ${secondHalfMedian > 0 ? 'recent transaction median' : avgDailyPayoutRate > 0 ? 'payout-per-day rate' : 'traditional average'})`);
   
   // Calculate trend (positive = growing, negative = declining)
   // CRITICAL: Cap trend to realistic bounds to prevent exponential explosion

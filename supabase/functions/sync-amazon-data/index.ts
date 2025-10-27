@@ -159,17 +159,26 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     yesterday.setDate(yesterday.getDate() - 1)
     yesterday.setHours(23, 59, 59, 999)
 
-    // For settlements, always fetch full year for seasonal patterns (365 days BACK)
+    // NEW STRATEGY: Incremental settlement sync after initial load
+    // First sync: Last 2 years of settlements
+    // Subsequent syncs: Only new settlements since last sync
     let settlementsStartDate = new Date()
-    settlementsStartDate.setDate(settlementsStartDate.getDate() - 365)
-    settlementsStartDate.setHours(0, 0, 0, 0)
-
-    const nowForSettlements = new Date()
-    nowForSettlements.setMinutes(nowForSettlements.getMinutes() - 5) // Amazon requires date to be no later than 2 minutes from now
+    const isInitialSettlementSync = !amazonAccount.last_settlement_sync_date
     
-    // Define the target historical window (90 days BACK from today for transactions)
+    if (isInitialSettlementSync) {
+      // Initial sync: Get last 2 years for historical context
+      settlementsStartDate.setDate(settlementsStartDate.getDate() - 730) // 2 years
+      console.log('[SYNC] Initial settlement sync - fetching 2 years of history')
+    } else {
+      // Incremental: Only fetch settlements that ended after our last sync
+      settlementsStartDate = new Date(amazonAccount.last_settlement_sync_date)
+      console.log('[SYNC] Incremental settlement sync from:', settlementsStartDate.toISOString())
+    }
+    settlementsStartDate.setHours(0, 0, 0, 0)
+    
+    // Define the target historical window (60 days BACK from today for transactions)
     const transactionStartDate = new Date()
-    transactionStartDate.setDate(transactionStartDate.getDate() - 90) // 90 days for transactions
+    transactionStartDate.setDate(transactionStartDate.getDate() - 60) // 60 days for transactions
     transactionStartDate.setHours(0, 0, 0, 0)
 
     // Check if last_synced_to is valid and in the past
@@ -267,32 +276,58 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       console.log('[SYNC] Incremental mode - fetching new transactions from:', startDate.toISOString(), 'to', endDate.toISOString())
     }
 
-    console.log('[SYNC] Settlements window: Full year (365 days) for seasonal analysis')
+    // Smart rate limiting tracker
+    let requestCount = 0
+    const burstLimit = 20 // Amazon allows ~20 requests burst
+    let retryCount = 0
+    const maxRetries = 3
+    
+    // Helper function for smart rate limiting
+    const smartDelay = async (isSettlement: boolean = false) => {
+      requestCount++
+      if (requestCount > burstLimit) {
+        // After burst, throttle to 0.5 req/sec (2 second delay)
+        await new Promise(resolve => setTimeout(resolve, 2000))
+      } else {
+        // Within burst, small delay to avoid hammering
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+    }
+    
+    // Helper for 429 retry with exponential backoff
+    const retryWithBackoff = async (fetchFn: () => Promise<Response>): Promise<Response> => {
+      let response = await fetchFn()
+      let currentRetry = 0
+      
+      while (response.status === 429 && currentRetry < maxRetries) {
+        currentRetry++
+        const backoffMs = Math.pow(2, currentRetry) * 1000 // 2s, 4s, 8s
+        console.log(`[SYNC] Rate limited (429), backing off ${backoffMs}ms...`)
+        await new Promise(resolve => setTimeout(resolve, backoffMs))
+        response = await fetchFn()
+      }
+      
+      return response
+    }
 
-    // First, fetch settlement groups (actual payouts) - ALWAYS fetch full year for seasonal patterns
-    // This runs regardless of transaction sync status to capture open settlements
+    console.log('[SYNC] Settlements window:', isInitialSettlementSync ? '2 years (initial)' : `Incremental from ${settlementsStartDate.toISOString()}`)
+
+    // Fetch settlement groups with smart rate limiting
     const eventGroupsUrl = `${apiEndpoint}/finances/v0/financialEventGroups`
     const settlementsToAdd: any[] = []
     
-    // Safety check: Amazon API has 180-day max limit for settlements too
-    let settlementsFetchStart = new Date(settlementsStartDate)
-    const daysDiff = Math.floor((yesterday.getTime() - settlementsFetchStart.getTime()) / (1000 * 60 * 60 * 24))
-    if (daysDiff > 179) {
-      // Cap at 179 days for this request
-      settlementsFetchStart = new Date(yesterday)
-      settlementsFetchStart.setDate(settlementsFetchStart.getDate() - 179)
-      settlementsFetchStart.setHours(0, 0, 0, 0)
-      console.log('[SYNC] Settlements fetch capped at 179 days due to Amazon API limit')
-    }
+    // For incremental syncs, use FinancialEventGroupEnd filter
+    const settlementFilterField = isInitialSettlementSync ? 
+      'FinancialEventGroupStartedAfter' : 
+      'FinancialEventGroupEndAfter'
     
-    console.log('[SYNC] Fetching settlement groups:', settlementsFetchStart.toISOString(), 'to', yesterday.toISOString())
+    console.log('[SYNC] Fetching settlement groups using filter:', settlementFilterField)
     let groupNextToken: string | undefined = undefined
     let groupPageCount = 0
     
     do {
       groupPageCount++
-      // Use settlementsFetchStart (capped at 179 days) for settlements
-      let groupUrl = `${eventGroupsUrl}?FinancialEventGroupStartedAfter=${settlementsFetchStart.toISOString()}&FinancialEventGroupStartedBefore=${yesterday.toISOString()}&MaxResultsPerPage=100`
+      let groupUrl = `${eventGroupsUrl}?${settlementFilterField}=${settlementsStartDate.toISOString()}&MaxResultsPerPage=100`
       
       if (groupNextToken) {
         groupUrl += `&NextToken=${encodeURIComponent(groupNextToken)}`
@@ -300,12 +335,12 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       
       console.log(`[SYNC] Fetching settlement groups page ${groupPageCount}...`)
       
-      const groupResponse = await fetch(groupUrl, {
+      const groupResponse = await retryWithBackoff(() => fetch(groupUrl, {
         headers: {
           'x-amz-access-token': accessToken,
           'Content-Type': 'application/json',
         }
-      })
+      }))
       
       if (!groupResponse.ok) {
         const errorText = await groupResponse.text()
@@ -326,6 +361,14 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         const processingStatus = group.ProcessingStatus
         const fundTransferStatus = group.FundTransferStatus
         
+        // Calculate settlement period length for payout-per-day analysis
+        let settlementDays = 14 // Default for bi-weekly
+        if (startDate && endDate) {
+          const start = new Date(startDate)
+          const end = new Date(endDate)
+          settlementDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)))
+        }
+        
         // For open settlements without endDate, calculate it based on payout frequency
         if (!endDate && processingStatus === 'Open') {
           const start = new Date(startDate);
@@ -333,10 +376,12 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
             // Bi-weekly settlements close 14 days after start
             start.setDate(start.getDate() + 14);
             endDate = start.toISOString().split('T')[0];
+            settlementDays = 14
             console.log(`[SYNC] Calculated end date for open bi-weekly settlement: ${startDate} -> ${endDate}`);
           } else if (amazonAccount.payout_frequency === 'daily' || amazonAccount.payout_model === 'daily') {
             // Daily payouts close same day
             endDate = startDate;
+            settlementDays = 1
           }
         }
         
@@ -363,6 +408,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         
         console.log(`[SYNC] Settlement ${settlementId}: closes ${endDate || startDate}, pays ${payoutDate} (status: ${settlementStatus}, amount: $${totalAmount.toFixed(2)})`);
         
+        // Calculate daily payout rate for forecasting
+        const dailyPayoutRate = settlementDays > 0 ? totalAmount / settlementDays : 0
+        
         settlementsToAdd.push({
           user_id: actualUserId,
           account_id: amazonAccount.account_id,
@@ -377,14 +425,19 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           status: settlementStatus,
           payout_type: amazonAccount.payout_frequency || 'bi-weekly',
           marketplace_name: amazonAccount.marketplace_name,
-          raw_settlement_data: group
+          raw_settlement_data: {
+            ...group,
+            settlement_days: settlementDays,
+            daily_payout_rate: dailyPayoutRate,
+            period_start: startDate,
+            period_end: endDate
+          }
         })
       }
       
-      // Amazon SP-API rate limit: 0.5 requests/second for financial data
-      // Wait 2 seconds between requests to stay well under the limit
+      // Smart rate limiting
       if (groupNextToken) {
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        await smartDelay(true)
       }
       
     } while (groupNextToken && groupPageCount < 100)
@@ -412,6 +465,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         }
       }
       
+      // Update last_settlement_sync_date
       await supabase
         .from('amazon_accounts')
         .update({ 
@@ -419,6 +473,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           sync_progress: 100,
           sync_message: 'Synced',
           last_sync: new Date().toISOString(),
+          last_settlement_sync_date: yesterday.toISOString(),
           initial_sync_complete: true
         })
         .eq('id', amazonAccountId)
