@@ -225,7 +225,24 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       // Only proceed if startDate is before yesterday (not trying to sync future)
       if (startDate >= yesterday) {
         console.log('[SYNC] Already up to date - no new transactions to sync')
-...
+        // Update last_sync timestamp but don't fetch
+        await supabase
+          .from('amazon_accounts')
+          .update({ 
+            last_sync: new Date().toISOString(),
+            sync_status: 'idle'
+          })
+          .eq('id', amazonAccountId)
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'Account already up to date',
+            settlementCount: 0,
+            transactionCount: 0
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
       }
       
       console.log('[SYNC] Incremental mode - fetching new transactions from:', startDate.toISOString(), 'to', endDate.toISOString())
