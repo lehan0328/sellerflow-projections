@@ -572,9 +572,6 @@ export function AmazonPayouts() {
                                 `Started: ${payout.payout_date}`
                               )}
                             </span>
-                            <span className={`font-medium ${daysUntil === 0 ? 'text-finance-positive' : daysUntil <= 3 && daysUntil >= 0 ? 'text-warning' : 'text-muted-foreground'}`}>
-                              Payout: {daysUntil === 0 ? 'Today' : daysUntil > 0 ? `in ${daysUntil} days` : `${Math.abs(daysUntil)} days overdue`}
-                            </span>
                           </div>
                           <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                             {rawData?.BeginningBalance?.CurrencyAmount !== undefined && (

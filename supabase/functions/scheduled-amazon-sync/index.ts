@@ -67,18 +67,20 @@ Deno.serve(async (req) => {
             .update({ sync_status: 'idle' })
             .eq('id', account.id)
         }
-        // Otherwise, sync every 5 minutes (matching cron schedule)
+        // Otherwise, sync every 6 hours (matching cron schedule)
         else {
-          const minMinutesBetweenSync = 4.5 // Slightly less than 5 to avoid timing issues
+          const minHoursBetweenSync = 5.5 // Slightly less than 6 hours to avoid timing issues
           
-          if (minutesSinceSync < minMinutesBetweenSync) {
-            console.log(`Skipping ${account.account_name} - last synced ${minutesSinceSync.toFixed(1)} minutes ago`)
+          const hoursSinceSync = minutesSinceSync / 60
+          
+          if (hoursSinceSync < minHoursBetweenSync) {
+            console.log(`Skipping ${account.account_name} - last synced ${hoursSinceSync.toFixed(1)} hours ago`)
             syncResults.push({
               accountId: account.id,
               accountName: account.account_name,
               success: true,
               skipped: true,
-              reason: `Last synced ${minutesSinceSync.toFixed(1)} minutes ago`
+              reason: `Last synced ${hoursSinceSync.toFixed(1)} hours ago`
             })
             continue
           }
