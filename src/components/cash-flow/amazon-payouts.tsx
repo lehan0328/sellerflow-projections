@@ -487,7 +487,11 @@ export function AmazonPayouts() {
                       </div>
                     </div>
                      <div className="flex items-center gap-2 flex-shrink-0">
-                      {account.initial_sync_complete ? (
+                      {account.initial_sync_complete && account.transaction_count === 0 ? (
+                        <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-700 border-amber-500/20">
+                          ⚠ No Data
+                        </Badge>
+                      ) : account.initial_sync_complete ? (
                         <Badge variant="outline" className="text-xs bg-green-500/10 text-green-700 border-green-500/20">
                           ✓ Synced
                         </Badge>
