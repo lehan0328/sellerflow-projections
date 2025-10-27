@@ -452,6 +452,16 @@ export function AmazonPayouts() {
                 const hasRecentSync = hoursSinceSync !== null && hoursSinceSync < 24;
                 const showWarning = !account.initial_sync_complete && hoursSinceSync !== null && hoursSinceSync > 24;
                 
+                // Debug logging
+                console.log('Amazon Account Debug:', {
+                  accountName: account.account_name,
+                  syncStatus: account.sync_status,
+                  transactionCount: account.transaction_count,
+                  hoursSinceSync,
+                  initialSyncComplete: account.initial_sync_complete,
+                  shouldShowReset: account.sync_status === 'syncing' && account.transaction_count === 0 && hoursSinceSync && hoursSinceSync > 1
+                });
+                
                 return (
                   <div key={account.id} className="flex items-center justify-between text-sm p-2 rounded bg-muted/50">
                     <div className="flex items-center gap-2 flex-1">
