@@ -159,20 +159,138 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     yesterday.setDate(yesterday.getDate() - 1)
     yesterday.setHours(23, 59, 59, 999)
 
-    // NEW STRATEGY: Incremental settlement sync after initial load
-    // First sync: Last 2 years of settlements
-    // Subsequent syncs: Only new settlements since last sync
-    let settlementsStartDate = new Date()
-    const isInitialSettlementSync = !amazonAccount.last_settlement_sync_date
+    // ===== STEP 1: FETCH SETTLEMENTS FIRST (Fast - only 30-300 records) =====
+    const isInitialSync = !amazonAccount.last_settlement_sync_date
     
-    if (isInitialSettlementSync) {
-      // Initial sync: Get last 2 years for historical context
-      settlementsStartDate.setDate(settlementsStartDate.getDate() - 730) // 2 years
-      console.log('[SYNC] Initial settlement sync - fetching 2 years of history')
+    if (isInitialSync) {
+      console.log('[SYNC] 🚀 INITIAL SYNC - Fetching settlements first for instant data!')
+      
+      await supabase
+        .from('amazon_accounts')
+        .update({ 
+          sync_status: 'syncing',
+          sync_message: 'Loading settlements...',
+          sync_progress: 5
+        })
+        .eq('id', amazonAccountId)
+      
+      // Fetch settlements using listFinancialEventGroups (fast!)
+      const eventGroupsUrl = `${apiEndpoint}/finances/v0/financialEventGroups`
+      const twoYearsAgo = new Date()
+      twoYearsAgo.setDate(twoYearsAgo.getDate() - 730)
+      
+      const settlementsToAdd: any[] = []
+      let groupNextToken: string | null = null
+      let groupPageCount = 0
+      
+      do {
+        const groupParams = new URLSearchParams({
+          FinancialEventGroupStartedAfter: twoYearsAgo.toISOString()
+        })
+        if (groupNextToken) {
+          groupParams.append('NextToken', groupNextToken)
+        }
+        
+        const groupResponse = await fetch(`${eventGroupsUrl}?${groupParams}`, {
+          headers: {
+            'x-amz-access-token': accessToken,
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        if (groupResponse.ok) {
+          const groupData = await groupResponse.json()
+          const groups = groupData.payload?.FinancialEventGroupList || []
+          
+          console.log(`[SYNC] Settlement page ${groupPageCount + 1}: ${groups.length} groups`)
+          
+          for (const group of groups) {
+            if (group.FinancialEventGroupId) {
+              const settlementEndDate = group.FinancialEventGroupEnd ? 
+                new Date(group.FinancialEventGroupEnd) : null
+              
+              let payoutDate: string
+              if (settlementEndDate) {
+                const payoutDateObj = new Date(settlementEndDate)
+                payoutDateObj.setDate(payoutDateObj.getDate() + 1)
+                payoutDate = payoutDateObj.toISOString().split('T')[0]
+              } else {
+                payoutDate = new Date().toISOString().split('T')[0]
+              }
+              
+              const status = settlementEndDate && settlementEndDate <= new Date() ? 'confirmed' : 'estimated'
+              const totalAmount = parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0')
+              
+              settlementsToAdd.push({
+                user_id: actualUserId,
+                account_id: amazonAccount.account_id,
+                amazon_account_id: amazonAccountId,
+                settlement_id: group.FinancialEventGroupId,
+                payout_date: payoutDate,
+                total_amount: totalAmount,
+                currency: group.ConvertedTotal?.CurrencyCode || group.OriginalTotal?.CurrencyCode || 'USD',
+                status: status,
+                payout_type: amazonAccount.payout_frequency || 'bi-weekly',
+                settlement_start_date: group.FinancialEventGroupStart ? 
+                  new Date(group.FinancialEventGroupStart).toISOString().split('T')[0] : null,
+                settlement_end_date: group.FinancialEventGroupEnd ? 
+                  new Date(group.FinancialEventGroupEnd).toISOString().split('T')[0] : null,
+                marketplace_name: amazonAccount.marketplace_name
+              })
+            }
+          }
+          
+          groupNextToken = groupData.payload?.NextToken || null
+          groupPageCount++
+        } else {
+          console.error('[SYNC] Error fetching settlement groups:', await groupResponse.text())
+          break
+        }
+        
+        // Rate limit: 0.5 req/sec
+        if (groupNextToken) {
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
+        
+      } while (groupNextToken && groupPageCount < 50)
+      
+      console.log(`[SYNC] ✅ Found ${settlementsToAdd.length} settlements`)
+      
+      // Save settlements immediately
+      if (settlementsToAdd.length > 0) {
+        const { error: settlementsError } = await supabase
+          .from('amazon_payouts')
+          .upsert(settlementsToAdd, { 
+            onConflict: 'amazon_account_id,settlement_id',
+            ignoreDuplicates: false 
+          })
+        
+        if (!settlementsError) {
+          console.log(`[SYNC] ✅ ${settlementsToAdd.length} settlements saved! Users can see payouts now.`)
+          
+          // Update progress - settlements complete!
+          await supabase
+            .from('amazon_accounts')
+            .update({ 
+              sync_message: `${settlementsToAdd.length} payouts loaded! Syncing transactions...`,
+              sync_progress: 15,
+              last_settlement_sync_date: new Date().toISOString()
+            })
+            .eq('id', amazonAccountId)
+        } else {
+          console.error('[SYNC] Error saving settlements:', settlementsError)
+        }
+      }
+    }
+    
+    // ===== STEP 2: FETCH TRANSACTIONS (Slow - 30k+ records) =====
+    console.log('[SYNC] Now fetching transaction history...')
+    
+    let settlementsStartDate = new Date()
+    if (!amazonAccount.last_settlement_sync_date) {
+      settlementsStartDate.setDate(settlementsStartDate.getDate() - 730)
     } else {
-      // Incremental: Only fetch settlements that ended after our last sync
       settlementsStartDate = new Date(amazonAccount.last_settlement_sync_date)
-      console.log('[SYNC] Incremental settlement sync from:', settlementsStartDate.toISOString())
     }
     settlementsStartDate.setHours(0, 0, 0, 0)
     
