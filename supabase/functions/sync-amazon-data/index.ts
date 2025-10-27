@@ -313,22 +313,18 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       
       console.log('[SYNC] 🔄 CONTINUATION - same date range:', startDate.toISOString(), 'to', endDate.toISOString(), '(has nextToken)')
     } else if (!lastSyncDate || isLastSyncInFuture) {
-      // First sync OR last_synced_to is today/future (invalid) - fetch last 90 days of transactions
-      // IMPORTANT: Amazon API has 180-day max limit, so we enforce it here
+      // First sync OR last_synced_to is today/future (invalid)
+      // Fetch in 7-day windows instead of all 60 days at once to avoid massive pagination
       startDate = new Date(transactionStartDate)
-      endDate = new Date(yesterday)
+      endDate = new Date(startDate)
+      endDate.setDate(endDate.getDate() + 7) // 7 days at a time
       
-      // Safety check: Ensure we don't exceed Amazon's 180-day limit
-      const daysDifference = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
-      if (daysDifference > 179) {
-        // Cap at 179 days to be safe
-        startDate = new Date(yesterday)
-        startDate.setDate(startDate.getDate() - 179)
-        startDate.setHours(0, 0, 0, 0)
-        console.log('[SYNC] Initial sync capped at 179 days due to Amazon API limit')
+      // Don't go beyond yesterday
+      if (endDate > yesterday) {
+        endDate = new Date(yesterday)
       }
       
-      console.log('[SYNC] Initial/Reset sync - fetching 90 days of historical transactions:', startDate.toISOString(), 'to', endDate.toISOString())
+      console.log('[SYNC] Initial sync - fetching 7-day window:', startDate.toISOString(), 'to', endDate.toISOString())
     } else if (lastSyncDate < transactionStartDate) {
       // Last sync was more than 90 days ago - resume from where we left off to backfill
       startDate = new Date(lastSyncDate)
@@ -624,9 +620,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     console.log('[SYNC] Starting pagination for 1-day window...')
     console.log('[SYNC] Fetching: ', `${startDate.toISOString()} to ${endDate.toISOString()}`)
 
-    // With background tasks, no HTTP timeout - can process unlimited pages
-    // But still batch to allow graceful interruption and progress updates
-    const MAX_PAGES_PER_RUN = 2000 // ~200k transactions per run
+    // With background tasks, no HTTP timeout - but limit pages per date window
+    // Process in smaller chunks to avoid token expiration and massive pagination
+    const MAX_PAGES_PER_RUN = 150 // ~15k transactions per run (reasonable for 7-day window)
     let totalSavedThisRun = 0 // Track total saved in this run
     
     do {
@@ -688,30 +684,38 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       
       // Safety: Stop if we've processed too many pages in one run
       if (pageCount >= MAX_PAGES_PER_RUN) {
-        console.log(`[SYNC] ⚠️ Reached page limit (${MAX_PAGES_PER_RUN}), saving nextToken for continuation...`)
+        console.log(`[SYNC] ⚠️ Reached page limit (${MAX_PAGES_PER_RUN}) for this date window`)
         
-        // Calculate accurate progress based on transaction count
-        const { count: totalTransactions } = await supabase
-          .from('amazon_transactions')
-          .select('*', { count: 'exact', head: true })
-          .eq('amazon_account_id', amazonAccountId)
-        
-        const estimatedTotal = 50000 // Rough estimate for large sellers
-        const progressPct = Math.min(Math.floor((totalTransactions || 0) / estimatedTotal * 100), 95)
-        
-        // Save the nextToken AND the sync window so we can resume from here
-        await supabase
-          .from('amazon_accounts')
-          .update({ 
-            sync_next_token: nextToken,
-            sync_status: 'idle',
-            sync_progress: Math.floor(progressPct),
-            sync_message: `Paused: ${totalTransactions} txns (${Math.floor(progressPct)}%)`,
-            last_sync: new Date().toISOString()
-          })
-          .eq('id', amazonAccountId)
-        console.log(`[SYNC] ✓ Saved continuation token. Cron will resume shortly. Progress: ${Math.floor(progressPct)}%`)
-        break
+        // If we hit page limit with more data, save token to continue this window
+        if (nextToken) {
+          console.log(`[SYNC] More data exists, saving token to continue this date window...`)
+          
+          // Calculate accurate progress based on transaction count
+          const { count: totalTransactions } = await supabase
+            .from('amazon_transactions')
+            .select('*', { count: 'exact', head: true })
+            .eq('amazon_account_id', amazonAccountId)
+          
+          const estimatedTotal = 50000 // Rough estimate for large sellers
+          const progressPct = Math.min(Math.floor((totalTransactions || 0) / estimatedTotal * 100), 95)
+          
+          // Save the nextToken AND the sync window so we can resume from here
+          await supabase
+            .from('amazon_accounts')
+            .update({ 
+              sync_next_token: nextToken,
+              sync_status: 'idle',
+              sync_progress: Math.floor(progressPct),
+              sync_message: `Paused: ${totalTransactions} txns (${Math.floor(progressPct)}%)`,
+              last_sync: new Date().toISOString()
+            })
+            .eq('id', amazonAccountId)
+          console.log(`[SYNC] ✓ Saved continuation token. Cron will resume shortly. Progress: ${Math.floor(progressPct)}%`)
+          break
+        } else {
+          // No more data in this window, continue to move to next window
+          console.log(`[SYNC] Date window complete, will move to next window...`)
+        }
       }
 
       // Build URL
