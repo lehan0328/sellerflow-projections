@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useIncome } from "@/hooks/useIncome";
@@ -33,6 +33,7 @@ import {
 import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { format } from "date-fns";
 import { AmazonForecastAccuracy } from "@/components/cash-flow/amazon-forecast-accuracy";
 import { ForecastSettings } from "@/components/settings/forecast-settings";
 import { BarChart3 } from "lucide-react";
@@ -525,6 +526,59 @@ export default function AmazonForecast() {
               </RechartsLineChart>
             )}
           </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Forecasted Payouts Log */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Upcoming Forecasted Payouts
+          </CardTitle>
+          <CardDescription>
+            Mathematical projections based on historical settlement patterns
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {amazonPayouts.filter(p => p.status === 'forecasted').length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">
+              No forecasted payouts available. Generate forecasts to see predictions.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {amazonPayouts
+                .filter(p => p.status === 'forecasted')
+                .sort((a, b) => new Date(a.payout_date).getTime() - new Date(b.payout_date).getTime())
+                .map((payout) => (
+                  <div 
+                    key={payout.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">
+                          {format(new Date(payout.payout_date), 'MMM dd, yyyy')}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          Settlement ID: {payout.settlement_id}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <div className="text-right">
+                        <div className="text-lg font-semibold text-amber-600">
+                          ${payout.total_amount.toLocaleString()}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Forecasted
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
