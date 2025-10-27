@@ -436,7 +436,13 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         url += `&NextToken=${encodeURIComponent(nextToken)}`
       }
       
-      console.log(`[SYNC] Fetching: ${url.substring(0, 150)}...`)
+      console.log(`[SYNC] ============ API CALL DIAGNOSTIC ============`)
+      console.log(`[SYNC] Full URL: ${url}`)
+      console.log(`[SYNC] Start Date: ${startDate.toISOString()}`)
+      console.log(`[SYNC] End Date: ${endDate.toISOString()}`)
+      console.log(`[SYNC] Marketplace ID: ${amazonAccount.marketplace_id}`)
+      console.log(`[SYNC] Has NextToken: ${!!nextToken}`)
+      console.log(`[SYNC] ============================================`)
 
       // Rate limit handling with exponential backoff
       let retryAttempts = 0
@@ -450,6 +456,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
             'Content-Type': 'application/json',
           }
         })
+
+        console.log(`[SYNC] Response Status: ${response.status} ${response.statusText}`)
+        console.log(`[SYNC] Response Headers:`, Object.fromEntries(response.headers.entries()))
 
         // Handle rate limiting (429) and server errors (503)
         if (response.status === 429 || response.status === 503) {
@@ -481,7 +490,12 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         // Handle non-OK responses
         if (!response.ok) {
           const errorText = await response.text()
-          console.error('[SYNC] API error:', errorText)
+          console.error('[SYNC] ========== API ERROR DETAILS ==========')
+          console.error('[SYNC] Status:', response.status)
+          console.error('[SYNC] Status Text:', response.statusText)
+          console.error('[SYNC] Error Body:', errorText)
+          console.error('[SYNC] Request URL:', url)
+          console.error('[SYNC] =========================================')
           
           // Handle TTL expiration specifically - reset token and continue with next date
           if (errorText.includes('Time to live') || errorText.includes('TTL exceeded')) {
@@ -516,7 +530,18 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
 
       // Parse JSON only for successful responses
       const data = await response.json()
+      
+      console.log(`[SYNC] ========== API RESPONSE STRUCTURE ==========`)
+      console.log(`[SYNC] Response Keys:`, Object.keys(data))
+      console.log(`[SYNC] Payload Keys:`, Object.keys(data.payload || {}))
+      console.log(`[SYNC] Has FinancialEvents:`, !!data.payload?.FinancialEvents)
+      if (data.payload?.FinancialEvents) {
+        console.log(`[SYNC] FinancialEvents Keys:`, Object.keys(data.payload.FinancialEvents))
+      }
+      console.log(`[SYNC] ==============================================`)
+      
       nextToken = data.payload?.NextToken
+      console.log(`[SYNC] NextToken present: ${!!nextToken}`)
       
       // Save nextToken for resumption
       if (nextToken) {
@@ -529,12 +554,18 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       // Process events
       const events = data.payload?.FinancialEvents || {}
       
-      console.log('[SYNC] Event counts:', {
-        shipments: (events.ShipmentEventList || []).length,
-        refunds: (events.RefundEventList || []).length,
-        adjustments: (events.AdjustmentEventList || []).length,
-        settlements: (events.ShipmentSettleEventList || []).length
-      })
+      console.log('[SYNC] ========== EVENT COUNTS ==========')
+      console.log('[SYNC] ShipmentEventList:', (events.ShipmentEventList || []).length, 'events')
+      console.log('[SYNC] RefundEventList:', (events.RefundEventList || []).length, 'events')
+      console.log('[SYNC] AdjustmentEventList:', (events.AdjustmentEventList || []).length, 'events')
+      console.log('[SYNC] ShipmentSettleEventList:', (events.ShipmentSettleEventList || []).length, 'events')
+      console.log('[SYNC] ServiceFeeEventList:', (events.ServiceFeeEventList || []).length, 'events')
+      console.log('[SYNC] ====================================')
+      
+      // Log sample data if available
+      if (events.ShipmentEventList && events.ShipmentEventList.length > 0) {
+        console.log('[SYNC] Sample Shipment Event:', JSON.stringify(events.ShipmentEventList[0], null, 2))
+      }
 
       // Process settlement events (Payouts)
       for (const settlement of (events.ShipmentSettleEventList || [])) {
@@ -659,8 +690,18 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
 
     } while (nextToken)
     
-    console.log(`[SYNC] Pagination complete after ${pageCount} pages`)
-    console.log(`[SYNC] Extracted: ${transactionsToAdd.length} transactions, ${payoutsToAdd.length} payouts from events, ${settlementsToAdd.length} settlements from groups`)
+    console.log(`[SYNC] ========== SYNC SUMMARY ==========`)
+    console.log(`[SYNC] Pages Fetched: ${pageCount}`)
+    console.log(`[SYNC] Transactions Extracted: ${transactionsToAdd.length}`)
+    console.log(`[SYNC] Payouts from Events: ${payoutsToAdd.length}`)
+    console.log(`[SYNC] Settlements from Groups: ${settlementsToAdd.length}`)
+    console.log(`[SYNC] Date Range: ${startDate.toISOString()} to ${endDate.toISOString()}`)
+    console.log(`[SYNC] ====================================`)
+    
+    // Log first transaction sample if available
+    if (transactionsToAdd.length > 0) {
+      console.log('[SYNC] Sample Transaction:', JSON.stringify(transactionsToAdd[0], null, 2))
+    }
 
     // Determine if this day's data should go to rollups or detailed transactions
     const ninetyDaysAgo = new Date()
