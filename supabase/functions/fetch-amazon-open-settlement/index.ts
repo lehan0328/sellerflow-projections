@@ -138,19 +138,28 @@ Deno.serve(async (req) => {
           const status = settlementEndDate && settlementEndDate <= new Date() ? 'confirmed' : 'estimated'
           const type = settlementEndDate && settlementEndDate <= new Date() ? 'settlement' : 'open_settlement'
           
+          // Extract BeginningBalance for open settlements (cumulative available amount)
+          const beginningBalance = parseFloat(group.BeginningBalance?.CurrencyAmount || '0');
+          const totalAmount = parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0');
+          
           settlementsToAdd.push({
             user_id: user.id,
             amazon_account_id: amazonAccountId,
             settlement_id: group.FinancialEventGroupId,
             payout_date: payoutDate, // Now uses closing date + 1
-            total_amount: parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0'),
+            total_amount: totalAmount,
             currency: group.ConvertedTotal?.CurrencyCode || group.OriginalTotal?.CurrencyCode || 'USD',
             status: status,
             type: type,
             settlement_start_date: group.FinancialEventGroupStart ? 
               new Date(group.FinancialEventGroupStart).toISOString().split('T')[0] : null,
             settlement_end_date: group.FinancialEventGroupEnd ? 
-              new Date(group.FinancialEventGroupEnd).toISOString().split('T')[0] : null
+              new Date(group.FinancialEventGroupEnd).toISOString().split('T')[0] : null,
+            raw_settlement_data: {
+              beginning_balance: beginningBalance,
+              financial_event_group_id: group.FinancialEventGroupId,
+              captured_at: new Date().toISOString()
+            }
           })
         }
       }

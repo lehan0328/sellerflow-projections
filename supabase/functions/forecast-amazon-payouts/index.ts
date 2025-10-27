@@ -414,8 +414,79 @@ serve(async (req) => {
               }
             };
           } else if (payoutFrequency === 'daily') {
-            console.log(`  - NOTE: For daily payouts, open settlement covers period up to ${estimatedPayouts[0].payout_date}`);
-            console.log(`  - Future forecasts will use baseline from transactions AFTER this open settlement`);
+            console.log(`  - DAILY: Generating cumulative distribution for open settlement`);
+            
+            // Fetch total draws already made in this settlement
+            const { data: existingDraws } = await supabase
+              .from('amazon_daily_draws')
+              .select('amount')
+              .eq('amazon_account_id', amazonAccount.id)
+              .eq('settlement_id', estimatedPayouts[0].settlement_id);
+            
+            const totalDrawn = existingDraws?.reduce((sum, d) => sum + Number(d.amount), 0) || 0;
+            
+            // Fetch recent transaction volume for weighting
+            const { data: recentVolume } = await supabase
+              .from('amazon_transactions_daily_summary')
+              .select('transaction_date, net_amount')
+              .eq('amazon_account_id', amazonAccount.id)
+              .gte('transaction_date', estimatedPayouts[0].raw_settlement_data?.settlement_start_date || estimatedPayouts[0].settlement_start_date)
+              .order('transaction_date', { ascending: true });
+            
+            console.log(`  - Settlement: ${estimatedPayouts[0].settlement_start_date} to ${estimatedPayouts[0].settlement_end_date}`);
+            console.log(`  - Total cumulative: $${openSettlementAmount}`);
+            console.log(`  - Already drawn: $${totalDrawn}`);
+            console.log(`  - Volume data points: ${recentVolume?.length || 0}`);
+            
+            // Use the settlement dates to generate daily distributions
+            const settlementStart = estimatedPayouts[0].raw_settlement_data?.settlement_start_date || estimatedPayouts[0].settlement_start_date;
+            const settlementEnd = estimatedPayouts[0].raw_settlement_data?.settlement_end_date || estimatedPayouts[0].settlement_end_date;
+            
+            if (settlementStart && settlementEnd) {
+              // Import distribution calculator
+              const { generateCumulativeDailyDistribution } = await import('./forecast-amazon-payouts-math/daily-cumulative-distribution.ts');
+              
+              const dailyDist = generateCumulativeDailyDistribution(
+                new Date(settlementStart),
+                new Date(settlementEnd),
+                openSettlementAmount, // Total cumulative from Amazon
+                totalDrawn,
+                recentVolume || []
+              );
+              
+              console.log(`  - Generated ${dailyDist.length} daily distribution entries`);
+              
+              // Create forecast entries for each day
+              dailyDist.forEach(day => {
+                forecastedPayouts.push({
+                  user_id: userId,
+                  account_id: amazonAccount.account_id,
+                  amazon_account_id: amazonAccount.id,
+                  payout_date: day.date,
+                  total_amount: day.cumulative_available, // Cumulative amount
+                  settlement_id: estimatedPayouts[0].settlement_id,
+                  status: 'forecasted',
+                  payout_type: 'daily',
+                  currency_code: 'USD',
+                  raw_settlement_data: {
+                    forecast_metadata: {
+                      method: 'cumulative_daily_distribution',
+                      settlement_period: {
+                        start: settlementStart,
+                        end: settlementEnd
+                      },
+                      daily_unlock_amount: day.daily_unlock,
+                      cumulative_available: day.cumulative_available,
+                      days_accumulated: day.days_accumulated,
+                      total_drawn_to_date: totalDrawn,
+                      confidence: 95
+                    }
+                  }
+                });
+              });
+            } else {
+              console.log(`  - WARNING: Missing settlement dates, skipping daily distribution`);
+            }
           }
         } else {
           // No open settlement, start from last confirmed payout

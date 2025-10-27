@@ -12,7 +12,16 @@ interface DailyPayoutTrackerProps {
   amazonAccountId: string;
   settlementId: string;
   settlementDate: string;
-  dailyAmounts: Array<{ date: string; amount: number; cumulative: number }>;
+  dailyAmounts: Array<{ 
+    date: string; 
+    amount: number; 
+    cumulative: number;
+    metadata?: {
+      settlement_period?: { start: string; end: string };
+      days_accumulated?: number;
+      daily_unlock_amount?: number;
+    };
+  }>;
   lumpSumAmount: number;
   totalDrawsToDate: number;
 }
@@ -27,7 +36,8 @@ export function DailyPayoutTracker({
 }: DailyPayoutTrackerProps) {
   const [isTransferring, setIsTransferring] = useState(false);
   
-  const todayStr = new Date().toISOString().split('T')[0];
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
   const todayData = dailyAmounts.find(d => d.date === todayStr);
   const availableToday = todayData?.amount || 0;
   const cumulativeAvailable = todayData?.cumulative || 0;
@@ -80,6 +90,18 @@ export function DailyPayoutTracker({
     }
   };
 
+  // Calculate missed days
+  // Extract settlement metadata if available
+  const metadata = dailyAmounts[0]?.metadata;
+  const settlementStart = metadata?.settlement_period?.start;
+  const settlementEnd = metadata?.settlement_period?.end;
+  
+  // Calculate days accumulated if we have metadata
+  let daysMissed = 0;
+  if (todayData?.metadata?.days_accumulated) {
+    daysMissed = todayData.metadata.days_accumulated - 1;
+  }
+
   // Calculate progress
   const totalProjected = lumpSumAmount + totalDrawsToDate;
   const progressPercentage = totalProjected > 0 
@@ -96,7 +118,10 @@ export function DailyPayoutTracker({
               Daily Payout Tracker
             </CardTitle>
             <CardDescription>
-              Settlement on {formatDate(settlementDate)} ({daysUntilSettlement} days)
+              Settlement Period: {settlementStart && settlementEnd ? 
+                `${formatDate(settlementStart)} - ${formatDate(settlementEnd)}` : 
+                `Settlement on ${formatDate(settlementDate)}`
+              } ({daysUntilSettlement} days)
             </CardDescription>
           </div>
           <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900/20">
@@ -113,9 +138,16 @@ export function DailyPayoutTracker({
               <p className="text-3xl font-bold text-finance-positive">
                 {formatCurrency(availableToday)}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Cumulative if not withdrawn: {formatCurrency(cumulativeAvailable)}
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-muted-foreground">
+                  Cumulative if not withdrawn: {formatCurrency(cumulativeAvailable)}
+                </p>
+                {daysMissed > 0 && (
+                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 text-xs">
+                    {daysMissed} Days Accumulated
+                  </Badge>
+                )}
+              </div>
             </div>
             <Button 
               onClick={handleTransferToday} 

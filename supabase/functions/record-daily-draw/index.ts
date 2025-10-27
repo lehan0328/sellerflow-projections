@@ -49,7 +49,25 @@ serve(async (req) => {
 
     const today = drawDate || new Date().toISOString().split('T')[0];
 
-    // Record the daily draw
+    // Fetch the open settlement to get period dates
+    const { data: settlement, error: settlementError } = await supabase
+      .from('amazon_payouts')
+      .select('*')
+      .eq('settlement_id', settlementId)
+      .eq('amazon_account_id', amazonAccountId)
+      .eq('status', 'estimated')
+      .single();
+
+    if (settlementError || !settlement) {
+      console.error('Settlement not found:', settlementError);
+      throw new Error('Open settlement not found');
+    }
+
+    const metadata = settlement.raw_settlement_data?.forecast_metadata;
+    const settlementStart = metadata?.settlement_period?.start || today;
+    const settlementEnd = metadata?.settlement_period?.end || today;
+
+    // Record the daily draw with full settlement context
     const { data: draw, error: drawError } = await supabase
       .from('amazon_daily_draws')
       .insert({
@@ -59,8 +77,8 @@ serve(async (req) => {
         draw_date: today,
         amount: amount,
         settlement_id: settlementId,
-        settlement_period_start: today, // Will be updated with actual period
-        settlement_period_end: today,   // Will be updated with actual period
+        settlement_period_start: settlementStart,
+        settlement_period_end: settlementEnd,
       })
       .select()
       .single();

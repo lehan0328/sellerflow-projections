@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
@@ -30,110 +30,176 @@ serve(async (req) => {
 
     const { amazonAccountId, settlementId, drawAmount } = await req.json();
 
+    if (!amazonAccountId || !settlementId) {
+      throw new Error('Missing required fields: amazonAccountId, settlementId');
+    }
+
     console.log('[RECALC] Recalculating daily payouts after draw:', {
       amazonAccountId,
       settlementId,
       drawAmount
     });
 
-    // Get the current settlement bucket
-    const { data: currentSettlement, error: settlementError } = await supabase
+    const { data: settlement, error: settlementError } = await supabase
       .from('amazon_payouts')
       .select('*')
       .eq('settlement_id', settlementId)
       .eq('amazon_account_id', amazonAccountId)
-      .order('payout_date', { ascending: false })
-      .limit(1)
+      .eq('status', 'estimated')
       .single();
 
-    if (settlementError || !currentSettlement) {
-      throw new Error('Settlement not found');
+    if (settlementError || !settlement) {
+      console.error('[RECALC] Settlement not found:', settlementError);
+      throw new Error('Open settlement not found');
     }
 
-    // Calculate new totals
-    const newTotalDraws = (currentSettlement.total_daily_draws || 0) + drawAmount;
-    const remainingLumpSum = Math.max(
-      0,
-      (currentSettlement.eligible_in_period || 0) - newTotalDraws
+    const { data: allDraws, error: drawsError } = await supabase
+      .from('amazon_daily_draws')
+      .select('amount')
+      .eq('amazon_account_id', amazonAccountId)
+      .eq('settlement_id', settlementId);
+
+    if (drawsError) {
+      console.error('[RECALC] Error fetching draws:', drawsError);
+      throw new Error('Failed to fetch draws');
+    }
+
+    const totalDrawn = (allDraws || []).reduce((sum, d) => sum + Number(d.amount), 0);
+    console.log('[RECALC] Total drawn to date:', totalDrawn);
+
+    const metadata = settlement.raw_settlement_data?.forecast_metadata;
+    const settlementStart = metadata?.settlement_period?.start;
+    const settlementEnd = metadata?.settlement_period?.end;
+    const totalAmount = Number(settlement.total_amount || 0);
+
+    if (!settlementStart || !settlementEnd) {
+      console.error('[RECALC] Missing settlement period in metadata');
+      throw new Error('Invalid settlement metadata');
+    }
+
+    const { data: volumeWeights } = await supabase
+      .from('amazon_transactions_daily_summary')
+      .select('transaction_date, net_amount')
+      .eq('amazon_account_id', amazonAccountId)
+      .gte('transaction_date', settlementStart)
+      .lte('transaction_date', settlementEnd)
+      .order('transaction_date', { ascending: true });
+
+    const generateDistribution = (
+      startDate: Date,
+      endDate: Date,
+      totalAmount: number,
+      drawn: number,
+      weights: any[]
+    ) => {
+      const distributions = [];
+      const netAvailable = Math.max(0, totalAmount - drawn);
+      
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      
+      const end = new Date(endDate);
+      end.setHours(0, 0, 0, 0);
+      
+      const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      
+      const volumeMap = new Map();
+      let totalVolume = 0;
+      
+      if (weights && weights.length > 0) {
+        weights.forEach(w => {
+          const amount = Math.abs(w.net_amount);
+          volumeMap.set(w.transaction_date, amount);
+          totalVolume += amount;
+        });
+      }
+      
+      let cumulative = 0;
+      for (let i = 0; i < totalDays; i++) {
+        const current = new Date(start);
+        current.setDate(current.getDate() + i);
+        const dateStr = current.toISOString().split('T')[0];
+        
+        let dailyUnlock = netAvailable / totalDays;
+        if (totalVolume > 0 && volumeMap.has(dateStr)) {
+          const weight = volumeMap.get(dateStr) / totalVolume;
+          dailyUnlock = netAvailable * weight;
+        }
+        
+        cumulative += dailyUnlock;
+        distributions.push({
+          date: dateStr,
+          daily_unlock: Math.round(dailyUnlock * 100) / 100,
+          cumulative_available: Math.round(cumulative * 100) / 100,
+          days_accumulated: i + 1
+        });
+      }
+      
+      return distributions;
+    };
+
+    const newDistributions = generateDistribution(
+      new Date(settlementStart),
+      new Date(settlementEnd),
+      totalAmount,
+      totalDrawn,
+      volumeWeights || []
     );
 
-    // If draw happened, shift settlement date by 14 days
-    const today = new Date();
-    const newSettlementDate = new Date(today);
-    newSettlementDate.setDate(newSettlementDate.getDate() + 14);
-    const newSettlementDateStr = newSettlementDate.toISOString().split('T')[0];
+    console.log('[RECALC] Generated new distributions:', newDistributions.length);
 
-    console.log('[RECALC] New settlement date:', newSettlementDateStr);
-    console.log('[RECALC] Remaining lump sum:', remainingLumpSum);
-
-    // Delete all forecasted payouts for this settlement bucket
     await supabase
       .from('amazon_payouts')
       .delete()
-      .eq('settlement_id', settlementId)
       .eq('amazon_account_id', amazonAccountId)
+      .eq('settlement_id', settlementId)
       .eq('status', 'forecasted');
 
-    // Redistribute remaining amount across next 14 days
-    const daysUntilSettlement = 14;
-    const dailyAmount = remainingLumpSum / daysUntilSettlement;
+    const forecastsToInsert = newDistributions.map(dist => ({
+      user_id: user.id,
+      account_id: settlement.account_id,
+      amazon_account_id: amazonAccountId,
+      settlement_id: settlementId,
+      payout_date: dist.date,
+      total_amount: dist.cumulative_available,
+      status: 'forecasted',
+      payout_type: 'daily',
+      currency_code: settlement.currency_code || 'USD',
+      raw_settlement_data: {
+        forecast_metadata: {
+          method: 'cumulative_daily_distribution',
+          settlement_period: {
+            start: settlementStart,
+            end: settlementEnd
+          },
+          daily_unlock_amount: dist.daily_unlock,
+          cumulative_available: dist.cumulative_available,
+          days_accumulated: dist.days_accumulated,
+          total_drawn_to_date: totalDrawn,
+          confidence: 95,
+          recalculated_at: new Date().toISOString()
+        }
+      }
+    }));
 
-    const newForecasts: any[] = [];
-    let cumulativeAvailable = 0;
+    if (forecastsToInsert.length > 0) {
+      const { error: insertError } = await supabase
+        .from('amazon_payouts')
+        .insert(forecastsToInsert);
 
-    for (let i = 1; i <= daysUntilSettlement; i++) {
-      const forecastDate = new Date(today);
-      forecastDate.setDate(forecastDate.getDate() + i);
-      
-      cumulativeAvailable += dailyAmount;
-      const isSettlementDay = i === daysUntilSettlement;
+      if (insertError) {
+        console.error('[RECALC] Error inserting forecasts:', insertError);
+        throw insertError;
+      }
 
-      newForecasts.push({
-        user_id: user.id,
-        account_id: currentSettlement.account_id,
-        amazon_account_id: amazonAccountId,
-        settlement_id: `daily-forecast-${amazonAccountId}-${newSettlementDateStr}`,
-        payout_date: forecastDate.toISOString().split('T')[0],
-        total_amount: dailyAmount,
-        orders_total: currentSettlement.orders_total || 0,
-        fees_total: currentSettlement.fees_total || 0,
-        refunds_total: 0,
-        other_total: 0,
-        adjustments: 0,
-        status: 'forecasted',
-        payout_type: 'bi-weekly',
-        marketplace_name: currentSettlement.marketplace_name,
-        transaction_count: currentSettlement.transaction_count || 0,
-        currency_code: 'USD',
-        confidence_score: 0.75,
-        modeling_method: 'daily_redistribution_after_draw',
-        reserve_amount: currentSettlement.reserve_amount || 0,
-        eligible_in_period: isSettlementDay ? remainingLumpSum : 0,
-        available_for_daily_transfer: dailyAmount,
-        total_daily_draws: newTotalDraws,
-        last_draw_calculation_date: today.toISOString().split('T')[0]
-      });
+      console.log('[RECALC] Inserted', forecastsToInsert.length, 'new forecasts');
     }
-
-    // Insert new forecasts
-    const { error: insertError } = await supabase
-      .from('amazon_payouts')
-      .insert(newForecasts);
-
-    if (insertError) {
-      console.error('[RECALC] Error inserting new forecasts:', insertError);
-      throw insertError;
-    }
-
-    console.log('[RECALC] Successfully recalculated daily payouts');
 
     return new Response(
       JSON.stringify({
         success: true,
-        new_settlement_date: newSettlementDateStr,
-        remaining_lump_sum: remainingLumpSum,
-        daily_amount: dailyAmount,
-        message: 'Daily payouts recalculated successfully'
+        message: 'Daily payouts recalculated successfully',
+        distributions: newDistributions.length
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -141,7 +207,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('[RECALC] Error:', error);
+    console.error('Error in recalculate-daily-payouts:', error);
     return new Response(
       JSON.stringify({
         success: false,

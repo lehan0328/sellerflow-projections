@@ -113,11 +113,20 @@ export const useAmazonPayouts = () => {
       console.log('[fetchAmazonPayouts] Filtered payouts:', filteredPayouts.length, 'total');
       console.log('[fetchAmazonPayouts] Open settlements:', filteredPayouts.filter(p => p.status === 'estimated').length);
 
-      setAmazonPayouts(filteredPayouts.map(payout => ({
-        ...payout,
-        status: payout.status as "confirmed" | "estimated" | "processing" | "forecasted",
-        payout_type: payout.payout_type as "bi-weekly" | "reserve-release" | "adjustment"
-      })));
+      // Parse and enrich with metadata
+      setAmazonPayouts(filteredPayouts.map(payout => {
+        const rawData = payout.raw_settlement_data as any;
+        const metadata = rawData?.forecast_metadata;
+        return {
+          ...payout,
+          status: payout.status as "confirmed" | "estimated" | "processing" | "forecasted",
+          payout_type: payout.payout_type as "bi-weekly" | "reserve-release" | "adjustment",
+          available_for_daily_transfer: metadata?.daily_unlock_amount || 0,
+          settlement_start_date: metadata?.settlement_period?.start,
+          settlement_end_date: metadata?.settlement_period?.end,
+          days_accumulated: metadata?.days_accumulated || 0
+        };
+      }));
     } catch (error) {
       console.error("Error fetching Amazon payouts:", error);
       toast.error("Failed to load Amazon payouts");
