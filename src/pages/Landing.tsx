@@ -615,10 +615,6 @@ const Landing = () => {
                           <span className="font-display">Mathematical Rule-Based</span>
                           <span className="ml-2 px-2.5 py-0.5 bg-primary/20 rounded-full text-xs">Accurate</span>
                         </Badge>
-                        <Badge variant="outline" className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500/10 to-orange-600/10 text-orange-700 dark:text-orange-400 border border-orange-500/30 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm">
-                          <ShoppingCart className="h-3.5 w-3.5" />
-                          <span>Amazon Authorized Partner</span>
-                        </Badge>
                       </div>
                     </div>
                     <div className="flex items-center gap-4 pb-2">
