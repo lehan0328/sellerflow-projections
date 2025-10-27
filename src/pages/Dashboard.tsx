@@ -75,6 +75,7 @@ import { TransactionMatchButton } from "@/components/cash-flow/transaction-match
 import { MatchReviewDialog } from "@/components/cash-flow/match-review-dialog";
 import { TransactionMatch } from "@/hooks/useTransactionMatching";
 import { ManualMatchDialog } from "@/components/cash-flow/manual-match-dialog";
+import { AmazonSyncBanner } from "@/components/cash-flow/amazon-sync-banner";
 
 // ========== Type Definitions ==========
 
@@ -2116,7 +2117,10 @@ const Dashboard = () => {
       case "overview":
         return (
           <>
-            <OverviewStats 
+            {/* Amazon Sync Progress Banner */}
+            <AmazonSyncBanner />
+            
+            <OverviewStats
               totalCash={displayCash} 
               events={allCalendarEvents}
               onUpdateCashBalance={handleUpdateCashBalance}

@@ -577,11 +577,17 @@ const Landing = () => {
                   <h1 className="text-4xl lg:text-5xl xl:text-6xl font-display font-bold leading-relaxed tracking-tight flex-1">
                     <div className="flex items-center justify-between pb-2">
                       <span className="text-foreground">Smarter</span>
-                      <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm hover-scale whitespace-nowrap" style={{ wordSpacing: '0.3em' }}>
-                        <Sparkles className="h-4 w-4 animate-pulse" />
-                        <span className="font-display">Mathematical Rule-Based</span>
-                        <span className="ml-2 px-2.5 py-0.5 bg-primary/20 rounded-full text-xs">Accurate</span>
-                      </Badge>
+                      <div className="flex flex-col gap-2">
+                        <Badge className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 px-4 py-2 text-sm font-semibold backdrop-blur-sm hover-scale whitespace-nowrap" style={{ wordSpacing: '0.3em' }}>
+                          <Sparkles className="h-4 w-4 animate-pulse" />
+                          <span className="font-display">Mathematical Rule-Based</span>
+                          <span className="ml-2 px-2.5 py-0.5 bg-primary/20 rounded-full text-xs">Accurate</span>
+                        </Badge>
+                        <Badge variant="outline" className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500/10 to-orange-600/10 text-orange-700 dark:text-orange-400 border border-orange-500/30 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm">
+                          <ShoppingCart className="h-3.5 w-3.5" />
+                          <span>Amazon Authorized Partner</span>
+                        </Badge>
+                      </div>
                     </div>
                     <div className="flex items-center gap-4 pb-2">
                       <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
