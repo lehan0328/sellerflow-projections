@@ -99,11 +99,11 @@ serve(async (req) => {
 
     console.log(`✅ ${accountsReadyForForecast.length} of ${amazonAccounts.length} accounts ready for forecasting`);
 
-    // Delete existing forecasted payouts
+    // Delete existing forecasted payouts for this account
     await supabase
       .from('amazon_payouts')
       .delete()
-      .eq('user_id', userId)
+      .eq('account_id', accountId)
       .eq('status', 'forecasted');
 
     const allForecasts: any[] = [];
@@ -233,14 +233,17 @@ serve(async (req) => {
       }
     }
 
-    // Insert all forecasts
+    // Upsert all forecasts (update if exists, insert if new)
     if (allForecasts.length > 0) {
       const { error: insertError } = await supabase
         .from('amazon_payouts')
-        .insert(allForecasts);
+        .upsert(allForecasts, { 
+          onConflict: 'amazon_account_id,settlement_id',
+          ignoreDuplicates: false 
+        });
 
       if (insertError) {
-        console.error('[MATH-FORECAST] Insert error:', insertError);
+        console.error('[MATH-FORECAST] Upsert error:', insertError);
         throw insertError;
       }
     }
