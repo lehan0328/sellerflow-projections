@@ -29,61 +29,15 @@ const MARKETPLACE_REGIONS: Record<string, string> = {
   'A1VC38T7YXB528': 'FE',
 }
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
-
+// Background sync function that can run without HTTP timeout
+async function performBackgroundSync(
+  amazonAccountId: string,
+  userId: string,
+  supabase: any
+) {
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    )
-
-    // Parse request body
-    const { amazonAccountId, userId, cronJob } = await req.json()
-
-    console.log(`[SYNC] Starting sync - Account: ${amazonAccountId}, User: ${userId}, Cron: ${cronJob}`)
-
-    if (!amazonAccountId) {
-      return new Response(
-        JSON.stringify({ error: 'Amazon account ID required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    let actualUserId = userId
-    
-    // Only check auth for manual syncs
-    if (!cronJob) {
-      const authHeader = req.headers.get('Authorization')
-      if (!authHeader) {
-        console.error('[SYNC] No auth header')
-        return new Response(
-          JSON.stringify({ error: 'No authorization header' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      const token = authHeader.replace('Bearer ', '')
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-      
-      if (authError || !user) {
-        console.error('[SYNC] Auth error:', authError)
-        return new Response(
-          JSON.stringify({ error: 'Invalid token' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-      
-      actualUserId = user.id
-    }
+    console.log(`[BACKGROUND] Starting sync - Account: ${amazonAccountId}, User: ${userId}`)
+    const actualUserId = userId
 
     // Fetch Amazon account details
     const { data: amazonAccount, error: accountError } = await supabase
@@ -479,8 +433,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     console.log('[SYNC] Starting pagination for 1-day window...')
     console.log('[SYNC] Fetching: ', `${startDate.toISOString()} to ${endDate.toISOString()}`)
 
-    // Increase limit significantly for high-volume sellers (500 pages ~= 50k transactions)
-    const MAX_PAGES_PER_RUN = 500
+    // With background tasks, no HTTP timeout - can process unlimited pages
+    // But still batch to allow graceful interruption and progress updates
+    const MAX_PAGES_PER_RUN = 2000 // ~200k transactions per run
     let totalSavedThisRun = 0 // Track total saved in this run
     
     do {
@@ -865,9 +820,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         transactionsToAdd.length = 0
       }
 
-      // Rate limiting delay between transaction pages - prevent Amazon throttling
+      // Minimal delay between transaction pages (background task = no timeout concern)
       if (nextToken) {
-        await new Promise(resolve => setTimeout(resolve, 500)) // 0.5 second delay
+        await new Promise(resolve => setTimeout(resolve, 200)) // 0.2 second delay
       }
 
     } while (nextToken)
@@ -1241,5 +1196,101 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         })
         .eq('id', amazonAccountId)
     }
+    
+    console.log('[BACKGROUND] ✓ Sync completed')
+  } catch (error) {
+    console.error('[BACKGROUND] Fatal error:', error)
+    
+    try {
+      await supabase
+        .from('amazon_accounts')
+        .update({ 
+          sync_status: 'idle',
+          sync_message: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          last_sync: new Date().toISOString()
+        })
+        .eq('id', amazonAccountId)
+    } catch (updateError) {
+      console.error('[BACKGROUND] Failed to update error status:', updateError)
+    }
   }
 }
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+
+    const { amazonAccountId, userId, cronJob } = await req.json()
+
+    console.log(`[SYNC] Request received - Account: ${amazonAccountId}`)
+
+    if (!amazonAccountId) {
+      return new Response(
+        JSON.stringify({ error: 'Amazon account ID required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    let actualUserId = userId
+    
+    if (!cronJob) {
+      const authHeader = req.headers.get('Authorization')
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: 'No authorization header' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      const token = authHeader.replace('Bearer ', '')
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+      
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid token' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      
+      actualUserId = user.id
+    }
+
+    // Start background sync - no HTTP timeout!
+    console.log('[SYNC] Starting background sync...')
+    EdgeRuntime.waitUntil(
+      performBackgroundSync(amazonAccountId, actualUserId, supabase)
+    )
+    
+    // Return immediately
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        message: 'Sync started in background'
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  } catch (error) {
+    console.error('[SYNC] Request error:', error)
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+})
+
+addEventListener('beforeunload', (ev) => {
+  console.log('[SYNC] Shutdown:', ev.detail?.reason)
+})

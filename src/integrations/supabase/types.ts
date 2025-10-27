@@ -213,6 +213,8 @@ export type Database = {
           sync_next_token: string | null
           sync_progress: number | null
           sync_status: string | null
+          sync_window_end: string | null
+          sync_window_start: string | null
           token_expires_at: string | null
           transaction_count: number | null
           updated_at: string
@@ -248,6 +250,8 @@ export type Database = {
           sync_next_token?: string | null
           sync_progress?: number | null
           sync_status?: string | null
+          sync_window_end?: string | null
+          sync_window_start?: string | null
           token_expires_at?: string | null
           transaction_count?: number | null
           updated_at?: string
@@ -283,6 +287,8 @@ export type Database = {
           sync_next_token?: string | null
           sync_progress?: number | null
           sync_status?: string | null
+          sync_window_end?: string | null
+          sync_window_start?: string | null
           token_expires_at?: string | null
           transaction_count?: number | null
           updated_at?: string
