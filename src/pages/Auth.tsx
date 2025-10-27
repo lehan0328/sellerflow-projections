@@ -137,7 +137,7 @@ export const Auth = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: signInData.email,
         password: signInData.password,
       });
@@ -145,10 +145,22 @@ export const Auth = () => {
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
           toast.error('Invalid email or password');
+        } else if (error.message.includes('Email not confirmed')) {
+          toast.error('Please verify your email address before signing in. Check your inbox for the verification link.');
         } else {
           toast.error(error.message);
         }
+        return;
       }
+
+      // Check if email is verified
+      if (data.user && !data.user.email_confirmed_at) {
+        await supabase.auth.signOut();
+        toast.error('Please verify your email address before signing in. Check your inbox for the verification link.');
+        return;
+      }
+
+      // Success - the onAuthStateChange listener will handle navigation
     } catch (error) {
       toast.error('An unexpected error occurred');
     } finally {

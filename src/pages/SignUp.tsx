@@ -19,6 +19,7 @@ export const SignUp = () => {
     confirmPassword: '',
     firstName: '',
     lastName: '',
+    company: '',
   });
 
   useEffect(() => {
@@ -45,7 +46,7 @@ export const SignUp = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!signUpData.email || !signUpData.password || !signUpData.confirmPassword || !signUpData.firstName || !signUpData.lastName) {
+    if (!signUpData.email || !signUpData.password || !signUpData.confirmPassword || !signUpData.firstName || !signUpData.lastName || !signUpData.company) {
       toast.error('Please fill in all fields');
       return;
     }
@@ -62,9 +63,9 @@ export const SignUp = () => {
 
     setLoading(true);
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${window.location.origin}/auth`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: signUpData.email,
         password: signUpData.password,
         options: {
@@ -72,13 +73,25 @@ export const SignUp = () => {
           data: {
             first_name: signUpData.firstName,
             last_name: signUpData.lastName,
+            company: signUpData.company,
           }
         }
       });
 
       if (error) throw error;
 
-      toast.success('Account created successfully! Redirecting...');
+      // Check if email confirmation is required
+      if (data.user && !data.session) {
+        toast.success('Account created! Please check your email to verify your account before signing in.');
+        // Redirect to auth page after a delay
+        setTimeout(() => {
+          navigate('/auth');
+        }, 3000);
+      } else {
+        // If auto-confirmed (shouldn't happen with our settings)
+        toast.success('Account created successfully!');
+        navigate('/onboarding');
+      }
     } catch (error: any) {
       console.error('Signup error:', error);
       if (error.message.includes('already registered')) {
@@ -166,6 +179,19 @@ export const SignUp = () => {
                       required
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="company" className="text-base">Company Name</Label>
+                  <Input
+                    id="company"
+                    type="text"
+                    value={signUpData.company}
+                    onChange={(e) => setSignUpData({ ...signUpData, company: e.target.value })}
+                    className="h-12 border-primary/20 bg-background/50 backdrop-blur-sm focus:border-primary focus:ring-primary/20 transition-all"
+                    disabled={loading}
+                    required
+                  />
                 </div>
 
                 <div className="space-y-2">
