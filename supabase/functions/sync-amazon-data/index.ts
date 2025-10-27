@@ -178,9 +178,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       startDate.setDate(startDate.getDate() + 1)
       startDate.setHours(0, 0, 0, 0)
       
-      // Fetch 1 day at a time for backfill (optimized for high-volume accounts)
+      // Fetch 12 hours at a time for backfill to avoid NextToken expiration
       endDate = new Date(startDate)
-      endDate.setDate(endDate.getDate() + 1)
+      endDate.setHours(endDate.getHours() + 12)
       
       // Don't go beyond yesterday
       if (endDate > yesterday) {
@@ -194,9 +194,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       startDate.setDate(startDate.getDate() + 1)
       startDate.setHours(0, 0, 0, 0)
       
-      // Fetch 1 day at a time (optimized for high-volume accounts)
+      // Fetch 12 hours at a time to avoid NextToken expiration
       endDate = new Date(startDate)
-      endDate.setDate(endDate.getDate() + 1)
+      endDate.setHours(endDate.getHours() + 12)
       
       // Don't go beyond yesterday
       if (endDate > yesterday) {
@@ -332,9 +332,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         })
       }
       
-      // Rate limiting delay between pages (reduced for faster sync)
+      // Minimal delay between pages to avoid NextToken expiration
       if (groupNextToken) {
-        await new Promise(resolve => setTimeout(resolve, 500))
+        await new Promise(resolve => setTimeout(resolve, 100))
       }
       
     } while (groupNextToken && groupPageCount < 100)
@@ -597,23 +597,26 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           console.error('[SYNC] Request URL:', url)
           console.error('[SYNC] =========================================')
           
-          // Handle TTL expiration specifically - reset token and continue with next date
+          // Handle TTL expiration specifically - DO NOT advance date, retry same date
           if (errorText.includes('Time to live') || errorText.includes('TTL exceeded')) {
-            console.log('[SYNC] NextToken expired - resetting and moving to next date')
+            console.log('[SYNC] ⚠️ NextToken expired - will retry SAME date on next sync')
             
-            // Clear the expired token
+            // CRITICAL: DON'T advance last_synced_to - we need to retry this date
+            // Clear the expired token so next sync starts fresh for this same date
             await supabase
               .from('amazon_accounts')
               .update({ 
                 sync_next_token: null,
-                last_synced_to: endDate.toISOString(), // Mark this date as done
-                sync_message: 'Token expired - continuing next date...'
+                sync_status: 'idle',
+                sync_message: `Token expired at page ${pageCount}. Will retry same date next run.`,
+                last_sync: new Date().toISOString()
               })
               .eq('id', amazonAccountId)
             
-            // Break out of BOTH loops - skip JSON parsing
+            console.log('[SYNC] ✓ Cleared token, keeping same date for retry')
+            // Break out of pagination - let next cron run retry this date
             nextToken = undefined
-            break
+            return
           }
           
           throw new Error(`API failed: ${response.status} - ${errorText}`)
