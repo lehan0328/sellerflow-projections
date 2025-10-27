@@ -180,7 +180,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     // Refresh access token if needed
     console.log('[SYNC] Checking access token...')
     const tokenExpiresAt = new Date(amazonAccount.token_expires_at || 0)
-    now = new Date()
+    let now = new Date()
     let accessToken = amazonAccount.encrypted_access_token
 
     if (tokenExpiresAt <= now || !accessToken) {
@@ -211,8 +211,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     settlementsStartDate.setDate(settlementsStartDate.getDate() - 365)
     settlementsStartDate.setHours(0, 0, 0, 0)
 
-    now = new Date()
-    now.setMinutes(now.getMinutes() - 5) // Amazon requires date to be no later than 2 minutes from now
+    const nowForSettlements = new Date()
+    nowForSettlements.setMinutes(nowForSettlements.getMinutes() - 5) // Amazon requires date to be no later than 2 minutes from now
     
     // Define the target historical window (90 days BACK from today)
     const transactionStartDate = new Date()
@@ -226,7 +226,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     if (!lastSyncDate || isLastSyncInFuture) {
       // First sync OR last_synced_to is today/future (invalid) - fetch last 90 days
       startDate = new Date(transactionStartDate)
-      endDate = new Date(now)
+      endDate = new Date(yesterday)
       
       console.log('[SYNC] Initial/Reset sync - fetching 90 days of historical transactions:', startDate.toISOString(), 'to', endDate.toISOString())
     } else if (lastSyncDate < transactionStartDate) {
