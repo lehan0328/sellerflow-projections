@@ -55,6 +55,7 @@ export const ForecastSettings = () => {
   const [togglingForecast, setTogglingForecast] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
   const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(false);
+  const [savedAdvancedModelingEnabled, setSavedAdvancedModelingEnabled] = useState(false);
   
   const hasAmazonStore = amazonAccounts && amazonAccounts.length > 0;
   
@@ -141,6 +142,7 @@ export const ForecastSettings = () => {
       // Set forecast enabled state
       setForecastsEnabled(data?.forecasts_enabled ?? true);
       setAdvancedModelingEnabled(data?.advanced_modeling_enabled ?? false);
+      setSavedAdvancedModelingEnabled(data?.advanced_modeling_enabled ?? false);
     } catch (error) {
       console.error('Error fetching forecast settings:', error);
       // On error, default to 8 (Moderate)
@@ -496,6 +498,7 @@ export const ForecastSettings = () => {
             account_id: profile.account_id,
             forecast_confidence_threshold: confidenceThreshold,
             forecasts_enabled: forecastsEnabled,
+            advanced_modeling_enabled: advancedModelingEnabled,
             default_reserve_lag_days: 7, // DD+7 standard
           })
           .select('forecast_confidence_threshold')
@@ -512,7 +515,8 @@ export const ForecastSettings = () => {
           .from('user_settings')
           .update({ 
             forecast_confidence_threshold: confidenceThreshold,
-            forecasts_enabled: forecastsEnabled
+            forecasts_enabled: forecastsEnabled,
+            advanced_modeling_enabled: advancedModelingEnabled
           })
           .eq('user_id', currentUser.id)
           .select('forecast_confidence_threshold')
@@ -542,8 +546,9 @@ export const ForecastSettings = () => {
 
       console.log('✅ Forecast risk level saved and verified:', confidenceThreshold);
       
-      // Update saved value after successful save
+      // Update saved values after successful save
       setSavedConfidenceThreshold(confidenceThreshold);
+      setSavedAdvancedModelingEnabled(advancedModelingEnabled);
 
       // Handle forecasts based on enabled state
       if (!forecastsEnabled) {
@@ -1001,6 +1006,53 @@ export const ForecastSettings = () => {
           </div>
         </div>
 
+        {/* Advanced Modeling Toggle */}
+        {payoutModel === 'daily' && (
+          <div className="rounded-lg border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-purple-600" />
+                <div>
+                  <Label htmlFor="advanced-modeling" className="text-sm font-semibold text-purple-900 dark:text-purple-100">
+                    Advanced Daily Distribution
+                  </Label>
+                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-0.5">
+                    Volume-weighted cumulative unlocking from Amazon BeginningBalance
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="advanced-modeling"
+                checked={advancedModelingEnabled}
+                onCheckedChange={setAdvancedModelingEnabled}
+                disabled={!forecastsEnabled || !hasEnoughDataForAdvanced}
+              />
+            </div>
+            
+            {!hasEnoughDataForAdvanced && (
+              <div className="p-2 bg-amber-100 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Requires 3+ confirmed payouts</p>
+                  <p className="text-[10px] mt-0.5">Currently have {confirmedPayouts.length} confirmed payout{confirmedPayouts.length !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
+            )}
+            
+            {advancedModelingEnabled && (
+              <div className="p-3 bg-white/70 dark:bg-slate-900/50 rounded text-xs text-slate-700 dark:text-slate-300 space-y-2">
+                <p className="font-medium text-purple-800 dark:text-purple-200">How it works:</p>
+                <ul className="space-y-1 ml-4 list-disc text-[10px]">
+                  <li><strong>Extracts real Amazon BeginningBalance</strong> from open settlements</li>
+                  <li><strong>Distributes daily</strong> based on your transaction volume patterns</li>
+                  <li><strong>Cumulative unlocking</strong>: Funds add up each day if not withdrawn</li>
+                  <li>Example: If $30k total → Day 1: $2.5k, Day 2: +$3k = $5.5k available, etc.</li>
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="rounded-lg bg-muted/50 p-4 space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium">
             <TrendingUp className="h-4 w-4" />
@@ -1020,10 +1072,10 @@ export const ForecastSettings = () => {
               <div>
                 <Button 
                   onClick={handleSave} 
-                  disabled={saving || !forecastsEnabled || confidenceThreshold === savedConfidenceThreshold}
+                  disabled={saving || !forecastsEnabled || (confidenceThreshold === savedConfidenceThreshold && advancedModelingEnabled === savedAdvancedModelingEnabled)}
                   className="w-full"
                 >
-                  {saving ? "Saving..." : confidenceThreshold === savedConfidenceThreshold ? "No Changes to Save" : "Save Forecast Settings"}
+                  {saving ? "Saving..." : (confidenceThreshold === savedConfidenceThreshold && advancedModelingEnabled === savedAdvancedModelingEnabled) ? "No Changes to Save" : "Save Forecast Settings"}
                 </Button>
               </div>
             </TooltipTrigger>

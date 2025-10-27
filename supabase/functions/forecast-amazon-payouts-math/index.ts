@@ -54,22 +54,24 @@ serve(async (req) => {
     if (!profile?.account_id) throw new Error('User profile not found');
     const accountId = profile.account_id;
 
-    // Get user settings
+    // Get user settings including advanced modeling flag
     const { data: userSettings } = await supabase
       .from('user_settings')
-      .select('forecast_confidence_threshold, default_reserve_lag_days, min_reserve_floor')
+      .select('forecast_confidence_threshold, default_reserve_lag_days, min_reserve_floor, advanced_modeling_enabled')
       .eq('user_id', userId)
       .maybeSingle();
 
     const riskAdjustment = userSettings?.forecast_confidence_threshold ?? 8; // Default 8% (Moderate)
     const defaultReserveLag = userSettings?.default_reserve_lag_days ?? 7;
     const minReserveFloor = userSettings?.min_reserve_floor ?? 1000;
+    const advancedModelingEnabled = userSettings?.advanced_modeling_enabled ?? false;
 
     console.log('[MATH-FORECAST] Safety Net Level:', { 
       riskAdjustment, 
       level: riskAdjustment === 3 ? 'Aggressive (-3%)' : riskAdjustment === 8 ? 'Moderate (-8%)' : 'Conservative (-15%)',
       defaultReserveLag, 
-      minReserveFloor 
+      minReserveFloor,
+      advancedModelingEnabled
     });
 
     // Fetch active Amazon accounts that have completed initial sync
@@ -281,6 +283,7 @@ serve(async (req) => {
           reserveLag,
           minReserveFloor,
           riskAdjustment,
+          advancedModelingEnabled,
           forecastStartDate,
           recentAvgPayout,
           historicalAvgPayout
@@ -488,6 +491,7 @@ function generateDailyForecasts(
   reserveLag: number,
   minReserveFloor: number,
   riskAdjustment: number,
+  advancedModelingEnabled: boolean,
   startDate?: Date,
   recentAvgPayout?: number,
   historicalAvgPayout?: number
@@ -556,7 +560,40 @@ function generateDailyForecasts(
   const adjustmentMultiplier = 1 - (riskAdjustment / 100);
   const adjustedLumpSum = lumpSumBeforeAdjustment * adjustmentMultiplier;
   
-  // Distribute lump sum evenly across 14 days
+  // ADVANCED MODELING: Use daily cumulative distribution with volume weighting
+  let dailyDistributions: any[] = [];
+  if (advancedModelingEnabled) {
+    console.log('🎯 Using ADVANCED cumulative daily distribution with volume weighting');
+    
+    // Get volume weights for the settlement period
+    const volumeWeights: { transaction_date: string; net_amount: number }[] = [];
+    transactions.forEach(txn => {
+      if (txn.transaction_date > today.toISOString().split('T')[0] && txn.transaction_date <= settlementDateStr) {
+        volumeWeights.push({
+          transaction_date: txn.transaction_date,
+          net_amount: txn.net_amount
+        });
+      }
+    });
+    
+    // Import the cumulative distribution function
+    const { generateCumulativeDailyDistribution } = await import('./daily-cumulative-distribution.ts');
+    
+    const startDateObj = new Date(today);
+    startDateObj.setDate(startDateObj.getDate() + 1);
+    
+    dailyDistributions = generateCumulativeDailyDistribution(
+      startDateObj,
+      settlementDate,
+      adjustedLumpSum,
+      0, // No draws yet for new forecasts
+      volumeWeights
+    );
+    
+    console.log(`✅ Generated ${dailyDistributions.length} daily distributions with cumulative unlocking`);
+  }
+  
+  // Fallback: Distribute lump sum evenly across 14 days (simple mode)
   const dailyIncrement = adjustedLumpSum / 14;
   
   let cumulativeAvailable = 0;
@@ -568,7 +605,27 @@ function generateDailyForecasts(
     forecastDate.setDate(forecastDate.getDate() + i);
     const forecastDateStr = forecastDate.toISOString().split('T')[0];
 
-    cumulativeAvailable += dailyIncrement;
+    let dailyAmount: number;
+    let cumulativeForDay: number;
+    
+    if (advancedModelingEnabled && dailyDistributions.length > 0) {
+      // Use advanced cumulative distribution
+      const dist = dailyDistributions[i - 1];
+      if (dist) {
+        dailyAmount = dist.daily_unlock;
+        cumulativeForDay = dist.cumulative_available;
+      } else {
+        dailyAmount = dailyIncrement;
+        cumulativeAvailable += dailyIncrement;
+        cumulativeForDay = cumulativeAvailable;
+      }
+    } else {
+      // Simple even distribution
+      dailyAmount = dailyIncrement;
+      cumulativeAvailable += dailyIncrement;
+      cumulativeForDay = cumulativeAvailable;
+    }
+    
     const isSettlementDay = i === 14;
 
     forecasts.push({
@@ -576,7 +633,7 @@ function generateDailyForecasts(
       account_id: account.account_id,
       amazon_account_id: account.id,
       payout_date: forecastDateStr,
-      total_amount: dailyIncrement, // Daily increment shown on calendar
+      total_amount: dailyAmount, // Daily unlock or daily increment
       reserve_amount: settlementReserve / 14, // Distribute reserve proportionally
       adjustments: 0,
       orders_total: (totalEligible / 14) / 0.85, // Reverse calc from net eligible
@@ -589,11 +646,21 @@ function generateDailyForecasts(
       settlement_id: settlementId,
       transaction_count: Math.round(transactions.length / 14),
       currency_code: 'USD',
-      modeling_method: 'mathematical_biweekly',
+      modeling_method: advancedModelingEnabled ? 'advanced_cumulative_daily' : 'mathematical_biweekly',
       eligible_in_period: isSettlementDay ? adjustedLumpSum : 0, // Show lump sum only on settlement day
-      available_for_daily_transfer: dailyIncrement,
+      available_for_daily_transfer: dailyAmount,
+      cumulative_available: cumulativeForDay,
       total_daily_draws: 0,
-      last_draw_calculation_date: today.toISOString().split('T')[0]
+      last_draw_calculation_date: today.toISOString().split('T')[0],
+      raw_settlement_data: advancedModelingEnabled && dailyDistributions[i - 1] ? {
+        forecast_metadata: {
+          method: 'cumulative_daily_distribution',
+          daily_unlock_amount: dailyDistributions[i - 1].daily_unlock,
+          cumulative_available: dailyDistributions[i - 1].cumulative_available,
+          days_accumulated: dailyDistributions[i - 1].days_accumulated,
+          volume_weighted: true
+        }
+      } : undefined
     });
   }
 
