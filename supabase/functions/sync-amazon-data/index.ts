@@ -891,8 +891,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         }
       }
 
-      // Save transactions in batches every 50 to avoid losing data (more frequent for high-volume)
-      if (transactionsToAdd.length >= 50) {
+      // Save transactions in batches every 500 to avoid losing data
+      if (transactionsToAdd.length >= 500) {
         console.log(`[SYNC] Saving batch of ${transactionsToAdd.length} transactions...`)
         
         const uniqueTransactions = transactionsToAdd.reduce((acc, tx) => {
@@ -905,7 +905,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         
         const deduplicatedTransactions = Array.from(uniqueTransactions.values())
         
-        const batchSize = 100
+        // Save in batches of 1000 for better performance
+        const batchSize = 1000
         for (let i = 0; i < deduplicatedTransactions.length; i += batchSize) {
           const batch = deduplicatedTransactions.slice(i, i + batchSize)
           const { error: txError } = await supabase
@@ -919,31 +920,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           }
         }
         
-        // Update transaction count and track total saved
-        const { count, error: countError } = await supabase
-          .from('amazon_transactions')
-          .select('*', { count: 'exact', head: true })
-          .eq('amazon_account_id', amazonAccountId)
-        
-        if (countError) {
-          console.error('[SYNC] Error counting transactions:', countError)
-        }
-        
-        console.log(`[SYNC] Count query result: ${count}, error: ${countError}`)
-        
-        // Update the account's transaction count
-        const { error: updateError } = await supabase
-          .from('amazon_accounts')
-          .update({ transaction_count: count || 0 })
-          .eq('id', amazonAccountId)
-        
-        if (updateError) {
-          console.error('[SYNC] Error updating transaction count:', updateError)
-        }
-        
         totalSavedThisRun += deduplicatedTransactions.length
-        console.log(`[SYNC] ✓ Batch saved. Total this run: ${totalSavedThisRun}, DB count: ${count || 0}`)
-        
+        console.log(`[SYNC] ✓ Batch saved. Total this run: ${totalSavedThisRun}`)
         
         // Clear the array
         transactionsToAdd.length = 0
