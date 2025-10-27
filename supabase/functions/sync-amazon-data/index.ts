@@ -663,13 +663,13 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     console.log(`[SYNC] Extracted: ${transactionsToAdd.length} transactions, ${payoutsToAdd.length} payouts from events, ${settlementsToAdd.length} settlements from groups`)
 
     // Determine if this day's data should go to rollups or detailed transactions
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-    const isOldData = endDate < thirtyDaysAgo
+    const ninetyDaysAgo = new Date()
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+    const isOldData = endDate < ninetyDaysAgo
 
     if (isOldData && transactionsToAdd.length > 0) {
       // Aggregate into daily rollups
-      console.log('[SYNC] Data is >30 days old - aggregating into rollups')
+      console.log('[SYNC] Data is >90 days old - aggregating into rollups')
       
       const rollup = {
         user_id: actualUserId,
@@ -720,7 +720,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       console.log('[SYNC] ✓ Saved daily rollup')
     } else {
       // Save detailed transactions
-      console.log('[SYNC] Data is <30 days old - saving detailed transactions')
+      console.log('[SYNC] Data is <90 days old - saving detailed transactions')
       
       if (transactionsToAdd.length > 0) {
         const uniqueTransactions = transactionsToAdd.reduce((acc, tx) => {
