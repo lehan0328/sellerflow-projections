@@ -545,18 +545,19 @@ export function AmazonPayouts() {
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           
+          // Filter open settlements across ALL connected Amazon accounts
           const openSettlements = amazonPayouts.filter(p => {
             // Open settlements must have:
             // 1. Status = estimated
             // 2. No end date in raw_settlement_data
             // 3. ProcessingStatus = Open
             // 4. Amount > 0 (exclude empty open settlements)
-            // 5. Payout date is today or in the future
+            // 5. Payout date is today or in the future (automatically filters old settlements)
             const rawData = p.raw_settlement_data;
             const hasEndDate = rawData?.FinancialEventGroupEnd;
             const processingStatus = rawData?.ProcessingStatus;
             
-            // Check if payout date is today or in the future
+            // Only show settlements with payout dates today or later
             const payoutDate = new Date(p.payout_date);
             payoutDate.setHours(0, 0, 0, 0);
             const isRelevantDate = payoutDate >= today;
