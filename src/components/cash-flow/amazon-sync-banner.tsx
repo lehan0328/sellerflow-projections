@@ -1,21 +1,6 @@
 import { Loader2, Clock } from "lucide-react";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 
-const calculateEstimatedTime = (progress: number) => {
-  // Amazon rate limit: 0.5 req/sec = 2 seconds per page minimum
-  // With retries and backoff, average ~4-5 seconds per page
-  const avgSecondsPerPage = 4.5;
-  const remainingProgress = 100 - progress;
-  const estimatedMinutes = Math.ceil((remainingProgress * avgSecondsPerPage) / 60);
-  
-  if (estimatedMinutes < 1) return "Less than 1 minute";
-  if (estimatedMinutes < 60) return `~${estimatedMinutes} minutes`;
-  
-  const hours = Math.floor(estimatedMinutes / 60);
-  const mins = estimatedMinutes % 60;
-  return `~${hours}h ${mins}m`;
-};
-
 export const AmazonSyncBanner = () => {
   const { amazonAccounts } = useAmazonAccounts();
   
@@ -29,10 +14,6 @@ export const AmazonSyncBanner = () => {
         <Loader2 className="h-5 w-5 animate-spin text-blue-600 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           {syncingAccounts.map(account => {
-            const estimatedTime = account.sync_progress !== undefined && account.sync_progress > 0 
-              ? calculateEstimatedTime(account.sync_progress)
-              : null;
-            
             return (
               <div key={account.id} className="space-y-1">
                 <p className="font-semibold text-blue-900 dark:text-blue-100 text-sm">
@@ -54,12 +35,10 @@ export const AmazonSyncBanner = () => {
                       <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
                         {account.sync_progress}%
                       </span>
-                      {estimatedTime && (
-                        <span className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {estimatedTime} remaining
-                        </span>
-                      )}
+                      <span className="text-xs text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        This may take several hours
+                      </span>
                     </div>
                     <div className="w-full bg-blue-200 dark:bg-blue-900 rounded-full h-2">
                       <div
