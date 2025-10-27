@@ -113,21 +113,36 @@ serve(async (req) => {
     for (const account of accountsReadyForForecast) {
       console.log(`\n[MATH-FORECAST] Processing ${account.account_name} (${account.payout_model} model)`);
 
-      // Fetch historical confirmed payouts to establish realistic caps
+      // Fetch historical confirmed payouts to establish realistic caps and recent trends
       const { data: historicalPayouts } = await supabase
         .from('amazon_payouts')
-        .select('total_amount')
+        .select('total_amount, payout_date')
         .eq('amazon_account_id', account.id)
         .eq('status', 'confirmed')
-        .order('total_amount', { ascending: false });
+        .order('payout_date', { ascending: false });
       
       let historicalMaxPayout = 0;
       let historicalAvgPayout = 0;
+      let recentAvgPayout = 0;
       
       if (historicalPayouts && historicalPayouts.length > 0) {
-        historicalMaxPayout = Number(historicalPayouts[0].total_amount || 0);
+        historicalMaxPayout = Math.max(...historicalPayouts.map(p => Number(p.total_amount || 0)));
         const totalPayouts = historicalPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
         historicalAvgPayout = totalPayouts / historicalPayouts.length;
+        
+        // Calculate recent 90-day average to determine current trend
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+        const recentPayouts = historicalPayouts.filter(p => {
+          const payoutDate = new Date(p.payout_date);
+          return payoutDate >= ninetyDaysAgo;
+        });
+        
+        if (recentPayouts.length > 0) {
+          const recentTotal = recentPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+          recentAvgPayout = recentTotal / recentPayouts.length;
+          console.log(`📊 Recent 90-day avg: $${recentAvgPayout.toFixed(2)} (${recentPayouts.length} payouts)`);
+        }
         
         console.log(`📊 Historical payout stats: Max=$${historicalMaxPayout.toFixed(2)}, Avg=$${historicalAvgPayout.toFixed(2)}, Count=${historicalPayouts.length}`);
       } else {
@@ -135,19 +150,19 @@ serve(async (req) => {
       }
       
       // Set realistic cap based on safety net level and historical max
-      // Conservative: 1.2x historical max, Moderate: 1.4x, Aggressive: 1.6x
-      let forecastCapMultiplier = 1.4; // Moderate default
+      // Conservative: 85% of historical max, Moderate: 100%, Aggressive: 115%
+      let forecastCapMultiplier = 1.0; // Moderate default (100% of historical max)
       if (riskAdjustment === 15) {
-        forecastCapMultiplier = 1.2; // Conservative (most safe)
+        forecastCapMultiplier = 0.85; // Conservative - 85% of historical max
       } else if (riskAdjustment === 3) {
-        forecastCapMultiplier = 1.6; // Aggressive
+        forecastCapMultiplier = 1.15; // Aggressive - 115% of historical max
       }
       
       const forecastCap = historicalMaxPayout > 0 
         ? historicalMaxPayout * forecastCapMultiplier 
         : 999999; // No cap if no historical data
       
-      console.log(`🔒 Forecast cap set to $${forecastCap.toFixed(2)} (${forecastCapMultiplier}x historical max)`);
+      console.log(`🔒 Forecast cap set to $${forecastCap.toFixed(2)} (${(forecastCapMultiplier * 100).toFixed(0)}% of historical max $${historicalMaxPayout.toFixed(2)})`);
 
       const reserveLag = account.reserve_lag_days || defaultReserveLag;
       const reserveMultiplier = account.reserve_multiplier || 1.0;
@@ -251,7 +266,9 @@ serve(async (req) => {
           minReserveFloor,
           riskAdjustment,
           forecastStartDate,
-          forecastCap
+          forecastCap,
+          recentAvgPayout,
+          historicalAvgPayout
         );
         allForecasts.push(...forecasts);
       } else {
@@ -264,7 +281,9 @@ serve(async (req) => {
           reserveLag,
           minReserveFloor,
           riskAdjustment,
-          forecastStartDate
+          forecastStartDate,
+          recentAvgPayout,
+          historicalAvgPayout
         );
         allForecasts.push(...forecasts);
       }
@@ -311,7 +330,9 @@ function generateBiWeeklyForecasts(
   minReserve: number,
   riskAdjustment: number,
   startDate?: Date,
-  forecastCap?: number
+  forecastCap?: number,
+  recentAvgPayout?: number,
+  historicalAvgPayout?: number
 ): any[] {
   const forecasts: any[] = [];
   const today = startDate || new Date();
@@ -344,8 +365,9 @@ function generateBiWeeklyForecasts(
   const firstHalfMedian = calculateMedian(firstHalf);
   const secondHalfMedian = calculateMedian(secondHalf);
   
-  // Use median for more stable baseline
-  const avgDailyEligible = secondHalfMedian || firstHalfMedian || 50;
+  // Use recent 90-day average as baseline if available, otherwise use historical average
+  const baselinePayout = (recentAvgPayout && recentAvgPayout > 0) ? recentAvgPayout : (historicalAvgPayout || 0);
+  const avgDailyEligible = secondHalfMedian || firstHalfMedian || (baselinePayout / 14) || 50;
   
   // Calculate trend (positive = growing, negative = declining)
   // CRITICAL: Cap trend to realistic bounds to prevent exponential explosion
@@ -354,7 +376,7 @@ function generateBiWeeklyForecasts(
   // More conservative trend caps: -10% to +10% per period max
   const trendMultiplier = Math.max(0.90, Math.min(1.10, rawTrendMultiplier));
   
-  console.log(`📊 60-day trend analysis: First half median $${firstHalfMedian.toFixed(2)}, Second half median $${secondHalfMedian.toFixed(2)}, Raw trend: ${((rawTrendMultiplier - 1) * 100).toFixed(1)}%, Capped to: ${((trendMultiplier - 1) * 100).toFixed(1)}%`);
+  console.log(`📊 60-day trend analysis: First half median $${firstHalfMedian.toFixed(2)}, Second half median $${secondHalfMedian.toFixed(2)}, Baseline from recent 90-day avg: $${baselinePayout.toFixed(2)}, Raw trend: ${((rawTrendMultiplier - 1) * 100).toFixed(1)}%, Capped to: ${((trendMultiplier - 1) * 100).toFixed(1)}%`);
 
   // Generate 6 bi-weekly settlement forecasts (3 months)
   for (let i = 0; i < 6; i++) {
@@ -466,7 +488,9 @@ function generateDailyForecasts(
   reserveLag: number,
   minReserveFloor: number,
   riskAdjustment: number,
-  startDate?: Date
+  startDate?: Date,
+  recentAvgPayout?: number,
+  historicalAvgPayout?: number
 ): any[] {
   const forecasts: any[] = [];
   const today = startDate || new Date();
@@ -487,10 +511,12 @@ function generateDailyForecasts(
     ? secondHalf.reduce((sum, date) => sum + (dailyEligibleMap.get(date) || 0), 0) / secondHalf.length
     : 0;
   
+  // Use recent 90-day average as baseline if available, otherwise use historical average
+  const baselinePayout = (recentAvgPayout && recentAvgPayout > 0) ? recentAvgPayout : (historicalAvgPayout || 0);
   const trendMultiplier = firstHalfAvg > 0 ? secondHalfAvg / firstHalfAvg : 1.0;
-  const avgDailyEligible = secondHalfAvg || firstHalfAvg;
+  const avgDailyEligible = secondHalfAvg || firstHalfAvg || (baselinePayout / 14) || 50;
 
-  console.log(`📊 Daily model trend: ${((trendMultiplier - 1) * 100).toFixed(1)}% (${avgDailyEligible.toFixed(2)}/day)`);
+  console.log(`📊 Daily model trend: ${((trendMultiplier - 1) * 100).toFixed(1)}% (${avgDailyEligible.toFixed(2)}/day), Baseline from recent 90-day avg: $${baselinePayout.toFixed(2)}`);
 
   const settlementDate = new Date(today);
   settlementDate.setDate(settlementDate.getDate() + 14);
