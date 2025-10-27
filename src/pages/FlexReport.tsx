@@ -622,7 +622,7 @@ const FlexReport = () => {
                 </button>
               </div>
 
-              {/* Total Amazon Payouts */}
+              {/* Amazon Revenue (30d) */}
               <div className="group bg-gradient-to-br from-amber-50 via-amber-100/80 to-amber-50 rounded-2xl p-4 border-2 border-amber-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-amber-50 border-2 border-amber-600 rounded-full">
                   <div className="w-1 h-1 bg-amber-600 rounded-full"></div>
@@ -632,9 +632,40 @@ const FlexReport = () => {
                   <div className="p-2 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <ShoppingCart className="w-4 h-4 text-white" />
                   </div>
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Amazon Revenue (30d)</p>
+                </div>
+                <p className={`text-2xl font-black text-amber-700 drop-shadow-sm transition-all duration-300 ${!visibility.amazonRevenue ? 'blur-lg' : ''}`}>{formatCurrency(amazonRevenue30Days)}</p>
+                {showPercentageChange && (
+                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.amazonRevenue >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.amazonRevenue >= 0 ? '' : 'rotate-180'}`} />
+                    <span className="text-[10px] font-bold">{Math.abs(percentageChanges.amazonRevenue).toFixed(1)}%</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => toggleVisibility('amazonRevenue')}
+                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-amber-100/50 transition-colors z-10"
+                >
+                  {visibility.amazonRevenue ? (
+                    <Eye className="w-4 h-4 text-blue-600" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 text-slate-400" />
+                  )}
+                </button>
+              </div>
+
+              {/* Total Amazon Payouts */}
+              <div className="group bg-gradient-to-br from-orange-50 via-orange-100/80 to-orange-50 rounded-2xl p-4 border-2 border-orange-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
+                <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-orange-50 border-2 border-orange-600 rounded-full">
+                  <div className="w-1 h-1 bg-orange-600 rounded-full"></div>
+                  <span className="text-[10px] font-black text-orange-700 uppercase tracking-wider">Verified</span>
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="p-2 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <DollarSign className="w-4 h-4 text-white" />
+                  </div>
                   <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Total Amazon Payouts</p>
                 </div>
-                <p className={`text-2xl font-black text-amber-700 drop-shadow-sm transition-all duration-300 ${!visibility.totalPayouts ? 'blur-lg' : ''}`}>{formatCurrency(totalPayouts)}</p>
+                <p className={`text-2xl font-black text-orange-700 drop-shadow-sm transition-all duration-300 ${!visibility.totalPayouts ? 'blur-lg' : ''}`}>{formatCurrency(totalPayouts)}</p>
                 {showPercentageChange && (
                   <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 bg-blue-100 text-blue-700">
                     <span className="text-[10px] font-bold">All-Time</span>
@@ -642,7 +673,7 @@ const FlexReport = () => {
                 )}
                 <button
                   onClick={() => toggleVisibility('totalPayouts')}
-                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-amber-100/50 transition-colors z-10"
+                  className="absolute bottom-4 right-4 p-2 rounded-lg hover:bg-orange-100/50 transition-colors z-10"
                 >
                   {visibility.totalPayouts ? (
                     <Eye className="w-4 h-4 text-blue-600" />
