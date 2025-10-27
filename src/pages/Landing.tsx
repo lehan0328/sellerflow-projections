@@ -3,7 +3,13 @@ import { Helmet } from "react-helmet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun, ExternalLink, Lock, AlertCircle, BookOpen, Calculator, BadgeCheck, Lightbulb, Wallet } from "lucide-react";
+import { CheckCircle, Star, TrendingUp, Shield, Zap, Users, ArrowRight, ShoppingCart, CreditCard, Calendar, Sparkles, Check, X, Plus, Minus, Moon, Sun, ExternalLink, Lock, AlertCircle, BookOpen, Calculator, BadgeCheck, Lightbulb, Wallet, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import aurenFullLogo from "@/assets/auren-full-logo.png";
 import avatar1 from "@/assets/avatar-1.jpg";
@@ -530,6 +536,31 @@ const Landing = () => {
               <a href="/docs" className="text-muted-foreground hover:text-foreground transition-all duration-300 story-link font-medium">
                 Docs
               </a>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="text-muted-foreground hover:text-foreground transition-all duration-300 font-medium gap-1">
+                    Coming Soon
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem disabled className="cursor-not-allowed opacity-60">
+                    <span>Inventory</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled className="cursor-not-allowed opacity-60">
+                    <span>Reimbursements</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled className="cursor-not-allowed opacity-60">
+                    <span>Analytics</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled className="cursor-not-allowed opacity-60">
+                    <span>Accounting</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled className="cursor-not-allowed opacity-60">
+                    <span>Walmart, Shopify & More</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="hover-scale transition-all duration-200">
                 <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                 <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
