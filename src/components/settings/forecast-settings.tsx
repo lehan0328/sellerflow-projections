@@ -12,6 +12,7 @@ import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Tooltip,
   TooltipContent,
@@ -38,6 +39,7 @@ import {
 
 export const ForecastSettings = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { amazonAccounts } = useAmazonAccounts();
   const { amazonPayouts, refetch: refetchPayouts } = useAmazonPayouts();
@@ -242,6 +244,11 @@ export const ForecastSettings = () => {
       console.log('✅ [TOGGLE] Verified value in DB matches expected:', verifyData);
 
       setForecastsEnabled(enabled);
+      
+      // Invalidate queries to ensure UI components refresh immediately
+      queryClient.invalidateQueries({ queryKey: ['user-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['amazon-payouts'] });
+      
       setSyncProgress(30);
 
       if (!enabled) {
@@ -383,6 +390,10 @@ export const ForecastSettings = () => {
       toast.error("Failed to update forecast settings");
       // Revert on error
       setForecastsEnabled(!enabled);
+      
+      // Invalidate queries to ensure UI reflects correct state
+      queryClient.invalidateQueries({ queryKey: ['user-settings'] });
+      
       setSyncProgress(0);
     } finally {
       setTogglingForecast(false);

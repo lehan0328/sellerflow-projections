@@ -296,10 +296,13 @@ function generateBiWeeklyForecasts(
     : 0;
   
   // Calculate trend (positive = growing, negative = declining)
-  const trendMultiplier = firstHalfAvg > 0 ? secondHalfAvg / firstHalfAvg : 1.0;
+  // CRITICAL: Cap trend to realistic bounds to prevent exponential explosion
+  let rawTrendMultiplier = firstHalfAvg > 0 ? secondHalfAvg / firstHalfAvg : 1.0;
+  // Cap trend between -20% to +20% per period to prevent unrealistic projections
+  const trendMultiplier = Math.max(0.80, Math.min(1.20, rawTrendMultiplier));
   const avgDailyEligible = secondHalfAvg || firstHalfAvg || 50;
   
-  console.log(`📊 60-day trend analysis: First half avg $${firstHalfAvg.toFixed(2)}, Second half avg $${secondHalfAvg.toFixed(2)}, Trend: ${((trendMultiplier - 1) * 100).toFixed(1)}%`);
+  console.log(`📊 60-day trend analysis: First half avg $${firstHalfAvg.toFixed(2)}, Second half avg $${secondHalfAvg.toFixed(2)}, Raw trend: ${((rawTrendMultiplier - 1) * 100).toFixed(1)}%, Capped to: ${((trendMultiplier - 1) * 100).toFixed(1)}%`);
 
   // Generate 6 bi-weekly settlement forecasts (3 months)
   for (let i = 0; i < 6; i++) {
@@ -322,19 +325,19 @@ function generateBiWeeklyForecasts(
 
     // For future periods, project forward using trend
     if (eligibleInPeriod === 0) {
-      // Apply trend multiplier for each future period (compound growth/decline)
-      const periodTrendMultiplier = Math.pow(trendMultiplier, i + 1);
-      eligibleInPeriod = avgDailyEligible * 14 * periodTrendMultiplier;
+      // Apply linear trend growth per period (not exponential to prevent explosion)
+      // If trend is +20%, period 1 = 1.20x, period 2 = 1.40x, period 3 = 1.60x, etc.
+      const linearTrendMultiplier = 1 + ((trendMultiplier - 1) * (i + 1));
+      eligibleInPeriod = avgDailyEligible * 14 * linearTrendMultiplier;
       
-      // Cap extreme projections at ±20% per period
-      const maxMultiplier = Math.pow(1.20, i + 1);
-      const minMultiplier = Math.pow(0.80, i + 1);
+      // Additional safety cap: max 2x of current avg, min 0.5x
+      const basePeriodAmount = avgDailyEligible * 14;
       eligibleInPeriod = Math.max(
-        avgDailyEligible * 14 * minMultiplier,
-        Math.min(avgDailyEligible * 14 * maxMultiplier, eligibleInPeriod)
+        basePeriodAmount * 0.5,
+        Math.min(basePeriodAmount * 2.0, eligibleInPeriod)
       );
       
-      console.log(`🔮 Period ${i+1}: $${eligibleInPeriod.toFixed(2)} (trend-adjusted: ${((periodTrendMultiplier - 1) * 100).toFixed(1)}%)`);
+      console.log(`🔮 Period ${i+1}: $${eligibleInPeriod.toFixed(2)} (linear trend: ${((linearTrendMultiplier - 1) * 100).toFixed(1)}%)`);
     }
 
     // Reserve = funds from orders delivered within reserve lag (7 days before settlement)
