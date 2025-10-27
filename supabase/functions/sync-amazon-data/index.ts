@@ -187,8 +187,19 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       console.log('[SYNC] 🔄 CONTINUATION - same date range:', startDate.toISOString(), 'to', endDate.toISOString(), '(has nextToken)')
     } else if (!lastSyncDate || isLastSyncInFuture) {
       // First sync OR last_synced_to is today/future (invalid) - fetch last 90 days of transactions
+      // IMPORTANT: Amazon API has 180-day max limit, so we enforce it here
       startDate = new Date(transactionStartDate)
       endDate = new Date(yesterday)
+      
+      // Safety check: Ensure we don't exceed Amazon's 180-day limit
+      const daysDifference = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+      if (daysDifference > 179) {
+        // Cap at 179 days to be safe
+        startDate = new Date(yesterday)
+        startDate.setDate(startDate.getDate() - 179)
+        startDate.setHours(0, 0, 0, 0)
+        console.log('[SYNC] Initial sync capped at 179 days due to Amazon API limit')
+      }
       
       console.log('[SYNC] Initial/Reset sync - fetching 90 days of historical transactions:', startDate.toISOString(), 'to', endDate.toISOString())
     } else if (lastSyncDate < transactionStartDate) {
@@ -197,13 +208,21 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       startDate.setDate(startDate.getDate() + 1)
       startDate.setHours(0, 0, 0, 0)
       
-      // Fetch 12 hours at a time for backfill to avoid NextToken expiration
+      // Fetch 7 days at a time for backfill to stay well under 180-day limit
       endDate = new Date(startDate)
-      endDate.setHours(endDate.getHours() + 12)
+      endDate.setDate(endDate.getDate() + 7)
       
       // Don't go beyond yesterday
       if (endDate > yesterday) {
         endDate = new Date(yesterday)
+      }
+      
+      // Safety check: Ensure we don't exceed Amazon's 180-day limit
+      const daysDifference = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+      if (daysDifference > 179) {
+        endDate = new Date(startDate)
+        endDate.setDate(endDate.getDate() + 179)
+        console.log('[SYNC] Backfill capped at 179 days due to Amazon API limit')
       }
       
       console.log('[SYNC] Backfill mode - continuing from:', startDate.toISOString(), 'to', endDate.toISOString())
@@ -255,14 +274,25 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     const eventGroupsUrl = `${apiEndpoint}/finances/v0/financialEventGroups`
     const settlementsToAdd: any[] = []
     
-    console.log('[SYNC] Fetching settlement groups (full year for seasonal patterns)...')
+    // Safety check: Amazon API has 180-day max limit for settlements too
+    let settlementsFetchStart = new Date(settlementsStartDate)
+    const daysDiff = Math.floor((yesterday.getTime() - settlementsFetchStart.getTime()) / (1000 * 60 * 60 * 24))
+    if (daysDiff > 179) {
+      // Cap at 179 days for this request
+      settlementsFetchStart = new Date(yesterday)
+      settlementsFetchStart.setDate(settlementsFetchStart.getDate() - 179)
+      settlementsFetchStart.setHours(0, 0, 0, 0)
+      console.log('[SYNC] Settlements fetch capped at 179 days due to Amazon API limit')
+    }
+    
+    console.log('[SYNC] Fetching settlement groups:', settlementsFetchStart.toISOString(), 'to', yesterday.toISOString())
     let groupNextToken: string | undefined = undefined
     let groupPageCount = 0
     
     do {
       groupPageCount++
-      // Use settlementsStartDate (365 days) for settlements, not startDate
-      let groupUrl = `${eventGroupsUrl}?FinancialEventGroupStartedAfter=${settlementsStartDate.toISOString()}&FinancialEventGroupStartedBefore=${yesterday.toISOString()}&MaxResultsPerPage=100`
+      // Use settlementsFetchStart (capped at 179 days) for settlements
+      let groupUrl = `${eventGroupsUrl}?FinancialEventGroupStartedAfter=${settlementsFetchStart.toISOString()}&FinancialEventGroupStartedBefore=${yesterday.toISOString()}&MaxResultsPerPage=100`
       
       if (groupNextToken) {
         groupUrl += `&NextToken=${encodeURIComponent(groupNextToken)}`
