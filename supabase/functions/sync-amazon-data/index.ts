@@ -103,9 +103,9 @@ serve(async (req) => {
     console.log('[SYNC] Account found:', amazonAccount.account_name)
 
     // Check for rate limiting
+    let now = new Date()
     if (amazonAccount.rate_limited_until) {
       const rateLimitExpiry = new Date(amazonAccount.rate_limited_until)
-      const now = new Date()
       if (rateLimitExpiry > now) {
         const waitSeconds = Math.ceil((rateLimitExpiry.getTime() - now.getTime()) / 1000)
         console.log(`[SYNC] Rate limited. Wait ${waitSeconds}s`)
@@ -180,7 +180,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     // Refresh access token if needed
     console.log('[SYNC] Checking access token...')
     const tokenExpiresAt = new Date(amazonAccount.token_expires_at || 0)
-    const now = new Date()
+    now = new Date()
     let accessToken = amazonAccount.encrypted_access_token
 
     if (tokenExpiresAt <= now || !accessToken) {
@@ -211,7 +211,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     settlementsStartDate.setDate(settlementsStartDate.getDate() - 365)
     settlementsStartDate.setHours(0, 0, 0, 0)
 
-    const now = new Date()
+    now = new Date()
     now.setMinutes(now.getMinutes() - 5) // Amazon requires date to be no later than 2 minutes from now
     
     // Define the target historical window (90 days BACK from today)
