@@ -64,8 +64,27 @@ async function performBackgroundSync(
       }
     }
 
-    // Prevent duplicate syncs
-    if (amazonAccount.sync_status === 'syncing') {
+    // Auto-unstuck: If stuck in "syncing" for >10 minutes, force reset
+    if (amazonAccount.sync_status === 'syncing' && amazonAccount.last_sync) {
+      const lastSyncDate = new Date(amazonAccount.last_sync)
+      const minutesSinceSync = (now.getTime() - lastSyncDate.getTime()) / (1000 * 60)
+      
+      if (minutesSinceSync > 10) {
+        console.log(`[BACKGROUND] Auto-unstuck: Account stuck ${minutesSinceSync.toFixed(1)}m, resetting...`)
+        await supabase
+          .from('amazon_accounts')
+          .update({ 
+            sync_status: 'idle',
+            sync_message: 'Auto-restarting after timeout...',
+            sync_next_token: null
+          })
+          .eq('id', amazonAccountId)
+        // Continue with sync
+      } else {
+        console.log('[BACKGROUND] Already syncing (less than 10 minutes), skipping')
+        return
+      }
+    } else if (amazonAccount.sync_status === 'syncing') {
       console.log('[BACKGROUND] Already syncing, skipping')
       return
     }

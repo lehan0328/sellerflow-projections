@@ -66,8 +66,22 @@ Deno.serve(async (req) => {
         const now = new Date()
         const minutesSinceSync = (now.getTime() - lastSyncDate.getTime()) / (1000 * 60)
         
+        // CRITICAL: Check for stuck syncs FIRST before checking continuation tokens
+        // Auto-unstuck: If stuck in "syncing" for >10 minutes, force reset to idle
+        if (account.sync_status === 'syncing' && minutesSinceSync > 10) {
+          console.log(`🔧 AUTO-UNSTUCK: Resetting ${account.account_name} (stuck ${minutesSinceSync.toFixed(1)}m)`)
+          await supabase
+            .from('amazon_accounts')
+            .update({ 
+              sync_status: 'idle',
+              sync_message: 'Auto-restarting after timeout...',
+              sync_next_token: null // Clear potentially expired token
+            })
+            .eq('id', account.id)
+          // Continue to sync this account immediately after unstuck
+        }
         // PRIORITY: If account has sync_next_token, it needs to continue ASAP (every 30 seconds)
-        if (account.sync_next_token) {
+        else if (account.sync_next_token) {
           if (minutesSinceSync < 0.5) { // 30 seconds
             console.log(`⏭️ Continuation ready for ${account.account_name} - but synced ${minutesSinceSync.toFixed(1)}m ago, waiting...`)
             syncResults.push({
@@ -80,18 +94,6 @@ Deno.serve(async (req) => {
             continue
           }
           console.log(`🔄 CONTINUING INTERRUPTED SYNC for ${account.account_name} (has nextToken)`)
-        }
-        // Auto-unstuck: If stuck in "syncing" for >10 minutes, force reset to idle
-        else if (account.sync_status === 'syncing' && minutesSinceSync > 10) {
-          console.log(`🔧 AUTO-UNSTUCK: Resetting ${account.account_name} (stuck ${minutesSinceSync.toFixed(1)}m)`)
-          await supabase
-            .from('amazon_accounts')
-            .update({ 
-              sync_status: 'idle',
-              sync_message: 'Auto-restarting after timeout...'
-            })
-            .eq('id', account.id)
-          // Continue to sync this account immediately after unstuck
         }
         // For accounts in backfill mode (progress < 95%), sync every 2 minutes aggressively
         else if (!account.initial_sync_complete || (account.sync_progress && account.sync_progress < 95)) {
