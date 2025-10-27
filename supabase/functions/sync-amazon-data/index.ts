@@ -211,34 +211,48 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     settlementsStartDate.setDate(settlementsStartDate.getDate() - 365)
     settlementsStartDate.setHours(0, 0, 0, 0)
 
+    const now = new Date()
+    now.setMinutes(now.getMinutes() - 5) // Amazon requires date to be no later than 2 minutes from now
+    
+    // Define the target historical window (90 days back)
+    const historicalStartDate = new Date()
+    historicalStartDate.setDate(historicalStartDate.getDate() - 90)
+    historicalStartDate.setHours(0, 0, 0, 0)
+
     if (amazonAccount.last_synced_to) {
-      // Continue from last successful sync
-      startDate = new Date(amazonAccount.last_synced_to)
-      startDate.setDate(startDate.getDate() + 1)
-      startDate.setHours(0, 0, 0, 0)
+      const lastSyncDate = new Date(amazonAccount.last_synced_to)
       
-      // Instead of one day at a time, fetch 30 days per sync for faster backfill
-      endDate = new Date(startDate)
-      endDate.setDate(endDate.getDate() + 30)
-      
-      // Amazon requires date to be no later than 2 minutes from now
-      const now = new Date()
-      now.setMinutes(now.getMinutes() - 5)
-      if (endDate > now) {
-        endDate = now
+      // If last sync is already at or past our historical start, continue forward from last sync
+      if (lastSyncDate >= historicalStartDate) {
+        startDate = new Date(lastSyncDate)
+        startDate.setDate(startDate.getDate() + 1)
+        startDate.setHours(0, 0, 0, 0)
+        
+        endDate = new Date(startDate)
+        endDate.setDate(endDate.getDate() + 30)
+        
+        if (endDate > now) {
+          endDate = now
+        }
+        
+        console.log('[SYNC] Incremental mode - continuing from last sync:', startDate.toISOString(), 'to', endDate.toISOString())
+      } else {
+        // Backfill mode: last sync is before our 90-day window, so backfill historical data
+        startDate = new Date(historicalStartDate)
+        
+        endDate = new Date(startDate)
+        endDate.setDate(endDate.getDate() + 30) // Fetch 30 days at a time for backfill
+        
+        if (endDate > now) {
+          endDate = now
+        }
+        
+        console.log('[SYNC] Backfill mode - fetching historical data from:', startDate.toISOString(), 'to', endDate.toISOString())
       }
-      
-      console.log('[SYNC] Incremental mode - fetching 30 days of transactions from:', startDate.toISOString())
     } else {
       // First sync - get last 90 days of detailed transactions (3 full months)
-      startDate = new Date()
-      startDate.setDate(startDate.getDate() - 90)
-      startDate.setHours(0, 0, 0, 0)
-      
-      // Fetch all 90 days in one go for initial sync
-      // Amazon requires date to be no later than 2 minutes from now, so use current time minus 5 minutes
-      endDate = new Date()
-      endDate.setMinutes(endDate.getMinutes() - 5)
+      startDate = new Date(historicalStartDate)
+      endDate = new Date(now)
       
       console.log('[SYNC] Initial sync - fetching 90 days of transactions:', startDate.toISOString(), 'to', endDate.toISOString())
     }

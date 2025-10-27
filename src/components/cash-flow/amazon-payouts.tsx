@@ -769,7 +769,7 @@ export function AmazonPayouts() {
             const isUpcoming = daysUntil <= 7 && daysUntil >= 0;
             const isForecasted = aggregatedPayout.status === 'forecasted';
             
-            return <div key={aggregatedPayout.payout_date} className={`rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card ${isUpcoming ? 'border-primary/30 bg-primary/5' : ''} ${isForecasted ? 'border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/30' : ''}`}>
+            return <div key={`${aggregatedPayout.payout_date}-${aggregatedPayout.settlement_id}`} className={`rounded-lg border bg-gradient-card p-4 transition-all hover:shadow-card ${isUpcoming ? 'border-primary/30 bg-primary/5' : ''} ${isForecasted ? 'border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/30' : ''}`}>
                     <div className="flex items-center justify-between">
                       <div className="space-y-2">
                         <div className="flex items-center space-x-2">
