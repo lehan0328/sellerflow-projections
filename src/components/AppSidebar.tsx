@@ -35,6 +35,11 @@ const overviewSections = [{
   id: "scenario-planning",
   title: "Scenario Planning",
   icon: Calculator
+}, {
+  id: "ai-forecast",
+  title: "Advanced Forecast",
+  icon: Brain,
+  showForecastBadge: true
 }];
 const transactionSections = [{
   id: "transactions",
@@ -55,8 +60,8 @@ const transactionSections = [{
 }];
 
 const amazonSections = [{
-  id: "amazon-forecast",
-  title: "Amazon Forecast",
+  id: "amazon-payouts",
+  title: "Amazon Payouts",
   icon: ShoppingCart
 }];
 const resourceSections = [{
@@ -180,6 +185,18 @@ export function AppSidebar({
                             {'showBadge' in section && section.showBadge && unreadCount > 0 && <Badge variant="destructive" className="text-[10px] font-bold px-1.5 py-0 min-w-[18px] h-[18px] flex items-center justify-center">
                                 {unreadCount}
                               </Badge>}
+                            {'showForecastBadge' in section && section.showForecastBadge && (
+                              <Badge 
+                                variant="default"
+                                className={`text-[10px] font-bold px-1.5 py-0 h-[18px] ${
+                                  forecastsEnabled 
+                                    ? "bg-emerald-500 hover:bg-emerald-600 text-white" 
+                                    : "bg-gray-400 hover:bg-gray-500 text-white"
+                                }`}
+                              >
+                                {forecastsEnabled ? "ON" : "OFF"}
+                              </Badge>
+                            )}
                             {showProfessionalLock && <Lock className="h-4 w-4 text-muted-foreground" />}
                           </span>
                         </span>}
@@ -189,6 +206,15 @@ export function AppSidebar({
                       {isCollapsed && 'showMatchCount' in section && section.showMatchCount && matchCount > 0 && <div className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">
                           {matchCount}
                         </div>}
+                      {isCollapsed && 'showForecastBadge' in section && section.showForecastBadge && (
+                        <div className={`absolute -top-1 -right-1 rounded-full w-5 h-5 flex items-center justify-center text-[9px] font-bold ${
+                          forecastsEnabled 
+                            ? "bg-emerald-500 text-white" 
+                            : "bg-gray-400 text-white"
+                        }`}>
+                          {forecastsEnabled ? "ON" : "OFF"}
+                        </div>
+                      )}
                       {isCollapsed && showProfessionalLock && <div className="absolute -top-1 -right-1">
                           <Lock className="h-3 w-3 text-muted-foreground" />
                         </div>}
@@ -245,32 +271,7 @@ export function AppSidebar({
                         ${isActive ? "bg-gradient-to-r from-primary/90 to-accent/90 text-primary-foreground shadow-md hover:shadow-lg font-semibold" : "hover:bg-accent/50 hover:translate-x-1"}
                       `}>
                       <Icon className={`${isCollapsed ? "h-5 w-5" : "h-4 w-4"} ${isActive ? "animate-pulse" : ""} ${isCollapsed ? "mx-auto" : ""}`} />
-                      {!isCollapsed && <span className="flex items-center justify-between w-full pr-1">
-                          <span>{section.title}</span>
-                          <span className="flex items-center gap-2">
-                            {section.id === 'amazon-forecast' && (
-                              <Badge 
-                                variant="default"
-                                className={`text-[10px] font-bold px-1.5 py-0 h-[18px] ${
-                                  forecastsEnabled 
-                                    ? "bg-emerald-500 hover:bg-emerald-600 text-white" 
-                                    : "bg-gray-400 hover:bg-gray-500 text-white"
-                                }`}
-                              >
-                                {forecastsEnabled ? "ON" : "OFF"}
-                              </Badge>
-                            )}
-                          </span>
-                        </span>}
-                      {isCollapsed && section.id === 'amazon-forecast' && (
-                        <div className={`absolute -top-1 -right-1 rounded-full w-5 h-5 flex items-center justify-center text-[9px] font-bold ${
-                          forecastsEnabled 
-                            ? "bg-emerald-500 text-white" 
-                            : "bg-gray-400 text-white"
-                        }`}>
-                          {forecastsEnabled ? "ON" : "OFF"}
-                        </div>
-                      )}
+                      {!isCollapsed && <span>{section.title}</span>}
                     </SidebarMenuButton>
                   </SidebarMenuItem>;
             })}
