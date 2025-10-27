@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useIncome } from "@/hooks/useIncome";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
@@ -47,6 +48,7 @@ export default function AmazonForecast() {
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
   const [amazonTransactions, setAmazonTransactions] = useState<any[]>([]);
   const [isDeletingSampleData, setIsDeletingSampleData] = useState(false);
+  const [growthTimeframe, setGrowthTimeframe] = useState<'30d' | '60d' | '90d' | '6m' | '1y'>('90d');
 
   // Check if user has 3+ confirmed payouts
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
@@ -243,21 +245,56 @@ export default function AmazonForecast() {
     const avgPayout = confirmedPayouts.length > 0 ? totalPayouts / confirmedPayouts.length : 0;
     const lastPayout = confirmedPayouts.length > 0 ? Number(confirmedPayouts[0].total_amount || 0) : 0;
     
-    // Calculate growth rate
-    const recentPayouts = confirmedPayouts.slice(0, 3).map(p => Number(p.total_amount || 0));
-    const olderPayouts = confirmedPayouts.slice(3, 6).map(p => Number(p.total_amount || 0));
-    const recentAvg = recentPayouts.length > 0 ? recentPayouts.reduce((a, b) => a + b, 0) / recentPayouts.length : 0;
-    const olderAvg = olderPayouts.length > 0 ? olderPayouts.reduce((a, b) => a + b, 0) / olderPayouts.length : 0;
-    const growthRate = olderAvg > 0 ? ((recentAvg - olderAvg) / olderAvg) * 100 : 0;
+    // Calculate growth rate based on selected timeframe
+    const now = new Date();
+    let cutoffDate = new Date();
+    let comparisonPeriod = '';
+    
+    switch(growthTimeframe) {
+      case '30d':
+        cutoffDate.setDate(cutoffDate.getDate() - 30);
+        comparisonPeriod = 'last 30 days';
+        break;
+      case '60d':
+        cutoffDate.setDate(cutoffDate.getDate() - 60);
+        comparisonPeriod = 'last 60 days';
+        break;
+      case '90d':
+        cutoffDate.setDate(cutoffDate.getDate() - 90);
+        comparisonPeriod = 'last 90 days';
+        break;
+      case '6m':
+        cutoffDate.setMonth(cutoffDate.getMonth() - 6);
+        comparisonPeriod = 'last 6 months';
+        break;
+      case '1y':
+        cutoffDate.setFullYear(cutoffDate.getFullYear() - 1);
+        comparisonPeriod = 'last year';
+        break;
+    }
+    
+    // Split payouts into current period and previous period
+    const midpointDate = new Date(cutoffDate.getTime() + (now.getTime() - cutoffDate.getTime()) / 2);
+    
+    const recentPayouts = confirmedPayouts.filter(p => new Date(p.payout_date) >= midpointDate);
+    const olderPayouts = confirmedPayouts.filter(p => 
+      new Date(p.payout_date) >= cutoffDate && new Date(p.payout_date) < midpointDate
+    );
+    
+    const recentTotal = recentPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+    const olderTotal = olderPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+    
+    const growthRate = olderTotal > 0 ? ((recentTotal - olderTotal) / olderTotal) * 100 : 0;
 
     return {
       totalPayouts,
       avgPayout,
       lastPayout,
       growthRate,
-      payoutCount: confirmedPayouts.length
+      payoutCount: confirmedPayouts.length,
+      comparisonPeriod
     };
-  }, [amazonPayouts]);
+  }, [amazonPayouts, growthTimeframe]);
 
   // Calculate forecast accuracy
   const [forecastAccuracy, setForecastAccuracy] = useState<number | null>(null);
@@ -395,14 +432,28 @@ export default function AmazonForecast() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Growth Rate</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-medium">Growth Rate</CardTitle>
+              <Select value={growthTimeframe} onValueChange={(value: any) => setGrowthTimeframe(value)}>
+                <SelectTrigger className="h-7 w-[90px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30d">30 Days</SelectItem>
+                  <SelectItem value="60d">60 Days</SelectItem>
+                  <SelectItem value="90d">90 Days</SelectItem>
+                  <SelectItem value="6m">6 Months</SelectItem>
+                  <SelectItem value="1y">1 Year</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${metrics.growthRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {metrics.growthRate >= 0 ? '+' : ''}{metrics.growthRate.toFixed(1)}%
             </div>
-            <p className="text-xs text-muted-foreground">Trend analysis</p>
+            <p className="text-xs text-muted-foreground">vs previous period</p>
           </CardContent>
         </Card>
       </div>
