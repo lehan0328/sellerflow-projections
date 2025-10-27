@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       .from('amazon_accounts')
       .select('id, user_id, account_name, marketplace_name, last_sync, sync_status, created_at')
       .eq('is_active', true)
-      .or('sync_status.eq.idle,sync_status.eq.syncing') // Include stuck "syncing" accounts
+      .in('sync_status', ['idle', 'syncing']) // Include stuck "syncing" accounts
 
     if (fetchError) {
       console.error('Error fetching Amazon accounts:', fetchError)
