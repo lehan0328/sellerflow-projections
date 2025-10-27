@@ -548,14 +548,32 @@ export function AmazonPayouts() {
             // 2. No end date in raw_settlement_data
             // 3. ProcessingStatus = Open
             // 4. Amount > 0 (exclude empty open settlements)
+            // 5. Started within a reasonable timeframe (within last 30 days)
             const rawData = p.raw_settlement_data;
             const hasEndDate = rawData?.FinancialEventGroupEnd;
             const processingStatus = rawData?.ProcessingStatus;
+            const startDate = rawData?.FinancialEventGroupStart ? new Date(rawData.FinancialEventGroupStart) : null;
+            
+            // Only show open settlements that started within the last 30 days
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const isRecent = startDate && startDate >= thirtyDaysAgo;
             
             return p.status === 'estimated' && 
                    !hasEndDate && 
                    processingStatus === 'Open' &&
-                   p.total_amount > 0;
+                   p.total_amount > 0 &&
+                   isRecent;
+          })
+          // Sort by start date descending and take only the most recent one per account
+          .sort((a, b) => {
+            const dateA = a.raw_settlement_data?.FinancialEventGroupStart ? new Date(a.raw_settlement_data.FinancialEventGroupStart).getTime() : 0;
+            const dateB = b.raw_settlement_data?.FinancialEventGroupStart ? new Date(b.raw_settlement_data.FinancialEventGroupStart).getTime() : 0;
+            return dateB - dateA;
+          })
+          // Keep only one open settlement per Amazon account
+          .filter((payout, index, array) => {
+            return index === array.findIndex(p => p.amazon_account_id === payout.amazon_account_id);
           });
 
           if (openSettlements.length === 0) return null;
