@@ -487,11 +487,7 @@ export function AmazonPayouts() {
                       </div>
                     </div>
                      <div className="flex items-center gap-2 flex-shrink-0">
-                      {account.initial_sync_complete && account.transaction_count === 0 ? (
-                        <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-700 border-amber-500/20">
-                          ⚠ No Data
-                        </Badge>
-                      ) : account.initial_sync_complete ? (
+                      {account.sync_progress >= 100 && account.initial_sync_complete ? (
                         <Badge variant="outline" className="text-xs bg-green-500/10 text-green-700 border-green-500/20">
                           ✓ Synced
                         </Badge>
@@ -499,9 +495,13 @@ export function AmazonPayouts() {
                         <Badge variant="outline" className="text-xs bg-red-500/10 text-red-700 border-red-500/20">
                           Stuck
                         </Badge>
+                      ) : account.sync_progress && account.sync_progress > 0 ? (
+                        <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-700 border-blue-500/20">
+                          {account.sync_progress}% Syncing
+                        </Badge>
                       ) : (
                         <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-700 border-amber-500/20">
-                          Backfilling...
+                          Starting...
                         </Badge>
                       )}
                       <Button

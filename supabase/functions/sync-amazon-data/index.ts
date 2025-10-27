@@ -1125,7 +1125,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     }
 
     // Mark this day as complete and clear next_token
-    // Also mark initial sync as complete if we have enough transactions (50+)
+    // Only mark initial_sync_complete when we're truly caught up to yesterday
     const updateData: any = { 
       last_synced_to: endDate.toISOString(),
       sync_next_token: null,
@@ -1133,11 +1133,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       transaction_count: totalTransactionCount
     };
     
-    // Mark initial sync complete once we have sufficient data
-    if (totalTransactionCount >= 50 && !amazonAccount.initial_sync_complete) {
-      updateData.initial_sync_complete = true;
-      console.log('[SYNC] ✓ Initial sync complete - sufficient data collected');
-    }
+    // Don't set initial_sync_complete here - only when fully caught up below
     
     await supabase
       .from('amazon_accounts')
