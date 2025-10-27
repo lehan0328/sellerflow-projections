@@ -133,6 +133,7 @@ export default function Analytics() {
   
   const [vendorDateRange, setVendorDateRange] = useState<string>("this-month");
   const [incomeDateRange, setIncomeDateRange] = useState<string>("this-month");
+  const [amazonRevenueRange, setAmazonRevenueRange] = useState<string>("last-30-days");
   const [customStartDate, setCustomStartDate] = useState<Date>(defaultStartDate);
   const [customEndDate, setCustomEndDate] = useState<Date>(defaultEndDate);
 
@@ -182,12 +183,18 @@ export default function Analytics() {
 
     // Amazon revenue - track gross order totals (before fees) for plan tier tracking
     // Only count Order/Shipment transactions, not fees or refunds
+    // Filter by selected date range
+    const amazonDateRange = getDateRange(amazonRevenueRange);
     const amazonRevenue = amazonTransactions
-      .filter(tx => 
-        tx.transaction_type && 
-        (tx.transaction_type.toLowerCase().includes('order') || 
-         tx.transaction_type.toLowerCase().includes('shipment'))
-      )
+      .filter(tx => {
+        if (!tx.transaction_type) return false;
+        const isOrderOrShipment = tx.transaction_type.toLowerCase().includes('order') || 
+                                  tx.transaction_type.toLowerCase().includes('shipment');
+        if (!isOrderOrShipment) return false;
+        
+        const txDate = new Date(tx.transaction_date);
+        return txDate >= amazonDateRange.start && txDate <= amazonDateRange.end;
+      })
       .reduce((sum, tx) => sum + (tx.gross_amount || tx.amount || 0), 0);
 
     // Total expenses from vendors + purchase orders
@@ -275,6 +282,11 @@ export default function Analytics() {
     const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
     
     switch (rangeType) {
+      case "last-30-days":
+        return {
+          start: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+          end: now
+        };
       case "custom":
         return { 
           start: new Date(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate(), 0, 0, 0, 0),
@@ -295,6 +307,11 @@ export default function Analytics() {
         return { start: new Date(now.getFullYear(), now.getMonth() - 6, 1), end: endOfThisMonth };
       case "ytd":
         return { start: startOfYear, end: endOfThisMonth };
+      case "all-time":
+        return {
+          start: new Date(2020, 0, 1), // Far enough back to capture all data
+          end: now
+        };
       default:
         return { 
           start: new Date(customStartDate.getFullYear(), customStartDate.getMonth(), customStartDate.getDate(), 0, 0, 0, 0),
@@ -597,12 +614,29 @@ export default function Analytics() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Amazon Revenue</CardTitle>
+            <div className="flex items-center gap-2 flex-1">
+              <CardTitle className="text-sm font-medium">Amazon Revenue</CardTitle>
+              <Select value={amazonRevenueRange} onValueChange={setAmazonRevenueRange}>
+                <SelectTrigger className="w-36 h-7 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="z-50 bg-background">
+                  <SelectItem value="last-30-days">Last 30 Days</SelectItem>
+                  <SelectItem value="this-month">This Month</SelectItem>
+                  <SelectItem value="last-month">Last Month</SelectItem>
+                  <SelectItem value="last-3-months">Last 3 Months</SelectItem>
+                  <SelectItem value="last-6-months">Last 6 Months</SelectItem>
+                  <SelectItem value="ytd">Year to Date</SelectItem>
+                  <SelectItem value="all-time">All Time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Package className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">${metrics.amazonRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Gross order revenue (all-time)</p>
+            <p className="text-xs text-muted-foreground">Gross order revenue (before Amazon fees)</p>
+            <p className="text-xs text-muted-foreground mt-1 font-semibold">⚡ Used for plan tier tracking</p>
           </CardContent>
         </Card>
 
