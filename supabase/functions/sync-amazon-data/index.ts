@@ -206,7 +206,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     yesterday.setDate(yesterday.getDate() - 1)
     yesterday.setHours(23, 59, 59, 999)
 
-    // For settlements, always fetch full year for seasonal patterns
+    // For settlements, always fetch full year for seasonal patterns (365 days BACK)
     let settlementsStartDate = new Date()
     settlementsStartDate.setDate(settlementsStartDate.getDate() - 365)
     settlementsStartDate.setHours(0, 0, 0, 0)
@@ -214,47 +214,76 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     const now = new Date()
     now.setMinutes(now.getMinutes() - 5) // Amazon requires date to be no later than 2 minutes from now
     
-    // Define the target historical window (90 days back)
-    const historicalStartDate = new Date()
-    historicalStartDate.setDate(historicalStartDate.getDate() - 90)
-    historicalStartDate.setHours(0, 0, 0, 0)
+    // Define the target historical window (90 days BACK from today)
+    const transactionStartDate = new Date()
+    transactionStartDate.setDate(transactionStartDate.getDate() - 90)
+    transactionStartDate.setHours(0, 0, 0, 0)
 
-    if (amazonAccount.last_synced_to) {
-      const lastSyncDate = new Date(amazonAccount.last_synced_to)
-      
-      // If last sync is already at or past our historical start, continue forward from last sync
-      if (lastSyncDate >= historicalStartDate) {
-        startDate = new Date(lastSyncDate)
-        startDate.setDate(startDate.getDate() + 1)
-        startDate.setHours(0, 0, 0, 0)
-        
-        endDate = new Date(startDate)
-        endDate.setDate(endDate.getDate() + 30)
-        
-        if (endDate > now) {
-          endDate = now
-        }
-        
-        console.log('[SYNC] Incremental mode - continuing from last sync:', startDate.toISOString(), 'to', endDate.toISOString())
-      } else {
-        // Backfill mode: last sync is before our 90-day window, so backfill historical data
-        startDate = new Date(historicalStartDate)
-        
-        endDate = new Date(startDate)
-        endDate.setDate(endDate.getDate() + 30) // Fetch 30 days at a time for backfill
-        
-        if (endDate > now) {
-          endDate = now
-        }
-        
-        console.log('[SYNC] Backfill mode - fetching historical data from:', startDate.toISOString(), 'to', endDate.toISOString())
-      }
-    } else {
-      // First sync - get last 90 days of detailed transactions (3 full months)
-      startDate = new Date(historicalStartDate)
+    // Check if last_synced_to is valid and in the past
+    const lastSyncDate = amazonAccount.last_synced_to ? new Date(amazonAccount.last_synced_to) : null
+    const isLastSyncInFuture = lastSyncDate && lastSyncDate >= yesterday
+    
+    if (!lastSyncDate || isLastSyncInFuture) {
+      // First sync OR last_synced_to is today/future (invalid) - fetch last 90 days
+      startDate = new Date(transactionStartDate)
       endDate = new Date(now)
       
-      console.log('[SYNC] Initial sync - fetching 90 days of transactions:', startDate.toISOString(), 'to', endDate.toISOString())
+      console.log('[SYNC] Initial/Reset sync - fetching 90 days of historical transactions:', startDate.toISOString(), 'to', endDate.toISOString())
+    } else if (lastSyncDate < transactionStartDate) {
+      // Last sync was more than 90 days ago - resume from where we left off
+      startDate = new Date(lastSyncDate)
+      startDate.setDate(startDate.getDate() + 1)
+      startDate.setHours(0, 0, 0, 0)
+      
+      // Fetch 30 days at a time for backfill
+      endDate = new Date(startDate)
+      endDate.setDate(endDate.getDate() + 30)
+      
+      // Don't go beyond yesterday
+      if (endDate > yesterday) {
+        endDate = new Date(yesterday)
+      }
+      
+      console.log('[SYNC] Backfill mode - continuing from:', startDate.toISOString(), 'to', endDate.toISOString())
+    } else {
+      // Last sync was within the 90-day window - continue incrementally
+      startDate = new Date(lastSyncDate)
+      startDate.setDate(startDate.getDate() + 1)
+      startDate.setHours(0, 0, 0, 0)
+      
+      // Fetch up to 30 days
+      endDate = new Date(startDate)
+      endDate.setDate(endDate.getDate() + 30)
+      
+      // Don't go beyond yesterday
+      if (endDate > yesterday) {
+        endDate = new Date(yesterday)
+      }
+      
+      // Only proceed if startDate is before yesterday (not trying to sync future)
+      if (startDate >= yesterday) {
+        console.log('[SYNC] Already up to date - no new transactions to sync')
+        // Update last_sync timestamp but don't fetch
+        await supabase
+          .from('amazon_accounts')
+          .update({ 
+            last_sync: new Date().toISOString(),
+            sync_status: 'idle'
+          })
+          .eq('id', amazonAccountId)
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'Account already up to date',
+            settlementCount: 0,
+            transactionCount: 0
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      
+      console.log('[SYNC] Incremental mode - fetching new transactions from:', startDate.toISOString(), 'to', endDate.toISOString())
     }
 
     console.log('[SYNC] Settlements window: Full year (365 days) for seasonal analysis')
