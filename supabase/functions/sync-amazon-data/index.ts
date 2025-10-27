@@ -167,9 +167,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     const nowForSettlements = new Date()
     nowForSettlements.setMinutes(nowForSettlements.getMinutes() - 5) // Amazon requires date to be no later than 2 minutes from now
     
-    // Define the target historical window (365 days BACK from today for full year)
+    // Define the target historical window (90 days BACK from today for transactions)
     const transactionStartDate = new Date()
-    transactionStartDate.setDate(transactionStartDate.getDate() - 365) // Full year for initial sync
+    transactionStartDate.setDate(transactionStartDate.getDate() - 90) // 90 days for transactions
     transactionStartDate.setHours(0, 0, 0, 0)
 
     // Check if last_synced_to is valid and in the past
@@ -186,13 +186,13 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       
       console.log('[SYNC] 🔄 CONTINUATION - same date range:', startDate.toISOString(), 'to', endDate.toISOString(), '(has nextToken)')
     } else if (!lastSyncDate || isLastSyncInFuture) {
-      // First sync OR last_synced_to is today/future (invalid) - fetch last 365 days (full year)
+      // First sync OR last_synced_to is today/future (invalid) - fetch last 90 days of transactions
       startDate = new Date(transactionStartDate)
       endDate = new Date(yesterday)
       
-      console.log('[SYNC] Initial/Reset sync - fetching full year (365 days) of historical transactions:', startDate.toISOString(), 'to', endDate.toISOString())
+      console.log('[SYNC] Initial/Reset sync - fetching 90 days of historical transactions:', startDate.toISOString(), 'to', endDate.toISOString())
     } else if (lastSyncDate < transactionStartDate) {
-      // Last sync was more than 365 days ago - resume from where we left off to backfill full year
+      // Last sync was more than 90 days ago - resume from where we left off to backfill
       startDate = new Date(lastSyncDate)
       startDate.setDate(startDate.getDate() + 1)
       startDate.setHours(0, 0, 0, 0)
@@ -208,7 +208,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       
       console.log('[SYNC] Backfill mode - continuing from:', startDate.toISOString(), 'to', endDate.toISOString())
     } else {
-      // Last sync was within the 365-day window - continue incrementally
+      // Last sync was within the 90-day window - continue incrementally
       startDate = new Date(lastSyncDate)
       startDate.setDate(startDate.getDate() + 1)
       startDate.setHours(0, 0, 0, 0)
