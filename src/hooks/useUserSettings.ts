@@ -431,9 +431,12 @@ export const useUserSettings = () => {
       console.log('✅ User roles managed by database triggers')
 
       // Reset user_settings to defaults including reserve amount
+      // Use upsert to handle case where settings don't exist yet
       const { error: upsertError } = await supabase
         .from('user_settings')
-        .update({
+        .upsert({
+          user_id: user.id,
+          account_id: accountId,
           total_cash: 0,
           safe_spending_percentage: 20,
           safe_spending_reserve: 0,
@@ -449,8 +452,9 @@ export const useUserSettings = () => {
           chart_credit_color: '#f59e0b',
           chart_reserve_color: '#ef4444',
           chart_forecast_color: '#a855f7',
-        })
-        .eq('user_id', user.id);
+        }, {
+          onConflict: 'user_id',
+        });
 
       if (upsertError) {
         console.error('Failed to reset user settings:', upsertError);
