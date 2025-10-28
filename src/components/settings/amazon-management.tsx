@@ -157,6 +157,20 @@ export function AmazonManagement() {
       params.delete('new_account');
       window.history.replaceState({}, '', `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`);
     }
+    
+    // Check for manual notification opt-in trigger (for testing or re-showing)
+    const accountIdParam = params.get('show_notification_optin');
+    if (accountIdParam && amazonAccounts.length > 0) {
+      const targetAccount = amazonAccounts.find(acc => acc.account_name === accountIdParam || acc.id === accountIdParam);
+      if (targetAccount) {
+        setNewAccountId(targetAccount.id);
+        setShowNotificationOptIn(true);
+        
+        // Clean up URL
+        params.delete('show_notification_optin');
+        window.history.replaceState({}, '', `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`);
+      }
+    }
   }, [amazonAccounts]);
 
   // Monitor sync status changes and update progress in real-time
