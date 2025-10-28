@@ -946,14 +946,41 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     
     console.log(`[SYNC] ========== SYNC SUMMARY ==========`)
     console.log(`[SYNC] Pages Fetched: ${pageCount}`)
-    console.log(`[SYNC] Transactions Extracted: ${transactionsToAdd.length}`)
-    console.log(`[SYNC] Payouts from Events: ${payoutsToAdd.length}`)
+    console.log(`[SYNC] Transactions Pending: ${transactionsToAdd.length}`)
+    console.log(`[SYNC] Payouts Pending: ${payoutsToAdd.length}`)
+    console.log(`[SYNC] Total Saved This Run: ${totalSavedThisRun}`)
     console.log(`[SYNC] Date Range: ${startDate.toISOString()} to ${endDate.toISOString()}`)
     console.log(`[SYNC] ====================================`)
     
-    // Log first transaction sample if available
+    // Save any remaining transactions before proceeding
     if (transactionsToAdd.length > 0) {
-      console.log('[SYNC] Sample Transaction:', JSON.stringify(transactionsToAdd[0], null, 2))
+      console.log(`[SYNC] Saving final ${transactionsToAdd.length} transactions...`)
+      const batchSize = 5000
+      for (let i = 0; i < transactionsToAdd.length; i += batchSize) {
+        const batch = transactionsToAdd.slice(i, i + batchSize)
+        const { error: txError } = await supabase
+          .from('amazon_transactions')
+          .upsert(batch, { onConflict: 'transaction_id', ignoreDuplicates: true })
+        
+        if (txError) {
+          console.error('[SYNC] Final batch error:', txError)
+        }
+      }
+      totalSavedThisRun += transactionsToAdd.length
+      transactionsToAdd.length = 0
+    }
+    
+    // Save any remaining payouts
+    if (payoutsToAdd.length > 0) {
+      console.log(`[SYNC] Saving final ${payoutsToAdd.length} payouts...`)
+      const { error: payoutError } = await supabase
+        .from('amazon_payouts')
+        .upsert(payoutsToAdd, { onConflict: 'amazon_account_id,settlement_id', ignoreDuplicates: false })
+      
+      if (payoutError) {
+        console.error('[SYNC] Final payout batch error:', payoutError)
+      }
+      payoutsToAdd.length = 0
     }
 
     // Determine if this day's data should go to rollups or detailed transactions
@@ -1017,28 +1044,18 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       console.log('[SYNC] Data is <90 days old - saving detailed transactions')
       
       if (transactionsToAdd.length > 0) {
-        const uniqueTransactions = transactionsToAdd.reduce((acc, tx) => {
-          const key = tx.transaction_id
-          if (!acc.has(key)) {
-            acc.set(key, tx)
-          }
-          return acc
-        }, new Map())
+        console.log(`[SYNC] Saving ${transactionsToAdd.length} transactions in final batch...`)
         
-        const deduplicatedTransactions = Array.from(uniqueTransactions.values())
-        console.log(`[SYNC] Saving ${deduplicatedTransactions.length} unique transactions (${transactionsToAdd.length - deduplicatedTransactions.length} duplicates removed)...`)
-        
-        // Save in batches of 1000 (optimized from 100 for better performance)
-        const batchSize = 1000
-        for (let i = 0; i < deduplicatedTransactions.length; i += batchSize) {
-          const batch = deduplicatedTransactions.slice(i, i + batchSize)
+        // Use optimized batch size
+        const batchSize = 5000
+        for (let i = 0; i < transactionsToAdd.length; i += batchSize) {
+          const batch = transactionsToAdd.slice(i, i + batchSize)
           const { error: txError } = await supabase
             .from('amazon_transactions')
             .upsert(batch, { onConflict: 'transaction_id', ignoreDuplicates: true })
           
           if (txError) {
             console.error('[SYNC] Transaction insert error:', txError)
-            // Update status to error and stop sync
             await supabase
               .from('amazon_accounts')
               .update({ 
@@ -1049,33 +1066,26 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
               .eq('id', amazonAccountId)
             throw new Error(`Failed to insert transactions: ${txError.message}`)
           } else {
-            console.log(`[SYNC] Saved ${Math.min(i + batchSize, deduplicatedTransactions.length)}/${deduplicatedTransactions.length}`)
+            console.log(`[SYNC] Saved ${Math.min(i + batchSize, transactionsToAdd.length)}/${transactionsToAdd.length}`)
           }
         }
       }
     }
 
-    // Save payouts from events
+    // Save any remaining payouts (final batch)
     if (payoutsToAdd.length > 0) {
-      const uniquePayouts = payoutsToAdd.reduce((acc, payout) => {
-        const key = payout.settlement_id
-        if (!acc.has(key)) {
-          acc.set(key, payout)
-        }
-        return acc
-      }, new Map())
-      
-      const deduplicatedPayouts = Array.from(uniquePayouts.values())
-      
+      console.log(`[SYNC] Saving final batch of ${payoutsToAdd.length} payouts...`)
       const { error: payoutError } = await supabase
         .from('amazon_payouts')
-        .upsert(deduplicatedPayouts, { 
+        .upsert(payoutsToAdd, { 
           onConflict: 'amazon_account_id,settlement_id',
           ignoreDuplicates: false 
         })
       
       if (!payoutError) {
-        console.log(`[SYNC] ✓ Saved ${deduplicatedPayouts.length} payouts from events`)
+        console.log(`[SYNC] ✓ Saved ${payoutsToAdd.length} payouts from events`)
+      } else {
+        console.error('[SYNC] Error saving final payout batch:', payoutError)
       }
     }
     
