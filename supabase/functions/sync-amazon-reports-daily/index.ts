@@ -313,11 +313,25 @@ Deno.serve(async (req) => {
 
     console.log(`[REPORTS] Parsed ${transactions.length} unique orders (aggregated from line items) with delivery dates`)
 
-    // Step 5: Upsert to database
-    if (transactions.length > 0) {
+    // Step 5: Final deduplication check - ensure no duplicate transaction_ids
+    const seenIds = new Set()
+    const dedupedTransactions = transactions.filter(t => {
+      const key = `${t.transaction_id}`
+      if (seenIds.has(key)) {
+        console.log(`[REPORTS] ⚠️ Removing duplicate transaction_id: ${key}`)
+        return false
+      }
+      seenIds.add(key)
+      return true
+    })
+
+    console.log(`[REPORTS] After deduplication: ${dedupedTransactions.length} transactions (removed ${transactions.length - dedupedTransactions.length} duplicates)`)
+
+    // Step 6: Upsert to database
+    if (dedupedTransactions.length > 0) {
       const { error: upsertError } = await supabase
         .from('amazon_transactions')
-        .upsert(transactions, {
+        .upsert(dedupedTransactions, {
           onConflict: 'transaction_id,amazon_account_id',
           ignoreDuplicates: false
         })
