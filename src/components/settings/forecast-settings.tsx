@@ -74,8 +74,13 @@ export const ForecastSettings = () => {
     return (Date.now() - new Date(newestAmazonAccount.created_at).getTime()) / (1000 * 60 * 60); // in hours
   }, [newestAmazonAccount]);
   
-  // Always allow forecast toggle if Amazon account exists
-  const canEnableForecasts = hasAmazonStore;
+  // Check if any Amazon account is currently syncing
+  const isSyncing = useMemo(() => {
+    return amazonAccounts?.some(acc => acc.sync_status === 'syncing') ?? false;
+  }, [amazonAccounts]);
+  
+  // Always allow forecast toggle if Amazon account exists and is not syncing
+  const canEnableForecasts = hasAmazonStore && !isSyncing;
   const hoursUntilForecastAvailable = Math.max(0, Math.ceil(3 - amazonAccountAge));
   const [payoutModel, setPayoutModel] = useState<'bi-weekly' | 'daily'>('bi-weekly');
   
@@ -797,6 +802,13 @@ export const ForecastSettings = () => {
                   {!hasAmazonStore ? (
                     <TooltipContent>
                       <p>Connect an Amazon account to enable forecasting</p>
+                    </TooltipContent>
+                  ) : isSyncing ? (
+                    <TooltipContent>
+                      <p>Amazon sync in progress</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Wait for sync to complete before enabling forecasts
+                      </p>
                     </TooltipContent>
                   ) : !canEnableForecasts ? (
                     <TooltipContent>
