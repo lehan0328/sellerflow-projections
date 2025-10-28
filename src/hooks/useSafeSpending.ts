@@ -370,8 +370,10 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
             return;
           }
           
-          // Skip today's Amazon payouts if excludeTodayTransactions is true
-          if (excludeTodayTransactions && payoutDate.getTime() === today.getTime()) {
+          // ALWAYS include open settlements (estimated) - they represent real accumulating money
+          // Only apply excludeToday filter to confirmed or forecasted payouts
+          const isOpenSettlement = payout.status === 'estimated';
+          if (excludeTodayTransactions && payoutDate.getTime() === today.getTime() && !isOpenSettlement) {
             if (isKeyDate) {
               console.log(`  🚫 EXCLUDING today's Amazon payout: $${payout.total_amount} (excluded by user)`);
             }
