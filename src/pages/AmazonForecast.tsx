@@ -396,7 +396,7 @@ export default function AmazonForecast() {
                 </div>
                 <LineChart className="h-4 w-4 text-blue-600" />
               </div>
-              <div className="text-2xl font-bold">${metrics.avgPayout.toLocaleString()}</div>
+              <div className="text-2xl font-bold">${metrics.avgPayout.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground">{metrics.avgPayoutLabel}</p>
             </div>
 
