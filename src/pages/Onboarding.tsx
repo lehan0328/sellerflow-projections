@@ -46,11 +46,12 @@ export default function Onboarding() {
   const { addAmazonAccount } = useAmazonAccounts();
   const { product_id } = useSubscription();
   
-  const [currentStep, setCurrentStep] = useState<'welcome' | 'amazon' | 'bank' | 'forecasting'>('welcome');
+  const [currentStep, setCurrentStep] = useState<'welcome' | 'amazon' | 'bank' | 'reserve' | 'forecasting'>('welcome');
   const [showEnterpriseSetup, setShowEnterpriseSetup] = useState(false);
   const [amazonSkipped, setAmazonSkipped] = useState(false);
   const [bankSkipped, setBankSkipped] = useState(false);
   const [forecastingEnabled, setForecastingEnabled] = useState(false);
+  const [reserveAmount, setReserveAmount] = useState<string>('0');
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -97,12 +98,8 @@ export default function Onboarding() {
         setIsConnecting(false);
         setLinkToken(null);
         
-        // Move to forecasting step if Amazon was connected
-        if (!amazonSkipped) {
-          setCurrentStep('forecasting');
-        } else {
-          navigate('/dashboard');
-        }
+        // Move to reserve step after bank connection
+        setCurrentStep('reserve');
       } catch (error) {
         console.error("Error exchanging token:", error);
         toast.error("Failed to connect account");
@@ -193,11 +190,72 @@ export default function Onboarding() {
 
   const handleSkipBank = () => {
     setBankSkipped(true);
+    // Move to reserve step
+    setCurrentStep('reserve');
+  };
+
+  const handleSkipReserve = () => {
     // Only show forecasting if Amazon was connected
     if (!amazonSkipped) {
       setCurrentStep('forecasting');
     } else {
       navigate('/dashboard');
+    }
+  };
+
+  const handleSaveReserve = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please log in to continue");
+        return;
+      }
+
+      // Get account_id from profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!profile?.account_id) {
+        toast.error("Account not found");
+        return;
+      }
+
+      // Save reserve amount
+      const reserveValue = Number(reserveAmount) || 0;
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert({
+          user_id: user.id,
+          account_id: profile.account_id,
+          safe_spending_reserve: reserveValue,
+          reserve_last_updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('Error saving reserve:', error);
+        toast.error('Failed to save reserve amount');
+        return;
+      }
+
+      toast.success(reserveValue > 0 
+        ? `Reserve set to $${reserveValue.toLocaleString()}` 
+        : 'Reserve set to $0'
+      );
+
+      // Move to forecasting step if Amazon was connected
+      if (!amazonSkipped) {
+        setCurrentStep('forecasting');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Error saving reserve:', error);
+      toast.error('An error occurred');
     }
   };
 
@@ -240,7 +298,9 @@ export default function Onboarding() {
                 account_id: profile.account_id,
                 forecasts_enabled: false, // Will be enabled after sync completes
                 forecast_confidence_threshold: 8,
-                default_reserve_lag_days: 7
+                default_reserve_lag_days: 7,
+                safe_spending_reserve: Number(reserveAmount) || 0,
+                reserve_last_updated_at: new Date().toISOString(),
               }, {
                 onConflict: 'user_id'
               });
@@ -250,7 +310,7 @@ export default function Onboarding() {
           }
         }
         
-        // Save forecasting preference
+        // Save forecasting preference and reserve amount
         const { data: settingsData, error: settingsError } = await supabase
           .from('user_settings')
           .upsert({
@@ -258,7 +318,9 @@ export default function Onboarding() {
             account_id: profile.account_id,
             forecasts_enabled: forecastingEnabled,
             forecast_confidence_threshold: 8, // Default to Moderate
-            default_reserve_lag_days: 7
+            default_reserve_lag_days: 7,
+            safe_spending_reserve: Number(reserveAmount) || 0,
+            reserve_last_updated_at: new Date().toISOString(),
           }, {
             onConflict: 'user_id'
           })
@@ -604,6 +666,149 @@ export default function Onboarding() {
                   disabled={isConnecting}
                 >
                   {isConnecting ? "Connecting..." : "Connect Bank Account"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Reserve Amount Step */}
+        {currentStep === 'reserve' && (
+          <Card className="shadow-2xl border border-primary/20 backdrop-blur-xl bg-card/95">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-6 w-6 text-primary" />
+                <CardTitle className="text-2xl">Set Your Reserve Amount</CardTitle>
+              </div>
+              <CardDescription>
+                Your reserve is a safety buffer - money you never want to dip below
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-lg p-6 border-2 border-amber-200 dark:border-amber-800">
+                <div className="flex items-start gap-3 mb-4">
+                  <Brain className="h-6 w-6 text-amber-600 mt-1 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Why Having a Reserve is Important</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      A reserve amount acts as your financial safety net:
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="space-y-3 ml-9 text-sm">
+                  <div className="flex items-start gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-amber-600 mt-1.5 flex-shrink-0" />
+                    <div>
+                      <strong className="text-amber-900 dark:text-amber-100">Emergency Protection:</strong>
+                      <span className="text-muted-foreground ml-1">Covers unexpected expenses without disrupting your business</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-amber-600 mt-1.5 flex-shrink-0" />
+                    <div>
+                      <strong className="text-amber-900 dark:text-amber-100">Cash Crunch Prevention:</strong>
+                      <span className="text-muted-foreground ml-1">Prevents overdrafts when payouts are delayed or returns spike</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-amber-600 mt-1.5 flex-shrink-0" />
+                    <div>
+                      <strong className="text-amber-900 dark:text-amber-100">Accurate Safe Spending:</strong>
+                      <span className="text-muted-foreground ml-1">Your "safe to spend" calculations will respect this minimum balance</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-amber-600 mt-1.5 flex-shrink-0" />
+                    <div>
+                      <strong className="text-amber-900 dark:text-amber-100">Peace of Mind:</strong>
+                      <span className="text-muted-foreground ml-1">Sleep better knowing you have a cushion for your business</span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-amber-600 mt-1.5 flex-shrink-0" />
+                    <div>
+                      <strong className="text-amber-900 dark:text-amber-100">Seasonal Stability:</strong>
+                      <span className="text-muted-foreground ml-1">Maintains stability during slow periods or seasonal dips</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <p className="text-sm text-blue-900 dark:text-blue-100 font-medium mb-2">
+                    💡 Recommended Reserve Amount
+                  </p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    Most sellers keep 1-2 months of operating expenses as a reserve. Common amounts range from $5,000 to $25,000 depending on business size.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reserve" className="text-sm font-medium">
+                    Reserve Amount (Optional)
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <Input
+                      id="reserve"
+                      type="number"
+                      min="0"
+                      step="100"
+                      value={reserveAmount}
+                      onChange={(e) => setReserveAmount(e.target.value)}
+                      placeholder="0"
+                      className="pl-8 h-12 text-lg"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    You can set this to $0 now and adjust it later in Settings. You can change this once every 24 hours.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setReserveAmount('5000')}
+                    className="text-xs"
+                  >
+                    $5,000
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setReserveAmount('10000')}
+                    className="text-xs"
+                  >
+                    $10,000
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setReserveAmount('25000')}
+                    className="text-xs"
+                  >
+                    $25,000
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button 
+                  onClick={handleSkipReserve}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Skip (Set to $0)
+                </Button>
+                <Button 
+                  onClick={handleSaveReserve}
+                  className="flex-1 bg-gradient-primary"
+                >
+                  Continue
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
             </CardContent>
