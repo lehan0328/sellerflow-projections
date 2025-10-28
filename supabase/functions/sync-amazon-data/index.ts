@@ -530,18 +530,10 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         
         // Save any pending transactions
         if (transactionsToAdd.length > 0) {
-          const uniqueTransactions = transactionsToAdd.reduce((acc, tx) => {
-            const key = tx.transaction_id
-            if (!acc.has(key)) {
-              acc.set(key, tx)
-            }
-            return acc
-          }, new Map())
-          
-          const deduplicatedTransactions = Array.from(uniqueTransactions.values())
-          const batchSize = 100
-          for (let i = 0; i < deduplicatedTransactions.length; i += batchSize) {
-            const batch = deduplicatedTransactions.slice(i, i + batchSize)
+          // Use larger batch size for timeout save
+          const batchSize = 5000
+          for (let i = 0; i < transactionsToAdd.length; i += batchSize) {
+            const batch = transactionsToAdd.slice(i, i + batchSize)
             await supabase
               .from('amazon_transactions')
               .upsert(batch, { onConflict: 'transaction_id', ignoreDuplicates: true })
@@ -651,19 +643,10 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
             if (transactionsToAdd.length > 0) {
               console.log(`[SYNC] Saving final batch of ${transactionsToAdd.length} transactions before rate limit pause...`)
               
-              const uniqueTransactions = transactionsToAdd.reduce((acc, tx) => {
-                const key = tx.transaction_id
-                if (!acc.has(key)) {
-                  acc.set(key, tx)
-                }
-                return acc
-              }, new Map())
-              
-              const deduplicatedTransactions = Array.from(uniqueTransactions.values())
-              
-              const batchSize = 100
-              for (let i = 0; i < deduplicatedTransactions.length; i += batchSize) {
-                const batch = deduplicatedTransactions.slice(i, i + batchSize)
+              // Use larger batch size for final save
+              const batchSize = 5000
+              for (let i = 0; i < transactionsToAdd.length; i += batchSize) {
+                const batch = transactionsToAdd.slice(i, i + batchSize)
                 await supabase
                   .from('amazon_transactions')
                   .upsert(batch, { onConflict: 'transaction_id', ignoreDuplicates: true })
@@ -911,24 +894,14 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         }
       }
 
-      // Save transactions in batches every 500 to avoid losing data
-      if (transactionsToAdd.length >= 500) {
+      // Save transactions in larger batches (2000) for better throughput
+      if (transactionsToAdd.length >= 2000) {
         console.log(`[SYNC] Saving batch of ${transactionsToAdd.length} transactions...`)
         
-        const uniqueTransactions = transactionsToAdd.reduce((acc, tx) => {
-          const key = tx.transaction_id
-          if (!acc.has(key)) {
-            acc.set(key, tx)
-          }
-          return acc
-        }, new Map())
-        
-        const deduplicatedTransactions = Array.from(uniqueTransactions.values())
-        
-        // Save in batches of 1000 for better performance
-        const batchSize = 1000
-        for (let i = 0; i < deduplicatedTransactions.length; i += batchSize) {
-          const batch = deduplicatedTransactions.slice(i, i + batchSize)
+        // Batch insert with larger chunk size (5000 rows per insert for maximum efficiency)
+        const batchSize = 5000
+        for (let i = 0; i < transactionsToAdd.length; i += batchSize) {
+          const batch = transactionsToAdd.slice(i, i + batchSize)
           const { error: txError } = await supabase
             .from('amazon_transactions')
             .upsert(batch, { onConflict: 'transaction_id', ignoreDuplicates: true })
@@ -936,15 +909,31 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           if (txError) {
             console.error('[SYNC] Transaction batch save error:', txError)
           } else {
-            console.log(`[SYNC] ✓ Saved batch ${Math.floor(i / batchSize) + 1}`)
+            console.log(`[SYNC] ✓ Saved batch ${Math.floor(i / batchSize) + 1} (${batch.length} records)`)
           }
         }
         
-        totalSavedThisRun += deduplicatedTransactions.length
+        totalSavedThisRun += transactionsToAdd.length
         console.log(`[SYNC] ✓ Batch saved. Total this run: ${totalSavedThisRun}`)
         
         // Clear the array
         transactionsToAdd.length = 0
+      }
+      
+      // Save payouts in bulk every 100 for efficiency
+      if (payoutsToAdd.length >= 100) {
+        console.log(`[SYNC] Saving batch of ${payoutsToAdd.length} payouts...`)
+        const { error: payoutError } = await supabase
+          .from('amazon_payouts')
+          .upsert(payoutsToAdd, { onConflict: 'settlement_id', ignoreDuplicates: false })
+        
+        if (payoutError) {
+          console.error('[SYNC] Payout batch save error:', payoutError)
+        } else {
+          console.log(`[SYNC] ✓ ${payoutsToAdd.length} payouts saved`)
+        }
+        
+        payoutsToAdd.length = 0
       }
 
       // Amazon SP-API rate limit: 0.5 requests/second for financial data
