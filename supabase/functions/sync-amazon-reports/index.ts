@@ -46,6 +46,38 @@ Deno.serve(async (req) => {
       throw new Error('Amazon account not found')
     }
 
+    // Check if token is expired and refresh if needed
+    const tokenExpiresAt = new Date(account.access_token_expires_at)
+    const now = new Date()
+    const bufferMinutes = 5 // Refresh if expiring within 5 minutes
+    
+    if (tokenExpiresAt.getTime() - now.getTime() < bufferMinutes * 60 * 1000) {
+      console.log('[REPORTS] Access token expired, refreshing...')
+      
+      const { data: refreshData, error: refreshError } = await supabase.functions.invoke('refresh-amazon-token', {
+        body: { amazon_account_id: accountId }
+      })
+      
+      if (refreshError) {
+        throw new Error(`Token refresh failed: ${refreshError.message}`)
+      }
+      
+      console.log('[REPORTS] Token refreshed successfully')
+      
+      // Re-fetch account with new token
+      const { data: refreshedAccount, error: refetchError } = await supabase
+        .from('amazon_accounts')
+        .select('*')
+        .eq('id', accountId)
+        .single()
+      
+      if (refetchError || !refreshedAccount) {
+        throw new Error('Failed to fetch refreshed account')
+      }
+      
+      account.access_token = refreshedAccount.access_token
+    }
+
     const region = MARKETPLACE_REGIONS[account.marketplace_id] || 'US'
     const endpoint = AMAZON_SPAPI_ENDPOINTS[region]
 
