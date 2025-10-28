@@ -13,37 +13,23 @@ import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 export const ForecastSettings = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const { amazonAccounts } = useAmazonAccounts();
-  const { amazonPayouts, refetch: refetchPayouts } = useAmazonPayouts();
-  
+  const {
+    user
+  } = useAuth();
+  const {
+    amazonAccounts
+  } = useAmazonAccounts();
+  const {
+    amazonPayouts,
+    refetch: refetchPayouts
+  } = useAmazonPayouts();
+
   // Check if we're on the AI Forecast page
   const isOnForecastPage = window.location.pathname === '/ai-forecast';
   const [loading, setLoading] = useState(true);
@@ -56,9 +42,8 @@ export const ForecastSettings = () => {
   const [syncProgress, setSyncProgress] = useState(0);
   const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(true); // Default to ON
   const [savedAdvancedModelingEnabled, setSavedAdvancedModelingEnabled] = useState(true);
-  
   const hasAmazonStore = amazonAccounts && amazonAccounts.length > 0;
-  
+
   // Check if any Amazon account is less than 3 hours old
   const newestAmazonAccount = useMemo(() => {
     if (!amazonAccounts || amazonAccounts.length === 0) return null;
@@ -68,30 +53,29 @@ export const ForecastSettings = () => {
       return accountDate > newestDate ? account : newest;
     }, amazonAccounts[0]);
   }, [amazonAccounts]);
-  
   const amazonAccountAge = useMemo(() => {
     if (!newestAmazonAccount) return Infinity;
     return (Date.now() - new Date(newestAmazonAccount.created_at).getTime()) / (1000 * 60 * 60); // in hours
   }, [newestAmazonAccount]);
-  
+
   // Check if any Amazon account is currently syncing
   const isSyncing = useMemo(() => {
     return amazonAccounts?.some(acc => acc.sync_status === 'syncing') ?? false;
   }, [amazonAccounts]);
-  
+
   // Always allow forecast toggle if Amazon account exists and is not syncing
   const canEnableForecasts = hasAmazonStore && !isSyncing;
   const hoursUntilForecastAvailable = Math.max(0, Math.ceil(3 - amazonAccountAge));
   const [payoutModel, setPayoutModel] = useState<'bi-weekly' | 'daily'>('bi-weekly');
-  
+
   // Check if Amazon accounts are fully synced
   const hasFullySyncedAmazonAccount = useMemo(() => {
     return amazonAccounts?.some(acc => acc.is_active && acc.initial_sync_complete) ?? false;
   }, [amazonAccounts]);
-  
+
   // Mathematical forecasting is always available - no restrictions
   const canEnableAdvancedModeling = true;
-  
+
   // Use the payout frequency from the user's Amazon account settings instead of auto-detecting
   const userSelectedPayoutModel = useMemo(() => {
     // Get payout frequency from the first active Amazon account
@@ -106,32 +90,26 @@ export const ForecastSettings = () => {
       setPayoutModel(userSelectedPayoutModel);
     }
   }, [userSelectedPayoutModel]);
-
   useEffect(() => {
     if (user) {
       fetchSettings();
     }
   }, [user]);
-
   const fetchSettings = async () => {
     try {
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('forecast_confidence_threshold, forecasts_enabled, advanced_modeling_enabled, default_reserve_lag_days')
-        .eq('user_id', user!.id)
-        .maybeSingle();
-
+      const {
+        data,
+        error
+      } = await supabase.from('user_settings').select('forecast_confidence_threshold, forecasts_enabled, advanced_modeling_enabled, default_reserve_lag_days').eq('user_id', user!.id).maybeSingle();
       console.log('🔍 Fetched settings:', data);
-      
+
       // Use the payout frequency from user's Amazon account settings
       if (amazonAccounts && amazonAccounts.length > 0) {
         const firstAccount = amazonAccounts[0] as any;
         const currentModel = firstAccount.payout_frequency || 'bi-weekly';
-        
         console.log('🔍 Using payout model from account settings:', currentModel);
         setPayoutModel(currentModel);
       }
-
       if (error && error.code !== 'PGRST116') throw error;
 
       // Default to Moderate (8) for all accounts until changed
@@ -161,88 +139,78 @@ export const ForecastSettings = () => {
       setLoading(false);
     }
   };
-
-   const handleToggleForecast = async (enabled: boolean) => {
+  const handleToggleForecast = async (enabled: boolean) => {
     setTogglingForecast(true);
-    
     try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user: currentUser
+        }
+      } = await supabase.auth.getUser();
       if (!currentUser) throw new Error("Not authenticated");
 
       // If enabling, just verify Amazon account exists
       if (enabled) {
-        const { data: amazonAccounts } = await supabase
-          .from('amazon_accounts')
-          .select('id')
-          .eq('user_id', currentUser.id)
-          .eq('is_active', true);
-
+        const {
+          data: amazonAccounts
+        } = await supabase.from('amazon_accounts').select('id').eq('user_id', currentUser.id).eq('is_active', true);
         if (!amazonAccounts || amazonAccounts.length === 0) {
           toast.error("Connect an Amazon account before enabling forecasts");
           setTogglingForecast(false);
           return;
         }
       }
-
       console.log('🔄 [TOGGLE] Starting toggle to:', enabled, '| User ID:', currentUser.id);
       setSyncProgress(10);
 
       // Get current profile for account_id
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('account_id')
-        .eq('user_id', currentUser.id)
-        .single();
-      
+      const {
+        data: profile
+      } = await supabase.from('profiles').select('account_id').eq('user_id', currentUser.id).single();
       console.log('👤 [TOGGLE] Profile account_id:', profile?.account_id);
 
       // CRITICAL: Update forecasts_enabled BEFORE generating forecasts
       console.log('💾 [TOGGLE] Attempting database update...');
-      const { data: updateData, error: updateError } = await supabase
-        .from('user_settings')
-        .update({ 
-          forecasts_enabled: enabled,
-          updated_at: new Date().toISOString() // Force timestamp update
-        })
-        .eq('user_id', currentUser.id)
-        .select('forecasts_enabled, account_id')
-        .single();
-
-      console.log('📦 [TOGGLE] Update response:', { updateData, updateError });
-
+      const {
+        data: updateData,
+        error: updateError
+      } = await supabase.from('user_settings').update({
+        forecasts_enabled: enabled,
+        updated_at: new Date().toISOString() // Force timestamp update
+      }).eq('user_id', currentUser.id).select('forecasts_enabled, account_id').single();
+      console.log('📦 [TOGGLE] Update response:', {
+        updateData,
+        updateError
+      });
       if (updateError) {
         console.error('❌ [TOGGLE] Failed to update forecasts_enabled:', updateError);
         throw new Error(`Database update failed: ${updateError.message}`);
       }
-      
       if (!updateData) {
         console.error('❌ [TOGGLE] No data returned from update');
         throw new Error('Update succeeded but no data returned - check RLS policies');
       }
-      
       console.log('✅ [TOGGLE] Database updated successfully:', updateData);
       setSyncProgress(20);
 
       // Verify the update actually persisted with a fresh query
       await new Promise(resolve => setTimeout(resolve, 500)); // Wait for DB to settle
-      const { data: verifyData, error: verifyError } = await supabase
-        .from('user_settings')
-        .select('forecasts_enabled, account_id, updated_at')
-        .eq('user_id', currentUser.id)
-        .single();
-      
-      console.log('🔍 [TOGGLE] Verification query:', { verifyData, verifyError });
-      
+      const {
+        data: verifyData,
+        error: verifyError
+      } = await supabase.from('user_settings').select('forecasts_enabled, account_id, updated_at').eq('user_id', currentUser.id).single();
+      console.log('🔍 [TOGGLE] Verification query:', {
+        verifyData,
+        verifyError
+      });
       if (verifyError) {
         console.error('❌ [TOGGLE] Verification query failed:', verifyError);
         throw new Error(`Verification failed: ${verifyError.message}`);
       }
-      
       if (!verifyData) {
         console.error('❌ [TOGGLE] No settings found for user');
         throw new Error('User settings not found - may need to be created first');
       }
-      
       if (verifyData.forecasts_enabled !== enabled) {
         console.error('❌ [TOGGLE] Value mismatch after update!', {
           expected: enabled,
@@ -251,31 +219,26 @@ export const ForecastSettings = () => {
         });
         throw new Error(`Setting did not persist: expected ${enabled}, got ${verifyData.forecasts_enabled}`);
       }
-      
       console.log('✅ [TOGGLE] Verified value in DB matches expected:', verifyData);
-
       setForecastsEnabled(enabled);
-      
-      // Invalidate queries to ensure UI components refresh immediately
-      queryClient.invalidateQueries({ queryKey: ['user-settings'] });
-      queryClient.invalidateQueries({ queryKey: ['amazon-payouts'] });
-      
-      setSyncProgress(30);
 
+      // Invalidate queries to ensure UI components refresh immediately
+      queryClient.invalidateQueries({
+        queryKey: ['user-settings']
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['amazon-payouts']
+      });
+      setSyncProgress(30);
       if (!enabled) {
         // Delete all forecasted payouts when disabled
         setSyncProgress(50);
-        await supabase
-          .from('amazon_payouts')
-          .delete()
-          .eq('user_id', currentUser.id)
-          .eq('status', 'forecasted');
-        
+        await supabase.from('amazon_payouts').delete().eq('user_id', currentUser.id).eq('status', 'forecasted');
         setSyncProgress(80);
         await refetchPayouts();
         setSyncProgress(100);
         toast.success("Forecasts disabled and removed");
-        
+
         // Auto-refresh to ensure all charts and components reflect the change
         setTimeout(() => {
           window.location.reload();
@@ -283,34 +246,37 @@ export const ForecastSettings = () => {
       } else {
         // Automatically regenerate forecasts when enabled
         const loadingToastId = `forecast-generation-${Date.now()}`;
-        toast.loading("Starting forecast generation...", { id: loadingToastId });
+        toast.loading("Starting forecast generation...", {
+          id: loadingToastId
+        });
         setSyncProgress(40);
-        
         try {
           // CRITICAL: Delete ALL old forecasts FIRST before generating new ones
           console.log('🗑️ [TOGGLE] Deleting old forecasts before generation...');
-          const { error: deleteError } = await supabase
-            .from('amazon_payouts')
-            .delete()
-            .eq('user_id', currentUser.id)
-            .eq('status', 'forecasted');
-          
+          const {
+            error: deleteError
+          } = await supabase.from('amazon_payouts').delete().eq('user_id', currentUser.id).eq('status', 'forecasted');
           if (deleteError) {
             console.error('❌ [TOGGLE] Failed to delete old forecasts:', deleteError);
           } else {
             console.log('✅ [TOGGLE] Old forecasts deleted');
           }
-          
           setSyncProgress(45);
-          
+
           // Generate new forecasts using mathematical model
           console.log('🔄 [TOGGLE] Calling forecast generation edge function...');
-          const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts', {
-            body: { userId: currentUser.id }
+          const {
+            data,
+            error
+          } = await supabase.functions.invoke('forecast-amazon-payouts', {
+            body: {
+              userId: currentUser.id
+            }
           });
-
-          console.log('📨 [TOGGLE] Edge function response:', { data, error });
-
+          console.log('📨 [TOGGLE] Edge function response:', {
+            data,
+            error
+          });
           if (error) {
             toast.dismiss(loadingToastId);
             console.error('❌ [TOGGLE] Forecast generation error:', error);
@@ -318,40 +284,35 @@ export const ForecastSettings = () => {
             setSyncProgress(0);
             return;
           }
-
           console.log('📊 [TOGGLE] Starting forecast polling...');
           setSyncProgress(50);
 
           // Poll for NEW forecasts to appear in the database
           // Wait at least 3 seconds before first check to let edge function start
           await new Promise(resolve => setTimeout(resolve, 3000));
-          
           let forecastsFound = false;
           let attempts = 0;
           const maxAttempts = 20; // 20 attempts * 2 seconds = 40 seconds max
-          
+
           while (!forecastsFound && attempts < maxAttempts) {
             attempts++;
-            const progressPercent = 50 + (attempts / maxAttempts) * 30; // 50-80%
+            const progressPercent = 50 + attempts / maxAttempts * 30; // 50-80%
             setSyncProgress(progressPercent);
-            toast.loading(`Waiting for forecasts (${attempts}/${maxAttempts})...`, { id: loadingToastId });
+            toast.loading(`Waiting for forecasts (${attempts}/${maxAttempts})...`, {
+              id: loadingToastId
+            });
             console.log(`🔍 Polling for forecasts (attempt ${attempts}/${maxAttempts})...`);
-            
+
             // Wait 2 seconds between checks
             await new Promise(resolve => setTimeout(resolve, 2000));
-            
+
             // Check if NEW forecasts exist (created in last 2 minutes)
             const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
-            const { data: forecasts, error: fetchError } = await supabase
-              .from('amazon_payouts')
-              .select('id, created_at')
-              .eq('user_id', currentUser.id)
-              .eq('status', 'forecasted')
-              .gte('created_at', twoMinutesAgo)
-              .limit(1);
-            
+            const {
+              data: forecasts,
+              error: fetchError
+            } = await supabase.from('amazon_payouts').select('id, created_at').eq('user_id', currentUser.id).eq('status', 'forecasted').gte('created_at', twoMinutesAgo).limit(1);
             console.log(`🔍 [TOGGLE] Poll ${attempts}/${maxAttempts}: Found ${forecasts?.length || 0} NEW forecasts`);
-            
             if (fetchError) {
               console.error('❌ [TOGGLE] Error checking for forecasts:', fetchError);
               toast.dismiss(loadingToastId);
@@ -360,16 +321,13 @@ export const ForecastSettings = () => {
               setTogglingForecast(false);
               return;
             }
-            
             if (forecasts && forecasts.length > 0) {
               forecastsFound = true;
               console.log('✅ [TOGGLE] NEW forecasts found in database!', forecasts);
               break;
             }
           }
-          
           toast.dismiss(loadingToastId);
-          
           if (forecastsFound) {
             setSyncProgress(90);
             await refetchPayouts();
@@ -378,7 +336,7 @@ export const ForecastSettings = () => {
             toast.success("Forecasts generated using spec-based calculations!", {
               description: "Using bi-weekly settlement cycle with 7-day reserve lag per Amazon Forecasting Spec v2"
             });
-            
+
             // Auto-refresh to ensure all charts and components show the new forecasts
             setTimeout(() => {
               window.location.reload();
@@ -395,10 +353,10 @@ export const ForecastSettings = () => {
           setSyncProgress(0);
         }
       }
-      
+
       // Refetch settings to ensure UI is in sync
       await fetchSettings();
-      
+
       // Small delay to ensure realtime updates propagate
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
@@ -406,10 +364,11 @@ export const ForecastSettings = () => {
       toast.error("Failed to update forecast settings");
       // Revert on error
       setForecastsEnabled(!enabled);
-      
+
       // Invalidate queries to ensure UI reflects correct state
-      queryClient.invalidateQueries({ queryKey: ['user-settings'] });
-      
+      queryClient.invalidateQueries({
+        queryKey: ['user-settings']
+      });
       setSyncProgress(0);
     } finally {
       setTogglingForecast(false);
@@ -417,23 +376,21 @@ export const ForecastSettings = () => {
       setTimeout(() => setSyncProgress(0), 1000);
     }
   };
-
   const confirmDisableForecast = async () => {
     setShowDisableConfirm(false);
     setTogglingForecast(true);
-    
     try {
       console.log('[DISABLE] Calling disable-forecasts function...');
-      const { error } = await supabase.functions.invoke('disable-forecasts');
-
+      const {
+        error
+      } = await supabase.functions.invoke('disable-forecasts');
       if (error) {
         console.error('[DISABLE] Error:', error);
         throw error;
       }
-
       setForecastsEnabled(false);
       toast.success("Mathematical forecasts disabled. All forecasted payouts removed.");
-      
+
       // Reload to reflect changes
       setTimeout(() => {
         window.location.reload();
@@ -445,74 +402,64 @@ export const ForecastSettings = () => {
       setTogglingForecast(false);
     }
   };
-
   const handleSave = async () => {
     setSaving(true);
     console.log('🔵 Starting save with value:', confidenceThreshold);
-    
     try {
-      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: {
+          user: currentUser
+        },
+        error: userError
+      } = await supabase.auth.getUser();
       if (userError) {
         console.error('❌ Auth error:', userError);
         throw new Error("Authentication error: " + userError.message);
       }
       if (!currentUser) throw new Error("Not authenticated");
-
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('account_id')
-        .eq('user_id', currentUser.id)
-        .maybeSingle();
-
+      const {
+        data: profile,
+        error: profileError
+      } = await supabase.from('profiles').select('account_id').eq('user_id', currentUser.id).maybeSingle();
       if (profileError) {
         console.error('❌ Profile fetch error:', profileError);
         throw new Error("Failed to fetch profile: " + profileError.message);
       }
-
       if (!profile?.account_id) {
         console.error('❌ No account_id found in profile:', profile);
         throw new Error("Account not found. Please contact support.");
       }
-
       console.log('✅ Found account_id:', profile.account_id);
 
       // Update Amazon account payout model (DD+7 is standard)
       if (amazonAccounts && amazonAccounts.length > 0) {
         for (const account of amazonAccounts) {
-          await supabase
-            .from('amazon_accounts')
-            .update({
-              payout_model: payoutModel,
-              reserve_lag_days: 7 // DD+7 standard
-            })
-            .eq('id', account.id);
+          await supabase.from('amazon_accounts').update({
+            payout_model: payoutModel,
+            reserve_lag_days: 7 // DD+7 standard
+          }).eq('id', account.id);
         }
       }
 
       // Check if settings exist
-      const { data: existing } = await supabase
-        .from('user_settings')
-        .select('id, forecast_confidence_threshold')
-        .eq('user_id', currentUser.id)
-        .maybeSingle();
-
+      const {
+        data: existing
+      } = await supabase.from('user_settings').select('id, forecast_confidence_threshold').eq('user_id', currentUser.id).maybeSingle();
       console.log('💾 Current DB value:', existing?.forecast_confidence_threshold, '| Saving:', confidenceThreshold, forecastsEnabled);
-      
       if (!existing) {
         console.log('📝 Inserting new record');
-        const { data: insertedData, error: insertError } = await supabase
-          .from('user_settings')
-          .insert({
-            user_id: currentUser.id,
-            account_id: profile.account_id,
-            forecast_confidence_threshold: confidenceThreshold,
-            forecasts_enabled: forecastsEnabled,
-            advanced_modeling_enabled: advancedModelingEnabled ?? true, // Default to ON
-            default_reserve_lag_days: 7, // DD+7 standard
-          })
-          .select('forecast_confidence_threshold')
-          .single();
-        
+        const {
+          data: insertedData,
+          error: insertError
+        } = await supabase.from('user_settings').insert({
+          user_id: currentUser.id,
+          account_id: profile.account_id,
+          forecast_confidence_threshold: confidenceThreshold,
+          forecasts_enabled: forecastsEnabled,
+          advanced_modeling_enabled: advancedModelingEnabled ?? true,
+          // Default to ON
+          default_reserve_lag_days: 7 // DD+7 standard
+        }).select('forecast_confidence_threshold').single();
         if (insertError) {
           console.error('❌ Insert error:', insertError);
           throw insertError;
@@ -520,17 +467,14 @@ export const ForecastSettings = () => {
         console.log('✅ Inserted value:', insertedData?.forecast_confidence_threshold);
       } else {
         console.log('📝 Updating existing record');
-        const { data: updatedData, error: updateError } = await supabase
-          .from('user_settings')
-          .update({ 
-            forecast_confidence_threshold: confidenceThreshold,
-            forecasts_enabled: forecastsEnabled,
-            advanced_modeling_enabled: advancedModelingEnabled
-          })
-          .eq('user_id', currentUser.id)
-          .select('forecast_confidence_threshold')
-          .single();
-        
+        const {
+          data: updatedData,
+          error: updateError
+        } = await supabase.from('user_settings').update({
+          forecast_confidence_threshold: confidenceThreshold,
+          forecasts_enabled: forecastsEnabled,
+          advanced_modeling_enabled: advancedModelingEnabled
+        }).eq('user_id', currentUser.id).select('forecast_confidence_threshold').single();
         if (updateError) {
           console.error('❌ Update error:', updateError);
           throw updateError;
@@ -539,22 +483,17 @@ export const ForecastSettings = () => {
       }
 
       // Verify the save by reading back
-      const { data: verification } = await supabase
-        .from('user_settings')
-        .select('forecast_confidence_threshold')
-        .eq('user_id', currentUser.id)
-        .single();
-      
+      const {
+        data: verification
+      } = await supabase.from('user_settings').select('forecast_confidence_threshold').eq('user_id', currentUser.id).single();
       console.log('🔍 Verification - Value in DB after save:', verification?.forecast_confidence_threshold);
-      
       if (verification?.forecast_confidence_threshold !== confidenceThreshold) {
         console.error('⚠️ WARNING: Saved value does not match! Expected:', confidenceThreshold, 'Got:', verification?.forecast_confidence_threshold);
         toast.error("Save verification failed - value mismatch!");
         return;
       }
-
       console.log('✅ Forecast risk level saved and verified:', confidenceThreshold);
-      
+
       // Update saved values after successful save
       setSavedConfidenceThreshold(confidenceThreshold);
       setSavedAdvancedModelingEnabled(advancedModelingEnabled);
@@ -563,12 +502,9 @@ export const ForecastSettings = () => {
       if (!forecastsEnabled) {
         // Delete all forecasted payouts when disabled
         console.log('🗑️ Forecasts disabled, deleting forecasted payouts...');
-        const { error: deleteError } = await supabase
-          .from('amazon_payouts')
-          .delete()
-          .eq('user_id', currentUser.id)
-          .eq('status', 'forecasted');
-
+        const {
+          error: deleteError
+        } = await supabase.from('amazon_payouts').delete().eq('user_id', currentUser.id).eq('status', 'forecasted');
         if (deleteError) {
           console.error('❌ Error deleting forecasts:', deleteError);
           toast.error("Settings saved but failed to remove forecasted payouts");
@@ -580,16 +516,14 @@ export const ForecastSettings = () => {
         // Automatically regenerate forecasts
         console.log('🔄 Starting forecast regeneration...');
         const loadingToastId = `forecast-save-${Date.now()}`;
-        toast.loading("Regenerating forecasts...", { id: loadingToastId });
-        
+        toast.loading("Regenerating forecasts...", {
+          id: loadingToastId
+        });
         try {
           // Delete old forecasts
-          const { error: deleteError } = await supabase
-            .from('amazon_payouts')
-            .delete()
-            .eq('user_id', currentUser.id)
-            .eq('status', 'forecasted');
-
+          const {
+            error: deleteError
+          } = await supabase.from('amazon_payouts').delete().eq('user_id', currentUser.id).eq('status', 'forecasted');
           if (deleteError) {
             console.error('❌ Error deleting old forecasts:', deleteError);
           } else {
@@ -598,12 +532,18 @@ export const ForecastSettings = () => {
 
           // Generate new forecasts using mathematical model
           console.log('🤖 Calling forecast-amazon-payouts-math function...');
-          const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
-            body: { userId: currentUser.id }
+          const {
+            data,
+            error
+          } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
+            body: {
+              userId: currentUser.id
+            }
           });
-
-          console.log('📊 Forecast response:', { data, error });
-
+          console.log('📊 Forecast response:', {
+            data,
+            error
+          });
           if (error) {
             toast.dismiss(loadingToastId);
             console.error('❌ Forecast regeneration error:', error);
@@ -615,37 +555,33 @@ export const ForecastSettings = () => {
           let forecastsFound = false;
           let attempts = 0;
           const maxAttempts = 15; // 15 attempts * 2 seconds = 30 seconds max
-          
+
           while (!forecastsFound && attempts < maxAttempts) {
             attempts++;
-            toast.loading(`Waiting for forecasts (${attempts}/${maxAttempts})...`, { id: loadingToastId });
+            toast.loading(`Waiting for forecasts (${attempts}/${maxAttempts})...`, {
+              id: loadingToastId
+            });
             console.log(`🔍 Polling for forecasts (attempt ${attempts}/${maxAttempts})...`);
-            
+
             // Wait 2 seconds between checks
             await new Promise(resolve => setTimeout(resolve, 2000));
-            
+
             // Check if forecasts exist
-            const { data: forecasts, error: fetchError } = await supabase
-              .from('amazon_payouts')
-              .select('id')
-              .eq('user_id', currentUser.id)
-              .eq('status', 'forecasted')
-              .limit(1);
-            
+            const {
+              data: forecasts,
+              error: fetchError
+            } = await supabase.from('amazon_payouts').select('id').eq('user_id', currentUser.id).eq('status', 'forecasted').limit(1);
             if (fetchError) {
               console.error('❌ Error checking for forecasts:', fetchError);
               continue;
             }
-            
             if (forecasts && forecasts.length > 0) {
               forecastsFound = true;
               console.log('✅ Forecasts found in database!');
               break;
             }
           }
-          
           toast.dismiss(loadingToastId);
-          
           if (forecastsFound) {
             console.log('✅ Forecasts regenerated successfully');
             await refetchPayouts();
@@ -661,10 +597,10 @@ export const ForecastSettings = () => {
           toast.error("An error occurred during forecast regeneration");
         }
       }
-      
+
       // Refetch settings to update UI state
       await fetchSettings();
-      
+
       // Refresh payout data to show updated data
       await refetchPayouts();
     } catch (error) {
@@ -675,49 +611,55 @@ export const ForecastSettings = () => {
       setSaving(false);
     }
   };
-
   const getSafetyLevel = (value: number) => {
-    if (value === 15) return { label: "Conservative (Safe)", color: "bg-emerald-500", index: 2, discount: "−15%" };
-    if (value === 8) return { label: "Moderate (Balanced)", color: "bg-blue-500", index: 1, discount: "−8%" };
-    return { label: "Aggressive (Fast Cycle)", color: "bg-orange-500", index: 0, discount: "−3%" };
+    if (value === 15) return {
+      label: "Conservative (Safe)",
+      color: "bg-emerald-500",
+      index: 2,
+      discount: "−15%"
+    };
+    if (value === 8) return {
+      label: "Moderate (Balanced)",
+      color: "bg-blue-500",
+      index: 1,
+      discount: "−8%"
+    };
+    return {
+      label: "Aggressive (Fast Cycle)",
+      color: "bg-orange-500",
+      index: 0,
+      discount: "−3%"
+    };
   };
-
-  const tiers = [
-    { 
-      value: 3, 
-      label: "Aggressive", 
-      color: "bg-orange-500", 
-      recommended: false, 
-      subtitle: "Fast Cycle (−3%)",
-      hint: "Minimal buffer - best for stable sales with low returns and chargebacks."
-    },
-    { 
-      value: 8, 
-      label: "Moderate", 
-      color: "bg-blue-500", 
-      recommended: true, 
-      subtitle: "Balanced (−8%)",
-      hint: "Balanced protection - accounts for typical reserve delays and return rates."
-    },
-    { 
-      value: 15, 
-      label: "Conservative", 
-      color: "bg-emerald-500", 
-      recommended: false, 
-      subtitle: "Safe (−15%)",
-      hint: "Maximum safety net - best for volatile sales or high return categories."
-    }
-  ];
-
+  const tiers = [{
+    value: 3,
+    label: "Aggressive",
+    color: "bg-orange-500",
+    recommended: false,
+    subtitle: "Fast Cycle (−3%)",
+    hint: "Minimal buffer - best for stable sales with low returns and chargebacks."
+  }, {
+    value: 8,
+    label: "Moderate",
+    color: "bg-blue-500",
+    recommended: true,
+    subtitle: "Balanced (−8%)",
+    hint: "Balanced protection - accounts for typical reserve delays and return rates."
+  }, {
+    value: 15,
+    label: "Conservative",
+    color: "bg-emerald-500",
+    recommended: false,
+    subtitle: "Safe (−15%)",
+    hint: "Maximum safety net - best for volatile sales or high return categories."
+  }];
   const safetyLevel = getSafetyLevel(confidenceThreshold);
   const savedSafetyLevel = getSafetyLevel(savedConfidenceThreshold); // For "Current" display
 
   if (loading) {
     return <div>Loading...</div>;
   }
-
-  return (
-    <>
+  return <>
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -726,98 +668,69 @@ export const ForecastSettings = () => {
               <CardTitle>Mathematical Forecast Settings</CardTitle>
             </div>
             <div className="flex items-center gap-3">
-              {!isOnForecastPage && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate('/ai-forecast')}
-                  className="flex items-center gap-2"
-                >
-                  <TrendingUp className="h-4 w-4" />
-                  View Advanced Forecast
-                </Button>
-              )}
-              {forecastsEnabled && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    setSyncProgress(10);
-                    toast.loading("Regenerating forecasts...");
-                    try {
-                      const { data: { user: currentUser } } = await supabase.auth.getUser();
-                      if (!currentUser) throw new Error("Not authenticated");
-                      
-                      setSyncProgress(30);
-                      // Delete old forecasts
-                      await supabase
-                        .from('amazon_payouts')
-                        .delete()
-                        .eq('user_id', currentUser.id)
-                        .eq('status', 'forecasted');
-                      
-                      setSyncProgress(50);
-                      // Generate new forecasts
-                      const { error } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
-                        body: { userId: currentUser.id }
-                      });
-                      
-                      if (error) throw error;
-                      
-                      setSyncProgress(80);
-                      await refetchPayouts();
-                      setSyncProgress(100);
-                      toast.dismiss();
-                      toast.success("Forecasts regenerated successfully!");
-                      setTimeout(() => setSyncProgress(0), 500);
-                    } catch (error) {
-                      console.error("Regeneration error:", error);
-                      toast.dismiss();
-                      toast.error("Failed to regenerate forecasts");
-                      setSyncProgress(0);
-                    }
-                  }}
-                  disabled={togglingForecast || syncProgress > 0}
-                  className="flex items-center gap-2"
-                >
+              {!isOnForecastPage}
+              {forecastsEnabled && <Button variant="outline" size="sm" onClick={async () => {
+              setSyncProgress(10);
+              toast.loading("Regenerating forecasts...");
+              try {
+                const {
+                  data: {
+                    user: currentUser
+                  }
+                } = await supabase.auth.getUser();
+                if (!currentUser) throw new Error("Not authenticated");
+                setSyncProgress(30);
+                // Delete old forecasts
+                await supabase.from('amazon_payouts').delete().eq('user_id', currentUser.id).eq('status', 'forecasted');
+                setSyncProgress(50);
+                // Generate new forecasts
+                const {
+                  error
+                } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
+                  body: {
+                    userId: currentUser.id
+                  }
+                });
+                if (error) throw error;
+                setSyncProgress(80);
+                await refetchPayouts();
+                setSyncProgress(100);
+                toast.dismiss();
+                toast.success("Forecasts regenerated successfully!");
+                setTimeout(() => setSyncProgress(0), 500);
+              } catch (error) {
+                console.error("Regeneration error:", error);
+                toast.dismiss();
+                toast.error("Failed to regenerate forecasts");
+                setSyncProgress(0);
+              }
+            }} disabled={togglingForecast || syncProgress > 0} className="flex items-center gap-2">
                   <RefreshCw className="h-4 w-4" />
                   Regenerate
-                </Button>
-              )}
+                </Button>}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="flex items-center gap-2">
                       <Label htmlFor="forecast-toggle" className="text-sm">
-                        Mathematical Forecasts {(forecastsEnabled && hasAmazonStore) ? 'Enabled' : 'Disabled'}
+                        Mathematical Forecasts {forecastsEnabled && hasAmazonStore ? 'Enabled' : 'Disabled'}
                       </Label>
-                      <Switch
-                        id="forecast-toggle"
-                        checked={forecastsEnabled && hasAmazonStore && canEnableForecasts}
-                        onCheckedChange={handleToggleForecast}
-                        disabled={togglingForecast || !hasAmazonStore || !canEnableForecasts}
-                      />
+                      <Switch id="forecast-toggle" checked={forecastsEnabled && hasAmazonStore && canEnableForecasts} onCheckedChange={handleToggleForecast} disabled={togglingForecast || !hasAmazonStore || !canEnableForecasts} />
                     </div>
                   </TooltipTrigger>
-                  {!hasAmazonStore ? (
-                    <TooltipContent>
+                  {!hasAmazonStore ? <TooltipContent>
                       <p>Connect an Amazon account to enable forecasting</p>
-                    </TooltipContent>
-                  ) : isSyncing ? (
-                    <TooltipContent>
+                    </TooltipContent> : isSyncing ? <TooltipContent>
                       <p>Amazon sync in progress</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Wait for sync to complete before enabling forecasts
                       </p>
-                    </TooltipContent>
-                  ) : !canEnableForecasts ? (
-                    <TooltipContent>
+                    </TooltipContent> : !canEnableForecasts ? <TooltipContent>
                       <p>Forecast available in {hoursUntilForecastAvailable} hours</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         3-hour data collection period required
                       </p>
-                    </TooltipContent>
-                  ) : null}
+                    </TooltipContent> : null}
                 </Tooltip>
               </TooltipProvider>
               <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/20">
@@ -825,28 +738,19 @@ export const ForecastSettings = () => {
               </Badge>
             </div>
           </div>
-           {syncProgress > 0 && syncProgress < 100 && (
-            <div className="mt-3 space-y-2">
+           {syncProgress > 0 && syncProgress < 100 && <div className="mt-3 space-y-2">
               <Progress value={syncProgress} className="h-2" />
               <p className="text-xs text-muted-foreground text-center">
-                {syncProgress < 40 ? 'Updating settings...' : 
-                 syncProgress < 60 ? 'Generating forecasts...' : 
-                 syncProgress < 90 ? 'Waiting for sync...' : 'Finalizing...'}
+                {syncProgress < 40 ? 'Updating settings...' : syncProgress < 60 ? 'Generating forecasts...' : syncProgress < 90 ? 'Waiting for sync...' : 'Finalizing...'}
               </p>
-            </div>
-          )}
+            </div>}
           <CardDescription>
-            {forecastsEnabled && canEnableForecasts ? (
-              <div className="space-y-2">
+            {forecastsEnabled && canEnableForecasts ? <div className="space-y-2">
                 <div>Adjust the conservatism of your Amazon payout forecasts</div>
-                {!loading && (
-                  <div className="text-xs text-muted-foreground">
+                {!loading && <div className="text-xs text-muted-foreground">
                     Current safety net: <span className="font-semibold">{savedSafetyLevel.label} {savedSafetyLevel.discount}</span>
-                  </div>
-                )}
-              </div>
-            ) : !canEnableForecasts ? (
-              <div className="mt-2 space-y-1">
+                  </div>}
+              </div> : !canEnableForecasts ? <div className="mt-2 space-y-1">
                 <div className="text-sm text-blue-600 dark:text-blue-400 flex items-center gap-2">
                   <AlertCircle className="h-4 w-4" />
                   Forecasts will be available in {hoursUntilForecastAvailable} hours
@@ -854,28 +758,26 @@ export const ForecastSettings = () => {
                 <div className="text-xs text-muted-foreground">
                   We need 3 hours to collect enough Amazon data for accurate forecasting
                 </div>
-              </div>
-            ) : (
-              <div className="mt-2 space-y-1">
+              </div> : <div className="mt-2 space-y-1">
                 <p className="text-sm text-orange-600 dark:text-orange-400 flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4" />
                   Mathematical forecasts are currently disabled
                 </p>
-              </div>
-            )}
+              </div>}
           </CardDescription>
         </CardHeader>
       <CardContent className="space-y-6">
-        {!forecastsEnabled && (
-          <div className="rounded-lg border-2 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/20 p-4">
+        {!forecastsEnabled && <div className="rounded-lg border-2 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-950/20 p-4">
             <p className="text-sm text-orange-800 dark:text-orange-200">
               All AI-forecasted Amazon payouts have been removed from your cash flow projections. 
               Only confirmed payouts will be shown.
             </p>
-          </div>
-        )}
+          </div>}
         
-        <div className="space-y-4" style={{ opacity: forecastsEnabled ? 1 : 0.5, pointerEvents: forecastsEnabled ? 'auto' : 'none' }}>
+        <div className="space-y-4" style={{
+          opacity: forecastsEnabled ? 1 : 0.5,
+          pointerEvents: forecastsEnabled ? 'auto' : 'none'
+        }}>
           {/* Mathematical Forecasting Model Selection */}
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <div className="flex items-start gap-3">
@@ -891,37 +793,23 @@ export const ForecastSettings = () => {
                 </p>
                 
                 <div className="space-y-3">
-                  {userSelectedPayoutModel && (
-                    <div className="p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  {userSelectedPayoutModel && <div className="p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
                       <p className="text-xs text-green-800 dark:text-green-200 flex items-center gap-1.5">
                         <AlertCircle className="h-3.5 w-3.5" />
                         Using your selected payout schedule: <span className="font-semibold">{userSelectedPayoutModel === 'bi-weekly' ? '14-Day Settlements' : 'Daily Available'}</span>
                       </p>
-                    </div>
-                  )}
+                    </div>}
                   
                   <div>
                     <Label className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-2 block">
                       Forecast Model {userSelectedPayoutModel ? '(From Account Settings)' : ''}
                     </Label>
                     <div className="grid grid-cols-2 gap-2">
-                      <div
-                        className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                          userSelectedPayoutModel === 'bi-weekly'
-                            ? 'bg-blue-600 text-white shadow-md'
-                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 opacity-50'
-                        }`}
-                      >
+                      <div className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${userSelectedPayoutModel === 'bi-weekly' ? 'bg-blue-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 opacity-50'}`}>
                         <div className="font-semibold">14-Day Settlements</div>
                         <div className="text-[10px] opacity-80">Standard bi-weekly</div>
                       </div>
-                      <div
-                        className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                          userSelectedPayoutModel === 'daily'
-                            ? 'bg-purple-600 text-white shadow-md'
-                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 opacity-50'
-                        }`}
-                      >
+                      <div className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${userSelectedPayoutModel === 'daily' ? 'bg-purple-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 opacity-50'}`}>
                         <div className="font-semibold">Daily Available</div>
                         <div className="text-[10px] opacity-80">Withdrawable funds</div>
                       </div>
@@ -951,9 +839,7 @@ export const ForecastSettings = () => {
                 <div className="mt-3 p-2 bg-white/50 dark:bg-slate-900/50 rounded text-[10px] text-slate-600 dark:text-slate-400">
                   <p className="font-medium mb-1">Calculation Method:</p>
                   <p>
-                    {payoutModel === 'bi-weekly' 
-                      ? 'Payout = [Eligible in Period + Prior Balance + Adjustments] - Reserve(DD+7)'
-                      : 'Daily Available = Eligible Cash - Account Reserve(DD+7) - Min Floor'}
+                    {payoutModel === 'bi-weekly' ? 'Payout = [Eligible in Period + Prior Balance + Adjustments] - Reserve(DD+7)' : 'Daily Available = Eligible Cash - Account Reserve(DD+7) - Min Floor'}
                   </p>
                 </div>
               </div>
@@ -987,44 +873,28 @@ export const ForecastSettings = () => {
           </div>
 
           <div className="grid grid-cols-3 gap-2 mb-4">
-            {tiers.map((tier) => (
-              <button
-                key={tier.value}
-                type="button"
-                onClick={() => {
-                  console.log('🎯 Selected tier:', tier.label, 'Value:', tier.value);
-                  setConfidenceThreshold(tier.value);
-                }}
-                className={`p-4 rounded-lg border-2 transition-all relative ${
-                  confidenceThreshold === tier.value
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border hover:border-primary/50'
-                }`}
-              >
-                {tier.recommended && (
-                  <Badge className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-0.5">
+            {tiers.map(tier => <button key={tier.value} type="button" onClick={() => {
+              console.log('🎯 Selected tier:', tier.label, 'Value:', tier.value);
+              setConfidenceThreshold(tier.value);
+            }} className={`p-4 rounded-lg border-2 transition-all relative ${confidenceThreshold === tier.value ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'}`}>
+                {tier.recommended && <Badge className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs px-2 py-0.5">
                     Recommended
-                  </Badge>
-                )}
+                  </Badge>}
                 <div className={`w-3 h-3 rounded-full ${tier.color} mx-auto mb-2`} />
                 <div className="text-sm font-medium mb-1">{tier.label}</div>
                 <div className="text-[10px] text-muted-foreground mb-2">{tier.subtitle}</div>
                 <div className="text-[9px] text-muted-foreground italic line-clamp-2">{tier.hint}</div>
-                {savedConfidenceThreshold === tier.value && confidenceThreshold !== tier.value && (
-                  <div className="absolute top-1 left-1">
+                {savedConfidenceThreshold === tier.value && confidenceThreshold !== tier.value && <div className="absolute top-1 left-1">
                     <Badge variant="outline" className="text-[9px] px-1 py-0">
                       Saved
                     </Badge>
-                  </div>
-                )}
-              </button>
-            ))}
+                  </div>}
+              </button>)}
           </div>
         </div>
 
         {/* Advanced Modeling Toggle */}
-        {payoutModel === 'daily' && (
-          <div className="rounded-lg border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 p-4 space-y-3">
+        {payoutModel === 'daily' && <div className="rounded-lg border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-purple-600" />
@@ -1037,17 +907,11 @@ export const ForecastSettings = () => {
                   </p>
                 </div>
               </div>
-              <Switch
-                id="advanced-modeling"
-                checked={advancedModelingEnabled}
-                onCheckedChange={setAdvancedModelingEnabled}
-                disabled={!forecastsEnabled || !canEnableAdvancedModeling}
-              />
+              <Switch id="advanced-modeling" checked={advancedModelingEnabled} onCheckedChange={setAdvancedModelingEnabled} disabled={!forecastsEnabled || !canEnableAdvancedModeling} />
             </div>
             
             
-            {advancedModelingEnabled && canEnableAdvancedModeling && (
-              <div className="p-3 bg-white/70 dark:bg-slate-900/50 rounded text-xs text-slate-700 dark:text-slate-300 space-y-2">
+            {advancedModelingEnabled && canEnableAdvancedModeling && <div className="p-3 bg-white/70 dark:bg-slate-900/50 rounded text-xs text-slate-700 dark:text-slate-300 space-y-2">
                 <p className="font-medium text-purple-800 dark:text-purple-200">How it works:</p>
                 <ul className="space-y-1 ml-4 list-disc text-[10px]">
                   <li><strong>Extracts real Amazon BeginningBalance</strong> from open settlements</li>
@@ -1055,10 +919,8 @@ export const ForecastSettings = () => {
                   <li><strong>Cumulative unlocking</strong>: Funds add up each day if not withdrawn</li>
                   <li>Example: If $30k total → Day 1: $2.5k, Day 2: +$3k = $5.5k available, etc.</li>
                 </ul>
-              </div>
-            )}
-          </div>
-        )}
+              </div>}
+          </div>}
 
         <div className="rounded-lg bg-muted/50 p-4 space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium">
@@ -1077,25 +939,17 @@ export const ForecastSettings = () => {
           <Tooltip>
             <TooltipTrigger asChild>
               <div>
-                <Button 
-                  onClick={handleSave} 
-                  disabled={saving || !forecastsEnabled || (confidenceThreshold === savedConfidenceThreshold && advancedModelingEnabled === savedAdvancedModelingEnabled)}
-                  className="w-full"
-                >
-                  {saving ? "Saving..." : (confidenceThreshold === savedConfidenceThreshold && advancedModelingEnabled === savedAdvancedModelingEnabled) ? "No Changes to Save" : "Save Forecast Settings"}
+                <Button onClick={handleSave} disabled={saving || !forecastsEnabled || confidenceThreshold === savedConfidenceThreshold && advancedModelingEnabled === savedAdvancedModelingEnabled} className="w-full">
+                  {saving ? "Saving..." : confidenceThreshold === savedConfidenceThreshold && advancedModelingEnabled === savedAdvancedModelingEnabled ? "No Changes to Save" : "Save Forecast Settings"}
                 </Button>
               </div>
             </TooltipTrigger>
-            {!hasAmazonStore && (
-              <TooltipContent>
+            {!hasAmazonStore && <TooltipContent>
                 <p>Connect an Amazon store to enable forecast settings</p>
-              </TooltipContent>
-            )}
-            {!forecastsEnabled && (
-              <TooltipContent>
+              </TooltipContent>}
+            {!forecastsEnabled && <TooltipContent>
                 <p>Enable mathematical forecasts to adjust settings</p>
-              </TooltipContent>
-            )}
+              </TooltipContent>}
           </Tooltip>
         </TooltipProvider>
       </CardContent>
@@ -1124,10 +978,7 @@ export const ForecastSettings = () => {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={confirmDisableForecast}
-            className="bg-orange-600 hover:bg-orange-700"
-          >
+          <AlertDialogAction onClick={confirmDisableForecast} className="bg-orange-600 hover:bg-orange-700">
             Disable Forecasts
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -1155,6 +1006,5 @@ export const ForecastSettings = () => {
         </DialogHeader>
       </DialogContent>
     </Dialog>
-    </>
-  );
+    </>;
 };
