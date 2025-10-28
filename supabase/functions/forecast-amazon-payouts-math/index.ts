@@ -301,14 +301,14 @@ serve(async (req) => {
               
               console.log(`[MATH-FORECAST] Generated ${dailyDist.length} daily distribution entries for open settlement`);
               
-              // Convert to forecast format - these show cumulative unlocking
+              // Convert to forecast format - each day shows its unlock amount (not cumulative)
               settlementForecasts = dailyDist.map(dist => ({
                 user_id: userId,
                 account_id: accountId,
                 amazon_account_id: account.id,
                 settlement_id: `FORECAST-OPEN-${dist.date}`,
                 payout_date: dist.date,
-                total_amount: Math.round(dist.cumulative_available * 100) / 100,
+                total_amount: Math.round(dist.daily_unlock * 100) / 100, // Daily unlock, not cumulative
                 currency_code: 'USD',
                 status: 'forecasted',
                 payout_type: 'daily',
@@ -327,14 +327,14 @@ serve(async (req) => {
                 refunds_total: dist.days_accumulated,
               }));
               
-              // Track last cumulative amount and date for continuation
+              // Track date for continuation (no cumulative tracking for daily payouts)
               if (settlementForecasts.length > 0) {
                 const lastForecast = settlementForecasts[settlementForecasts.length - 1];
-                lastCumulativeAmount = lastForecast.total_amount;
                 forecastStartDate = new Date(lastForecast.payout_date);
                 forecastStartDate.setDate(forecastStartDate.getDate() + 1); // Start next day
                 
-                console.log(`[MATH-FORECAST] Open settlement ends on ${lastForecast.payout_date} with cumulative: $${lastCumulativeAmount.toFixed(2)}`);
+                const totalDistributed = dailyDist.reduce((sum, d) => sum + d.daily_unlock, 0);
+                console.log(`[MATH-FORECAST] Open settlement ends on ${lastForecast.payout_date}, total distributed: $${totalDistributed.toFixed(2)}`);
               }
             }
           }
@@ -372,11 +372,8 @@ serve(async (req) => {
             // Add realistic variance: ±10% random variation
             const varianceFactor = 0.9 + (Math.random() * 0.2); // 0.9 to 1.1
             
-            // Calculate daily amount with all adjustments
+            // Calculate daily amount with all adjustments (no accumulation for daily payouts)
             const dailyAmount = adjustedDailyAvg * seasonalMultiplier * varianceFactor;
-            
-            // Each day adds to cumulative total
-            lastCumulativeAmount += dailyAmount;
             
             settlementForecasts.push({
               user_id: userId,
@@ -384,16 +381,16 @@ serve(async (req) => {
               amazon_account_id: account.id,
               settlement_id: `FORECAST-${forecastDate.toISOString().split('T')[0]}`,
               payout_date: forecastDate.toISOString().split('T')[0],
-              total_amount: Math.round(lastCumulativeAmount * 100) / 100,
+              total_amount: Math.round(dailyAmount * 100) / 100, // Daily amount, not cumulative
               currency_code: 'USD',
               status: 'forecasted',
               payout_type: 'daily',
               marketplace_name: account.marketplace_name || 'Amazon.com',
               modeling_method: 'mathematical_daily',
               raw_settlement_data: {
-                method: 'cumulative_daily_average',
-                daily_unlock_amount: Math.round(dailyAmount * 100) / 100,
-                cumulative_available: Math.round(lastCumulativeAmount * 100) / 100,
+                method: 'daily_average_with_adjustments',
+                daily_amount: Math.round(dailyAmount * 100) / 100,
+                base_daily_avg: adjustedDailyAvg,
                 seasonality: seasonalMultiplier,
                 variance: varianceFactor,
                 source: 'historical_average'
