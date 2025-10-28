@@ -52,12 +52,6 @@ export default function AmazonForecast() {
   const [amazonTransactions, setAmazonTransactions] = useState<any[]>([]);
   const [isDeletingSampleData, setIsDeletingSampleData] = useState(false);
   const [growthTimeframe, setGrowthTimeframe] = useState<'30d' | '60d' | '90d' | '6m' | '1y'>('1y');
-  
-  // Date range state for metrics filtering
-  const [dateRange, setDateRange] = useState<{from: Date | undefined, to: Date | undefined}>({
-    from: new Date(new Date().setDate(new Date().getDate() - 90)),
-    to: new Date()
-  });
 
   // Check if user has 3+ confirmed payouts
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
@@ -245,12 +239,9 @@ export default function AmazonForecast() {
 
   // Calculate key metrics
   const metrics = useMemo(() => {
-    // Filter to only confirmed payouts and exclude sample data, and apply date range filter
+    // Filter to only confirmed payouts and exclude sample data
     const confirmedPayouts = amazonPayouts.filter(p => {
-      const payoutDate = new Date(p.payout_date);
-      const inDateRange = (!dateRange.from || payoutDate >= dateRange.from) && 
-                          (!dateRange.to || payoutDate <= dateRange.to);
-      return p.status === 'confirmed' && p.marketplace_name !== 'Amazon.com' && inDateRange;
+      return p.status === 'confirmed' && p.marketplace_name !== 'Amazon.com';
     });
     
     const totalPayouts = confirmedPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
@@ -306,7 +297,7 @@ export default function AmazonForecast() {
       payoutCount: confirmedPayouts.length,
       comparisonPeriod
     };
-  }, [amazonPayouts, growthTimeframe, dateRange]);
+  }, [amazonPayouts, growthTimeframe]);
 
   // Calculate forecast accuracy
   const [forecastAccuracy, setForecastAccuracy] = useState<number | null>(null);
@@ -384,53 +375,27 @@ export default function AmazonForecast() {
         </Card>
       )}
 
-      {/* Key Metrics with Date Range Filter */}
+      {/* Mathematical Forecast Settings */}
+      <ForecastSettings />
+
+      {/* Key Metrics */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div className="space-y-1">
             <CardTitle>Overview Metrics</CardTitle>
             <CardDescription>Key performance indicators for your Amazon payouts</CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-[280px] justify-start text-left font-normal", !dateRange.from && "text-muted-foreground")}>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateRange.from ? (
-                    dateRange.to ? (
-                      <>
-                        {format(dateRange.from, "MMM dd, yyyy")} - {format(dateRange.to, "MMM dd, yyyy")}
-                      </>
-                    ) : (
-                      format(dateRange.from, "MMM dd, yyyy")
-                    )
-                  ) : (
-                    <span>Pick a date range</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  mode="range"
-                  selected={{ from: dateRange.from, to: dateRange.to }}
-                  onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
-                  numberOfMonths={2}
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-            {amazonPayouts.some(p => p.marketplace_name === 'Amazon.com') && (
-              <Button 
-                onClick={deleteSampleData} 
-                disabled={isDeletingSampleData}
-                variant="outline"
-                size="sm"
-                className="border-red-300 text-red-700 hover:bg-red-50"
-              >
-                {isDeletingSampleData ? 'Deleting...' : 'Delete Sample Data'}
-              </Button>
-            )}
-          </div>
+          {amazonPayouts.some(p => p.marketplace_name === 'Amazon.com') && (
+            <Button 
+              onClick={deleteSampleData} 
+              disabled={isDeletingSampleData}
+              variant="outline"
+              size="sm"
+              className="border-red-300 text-red-700 hover:bg-red-50"
+            >
+              {isDeletingSampleData ? 'Deleting...' : 'Delete Sample Data'}
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-4">
@@ -627,8 +592,6 @@ export default function AmazonForecast() {
         </CardContent>
       </Card>
 
-      {/* Forecast Settings */}
-      <ForecastSettings />
 
       {/* Forecasted Payouts Log */}
       <Card>
