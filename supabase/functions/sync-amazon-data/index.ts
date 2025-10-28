@@ -1090,44 +1090,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       }
     }
     
-    // Save settlements from groups
-    if (settlementsToAdd.length > 0) {
-      const uniqueSettlements = settlementsToAdd.reduce((acc, settlement) => {
-        const key = settlement.settlement_id
-        if (!acc.has(key)) {
-          acc.set(key, settlement)
-        }
-        return acc
-      }, new Map())
-      
-      const deduplicatedSettlements = Array.from(uniqueSettlements.values())
-      
-      // Delete any forecasted payouts that overlap with real settlements
-      const settlementDates = deduplicatedSettlements.map(s => s.payout_date)
-      if (settlementDates.length > 0) {
-        await supabase
-          .from('amazon_payouts')
-          .delete()
-          .eq('amazon_account_id', amazonAccountId)
-          .eq('status', 'forecasted')
-          .in('payout_date', settlementDates)
-        
-        console.log(`[SYNC] Cleared forecasted payouts for ${settlementDates.length} settlement dates`)
-      }
-      
-      const { error: settlementError } = await supabase
-        .from('amazon_payouts')
-        .upsert(deduplicatedSettlements, { 
-          onConflict: 'amazon_account_id,settlement_id',
-          ignoreDuplicates: false 
-        })
-      
-      if (settlementError) {
-        console.error('[SYNC] Settlement insert error:', settlementError)
-      } else {
-        console.log(`[SYNC] ✓ Saved ${deduplicatedSettlements.length} settlements from groups`)
-      }
-    }
+    // Note: Settlements are now saved during the backfill phase above
+    // This transaction sync phase only handles transactions
 
     // Get updated transaction count from both tables
     const { count: recentTransactionCount, error: countError } = await supabase
@@ -1308,7 +1272,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
               userId: actualUserId,
               accountName: accountData.account_name,
               transactionCount: totalTransactionCount,
-              settlementCount: settlementsToAdd.length,
+              settlementCount: 0, // Settlements are tracked separately during backfill phase
               syncDuration: syncDuration
             }
           })
