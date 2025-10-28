@@ -263,12 +263,12 @@ export const ForecastSettings = () => {
           }
           setSyncProgress(45);
 
-          // Generate new forecasts using mathematical model
+          // Generate new forecasts using seasonality model
           console.log('🔄 [TOGGLE] Calling forecast generation edge function...');
           const {
             data,
             error
-          } = await supabase.functions.invoke('forecast-amazon-payouts', {
+          } = await supabase.functions.invoke('forecast-amazon-payouts-seasonality', {
             body: {
               userId: currentUser.id
             }
