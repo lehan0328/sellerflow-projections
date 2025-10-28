@@ -538,15 +538,15 @@ export function AmazonPayouts() {
         {(() => {
           const todayStr = new Date().toISOString().split('T')[0];
           
-          // Filter open settlements across ALL connected Amazon accounts
+          // Filter open settlements across ALL connected Amazon accounts - only for today
           const openSettlements = amazonPayouts.filter(p => {
             const rawData = p.raw_settlement_data;
             const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
             const payoutDateStr = p.payout_date.split('T')[0]; // Get just YYYY-MM-DD
-            const isTodayOrFuture = payoutDateStr >= todayStr;
+            const isToday = payoutDateStr === todayStr;
             const isEstimated = p.status === 'estimated';
             
-            return isEstimated && !hasEndDate && isTodayOrFuture;
+            return isEstimated && !hasEndDate && isToday;
           });
           
           if (openSettlements.length === 0) {
