@@ -1542,17 +1542,16 @@ serve(async (req) => {
       actualUserId = user.id
     }
 
-    // Start background sync - no HTTP timeout!
-    console.log('[SYNC] Starting background sync...')
-    EdgeRuntime.waitUntil(
-      performBackgroundSync(amazonAccountId, actualUserId, supabase)
-    )
+    // Run sync directly - no background pattern
+    console.log('[SYNC] Starting sync...')
+    await performBackgroundSync(amazonAccountId, actualUserId, supabase)
     
-    // Return immediately
+    // Return after sync completes (or exits early for batch processing)
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: 'Sync started in background'
+        status: 'processing',
+        message: 'Sync in progress'
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
