@@ -211,12 +211,45 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to download report: ${downloadResponse.status}`)
     }
 
-    let reportContent = await downloadResponse.text()
+    let reportContent: string
     
     // Decompress if needed
     if (compressionAlgorithm === 'GZIP') {
-      // Handle GZIP decompression if needed
-      console.log('[REPORTS] Note: GZIP compression detected, may need decompression')
+      console.log('[REPORTS] GZIP compression detected, decompressing...')
+      
+      // Get the response as an array buffer
+      const compressedData = await downloadResponse.arrayBuffer()
+      
+      // Create a decompression stream
+      const decompressedStream = new ReadableStream({
+        start(controller) {
+          const decompressor = new DecompressionStream('gzip')
+          const writer = decompressor.writable.getWriter()
+          writer.write(new Uint8Array(compressedData))
+          writer.close()
+          
+          const reader = decompressor.readable.getReader()
+          const pump = () => {
+            reader.read().then(({ done, value }) => {
+              if (done) {
+                controller.close()
+                return
+              }
+              controller.enqueue(value)
+              pump()
+            })
+          }
+          pump()
+        }
+      })
+      
+      // Read the decompressed data
+      const decompressedData = await new Response(decompressedStream).arrayBuffer()
+      reportContent = new TextDecoder().decode(decompressedData)
+      
+      console.log('[REPORTS] Decompression complete')
+    } else {
+      reportContent = await downloadResponse.text()
     }
 
     console.log(`[REPORTS] Downloaded ${reportContent.length} bytes`)
