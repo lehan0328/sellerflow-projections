@@ -251,11 +251,18 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
               
               let payoutDate: string
               if (settlementEndDate) {
+                // Closed settlement: payout arrives 1 day after close
                 const payoutDateObj = new Date(settlementEndDate)
                 payoutDateObj.setDate(payoutDateObj.getDate() + 1)
                 payoutDate = payoutDateObj.toISOString().split('T')[0]
               } else {
-                payoutDate = new Date().toISOString().split('T')[0]
+                // Open settlement: calculate estimated close date (start + 14 days for bi-weekly)
+                const settlementStartDate = group.FinancialEventGroupStart ? 
+                  new Date(group.FinancialEventGroupStart) : new Date()
+                const estimatedCloseDate = new Date(settlementStartDate)
+                estimatedCloseDate.setDate(estimatedCloseDate.getDate() + 14) // Bi-weekly period
+                payoutDate = estimatedCloseDate.toISOString().split('T')[0]
+                console.log(`[SYNC] Open settlement ${group.FinancialEventGroupId}: start=${settlementStartDate.toISOString().split('T')[0]}, estimated_close=${payoutDate}`)
               }
               
               const status = settlementEndDate && settlementEndDate <= new Date() ? 'confirmed' : 'estimated'

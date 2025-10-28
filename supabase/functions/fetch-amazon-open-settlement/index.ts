@@ -132,7 +132,13 @@ Deno.serve(async (req) => {
             payoutDateObj.setDate(payoutDateObj.getDate() + 1) // Add 1 day for bank deposit
             payoutDate = payoutDateObj.toISOString().split('T')[0]
           } else {
-            payoutDate = new Date().toISOString().split('T')[0]
+            // Open settlement: calculate estimated close date (start + 14 days for bi-weekly)
+            const settlementStartDate = group.FinancialEventGroupStart ? 
+              new Date(group.FinancialEventGroupStart) : new Date()
+            const estimatedCloseDate = new Date(settlementStartDate)
+            estimatedCloseDate.setDate(estimatedCloseDate.getDate() + 14) // Bi-weekly period
+            payoutDate = estimatedCloseDate.toISOString().split('T')[0]
+            console.log(`[FETCH] Open settlement ${group.FinancialEventGroupId}: start=${settlementStartDate.toISOString().split('T')[0]}, estimated_close=${payoutDate}`)
           }
           
           const status = settlementEndDate && settlementEndDate <= new Date() ? 'confirmed' : 'estimated'
