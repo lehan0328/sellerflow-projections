@@ -81,10 +81,10 @@ Deno.serve(async (req) => {
     const region = MARKETPLACE_REGIONS[account.marketplace_id] || 'US'
     const endpoint = AMAZON_SPAPI_ENDPOINTS[region]
 
-    // Step 1: Request a report for the last 2 years (730 days)
+    // Step 1: Request a report for the last 30 days (Amazon's max for this report type)
     const endDate = new Date()
     const startDate = new Date()
-    startDate.setDate(startDate.getDate() - 730)
+    startDate.setDate(startDate.getDate() - 30)
 
     console.log(`[REPORTS] Requesting report from ${startDate.toISOString()} to ${endDate.toISOString()}`)
 
