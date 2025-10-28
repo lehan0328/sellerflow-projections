@@ -1245,8 +1245,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     // Only update last_synced_to and clear next_token if we completed ALL pages for this date range
     if (pageCount < MAX_PAGES_PER_RUN && !nextToken) {
       updateData.sync_next_token = null
-      updateData.last_synced_to = endDate.toISOString() // Only advance when fully complete
-      console.log('[SYNC] ✓ Date complete, advancing last_synced_to to:', endDate.toISOString())
+      // Advance by the actual window size we just completed
+      updateData.last_synced_to = new Date(startDate.getTime() + (endDate.getTime() - startDate.getTime())).toISOString()
+      console.log('[SYNC] ✓ Date complete, advancing last_synced_to to:', updateData.last_synced_to)
     } else if (pageCount >= MAX_PAGES_PER_RUN && nextToken) {
       // Paused mid-day - keep last_synced_to the same so we resume the same date
       console.log('[SYNC] ⏸ Paused mid-pagination - keeping last_synced_to at:', amazonAccount.last_synced_to)

@@ -43,13 +43,25 @@ export const useAmazonTransactions = () => {
     }
 
     try {
+      // Fetch transaction count first
+      const { count, error: countError } = await supabase
+        .from("amazon_transactions")
+        .select("*", { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if (countError) {
+        console.error("Error fetching transaction count:", countError);
+      } else {
+        console.log(`📊 Total Amazon transactions in DB: ${count}`);
+      }
+
       // Fetch recent transactions with limit to prevent timeout
       const { data, error } = await supabase
         .from("amazon_transactions")
         .select("*")
         .eq('user_id', user.id)
         .order("transaction_date", { ascending: false })
-        .limit(1000); // Limit to most recent 1000 transactions
+        .limit(1000); // Limit to most recent 1000 transactions for display
 
       if (error) {
         console.error("Error fetching Amazon transactions:", error);
