@@ -89,8 +89,8 @@ export const ForecastSettings = () => {
     return amazonAccounts?.some(acc => acc.is_active && acc.initial_sync_complete) ?? false;
   }, [amazonAccounts]);
   
-  // Advanced modeling only requires sync completion (no payout count requirement)
-  const canEnableAdvancedModeling = hasFullySyncedAmazonAccount;
+  // Mathematical forecasting is always available - no restrictions
+  const canEnableAdvancedModeling = true;
   
   // Use the payout frequency from the user's Amazon account settings instead of auto-detecting
   const userSelectedPayoutModel = useMemo(() => {
@@ -1045,15 +1045,6 @@ export const ForecastSettings = () => {
               />
             </div>
             
-            {!hasFullySyncedAmazonAccount && (
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 rounded text-xs text-blue-800 dark:text-blue-200 flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-medium">Requires full Amazon sync</p>
-                  <p className="text-[10px] mt-0.5">Your Amazon account needs to complete its initial sync with 50+ transactions before advanced modeling is available.</p>
-                </div>
-              </div>
-            )}
             
             {advancedModelingEnabled && canEnableAdvancedModeling && (
               <div className="p-3 bg-white/70 dark:bg-slate-900/50 rounded text-xs text-slate-700 dark:text-slate-300 space-y-2">

@@ -1038,17 +1038,40 @@ export default function Analytics() {
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
                   ${(() => {
-                    // Calculate average Amazon payout from recent payouts
-                    const recentPayouts = amazonPayouts.slice(0, 6); // Last 6 payouts
-                    const avgPayout = recentPayouts.length > 0 
-                      ? recentPayouts.reduce((sum, p) => sum + (p.total_amount || 0), 0) / recentPayouts.length 
-                      : 0;
-                    // Estimate monthly (assuming bi-weekly = 2 payouts per month)
-                    return (avgPayout * 2).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    // Calculate total Amazon payouts from the last 30 days
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    
+                    const last30DaysPayouts = amazonPayouts.filter(p => {
+                      const payoutDate = new Date(p.payout_date);
+                      return payoutDate >= thirtyDaysAgo;
+                    });
+                    
+                    const total30Days = last30DaysPayouts.reduce((sum, p) => sum + (p.total_amount || 0), 0);
+                    
+                    // If we have data, project to full month
+                    if (last30DaysPayouts.length > 0) {
+                      return total30Days.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    }
+                    
+                    // Fallback: use all available payouts and calculate monthly average
+                    if (amazonPayouts.length > 0) {
+                      // Get date range of all payouts
+                      const dates = amazonPayouts.map(p => new Date(p.payout_date).getTime());
+                      const oldestDate = new Date(Math.min(...dates));
+                      const newestDate = new Date(Math.max(...dates));
+                      const daysDiff = Math.max(1, (newestDate.getTime() - oldestDate.getTime()) / (1000 * 60 * 60 * 24));
+                      const totalAmount = amazonPayouts.reduce((sum, p) => sum + (p.total_amount || 0), 0);
+                      const dailyAvg = totalAmount / daysDiff;
+                      const monthlyProjection = dailyAvg * 30;
+                      return monthlyProjection.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    }
+                    
+                    return '0.00';
                   })()}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Based on recent payouts
+                  Last 30 days of payouts
                 </p>
               </CardContent>
             </Card>
