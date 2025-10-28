@@ -49,7 +49,6 @@ export default function AmazonForecast() {
   const { amazonAccounts } = useAmazonAccounts();
   const [isGenerating, setIsGenerating] = useState(false);
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
-  const [amazonTransactions, setAmazonTransactions] = useState<any[]>([]);
   const [isDeletingSampleData, setIsDeletingSampleData] = useState(false);
   const [growthTimeframe, setGrowthTimeframe] = useState<'30d' | '60d' | '90d' | '6m' | '1y'>('1y');
 
@@ -57,88 +56,17 @@ export default function AmazonForecast() {
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
   const hasEnoughData = confirmedPayouts.length >= 3;
 
-  // Fetch Amazon data: transactions for past 90 days, daily rollups for older data
-  const [rollupData, setRollupData] = useState<any[]>([]);
-  
-  useEffect(() => {
-    const fetchRevenueData = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const twelveMonthsAgo = new Date();
-        twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
-
-        // Fetch settlement payouts (net amounts that hit your bank)
-        const payoutsRes = await supabase
-          .from('amazon_payouts')
-          .select('payout_date, total_amount, status')
-          .eq('user_id', user.id)
-          .gte('payout_date', twelveMonthsAgo.toISOString().split('T')[0])
-          .order('payout_date', { ascending: true });
-
-        if (payoutsRes.error) {
-          console.error('[AmazonForecast] Error fetching payouts:', payoutsRes.error);
-          setAmazonTransactions([]);
-          setRollupData([]);
-        } else {
-          // Map payouts to match expected format (using net payout amounts)
-          const mappedPayouts = (payoutsRes.data || []).map(p => ({
-            transaction_date: p.payout_date,
-            amount: p.total_amount,
-            gross_amount: p.total_amount, // Net = gross for settlements
-            transaction_type: 'Payout'
-          }));
-          setAmazonTransactions(mappedPayouts);
-          setRollupData([]);
-          console.log('[AmazonForecast] Fetched settlement payouts:', mappedPayouts.length);
-        }
-      } catch (error) {
-        console.error('Error fetching Amazon revenue data:', error);
-      }
-    };
-
-    fetchRevenueData();
-  }, [amazonAccounts]); // Refetch when Amazon accounts change (after sync)
-
   // Calculate historical metrics with forecasts
   const historicalData = useMemo(() => {
-    const monthlyData: Record<string, { revenue: number; actualPayouts: number; forecastedPayouts: number; count: number }> = {};
+    const monthlyData: Record<string, { actualPayouts: number; forecastedPayouts: number; count: number }> = {};
     
     // Last 12 months
     for (let i = 11; i >= 0; i--) {
       const date = new Date();
       date.setMonth(date.getMonth() - i);
       const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      monthlyData[key] = { revenue: 0, actualPayouts: 0, forecastedPayouts: 0, count: 0 };
+      monthlyData[key] = { actualPayouts: 0, forecastedPayouts: 0, count: 0 };
     }
-
-    // Aggregate revenue from daily rollups (data older than 90 days)
-    console.log('[AmazonForecast] Processing daily rollups (>90 days):', rollupData.length);
-    rollupData.forEach(rollup => {
-      const revenue = Number(rollup.total_revenue || 0);
-      if (revenue > 0) {
-        const date = new Date(rollup.rollup_date);
-        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        if (monthlyData[key]) {
-          monthlyData[key].revenue += revenue;
-        }
-      }
-    });
-
-    // Aggregate revenue from transactions (last 90 days - detailed data)
-    console.log('[AmazonForecast] Processing transactions (last 90 days):', amazonTransactions.length);
-    amazonTransactions.forEach(txn => {
-      // Use gross_amount if available, fallback to amount
-      const amount = Number(txn.gross_amount || txn.amount || 0);
-      if (amount > 0) {
-        const date = new Date(txn.transaction_date);
-        const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-        if (monthlyData[key]) {
-          monthlyData[key].revenue += amount;
-        }
-      }
-    });
 
     // Aggregate actual payouts - only confirmed payouts
     amazonPayouts
@@ -165,12 +93,11 @@ export default function AmazonForecast() {
 
     return Object.entries(monthlyData).map(([month, data]) => ({
       month,
-      revenue: data.revenue,
       actualPayouts: data.actualPayouts,
       forecastedPayouts: data.forecastedPayouts,
       count: data.count
     }));
-  }, [amazonPayouts, amazonTransactions, rollupData]);
+  }, [amazonPayouts]);
 
   const generateForecast = async () => {
     setIsGenerating(true);
@@ -501,13 +428,7 @@ export default function AmazonForecast() {
                   wrapperStyle={{ paddingTop: '20px' }}
                   iconType="circle"
                 />
-                <Bar 
-                  dataKey="revenue" 
-                  fill="#10b981" 
-                  name="Revenue"
-                  radius={[8, 8, 0, 0]}
-                />
-                <Bar 
+                <Bar
                   dataKey="forecastedPayouts" 
                   fill="#f59e0b" 
                   name="Forecasted Payouts"
@@ -546,16 +467,7 @@ export default function AmazonForecast() {
                   wrapperStyle={{ paddingTop: '20px' }}
                   iconType="circle"
                 />
-                <Line 
-                  type="monotone"
-                  dataKey="revenue" 
-                  stroke="#10b981" 
-                  strokeWidth={3}
-                  name="Revenue"
-                  dot={{ fill: '#10b981', r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line 
+                <Line
                   type="monotone"
                   dataKey="forecastedPayouts" 
                   stroke="#f59e0b" 
