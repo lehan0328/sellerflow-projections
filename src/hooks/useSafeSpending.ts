@@ -401,7 +401,24 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
 
         // Include ALL Amazon payouts (confirmed, estimated, and forecasted if enabled)
         filteredAmazonPayouts?.forEach((payout) => {
-          const payoutDate = parseLocalDate(payout.payout_date);
+          // For open settlements (estimated), calculate the close date from settlement start
+          let payoutDate: Date;
+          
+          if (payout.status === 'estimated') {
+            const rawData = (payout as any).raw_settlement_data;
+            const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
+            
+            if (settlementStartStr) {
+              const settlementStartDate = new Date(settlementStartStr);
+              const settlementCloseDate = new Date(settlementStartDate);
+              settlementCloseDate.setDate(settlementCloseDate.getDate() + 14); // Close date is start + 14 days
+              payoutDate = parseLocalDate(settlementCloseDate.toISOString().split('T')[0]);
+            } else {
+              payoutDate = parseLocalDate(payout.payout_date);
+            }
+          } else {
+            payoutDate = parseLocalDate(payout.payout_date);
+          }
           
           // Skip ALL past Amazon payouts (anything before today)
           if (payoutDate.getTime() < today.getTime()) {
@@ -423,7 +440,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           
           if (payoutDate.getTime() === targetDate.getTime()) {
             const amt = Number(payout.total_amount);
-            console.log(`  🛒 Amazon payout (${payout.status}): +$${amt} on ${targetDateStr}`);
+            console.log(`  🛒 Amazon payout (${payout.status}): +$${amt} on ${targetDateStr}${isOpenSettlement ? ' (CLOSE DATE)' : ''}`);
             dayChange += amt;
           }
         });
