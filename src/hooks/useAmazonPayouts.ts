@@ -78,9 +78,41 @@ export const useAmazonPayouts = () => {
 
       // Filter payouts based on settings
       const filteredPayouts = (data || []).filter((payout) => {
-        // Always show Amazon's real settlements (confirmed and estimated/open)
-        if (payout.status === 'confirmed' || payout.status === 'estimated') {
-          console.log('[fetchAmazonPayouts] Keeping real settlement:', {
+        // For open settlements (estimated), filter out stale data
+        if (payout.status === 'estimated') {
+          // Get settlement start date from raw_settlement_data
+          const rawData = payout.raw_settlement_data as any;
+          const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
+          
+          if (settlementStartStr) {
+            const settlementStart = new Date(settlementStartStr);
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            
+            // Filter out open settlements older than 30 days (stale data)
+            if (settlementStart < thirtyDaysAgo) {
+              console.log('[fetchAmazonPayouts] Filtering stale open settlement:', {
+                id: payout.id,
+                started: settlementStartStr,
+                amount: payout.total_amount,
+                reason: 'Started more than 30 days ago'
+              });
+              return false;
+            }
+          }
+          
+          console.log('[fetchAmazonPayouts] Keeping recent open settlement:', {
+            id: payout.id,
+            status: payout.status,
+            date: payout.payout_date,
+            amount: payout.total_amount
+          });
+          return true;
+        }
+        
+        // Always show confirmed settlements
+        if (payout.status === 'confirmed') {
+          console.log('[fetchAmazonPayouts] Keeping confirmed settlement:', {
             id: payout.id,
             status: payout.status,
             date: payout.payout_date,

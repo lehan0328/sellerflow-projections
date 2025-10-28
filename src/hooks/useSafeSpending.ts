@@ -205,8 +205,34 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       
       // Filter Amazon payouts based on forecast settings
       const filteredAmazonPayouts = (amazonResult.data || []).filter((payout) => {
-        // Always show Amazon's real settlements (confirmed and estimated/open)
-        if (payout.status === 'confirmed' || payout.status === 'estimated') {
+        // For open settlements (estimated), filter out stale data
+        if (payout.status === 'estimated') {
+          // Get settlement start date from raw_settlement_data
+          const rawData = payout.raw_settlement_data as any;
+          const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
+          
+          if (settlementStartStr) {
+            const settlementStart = parseLocalDate(settlementStartStr);
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            
+            // Filter out open settlements older than 30 days (stale data)
+            if (settlementStart.getTime() < thirtyDaysAgo.getTime()) {
+              console.log('🚫 [SAFE SPENDING] Filtering stale open settlement:', {
+                id: payout.id,
+                started: settlementStartStr,
+                amount: payout.total_amount,
+                reason: 'Started more than 30 days ago'
+              });
+              return false;
+            }
+          }
+          
+          return true;
+        }
+        
+        // Always show Amazon's real confirmed settlements
+        if (payout.status === 'confirmed') {
           return true;
         }
         
