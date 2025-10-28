@@ -388,9 +388,16 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         body: { accountId: amazonAccountId }
       })
       
+      // Check for network errors
       if (reportError) {
-        console.error('[SYNC] Reports API error:', reportError)
-        throw new Error(`Reports API failed: ${reportError.message}`)
+        console.error('[SYNC] Network error calling sync-amazon-reports:', reportError)
+        throw new Error(`Failed to call sync-amazon-reports: ${reportError.message}`)
+      }
+      
+      // Check for function errors (non-2xx responses)
+      if (reportData?.error) {
+        console.error('[SYNC] sync-amazon-reports returned error:', reportData.error)
+        throw new Error(`Reports sync failed: ${reportData.error}`)
       }
       
       console.log('[SYNC] ✅ Bulk transaction sync complete:', reportData)
