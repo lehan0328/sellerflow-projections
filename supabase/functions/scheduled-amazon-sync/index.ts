@@ -95,18 +95,18 @@ Deno.serve(async (req) => {
           }
           console.log(`🔄 CONTINUING INTERRUPTED SYNC for ${account.account_name} (has nextToken)`)
         }
-        // For accounts in backfill mode (progress < 95%), sync conservatively
+        // For accounts in backfill mode (progress < 95%), sync more aggressively
         else if (!account.initial_sync_complete || (account.sync_progress && account.sync_progress < 95)) {
-          const minMinutesBetweenSync = 1 // Reduced to expedite backfill (still respects rate limits)
+          const minSecondsBetweenSync = 10 // Aggressive: 10 seconds between syncs during backfill
           
-          if (minutesSinceSync < minMinutesBetweenSync) {
-            console.log(`Backfill in progress for ${account.account_name} - last synced ${minutesSinceSync.toFixed(1)} minutes ago`)
+          if (minutesSinceSync * 60 < minSecondsBetweenSync) {
+            console.log(`Backfill in progress for ${account.account_name} - last synced ${(minutesSinceSync * 60).toFixed(0)} seconds ago`)
             syncResults.push({
               accountId: account.id,
               accountName: account.account_name,
               success: true,
               skipped: true,
-              reason: `Backfilling - last synced ${minutesSinceSync.toFixed(1)} minutes ago`
+              reason: `Backfilling - last synced ${(minutesSinceSync * 60).toFixed(0)} seconds ago`
             })
             continue
           }
