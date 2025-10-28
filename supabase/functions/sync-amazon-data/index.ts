@@ -959,7 +959,6 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     console.log(`[SYNC] Pages Fetched: ${pageCount}`)
     console.log(`[SYNC] Transactions Extracted: ${transactionsToAdd.length}`)
     console.log(`[SYNC] Payouts from Events: ${payoutsToAdd.length}`)
-    console.log(`[SYNC] Settlements from Groups: ${settlementsToAdd.length}`)
     console.log(`[SYNC] Date Range: ${startDate.toISOString()} to ${endDate.toISOString()}`)
     console.log(`[SYNC] ====================================`)
     
