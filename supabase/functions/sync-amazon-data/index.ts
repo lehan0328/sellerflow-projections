@@ -133,45 +133,71 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
       return
     }
     
-    // Detect payout frequency based on settlement intervals
-    console.log('[SYNC] Analyzing payout frequency from settlements...')
-    const closedSettlements = allSettlements
-      .filter((g: any) => g.FinancialEventGroupEnd)
-      .map((g: any) => new Date(g.FinancialEventGroupEnd))
-      .sort((a, b) => a.getTime() - b.getTime())
+    // Detect payout frequency based on RECENT closed settlement intervals only
+    console.log('[SYNC] Analyzing payout frequency from recent closed settlements...')
+    const now = new Date()
+    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
+    
+    // Get only CLOSED settlements from the last 60 days, sorted by end date
+    const recentClosedSettlements = allSettlements
+      .filter((g: any) => {
+        // Must have an end date (closed settlement)
+        if (!g.FinancialEventGroupEnd) return false
+        const endDate = new Date(g.FinancialEventGroupEnd)
+        // Must be within last 60 days and not in the future
+        return endDate >= sixtyDaysAgo && endDate <= now
+      })
+      .map((g: any) => ({
+        id: g.FinancialEventGroupId,
+        endDate: new Date(g.FinancialEventGroupEnd)
+      }))
+      .sort((a, b) => a.endDate.getTime() - b.endDate.getTime())
+    
+    console.log(`[SYNC] Found ${recentClosedSettlements.length} recent closed settlements in last 60 days`)
     
     let detectedFrequency = 'bi-weekly' // default
     
-    if (closedSettlements.length >= 3) {
+    if (recentClosedSettlements.length >= 3) {
       // Calculate intervals between consecutive settlements
       const intervals: number[] = []
-      for (let i = 1; i < closedSettlements.length; i++) {
+      for (let i = 1; i < recentClosedSettlements.length; i++) {
         const daysDiff = Math.abs(
-          (closedSettlements[i].getTime() - closedSettlements[i-1].getTime()) / (1000 * 60 * 60 * 24)
+          (recentClosedSettlements[i].endDate.getTime() - recentClosedSettlements[i-1].endDate.getTime()) / (1000 * 60 * 60 * 24)
         )
         intervals.push(daysDiff)
       }
       
-      // Count how many intervals are < 14 days
-      const dailyIntervals = intervals.filter(d => d < 14).length
-      const biWeeklyIntervals = intervals.filter(d => d >= 14).length
+      console.log(`[SYNC] Settlement intervals (days): ${intervals.map(i => i.toFixed(1)).join(', ')}`)
       
-      if (dailyIntervals > biWeeklyIntervals) {
+      // If we have ANY intervals less than 10 days, it's likely daily
+      // (allowing some margin for weekends/holidays)
+      const hasShortIntervals = intervals.some(d => d < 10)
+      
+      if (hasShortIntervals) {
         detectedFrequency = 'daily'
+        console.log('[SYNC] ✅ Detected DAILY payout frequency (found intervals < 10 days)')
+      } else {
+        // Count intervals to be sure
+        const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length
+        console.log(`[SYNC] Average interval: ${avgInterval.toFixed(1)} days`)
+        
+        if (avgInterval < 10) {
+          detectedFrequency = 'daily'
+          console.log('[SYNC] ✅ Detected DAILY payout frequency (average < 10 days)')
+        } else {
+          detectedFrequency = 'bi-weekly'
+          console.log('[SYNC] ✅ Detected BI-WEEKLY payout frequency (average >= 10 days)')
+        }
       }
-      
-      const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length
-      console.log(`[SYNC] Settlement intervals: ${intervals.map(i => i.toFixed(1)).join(', ')} days`)
-      console.log(`[SYNC] Average interval: ${avgInterval.toFixed(1)} days`)
-      console.log(`[SYNC] Daily intervals (<14d): ${dailyIntervals}, Bi-weekly intervals (>=14d): ${biWeeklyIntervals}`)
-      console.log(`[SYNC] Detected payout frequency: ${detectedFrequency}`)
       
       // Update amazon_account with detected frequency
       await supabase.from('amazon_accounts').update({ 
         payout_frequency: detectedFrequency
       }).eq('id', amazonAccountId)
+      
+      console.log(`[SYNC] 💾 Updated payout_frequency to: ${detectedFrequency}`)
     } else {
-      console.log('[SYNC] Not enough closed settlements to detect frequency, using default: bi-weekly')
+      console.log('[SYNC] ⚠️ Not enough recent closed settlements (need 3+) to detect frequency, using default: bi-weekly')
     }
     
     // Process and save settlements (including open ones)
