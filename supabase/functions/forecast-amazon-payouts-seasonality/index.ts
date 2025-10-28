@@ -195,7 +195,7 @@ Deno.serve(async (req) => {
         status: 'forecasted',
         payout_type: payoutFrequency,
         marketplace_name: confirmedPayouts[0]?.marketplace_name || 'Amazon.com',
-        modeling_method: 'seasonality',
+        modeling_method: payoutFrequency === 'daily' ? 'mathematical_daily' : 'mathematical_biweekly',
         // Store calculation details
         orders_total: avgPayout, // Store baseline for reference
         fees_total: seasonality, // Store seasonality factor
