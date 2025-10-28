@@ -122,8 +122,9 @@ export const useAmazonPayouts = () => {
           status: payout.status as "confirmed" | "estimated" | "processing" | "forecasted",
           payout_type: payout.payout_type as "bi-weekly" | "reserve-release" | "adjustment",
           available_for_daily_transfer: metadata?.daily_unlock_amount || 0,
-          settlement_start_date: metadata?.settlement_period?.start,
-          settlement_end_date: metadata?.settlement_period?.end,
+          // Use database fields first, fallback to metadata
+          settlement_start_date: (payout as any).settlement_start_date || metadata?.settlement_period?.start,
+          settlement_end_date: (payout as any).settlement_end_date || metadata?.settlement_period?.end,
           days_accumulated: metadata?.days_accumulated || 0
         };
       }));

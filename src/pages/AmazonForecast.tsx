@@ -597,7 +597,7 @@ export default function AmazonForecast() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+            <CalendarIcon className="h-5 w-5" />
             Upcoming Forecasted Payouts
           </CardTitle>
           <CardDescription>
