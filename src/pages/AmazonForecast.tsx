@@ -68,42 +68,30 @@ export default function AmazonForecast() {
 
         const twelveMonthsAgo = new Date();
         twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
-        
-        const ninetyDaysAgo = new Date();
-        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-        // Fetch transactions for the last 90 days (detailed data)
-        const transactionsRes = await supabase
-          .from('amazon_transactions')
-          .select('transaction_date, amount, gross_amount, transaction_type')
+        // Fetch settlement payouts (net amounts that hit your bank)
+        const payoutsRes = await supabase
+          .from('amazon_payouts')
+          .select('payout_date, total_amount, status')
           .eq('user_id', user.id)
-          .eq('transaction_type', 'Order')
-          .gte('transaction_date', ninetyDaysAgo.toISOString())
-          .order('transaction_date', { ascending: true });
+          .gte('payout_date', twelveMonthsAgo.toISOString().split('T')[0])
+          .order('payout_date', { ascending: true });
 
-        // Fetch daily rollups for data older than 90 days (up to 12 months)
-        const rollupsRes = await supabase
-          .from('amazon_daily_rollups')
-          .select('rollup_date, total_revenue, order_count')
-          .eq('user_id', user.id)
-          .gte('rollup_date', twelveMonthsAgo.toISOString().split('T')[0])
-          .lt('rollup_date', ninetyDaysAgo.toISOString().split('T')[0])
-          .order('rollup_date', { ascending: true });
-
-        if (transactionsRes.error) {
-          console.error('[AmazonForecast] Error fetching transactions:', transactionsRes.error);
+        if (payoutsRes.error) {
+          console.error('[AmazonForecast] Error fetching payouts:', payoutsRes.error);
           setAmazonTransactions([]);
-        } else {
-          setAmazonTransactions(transactionsRes.data || []);
-          console.log('[AmazonForecast] Fetched transactions (last 90 days):', transactionsRes.data?.length || 0);
-        }
-
-        if (rollupsRes.error) {
-          console.log('[AmazonForecast] No rollup data:', rollupsRes.error);
           setRollupData([]);
         } else {
-          setRollupData(rollupsRes.data || []);
-          console.log('[AmazonForecast] Fetched daily rollups (>90 days old):', rollupsRes.data?.length || 0);
+          // Map payouts to match expected format (using net payout amounts)
+          const mappedPayouts = (payoutsRes.data || []).map(p => ({
+            transaction_date: p.payout_date,
+            amount: p.total_amount,
+            gross_amount: p.total_amount, // Net = gross for settlements
+            transaction_type: 'Payout'
+          }));
+          setAmazonTransactions(mappedPayouts);
+          setRollupData([]);
+          console.log('[AmazonForecast] Fetched settlement payouts:', mappedPayouts.length);
         }
       } catch (error) {
         console.error('Error fetching Amazon revenue data:', error);

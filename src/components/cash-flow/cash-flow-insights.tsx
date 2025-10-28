@@ -20,7 +20,6 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAuth } from "@/hooks/useAuth";
-import { AmazonTransactionHistory } from "./amazon-transaction-history";
 import aurenLogo from "@/assets/auren-icon-blue.png";
 interface CashFlowInsightsProps {
   currentBalance: number;
@@ -90,7 +89,6 @@ export const CashFlowInsights = ({
   const [isEditingReserve, setIsEditingReserve] = useState(false);
   const [editReserveValue, setEditReserveValue] = useState(reserveAmount.toString());
   const [isForecastGenerating, setIsForecastGenerating] = useState(false);
-  const [showTransactionHistory, setShowTransactionHistory] = useState(false);
   const [lastRefreshTime, setLastRefreshTime] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [userConfidenceThreshold, setUserConfidenceThreshold] = useState<number>(0);
@@ -1249,12 +1247,6 @@ export const CashFlowInsights = ({
           </Tabs>
         </DialogContent>
       </Dialog>
-
-      {/* Amazon Transaction History Modal */}
-      <AmazonTransactionHistory 
-        open={showTransactionHistory}
-        onOpenChange={setShowTransactionHistory}
-      />
 
       {/* All Credit Cards Modal */}
       <Dialog open={showAllCreditCards} onOpenChange={setShowAllCreditCards}>

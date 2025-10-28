@@ -338,8 +338,6 @@ export const useUserSettings = () => {
       console.log('🗑️ Step 1: Deleting dependent records...');
       const dependentDeletes = [
         { name: 'bank_transactions', promise: supabase.from('bank_transactions').delete().eq('account_id', accountId) },
-        { name: 'amazon_transactions', promise: supabase.from('amazon_transactions').delete().eq('account_id', accountId) },
-        { name: 'amazon_transactions_daily_summary', promise: supabase.from('amazon_transactions_daily_summary').delete().eq('account_id', accountId) },
         { name: 'amazon_daily_rollups', promise: supabase.from('amazon_daily_rollups').delete().eq('account_id', accountId) },
         { name: 'amazon_daily_draws', promise: supabase.from('amazon_daily_draws').delete().eq('account_id', accountId) },
         { name: 'amazon_payouts', promise: supabase.from('amazon_payouts').delete().eq('account_id', accountId) },

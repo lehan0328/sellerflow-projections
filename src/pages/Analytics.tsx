@@ -8,7 +8,6 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { supabase } from "@/integrations/supabase/client";
 import { useCreditCards } from "@/hooks/useCreditCards";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
-import { useAmazonTransactions } from "@/hooks/useAmazonTransactions";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
 import { 
@@ -124,7 +123,6 @@ export default function Analytics() {
   }, []);
   const { creditCards } = useCreditCards();
   const { amazonPayouts } = useAmazonPayouts();
-  const { amazonTransactions } = useAmazonTransactions();
   const { accounts } = useBankAccounts();
   const { recurringExpenses } = useRecurringExpenses();
   const now = new Date();
@@ -228,20 +226,16 @@ export default function Analytics() {
     const totalCreditUsed = creditCards.reduce((sum, c) => sum + (c.balance || 0), 0);
     const creditUtilization = totalCreditLimit > 0 ? (totalCreditUsed / totalCreditLimit) * 100 : 0;
 
-    // Amazon gross revenue - sum gross_amount from order/shipment transactions
-    // Filter by selected date range
+    // Amazon revenue from net payouts
     const amazonDateRange = getDateRange(amazonRevenueRange);
-    const amazonRevenue = amazonTransactions
-      .filter(tx => {
-        if (!tx.transaction_type) return false;
-        const isOrderOrShipment = tx.transaction_type.toLowerCase().includes('order') || 
-                                  tx.transaction_type.toLowerCase().includes('shipment');
-        if (!isOrderOrShipment) return false;
-        
-        const txDate = new Date(tx.transaction_date);
-        return txDate >= amazonDateRange.start && txDate <= amazonDateRange.end;
+    const amazonRevenue = amazonPayouts
+      .filter(p => {
+        const payoutDate = new Date(p.payout_date);
+        return payoutDate >= amazonDateRange.start && 
+               payoutDate <= amazonDateRange.end &&
+               p.status === 'confirmed';
       })
-      .reduce((sum, tx) => sum + (tx.gross_amount || 0), 0);
+      .reduce((sum, p) => sum + (p.total_amount || 0), 0);
 
     // Total expenses from vendors + purchase orders
     const vendorExpenses = vendors.reduce((sum, v) => sum + (v.totalOwed || 0), 0);
@@ -263,7 +257,7 @@ export default function Analytics() {
       totalExpenses,
       netCashFlow
     };
-  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, amazonTransactions, accounts]);
+  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts]);
 
   // Revenue over time (last 6 months) - includes Amazon payouts and recurring income
   const revenueData = useMemo(() => {

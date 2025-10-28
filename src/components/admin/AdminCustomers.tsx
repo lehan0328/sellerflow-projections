@@ -125,28 +125,18 @@ export const AdminCustomers = () => {
             accountOwnerCompany = ownerProfile?.company;
           }
 
-          // Fetch Amazon transactions for revenue calculation
-          const { data: amazonTransactions } = await supabase
-            .from('amazon_transactions')
-            .select('amount, transaction_type')
-            .eq('user_id', profile.user_id)
-            .gte('transaction_date', thirtyDaysAgo.toISOString())
-            .in('transaction_type', ['Order', 'Refund', 'Transfer']);
+          // Fetch Amazon payouts for revenue calculation
+          const { data: amazonPayouts } = await supabase
+            .from('amazon_payouts')
+            .select('total_amount, status')
+            .eq('user_id', profile.user_id);
 
-          let revenue = 0;
-          if (amazonTransactions && amazonTransactions.length > 0) {
-            // Calculate revenue (orders) before fees
-            revenue = amazonTransactions
-              .filter(t => t.transaction_type === 'Order' || t.transaction_type === 'Transfer')
-              .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-            
-            // Subtract refunds
-            const refunds = amazonTransactions
-              .filter(t => t.transaction_type === 'Refund')
-              .reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
-            
-            revenue = Math.max(0, revenue - refunds);
-          }
+          const amazonRevenue = amazonPayouts?.filter(
+            p => p.status === 'confirmed'
+          ).reduce((sum, p) => sum + (p.total_amount || 0), 0) || 0;
+
+          const amazonRefunds = 0; // Not tracked at settlement level
+          const revenue = amazonRevenue;
 
           // Fetch Stripe subscription data if customer has stripe_customer_id
           let renewalDate = null;

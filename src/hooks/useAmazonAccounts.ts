@@ -303,39 +303,7 @@ export const useAmazonAccounts = () => {
         console.error("Error deleting Amazon rollups:", rollupsError);
       }
 
-      // Delete all associated transactions
-      const { error: transactionError } = await supabase
-        .from("amazon_transactions")
-        .delete()
-        .eq("amazon_account_id", accountId);
-
-      if (transactionError) {
-        console.error("Error deleting Amazon transactions:", transactionError);
-        toast.error("Failed to delete associated transactions");
-        return false;
-      }
-
-      // Delete all associated payouts
-      const { error: payoutError } = await supabase
-        .from("amazon_payouts")
-        .delete()
-        .eq("amazon_account_id", accountId);
-
-      if (payoutError) {
-        console.error("Error deleting Amazon payouts:", payoutError);
-        toast.error("Failed to delete associated payouts");
-        return false;
-      }
-
-      // Delete all associated daily summaries
-      const { error: summaryError } = await supabase
-        .from("amazon_transactions_daily_summary")
-        .delete()
-        .eq("amazon_account_id", accountId);
-
-      if (summaryError) {
-        console.error("Error deleting Amazon summaries:", summaryError);
-      }
+      // Amazon transactions and summaries tables no longer exist (using settlements only)
 
       // Now delete the account
       const { error } = await supabase

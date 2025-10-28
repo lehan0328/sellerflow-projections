@@ -54,7 +54,6 @@ import AffiliateDashboard from "./pages/AffiliateDashboard";
 import Pricing from "./pages/Pricing";
 import FlexReport from "./pages/FlexReport";
 import AmazonOAuthCallback from "./pages/AmazonOAuthCallback";
-import AmazonTransactionsTest from "./pages/AmazonTransactionsTest";
 import SampleDataGenerator from "./pages/SampleDataGenerator";
 import MatchTransactions from "./pages/MatchTransactions";
 import Notifications from "./pages/Notifications";
@@ -193,11 +192,6 @@ const App = () => (
             } />
           <Route path="/amazon-oauth-callback" element={<AmazonOAuthCallback />} />
           <Route path="/oauth-redirect" element={<OAuthRedirect />} />
-          <Route path="/amazon-transactions-test" element={
-            <ProtectedRoute>
-              <AmazonTransactionsTest />
-            </ProtectedRoute>
-          } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

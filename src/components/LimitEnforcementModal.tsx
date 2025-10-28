@@ -134,9 +134,7 @@ export const LimitEnforcementModal = ({
       // Delete all associated data first
       await Promise.all([
         supabase.from('amazon_daily_rollups').delete().eq('amazon_account_id', accountId),
-        supabase.from('amazon_transactions').delete().eq('amazon_account_id', accountId),
         supabase.from('amazon_payouts').delete().eq('amazon_account_id', accountId),
-        supabase.from('amazon_transactions_daily_summary').delete().eq('amazon_account_id', accountId),
       ]);
 
       // Delete the account
