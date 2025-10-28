@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+export type SafetyNetLevel = 'low' | 'medium' | 'high' | 'maximum';
+
 export const useUserSettings = () => {
   const [totalCash, setTotalCash] = useState(0);
   const [loading, setLoading] = useState(true);
   const [forecastsEnabled, setForecastsEnabled] = useState(false);
+  const [safetyNetLevel, setSafetyNetLevel] = useState<SafetyNetLevel>('medium');
   const [chartPreferences, setChartPreferences] = useState({
     showCashFlowLine: true,
     showTotalResourcesLine: true,
@@ -63,11 +66,13 @@ export const useUserSettings = () => {
       });
     }
 
-    // Use database value directly - trust the backend validation
-    const actualForecastsEnabled = data.forecasts_enabled ?? false;
+      // Use database value directly - trust the backend validation
+      const actualForecastsEnabled = data.forecasts_enabled ?? false;
+      const actualSafetyNetLevel = (data.safety_net_level as SafetyNetLevel) || 'medium';
 
       setTotalCash(Number(data.total_cash));
       setForecastsEnabled(actualForecastsEnabled ?? false);
+      setSafetyNetLevel(actualSafetyNetLevel);
       
       // Load chart preferences if they exist
       setChartPreferences({
@@ -482,6 +487,43 @@ export const useUserSettings = () => {
       toast({
         title: "Error",
         description: "Failed to reset account data",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateSafetyNetLevel = async (level: SafetyNetLevel) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!profile?.account_id) {
+        throw new Error('Account not found');
+      }
+
+      const { error } = await supabase
+        .from('user_settings')
+        .update({ safety_net_level: level })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setSafetyNetLevel(level);
+      toast({
+        title: "Success",
+        description: "Safety net level updated successfully",
+      });
+    } catch (error: any) {
+      console.error('Error updating safety net level:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update safety net level",
         variant: "destructive",
       });
     }

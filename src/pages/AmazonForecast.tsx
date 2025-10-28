@@ -102,12 +102,12 @@ export default function AmazonForecast() {
 
   const generateForecast = async () => {
     setIsGenerating(true);
-    toast.loading("Generating Mathematical Forecast - Analyzing Amazon transactions and reserves...");
+    toast.loading("Generating Seasonality-Based Forecast - Analyzing Amazon payout patterns...");
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase.functions.invoke("forecast-amazon-payouts-math", {
+      const { data, error } = await supabase.functions.invoke("forecast-amazon-payouts-seasonality", {
         body: { userId: user.id }
       });
 
@@ -123,7 +123,7 @@ export default function AmazonForecast() {
 
       if (data?.success) {
         toast.dismiss();
-        toast.success(`Mathematical forecast generated! ${data.forecastCount || 0} forecasts created. Refreshing...`);
+        toast.success(`Seasonality forecast generated! ${data.forecastCount || 0} forecasts created. Refreshing...`);
         setTimeout(() => window.location.reload(), 1500);
       }
     } catch (error: any) {
