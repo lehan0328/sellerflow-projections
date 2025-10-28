@@ -837,6 +837,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       for (const shipment of (events.ShipmentEventList || [])) {
         const orderId = shipment.AmazonOrderId
         const shipmentDate = shipment.PostedDate
+        const settlementId = shipment.FinancialEventGroupId // Link to settlement
         
         for (const item of (shipment.ShipmentItemList || [])) {
           let totalAmount = 0
@@ -867,6 +868,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
             gross_amount: grossAmount,
             currency_code: item.ItemChargeList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
             sku: item.SellerSKU,
+            settlement_id: settlementId || null, // Add settlement link
             marketplace_name: amazonAccount.marketplace_name,
             raw_data: shipment
           })
@@ -877,6 +879,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       for (const refund of (events.RefundEventList || [])) {
         const orderId = refund.AmazonOrderId
         const refundDate = refund.PostedDate
+        const settlementId = refund.FinancialEventGroupId // Link to settlement
         
         for (const item of (refund.ShipmentItemAdjustmentList || [])) {
           let totalAmount = 0
@@ -898,6 +901,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
             transaction_type: 'Refund',
             transaction_date: refundDate,
             amount: totalAmount,
+            settlement_id: settlementId || null, // Add settlement link
             gross_amount: totalAmount,
             currency_code: item.ItemChargeAdjustmentList?.[0]?.ChargeAmount?.CurrencyCode || 'USD',
             sku: item.SellerSKU,
