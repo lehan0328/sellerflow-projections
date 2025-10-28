@@ -8,13 +8,16 @@ import {
   TrendingUp, 
   ArrowLeft,
   Brain,
-  Calendar,
+  Calendar as CalendarIcon,
   DollarSign,
   LineChart,
   Loader2,
   AlertCircle,
   Target
 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import {
   LineChart as RechartsLineChart,
@@ -49,6 +52,12 @@ export default function AmazonForecast() {
   const [amazonTransactions, setAmazonTransactions] = useState<any[]>([]);
   const [isDeletingSampleData, setIsDeletingSampleData] = useState(false);
   const [growthTimeframe, setGrowthTimeframe] = useState<'30d' | '60d' | '90d' | '6m' | '1y'>('1y');
+  
+  // Date range state for metrics filtering
+  const [dateRange, setDateRange] = useState<{from: Date | undefined, to: Date | undefined}>({
+    from: new Date(new Date().setDate(new Date().getDate() - 90)),
+    to: new Date()
+  });
 
   // Check if user has 3+ confirmed payouts
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
@@ -236,10 +245,13 @@ export default function AmazonForecast() {
 
   // Calculate key metrics
   const metrics = useMemo(() => {
-    // Filter to only confirmed payouts and exclude sample data
-    const confirmedPayouts = amazonPayouts.filter(
-      p => p.status === 'confirmed' && p.marketplace_name !== 'Amazon.com'
-    );
+    // Filter to only confirmed payouts and exclude sample data, and apply date range filter
+    const confirmedPayouts = amazonPayouts.filter(p => {
+      const payoutDate = new Date(p.payout_date);
+      const inDateRange = (!dateRange.from || payoutDate >= dateRange.from) && 
+                          (!dateRange.to || payoutDate <= dateRange.to);
+      return p.status === 'confirmed' && p.marketplace_name !== 'Amazon.com' && inDateRange;
+    });
     
     const totalPayouts = confirmedPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
     const avgPayout = confirmedPayouts.length > 0 ? totalPayouts / confirmedPayouts.length : 0;
@@ -294,7 +306,7 @@ export default function AmazonForecast() {
       payoutCount: confirmedPayouts.length,
       comparisonPeriod
     };
-  }, [amazonPayouts, growthTimeframe]);
+  }, [amazonPayouts, growthTimeframe, dateRange]);
 
   // Calculate forecast accuracy
   const [forecastAccuracy, setForecastAccuracy] = useState<number | null>(null);
@@ -372,91 +384,119 @@ export default function AmazonForecast() {
         </Card>
       )}
 
-      {/* Forecast Settings */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex-1">
-          <ForecastSettings />
-        </div>
-        {amazonPayouts.some(p => p.marketplace_name === 'Amazon.com') && (
-          <Button 
-            onClick={deleteSampleData} 
-            disabled={isDeletingSampleData}
-            variant="outline"
-            className="border-red-300 text-red-700 hover:bg-red-50"
-          >
-            {isDeletingSampleData ? 'Deleting...' : 'Delete Sample Data'}
-          </Button>
-        )}
-      </div>
-
-      {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Forecast Accuracy</CardTitle>
-            <Target className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {forecastAccuracy !== null ? `${forecastAccuracy.toFixed(1)}%` : 'N/A'}
+      {/* Key Metrics with Date Range Filter */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="space-y-1">
+            <CardTitle>Overview Metrics</CardTitle>
+            <CardDescription>Key performance indicators for your Amazon payouts</CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("w-[280px] justify-start text-left font-normal", !dateRange.from && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "MMM dd, yyyy")} - {format(dateRange.to, "MMM dd, yyyy")}
+                      </>
+                    ) : (
+                      format(dateRange.from, "MMM dd, yyyy")
+                    )
+                  ) : (
+                    <span>Pick a date range</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="range"
+                  selected={{ from: dateRange.from, to: dateRange.to }}
+                  onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
+                  numberOfMonths={2}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+            {amazonPayouts.some(p => p.marketplace_name === 'Amazon.com') && (
+              <Button 
+                onClick={deleteSampleData} 
+                disabled={isDeletingSampleData}
+                variant="outline"
+                size="sm"
+                className="border-red-300 text-red-700 hover:bg-red-50"
+              >
+                {isDeletingSampleData ? 'Deleting...' : 'Delete Sample Data'}
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="bg-background rounded-lg border p-4">
+              <div className="flex items-center justify-between space-y-0 pb-2">
+                <p className="text-sm font-medium">Forecast Accuracy</p>
+                <Target className="h-4 w-4 text-purple-600" />
+              </div>
+              <div className="text-2xl font-bold">
+                {forecastAccuracy !== null ? `${forecastAccuracy.toFixed(1)}%` : 'N/A'}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {forecastAccuracy !== null && forecastAccuracy >= 90 ? 'Excellent' : 
+                 forecastAccuracy !== null && forecastAccuracy >= 80 ? 'Good' : 
+                 forecastAccuracy !== null ? 'Fair' : 'Not enough data'}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {forecastAccuracy !== null && forecastAccuracy >= 90 ? 'Excellent' : 
-               forecastAccuracy !== null && forecastAccuracy >= 80 ? 'Good' : 
-               forecastAccuracy !== null ? 'Fair' : 'Not enough data'}
-            </p>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Payouts</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${metrics.totalPayouts.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">{metrics.payoutCount} payouts tracked</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Payout</CardTitle>
-            <LineChart className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${metrics.avgPayout.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Per payout period</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-sm font-medium">Growth Rate</CardTitle>
-              <Select value={growthTimeframe} onValueChange={(value: any) => setGrowthTimeframe(value)}>
-                <SelectTrigger className="h-7 w-[90px] text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30d">30 Days</SelectItem>
-                  <SelectItem value="60d">60 Days</SelectItem>
-                  <SelectItem value="90d">90 Days</SelectItem>
-                  <SelectItem value="6m">6 Months</SelectItem>
-                  <SelectItem value="1y">1 Year</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="bg-background rounded-lg border p-4">
+              <div className="flex items-center justify-between space-y-0 pb-2">
+                <p className="text-sm font-medium">Total Payouts</p>
+                <DollarSign className="h-4 w-4 text-green-600" />
+              </div>
+              <div className="text-2xl font-bold">${metrics.totalPayouts.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">{metrics.payoutCount} payouts tracked</p>
             </div>
-            <TrendingUp className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${metrics.growthRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {metrics.growthRate >= 0 ? '+' : ''}{metrics.growthRate.toFixed(1)}%
+
+            <div className="bg-background rounded-lg border p-4">
+              <div className="flex items-center justify-between space-y-0 pb-2">
+                <p className="text-sm font-medium">Avg Payout</p>
+                <LineChart className="h-4 w-4 text-blue-600" />
+              </div>
+              <div className="text-2xl font-bold">${metrics.avgPayout.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Per payout period</p>
             </div>
-            <p className="text-xs text-muted-foreground">vs previous period</p>
-          </CardContent>
-        </Card>
-      </div>
+
+            <div className="bg-background rounded-lg border p-4">
+              <div className="flex items-center justify-between space-y-0 pb-2">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium">Growth Rate</p>
+                  <Select value={growthTimeframe} onValueChange={(value: any) => setGrowthTimeframe(value)}>
+                    <SelectTrigger className="h-7 w-[90px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="30d">30 Days</SelectItem>
+                      <SelectItem value="60d">60 Days</SelectItem>
+                      <SelectItem value="90d">90 Days</SelectItem>
+                      <SelectItem value="6m">6 Months</SelectItem>
+                      <SelectItem value="1y">1 Year</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <TrendingUp className="h-4 w-4 text-primary" />
+              </div>
+              <div className={`text-2xl font-bold ${metrics.growthRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {metrics.growthRate >= 0 ? '+' : ''}{metrics.growthRate.toFixed(1)}%
+              </div>
+              <p className="text-xs text-muted-foreground">vs previous period</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Forecast Settings moved below Overview */}
+      <ForecastSettings />
 
       {/* Historical Trends */}
       <Card>
