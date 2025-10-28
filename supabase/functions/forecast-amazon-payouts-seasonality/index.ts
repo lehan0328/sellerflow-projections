@@ -168,28 +168,47 @@ Deno.serve(async (req) => {
       .eq('user_id', user.id)
       .eq('status', 'forecasted');
 
-    // Generate forecasts for next 6 months
-    const forecasts = [];
-    const currentDate = new Date();
+    // Get the open settlement with the largest amount to determine forecast start date
+    const { data: openSettlements } = await supabase
+      .from('amazon_payouts')
+      .select('payout_date, total_amount, status')
+      .eq('user_id', user.id)
+      .in('status', ['pending', 'open'])
+      .order('total_amount', { ascending: false })
+      .limit(1);
     
-    for (let i = 1; i <= 6; i++) {
-      const forecastDate = new Date(currentDate);
-      forecastDate.setMonth(forecastDate.getMonth() + i);
+    let firstForecastDate = new Date();
+    firstForecastDate.setDate(firstForecastDate.getDate() + 14); // Default: 14 days from now
+    
+    if (openSettlements && openSettlements.length > 0) {
+      // Start 14 days after the largest open settlement
+      const largestOpenDate = new Date(openSettlements[0].payout_date);
+      firstForecastDate = new Date(largestOpenDate);
+      firstForecastDate.setDate(firstForecastDate.getDate() + 14);
+      console.log(`[Seasonality Forecast] Found open settlement: $${openSettlements[0].total_amount} on ${openSettlements[0].payout_date}`);
+      console.log(`[Seasonality Forecast] First forecast will be 14 days later: ${firstForecastDate.toISOString().split('T')[0]}`);
+    } else {
+      console.log(`[Seasonality Forecast] No open settlements found, using 14 days from today`);
+    }
+
+    // Generate forecasts - 6 bi-weekly periods
+    const forecasts = [];
+    
+    for (let i = 0; i < 6; i++) {
+      const forecastDate = new Date(firstForecastDate);
+      forecastDate.setDate(forecastDate.getDate() + (i * 14)); // Each forecast is 14 days apart
       const month = forecastDate.getMonth() + 1; // 1-12
       const seasonality = SEASONALITY[month];
 
       // Core formula with safety net
       const forecastedAmount = avgPayout * seasonality * growthTrend * momentumFactor * safetyMultiplier;
 
-      // Determine payout date (typically mid-month for bi-weekly)
-      const payoutDate = new Date(forecastDate.getFullYear(), forecastDate.getMonth(), 15);
-
       forecasts.push({
         user_id: user.id,
         account_id: accountId,
         amazon_account_id: confirmedPayouts[0]?.amazon_account_id,
-        settlement_id: `FORECAST-${payoutDate.toISOString().split('T')[0]}`,
-        payout_date: payoutDate.toISOString().split('T')[0],
+        settlement_id: `FORECAST-${forecastDate.toISOString().split('T')[0]}`,
+        payout_date: forecastDate.toISOString().split('T')[0],
         total_amount: Math.round(forecastedAmount * 100) / 100,
         currency_code: 'USD',
         status: 'forecasted',
@@ -203,7 +222,7 @@ Deno.serve(async (req) => {
         other_total: momentumFactor, // Store momentum factor
       });
 
-      console.log(`[Seasonality Forecast] Month ${month} (${seasonality}x): $${forecastedAmount.toFixed(2)}`);
+      console.log(`[Seasonality Forecast] Forecast ${i + 1}: ${forecastDate.toISOString().split('T')[0]} (${seasonality}x): $${forecastedAmount.toFixed(2)}`);
     }
 
     // Insert forecasts

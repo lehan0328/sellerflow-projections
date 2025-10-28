@@ -86,13 +86,38 @@ serve(async (req) => {
     }
 
     // Filter accounts that have sufficient data for forecasting
-    const accountsReadyForForecast = amazonAccounts.filter(acc => {
-      const hasEnoughData = acc.initial_sync_complete && (acc.transaction_count || 0) >= 50;
-      if (!hasEnoughData) {
-        console.log(`⚠️ Skipping ${acc.account_name}: insufficient data (${acc.transaction_count || 0} transactions, need 50+)`);
+    const accountsReadyForForecast = [];
+    
+    for (const acc of amazonAccounts) {
+      // Check for transaction-level data first
+      const hasTransactionData = acc.initial_sync_complete && (acc.transaction_count || 0) >= 50;
+      
+      if (hasTransactionData) {
+        accountsReadyForForecast.push(acc);
+        console.log(`✅ ${acc.account_name}: Has sufficient transaction data (${acc.transaction_count} transactions)`);
+        continue;
       }
-      return hasEnoughData;
-    });
+      
+      // For daily accounts, check if we have enough settlement/payout data instead
+      if (acc.payout_frequency === 'daily') {
+        const { data: settlements, count } = await supabase
+          .from('amazon_payouts')
+          .select('*', { count: 'exact', head: false })
+          .eq('amazon_account_id', acc.id)
+          .eq('status', 'confirmed')
+          .limit(1);
+        
+        if (count && count >= 30) {
+          accountsReadyForForecast.push(acc);
+          console.log(`✅ ${acc.account_name}: Has sufficient settlement data (${count} settlements)`);
+          continue;
+        } else {
+          console.log(`⚠️ Skipping ${acc.account_name}: insufficient data (${count || 0} settlements, need 30+)`);
+        }
+      } else {
+        console.log(`⚠️ Skipping ${acc.account_name}: insufficient transaction data (${acc.transaction_count || 0} transactions, need 50+)`);
+      }
+    }
 
     if (accountsReadyForForecast.length === 0) {
       console.log('⚠️ No accounts have sufficient data for forecasting yet');
