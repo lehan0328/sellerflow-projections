@@ -263,12 +263,25 @@ export const ForecastSettings = () => {
           }
           setSyncProgress(45);
 
-          // Generate new forecasts using seasonality model
-          console.log('🔄 [TOGGLE] Calling forecast generation edge function...');
+          // Determine which forecast function to use based on payout frequency
+          const { data: amazonAccount } = await supabase
+            .from('amazon_accounts')
+            .select('payout_frequency')
+            .eq('user_id', currentUser.id)
+            .eq('is_active', true)
+            .limit(1)
+            .single();
+          
+          const payoutFrequency = amazonAccount?.payout_frequency || 'bi-weekly';
+          const forecastFunction = payoutFrequency === 'daily' 
+            ? 'forecast-amazon-payouts-math'  // Advanced daily distribution (90 days)
+            : 'forecast-amazon-payouts-seasonality'; // Monthly seasonality (6 months)
+          
+          console.log(`🔄 [TOGGLE] Calling ${forecastFunction} for ${payoutFrequency} payouts...`);
           const {
             data,
             error
-          } = await supabase.functions.invoke('forecast-amazon-payouts-seasonality', {
+          } = await supabase.functions.invoke(forecastFunction, {
             body: {
               userId: currentUser.id
             }
@@ -520,6 +533,20 @@ export const ForecastSettings = () => {
           id: loadingToastId
         });
         try {
+          // Detect payout frequency
+          const { data: amazonAccount } = await supabase
+            .from('amazon_accounts')
+            .select('payout_frequency')
+            .eq('user_id', currentUser.id)
+            .eq('is_active', true)
+            .limit(1)
+            .single();
+          
+          const payoutFrequency = amazonAccount?.payout_frequency || 'bi-weekly';
+          const forecastFunction = payoutFrequency === 'daily' 
+            ? 'forecast-amazon-payouts-math'  // Advanced daily distribution (90 days)
+            : 'forecast-amazon-payouts-seasonality'; // Monthly seasonality (6 months)
+          
           // Delete old forecasts
           const {
             error: deleteError
@@ -530,12 +557,12 @@ export const ForecastSettings = () => {
             console.log('✅ Old forecasts deleted');
           }
 
-          // Generate new forecasts using mathematical model
-          console.log('🤖 Calling forecast-amazon-payouts-math function...');
+          // Generate new forecasts using appropriate model
+          console.log(`🤖 Calling ${forecastFunction} for ${payoutFrequency} payouts...`);
           const {
             data,
             error
-          } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
+          } = await supabase.functions.invoke(forecastFunction, {
             body: {
               userId: currentUser.id
             }
@@ -680,13 +707,31 @@ export const ForecastSettings = () => {
                 } = await supabase.auth.getUser();
                 if (!currentUser) throw new Error("Not authenticated");
                 setSyncProgress(30);
+                
+                // Detect payout frequency
+                const { data: amazonAccount } = await supabase
+                  .from('amazon_accounts')
+                  .select('payout_frequency')
+                  .eq('user_id', currentUser.id)
+                  .eq('is_active', true)
+                  .limit(1)
+                  .single();
+                
+                const payoutFrequency = amazonAccount?.payout_frequency || 'bi-weekly';
+                const forecastFunction = payoutFrequency === 'daily' 
+                  ? 'forecast-amazon-payouts-math'  // Advanced daily distribution (90 days)
+                  : 'forecast-amazon-payouts-seasonality'; // Monthly seasonality (6 months)
+                
+                console.log(`🔄 Regenerating with ${forecastFunction} for ${payoutFrequency} payouts...`);
+                
                 // Delete old forecasts
                 await supabase.from('amazon_payouts').delete().eq('user_id', currentUser.id).eq('status', 'forecasted');
                 setSyncProgress(50);
+                
                 // Generate new forecasts
                 const {
                   error
-                } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
+                } = await supabase.functions.invoke(forecastFunction, {
                   body: {
                     userId: currentUser.id
                   }
