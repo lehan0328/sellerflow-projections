@@ -215,44 +215,23 @@ Deno.serve(async (req) => {
     
     // Decompress if needed
     if (compressionAlgorithm === 'GZIP') {
-      console.log('[REPORTS] GZIP compression detected, decompressing...')
+      console.log('[REPORTS] 🔓 GZIP compression detected, decompressing...')
       
-      // Get the response as an array buffer
-      const compressedData = await downloadResponse.arrayBuffer()
+      // Get compressed data as array buffer
+      const compressedData = new Uint8Array(await downloadResponse.arrayBuffer())
       
-      // Create a decompression stream
-      const decompressedStream = new ReadableStream({
-        start(controller) {
-          const decompressor = new DecompressionStream('gzip')
-          const writer = decompressor.writable.getWriter()
-          writer.write(new Uint8Array(compressedData))
-          writer.close()
-          
-          const reader = decompressor.readable.getReader()
-          const pump = () => {
-            reader.read().then(({ done, value }) => {
-              if (done) {
-                controller.close()
-                return
-              }
-              controller.enqueue(value)
-              pump()
-            })
-          }
-          pump()
-        }
-      })
-      
-      // Read the decompressed data
+      // Use Deno's native DecompressionStream
+      const ds = new DecompressionStream('gzip')
+      const decompressedStream = new Blob([compressedData]).stream().pipeThrough(ds)
       const decompressedData = await new Response(decompressedStream).arrayBuffer()
       reportContent = new TextDecoder().decode(decompressedData)
       
-      console.log('[REPORTS] Decompression complete')
+      console.log('[REPORTS] ✅ Decompression complete, extracted', reportContent.length, 'bytes')
     } else {
       reportContent = await downloadResponse.text()
     }
 
-    console.log(`[REPORTS] Downloaded ${reportContent.length} bytes`)
+    console.log(`[REPORTS] Processing ${reportContent.length} characters of report data`)
 
     // Step 5: Parse CSV and aggregate at ORDER level for forecasting
     const lines = reportContent.split('\n')
