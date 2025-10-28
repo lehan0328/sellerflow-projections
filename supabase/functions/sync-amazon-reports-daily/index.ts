@@ -161,7 +161,15 @@ Deno.serve(async (req) => {
     const headers = lines[0].split('\t')
 
     console.log(`[REPORTS] CSV has ${lines.length - 1} rows`)
-    console.log(`[REPORTS] Headers (first 20):`, headers.slice(0, 20))
+    console.log(`[REPORTS] Total headers:`, headers.length)
+    console.log(`[REPORTS] ALL HEADERS:`, JSON.stringify(headers))
+    
+    // Also log first data row
+    if (lines.length > 1) {
+      const firstRow = lines[1].split('\t')
+      console.log(`[REPORTS] First data row length:`, firstRow.length)
+      console.log(`[REPORTS] First 5 values:`, firstRow.slice(0, 5))
+    }
 
     // Find column indices - try multiple possible column names
     const orderIdIdx = headers.findIndex(h => 
