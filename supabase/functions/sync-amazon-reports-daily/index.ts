@@ -156,20 +156,30 @@ Deno.serve(async (req) => {
       throw new Error('Failed to download report')
     }
 
-    const csvText = await csvResponse.text()
+    // Check if response is gzipped
+    const contentEncoding = csvResponse.headers.get('content-encoding')
+    console.log('[REPORTS] Content-Encoding:', contentEncoding)
+    
+    let csvText: string
+    if (contentEncoding === 'gzip' || downloadUrl.includes('.gz')) {
+      // Download as blob and decompress
+      const blob = await csvResponse.blob()
+      const arrayBuffer = await blob.arrayBuffer()
+      const decompressed = new DecompressionStream('gzip')
+      const decompressedStream = new Blob([arrayBuffer]).stream().pipeThrough(decompressed)
+      const decompressedBlob = await new Response(decompressedStream).blob()
+      csvText = await decompressedBlob.text()
+      console.log('[REPORTS] Decompressed gzipped report')
+    } else {
+      csvText = await csvResponse.text()
+    }
+    
     const lines = csvText.split('\n')
     const headers = lines[0].split('\t')
 
     console.log(`[REPORTS] CSV has ${lines.length - 1} rows`)
     console.log(`[REPORTS] Total headers:`, headers.length)
-    console.log(`[REPORTS] ALL HEADERS:`, JSON.stringify(headers))
-    
-    // Also log first data row
-    if (lines.length > 1) {
-      const firstRow = lines[1].split('\t')
-      console.log(`[REPORTS] First data row length:`, firstRow.length)
-      console.log(`[REPORTS] First 5 values:`, firstRow.slice(0, 5))
-    }
+    console.log(`[REPORTS] First 10 headers:`, headers.slice(0, 10))
 
     // Find column indices - try multiple possible column names
     const orderIdIdx = headers.findIndex(h => 
