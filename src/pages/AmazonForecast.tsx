@@ -160,7 +160,18 @@ export default function AmazonForecast() {
     });
     
     const totalPayouts = confirmedPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
-    const avgPayout = confirmedPayouts.length > 0 ? totalPayouts / confirmedPayouts.length : 0;
+    
+    // Calculate average daily payout
+    // Get date range of all confirmed payouts
+    let avgPayout = 0;
+    if (confirmedPayouts.length > 0) {
+      const payoutDates = confirmedPayouts.map(p => new Date(p.payout_date).getTime());
+      const minDate = Math.min(...payoutDates);
+      const maxDate = Math.max(...payoutDates);
+      const daysDifference = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24)) + 1; // +1 to include both start and end days
+      avgPayout = daysDifference > 0 ? totalPayouts / daysDifference : 0;
+    }
+    
     const lastPayout = confirmedPayouts.length > 0 ? Number(confirmedPayouts[0].total_amount || 0) : 0;
     
     // Calculate growth rate based on selected timeframe
@@ -340,11 +351,11 @@ export default function AmazonForecast() {
 
             <div className="bg-background rounded-lg border p-4">
               <div className="flex items-center justify-between space-y-0 pb-2">
-                <p className="text-sm font-medium">Avg Payout</p>
+                <p className="text-sm font-medium">Avg Daily Payout</p>
                 <LineChart className="h-4 w-4 text-blue-600" />
               </div>
               <div className="text-2xl font-bold">${metrics.avgPayout.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">Per payout period</p>
+              <p className="text-xs text-muted-foreground">Per day average</p>
             </div>
 
             <div className="bg-background rounded-lg border p-4">
