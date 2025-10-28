@@ -222,8 +222,8 @@ Deno.serve(async (req) => {
       throw new Error('Order ID column not found in report')
     }
 
-    // Parse transactions
-    const transactions = []
+    // Parse transactions - group by order ID to handle multi-item orders
+    const orderMap = new Map()
     let skippedNoOrderId = 0
     let skippedNoDate = 0
     let usedEstimatedDelivery = 0
@@ -276,35 +276,42 @@ Deno.serve(async (req) => {
         usedEstimatedDelivery++
       }
 
-      // Calculate net amount (gross - tax - discounts)
+      // Calculate net amount for this line item (gross - tax - discounts)
       const netAmount = itemPrice - itemTax - promotionDiscount
 
-      // Make transaction_id unique by appending line number (same order can have multiple items)
-      const uniqueTransactionId = `${orderId}-L${i}`
-
-      transactions.push({
-        amazon_account_id: amazonAccountId,
-        user_id: account.user_id,
-        account_id: account.account_id,
-        transaction_id: uniqueTransactionId,
-        transaction_type: 'Order',
-        transaction_date: new Date(purchaseDate).toISOString(),
-        delivery_date: deliveryDate.toISOString(),
-        amount: netAmount,
-        description: `Order ${orderId}`,
-        created_at: new Date().toISOString(),
-      })
+      // Aggregate by order ID
+      if (orderMap.has(orderId)) {
+        // Add to existing order
+        orderMap.get(orderId).amount += netAmount
+      } else {
+        // New order
+        orderMap.set(orderId, {
+          amazon_account_id: amazonAccountId,
+          user_id: account.user_id,
+          account_id: account.account_id,
+          transaction_id: orderId,
+          transaction_type: 'Order',
+          transaction_date: new Date(purchaseDate).toISOString(),
+          delivery_date: deliveryDate.toISOString(),
+          amount: netAmount,
+          description: `Order ${orderId}`,
+          created_at: new Date().toISOString(),
+        })
+      }
     }
+
+    const transactions = Array.from(orderMap.values())
 
     console.log(`[REPORTS] Parsing summary:`, {
       totalLines: lines.length - 1,
-      validOrders: transactions.length,
+      totalLineItems: lines.length - 1 - skippedNoOrderId - skippedNoDate,
+      uniqueOrders: transactions.length,
       skippedNoOrderId,
       skippedNoDate,
       usedEstimatedDelivery
     })
 
-    console.log(`[REPORTS] Parsed ${transactions.length} valid orders with delivery dates`)
+    console.log(`[REPORTS] Parsed ${transactions.length} unique orders (aggregated from line items) with delivery dates`)
 
     // Step 5: Upsert to database
     if (transactions.length > 0) {
