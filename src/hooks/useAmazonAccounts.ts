@@ -18,6 +18,7 @@ export interface AmazonAccount {
   sync_progress?: number;
   sync_message?: string;
   last_sync_error?: string | null;
+  sync_notifications_enabled?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -64,6 +65,7 @@ export const useAmazonAccounts = () => {
           sync_progress,
           sync_message,
           last_sync_error,
+          sync_notifications_enabled,
           created_at,
           updated_at
         `)

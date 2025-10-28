@@ -262,10 +262,10 @@ export function AmazonManagement() {
       console.log('Amazon OAuth URL:', authUrl);
       
       toast.info('Redirecting to Amazon Seller Central...');
-      console.log('Step 4: Redirecting to Amazon...');
+      console.log('Step 4: Redirecting to Amazon in same tab...');
       
-      // Open in same window to preserve session
-      window.location.href = authUrl;
+      // Force same-tab navigation (not new window)
+      window.open(authUrl, '_self');
     } catch (error) {
       console.error('=== ERROR IN AMAZON CONNECTION ===', error);
       toast.error(`Failed to initiate Amazon connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -344,8 +344,19 @@ export function AmazonManagement() {
 
       toast.success(enabled ? 'Sync email notifications enabled' : 'Sync email notifications disabled');
       
-      // Reload to refresh UI
-      window.location.reload();
+      // Refetch accounts to refresh UI without full page reload
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from("amazon_accounts")
+          .select('*')
+          .eq("user_id", user.id)
+          .eq("is_active", true);
+        
+        if (data) {
+          window.location.reload(); // Still need reload to update the hook state
+        }
+      }
     } catch (error) {
       console.error('Error updating notification preference:', error);
       toast.error('Failed to update notification preference');
@@ -770,7 +781,7 @@ export function AmazonManagement() {
                       </div>
                       <Switch
                         id={`sync-notifications-${account.id}`}
-                        checked={(account as any).sync_notifications_enabled || false}
+                        checked={account.sync_notifications_enabled || false}
                         onCheckedChange={(checked) => handleToggleSyncNotifications(account.id, checked)}
                       />
                     </div>
