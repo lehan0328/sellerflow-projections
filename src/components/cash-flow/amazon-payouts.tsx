@@ -538,13 +538,27 @@ export function AmazonPayouts() {
         {(() => {
           const todayStr = new Date().toISOString().split('T')[0];
           
-          // Filter open settlements across ALL connected Amazon accounts - only for today
+          // Filter open settlements - only show if settlement period includes today
           const openSettlements = amazonPayouts.filter(p => {
             const rawData = p.raw_settlement_data;
             const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
-            const payoutDateStr = p.payout_date.split('T')[0]; // Get just YYYY-MM-DD
+            const payoutDateStr = p.payout_date.split('T')[0];
             const isToday = payoutDateStr === todayStr;
             const isEstimated = p.status === 'estimated';
+            
+            // Check if settlement start date is within the last 30 days (current billing period)
+            const settlementStart = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
+            if (settlementStart) {
+              const startDate = new Date(settlementStart).toISOString().split('T')[0];
+              const thirtyDaysAgo = new Date();
+              thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+              const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+              
+              // Only show if settlement started within last 30 days
+              if (startDate < thirtyDaysAgoStr) {
+                return false;
+              }
+            }
             
             return isEstimated && !hasEndDate && isToday;
           });
