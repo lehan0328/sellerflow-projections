@@ -538,7 +538,7 @@ export function AmazonPayouts() {
         {(() => {
           const todayStr = new Date().toISOString().split('T')[0];
           
-          // Filter open settlements - only show if settlement period includes today
+          // Filter open settlements - only show if today falls within the settlement period
           const openSettlements = amazonPayouts.filter(p => {
             const rawData = p.raw_settlement_data;
             const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
@@ -546,16 +546,16 @@ export function AmazonPayouts() {
             const isToday = payoutDateStr === todayStr;
             const isEstimated = p.status === 'estimated';
             
-            // Check if settlement start date is within the last 30 days (current billing period)
+            // Check if settlement start date is within a reasonable bi-weekly period (21 days)
             const settlementStart = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
             if (settlementStart) {
-              const startDate = new Date(settlementStart).toISOString().split('T')[0];
-              const thirtyDaysAgo = new Date();
-              thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-              const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+              const startDateStr = new Date(settlementStart).toISOString().split('T')[0];
+              const twentyOneDaysAgo = new Date();
+              twentyOneDaysAgo.setDate(twentyOneDaysAgo.getDate() - 21);
+              const cutoffDateStr = twentyOneDaysAgo.toISOString().split('T')[0];
               
-              // Only show if settlement started within last 30 days
-              if (startDate < thirtyDaysAgoStr) {
+              // Only show if settlement started within last 21 days (bi-weekly period)
+              if (startDateStr < cutoffDateStr) {
                 return false;
               }
             }
