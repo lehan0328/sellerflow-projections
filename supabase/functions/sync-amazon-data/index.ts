@@ -152,6 +152,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
 
     console.log('[SYNC] Using endpoint:', apiEndpoint)
 
+    // Track counts for final reporting
+    let totalSettlementCount = 0
+
     // Helper function to make API request with automatic token refresh on 403
     const makeAuthenticatedRequest = async (url: string, options: any, retryCount = 0): Promise<Response> => {
       const response = await fetch(url, options)
@@ -247,6 +250,10 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       // Fetch settlements using listFinancialEventGroups
       const eventGroupsUrl = `${apiEndpoint}/finances/v0/financialEventGroups`
       
+      console.log(`[SYNC] ========== FETCHING SETTLEMENTS ==========`)
+      console.log(`[SYNC] Settlement date range: ${settlementStartDate.toISOString()} to ${settlementEndDate.toISOString()}`)
+      console.log(`[SYNC] API Endpoint: ${eventGroupsUrl}`)
+      
       const settlementsToAdd: any[] = []
       let groupNextToken: string | null = null
       let groupPageCount = 0
@@ -260,6 +267,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           groupParams.append('NextToken', groupNextToken)
         }
         
+        console.log(`[SYNC] Request URL: ${eventGroupsUrl}?${groupParams.toString()}`)
+        
         const groupResponse = await makeAuthenticatedRequest(
           `${eventGroupsUrl}?${groupParams}`,
           {
@@ -272,14 +281,18 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         
         if (!groupResponse.ok) {
           const errorText = await groupResponse.text()
-          console.error('[SYNC] Error fetching settlements:', errorText)
+          console.error('[SYNC] ❌ Error fetching settlements:', errorText)
+          console.error('[SYNC] Response status:', groupResponse.status)
           throw new Error(`Failed to fetch settlements: ${groupResponse.status} - ${errorText}`)
         }
         
         const groupData = await groupResponse.json()
+        console.log(`[SYNC] API Response payload keys:`, Object.keys(groupData.payload || {}))
+        console.log(`[SYNC] Full API Response:`, JSON.stringify(groupData, null, 2))
+        
         const groups = groupData.payload?.FinancialEventGroupList || []
         
-        console.log(`[SYNC] Settlement page ${groupPageCount + 1}: ${groups.length} groups`)
+        console.log(`[SYNC] Settlement page ${groupPageCount + 1}: ${groups.length} groups found`)
         
         for (const group of groups) {
             if (group.FinancialEventGroupId) {
@@ -339,10 +352,47 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         
       } while (groupNextToken && groupPageCount < 50)
       
-      console.log(`[SYNC] ✅ Found ${settlementsToAdd.length} settlements`)
+      console.log(`[SYNC] ========== SETTLEMENT SUMMARY ==========`)
+      console.log(`[SYNC] Total settlements found: ${settlementsToAdd.length}`)
+      console.log(`[SYNC] Payouts Pending (open): ${settlementsToAdd.filter(s => s.type === 'open_settlement').length}`)
+      console.log(`[SYNC] Payouts Confirmed (closed): ${settlementsToAdd.filter(s => s.type === 'settlement').length}`)
+      
+      // DON'T PROCEED if no settlements found - this indicates an API issue
+      if (settlementsToAdd.length === 0) {
+        console.log(`[SYNC] ⚠️ WARNING: No settlements found in date range`)
+        console.log(`[SYNC] This could mean:`)
+        console.log(`[SYNC] 1. This is a new Amazon account with no sales yet`)
+        console.log(`[SYNC] 2. The access token doesn't have financial data permissions`)
+        console.log(`[SYNC] 3. There's an API configuration issue`)
+        console.log(`[SYNC] Skipping transaction sync since we have no settlement context`)
+        
+        await supabase
+          .from('amazon_accounts')
+          .update({ 
+            sync_status: 'error',
+            sync_message: 'No settlements found - check account permissions or wait for first sale',
+            sync_progress: 0
+          })
+          .eq('id', amazonAccountId)
+        
+        return new Response(JSON.stringify({ 
+          success: false, 
+          message: 'No settlements found - check permissions or wait for sales',
+          settlements_found: 0,
+          transactions_synced: 0,
+          date_range: {
+            start: settlementStartDate.toISOString(),
+            end: settlementEndDate.toISOString()
+          }
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        })
+      }
       
       // Save settlements immediately
       if (settlementsToAdd.length > 0) {
+        totalSettlementCount += settlementsToAdd.length
         const { error: settlementsError } = await supabase
           .from('amazon_payouts')
           .upsert(settlementsToAdd, { 
@@ -1379,7 +1429,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
               userId: actualUserId,
               accountName: accountData.account_name,
               transactionCount: totalTransactionCount,
-              settlementCount: 0, // Settlements are tracked separately during backfill phase
+              settlementCount: totalSettlementCount,
               syncDuration: syncDuration
             }
           })
