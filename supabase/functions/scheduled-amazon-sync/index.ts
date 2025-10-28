@@ -112,9 +112,9 @@ Deno.serve(async (req) => {
           }
           console.log(`📥 Continuing backfill for ${account.account_name} (${account.sync_progress || 0}% complete)`)
         }
-        // For completed accounts, sync every 6 hours (matching cron schedule)
+        // For completed accounts, sync every 12 hours
         else {
-          const minHoursBetweenSync = 5.5 // Slightly less than 6 hours to avoid timing issues
+          const minHoursBetweenSync = 11.5 // Slightly less than 12 hours to avoid timing issues
           
           const hoursSinceSync = minutesSinceSync / 60
           

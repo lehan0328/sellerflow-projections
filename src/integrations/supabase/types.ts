@@ -198,6 +198,7 @@ export type Database = {
           id: string
           initial_sync_complete: boolean | null
           is_active: boolean
+          last_report_sync: string | null
           last_settlement_sync_date: string | null
           last_sync: string | null
           last_sync_error: string | null
@@ -238,6 +239,7 @@ export type Database = {
           id?: string
           initial_sync_complete?: boolean | null
           is_active?: boolean
+          last_report_sync?: string | null
           last_settlement_sync_date?: string | null
           last_sync?: string | null
           last_sync_error?: string | null
@@ -278,6 +280,7 @@ export type Database = {
           id?: string
           initial_sync_complete?: boolean | null
           is_active?: boolean
+          last_report_sync?: string | null
           last_settlement_sync_date?: string | null
           last_sync?: string | null
           last_sync_error?: string | null

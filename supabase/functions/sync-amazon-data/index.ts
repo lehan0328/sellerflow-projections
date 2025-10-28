@@ -263,45 +263,94 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
       last_sync: new Date().toISOString()
     }).eq('id', amazonAccountId)
     
-    // === STEP 2: FETCH TRANSACTION DETAILS ===
-    console.log('[SYNC] ===== STEP 2: FETCHING TRANSACTIONS =====')
+    // === STEP 2: TRIGGER REPORT SYNC FOR DAILY ACCOUNTS ===
+    console.log('[SYNC] ===== STEP 2: CHECKING REPORT SYNC ELIGIBILITY =====')
     
-    // Check if transactions need to be synced (not done OR no transactions exist)
-    const bulkSyncDone = amazonAccount.bulk_transaction_sync_complete && amazonAccount.transaction_count > 0
+    // Check if this is a daily payout account (already detected in Step 1)
+    const isDaily = detectedFrequency === 'daily'
     
-    if (!bulkSyncDone) {
-      await supabase.from('amazon_accounts').update({ 
-        sync_progress: 60,
-        sync_message: 'Downloading transaction details...'
-      }).eq('id', amazonAccountId)
+    if (isDaily) {
+      console.log('[SYNC] ✅ Daily payout account detected')
       
-      console.log('[SYNC] Calling sync-amazon-reports...')
+      // Check if report sync is needed (every 12 hours)
+      const { data: accountData } = await supabase
+        .from('amazon_accounts')
+        .select('last_report_sync')
+        .eq('id', amazonAccountId)
+        .single()
       
-      const { data: reportData, error: reportError } = await supabase.functions.invoke('sync-amazon-reports', {
-        body: { accountId: amazonAccountId }
-      })
+      const lastReportSync = accountData?.last_report_sync ? new Date(accountData.last_report_sync) : null
+      const now = new Date()
+      const hoursSinceReportSync = lastReportSync 
+        ? (now.getTime() - lastReportSync.getTime()) / (1000 * 60 * 60)
+        : 999 // Force sync if never synced
       
-      if (reportError || reportData?.error) {
-        console.error('[SYNC] Reports sync error:', reportError || reportData?.error)
-        throw new Error(`Reports sync failed: ${reportError?.message || reportData?.error}`)
+      // Sync reports twice per day (every 12 hours)
+      if (hoursSinceReportSync >= 12) {
+        await supabase.from('amazon_accounts').update({ 
+          sync_progress: 70,
+          sync_message: 'Fetching order delivery dates for forecasting...'
+        }).eq('id', amazonAccountId)
+        
+        console.log(`[SYNC] Triggering report sync (last sync: ${hoursSinceReportSync.toFixed(1)}h ago)`)
+        
+        try {
+          const { data: reportData, error: reportError } = await supabase.functions.invoke(
+            'sync-amazon-reports-daily',
+            { body: { amazonAccountId, days: 14 } }
+          )
+          
+          if (reportError || reportData?.error) {
+            console.error('[SYNC] Reports sync failed (non-critical):', reportError || reportData?.error)
+            // Don't throw - settlement data is still valid
+            await supabase.from('amazon_accounts').update({
+              sync_status: 'completed',
+              sync_progress: 100,
+              sync_message: `${settlementsToSave.length} payouts synced (reports failed - using estimated delivery dates)`,
+              last_sync: now.toISOString()
+            }).eq('id', amazonAccountId)
+          } else {
+            console.log('[SYNC] ✅ Reports synced:', reportData)
+            
+            await supabase.from('amazon_accounts').update({
+              sync_progress: 95,
+              sync_message: 'Processing delivery dates...'
+            }).eq('id', amazonAccountId)
+            
+            await supabase.from('amazon_accounts').update({
+              sync_status: 'completed',
+              sync_progress: 100,
+              sync_message: `${settlementsToSave.length} payouts + ${reportData.ordersCount || 0} orders synced`,
+              last_sync: now.toISOString(),
+              last_report_sync: now.toISOString()
+            }).eq('id', amazonAccountId)
+          }
+        } catch (error) {
+          console.error('[SYNC] Exception during report sync:', error)
+          await supabase.from('amazon_accounts').update({
+            sync_status: 'completed',
+            sync_progress: 100,
+            sync_message: `${settlementsToSave.length} payouts synced (report sync error)`,
+            last_sync: now.toISOString()
+          }).eq('id', amazonAccountId)
+        }
+      } else {
+        console.log(`[SYNC] Skipping report sync (synced ${hoursSinceReportSync.toFixed(1)}h ago, need 12h)`)
+        await supabase.from('amazon_accounts').update({
+          sync_status: 'completed',
+          sync_progress: 100,
+          sync_message: `${settlementsToSave.length} payouts synced`,
+          last_sync: now.toISOString()
+        }).eq('id', amazonAccountId)
       }
-      
-      console.log('[SYNC] ✅ Transaction details synced:', reportData)
-      
-      await supabase.from('amazon_accounts').update({ 
-        bulk_transaction_sync_complete: true,
-        sync_status: 'completed',
-        sync_progress: 100,
-        sync_message: `Complete! ${settlementsToSave.length} payouts + ${reportData.inserted || 0} transactions`,
-        last_sync: new Date().toISOString()
-      }).eq('id', amazonAccountId)
     } else {
-      console.log('[SYNC] Transactions already synced')
-      await supabase.from('amazon_accounts').update({ 
+      // Bi-weekly account - skip reports entirely
+      console.log('[SYNC] Bi-weekly account - skipping reports sync')
+      await supabase.from('amazon_accounts').update({
         sync_status: 'completed',
         sync_progress: 100,
-        sync_message: `${settlementsToSave.length} payouts updated`,
-        last_sync: new Date().toISOString()
+        sync_message: `${settlementsToSave.length} payouts synced`,
+        last_sync: now.toISOString()
       }).eq('id', amazonAccountId)
     }
     
