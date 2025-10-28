@@ -203,17 +203,70 @@ Deno.serve(async (req) => {
 
       // Map to our transaction format based on report type
       if (reportType === 'GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL') {
+        const itemPrice = parseFloat(row['item-price'] || '0')
+        const itemTax = parseFloat(row['item-tax'] || '0')
+        const shippingPrice = parseFloat(row['shipping-price'] || '0')
+        const shippingTax = parseFloat(row['shipping-tax'] || '0')
+        const giftWrap = parseFloat(row['gift-wrap-price'] || '0')
+        const giftWrapTax = parseFloat(row['gift-wrap-tax'] || '0')
+        const itemPromo = parseFloat(row['item-promotion-discount'] || '0')
+        const shipPromo = parseFloat(row['ship-promotion-discount'] || '0')
+        
+        // Calculate total amount (Amazon's way)
+        const totalAmount = itemPrice + itemTax + shippingPrice + shippingTax + 
+                           giftWrap + giftWrapTax - Math.abs(itemPromo) - Math.abs(shipPromo)
+        
         transactions.push({
           amazon_account_id: accountId,
           user_id: account.user_id,
           transaction_date: row['purchase-date'] || row['PurchaseDate'],
           amazon_order_id: row['amazon-order-id'] || row['AmazonOrderId'],
           transaction_type: 'Order',
-          amount: parseFloat(row['item-price'] || '0'),
+          amount: totalAmount,
           currency: row['currency'] || 'USD',
           sku: row['sku'] || row['SKU'],
           quantity: parseInt(row['quantity-purchased'] || '1'),
-          raw_data: row,
+          raw_data: {
+            // Core identifiers
+            order_id: row['amazon-order-id'],
+            order_item_id: row['order-item-id'],
+            sku: row['sku'],
+            asin: row['asin'],
+            
+            // Pricing breakdown
+            item_price: itemPrice,
+            item_tax: itemTax,
+            shipping_price: shippingPrice,
+            shipping_tax: shippingTax,
+            gift_wrap_price: giftWrap,
+            gift_wrap_tax: giftWrapTax,
+            item_promotion_discount: itemPromo,
+            ship_promotion_discount: shipPromo,
+            
+            // Order details
+            quantity: row['quantity-purchased'],
+            purchase_date: row['purchase-date'],
+            payments_date: row['payments-date'],
+            buyer_email: row['buyer-email'],
+            buyer_name: row['buyer-name'],
+            
+            // Shipping info
+            ship_service_level: row['ship-service-level'],
+            ship_city: row['ship-city'],
+            ship_state: row['ship-state'],
+            ship_postal_code: row['ship-postal-code'],
+            ship_country: row['ship-country'],
+            
+            // Product info
+            product_name: row['product-name'],
+            
+            // Status and channel
+            order_status: row['order-status'],
+            sales_channel: row['sales-channel'],
+            fulfillment_channel: row['fulfillment-channel'],
+            is_business_order: row['is-business-order'],
+            is_prime: row['is-prime'],
+          },
         })
       }
     }
