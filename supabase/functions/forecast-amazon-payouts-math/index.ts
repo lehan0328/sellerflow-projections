@@ -345,20 +345,20 @@ serve(async (req) => {
           
           console.log(`[MATH-FORECAST] Generating ${remainingDays} additional days of forecasts based on adjusted avg: $${adjustedDailyAvg.toFixed(2)}/day`);
           
-          // Seasonality multipliers by month (based on Amazon sales patterns)
+          // Seasonality multipliers by month (user-provided seasonality chart)
           const SEASONALITY = {
-            1: 0.92,  // Jan - post-holiday slowdown
-            2: 0.88,  // Feb - slowest month
-            3: 0.95,  // Mar
-            4: 0.98,  // Apr
-            5: 1.00,  // May - baseline
-            6: 1.02,  // Jun
-            7: 1.05,  // Jul - Prime Day
-            8: 0.97,  // Aug
-            9: 0.99,  // Sep
-            10: 1.03, // Oct - Q4 ramp
-            11: 1.15, // Nov - Black Friday/Cyber Monday
-            12: 1.20, // Dec - Holiday peak
+            1: 1.12,  // Jan
+            2: 0.92,  // Feb
+            3: 1.02,  // Mar
+            4: 1.00,  // Apr
+            5: 1.03,  // May
+            6: 1.04,  // Jun
+            7: 1.10,  // Jul
+            8: 0.96,  // Aug
+            9: 0.97,  // Sep
+            10: 1.05, // Oct
+            11: 1.08, // Nov
+            12: 1.06, // Dec
           };
           
           for (let i = 0; i < remainingDays; i++) {
@@ -630,7 +630,29 @@ function generateBiWeeklyForecasts(
       // Apply linear trend growth per period (not exponential to prevent explosion)
       // More conservative: max 50% increase over 6 periods
       const linearTrendMultiplier = 1 + ((trendMultiplier - 1) * (i + 1));
-      eligibleInPeriod = avgDailyEligible * 14 * linearTrendMultiplier;
+      
+      // Apply seasonality based on settlement month
+      const SEASONALITY_BI_WEEKLY = {
+        1: 1.12,  // Jan
+        2: 0.92,  // Feb
+        3: 1.02,  // Mar
+        4: 1.00,  // Apr
+        5: 1.03,  // May
+        6: 1.04,  // Jun
+        7: 1.10,  // Jul
+        8: 0.96,  // Aug
+        9: 0.97,  // Sep
+        10: 1.05, // Oct
+        11: 1.08, // Nov
+        12: 1.06, // Dec
+      };
+      const settlementMonth = settlementDate.getMonth() + 1;
+      const seasonalMultiplier = SEASONALITY_BI_WEEKLY[settlementMonth] || 1.0;
+      
+      // Add realistic variance: ±8% random variation (less than daily since bi-weekly smooths out)
+      const varianceFactor = 0.92 + (Math.random() * 0.16); // 0.92 to 1.08
+      
+      eligibleInPeriod = avgDailyEligible * 14 * linearTrendMultiplier * seasonalMultiplier * varianceFactor;
       
       // Additional safety cap: max 1.5x of current avg, min 0.7x
       const basePeriodAmount = avgDailyEligible * 14;
@@ -639,7 +661,7 @@ function generateBiWeeklyForecasts(
         Math.min(basePeriodAmount * 1.5, eligibleInPeriod)
       );
       
-      console.log(`🔮 Period ${i+1}: $${eligibleInPeriod.toFixed(2)} (linear trend: ${((linearTrendMultiplier - 1) * 100).toFixed(1)}%)`);
+      console.log(`🔮 Period ${i+1}: $${eligibleInPeriod.toFixed(2)} (trend: ${((linearTrendMultiplier - 1) * 100).toFixed(1)}%, seasonal: ${(seasonalMultiplier * 100).toFixed(0)}%, variance: ${(varianceFactor * 100).toFixed(0)}%)`);
     }
 
     // Reserve = funds from orders delivered within reserve lag (7 days before settlement)
