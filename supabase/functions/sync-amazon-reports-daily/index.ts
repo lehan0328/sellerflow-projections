@@ -171,8 +171,22 @@ Deno.serve(async (req) => {
     const shippingPriceIdx = headers.indexOf('shipping-price')
     const promotionDiscountIdx = headers.indexOf('promotion-discount')
 
+    console.log(`[REPORTS] Column indices found:`, {
+      orderIdIdx,
+      purchaseDateIdx,
+      deliveryDateIdx,
+      itemPriceIdx,
+      itemTaxIdx,
+      shippingPriceIdx,
+      promotionDiscountIdx
+    })
+
     // Parse transactions
     const transactions = []
+    let skippedNoOrderId = 0
+    let skippedNoDate = 0
+    let usedEstimatedDelivery = 0
+
     for (let i = 1; i < lines.length; i++) {
       if (!lines[i].trim()) continue
 
@@ -180,13 +194,34 @@ Deno.serve(async (req) => {
       
       const orderId = cols[orderIdIdx]
       const purchaseDate = cols[purchaseDateIdx]
-      const deliveryDate = cols[deliveryDateIdx]
+      const deliveryDateRaw = cols[deliveryDateIdx]
       const itemPrice = parseFloat(cols[itemPriceIdx] || '0')
       const itemTax = parseFloat(cols[itemTaxIdx] || '0')
       const shippingPrice = parseFloat(cols[shippingPriceIdx] || '0')
       const promotionDiscount = parseFloat(cols[promotionDiscountIdx] || '0')
 
-      if (!orderId || !deliveryDate) continue
+      // Skip if no order ID
+      if (!orderId) {
+        skippedNoOrderId++
+        continue
+      }
+
+      // Skip if no purchase date
+      if (!purchaseDate) {
+        skippedNoDate++
+        continue
+      }
+
+      // Use delivery date if available, otherwise estimate (purchase + 3 days)
+      let deliveryDate: Date
+      if (deliveryDateRaw && deliveryDateRaw.trim()) {
+        deliveryDate = new Date(deliveryDateRaw)
+      } else {
+        // Estimate: purchase date + 3 days
+        deliveryDate = new Date(purchaseDate)
+        deliveryDate.setDate(deliveryDate.getDate() + 3)
+        usedEstimatedDelivery++
+      }
 
       // Calculate net amount (gross - tax - discounts)
       const netAmount = itemPrice - itemTax - promotionDiscount
@@ -198,12 +233,20 @@ Deno.serve(async (req) => {
         transaction_id: orderId,
         transaction_type: 'Order',
         transaction_date: new Date(purchaseDate).toISOString(),
-        delivery_date: new Date(deliveryDate).toISOString(),
+        delivery_date: deliveryDate.toISOString(),
         amount: netAmount,
         description: `Order ${orderId}`,
         created_at: new Date().toISOString(),
       })
     }
+
+    console.log(`[REPORTS] Parsing summary:`, {
+      totalLines: lines.length - 1,
+      validOrders: transactions.length,
+      skippedNoOrderId,
+      skippedNoDate,
+      usedEstimatedDelivery
+    })
 
     console.log(`[REPORTS] Parsed ${transactions.length} valid orders with delivery dates`)
 
