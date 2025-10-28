@@ -78,33 +78,35 @@ export const useAmazonPayouts = () => {
 
       // Filter payouts based on settings
       const filteredPayouts = (data || []).filter((payout) => {
-        // For open settlements (estimated), filter out stale data
+        // For open settlements (estimated), only show if they close in the future
         if (payout.status === 'estimated') {
-          // Get settlement start date from raw_settlement_data
-          const rawData = payout.raw_settlement_data as any;
-          const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
+          // Get settlement close date from payout_date (Amazon pays 1 day after close)
+          // payout_date = settlement_end_date + 1 day
+          const payoutDate = new Date(payout.payout_date);
+          const settlementCloseDate = new Date(payoutDate);
+          settlementCloseDate.setDate(settlementCloseDate.getDate() - 1); // Subtract 1 day to get close date
           
-          if (settlementStartStr) {
-            const settlementStart = new Date(settlementStartStr);
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-            
-            // Filter out open settlements older than 30 days (stale data)
-            if (settlementStart < thirtyDaysAgo) {
-              console.log('[fetchAmazonPayouts] Filtering stale open settlement:', {
-                id: payout.id,
-                started: settlementStartStr,
-                amount: payout.total_amount,
-                reason: 'Started more than 30 days ago'
-              });
-              return false;
-            }
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          settlementCloseDate.setHours(0, 0, 0, 0);
+          
+          // Only show open settlements that close today or in the future
+          if (settlementCloseDate < today) {
+            console.log('[fetchAmazonPayouts] Filtering past open settlement:', {
+              id: payout.id,
+              payout_date: payout.payout_date,
+              close_date: settlementCloseDate.toISOString().split('T')[0],
+              amount: payout.total_amount,
+              reason: 'Settlement already closed'
+            });
+            return false;
           }
           
-          console.log('[fetchAmazonPayouts] Keeping recent open settlement:', {
+          console.log('[fetchAmazonPayouts] Keeping future open settlement:', {
             id: payout.id,
             status: payout.status,
-            date: payout.payout_date,
+            close_date: settlementCloseDate.toISOString().split('T')[0],
+            payout_date: payout.payout_date,
             amount: payout.total_amount
           });
           return true;
