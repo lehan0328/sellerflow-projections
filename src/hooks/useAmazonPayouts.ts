@@ -80,11 +80,18 @@ export const useAmazonPayouts = () => {
       const filteredPayouts = (data || []).filter((payout) => {
         // For open settlements (estimated), only show if they close in the future
         if (payout.status === 'estimated') {
-          // Get settlement close date from payout_date (Amazon pays 1 day after close)
-          // payout_date = settlement_end_date + 1 day
-          const payoutDate = new Date(payout.payout_date);
-          const settlementCloseDate = new Date(payoutDate);
-          settlementCloseDate.setDate(settlementCloseDate.getDate() - 1); // Subtract 1 day to get close date
+          const rawData = payout.raw_settlement_data as any;
+          const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
+          
+          if (!settlementStartStr) {
+            console.log('[fetchAmazonPayouts] No start date for open settlement, excluding:', payout.id);
+            return false;
+          }
+          
+          // Calculate close date: start date + 14 days
+          const settlementStartDate = new Date(settlementStartStr);
+          const settlementCloseDate = new Date(settlementStartDate);
+          settlementCloseDate.setDate(settlementCloseDate.getDate() + 14);
           
           const today = new Date();
           today.setHours(0, 0, 0, 0);
@@ -94,7 +101,7 @@ export const useAmazonPayouts = () => {
           if (settlementCloseDate < today) {
             console.log('[fetchAmazonPayouts] Filtering past open settlement:', {
               id: payout.id,
-              payout_date: payout.payout_date,
+              start_date: settlementStartStr,
               close_date: settlementCloseDate.toISOString().split('T')[0],
               amount: payout.total_amount,
               reason: 'Settlement already closed'
@@ -105,8 +112,8 @@ export const useAmazonPayouts = () => {
           console.log('[fetchAmazonPayouts] Keeping future open settlement:', {
             id: payout.id,
             status: payout.status,
+            start_date: settlementStartStr,
             close_date: settlementCloseDate.toISOString().split('T')[0],
-            payout_date: payout.payout_date,
             amount: payout.total_amount
           });
           return true;

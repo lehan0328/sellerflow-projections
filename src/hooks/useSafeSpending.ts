@@ -207,10 +207,18 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       const filteredAmazonPayouts = (amazonResult.data || []).filter((payout) => {
         // For open settlements (estimated), only show if they close in the future
         if (payout.status === 'estimated') {
-          // Get settlement close date from payout_date (Amazon pays 1 day after close)
-          const payoutDate = parseLocalDate(payout.payout_date);
-          const settlementCloseDate = new Date(payoutDate);
-          settlementCloseDate.setDate(settlementCloseDate.getDate() - 1); // Subtract 1 day to get close date
+          const rawData = (payout as any).raw_settlement_data;
+          const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
+          
+          if (!settlementStartStr) {
+            console.log('🚫 [SAFE SPENDING] No start date for open settlement, excluding:', payout.id);
+            return false;
+          }
+          
+          // Calculate close date: start date + 14 days
+          const settlementStartDate = new Date(settlementStartStr);
+          const settlementCloseDate = new Date(settlementStartDate);
+          settlementCloseDate.setDate(settlementCloseDate.getDate() + 14);
           settlementCloseDate.setHours(0, 0, 0, 0);
           
           const today = new Date();
@@ -220,13 +228,20 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           if (settlementCloseDate.getTime() < today.getTime()) {
             console.log('🚫 [SAFE SPENDING] Filtering past open settlement:', {
               id: payout.id,
-              payout_date: payout.payout_date,
+              start_date: settlementStartStr,
               close_date: settlementCloseDate.toISOString().split('T')[0],
               amount: payout.total_amount,
               reason: 'Settlement already closed'
             });
             return false;
           }
+          
+          console.log('✅ [SAFE SPENDING] Including future open settlement:', {
+            id: payout.id,
+            start_date: settlementStartStr,
+            close_date: settlementCloseDate.toISOString().split('T')[0],
+            amount: payout.total_amount
+          });
           
           return true;
         }
