@@ -538,29 +538,29 @@ export function AmazonPayouts() {
         {(() => {
           const todayStr = new Date().toISOString().split('T')[0];
           
-          // Filter open settlements - only show if today falls within the settlement period
+          // Filter open settlements - only show if estimated close date is on or after today
           const openSettlements = amazonPayouts.filter(p => {
             const rawData = p.raw_settlement_data;
             const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
-            const payoutDateStr = p.payout_date.split('T')[0];
-            const isToday = payoutDateStr === todayStr;
             const isEstimated = p.status === 'estimated';
             
-            // Check if settlement start date is within a reasonable bi-weekly period (21 days)
+            // Only show estimated settlements without end dates
+            if (!isEstimated || hasEndDate) return false;
+            
+            // Calculate estimated close date (start + 14 days for bi-weekly)
             const settlementStart = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
             if (settlementStart) {
-              const startDateStr = new Date(settlementStart).toISOString().split('T')[0];
-              const twentyOneDaysAgo = new Date();
-              twentyOneDaysAgo.setDate(twentyOneDaysAgo.getDate() - 21);
-              const cutoffDateStr = twentyOneDaysAgo.toISOString().split('T')[0];
+              const startDate = new Date(settlementStart);
+              const estimatedCloseDate = new Date(startDate);
+              estimatedCloseDate.setDate(estimatedCloseDate.getDate() + 14);
               
-              // Only show if settlement started within last 21 days (bi-weekly period)
-              if (startDateStr < cutoffDateStr) {
-                return false;
-              }
+              const closeDateStr = estimatedCloseDate.toISOString().split('T')[0];
+              
+              // Only show if close date is today or in the future
+              return closeDateStr >= todayStr;
             }
             
-            return isEstimated && !hasEndDate && isToday;
+            return false;
           });
           
           if (openSettlements.length === 0) {
