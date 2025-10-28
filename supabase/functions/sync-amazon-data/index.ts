@@ -133,6 +133,47 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
       return
     }
     
+    // Detect payout frequency based on settlement intervals
+    console.log('[SYNC] Analyzing payout frequency from settlements...')
+    const closedSettlements = allSettlements
+      .filter((g: any) => g.FinancialEventGroupEnd)
+      .map((g: any) => new Date(g.FinancialEventGroupEnd))
+      .sort((a, b) => a.getTime() - b.getTime())
+    
+    let detectedFrequency = 'bi-weekly' // default
+    
+    if (closedSettlements.length >= 3) {
+      // Calculate intervals between consecutive settlements
+      const intervals: number[] = []
+      for (let i = 1; i < closedSettlements.length; i++) {
+        const daysDiff = Math.abs(
+          (closedSettlements[i].getTime() - closedSettlements[i-1].getTime()) / (1000 * 60 * 60 * 24)
+        )
+        intervals.push(daysDiff)
+      }
+      
+      // Count how many intervals are < 14 days
+      const dailyIntervals = intervals.filter(d => d < 14).length
+      const biWeeklyIntervals = intervals.filter(d => d >= 14).length
+      
+      if (dailyIntervals > biWeeklyIntervals) {
+        detectedFrequency = 'daily'
+      }
+      
+      const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length
+      console.log(`[SYNC] Settlement intervals: ${intervals.map(i => i.toFixed(1)).join(', ')} days`)
+      console.log(`[SYNC] Average interval: ${avgInterval.toFixed(1)} days`)
+      console.log(`[SYNC] Daily intervals (<14d): ${dailyIntervals}, Bi-weekly intervals (>=14d): ${biWeeklyIntervals}`)
+      console.log(`[SYNC] Detected payout frequency: ${detectedFrequency}`)
+      
+      // Update amazon_account with detected frequency
+      await supabase.from('amazon_accounts').update({ 
+        payout_frequency: detectedFrequency
+      }).eq('id', amazonAccountId)
+    } else {
+      console.log('[SYNC] Not enough closed settlements to detect frequency, using default: bi-weekly')
+    }
+    
     // Process and save settlements (including open ones)
     const settlementsToSave = allSettlements.map((group: any) => {
       const settlementStartDate = group.FinancialEventGroupStart ? new Date(group.FinancialEventGroupStart) : null
@@ -171,7 +212,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
         total_amount: totalAmount,
         currency_code: group.ConvertedTotal?.CurrencyCode || group.OriginalTotal?.CurrencyCode || 'USD',
         status,
-        payout_type: amazonAccount.payout_frequency || 'bi-weekly',
+        payout_type: detectedFrequency,
         marketplace_name: amazonAccount.marketplace_name,
         raw_settlement_data: group
       }

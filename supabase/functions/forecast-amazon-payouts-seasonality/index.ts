@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
 
     console.log(`[Seasonality Forecast] Starting for user ${user.id}`);
 
-    // Get user's account_id
+    // Get user's account_id and Amazon account info
     const { data: profile } = await supabase
       .from('profiles')
       .select('account_id')
@@ -60,6 +60,18 @@ Deno.serve(async (req) => {
       .single();
 
     const accountId = profile?.account_id;
+    
+    // Get the first active Amazon account to detect payout frequency
+    const { data: amazonAccount } = await supabase
+      .from('amazon_accounts')
+      .select('payout_frequency, account_name')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .limit(1)
+      .single();
+    
+    const payoutFrequency = amazonAccount?.payout_frequency || 'bi-weekly';
+    console.log(`[Seasonality Forecast] Detected payout frequency: ${payoutFrequency}`);
 
     // Fetch all confirmed payouts (historical data)
     const { data: confirmedPayouts, error: payoutError } = await supabase
@@ -181,7 +193,7 @@ Deno.serve(async (req) => {
         total_amount: Math.round(forecastedAmount * 100) / 100,
         currency_code: 'USD',
         status: 'forecasted',
-        payout_type: 'bi-weekly',
+        payout_type: payoutFrequency,
         marketplace_name: confirmedPayouts[0].marketplace_name || 'Amazon.com',
         modeling_method: 'seasonality',
         // Store calculation details
