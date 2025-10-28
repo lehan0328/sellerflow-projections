@@ -152,6 +152,35 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
 
     console.log('[SYNC] Using endpoint:', apiEndpoint)
 
+    // Helper function to make API request with automatic token refresh on 403
+    const makeAuthenticatedRequest = async (url: string, options: any, retryCount = 0): Promise<Response> => {
+      const response = await fetch(url, options)
+      
+      // If 403 and haven't retried yet, refresh token and retry
+      if (response.status === 403 && retryCount === 0) {
+        console.log('[SYNC] Got 403, refreshing token and retrying...')
+        
+        const { data: refreshData, error: refreshError } = await supabase.functions.invoke('refresh-amazon-token', {
+          body: { amazon_account_id: amazonAccountId }
+        })
+        
+        if (refreshError || !refreshData?.access_token) {
+          const errorText = await response.text()
+          throw new Error(`Token refresh failed after 403: ${errorText}`)
+        }
+        
+        console.log('[SYNC] Token refreshed, retrying request...')
+        accessToken = refreshData.access_token
+        
+        // Update the token in options and retry
+        options.headers['x-amz-access-token'] = refreshData.access_token
+        
+        return makeAuthenticatedRequest(url, options, retryCount + 1)
+      }
+      
+      return response
+    }
+
     // Determine sync window based on last_synced_to
     let startDate: Date
     let endDate: Date
@@ -231,20 +260,28 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           groupParams.append('NextToken', groupNextToken)
         }
         
-        const groupResponse = await fetch(`${eventGroupsUrl}?${groupParams}`, {
-          headers: {
-            'x-amz-access-token': accessToken,
-            'Content-Type': 'application/json'
+        const groupResponse = await makeAuthenticatedRequest(
+          `${eventGroupsUrl}?${groupParams}`,
+          {
+            headers: {
+              'x-amz-access-token': accessToken,
+              'Content-Type': 'application/json'
+            }
           }
-        })
+        )
         
-        if (groupResponse.ok) {
-          const groupData = await groupResponse.json()
-          const groups = groupData.payload?.FinancialEventGroupList || []
-          
-          console.log(`[SYNC] Settlement page ${groupPageCount + 1}: ${groups.length} groups`)
-          
-          for (const group of groups) {
+        if (!groupResponse.ok) {
+          const errorText = await groupResponse.text()
+          console.error('[SYNC] Error fetching settlements:', errorText)
+          throw new Error(`Failed to fetch settlements: ${groupResponse.status} - ${errorText}`)
+        }
+        
+        const groupData = await groupResponse.json()
+        const groups = groupData.payload?.FinancialEventGroupList || []
+        
+        console.log(`[SYNC] Settlement page ${groupPageCount + 1}: ${groups.length} groups`)
+        
+        for (const group of groups) {
             if (group.FinancialEventGroupId) {
               const settlementEndDate = group.FinancialEventGroupEnd ? 
                 new Date(group.FinancialEventGroupEnd) : null
@@ -292,12 +329,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
             }
           }
           
-          groupNextToken = groupData.payload?.NextToken || null
-          groupPageCount++
-        } else {
-          console.error('[SYNC] Error fetching settlement groups:', await groupResponse.text())
-          break
-        }
+        groupNextToken = groupData.payload?.NextToken || null
+        groupPageCount++
         
         // Rate limit: 0.5 req/sec
         if (groupNextToken) {
