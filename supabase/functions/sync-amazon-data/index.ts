@@ -159,25 +159,64 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     yesterday.setDate(yesterday.getDate() - 1)
     yesterday.setHours(23, 59, 59, 999)
 
-    // ===== STEP 1: FETCH SETTLEMENTS FIRST (Fast - only 30-300 records) =====
-    const isInitialSync = !amazonAccount.last_settlement_sync_date
+    // ===== STEP 1: FETCH SETTLEMENTS IN BATCHES (Prioritized) =====
+    const settlementBackfillTarget = new Date()
+    settlementBackfillTarget.setDate(settlementBackfillTarget.getDate() - 730) // 2 years back
     
-    if (isInitialSync) {
-      console.log('[SYNC] 🚀 INITIAL SYNC - Fetching settlements first for instant data!')
+    const lastSettlementSync = amazonAccount.last_settlement_sync_date ? 
+      new Date(amazonAccount.last_settlement_sync_date) : null
+    
+    const isSettlementBackfillComplete = lastSettlementSync && 
+      lastSettlementSync <= settlementBackfillTarget
+    
+    // PRIORITY: Complete settlement backfill before starting transactions
+    if (!isSettlementBackfillComplete) {
+      console.log('[SYNC] 🎯 PRIORITY: Settlement backfill in progress')
+      
+      // Calculate settlement batch window (30 days at a time)
+      let settlementStartDate: Date
+      let settlementEndDate: Date
+      
+      if (!lastSettlementSync) {
+        // First settlement sync - start from 30 days ago
+        settlementEndDate = new Date()
+        settlementEndDate.setDate(settlementEndDate.getDate() - 1) // yesterday
+        settlementStartDate = new Date(settlementEndDate)
+        settlementStartDate.setDate(settlementStartDate.getDate() - 30) // 30-day batch
+        console.log('[SYNC] Initial settlement sync - fetching last 30 days')
+      } else {
+        // Continue backfill - go back another 30 days
+        settlementEndDate = new Date(lastSettlementSync)
+        settlementStartDate = new Date(settlementEndDate)
+        settlementStartDate.setDate(settlementStartDate.getDate() - 30)
+        
+        // Don't go beyond 730 days
+        if (settlementStartDate < settlementBackfillTarget) {
+          settlementStartDate = new Date(settlementBackfillTarget)
+        }
+        
+        console.log('[SYNC] Continuing settlement backfill - batch from', 
+          settlementStartDate.toISOString().split('T')[0], 'to', 
+          settlementEndDate.toISOString().split('T')[0])
+      }
+      
+      // Calculate backfill progress
+      const totalDays = 730
+      const daysRemaining = Math.floor((settlementEndDate.getTime() - settlementBackfillTarget.getTime()) / (1000 * 60 * 60 * 24))
+      const daysSynced = totalDays - daysRemaining
+      const progressPct = Math.floor((daysSynced / totalDays) * 50) // Settlements = 50% of total progress
       
       await supabase
         .from('amazon_accounts')
         .update({ 
           sync_status: 'syncing',
-          sync_message: 'Loading settlements...',
-          sync_progress: 5
+          sync_message: `Fetching payouts: ${daysSynced}/${totalDays} days (${progressPct}%)`,
+          sync_progress: progressPct
         })
         .eq('id', amazonAccountId)
       
-      // Fetch settlements using listFinancialEventGroups (fast!)
+      // Fetch settlements using listFinancialEventGroups
       const eventGroupsUrl = `${apiEndpoint}/finances/v0/financialEventGroups`
-      const twoYearsAgo = new Date()
-      twoYearsAgo.setDate(twoYearsAgo.getDate() - 730)
       
       const settlementsToAdd: any[] = []
       let groupNextToken: string | null = null
@@ -185,7 +224,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       
       do {
         const groupParams = new URLSearchParams({
-          FinancialEventGroupStartedAfter: twoYearsAgo.toISOString()
+          FinancialEventGroupStartedAfter: settlementStartDate.toISOString(),
+          FinancialEventGroupStartedBefore: settlementEndDate.toISOString()
         })
         if (groupNextToken) {
           groupParams.append('NextToken', groupNextToken)
@@ -266,33 +306,56 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           })
         
         if (!settlementsError) {
-          console.log(`[SYNC] ✅ ${settlementsToAdd.length} settlements saved! Users can see payouts now.`)
+          console.log(`[SYNC] ✅ ${settlementsToAdd.length} settlements saved!`)
           
-          // Update progress - settlements complete!
+          // Update last_settlement_sync_date to the START of this batch (we're going backwards)
+          const isBackfillComplete = settlementStartDate <= settlementBackfillTarget
+          
           await supabase
             .from('amazon_accounts')
             .update({ 
-              sync_message: `${settlementsToAdd.length} payouts loaded! Syncing transactions...`,
-              sync_progress: 15,
-              last_settlement_sync_date: new Date().toISOString()
+              sync_message: isBackfillComplete ? 
+                'Settlement backfill complete! Starting transactions...' : 
+                `Batch complete: ${settlementsToAdd.length} payouts saved. Continuing backfill...`,
+              sync_progress: progressPct,
+              last_settlement_sync_date: settlementStartDate.toISOString(),
+              sync_status: 'idle', // Let next cron run continue
+              last_sync: new Date().toISOString()
             })
             .eq('id', amazonAccountId)
+          
+          // Exit early - let next cron run fetch next batch
+          console.log('[SYNC] Settlement batch complete. Exiting to let next run continue.')
+          return
         } else {
           console.error('[SYNC] Error saving settlements:', settlementsError)
         }
       }
+      
+      // If we got here without settlements, something went wrong
+      console.log('[SYNC] No settlements in this batch, marking backfill complete')
+      await supabase
+        .from('amazon_accounts')
+        .update({ 
+          last_settlement_sync_date: settlementBackfillTarget.toISOString(),
+          sync_status: 'idle'
+        })
+        .eq('id', amazonAccountId)
+      return
     }
+    
+    // Settlement backfill is complete! Now sync transactions
+    console.log('[SYNC] ✅ Settlement backfill complete! Now syncing transactions...')
+    await supabase
+      .from('amazon_accounts')
+      .update({ 
+        sync_message: 'All payouts loaded! Syncing transaction details...',
+        sync_progress: 50
+      })
+      .eq('id', amazonAccountId)
     
     // ===== STEP 2: FETCH TRANSACTIONS (Slow - 30k+ records) =====
     console.log('[SYNC] Now fetching transaction history...')
-    
-    let settlementsStartDate = new Date()
-    if (!amazonAccount.last_settlement_sync_date) {
-      settlementsStartDate.setDate(settlementsStartDate.getDate() - 730)
-    } else {
-      settlementsStartDate = new Date(amazonAccount.last_settlement_sync_date)
-    }
-    settlementsStartDate.setHours(0, 0, 0, 0)
     
     // Define the target historical window (60 days BACK from today for transactions)
     const transactionStartDate = new Date()
