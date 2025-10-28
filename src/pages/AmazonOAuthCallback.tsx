@@ -95,7 +95,7 @@ const AmazonOAuthCallback = () => {
 
           // Redirect to settings Amazon section immediately
           setTimeout(() => {
-            navigate('/settings?tab=integrations&section=amazon&syncing=true');
+            navigate('/settings?tab=integrations&section=amazon&syncing=true&new_account=true');
           }, 1500);
         }
 

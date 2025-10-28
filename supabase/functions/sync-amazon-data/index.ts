@@ -1379,6 +1379,11 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     // Check if we're fully caught up (no nextToken and at yesterday)
     if (endDate >= yesterday && !nextToken && pageCount < MAX_PAGES_PER_RUN) {
       console.log('[SYNC] ✓ Fully caught up!')
+      const syncEndTime = Date.now()
+      const syncDurationMs = syncEndTime - syncStartTime
+      const syncDurationMin = Math.round(syncDurationMs / 60000)
+      const syncDuration = syncDurationMin < 60 ? `${syncDurationMin}m` : `${Math.round(syncDurationMin / 60)}h ${syncDurationMin % 60}m`
+      
       await supabase
         .from('amazon_accounts')
         .update({ 
@@ -1389,6 +1394,35 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
           last_sync_error: null
         })
         .eq('id', amazonAccountId)
+      
+      // Send completion email notification if enabled
+      try {
+        console.log('[SYNC] Checking if email notification enabled...')
+        const { data: accountData } = await supabase
+          .from('amazon_accounts')
+          .select('sync_notifications_enabled, account_name')
+          .eq('id', amazonAccountId)
+          .single()
+        
+        if (accountData?.sync_notifications_enabled) {
+          console.log('[SYNC] Sending completion email...')
+          await supabase.functions.invoke('send-sync-complete-email', {
+            body: {
+              userId: actualUserId,
+              accountName: accountData.account_name,
+              transactionCount: totalTransactionCount,
+              settlementCount: settlementsToAdd.length,
+              syncDuration: syncDuration
+            }
+          })
+          console.log('[SYNC] Email sent successfully')
+        } else {
+          console.log('[SYNC] Email notifications disabled')
+        }
+      } catch (emailError) {
+        console.error('[SYNC] Failed to send email (non-critical):', emailError)
+        // Don't fail the sync if email fails
+      }
     } else if (pageCount < MAX_PAGES_PER_RUN) {
       // Completed this batch but not caught up yet
       console.log('[SYNC] ✓ Batch complete - waiting for next scheduled run')

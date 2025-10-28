@@ -8,11 +8,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useSubscription } from "@/hooks/useSubscription";
-import { ShoppingCart, Plus, Trash2, RefreshCw, ExternalLink, Settings, DollarSign } from "lucide-react";
+import { ShoppingCart, Plus, Trash2, RefreshCw, ExternalLink, Settings, DollarSign, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -62,6 +63,8 @@ export function AmazonManagement() {
   const [manualFormOpen, setManualFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
+  const [showNotificationOptIn, setShowNotificationOptIn] = useState(false);
+  const [newAccountId, setNewAccountId] = useState<string | null>(null);
   const [showSyncingBanner, setShowSyncingBanner] = useState(false);
   const [lastConnectionTime, setLastConnectionTime] = useState<Date | null>(null);
   const [canConnect, setCanConnect] = useState(true);
@@ -142,7 +145,19 @@ export function AmazonManagement() {
       // Hide banner after 10 seconds
       setTimeout(() => setShowSyncingBanner(false), 10000);
     }
-  }, []);
+    
+    // Check for new account connection
+    if (params.get('new_account') === 'true' && amazonAccounts.length > 0) {
+      // Show notification opt-in dialog for the newest account
+      const newestAccount = amazonAccounts[amazonAccounts.length - 1];
+      setNewAccountId(newestAccount.id);
+      setShowNotificationOptIn(true);
+      
+      // Clean up URL
+      params.delete('new_account');
+      window.history.replaceState({}, '', `${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`);
+    }
+  }, [amazonAccounts]);
 
   // Monitor sync status changes and update progress in real-time
   useEffect(() => {
@@ -301,6 +316,25 @@ export function AmazonManagement() {
       await removeAmazonAccount(accountToDelete);
       setDeleteDialogOpen(false);
       setAccountToDelete(null);
+    }
+  };
+
+  const handleToggleSyncNotifications = async (accountId: string, enabled: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('amazon_accounts')
+        .update({ sync_notifications_enabled: enabled })
+        .eq('id', accountId);
+
+      if (error) throw error;
+
+      toast.success(enabled ? 'Sync email notifications enabled' : 'Sync email notifications disabled');
+      
+      // Reload to refresh UI
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating notification preference:', error);
+      toast.error('Failed to update notification preference');
     }
   };
 
@@ -712,6 +746,21 @@ export function AmazonManagement() {
                       </Badge>
                     </div>
                     
+                    {/* Email Notification Toggle */}
+                    <div className="flex items-center justify-between py-2 px-3 rounded-md bg-muted/30 border border-border/50">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <Label htmlFor={`sync-notifications-${account.id}`} className="text-sm cursor-pointer">
+                          Email when sync completes
+                        </Label>
+                      </div>
+                      <Switch
+                        id={`sync-notifications-${account.id}`}
+                        checked={(account as any).sync_notifications_enabled || false}
+                        onCheckedChange={(checked) => handleToggleSyncNotifications(account.id, checked)}
+                      />
+                    </div>
+                    
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <span>🔄</span>
                       Auto-sync enabled • Last: {new Date(account.last_sync).toLocaleString()}
@@ -766,6 +815,60 @@ export function AmazonManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Notification Opt-in Dialog */}
+      <Dialog open={showNotificationOptIn} onOpenChange={setShowNotificationOptIn}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-primary" />
+              Enable Sync Notifications?
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Would you like to receive an email notification when your Amazon data sync completes?
+            </p>
+            <div className="bg-muted/50 p-4 rounded-lg space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-primary">✓</span>
+                <span>Get notified immediately when sync finishes</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-primary">✓</span>
+                <span>See transaction count and sync duration</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-primary">✓</span>
+                <span>You can disable this anytime in settings</span>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowNotificationOptIn(false);
+                  toast.info('You can enable notifications anytime in Amazon Integration settings');
+                }}
+              >
+                No Thanks
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={async () => {
+                  if (newAccountId) {
+                    await handleToggleSyncNotifications(newAccountId, true);
+                  }
+                  setShowNotificationOptIn(false);
+                }}
+              >
+                Yes, Notify Me
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Setup Instructions */}
       <Card className="shadow-card">

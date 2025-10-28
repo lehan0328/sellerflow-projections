@@ -212,6 +212,7 @@ export type Database = {
           seller_id: string
           sync_message: string | null
           sync_next_token: string | null
+          sync_notifications_enabled: boolean | null
           sync_progress: number | null
           sync_status: string | null
           sync_window_end: string | null
@@ -250,6 +251,7 @@ export type Database = {
           seller_id: string
           sync_message?: string | null
           sync_next_token?: string | null
+          sync_notifications_enabled?: boolean | null
           sync_progress?: number | null
           sync_status?: string | null
           sync_window_end?: string | null
@@ -288,6 +290,7 @@ export type Database = {
           seller_id?: string
           sync_message?: string | null
           sync_next_token?: string | null
+          sync_notifications_enabled?: boolean | null
           sync_progress?: number | null
           sync_status?: string | null
           sync_window_end?: string | null
