@@ -536,15 +536,16 @@ export function AmazonPayouts() {
         
         {/* Open Settlements - Always visible at top */}
         {(() => {
-          console.log('[Amazon Payouts - Open Settlements] Starting filter, total payouts:', amazonPayouts.length);
+          console.log('[Amazon Payouts - Open Settlements] 🔍 Starting filter, total payouts:', amazonPayouts.length);
           
           const today = new Date();
           today.setHours(0, 0, 0, 0);
+          console.log('[Amazon Payouts - Open Settlements] 📅 Today is:', today.toISOString().split('T')[0]);
           
           // Filter open settlements across ALL connected Amazon accounts
           const openSettlements = amazonPayouts.filter(p => {
             const rawData = p.raw_settlement_data;
-            const hasEndDate = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
+            const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
             const payoutDate = new Date(p.payout_date);
             payoutDate.setHours(0, 0, 0, 0);
             const isTodayOrFuture = payoutDate >= today;
@@ -552,20 +553,21 @@ export function AmazonPayouts() {
             
             const passes = isEstimated && !hasEndDate && isTodayOrFuture;
             
-            console.log('[Amazon Payouts] Checking settlement:', {
-              settlement_id: p.settlement_id,
-              status: p.status,
-              payout_date: p.payout_date,
-              isEstimated,
-              hasEndDate,
-              isTodayOrFuture,
-              passes
-            });
+            console.log('[Amazon Payouts] 🔍 Checking settlement:', 
+              '\n  Settlement ID:', p.settlement_id,
+              '\n  Status:', p.status, '(isEstimated:', isEstimated + ')',
+              '\n  Payout Date:', p.payout_date, '(isTodayOrFuture:', isTodayOrFuture + ')',
+              '\n  Has End Date:', hasEndDate,
+              '\n  ✅ PASSES:', passes
+            );
             
             return passes;
           });
           
-          console.log('[Amazon Payouts] ✅ Found open settlements:', openSettlements.length);
+          console.log('[Amazon Payouts] ✅ FOUND', openSettlements.length, 'OPEN SETTLEMENTS');
+          if (openSettlements.length > 0) {
+            console.log('[Amazon Payouts] Open settlement IDs:', openSettlements.map(p => p.settlement_id));
+          }
           
           if (openSettlements.length === 0) {
             console.log('[Amazon Payouts] ⚠️ No open settlements to display');
