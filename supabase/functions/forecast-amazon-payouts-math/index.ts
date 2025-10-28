@@ -224,7 +224,68 @@ serve(async (req) => {
         .gte('transaction_date', sixtyDaysAgo.toISOString())
         .order('transaction_date', { ascending: true });
 
+      // If we don't have transaction data, use settlement-based forecasting for daily accounts
       if (!transactions || transactions.length < 30) {
+        if (account.payout_frequency === 'daily' && historicalPayouts && historicalPayouts.length >= 30) {
+          console.log(`[MATH-FORECAST] Using settlement-based forecasting (${historicalPayouts.length} settlements available)`);
+          
+          // Calculate trend: recent avg vs historical avg
+          const growthTrend = historicalAvgPayout > 0 ? recentAvgPayout / historicalAvgPayout : 1.0;
+          const safetyMultiplier = 1 - (riskAdjustment / 100); // Convert % to decimal reduction
+          
+          console.log(`[MATH-FORECAST] Settlement stats: Recent avg=$${recentAvgPayout.toFixed(2)}, Historical avg=$${historicalAvgPayout.toFixed(2)}, Growth=${(growthTrend * 100).toFixed(1)}%`);
+          
+          // Generate 90 daily forecasts
+          const settlementForecasts = [];
+          let currentDate = new Date(forecastStartDate);
+          currentDate.setDate(currentDate.getDate() + 14); // Start 14 days from open settlement
+          
+          for (let i = 0; i < 90; i++) {
+            const forecastDate = new Date(currentDate);
+            forecastDate.setDate(forecastDate.getDate() + i);
+            
+            // Use recent average with growth trend and safety multiplier
+            let predictedAmount = recentAvgPayout * growthTrend * safetyMultiplier;
+            
+            // Cap at historical max * multiplier
+            if (predictedAmount > forecastCap) {
+              predictedAmount = forecastCap;
+            }
+            
+            settlementForecasts.push({
+              user_id: userId,
+              account_id: accountId,
+              amazon_account_id: account.id,
+              settlement_id: `FORECAST-${forecastDate.toISOString().split('T')[0]}`,
+              payout_date: forecastDate.toISOString().split('T')[0],
+              total_amount: Math.round(predictedAmount * 100) / 100,
+              currency_code: 'USD',
+              status: 'forecasted',
+              payout_type: 'daily',
+              marketplace_name: account.marketplace_name || 'Amazon.com',
+              modeling_method: 'mathematical_daily',
+              orders_total: recentAvgPayout,
+              fees_total: growthTrend,
+              refunds_total: safetyMultiplier,
+            });
+          }
+          
+          // Insert forecasts
+          if (settlementForecasts.length > 0) {
+            const { error: insertError } = await supabase
+              .from('amazon_payouts')
+              .insert(settlementForecasts);
+            
+            if (insertError) {
+              console.error(`[MATH-FORECAST] Error inserting settlement forecasts:`, insertError);
+            } else {
+              console.log(`[MATH-FORECAST] ✅ Inserted ${settlementForecasts.length} settlement-based forecasts for ${account.account_name}`);
+            }
+          }
+          
+          continue;
+        }
+        
         console.log(`[MATH-FORECAST] Insufficient transaction data (${transactions?.length || 0}/30), skipping forecast`);
         continue;
       }
