@@ -547,6 +547,51 @@ export type Database = {
           },
         ]
       }
+      amazon_transactions: {
+        Row: {
+          account_id: string | null
+          amazon_account_id: string
+          amount: number
+          created_at: string
+          delivery_date: string | null
+          description: string | null
+          id: string
+          transaction_date: string
+          transaction_id: string
+          transaction_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amazon_account_id: string
+          amount?: number
+          created_at?: string
+          delivery_date?: string | null
+          description?: string | null
+          id?: string
+          transaction_date: string
+          transaction_id: string
+          transaction_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amazon_account_id?: string
+          amount?: number
+          created_at?: string
+          delivery_date?: string | null
+          description?: string | null
+          id?: string
+          transaction_date?: string
+          transaction_id?: string
+          transaction_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bank_accounts: {
         Row: {
           account_id: string | null
