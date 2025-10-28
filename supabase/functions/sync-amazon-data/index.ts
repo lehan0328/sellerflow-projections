@@ -271,11 +271,12 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
                 currency_code: group.ConvertedTotal?.CurrencyCode || group.OriginalTotal?.CurrencyCode || 'USD',
                 status: status,
                 payout_type: amazonAccount.payout_frequency || 'bi-weekly',
-                settlement_start_date: group.FinancialEventGroupStart ? 
-                  new Date(group.FinancialEventGroupStart).toISOString().split('T')[0] : null,
-                settlement_end_date: group.FinancialEventGroupEnd ? 
-                  new Date(group.FinancialEventGroupEnd).toISOString().split('T')[0] : null,
-                marketplace_name: amazonAccount.marketplace_name
+                marketplace_name: amazonAccount.marketplace_name,
+                raw_settlement_data: {
+                  ...group,
+                  settlement_start_date: group.FinancialEventGroupStart,
+                  settlement_end_date: group.FinancialEventGroupEnd
+                }
               })
             }
           }
