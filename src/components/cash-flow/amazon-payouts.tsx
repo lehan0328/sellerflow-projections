@@ -317,7 +317,7 @@ export function AmazonPayouts() {
               View Settlements ({settledPayoutsCount})
             </Button>
             
-            <Button variant="outline" size="sm" onClick={() => navigate('/settings')}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/settings?section=amazon')}>
               <Settings className="h-4 w-4 mr-2" />
               Manage
             </Button>
