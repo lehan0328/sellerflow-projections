@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Clock, Plus, Loader2, History as HistoryIcon } from "lucide-react";
+import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Clock, Plus, Loader2, History as HistoryIcon, FileText } from "lucide-react";
 import { AmazonSettledPayouts } from "./amazon-settled-payouts";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
@@ -250,6 +250,45 @@ export function AmazonPayouts() {
     }
   };
 
+  const handleSyncReports = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error('Please log in to sync reports.');
+        return;
+      }
+
+      if (amazonAccounts.length === 0) {
+        toast.error('No Amazon accounts connected.');
+        return;
+      }
+
+      setIsSyncing('syncing-reports');
+      toast.info('Syncing order reports (last 14 days)...');
+
+      const { data, error } = await supabase.functions.invoke('sync-amazon-reports-daily', {
+        body: { 
+          amazonAccountId: amazonAccounts[0].id,
+          days: 14
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) {
+        toast.error(`Failed to sync reports: ${error.message}`);
+      } else {
+        toast.success(`Synced ${data.ordersCount} orders`);
+      }
+    } catch (error) {
+      toast.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSyncing(null);
+    }
+  };
+
   const handleConnectAmazon = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -392,6 +431,16 @@ export function AmazonPayouts() {
               >
                 <Loader2 className="h-4 w-4 mr-2" />
                 Full Resync
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSyncReports}
+                disabled={isSyncing === 'syncing-reports'}
+                title="Sync order reports (last 14 days)"
+              >
+                <FileText className={`h-4 w-4 mr-2 ${isSyncing === 'syncing-reports' ? 'animate-spin' : ''}`} />
+                Sync Orders
               </Button>
               <Button
                 variant="ghost"
