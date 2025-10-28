@@ -1611,18 +1611,26 @@ const Dashboard = () => {
       // Open settlements (status='estimated') are in-progress and will update daily
       const isOpenSettlement = (payout.status as string) === 'estimated';
       
-      // For open settlements, use the settlement_end_date (close date) from the database
-      // For closed settlements, use payout_date (which is settlement_end_date + 1 day)
+      // For open settlements, calculate close date from settlement start + 14 days
+      // For closed settlements, use payout_date
       let displayDate = new Date(payout.payout_date);
-      if (isOpenSettlement && (payout as any).settlement_end_date) {
-        // Use the actual close date from Amazon for open settlements
-        displayDate = new Date((payout as any).settlement_end_date);
+      if (isOpenSettlement) {
+        const rawData = (payout as any).raw_settlement_data;
+        const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
         
-        console.log('[Calendar] Open settlement - using close date from Amazon:', {
-          settlementId: payout.settlement_id,
-          closeDate: (payout as any).settlement_end_date,
-          amount: payout.total_amount
-        });
+        if (settlementStartStr) {
+          const settlementStartDate = new Date(settlementStartStr);
+          const settlementCloseDate = new Date(settlementStartDate);
+          settlementCloseDate.setDate(settlementCloseDate.getDate() + 14); // Close date is start + 14 days
+          displayDate = settlementCloseDate;
+          
+          console.log('[Calendar] Open settlement - calculated close date:', {
+            settlementId: payout.settlement_id,
+            startDate: settlementStartStr,
+            closeDate: displayDate.toISOString().split('T')[0],
+            amount: payout.total_amount
+          });
+        }
       }
       
       const description = (payout.status as string) === 'forecasted' 
