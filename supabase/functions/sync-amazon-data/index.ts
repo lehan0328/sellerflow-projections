@@ -228,7 +228,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
                 settlement_id: group.FinancialEventGroupId,
                 payout_date: payoutDate,
                 total_amount: totalAmount,
-                currency: group.ConvertedTotal?.CurrencyCode || group.OriginalTotal?.CurrencyCode || 'USD',
+                currency_code: group.ConvertedTotal?.CurrencyCode || group.OriginalTotal?.CurrencyCode || 'USD',
                 status: status,
                 payout_type: amazonAccount.payout_frequency || 'bi-weekly',
                 settlement_start_date: group.FinancialEventGroupStart ? 
