@@ -378,8 +378,21 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     const lastSyncDate = amazonAccount.last_synced_to ? new Date(amazonAccount.last_synced_to) : null
     const isLastSyncInFuture = lastSyncDate && lastSyncDate >= yesterday
     
+    // CRITICAL FIX: If last_synced_to is in the future, reset to proper historical date
+    if (isLastSyncInFuture && lastSyncDate) {
+      console.log(`[SYNC] ⚠️ Detected future date in last_synced_to: ${lastSyncDate.toISOString()}. Resetting to historical start.`)
+      await supabase
+        .from('amazon_accounts')
+        .update({ 
+          last_synced_to: null,
+          sync_next_token: null,
+          sync_message: 'Reset due to future date detected'
+        })
+        .eq('id', amazonAccountId)
+    }
+    
     // CRITICAL: If we have a continuation token, we're still paginating the SAME date range
-    if (amazonAccount.sync_next_token && lastSyncDate) {
+    if (amazonAccount.sync_next_token && lastSyncDate && !isLastSyncInFuture) {
       // Continue paginating the same day we were on
       startDate = new Date(lastSyncDate)
       // For continuation, use the same date we were syncing (NOT +1 day)
