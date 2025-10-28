@@ -150,38 +150,30 @@ Deno.serve(async (req) => {
 
     console.log('[REPORTS] Downloading report...')
 
-    // Step 4: Download report CSV (Amazon serves it gzipped)
+    // Step 4: Download report as blob (Amazon serves it gzipped)
     const csvResponse = await fetch(downloadUrl)
     if (!csvResponse.ok) {
       throw new Error('Failed to download report')
     }
 
-    // Get the raw bytes
-    const arrayBuffer = await csvResponse.arrayBuffer()
-    const uint8Array = new Uint8Array(arrayBuffer)
+    // Get as blob to check for gzip
+    const blob = await csvResponse.blob()
+    const buffer = await blob.arrayBuffer()
+    const bytes = new Uint8Array(buffer)
     
     // Check if it's gzipped (starts with 0x1f 0x8b)
-    const isGzipped = uint8Array[0] === 0x1f && uint8Array[1] === 0x8b
+    const isGzipped = bytes[0] === 0x1f && bytes[1] === 0x8b
     console.log('[REPORTS] File is gzipped:', isGzipped)
     
     let csvText: string
     if (isGzipped) {
-      // Decompress using DecompressionStream
-      const stream = new ReadableStream({
-        start(controller) {
-          controller.enqueue(uint8Array)
-          controller.close()
-        }
-      })
-      
-      const decompressedStream = stream.pipeThrough(new DecompressionStream('gzip'))
-      const decompressedResponse = new Response(decompressedStream)
-      csvText = await decompressedResponse.text()
-      console.log('[REPORTS] Successfully decompressed')
+      // Decompress using blob stream
+      const decompressedStream = blob.stream().pipeThrough(new DecompressionStream('gzip'))
+      const decompressedBlob = await new Response(decompressedStream).blob()
+      csvText = await decompressedBlob.text()
+      console.log('[REPORTS] Successfully decompressed gzip')
     } else {
-      // Already plain text
-      const decoder = new TextDecoder('utf-8')
-      csvText = decoder.decode(uint8Array)
+      csvText = await blob.text()
     }
     
     const lines = csvText.split('\n')
