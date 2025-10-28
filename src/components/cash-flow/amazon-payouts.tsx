@@ -544,19 +544,31 @@ export function AmazonPayouts() {
             // Open settlements must have:
             // 1. Status = estimated
             // 2. No end date in raw_settlement_data
-            // 3. Payout date is today (not future dates)
+            // 3. Payout date is today or in the future
             const rawData = p.raw_settlement_data;
             const hasEndDate = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
             
-            // Only show settlements with payout date = today
+            // Only show settlements with payout date = today or future
             const payoutDate = new Date(p.payout_date);
             payoutDate.setHours(0, 0, 0, 0);
             const isTodayOrFuture = payoutDate >= today;
+            
+            console.log('[Amazon Payouts] Checking settlement:', {
+              id: p.id,
+              settlement_id: p.settlement_id,
+              status: p.status,
+              payout_date: p.payout_date,
+              hasEndDate,
+              isTodayOrFuture,
+              rawData: rawData ? Object.keys(rawData) : null
+            });
             
             return p.status === 'estimated' && 
                    !hasEndDate && 
                    isTodayOrFuture;
           });
+          
+          console.log('[Amazon Payouts] Found open settlements:', openSettlements.length);
 
           if (openSettlements.length === 0) return null;
 
