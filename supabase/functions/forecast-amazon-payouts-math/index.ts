@@ -229,18 +229,22 @@ serve(async (req) => {
         if (account.payout_frequency === 'daily' && historicalPayouts && historicalPayouts.length >= 30) {
           console.log(`[MATH-FORECAST] Using settlement-based cumulative distribution (${historicalPayouts.length} settlements available)`);
           
-          // Calculate recent daily average for forecasting beyond open settlement
+          // Calculate ACTUAL daily average: total revenue / calendar days (not per payout)
           const thirtyDaysAgo = new Date();
           thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
           const recentDailyPayouts = historicalPayouts.filter(p => {
             const payoutDate = new Date(p.payout_date);
             return payoutDate >= thirtyDaysAgo;
           });
+          
+          // Calculate average per calendar day, not per payout
+          const totalRevenue = recentDailyPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
+          const calendarDays = 30; // 30-day period
           const avgDailyPayout = recentDailyPayouts.length > 0 
-            ? recentDailyPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0) / recentDailyPayouts.length
+            ? totalRevenue / calendarDays
             : historicalAvgPayout;
           
-          console.log(`[MATH-FORECAST] Recent 30-day daily average: $${avgDailyPayout.toFixed(2)} (${recentDailyPayouts.length} payouts)`);
+          console.log(`[MATH-FORECAST] Recent 30-day stats: ${recentDailyPayouts.length} payouts, $${totalRevenue.toFixed(2)} total, $${avgDailyPayout.toFixed(2)} per day`);
           
           // Find the open settlement with the largest beginning balance
           const { data: openSettlements } = await supabase
