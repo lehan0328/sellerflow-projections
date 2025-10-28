@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
         }
         // For accounts in backfill mode (progress < 95%), sync conservatively
         else if (!account.initial_sync_complete || (account.sync_progress && account.sync_progress < 95)) {
-          const minMinutesBetweenSync = 3 // Conservative to respect Amazon rate limits
+          const minMinutesBetweenSync = 1 // Reduced to expedite backfill (still respects rate limits)
           
           if (minutesSinceSync < minMinutesBetweenSync) {
             console.log(`Backfill in progress for ${account.account_name} - last synced ${minutesSinceSync.toFixed(1)} minutes ago`)
