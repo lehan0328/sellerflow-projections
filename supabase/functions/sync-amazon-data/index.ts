@@ -69,7 +69,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
     }).eq('id', amazonAccountId)
 
     // Fetch last 365 days of settlements
+    // Amazon requires endDate to be at least 2 minutes in the past
     const endDate = new Date()
+    endDate.setMinutes(endDate.getMinutes() - 5) // Set to 5 minutes ago to be safe
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - 365)
     
