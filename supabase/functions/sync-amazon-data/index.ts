@@ -144,7 +144,6 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
       
       const now = new Date()
       const status = settlementEndDate <= now ? 'confirmed' : 'estimated'
-      const type = settlementEndDate <= now ? 'settlement' : 'open_settlement'
       
       const totalAmount = parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0')
       
@@ -157,12 +156,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
         total_amount: totalAmount,
         currency_code: group.ConvertedTotal?.CurrencyCode || group.OriginalTotal?.CurrencyCode || 'USD',
         status,
-        type,
         payout_type: amazonAccount.payout_frequency || 'bi-weekly',
         marketplace_name: amazonAccount.marketplace_name,
-        settlement_start_date: group.FinancialEventGroupStart ? 
-          new Date(group.FinancialEventGroupStart).toISOString().split('T')[0] : null,
-        settlement_end_date: settlementEndDate.toISOString().split('T')[0],
         raw_settlement_data: group
       }
     }).filter(Boolean)
