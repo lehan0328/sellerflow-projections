@@ -88,6 +88,36 @@ Deno.serve(async (req) => {
 
     console.log(`[REPORTS] Requesting report from ${startDate.toISOString()} to ${endDate.toISOString()}`)
 
+    // Helper function to make API request with automatic token refresh on 403
+    const makeAuthenticatedRequest = async (url: string, options: any, retryCount = 0): Promise<Response> => {
+      const response = await fetch(url, options)
+      
+      // If 403 and haven't retried yet, refresh token and retry
+      if (response.status === 403 && retryCount === 0) {
+        console.log('[REPORTS] Got 403, refreshing token and retrying...')
+        
+        const { data: refreshData, error: refreshError } = await supabase.functions.invoke('refresh-amazon-token', {
+          body: { amazon_account_id: accountId }
+        })
+        
+        if (refreshError || !refreshData?.access_token) {
+          const errorText = await response.text()
+          throw new Error(`Token refresh failed after 403: ${errorText}`)
+        }
+        
+        console.log('[REPORTS] Token refreshed, retrying request...')
+        
+        // Update the token in options and retry
+        options.headers['x-amz-access-token'] = refreshData.access_token
+        options.headers['Authorization'] = `Bearer ${refreshData.access_token}`
+        account.access_token = refreshData.access_token
+        
+        return makeAuthenticatedRequest(url, options, retryCount + 1)
+      }
+      
+      return response
+    }
+
     const reportRequestBody = {
       reportType,
       marketplaceIds: [account.marketplace_id],
@@ -95,15 +125,18 @@ Deno.serve(async (req) => {
       dataEndTime: endDate.toISOString(),
     }
 
-    const createReportResponse = await fetch(`${endpoint}/reports/2021-06-30/reports`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${account.access_token}`,
-        'x-amz-access-token': account.access_token,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(reportRequestBody),
-    })
+    const createReportResponse = await makeAuthenticatedRequest(
+      `${endpoint}/reports/2021-06-30/reports`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${account.access_token}`,
+          'x-amz-access-token': account.access_token,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reportRequestBody),
+      }
+    )
 
     if (!createReportResponse.ok) {
       const errorText = await createReportResponse.text()
@@ -123,12 +156,15 @@ Deno.serve(async (req) => {
       await new Promise(resolve => setTimeout(resolve, 5000)) // Wait 5 seconds
       attempts++
 
-      const statusResponse = await fetch(`${endpoint}/reports/2021-06-30/reports/${reportId}`, {
-        headers: {
-          'Authorization': `Bearer ${account.access_token}`,
-          'x-amz-access-token': account.access_token,
-        },
-      })
+      const statusResponse = await makeAuthenticatedRequest(
+        `${endpoint}/reports/2021-06-30/reports/${reportId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${account.access_token}`,
+            'x-amz-access-token': account.access_token,
+          },
+        }
+      )
 
       if (!statusResponse.ok) {
         throw new Error(`Failed to check report status: ${statusResponse.status}`)
@@ -152,12 +188,15 @@ Deno.serve(async (req) => {
     console.log(`[REPORTS] Report ready: ${reportDocumentId}`)
 
     // Step 3: Get report document details
-    const docResponse = await fetch(`${endpoint}/reports/2021-06-30/documents/${reportDocumentId}`, {
-      headers: {
-        'Authorization': `Bearer ${account.access_token}`,
-        'x-amz-access-token': account.access_token,
-      },
-    })
+    const docResponse = await makeAuthenticatedRequest(
+      `${endpoint}/reports/2021-06-30/documents/${reportDocumentId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${account.access_token}`,
+          'x-amz-access-token': account.access_token,
+        },
+      }
+    )
 
     if (!docResponse.ok) {
       throw new Error(`Failed to get document details: ${docResponse.status}`)
@@ -182,13 +221,14 @@ Deno.serve(async (req) => {
 
     console.log(`[REPORTS] Downloaded ${reportContent.length} bytes`)
 
-    // Step 5: Parse CSV and extract transactions
+    // Step 5: Parse CSV and aggregate at ORDER level for forecasting
     const lines = reportContent.split('\n')
     const headers = lines[0].split('\t')
     
     console.log(`[REPORTS] Parsing ${lines.length - 1} rows with headers:`, headers.slice(0, 10))
 
-    const transactions: any[] = []
+    // Group by order_id to aggregate order-level data (not SKU-level)
+    const orderMap = new Map()
     
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim()
@@ -201,75 +241,58 @@ Deno.serve(async (req) => {
         row[header] = values[index] || ''
       })
 
-      // Map to our transaction format based on report type
-      if (reportType === 'GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL') {
-        const itemPrice = parseFloat(row['item-price'] || '0')
-        const itemTax = parseFloat(row['item-tax'] || '0')
-        const shippingPrice = parseFloat(row['shipping-price'] || '0')
-        const shippingTax = parseFloat(row['shipping-tax'] || '0')
-        const giftWrap = parseFloat(row['gift-wrap-price'] || '0')
-        const giftWrapTax = parseFloat(row['gift-wrap-tax'] || '0')
-        const itemPromo = parseFloat(row['item-promotion-discount'] || '0')
-        const shipPromo = parseFloat(row['ship-promotion-discount'] || '0')
-        
-        // Calculate total amount (Amazon's way)
-        const totalAmount = itemPrice + itemTax + shippingPrice + shippingTax + 
-                           giftWrap + giftWrapTax - Math.abs(itemPromo) - Math.abs(shipPromo)
-        
-        transactions.push({
+      const orderId = row['amazon-order-id'] || row['AmazonOrderId']
+      if (!orderId) continue
+      
+      // Parse financial data
+      const itemPrice = parseFloat(row['item-price'] || '0')
+      const itemTax = parseFloat(row['item-tax'] || '0')
+      const shippingPrice = parseFloat(row['shipping-price'] || '0')
+      const shippingTax = parseFloat(row['shipping-tax'] || '0')
+      const giftWrap = parseFloat(row['gift-wrap-price'] || '0')
+      const giftWrapTax = parseFloat(row['gift-wrap-tax'] || '0')
+      const itemPromo = parseFloat(row['item-promotion-discount'] || '0')
+      const shipPromo = parseFloat(row['ship-promotion-discount'] || '0')
+      const quantity = parseInt(row['quantity-purchased'] || '1')
+      
+      // Aggregate at order level for forecasting
+      if (!orderMap.has(orderId)) {
+        orderMap.set(orderId, {
           amazon_account_id: accountId,
           user_id: account.user_id,
           transaction_date: row['purchase-date'] || row['PurchaseDate'],
-          amazon_order_id: row['amazon-order-id'] || row['AmazonOrderId'],
+          amazon_order_id: orderId,
           transaction_type: 'Order',
-          amount: totalAmount,
           currency: row['currency'] || 'USD',
-          sku: row['sku'] || row['SKU'],
-          quantity: parseInt(row['quantity-purchased'] || '1'),
+          total_revenue: 0,
+          total_tax: 0,
+          total_shipping: 0,
+          total_promotions: 0,
+          item_count: 0,
+          order_status: row['order-status'],
           raw_data: {
-            // Core identifiers
-            order_id: row['amazon-order-id'],
-            order_item_id: row['order-item-id'],
-            sku: row['sku'],
-            asin: row['asin'],
-            
-            // Pricing breakdown
-            item_price: itemPrice,
-            item_tax: itemTax,
-            shipping_price: shippingPrice,
-            shipping_tax: shippingTax,
-            gift_wrap_price: giftWrap,
-            gift_wrap_tax: giftWrapTax,
-            item_promotion_discount: itemPromo,
-            ship_promotion_discount: shipPromo,
-            
-            // Order details
-            quantity: row['quantity-purchased'],
             purchase_date: row['purchase-date'],
-            payments_date: row['payments-date'],
-            buyer_email: row['buyer-email'],
-            buyer_name: row['buyer-name'],
-            
-            // Shipping info
-            ship_service_level: row['ship-service-level'],
-            ship_city: row['ship-city'],
-            ship_state: row['ship-state'],
-            ship_postal_code: row['ship-postal-code'],
-            ship_country: row['ship-country'],
-            
-            // Product info
-            product_name: row['product-name'],
-            
-            // Status and channel
-            order_status: row['order-status'],
             sales_channel: row['sales-channel'],
             fulfillment_channel: row['fulfillment-channel'],
-            is_business_order: row['is-business-order'],
-            is_prime: row['is-prime'],
-          },
+          }
         })
       }
+      
+      const order = orderMap.get(orderId)
+      order.total_revenue += itemPrice
+      order.total_tax += itemTax + shippingTax + giftWrapTax
+      order.total_shipping += shippingPrice + giftWrap
+      order.total_promotions += Math.abs(itemPromo) + Math.abs(shipPromo)
+      order.item_count += quantity
     }
+    
+    // Convert to transactions array and calculate final amounts
+    const transactions: any[] = Array.from(orderMap.values()).map(order => ({
+      ...order,
+      amount: order.total_revenue + order.total_tax + order.total_shipping - order.total_promotions,
+      sku: `ORDER_${order.item_count}_ITEMS`, // Aggregate placeholder
+      quantity: order.item_count,
+    }))
 
     console.log(`[REPORTS] Parsed ${transactions.length} transactions`)
 
