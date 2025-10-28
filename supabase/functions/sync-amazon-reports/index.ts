@@ -273,9 +273,9 @@ Deno.serve(async (req) => {
           amazon_account_id: accountId,
           user_id: account.user_id,
           transaction_date: row['purchase-date'] || row['PurchaseDate'],
-          amazon_order_id: orderId,
+          order_id: orderId,
           transaction_type: 'Order',
-          currency: row['currency'] || 'USD',
+          currency_code: row['currency'] || 'USD',
           total_revenue: 0,
           total_tax: 0,
           total_shipping: 0,
@@ -316,7 +316,7 @@ Deno.serve(async (req) => {
       const { error: insertError } = await supabase
         .from('amazon_transactions')
         .upsert(batch, {
-          onConflict: 'amazon_account_id,transaction_date,amazon_order_id,transaction_type',
+          onConflict: 'amazon_account_id,transaction_date,order_id',
           ignoreDuplicates: true,
         })
 
