@@ -198,6 +198,8 @@ export default function ScenarioPlanner() {
     const currentCash = bankAccounts.reduce((sum, account) => {
       return sum + (account.balance || 0);
     }, 0);
+    
+    console.log('[ScenarioPlanner] Current cash from bank accounts:', currentCash);
 
     // Build complete event list matching dashboard logic with IDs for tracking
     const events: Array<{ date: Date; amount: number; type: 'inflow' | 'outflow'; sourceId: string; sourceType: string }> = [];
@@ -391,14 +393,24 @@ export default function ScenarioPlanner() {
       // Update cumulative balances
       runningBaselineCash += (baselineInflows - baselineOutflows);
       runningScenarioCash += (scenarioInflows - scenarioOutflows);
+      
+      console.log(`[ScenarioPlanner] Month ${monthOffset}:`, {
+        baselineInflows,
+        baselineOutflows,
+        scenarioInflows,
+        scenarioOutflows,
+        runningBaselineCash: Math.round(runningBaselineCash),
+        runningScenarioCash: Math.round(runningScenarioCash),
+        eventsInPeriod: periodEvents.length
+      });
 
       const date = new Date();
       date.setMonth(date.getMonth() + monthOffset);
       
       periods.push({
         month: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        baselineCash: runningBaselineCash,
-        scenarioCash: runningScenarioCash,
+        baselineCash: Math.round(runningBaselineCash),
+        scenarioCash: Math.round(runningScenarioCash),
       });
     }
 
