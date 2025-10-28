@@ -177,3 +177,6 @@ verify_jwt = false
 [functions.aggregate-old-transactions]
 verify_jwt = false
 
+[functions.reset-amazon-sync]
+verify_jwt = false
+

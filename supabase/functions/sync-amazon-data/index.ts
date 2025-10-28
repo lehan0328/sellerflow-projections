@@ -369,9 +369,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     // ===== STEP 2: FETCH TRANSACTIONS (Slow - 30k+ records) =====
     console.log('[SYNC] Now fetching transaction history...')
     
-    // Define the target historical window (60 days BACK from today for transactions)
+    // Define the target historical window (180 days BACK from today for transactions - Amazon's max)
     const transactionStartDate = new Date()
-    transactionStartDate.setDate(transactionStartDate.getDate() - 60) // 60 days for transactions
+    transactionStartDate.setDate(transactionStartDate.getDate() - 180) // 180 days (Amazon's maximum)
     transactionStartDate.setHours(0, 0, 0, 0)
 
     // Check if last_synced_to is valid and in the past
@@ -438,7 +438,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       
       console.log('[SYNC] Backfill mode - continuing from:', startDate.toISOString(), 'to', endDate.toISOString())
     } else {
-      // Last sync was within the 90-day window - continue incrementally
+      // Last sync was within the 180-day window - continue incrementally
       startDate = new Date(lastSyncDate)
       startDate.setDate(startDate.getDate() + 1)
       startDate.setHours(0, 0, 0, 0)
