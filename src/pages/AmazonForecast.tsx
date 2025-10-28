@@ -51,6 +51,7 @@ export default function AmazonForecast() {
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
   const [isDeletingSampleData, setIsDeletingSampleData] = useState(false);
   const [growthTimeframe, setGrowthTimeframe] = useState<'30d' | '60d' | '90d' | '6m' | '1y'>('1y');
+  const [avgPayoutPeriod, setAvgPayoutPeriod] = useState<string>(format(new Date(), 'yyyy-MM'));
 
   // Check if user has 3+ confirmed payouts
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed');
@@ -161,15 +162,38 @@ export default function AmazonForecast() {
     
     const totalPayouts = confirmedPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
     
-    // Calculate average daily payout
-    // Get date range of all confirmed payouts
+    // Calculate average daily payout based on selected period
     let avgPayout = 0;
+    let avgPayoutLabel = '';
+    
     if (confirmedPayouts.length > 0) {
-      const payoutDates = confirmedPayouts.map(p => new Date(p.payout_date).getTime());
-      const minDate = Math.min(...payoutDates);
-      const maxDate = Math.max(...payoutDates);
-      const daysDifference = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24)) + 1; // +1 to include both start and end days
-      avgPayout = daysDifference > 0 ? totalPayouts / daysDifference : 0;
+      let filteredPayouts = confirmedPayouts;
+      
+      if (avgPayoutPeriod === '12-months') {
+        // Last 12 months
+        const twelveMonthsAgo = new Date();
+        twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1);
+        filteredPayouts = confirmedPayouts.filter(p => new Date(p.payout_date) >= twelveMonthsAgo);
+        avgPayoutLabel = 'Last 12 months';
+        
+        const periodTotal = filteredPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+        avgPayout = periodTotal / 365; // Average per day over 365 days
+      } else {
+        // Specific month (YYYY-MM format)
+        const [year, month] = avgPayoutPeriod.split('-').map(Number);
+        filteredPayouts = confirmedPayouts.filter(p => {
+          const payoutDate = new Date(p.payout_date);
+          return payoutDate.getFullYear() === year && payoutDate.getMonth() === month - 1;
+        });
+        
+        const monthDate = new Date(year, month - 1, 1);
+        avgPayoutLabel = format(monthDate, 'MMMM yyyy');
+        
+        // Calculate days in selected month
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const periodTotal = filteredPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+        avgPayout = daysInMonth > 0 ? periodTotal / daysInMonth : 0;
+      }
     }
     
     const lastPayout = confirmedPayouts.length > 0 ? Number(confirmedPayouts[0].total_amount || 0) : 0;
@@ -218,12 +242,13 @@ export default function AmazonForecast() {
     return {
       totalPayouts,
       avgPayout,
+      avgPayoutLabel,
       lastPayout,
       growthRate,
       payoutCount: confirmedPayouts.length,
       comparisonPeriod
     };
-  }, [amazonPayouts, growthTimeframe]);
+  }, [amazonPayouts, growthTimeframe, avgPayoutPeriod]);
 
   // Calculate forecast accuracy
   const [forecastAccuracy, setForecastAccuracy] = useState<number | null>(null);
@@ -351,11 +376,28 @@ export default function AmazonForecast() {
 
             <div className="bg-background rounded-lg border p-4">
               <div className="flex items-center justify-between space-y-0 pb-2">
-                <p className="text-sm font-medium">Avg Daily Payout</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium">Avg Daily Payout</p>
+                  <Select value={avgPayoutPeriod} onValueChange={setAvgPayoutPeriod}>
+                    <SelectTrigger className="h-7 w-[120px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="12-months">12 Months</SelectItem>
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const date = new Date();
+                        date.setMonth(date.getMonth() - i);
+                        const value = format(date, 'yyyy-MM');
+                        const label = format(date, 'MMM yyyy');
+                        return <SelectItem key={value} value={value}>{label}</SelectItem>;
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <LineChart className="h-4 w-4 text-blue-600" />
               </div>
               <div className="text-2xl font-bold">${metrics.avgPayout.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">Per day average</p>
+              <p className="text-xs text-muted-foreground">{metrics.avgPayoutLabel}</p>
             </div>
 
             <div className="bg-background rounded-lg border p-4">
