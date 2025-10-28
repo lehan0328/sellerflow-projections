@@ -905,12 +905,12 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
         }
       }
 
-      // Save transactions in larger batches (2000) for better throughput
-      if (transactionsToAdd.length >= 2000) {
+      // Save transactions in smaller batches (300) for faster data availability
+      if (transactionsToAdd.length >= 300) {
         console.log(`[SYNC] Saving batch of ${transactionsToAdd.length} transactions...`)
         
-        // Batch insert with larger chunk size (5000 rows per insert for maximum efficiency)
-        const batchSize = 5000
+        // Batch insert with chunk size of 1000 rows per insert for good balance
+        const batchSize = 1000
         for (let i = 0; i < transactionsToAdd.length; i += batchSize) {
           const batch = transactionsToAdd.slice(i, i + batchSize)
           const { error: txError } = await supabase
@@ -966,7 +966,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
     // Save any remaining transactions before proceeding
     if (transactionsToAdd.length > 0) {
       console.log(`[SYNC] Saving final ${transactionsToAdd.length} transactions...`)
-      const batchSize = 5000
+      const batchSize = 1000
       for (let i = 0; i < transactionsToAdd.length; i += batchSize) {
         const batch = transactionsToAdd.slice(i, i + batchSize)
         const { error: txError } = await supabase
