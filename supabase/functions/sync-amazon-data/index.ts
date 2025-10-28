@@ -366,12 +366,55 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       })
       .eq('id', amazonAccountId)
     
-    // ===== STEP 2: FETCH TRANSACTIONS (Slow - 30k+ records) =====
-    console.log('[SYNC] Now fetching transaction history...')
+    // ===== STEP 2: FETCH TRANSACTIONS VIA REPORTS API (Fast bulk download) =====
+    console.log('[SYNC] Now fetching transaction history via Reports API...')
     
-    // Define the target historical window (180 days BACK from today for transactions - Amazon's max)
+    // Check if we've already done the bulk transaction sync
+    const bulkTransactionSyncDone = amazonAccount.bulk_transaction_sync_complete || false
+    
+    if (!bulkTransactionSyncDone) {
+      console.log('[SYNC] Starting bulk transaction sync (2 years of data)...')
+      
+      await supabase
+        .from('amazon_accounts')
+        .update({ 
+          sync_message: 'Downloading 2 years of transaction data via Reports API...',
+          sync_progress: 60
+        })
+        .eq('id', amazonAccountId)
+      
+      // Call sync-amazon-reports for bulk download
+      const { data: reportData, error: reportError } = await supabase.functions.invoke('sync-amazon-reports', {
+        body: { accountId: amazonAccountId }
+      })
+      
+      if (reportError) {
+        console.error('[SYNC] Reports API error:', reportError)
+        throw new Error(`Reports API failed: ${reportError.message}`)
+      }
+      
+      console.log('[SYNC] ✅ Bulk transaction sync complete:', reportData)
+      
+      // Mark bulk sync as complete
+      await supabase
+        .from('amazon_accounts')
+        .update({ 
+          bulk_transaction_sync_complete: true,
+          sync_message: `All data synced! ${reportData.inserted} transactions loaded.`,
+          sync_progress: 100,
+          sync_status: 'completed',
+          last_sync: new Date().toISOString()
+        })
+        .eq('id', amazonAccountId)
+      
+      console.log('[SYNC] ✅ Complete! Settlements and transactions fully synced.')
+      return
+    }
+    
+    // If bulk sync is done, just update recent transactions incrementally
+    console.log('[SYNC] Bulk sync complete. Updating recent transactions...')
     const transactionStartDate = new Date()
-    transactionStartDate.setDate(transactionStartDate.getDate() - 180) // 180 days (Amazon's maximum)
+    transactionStartDate.setDate(transactionStartDate.getDate() - 7) // Last 7 days only
     transactionStartDate.setHours(0, 0, 0, 0)
 
     // Check if last_synced_to is valid and in the past

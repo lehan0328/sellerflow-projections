@@ -189,6 +189,7 @@ export type Database = {
           account_name: string
           backfill_complete: boolean | null
           backfill_target_date: string | null
+          bulk_transaction_sync_complete: boolean | null
           created_at: string
           encrypted_access_token: string | null
           encrypted_client_id: string | null
@@ -228,6 +229,7 @@ export type Database = {
           account_name: string
           backfill_complete?: boolean | null
           backfill_target_date?: string | null
+          bulk_transaction_sync_complete?: boolean | null
           created_at?: string
           encrypted_access_token?: string | null
           encrypted_client_id?: string | null
@@ -267,6 +269,7 @@ export type Database = {
           account_name?: string
           backfill_complete?: boolean | null
           backfill_target_date?: string | null
+          bulk_transaction_sync_complete?: boolean | null
           created_at?: string
           encrypted_access_token?: string | null
           encrypted_client_id?: string | null
