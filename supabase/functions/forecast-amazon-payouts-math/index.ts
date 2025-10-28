@@ -229,6 +229,19 @@ serve(async (req) => {
         if (account.payout_frequency === 'daily' && historicalPayouts && historicalPayouts.length >= 30) {
           console.log(`[MATH-FORECAST] Using settlement-based cumulative distribution (${historicalPayouts.length} settlements available)`);
           
+          // Calculate recent daily average for forecasting beyond open settlement
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          const recentDailyPayouts = historicalPayouts.filter(p => {
+            const payoutDate = new Date(p.payout_date);
+            return payoutDate >= thirtyDaysAgo;
+          });
+          const avgDailyPayout = recentDailyPayouts.length > 0 
+            ? recentDailyPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0) / recentDailyPayouts.length
+            : historicalAvgPayout;
+          
+          console.log(`[MATH-FORECAST] Recent 30-day daily average: $${avgDailyPayout.toFixed(2)} (${recentDailyPayouts.length} payouts)`);
+          
           // Find the open settlement with the largest beginning balance
           const { data: openSettlements } = await supabase
             .from('amazon_payouts')
@@ -237,63 +250,109 @@ serve(async (req) => {
             .eq('status', 'estimated')
             .order('total_amount', { ascending: false });
           
-          if (!openSettlements || openSettlements.length === 0) {
-            console.log(`[MATH-FORECAST] No open settlements found, cannot generate daily distribution`);
-            continue;
+          let settlementForecasts: any[] = [];
+          let lastCumulativeAmount = 0;
+          let forecastStartDate = new Date();
+          forecastStartDate.setHours(0, 0, 0, 0);
+          
+          if (openSettlements && openSettlements.length > 0) {
+            // Get the largest open settlement
+            const largestSettlement = openSettlements[0];
+            const rawData = largestSettlement.raw_settlement_data as any;
+            const beginningBalance = Number(rawData?.BeginningBalance?.CurrencyAmount || rawData?.BeginningBalance || 0);
+            const settlementStart = rawData?.FinancialEventGroupStart || rawData?.settlement_start_date;
+            const settlementEnd = largestSettlement.payout_date;
+            
+            if (beginningBalance && settlementStart && settlementEnd) {
+              console.log(`[MATH-FORECAST] Open settlement: $${beginningBalance}, Period: ${settlementStart} to ${settlementEnd}`);
+              
+              // Import cumulative distribution function
+              const { generateCumulativeDailyDistribution } = await import('./daily-cumulative-distribution.ts');
+              
+              // Generate cumulative distribution for open settlement period
+              const dailyDist = generateCumulativeDailyDistribution(
+                new Date(settlementStart),
+                new Date(settlementEnd),
+                beginningBalance,
+                0, // No draws yet
+                undefined // No volume weights (using even distribution)
+              );
+              
+              console.log(`[MATH-FORECAST] Generated ${dailyDist.length} daily distribution entries for open settlement`);
+              
+              // Convert to forecast format - these show cumulative unlocking
+              settlementForecasts = dailyDist.map(dist => ({
+                user_id: userId,
+                account_id: accountId,
+                amazon_account_id: account.id,
+                settlement_id: `FORECAST-OPEN-${dist.date}`,
+                payout_date: dist.date,
+                total_amount: Math.round(dist.cumulative_available * 100) / 100,
+                currency_code: 'USD',
+                status: 'forecasted',
+                payout_type: 'daily',
+                marketplace_name: account.marketplace_name || 'Amazon.com',
+                modeling_method: 'mathematical_daily',
+                raw_settlement_data: {
+                  method: 'cumulative_daily_distribution',
+                  daily_unlock_amount: dist.daily_unlock,
+                  cumulative_available: dist.cumulative_available,
+                  days_accumulated: dist.days_accumulated,
+                  beginning_balance: beginningBalance,
+                  source: 'open_settlement'
+                },
+                orders_total: dist.daily_unlock,
+                fees_total: dist.cumulative_available,
+                refunds_total: dist.days_accumulated,
+              }));
+              
+              // Track last cumulative amount and date for continuation
+              if (settlementForecasts.length > 0) {
+                const lastForecast = settlementForecasts[settlementForecasts.length - 1];
+                lastCumulativeAmount = lastForecast.total_amount;
+                forecastStartDate = new Date(lastForecast.payout_date);
+                forecastStartDate.setDate(forecastStartDate.getDate() + 1); // Start next day
+                
+                console.log(`[MATH-FORECAST] Open settlement ends on ${lastForecast.payout_date} with cumulative: $${lastCumulativeAmount.toFixed(2)}`);
+              }
+            }
           }
           
-          // Get the largest open settlement
-          const largestSettlement = openSettlements[0];
-          const rawData = largestSettlement.raw_settlement_data as any;
-          const beginningBalance = Number(rawData?.BeginningBalance?.CurrencyAmount || rawData?.BeginningBalance || 0);
-          const settlementStart = rawData?.FinancialEventGroupStart || rawData?.settlement_start_date;
-          const settlementEnd = largestSettlement.payout_date;
+          // Continue forecasting for 90 days total using average daily payouts
+          const totalForecastDays = 90;
+          const remainingDays = totalForecastDays - settlementForecasts.length;
           
-          if (!beginningBalance || !settlementStart || !settlementEnd) {
-            console.log(`[MATH-FORECAST] Missing required settlement data for ${account.account_name}`);
-            continue;
+          console.log(`[MATH-FORECAST] Generating ${remainingDays} additional days of forecasts based on avg daily: $${avgDailyPayout.toFixed(2)}`);
+          
+          for (let i = 0; i < remainingDays; i++) {
+            const forecastDate = new Date(forecastStartDate);
+            forecastDate.setDate(forecastDate.getDate() + i);
+            
+            // Each day adds the average daily payout to the cumulative total
+            lastCumulativeAmount += avgDailyPayout;
+            
+            settlementForecasts.push({
+              user_id: userId,
+              account_id: accountId,
+              amazon_account_id: account.id,
+              settlement_id: `FORECAST-${forecastDate.toISOString().split('T')[0]}`,
+              payout_date: forecastDate.toISOString().split('T')[0],
+              total_amount: Math.round(lastCumulativeAmount * 100) / 100,
+              currency_code: 'USD',
+              status: 'forecasted',
+              payout_type: 'daily',
+              marketplace_name: account.marketplace_name || 'Amazon.com',
+              modeling_method: 'mathematical_daily',
+              raw_settlement_data: {
+                method: 'cumulative_daily_average',
+                daily_unlock_amount: avgDailyPayout,
+                cumulative_available: lastCumulativeAmount,
+                source: 'historical_average'
+              },
+              orders_total: avgDailyPayout,
+              fees_total: lastCumulativeAmount,
+            });
           }
-          
-          console.log(`[MATH-FORECAST] Open settlement: $${beginningBalance}, Period: ${settlementStart} to ${settlementEnd}`);
-          
-          // Import cumulative distribution function
-          const { generateCumulativeDailyDistribution } = await import('./daily-cumulative-distribution.ts');
-          
-          // Generate cumulative distribution starting from today
-          const dailyDist = generateCumulativeDailyDistribution(
-            new Date(settlementStart),
-            new Date(settlementEnd),
-            beginningBalance,
-            0, // No draws yet
-            undefined // No volume weights (using even distribution)
-          );
-          
-          console.log(`[MATH-FORECAST] Generated ${dailyDist.length} daily distribution entries`);
-          
-          // Convert to forecast format
-          const settlementForecasts = dailyDist.map(dist => ({
-            user_id: userId,
-            account_id: accountId,
-            amazon_account_id: account.id,
-            settlement_id: `FORECAST-${dist.date}`,
-            payout_date: dist.date,
-            total_amount: Math.round(dist.cumulative_available * 100) / 100,
-            currency_code: 'USD',
-            status: 'forecasted',
-            payout_type: 'daily',
-            marketplace_name: account.marketplace_name || 'Amazon.com',
-            modeling_method: 'mathematical_daily',
-            raw_settlement_data: {
-              method: 'cumulative_daily_distribution',
-              daily_unlock_amount: dist.daily_unlock,
-              cumulative_available: dist.cumulative_available,
-              days_accumulated: dist.days_accumulated,
-              beginning_balance: beginningBalance,
-            },
-            orders_total: dist.daily_unlock,
-            fees_total: dist.cumulative_available,
-            refunds_total: dist.days_accumulated,
-          }));
           
           // Insert forecasts
           if (settlementForecasts.length > 0) {
