@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     // Fetch all confirmed payouts (historical data)
     const { data: confirmedPayouts, error: payoutError } = await supabase
       .from('amazon_payouts')
-      .select('payout_date, total_amount, status')
+      .select('payout_date, total_amount, status, amazon_account_id, marketplace_name')
       .eq('user_id', user.id)
       .eq('status', 'confirmed')
       .order('payout_date', { ascending: false });
@@ -187,14 +187,14 @@ Deno.serve(async (req) => {
       forecasts.push({
         user_id: user.id,
         account_id: accountId,
-        amazon_account_id: confirmedPayouts[0].amazon_account_id || null,
+        amazon_account_id: confirmedPayouts[0]?.amazon_account_id,
         settlement_id: `FORECAST-${payoutDate.toISOString().split('T')[0]}`,
         payout_date: payoutDate.toISOString().split('T')[0],
         total_amount: Math.round(forecastedAmount * 100) / 100,
         currency_code: 'USD',
         status: 'forecasted',
         payout_type: payoutFrequency,
-        marketplace_name: confirmedPayouts[0].marketplace_name || 'Amazon.com',
+        marketplace_name: confirmedPayouts[0]?.marketplace_name || 'Amazon.com',
         modeling_method: 'seasonality',
         // Store calculation details
         orders_total: avgPayout, // Store baseline for reference
