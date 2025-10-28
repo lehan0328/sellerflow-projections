@@ -1610,6 +1610,24 @@ const Dashboard = () => {
     .map(payout => {
       // Open settlements (status='estimated') are in-progress and will update daily
       const isOpenSettlement = (payout.status as string) === 'estimated';
+      const rawData = (payout as any).raw_settlement_data;
+      
+      // For open settlements, calculate the close date (start + 14 days for bi-weekly)
+      let payoutDisplayDate = new Date(payout.payout_date);
+      if (isOpenSettlement && rawData?.FinancialEventGroupStart) {
+        const startDate = new Date(rawData.FinancialEventGroupStart);
+        const estimatedCloseDate = new Date(startDate);
+        estimatedCloseDate.setDate(estimatedCloseDate.getDate() + 14); // Bi-weekly settlement period
+        payoutDisplayDate = estimatedCloseDate;
+        
+        console.log('[Calendar] Open settlement - using close date:', {
+          settlementId: payout.settlement_id,
+          startDate: startDate.toISOString().split('T')[0],
+          closeDate: estimatedCloseDate.toISOString().split('T')[0],
+          amount: payout.total_amount
+        });
+      }
+      
       const description = (payout.status as string) === 'forecasted' 
         ? `Amazon Payout (Forecasted) - ${payout.marketplace_name}`
         : isOpenSettlement
@@ -1617,7 +1635,7 @@ const Dashboard = () => {
           : `Amazon Payout - ${payout.marketplace_name}`;
       
       console.log('[Calendar] Adding Amazon payout:', {
-        date: payout.payout_date,
+        date: payoutDisplayDate.toISOString().split('T')[0],
         amount: payout.total_amount,
         status: payout.status,
         isOpen: isOpenSettlement
@@ -1629,7 +1647,7 @@ const Dashboard = () => {
         amount: payout.total_amount,
         description,
         source: (payout.status as string) === 'forecasted' ? 'Amazon-Forecasted' : 'Amazon',
-        date: new Date(payout.payout_date)
+        date: payoutDisplayDate
       };
     });
   
