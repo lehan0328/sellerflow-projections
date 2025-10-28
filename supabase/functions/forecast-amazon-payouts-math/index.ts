@@ -232,19 +232,36 @@ serve(async (req) => {
           // Calculate ACTUAL daily average: total revenue / calendar days (not per payout)
           const thirtyDaysAgo = new Date();
           thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-          const recentDailyPayouts = historicalPayouts.filter(p => {
+          const sixtyDaysAgo = new Date();
+          sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+          
+          const recentPayouts = historicalPayouts.filter(p => {
             const payoutDate = new Date(p.payout_date);
             return payoutDate >= thirtyDaysAgo;
           });
           
-          // Calculate average per calendar day, not per payout
-          const totalRevenue = recentDailyPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
-          const calendarDays = 30; // 30-day period
-          const avgDailyPayout = recentDailyPayouts.length > 0 
-            ? totalRevenue / calendarDays
-            : historicalAvgPayout;
+          const priorPayouts = historicalPayouts.filter(p => {
+            const payoutDate = new Date(p.payout_date);
+            return payoutDate >= sixtyDaysAgo && payoutDate < thirtyDaysAgo;
+          });
           
-          console.log(`[MATH-FORECAST] Recent 30-day stats: ${recentDailyPayouts.length} payouts, $${totalRevenue.toFixed(2)} total, $${avgDailyPayout.toFixed(2)} per day`);
+          // Calculate average per calendar day
+          const recentTotal = recentPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
+          const priorTotal = priorPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
+          const avgDailyPayout = recentTotal / 30; // Last 30 calendar days
+          const priorAvgDaily = priorPayouts.length > 0 ? priorTotal / 30 : avgDailyPayout;
+          
+          // Calculate growth trend: recent vs prior period
+          const growthTrend = priorAvgDaily > 0 ? avgDailyPayout / priorAvgDaily : 1.0;
+          
+          // Apply safety net multiplier
+          const safetyMultiplier = 1 - (riskAdjustment / 100);
+          const adjustedDailyAvg = avgDailyPayout * growthTrend * safetyMultiplier;
+          
+          console.log(`[MATH-FORECAST] Recent 30-day: ${recentPayouts.length} payouts, $${recentTotal.toFixed(2)} total, $${avgDailyPayout.toFixed(2)}/day`);
+          console.log(`[MATH-FORECAST] Prior 30-day: ${priorPayouts.length} payouts, $${priorTotal.toFixed(2)} total, $${priorAvgDaily.toFixed(2)}/day`);
+          console.log(`[MATH-FORECAST] Growth trend: ${(growthTrend * 100).toFixed(1)}%, Safety: ${(safetyMultiplier * 100).toFixed(0)}%`);
+          console.log(`[MATH-FORECAST] Final adjusted daily average: $${adjustedDailyAvg.toFixed(2)}/day`);
           
           // Find the open settlement with the largest beginning balance
           const { data: openSettlements } = await supabase
@@ -322,18 +339,44 @@ serve(async (req) => {
             }
           }
           
-          // Continue forecasting for 90 days total using average daily payouts
+          // Continue forecasting for 90 days total using average daily payouts with variance
           const totalForecastDays = 90;
           const remainingDays = totalForecastDays - settlementForecasts.length;
           
-          console.log(`[MATH-FORECAST] Generating ${remainingDays} additional days of forecasts based on avg daily: $${avgDailyPayout.toFixed(2)}`);
+          console.log(`[MATH-FORECAST] Generating ${remainingDays} additional days of forecasts based on adjusted avg: $${adjustedDailyAvg.toFixed(2)}/day`);
+          
+          // Seasonality multipliers by month (based on Amazon sales patterns)
+          const SEASONALITY = {
+            1: 0.92,  // Jan - post-holiday slowdown
+            2: 0.88,  // Feb - slowest month
+            3: 0.95,  // Mar
+            4: 0.98,  // Apr
+            5: 1.00,  // May - baseline
+            6: 1.02,  // Jun
+            7: 1.05,  // Jul - Prime Day
+            8: 0.97,  // Aug
+            9: 0.99,  // Sep
+            10: 1.03, // Oct - Q4 ramp
+            11: 1.15, // Nov - Black Friday/Cyber Monday
+            12: 1.20, // Dec - Holiday peak
+          };
           
           for (let i = 0; i < remainingDays; i++) {
             const forecastDate = new Date(forecastStartDate);
             forecastDate.setDate(forecastDate.getDate() + i);
+            const month = forecastDate.getMonth() + 1;
             
-            // Each day adds the average daily payout to the cumulative total
-            lastCumulativeAmount += avgDailyPayout;
+            // Apply seasonality
+            const seasonalMultiplier = SEASONALITY[month] || 1.0;
+            
+            // Add realistic variance: ±10% random variation
+            const varianceFactor = 0.9 + (Math.random() * 0.2); // 0.9 to 1.1
+            
+            // Calculate daily amount with all adjustments
+            const dailyAmount = adjustedDailyAvg * seasonalMultiplier * varianceFactor;
+            
+            // Each day adds to cumulative total
+            lastCumulativeAmount += dailyAmount;
             
             settlementForecasts.push({
               user_id: userId,
@@ -349,12 +392,14 @@ serve(async (req) => {
               modeling_method: 'mathematical_daily',
               raw_settlement_data: {
                 method: 'cumulative_daily_average',
-                daily_unlock_amount: avgDailyPayout,
-                cumulative_available: lastCumulativeAmount,
+                daily_unlock_amount: Math.round(dailyAmount * 100) / 100,
+                cumulative_available: Math.round(lastCumulativeAmount * 100) / 100,
+                seasonality: seasonalMultiplier,
+                variance: varianceFactor,
                 source: 'historical_average'
               },
-              orders_total: avgDailyPayout,
-              fees_total: lastCumulativeAmount,
+              orders_total: Math.round(dailyAmount * 100) / 100,
+              fees_total: Math.round(lastCumulativeAmount * 100) / 100,
             });
           }
           
