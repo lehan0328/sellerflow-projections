@@ -279,11 +279,14 @@ Deno.serve(async (req) => {
       // Calculate net amount (gross - tax - discounts)
       const netAmount = itemPrice - itemTax - promotionDiscount
 
+      // Make transaction_id unique by appending line number (same order can have multiple items)
+      const uniqueTransactionId = `${orderId}-L${i}`
+
       transactions.push({
         amazon_account_id: amazonAccountId,
         user_id: account.user_id,
         account_id: account.account_id,
-        transaction_id: orderId,
+        transaction_id: uniqueTransactionId,
         transaction_type: 'Order',
         transaction_date: new Date(purchaseDate).toISOString(),
         delivery_date: deliveryDate.toISOString(),
