@@ -51,11 +51,11 @@ const transactionSections = [{
   icon: Repeat
 }, {
   id: "bank-transactions",
-  title: "Financial Connections",
+  title: "Bank Transactions",
   icon: Building2
 }, {
   id: "financials",
-  title: "Financials",
+  title: "Financial Connections",
   icon: Wallet
 }, {
   id: "amazon-payouts",
