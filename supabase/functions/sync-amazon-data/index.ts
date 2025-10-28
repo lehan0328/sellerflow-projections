@@ -133,17 +133,32 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
       return
     }
     
-    // Process and save settlements
+    // Process and save settlements (including open ones)
     const settlementsToSave = allSettlements.map((group: any) => {
+      const settlementStartDate = group.FinancialEventGroupStart ? new Date(group.FinancialEventGroupStart) : null
       const settlementEndDate = group.FinancialEventGroupEnd ? new Date(group.FinancialEventGroupEnd) : null
-      if (!settlementEndDate) return null
-      
-      const payoutDateObj = new Date(settlementEndDate)
-      payoutDateObj.setDate(payoutDateObj.getDate() + 1)
-      const payoutDate = payoutDateObj.toISOString().split('T')[0]
-      
       const now = new Date()
-      const status = settlementEndDate <= now ? 'confirmed' : 'estimated'
+      
+      // Determine payout date and status
+      let payoutDate: string
+      let status: string
+      
+      if (settlementEndDate) {
+        // Closed settlement - payout is 1 day after settlement end
+        const payoutDateObj = new Date(settlementEndDate)
+        payoutDateObj.setDate(payoutDateObj.getDate() + 1)
+        payoutDate = payoutDateObj.toISOString().split('T')[0]
+        status = settlementEndDate <= now ? 'confirmed' : 'estimated'
+      } else if (settlementStartDate) {
+        // Open settlement - estimate payout based on start date + typical cycle (14 days)
+        const estimatedPayoutObj = new Date(settlementStartDate)
+        estimatedPayoutObj.setDate(estimatedPayoutObj.getDate() + 15) // 14 day cycle + 1 day for payout
+        payoutDate = estimatedPayoutObj.toISOString().split('T')[0]
+        status = 'estimated'
+      } else {
+        // No dates available, skip this settlement
+        return null
+      }
       
       const totalAmount = parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0')
       
@@ -184,7 +199,8 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
     // === STEP 2: FETCH TRANSACTION DETAILS ===
     console.log('[SYNC] ===== STEP 2: FETCHING TRANSACTIONS =====')
     
-    const bulkSyncDone = amazonAccount.bulk_transaction_sync_complete || false
+    // Check if transactions need to be synced (not done OR no transactions exist)
+    const bulkSyncDone = amazonAccount.bulk_transaction_sync_complete && amazonAccount.transaction_count > 0
     
     if (!bulkSyncDone) {
       await supabase.from('amazon_accounts').update({ 
