@@ -65,29 +65,25 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       const hasDiscount = profile?.plan_override === 'referred_user_discount' && !profile?.discount_redeemed_at;
       setHasReferredDiscount(hasDiscount);
 
-      // Calculate revenue from last 30 days using aggregated payout data
-      // This is much more efficient than summing individual transactions (which can be 10k-100k rows)
+      // Calculate revenue from last 30 days using confirmed payout data
+      // We track NET payouts (money that hits bank account) for plan detection
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      // PRIORITIZE amazon_payouts - they contain pre-aggregated revenue data
-      // This is the correct approach for accounts with many transactions
+      // Use amazon_payouts - contains settlement payout amounts
       const { data: amazonPayouts } = await supabase
         .from('amazon_payouts')
-        .select('total_amount, orders_total, refunds_total, payout_date, status')
+        .select('total_amount, payout_date, status')
         .eq('user_id', user.id)
         .gte('payout_date', thirtyDaysAgo.toISOString().split('T')[0])
-        .in('status', ['completed', 'forecasted']);
+        .eq('status', 'confirmed');
 
       let calculatedRevenue = 0;
       
       if (amazonPayouts && amazonPayouts.length > 0) {
-        // Use aggregated orders_total (gross revenue BEFORE Amazon fees) and subtract refunds
-        // Note: total_amount in payouts is NET after fees, but orders_total is GROSS revenue
+        // Sum total net payouts from last 30 days
         calculatedRevenue = amazonPayouts.reduce((sum, p) => {
-          const orders = Number(p.orders_total) || 0;
-          const refunds = Math.abs(Number(p.refunds_total) || 0);
-          return sum + orders - refunds;
+          return sum + (Number(p.total_amount) || 0);
         }, 0);
       }
       
@@ -100,26 +96,26 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       const revenueNum = calculatedRevenue;
 
       // Determine appropriate plan based on revenue and get higher plans
-      if (revenueNum <= 20000) {
+      if (revenueNum <= 10000) {
         recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.starter };
         higherPlans = [
           { type: 'standard', plan: PRICING_PLANS.growing },
           { type: 'standard', plan: PRICING_PLANS.professional },
         ];
-      } else if (revenueNum <= 100000) {
+      } else if (revenueNum <= 50000) {
         recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.growing };
         higherPlans = [
           { type: 'standard', plan: PRICING_PLANS.professional },
         ];
-      } else if (revenueNum <= 200000) {
+      } else if (revenueNum <= 100000) {
         recommendedPlanData = { type: 'standard', plan: PRICING_PLANS.professional };
         higherPlans = [];
-      } else if (revenueNum <= 500000) {
+      } else if (revenueNum <= 250000) {
         recommendedPlanData = { type: 'enterprise', plan: ENTERPRISE_TIERS.tier1 };
         higherPlans = [
           { type: 'enterprise', plan: ENTERPRISE_TIERS.tier2 },
         ];
-      } else if (revenueNum <= 1000000) {
+      } else if (revenueNum <= 500000) {
         recommendedPlanData = { type: 'enterprise', plan: ENTERPRISE_TIERS.tier2 };
         higherPlans = [
           { type: 'enterprise', plan: ENTERPRISE_TIERS.tier3 },
@@ -142,7 +138,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
   // Define complete feature lists for each plan with included flag
   const planFeatures = {
     starter: [
-      { text: "Up to $20k monthly Amazon revenue", included: true },
+      { text: "Up to $10k monthly Amazon payout", included: true },
       { text: "2 bank/credit card connections", included: true },
       { text: "1 Amazon connection", included: true },
       { text: "Advance forecasting workflow", included: true },
@@ -156,7 +152,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "Scenario planning", included: false },
     ],
     growing: [
-      { text: "Up to $100k monthly Amazon revenue", included: true },
+      { text: "Up to $50k monthly Amazon payout", included: true },
       { text: "4 bank/credit card connections", included: true },
       { text: "1 Amazon connection", included: true },
       { text: "AI insights", included: true },
@@ -171,7 +167,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "Scenario planning", included: false },
     ],
     professional: [
-      { text: "Up to $200k monthly Amazon revenue", included: true },
+      { text: "Up to $100k monthly Amazon payout", included: true },
       { text: "7 bank/credit card connections", included: true },
       { text: "1 Amazon connection", included: true },
       { text: "AI insights", included: true },
@@ -186,7 +182,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "Priority support", included: true },
     ],
     enterprise_tier1: [
-      { text: "Up to $500k monthly revenue", included: true },
+      { text: "$100k - $250k monthly Amazon payout", included: true },
       { text: "5 bank/credit card connections", included: true },
       { text: "2 Amazon connections", included: true },
       { text: "7 additional users", included: true },
@@ -195,7 +191,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "Dedicated account manager", included: true },
     ],
     enterprise_tier2: [
-      { text: "Up to $1M monthly revenue", included: true },
+      { text: "$250k - $500k monthly Amazon payout", included: true },
       { text: "5 bank/credit card connections", included: true },
       { text: "2 Amazon connections", included: true },
       { text: "7 additional users", included: true },
@@ -204,7 +200,7 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       { text: "Dedicated account manager", included: true },
     ],
     enterprise_tier3: [
-      { text: "$1M+ monthly revenue", included: true },
+      { text: "$500k+ monthly Amazon payout", included: true },
       { text: "5 bank/credit card connections", included: true },
       { text: "2 Amazon connections", included: true },
       { text: "7 additional users", included: true },

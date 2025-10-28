@@ -100,7 +100,7 @@ const DocsFAQ = () => {
       questions: [
         {
           question: "What are the pricing plans?",
-          answer: "Starter ($24/mo or $240/year) for under $20k monthly Amazon payout, Growing ($59/mo or $590/year) for under $100k, and Professional ($89/mo or $890/year) for under $200k. All plans include unlimited vendors, unlimited transactions, AI forecasting, and transaction matching. Growing adds AI insights and buying opportunities. Professional adds automated notifications and scenario planning. Yearly plans save ~17%."
+          answer: "Starter ($24/mo or $240/year) for up to $10k monthly Amazon payout, Growing ($59/mo or $590/year) for up to $50k, and Professional ($89/mo or $890/year) for up to $100k. All plans include unlimited vendors, unlimited transactions, AI forecasting, and transaction matching. Growing adds AI insights and buying opportunities. Professional adds automated notifications and scenario planning. Yearly plans save ~17%."
         },
         {
           question: "Do you limit the number of vendors or transactions?",

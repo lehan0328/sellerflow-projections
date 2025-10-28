@@ -37,7 +37,7 @@ export default function Pricing() {
 
   const enterpriseTiers = {
     tier1: { 
-      revenue: "$200k - $500k", 
+      revenue: "$100k - $250k", 
       price: 149,
       yearlyPrice: 1490,
       connections: 5, 
@@ -47,7 +47,7 @@ export default function Pricing() {
       yearlyPriceId: "price_1SF2OZB28kMY3Use6rLIlv5g"
     },
     tier2: { 
-      revenue: "$500k - $1M", 
+      revenue: "$250k - $500k", 
       price: 299,
       yearlyPrice: 2990,
       connections: 5, 
@@ -57,7 +57,7 @@ export default function Pricing() {
       yearlyPriceId: "price_1SF2OnB28kMY3UseHsTG7DNZ"
     },
     tier3: { 
-      revenue: "$1M+", 
+      revenue: "$500k+", 
       price: 499,
       yearlyPrice: 4990,
       connections: 5, 
@@ -118,7 +118,7 @@ export default function Pricing() {
       yearlyPrice: "$24",
       period: "/month",
       yearlyPeriod: "/month",
-      description: "Up to $20k monthly revenue",
+      description: "Up to $10k monthly payout",
       popular: false,
       priceId: "price_1SEH8NB28kMY3UseBj2w9HgH",
       yearlyPriceId: "price_1SEHZGB28kMY3UseCkWIlnWw",
@@ -130,7 +130,7 @@ export default function Pricing() {
       yearlyPrice: "$49",
       period: "/month",
       yearlyPeriod: "/month",
-      description: "Up to $100k monthly revenue",
+      description: "Up to $50k monthly payout",
       popular: true,
       priceId: "price_1SEH8iB28kMY3Usem3k3vElT",
       yearlyPriceId: "price_1SEHZVB28kMY3Use9bH8xPlg",
@@ -142,7 +142,7 @@ export default function Pricing() {
       yearlyPrice: "$74",
       period: "/month",
       yearlyPeriod: "/month",
-      description: "Up to $200k monthly revenue",
+      description: "Up to $100k monthly payout",
       popular: false,
       priceId: "price_1SEHBHB28kMY3UsenQEY0qoT",
       yearlyPriceId: "price_1SEHZfB28kMY3UseZKmLEcPk",
@@ -154,7 +154,7 @@ export default function Pricing() {
       yearlyPrice: "Custom",
       period: "",
       yearlyPeriod: "",
-      description: "$200k+ monthly revenue",
+      description: "$100k+ monthly payout",
       popular: false,
       priceId: "enterprise",
       yearlyPriceId: "enterprise",

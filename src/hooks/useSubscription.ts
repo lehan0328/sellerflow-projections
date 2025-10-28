@@ -38,7 +38,7 @@ export const PRICING_PLANS = {
     price_id: "price_1SEH8NB28kMY3UseBj2w9HgH",
     yearly_price_id: "price_1SEHZGB28kMY3UseCkWIlnWw",
     features: [
-      "Under $20k monthly Amazon payout",
+      "Under $10k monthly Amazon payout",
       "2 bank/credit card connections",
       "1 Amazon connection",
       "✨ Smart Purchase Planning",
@@ -63,7 +63,7 @@ export const PRICING_PLANS = {
     price_id: "price_1SEH8iB28kMY3Usem3k3vElT",
     yearly_price_id: "price_1SEHZVB28kMY3Use9bH8xPlg",
     features: [
-      "Under $100k monthly Amazon payout",
+      "Under $50k monthly Amazon payout",
       "3 bank/credit card connections",
       "1 Amazon connection",
       "✨ Smart Purchase Planning",
@@ -90,7 +90,7 @@ export const PRICING_PLANS = {
     price_id: "price_1SEHBHB28kMY3UsenQEY0qoT",
     yearly_price_id: "price_1SEHZfB28kMY3UseZKmLEcPk",
     features: [
-      "Under $200k monthly Amazon payout",
+      "Under $100k monthly Amazon payout",
       "4 bank/credit card connections",
       "1 Amazon connection",
       "✨ Smart Purchase Planning",
@@ -114,7 +114,7 @@ export const PRICING_PLANS = {
 export const ENTERPRISE_TIERS = {
   tier1: {
     name: "Enterprise - Tier 1",
-    revenue: "$200k - $500k monthly revenue",
+    revenue: "$100k - $250k monthly payout",
     price: 149,
     yearlyPrice: 1490,
     priceId: "price_1SF1uxB28kMY3Use2W39zzO4",
@@ -131,7 +131,7 @@ export const ENTERPRISE_TIERS = {
   },
   tier2: {
     name: "Enterprise - Tier 2",
-    revenue: "$500k - $1M monthly revenue",
+    revenue: "$250k - $500k monthly payout",
     price: 299,
     yearlyPrice: 2990,
     priceId: "price_1SF1v8B28kMY3UseVLxkFEvr",
@@ -148,7 +148,7 @@ export const ENTERPRISE_TIERS = {
   },
   tier3: {
     name: "Enterprise - Tier 3",
-    revenue: "$1M+ monthly revenue",
+    revenue: "$500k+ monthly payout",
     price: 499,
     yearlyPrice: 4990,
     priceId: "price_1SF1vLB28kMY3UseRb0kIQNY",
