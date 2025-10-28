@@ -206,8 +206,12 @@ export const useAmazonPayouts = () => {
   }, [user]);
 
   // Calculate summary statistics
+  // Expected: ONLY open settlements (status='estimated') in the future
   const totalUpcoming = amazonPayouts
-    .filter(payout => new Date(payout.payout_date) >= new Date())
+    .filter(payout => 
+      payout.status === 'estimated' && 
+      new Date(payout.payout_date) >= new Date()
+    )
     .reduce((sum, payout) => sum + payout.total_amount, 0);
 
   const totalConfirmed = amazonPayouts
