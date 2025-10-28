@@ -51,7 +51,7 @@ const transactionSections = [{
   icon: Repeat
 }, {
   id: "bank-transactions",
-  title: "Bank Transactions",
+  title: "Financial Connections",
   icon: Building2
 }, {
   id: "financials",
