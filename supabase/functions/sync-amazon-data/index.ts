@@ -443,9 +443,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, actualUserId: s
       startDate.setDate(startDate.getDate() + 1)
       startDate.setHours(0, 0, 0, 0)
       
-      // Fetch 24 hours at a time to maximize throughput while avoiding token expiration
+      // Fetch 3 days at a time for faster backfill (instead of 24 hours)
       endDate = new Date(startDate)
-      endDate.setHours(endDate.getHours() + 24)
+      endDate.setDate(endDate.getDate() + 3)
       
       // Don't go beyond yesterday
       if (endDate > yesterday) {
