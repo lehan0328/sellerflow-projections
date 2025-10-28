@@ -160,18 +160,33 @@ Deno.serve(async (req) => {
     const lines = csvText.split('\n')
     const headers = lines[0].split('\t')
 
-    console.log(`[REPORTS] Parsing ${lines.length - 1} orders...`)
+    console.log(`[REPORTS] CSV has ${lines.length - 1} rows`)
+    console.log(`[REPORTS] Headers (first 20):`, headers.slice(0, 20))
 
-    // Find column indices
-    const orderIdIdx = headers.indexOf('amazon-order-id')
-    const purchaseDateIdx = headers.indexOf('purchase-date')
-    const deliveryDateIdx = headers.indexOf('estimated-delivery-date')
-    const itemPriceIdx = headers.indexOf('item-price')
-    const itemTaxIdx = headers.indexOf('item-tax')
-    const shippingPriceIdx = headers.indexOf('shipping-price')
-    const promotionDiscountIdx = headers.indexOf('promotion-discount')
+    // Find column indices - try multiple possible column names
+    const orderIdIdx = headers.findIndex(h => 
+      h === 'amazon-order-id' || h === 'order-id' || h === 'amazon_order_id'
+    )
+    const purchaseDateIdx = headers.findIndex(h => 
+      h === 'purchase-date' || h === 'order-date' || h === 'purchase_date'
+    )
+    const deliveryDateIdx = headers.findIndex(h => 
+      h === 'estimated-delivery-date' || h === 'delivery-date' || h === 'estimated_delivery_date'
+    )
+    const itemPriceIdx = headers.findIndex(h => 
+      h === 'item-price' || h === 'price' || h === 'item_price'
+    )
+    const itemTaxIdx = headers.findIndex(h => 
+      h === 'item-tax' || h === 'tax' || h === 'item_tax'
+    )
+    const shippingPriceIdx = headers.findIndex(h => 
+      h === 'shipping-price' || h === 'shipping' || h === 'shipping_price'
+    )
+    const promotionDiscountIdx = headers.findIndex(h => 
+      h === 'promotion-discount' || h === 'discount' || h === 'promotion_discount'
+    )
 
-    console.log(`[REPORTS] Column indices found:`, {
+    console.log(`[REPORTS] Column indices:`, {
       orderIdIdx,
       purchaseDateIdx,
       deliveryDateIdx,
@@ -181,40 +196,58 @@ Deno.serve(async (req) => {
       promotionDiscountIdx
     })
 
+    if (orderIdIdx === -1) {
+      console.error('[REPORTS] ⚠️ Could not find order ID column!')
+      console.error('[REPORTS] Available headers:', headers)
+      throw new Error('Order ID column not found in report')
+    }
+
     // Parse transactions
     const transactions = []
     let skippedNoOrderId = 0
     let skippedNoDate = 0
     let usedEstimatedDelivery = 0
 
+    // Log first row for debugging
+    if (lines.length > 1 && lines[1].trim()) {
+      const firstRow = lines[1].split('\t')
+      console.log(`[REPORTS] Sample first row data:`, {
+        orderId: firstRow[orderIdIdx],
+        purchaseDate: firstRow[purchaseDateIdx],
+        deliveryDate: firstRow[deliveryDateIdx],
+        itemPrice: firstRow[itemPriceIdx],
+        rowLength: firstRow.length
+      })
+    }
+
     for (let i = 1; i < lines.length; i++) {
       if (!lines[i].trim()) continue
 
       const cols = lines[i].split('\t')
       
-      const orderId = cols[orderIdIdx]
-      const purchaseDate = cols[purchaseDateIdx]
-      const deliveryDateRaw = cols[deliveryDateIdx]
+      const orderId = cols[orderIdIdx]?.trim()
+      const purchaseDate = cols[purchaseDateIdx]?.trim()
+      const deliveryDateRaw = cols[deliveryDateIdx]?.trim()
       const itemPrice = parseFloat(cols[itemPriceIdx] || '0')
       const itemTax = parseFloat(cols[itemTaxIdx] || '0')
       const shippingPrice = parseFloat(cols[shippingPriceIdx] || '0')
       const promotionDiscount = parseFloat(cols[promotionDiscountIdx] || '0')
 
       // Skip if no order ID
-      if (!orderId) {
+      if (!orderId || orderIdIdx === -1) {
         skippedNoOrderId++
         continue
       }
 
       // Skip if no purchase date
-      if (!purchaseDate) {
+      if (!purchaseDate || purchaseDateIdx === -1) {
         skippedNoDate++
         continue
       }
 
       // Use delivery date if available, otherwise estimate (purchase + 3 days)
       let deliveryDate: Date
-      if (deliveryDateRaw && deliveryDateRaw.trim()) {
+      if (deliveryDateRaw && deliveryDateIdx !== -1) {
         deliveryDate = new Date(deliveryDateRaw)
       } else {
         // Estimate: purchase date + 3 days
