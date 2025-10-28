@@ -536,41 +536,41 @@ export function AmazonPayouts() {
         
         {/* Open Settlements - Always visible at top */}
         {(() => {
+          console.log('[Amazon Payouts - Open Settlements] Starting filter, total payouts:', amazonPayouts.length);
+          
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           
           // Filter open settlements across ALL connected Amazon accounts
           const openSettlements = amazonPayouts.filter(p => {
-            // Open settlements must have:
-            // 1. Status = estimated
-            // 2. No end date in raw_settlement_data
-            // 3. Payout date is today or in the future
             const rawData = p.raw_settlement_data;
             const hasEndDate = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
-            
-            // Only show settlements with payout date = today or future
             const payoutDate = new Date(p.payout_date);
             payoutDate.setHours(0, 0, 0, 0);
             const isTodayOrFuture = payoutDate >= today;
+            const isEstimated = p.status === 'estimated';
+            
+            const passes = isEstimated && !hasEndDate && isTodayOrFuture;
             
             console.log('[Amazon Payouts] Checking settlement:', {
-              id: p.id,
               settlement_id: p.settlement_id,
               status: p.status,
               payout_date: p.payout_date,
+              isEstimated,
               hasEndDate,
               isTodayOrFuture,
-              rawData: rawData ? Object.keys(rawData) : null
+              passes
             });
             
-            return p.status === 'estimated' && 
-                   !hasEndDate && 
-                   isTodayOrFuture;
+            return passes;
           });
           
-          console.log('[Amazon Payouts] Found open settlements:', openSettlements.length);
-
-          if (openSettlements.length === 0) return null;
+          console.log('[Amazon Payouts] ✅ Found open settlements:', openSettlements.length);
+          
+          if (openSettlements.length === 0) {
+            console.log('[Amazon Payouts] ⚠️ No open settlements to display');
+            return null;
+          }
 
           return (
             <div className="space-y-3">
