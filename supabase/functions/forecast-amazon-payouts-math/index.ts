@@ -217,12 +217,37 @@ serve(async (req) => {
       }
 
       // Fetch transactions from last 60 days for accurate trend analysis
-      const { data: transactions } = await supabase
+      const { data: allTransactions } = await supabase
         .from('amazon_transactions')
         .select('*')
         .eq('amazon_account_id', account.id)
         .gte('transaction_date', sixtyDaysAgo.toISOString())
         .order('transaction_date', { ascending: true });
+      
+      // Filter out irregular transactions (outliers) - transactions that are significantly different from the typical amounts
+      let transactions = allTransactions;
+      if (allTransactions && allTransactions.length > 10) {
+        const amounts = allTransactions.map(t => Math.abs(Number(t.amount || 0))).filter(a => a > 0);
+        amounts.sort((a, b) => a - b);
+        
+        // Calculate median and IQR for outlier detection
+        const median = amounts[Math.floor(amounts.length / 2)];
+        const q1 = amounts[Math.floor(amounts.length * 0.25)];
+        const q3 = amounts[Math.floor(amounts.length * 0.75)];
+        const iqr = q3 - q1;
+        
+        // Filter out transactions outside 3 * IQR (very conservative, only removes extreme outliers)
+        const lowerBound = q1 - (3 * iqr);
+        const upperBound = q3 + (3 * iqr);
+        
+        const beforeFilter = allTransactions.length;
+        transactions = allTransactions.filter(t => {
+          const amount = Math.abs(Number(t.amount || 0));
+          return amount >= lowerBound && amount <= upperBound;
+        });
+        
+        console.log(`[MATH-FORECAST] Filtered ${beforeFilter - transactions.length} irregular transactions (median: $${median.toFixed(2)}, IQR: $${iqr.toFixed(2)}, bounds: $${lowerBound.toFixed(2)}-$${upperBound.toFixed(2)})`);
+      }
 
       // If we don't have transaction data, use settlement-based forecasting for daily accounts
       if (!transactions || transactions.length < 30) {
@@ -251,8 +276,40 @@ serve(async (req) => {
           const avgDailyPayout = recentTotal / 30; // Last 30 calendar days
           const priorAvgDaily = priorPayouts.length > 0 ? priorTotal / 30 : avgDailyPayout;
           
-          // Calculate growth trend: recent vs prior period
-          const growthTrend = priorAvgDaily > 0 ? avgDailyPayout / priorAvgDaily : 1.0;
+          // Analyze opening balance trends to understand sales momentum
+          // Get the most recent open settlements to see if opening balances are declining (sales slowing)
+          const { data: recentOpenSettlements } = await supabase
+            .from('amazon_payouts')
+            .select('total_amount, raw_settlement_data, payout_date')
+            .eq('amazon_account_id', account.id)
+            .eq('status', 'estimated')
+            .order('payout_date', { ascending: false })
+            .limit(3);
+          
+          let openingBalanceTrend = 1.0; // Default: no adjustment
+          if (recentOpenSettlements && recentOpenSettlements.length >= 2) {
+            const openingBalances = recentOpenSettlements.map(s => {
+              const rawData = s.raw_settlement_data as any;
+              return Number(rawData?.BeginningBalance?.CurrencyAmount || rawData?.BeginningBalance || 0);
+            }).filter(b => b > 0);
+            
+            if (openingBalances.length >= 2) {
+              const latestOpening = openingBalances[0];
+              const priorOpening = openingBalances[1];
+              openingBalanceTrend = priorOpening > 0 ? latestOpening / priorOpening : 1.0;
+              console.log(`[MATH-FORECAST] Opening balance trend: Latest=$${latestOpening.toFixed(2)}, Prior=$${priorOpening.toFixed(2)}, Trend=${(openingBalanceTrend * 100).toFixed(1)}%`);
+              
+              if (openingBalanceTrend < 0.95) {
+                console.log(`[MATH-FORECAST] ⚠️ Sales slowing detected (opening balance down ${((1 - openingBalanceTrend) * 100).toFixed(1)}%) - adjusting forecast downward`);
+              } else if (openingBalanceTrend > 1.05) {
+                console.log(`[MATH-FORECAST] 📈 Sales accelerating (opening balance up ${((openingBalanceTrend - 1) * 100).toFixed(1)}%) - adjusting forecast upward`);
+              }
+            }
+          }
+          
+          // Calculate growth trend: combine payout trend with opening balance trend
+          const payoutGrowthTrend = priorAvgDaily > 0 ? avgDailyPayout / priorAvgDaily : 1.0;
+          const growthTrend = (payoutGrowthTrend + openingBalanceTrend) / 2; // Average both signals
           
           // Apply safety net multiplier
           const safetyMultiplier = 1 - (riskAdjustment / 100);
@@ -260,7 +317,8 @@ serve(async (req) => {
           
           console.log(`[MATH-FORECAST] Recent 30-day: ${recentPayouts.length} payouts, $${recentTotal.toFixed(2)} total, $${avgDailyPayout.toFixed(2)}/day`);
           console.log(`[MATH-FORECAST] Prior 30-day: ${priorPayouts.length} payouts, $${priorTotal.toFixed(2)} total, $${priorAvgDaily.toFixed(2)}/day`);
-          console.log(`[MATH-FORECAST] Growth trend: ${(growthTrend * 100).toFixed(1)}%, Safety: ${(safetyMultiplier * 100).toFixed(0)}%`);
+          console.log(`[MATH-FORECAST] Payout growth trend: ${(payoutGrowthTrend * 100).toFixed(1)}%, Opening balance trend: ${(openingBalanceTrend * 100).toFixed(1)}%, Combined: ${(growthTrend * 100).toFixed(1)}%`);
+          console.log(`[MATH-FORECAST] Safety: ${(safetyMultiplier * 100).toFixed(0)}%`);
           console.log(`[MATH-FORECAST] Final adjusted daily average: $${adjustedDailyAvg.toFixed(2)}/day`);
           
           // Find the open settlement with the largest beginning balance

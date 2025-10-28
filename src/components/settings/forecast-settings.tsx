@@ -741,8 +741,11 @@ export const ForecastSettings = () => {
                 await refetchPayouts();
                 setSyncProgress(100);
                 toast.dismiss();
-                toast.success("Forecasts regenerated successfully!");
-                setTimeout(() => setSyncProgress(0), 500);
+                toast.success("Forecasts regenerated successfully! Refreshing...");
+                setTimeout(() => {
+                  setSyncProgress(0);
+                  window.location.reload();
+                }, 1500);
               } catch (error) {
                 console.error("Regeneration error:", error);
                 toast.dismiss();

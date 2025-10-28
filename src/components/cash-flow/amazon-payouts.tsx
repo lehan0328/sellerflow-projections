@@ -12,7 +12,7 @@ import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Cloc
 import { AmazonSettledPayouts } from "./amazon-settled-payouts";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -61,6 +61,7 @@ export function AmazonPayouts() {
   const [showConnectDialog, setShowConnectDialog] = useState(false);
   const [selectedMarketplace, setSelectedMarketplace] = useState("ATVPDKIKX0DER");
   const [showSettledPayouts, setShowSettledPayouts] = useState(false);
+  const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(false);
   
   // Date range filter - default to current month
   const now = new Date();
@@ -69,6 +70,24 @@ export function AmazonPayouts() {
   
   const [startDateFilter, setStartDateFilter] = useState(firstDayOfMonth.toISOString().split('T')[0]);
   const [endDateFilter, setEndDateFilter] = useState(lastDayOfMonth.toISOString().split('T')[0]);
+  
+  // Fetch advanced modeling setting
+  useEffect(() => {
+    const fetchAdvancedModelingSetting = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from('user_settings')
+        .select('advanced_modeling_enabled')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      setAdvancedModelingEnabled(data?.advanced_modeling_enabled ?? false);
+    };
+    
+    fetchAdvancedModelingSetting();
+  }, []);
   
   // Count settled payouts
   const settledPayoutsCount = amazonPayouts.filter(p => 
@@ -324,7 +343,8 @@ export function AmazonPayouts() {
             </Button>
           </div>
           <div className="flex items-center space-x-4">
-            {totalEstimated > 0 && (
+            {/* Only show open settlement if advanced modeling is disabled to avoid double counting */}
+            {totalEstimated > 0 && !advancedModelingEnabled && (
               <div className="text-sm text-muted-foreground">
                 Open Settlement: <span className="font-semibold text-amber-600 dark:text-amber-400">
                   {formatCurrency(totalEstimated)}
