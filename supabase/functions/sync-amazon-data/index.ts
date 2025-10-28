@@ -23,9 +23,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
   const amazonAccountId = amazonAccount.id
   
   try {
-    console.log('[SYNC] Starting sync for:', amazonAccount.account_name)
+    console.log('[SYNC] ===== STARTING AMAZON SYNC =====')
+    console.log('[SYNC] Account:', amazonAccount.account_name)
     
-    // Get region and endpoint
     const region = MARKETPLACE_REGIONS[amazonAccount.marketplace_id] || 'US'
     const apiEndpoint = AMAZON_SPAPI_ENDPOINTS[region]
     
@@ -34,72 +34,66 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
     const tokenExpiresAt = new Date(amazonAccount.token_expires_at || 0)
     
     if (tokenExpiresAt <= new Date() || !accessToken) {
-      console.log('[SYNC] Refreshing token...')
+      console.log('[SYNC] Refreshing access token...')
       const { data: refreshData, error: refreshError } = await supabase.functions.invoke('refresh-amazon-token', {
         body: { amazon_account_id: amazonAccountId }
       })
-      
       if (refreshError) throw new Error(`Token refresh failed: ${refreshError.message}`)
       accessToken = refreshData.access_token
+      console.log('[SYNC] ✅ Token refreshed')
     }
 
-    // Helper for authenticated requests with auto-retry on 403
+    // Helper for API calls with auto-retry on 403
     const makeRequest = async (url: string, options: any, retryCount = 0): Promise<Response> => {
       const response = await fetch(url, options)
-      
       if (response.status === 403 && retryCount === 0) {
-        console.log('[SYNC] Got 403, refreshing token...')
+        console.log('[SYNC] Got 403, refreshing token and retrying...')
         const { data: refreshData } = await supabase.functions.invoke('refresh-amazon-token', {
           body: { amazon_account_id: amazonAccountId }
         })
-        
         if (refreshData?.access_token) {
           options.headers['x-amz-access-token'] = refreshData.access_token
           return makeRequest(url, options, retryCount + 1)
         }
       }
-      
       return response
     }
 
-    // === STEP 1: FETCH SETTLEMENTS ===
-    console.log('[SYNC] Step 1: Fetching settlements...')
+    // === STEP 1: FETCH ALL SETTLEMENTS (CLOSED AND OPEN) ===
+    console.log('[SYNC] ===== STEP 1: FETCHING SETTLEMENTS =====')
     
     await supabase.from('amazon_accounts').update({ 
       sync_status: 'syncing',
       sync_progress: 10,
-      sync_message: 'Fetching payouts...'
+      sync_message: 'Fetching Amazon settlements...'
     }).eq('id', amazonAccountId)
 
-    const settlementBackfillTarget = new Date()
-    settlementBackfillTarget.setDate(settlementBackfillTarget.getDate() - 730)
+    // Fetch last 365 days of settlements
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - 365)
     
-    const lastSettlementSync = amazonAccount.last_settlement_sync_date ? 
-      new Date(amazonAccount.last_settlement_sync_date) : null
+    console.log(`[SYNC] Fetching settlements: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
     
-    const isBackfillComplete = lastSettlementSync && lastSettlementSync <= settlementBackfillTarget
+    const eventGroupsUrl = `${apiEndpoint}/finances/v0/financialEventGroups`
+    const params = new URLSearchParams({
+      FinancialEventGroupStartedAfter: startDate.toISOString(),
+      FinancialEventGroupStartedBefore: endDate.toISOString()
+    })
     
-    if (!isBackfillComplete) {
-      // Calculate batch window
-      let settlementEndDate = lastSettlementSync || new Date()
-      if (!lastSettlementSync) settlementEndDate.setDate(settlementEndDate.getDate() - 1)
+    let allSettlements: any[] = []
+    let nextToken: string | null = null
+    let pageCount = 0
+    
+    do {
+      pageCount++
+      const url = nextToken 
+        ? `${eventGroupsUrl}?${params}&NextToken=${encodeURIComponent(nextToken)}`
+        : `${eventGroupsUrl}?${params}`
       
-      let settlementStartDate = new Date(settlementEndDate)
-      settlementStartDate.setDate(settlementStartDate.getDate() - 30)
+      console.log(`[SYNC] Fetching settlements page ${pageCount}...`)
       
-      if (settlementStartDate < settlementBackfillTarget) {
-        settlementStartDate = new Date(settlementBackfillTarget)
-      }
-      
-      console.log(`[SYNC] Fetching settlements from ${settlementStartDate.toISOString().split('T')[0]} to ${settlementEndDate.toISOString().split('T')[0]}`)
-      
-      const eventGroupsUrl = `${apiEndpoint}/finances/v0/financialEventGroups`
-      const params = new URLSearchParams({
-        FinancialEventGroupStartedAfter: settlementStartDate.toISOString(),
-        FinancialEventGroupStartedBefore: settlementEndDate.toISOString()
-      })
-      
-      const response = await makeRequest(`${eventGroupsUrl}?${params}`, {
+      const response = await makeRequest(url, {
         headers: {
           'x-amz-access-token': accessToken,
           'Content-Type': 'application/json'
@@ -113,121 +107,135 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
       
       const data = await response.json()
       const groups = data.payload?.FinancialEventGroupList || []
+      allSettlements.push(...groups)
       
-      console.log(`[SYNC] Found ${groups.length} settlements`)
+      nextToken = data.payload?.NextToken || null
+      console.log(`[SYNC] Page ${pageCount}: Found ${groups.length} settlements (NextToken: ${!!nextToken})`)
       
-      if (groups.length === 0) {
-        await supabase.from('amazon_accounts').update({ 
-          sync_status: 'error',
-          sync_message: 'No settlements found - check permissions or wait for sales'
-        }).eq('id', amazonAccountId)
-        return
+      if (nextToken && pageCount >= 10) {
+        console.log('[SYNC] Reached 10 pages, stopping for now')
+        break
       }
-      
-      // Process and save settlements
-      const settlementsToAdd = groups.map((group: any) => {
-        const settlementEndDate = group.FinancialEventGroupEnd ? new Date(group.FinancialEventGroupEnd) : null
-        if (!settlementEndDate) return null
-        
-        const payoutDateObj = new Date(settlementEndDate)
-        payoutDateObj.setDate(payoutDateObj.getDate() + 1)
-        const payoutDate = payoutDateObj.toISOString().split('T')[0]
-        
-        const now = new Date()
-        const status = settlementEndDate <= now ? 'confirmed' : 'estimated'
-        const type = settlementEndDate <= now ? 'settlement' : 'open_settlement'
-        
-        const totalAmount = parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0')
-        
-        return {
-          user_id: userId,
-          account_id: amazonAccount.account_id,
-          amazon_account_id: amazonAccountId,
-          settlement_id: group.FinancialEventGroupId,
-          payout_date: payoutDate,
-          total_amount: totalAmount,
-          currency_code: group.ConvertedTotal?.CurrencyCode || group.OriginalTotal?.CurrencyCode || 'USD',
-          status,
-          type,
-          payout_type: amazonAccount.payout_frequency || 'bi-weekly',
-          marketplace_name: amazonAccount.marketplace_name,
-          settlement_start_date: group.FinancialEventGroupStart ? 
-            new Date(group.FinancialEventGroupStart).toISOString().split('T')[0] : null,
-          settlement_end_date: settlementEndDate.toISOString().split('T')[0],
-          raw_settlement_data: group
-        }
-      }).filter(Boolean)
-      
-      if (settlementsToAdd.length > 0) {
-        await supabase.from('amazon_payouts').upsert(settlementsToAdd, { 
-          onConflict: 'amazon_account_id,settlement_id'
-        })
-        
-        console.log(`[SYNC] ✅ ${settlementsToAdd.length} settlements saved`)
-        
-        const isComplete = settlementStartDate <= settlementBackfillTarget
-        
-        await supabase.from('amazon_accounts').update({ 
-          last_settlement_sync_date: settlementStartDate.toISOString(),
-          sync_status: 'idle',
-          sync_progress: 50,
-          sync_message: isComplete ? 'Settlements complete' : `${settlementsToAdd.length} payouts saved`,
-          last_sync: new Date().toISOString()
-        }).eq('id', amazonAccountId)
-        
-        if (!isComplete) {
-          console.log('[SYNC] Settlement batch complete. Next run will continue.')
-          return
-        }
-      }
+    } while (nextToken)
+    
+    console.log(`[SYNC] ✅ TOTAL SETTLEMENTS FETCHED: ${allSettlements.length}`)
+    
+    if (allSettlements.length === 0) {
+      console.log('[SYNC] ⚠️ No settlements found')
+      await supabase.from('amazon_accounts').update({ 
+        sync_status: 'completed',
+        sync_progress: 100,
+        sync_message: 'No settlements found - account may be new',
+        last_sync: new Date().toISOString()
+      }).eq('id', amazonAccountId)
+      return
     }
     
-    // === STEP 2: FETCH TRANSACTIONS VIA REPORTS ===
-    console.log('[SYNC] Step 2: Fetching transactions...')
+    // Process and save settlements
+    const settlementsToSave = allSettlements.map((group: any) => {
+      const settlementEndDate = group.FinancialEventGroupEnd ? new Date(group.FinancialEventGroupEnd) : null
+      if (!settlementEndDate) return null
+      
+      const payoutDateObj = new Date(settlementEndDate)
+      payoutDateObj.setDate(payoutDateObj.getDate() + 1)
+      const payoutDate = payoutDateObj.toISOString().split('T')[0]
+      
+      const now = new Date()
+      const status = settlementEndDate <= now ? 'confirmed' : 'estimated'
+      const type = settlementEndDate <= now ? 'settlement' : 'open_settlement'
+      
+      const totalAmount = parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0')
+      
+      return {
+        user_id: userId,
+        account_id: amazonAccount.account_id,
+        amazon_account_id: amazonAccountId,
+        settlement_id: group.FinancialEventGroupId,
+        payout_date: payoutDate,
+        total_amount: totalAmount,
+        currency_code: group.ConvertedTotal?.CurrencyCode || group.OriginalTotal?.CurrencyCode || 'USD',
+        status,
+        type,
+        payout_type: amazonAccount.payout_frequency || 'bi-weekly',
+        marketplace_name: amazonAccount.marketplace_name,
+        settlement_start_date: group.FinancialEventGroupStart ? 
+          new Date(group.FinancialEventGroupStart).toISOString().split('T')[0] : null,
+        settlement_end_date: settlementEndDate.toISOString().split('T')[0],
+        raw_settlement_data: group
+      }
+    }).filter(Boolean)
+    
+    console.log(`[SYNC] Saving ${settlementsToSave.length} settlements to database...`)
+    
+    const { error: upsertError } = await supabase
+      .from('amazon_payouts')
+      .upsert(settlementsToSave, { onConflict: 'amazon_account_id,settlement_id' })
+    
+    if (upsertError) {
+      console.error('[SYNC] Error saving settlements:', upsertError)
+      throw new Error(`Failed to save settlements: ${upsertError.message}`)
+    }
+    
+    console.log(`[SYNC] ✅ ${settlementsToSave.length} settlements saved to amazon_payouts table`)
+    
+    await supabase.from('amazon_accounts').update({ 
+      sync_progress: 50,
+      sync_message: `${settlementsToSave.length} payouts loaded`,
+      last_sync: new Date().toISOString()
+    }).eq('id', amazonAccountId)
+    
+    // === STEP 2: FETCH TRANSACTION DETAILS ===
+    console.log('[SYNC] ===== STEP 2: FETCHING TRANSACTIONS =====')
     
     const bulkSyncDone = amazonAccount.bulk_transaction_sync_complete || false
     
     if (!bulkSyncDone) {
       await supabase.from('amazon_accounts').update({ 
         sync_progress: 60,
-        sync_message: 'Downloading transaction data...'
+        sync_message: 'Downloading transaction details...'
       }).eq('id', amazonAccountId)
+      
+      console.log('[SYNC] Calling sync-amazon-reports...')
       
       const { data: reportData, error: reportError } = await supabase.functions.invoke('sync-amazon-reports', {
         body: { accountId: amazonAccountId }
       })
       
       if (reportError || reportData?.error) {
+        console.error('[SYNC] Reports sync error:', reportError || reportData?.error)
         throw new Error(`Reports sync failed: ${reportError?.message || reportData?.error}`)
       }
       
-      console.log('[SYNC] ✅ Transactions synced:', reportData)
+      console.log('[SYNC] ✅ Transaction details synced:', reportData)
       
       await supabase.from('amazon_accounts').update({ 
         bulk_transaction_sync_complete: true,
         sync_status: 'completed',
         sync_progress: 100,
-        sync_message: `Complete! ${reportData.inserted} transactions loaded`,
+        sync_message: `Complete! ${settlementsToSave.length} payouts + ${reportData.inserted || 0} transactions`,
         last_sync: new Date().toISOString()
       }).eq('id', amazonAccountId)
-      
-      return
+    } else {
+      console.log('[SYNC] Transactions already synced')
+      await supabase.from('amazon_accounts').update({ 
+        sync_status: 'completed',
+        sync_progress: 100,
+        sync_message: `${settlementsToSave.length} payouts updated`,
+        last_sync: new Date().toISOString()
+      }).eq('id', amazonAccountId)
     }
     
-    // Already complete
-    console.log('[SYNC] Account fully synced')
-    await supabase.from('amazon_accounts').update({ 
-      sync_status: 'completed',
-      last_sync: new Date().toISOString()
-    }).eq('id', amazonAccountId)
+    console.log('[SYNC] ===== SYNC COMPLETE =====')
     
   } catch (error) {
+    console.error('[SYNC] ===== SYNC FAILED =====')
     console.error('[SYNC] Error:', error)
     await supabase.from('amazon_accounts').update({ 
       sync_status: 'error',
       sync_message: (error as Error).message.substring(0, 200),
       last_sync_error: (error as Error).message.substring(0, 500)
     }).eq('id', amazonAccountId)
+    throw error
   }
 }
 
