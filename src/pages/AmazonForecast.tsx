@@ -495,9 +495,6 @@ export default function AmazonForecast() {
         </CardContent>
       </Card>
 
-      {/* Forecast Settings moved below Overview */}
-      <ForecastSettings />
-
       {/* Historical Trends */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
@@ -629,6 +626,9 @@ export default function AmazonForecast() {
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
+      {/* Forecast Settings */}
+      <ForecastSettings />
 
       {/* Forecasted Payouts Log */}
       <Card>
