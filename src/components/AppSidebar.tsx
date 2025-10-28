@@ -59,7 +59,7 @@ const transactionSections = [{
   icon: Wallet
 }, {
   id: "amazon-payouts",
-  title: "Amazon Payouts",
+  title: "Amazon Integration",
   icon: ShoppingCart
 }];
 const resourceSections = [{
