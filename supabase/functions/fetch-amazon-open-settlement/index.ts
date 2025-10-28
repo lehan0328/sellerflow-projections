@@ -121,28 +121,26 @@ Deno.serve(async (req) => {
       
       for (const group of groups) {
         if (group.FinancialEventGroupId) {
-          // Get settlement end date (closing date)
+          // Get settlement end date (closing date) - Amazon provides this even for open settlements
           const settlementEndDate = group.FinancialEventGroupEnd ? 
             new Date(group.FinancialEventGroupEnd) : null
           
-          // Calculate payout date: Amazon pays 1 day AFTER settlement closes
-          let payoutDate: string
-          if (settlementEndDate) {
-            const payoutDateObj = new Date(settlementEndDate)
-            payoutDateObj.setDate(payoutDateObj.getDate() + 1) // Add 1 day for bank deposit
-            payoutDate = payoutDateObj.toISOString().split('T')[0]
-          } else {
-            // Open settlement: calculate estimated close date (start + 14 days for bi-weekly)
-            const settlementStartDate = group.FinancialEventGroupStart ? 
-              new Date(group.FinancialEventGroupStart) : new Date()
-            const estimatedCloseDate = new Date(settlementStartDate)
-            estimatedCloseDate.setDate(estimatedCloseDate.getDate() + 14) // Bi-weekly period
-            payoutDate = estimatedCloseDate.toISOString().split('T')[0]
-            console.log(`[FETCH] Open settlement ${group.FinancialEventGroupId}: start=${settlementStartDate.toISOString().split('T')[0]}, estimated_close=${payoutDate}`)
+          if (!settlementEndDate) {
+            console.log(`[FETCH] WARNING: Settlement ${group.FinancialEventGroupId} has no end date, skipping`)
+            continue
           }
           
-          const status = settlementEndDate && settlementEndDate <= new Date() ? 'confirmed' : 'estimated'
-          const type = settlementEndDate && settlementEndDate <= new Date() ? 'settlement' : 'open_settlement'
+          // Calculate payout date: Amazon pays 1 day AFTER settlement closes
+          const payoutDateObj = new Date(settlementEndDate)
+          payoutDateObj.setDate(payoutDateObj.getDate() + 1) // Add 1 day for bank deposit
+          const payoutDate = payoutDateObj.toISOString().split('T')[0]
+          
+          // Status based on whether settlement has closed (end date in past)
+          const now = new Date()
+          const status = settlementEndDate <= now ? 'confirmed' : 'estimated'
+          const type = settlementEndDate <= now ? 'settlement' : 'open_settlement'
+          
+          console.log(`[FETCH] Settlement ${group.FinancialEventGroupId}: end=${settlementEndDate.toISOString().split('T')[0]}, payout=${payoutDate}, status=${status}`)
           
           // Extract BeginningBalance for open settlements (cumulative available amount)
           const beginningBalance = parseFloat(group.BeginningBalance?.CurrencyAmount || '0');

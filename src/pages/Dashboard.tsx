@@ -1610,20 +1610,17 @@ const Dashboard = () => {
     .map(payout => {
       // Open settlements (status='estimated') are in-progress and will update daily
       const isOpenSettlement = (payout.status as string) === 'estimated';
-      const rawData = (payout as any).raw_settlement_data;
       
-      // For open settlements, calculate the close date (start + 14 days for bi-weekly)
-      let payoutDisplayDate = new Date(payout.payout_date);
-      if (isOpenSettlement && rawData?.FinancialEventGroupStart) {
-        const startDate = new Date(rawData.FinancialEventGroupStart);
-        const estimatedCloseDate = new Date(startDate);
-        estimatedCloseDate.setDate(estimatedCloseDate.getDate() + 14); // Bi-weekly settlement period
-        payoutDisplayDate = estimatedCloseDate;
+      // For open settlements, use the settlement_end_date (close date) from the database
+      // For closed settlements, use payout_date (which is settlement_end_date + 1 day)
+      let displayDate = new Date(payout.payout_date);
+      if (isOpenSettlement && (payout as any).settlement_end_date) {
+        // Use the actual close date from Amazon for open settlements
+        displayDate = new Date((payout as any).settlement_end_date);
         
-        console.log('[Calendar] Open settlement - using close date:', {
+        console.log('[Calendar] Open settlement - using close date from Amazon:', {
           settlementId: payout.settlement_id,
-          startDate: startDate.toISOString().split('T')[0],
-          closeDate: estimatedCloseDate.toISOString().split('T')[0],
+          closeDate: (payout as any).settlement_end_date,
           amount: payout.total_amount
         });
       }
@@ -1635,7 +1632,7 @@ const Dashboard = () => {
           : `Amazon Payout - ${payout.marketplace_name}`;
       
       console.log('[Calendar] Adding Amazon payout:', {
-        date: payoutDisplayDate.toISOString().split('T')[0],
+        date: displayDate.toISOString().split('T')[0],
         amount: payout.total_amount,
         status: payout.status,
         isOpen: isOpenSettlement
@@ -1647,7 +1644,7 @@ const Dashboard = () => {
         amount: payout.total_amount,
         description,
         source: (payout.status as string) === 'forecasted' ? 'Amazon-Forecasted' : 'Amazon',
-        date: payoutDisplayDate
+        date: displayDate
       };
     });
   
