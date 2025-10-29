@@ -141,6 +141,10 @@ export default function Analytics() {
         return;
       }
 
+      console.log('[Analytics] Fetched Amazon transactions:', data?.length, 'orders');
+      console.log('[Analytics] Total revenue:', data?.reduce((sum, tx) => sum + (tx.amount || 0), 0));
+      console.log('[Analytics] Date range:', data?.[data.length - 1]?.transaction_date, 'to', data?.[0]?.transaction_date);
+      
       setAmazonTransactions(data || []);
     };
 
@@ -253,13 +257,14 @@ export default function Analytics() {
 
     // Amazon gross revenue from actual orders
     const amazonDateRange = getDateRange(amazonRevenueRange);
-    const amazonRevenue = amazonTransactions
-      .filter(tx => {
-        const txDate = new Date(tx.transaction_date);
-        return txDate >= amazonDateRange.start && 
-               txDate <= amazonDateRange.end;
-      })
-      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    const filteredTransactions = amazonTransactions.filter(tx => {
+      const txDate = new Date(tx.transaction_date);
+      return txDate >= amazonDateRange.start && 
+             txDate <= amazonDateRange.end;
+    });
+    console.log('[Analytics] Amazon date range:', amazonDateRange);
+    console.log('[Analytics] Filtered transactions:', filteredTransactions.length, 'of', amazonTransactions.length);
+    const amazonRevenue = filteredTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
     // Total expenses from vendors + purchase orders
     const vendorExpenses = vendors.reduce((sum, v) => sum + (v.totalOwed || 0), 0);
