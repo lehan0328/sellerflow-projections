@@ -47,6 +47,7 @@ export const useAmazonPayouts = () => {
   const { user } = useAuth();
   const [amazonPayouts, setAmazonPayouts] = useState<AmazonPayout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [forecastsEnabled, setForecastsEnabled] = useState(true);
 
   const fetchAmazonPayouts = async () => {
     if (!user) {
@@ -204,6 +205,17 @@ export const useAmazonPayouts = () => {
     fetchAmazonPayouts();
   }, [user]);
 
+  // Fetch forecasts_enabled setting
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('user_settings')
+      .select('forecasts_enabled')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => setForecastsEnabled(data?.forecasts_enabled ?? true));
+  }, [user]);
+
   // Subscribe to real-time updates
   useEffect(() => {
     if (!user) return;
@@ -241,7 +253,7 @@ export const useAmazonPayouts = () => {
     .filter(payout => payout.status === 'confirmed')
     .reduce((sum, payout) => sum + payout.total_amount, 0);
 
-  const totalEstimated = amazonPayouts
+  const totalEstimated = forecastsEnabled ? 0 : amazonPayouts
     .filter(payout => payout.status === 'estimated')
     .reduce((sum, payout) => sum + payout.total_amount, 0);
   

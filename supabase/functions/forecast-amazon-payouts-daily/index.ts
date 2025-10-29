@@ -160,18 +160,27 @@ serve(async (req) => {
       console.log('[DAILY FORECAST] Deleted existing forecasts');
     }
 
-    // STEP 7: Generate 90-Day Forecast with Backlog Method
+    // STEP 7: Generate 90-Day Forecast with Improved Algorithm
     const forecasts: any[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Days 0-6: Mathematical distribution of open settlement
-    const firstWeekDailyRate = openSettlementAmount / 7;
-    console.log(`[DAILY FORECAST] Days 0-6 rate: $${firstWeekDailyRate.toFixed(2)}/day`);
+    console.log(`[DAILY FORECAST] Base daily average: $${avgDailyNetIncome.toFixed(2)}`);
 
-    // Track cumulative balance for backlog method
-    let cumulativeBalance = openSettlementAmount;
-    let previousBalance = openSettlementAmount;
+    // Define day-of-week variation (more realistic patterns)
+    const dayOfWeekMultipliers: Record<number, number> = {
+      0: 0.85, // Sunday
+      1: 0.95, // Monday
+      2: 1.0,  // Tuesday
+      3: 1.05, // Wednesday
+      4: 1.1,  // Thursday
+      5: 1.0,  // Friday
+      6: 0.9   // Saturday
+    };
+
+    // Distribute open settlement over 3-4 days instead of 7 to reduce repetition
+    const settlementDistributionDays = 4;
+    const baseSettlementDaily = openSettlementAmount / settlementDistributionDays;
 
     for (let i = 0; i < 90; i++) {
       const forecastDate = new Date(today);
@@ -181,35 +190,33 @@ serve(async (req) => {
       
       let forecastAmount = 0;
       let modelType = '';
-      let dailyIncome = avgDailyNetIncome;
       
-      // Apply seasonality adjustment
-      const seasonalityFactor = weekdaySeasonality[weekday] || 1.0;
+      // Get day-of-week multiplier
+      const dayMultiplier = dayOfWeekMultipliers[weekday] || 1.0;
       
-      if (i < 7) {
-        // Days 0-6: Mathematical distribution of open settlement
-        forecastAmount = firstWeekDailyRate;
+      // Add randomness to avoid repeating numbers (±5%)
+      const randomVariation = 0.95 + (Math.random() * 0.1);
+      
+      if (i < settlementDistributionDays) {
+        // Days 0-3: Distribute open settlement with variation
+        forecastAmount = baseSettlementDaily * dayMultiplier * randomVariation;
         modelType = 'open_settlement_distribution';
-        
-        // Track balance growth
-        cumulativeBalance += (avgDailyNetIncome * seasonalityFactor);
+      } else if (i < 7) {
+        // Days 4-6: Blend settlement and daily average
+        const blendFactor = (i - settlementDistributionDays) / (7 - settlementDistributionDays);
+        const settlementPart = baseSettlementDaily * (1 - blendFactor);
+        const dailyPart = avgDailyNetIncome * blendFactor;
+        forecastAmount = (settlementPart + dailyPart) * dayMultiplier * randomVariation;
+        modelType = 'blended_transition';
       } else if (i < 14) {
-        // Days 7-13: Backlog delta method
-        const projectedDailyIncome = avgDailyNetIncome * seasonalityFactor;
-        cumulativeBalance += projectedDailyIncome;
-        
-        // Forecast is the delta (new balance - previous balance)
-        forecastAmount = cumulativeBalance - previousBalance;
-        previousBalance = cumulativeBalance;
-        
-        modelType = 'backlog_delta';
-        dailyIncome = projectedDailyIncome;
+        // Days 7-13: Use daily average with day-of-week variation
+        forecastAmount = avgDailyNetIncome * dayMultiplier * randomVariation;
+        modelType = 'daily_average_with_variation';
       } else {
-        // Days 14+: Conservative estimate (80% of recent average)
-        const conservativeFactor = 0.8;
-        forecastAmount = avgDailyNetIncome * seasonalityFactor * conservativeFactor;
-        modelType = 'trend_based_conservative';
-        dailyIncome = forecastAmount;
+        // Days 14+: Conservative estimate (85% of average)
+        const conservativeFactor = 0.85;
+        forecastAmount = avgDailyNetIncome * dayMultiplier * conservativeFactor * randomVariation;
+        modelType = 'conservative_projection';
       }
       
       // Apply safety net adjustment

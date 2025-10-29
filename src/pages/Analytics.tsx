@@ -142,41 +142,39 @@ export default function Analytics() {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      console.log('[Analytics] Fetching Amazon revenue from daily rollups:', thirtyDaysAgo.toISOString().split('T')[0], 'to', new Date().toISOString().split('T')[0]);
+      console.log('[Analytics] Fetching Amazon revenue:', thirtyDaysAgo.toISOString(), 'to', new Date().toISOString());
       console.log('[Analytics] User ID:', user.id);
 
       const { data: revenueData, error: revenueError } = await supabase
-        .from('amazon_daily_rollups')
-        .select('total_orders.sum()')
+        .from('amazon_transactions')
+        .select('amount.sum()')
         .eq('user_id', user.id)
-        .gte('rollup_date', thirtyDaysAgo.toISOString().split('T')[0])
+        .eq('transaction_type', 'Order')
+        .gt('amount', 0)
+        .gte('transaction_date', thirtyDaysAgo.toISOString())
         .single();
 
       console.log('[Analytics] Revenue query response:', { data: revenueData, error: revenueError });
 
       if (revenueError) {
-        console.error('[Analytics] Error fetching Amazon revenue aggregate:', revenueError);
-        console.log('[Analytics] Falling back to manual sum from daily rollups...');
-        
-        const { data: rawData, error: rawError } = await supabase
-          .from('amazon_daily_rollups')
-          .select('total_orders, rollup_date')
+        console.error('[Analytics] Error with aggregate, trying manual sum...');
+        const { data: rawData } = await supabase
+          .from('amazon_transactions')
+          .select('amount')
           .eq('user_id', user.id)
-          .gte('rollup_date', thirtyDaysAgo.toISOString().split('T')[0]);
+          .eq('transaction_type', 'Order')
+          .gt('amount', 0)
+          .gte('transaction_date', thirtyDaysAgo.toISOString());
         
-        if (rawError) {
-          console.error('[Analytics] Error fetching daily rollups:', rawError);
-        } else if (rawData) {
-          const manualSum = rawData.reduce((sum, row) => sum + (row.total_orders || 0), 0);
-          console.log('[Analytics] Manual sum result:', manualSum, 'from', rawData.length, 'daily rollups');
-          setAmazonTransactions([{ amount: manualSum } as any]);
-        }
+        const manualSum = (rawData || []).reduce((sum, t) => sum + (t.amount || 0), 0);
+        console.log('[Analytics] Manual sum result:', manualSum);
+        setAmazonTransactions([{ amount: manualSum } as any]);
         return;
       }
 
       const totalRevenue = revenueData?.sum || 0;
       
-      console.log('[Analytics] Final Amazon Revenue from daily rollups:', totalRevenue);
+      console.log('[Analytics] Final Amazon Revenue:', totalRevenue);
       
       // Store the total in state
       setAmazonTransactions([{ amount: totalRevenue } as any]);
