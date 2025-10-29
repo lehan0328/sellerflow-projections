@@ -138,18 +138,14 @@ export default function Analytics() {
 
       if (!profile?.account_id) return;
 
-      // Fetch last 30 days of Amazon orders (matching report date range)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
+      // Fetch ALL Amazon orders for total revenue
       const { data: amazonTxns, error: amazonError } = await supabase
         .from('amazon_transactions')
         .select('amount')
         .eq('account_id', profile.account_id)
         .eq('transaction_type', 'Order')
         .gt('amount', 0)
-        .gte('transaction_date', thirtyDaysAgo.toISOString())
-        .limit(50000);
+        .limit(100000);
 
       if (amazonError) {
         console.error('[Analytics] Error fetching Amazon transactions:', amazonError);

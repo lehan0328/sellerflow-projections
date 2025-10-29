@@ -223,7 +223,7 @@ serve(async (req) => {
         total_amount: safetyAdjustedAmount,
         status: 'forecasted',
         payout_type: 'daily',
-        modeling_method: 'daily_distribution',
+        modeling_method: 'mathematical_daily',
         eligible_in_period: forecastAmount,
         reserve_amount: 0,
         available_for_daily_transfer: safetyAdjustedAmount,
