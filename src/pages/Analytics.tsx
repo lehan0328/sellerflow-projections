@@ -138,29 +138,27 @@ export default function Analytics() {
 
       if (!profile?.account_id) return;
 
-      // Fetch last 30 days of Amazon orders for revenue
+      // Fetch last 30 days of Amazon payouts to get orders_total (gross revenue)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const { data: amazonTxns, error: amazonError } = await supabase
-        .from('amazon_transactions')
-        .select('amount')
+      const { data: payouts, error: payoutError } = await supabase
+        .from('amazon_payouts')
+        .select('orders_total, payout_date')
         .eq('account_id', profile.account_id)
-        .eq('transaction_type', 'Order')
-        .gt('amount', 0)
-        .gte('transaction_date', thirtyDaysAgo.toISOString())
-        .limit(50000);
+        .gte('payout_date', thirtyDaysAgo.toISOString().split('T')[0]);
 
-      if (amazonError) {
-        console.error('[Analytics] Error fetching Amazon transactions:', amazonError);
+      if (payoutError) {
+        console.error('[Analytics] Error fetching Amazon payouts:', payoutError);
         return;
       }
 
-      const totalRevenue = (amazonTxns || []).reduce((sum, txn) => sum + (txn.amount || 0), 0);
+      const totalRevenue = (payouts || []).reduce((sum, p) => sum + (p.orders_total || 0), 0);
       
       console.log('[Analytics] Amazon Revenue Calculation:', {
-        transactionCount: amazonTxns?.length || 0,
-        totalRevenue: totalRevenue
+        payoutCount: payouts?.length || 0,
+        totalRevenue: totalRevenue,
+        lastPayoutDate: payouts?.[payouts.length - 1]?.payout_date
       });
       
       // Store the total in state instead of individual transactions
