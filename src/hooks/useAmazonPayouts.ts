@@ -58,14 +58,15 @@ export const useAmazonPayouts = () => {
     try {
       console.log('[fetchAmazonPayouts] Fetching Amazon payouts for user:', user.id);
       
-      // Check if forecasts are enabled
+      // Check if forecasts and advanced modeling are enabled
       const { data: settings } = await supabase
         .from('user_settings')
-        .select('forecasts_enabled')
+        .select('forecasts_enabled, advanced_modeling_enabled')
         .eq('user_id', user.id)
         .maybeSingle();
 
       const forecastsEnabled = settings?.forecasts_enabled ?? true;
+      const advancedModelingEnabled = settings?.advanced_modeling_enabled ?? false;
 
       const { data, error } = await supabase
         .from("amazon_payouts")
@@ -91,8 +92,20 @@ export const useAmazonPayouts = () => {
 
       // Filter payouts based on settings
       const filteredPayouts = (data || []).filter((payout) => {
-        // For open settlements (estimated), only show if they close in the future
+        // For open settlements (estimated), exclude them if advanced modeling is enabled
         if (payout.status === 'estimated') {
+          // If advanced modeling is ON, completely exclude open settlements
+          if (advancedModelingEnabled) {
+            console.log('[fetchAmazonPayouts] Excluding open settlement (advanced modeling enabled):', {
+              id: payout.id,
+              settlement_id: payout.settlement_id,
+              amount: payout.total_amount,
+              reason: 'Advanced modeling generates mathematical forecasts instead'
+            });
+            return false;
+          }
+          
+          // If advanced modeling is OFF, only show open settlements that close in the future
           const rawData = payout.raw_settlement_data as any;
           const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
           
