@@ -56,6 +56,7 @@ export default function Analytics() {
   const { transactions: dbTransactions } = useTransactions();
   // Fetch ALL vendor transactions (including archived/completed, excluding deleted)
   const [vendorTransactions, setVendorTransactions] = useState<any[]>([]);
+  const [amazonTransactions, setAmazonTransactions] = useState<any[]>([]);
   
   useEffect(() => {
     const fetchAllVendorTransactions = async () => {
@@ -120,6 +121,30 @@ export default function Analytics() {
     return () => {
       supabase.removeChannel(channel);
     };
+  }, []);
+
+  // Fetch Amazon transactions for gross revenue calculation
+  useEffect(() => {
+    const fetchAmazonTransactions = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('amazon_transactions')
+        .select('*')
+        .eq('transaction_type', 'Order')
+        .gt('amount', 0)
+        .order('transaction_date', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching Amazon transactions:', error);
+        return;
+      }
+
+      setAmazonTransactions(data || []);
+    };
+
+    fetchAmazonTransactions();
   }, []);
   const { creditCards } = useCreditCards();
   const { amazonPayouts } = useAmazonPayouts();
@@ -226,16 +251,15 @@ export default function Analytics() {
     const totalCreditUsed = creditCards.reduce((sum, c) => sum + (c.balance || 0), 0);
     const creditUtilization = totalCreditLimit > 0 ? (totalCreditUsed / totalCreditLimit) * 100 : 0;
 
-    // Amazon revenue from net payouts
+    // Amazon gross revenue from actual orders
     const amazonDateRange = getDateRange(amazonRevenueRange);
-    const amazonRevenue = amazonPayouts
-      .filter(p => {
-        const payoutDate = new Date(p.payout_date);
-        return payoutDate >= amazonDateRange.start && 
-               payoutDate <= amazonDateRange.end &&
-               p.status === 'confirmed';
+    const amazonRevenue = amazonTransactions
+      .filter(tx => {
+        const txDate = new Date(tx.transaction_date);
+        return txDate >= amazonDateRange.start && 
+               txDate <= amazonDateRange.end;
       })
-      .reduce((sum, p) => sum + (p.total_amount || 0), 0);
+      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
     // Total expenses from vendors + purchase orders
     const vendorExpenses = vendors.reduce((sum, v) => sum + (v.totalOwed || 0), 0);
