@@ -2344,6 +2344,10 @@ export type Database = {
         Args: { plain_text: string }
         Returns: string
       }
+      get_amazon_revenue_30_days: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
       get_user_account_id: { Args: { _user_id: string }; Returns: string }
       get_user_plan_limits: {
         Args: { p_user_id: string }
