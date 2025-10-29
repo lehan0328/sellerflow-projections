@@ -28,6 +28,7 @@ export interface AmazonPayout {
   amazon_accounts?: {
     account_name: string;
     marketplace_name: string;
+    payout_frequency?: 'daily' | 'bi-weekly';
   };
   // Daily forecast metadata (Delivery Date + 7)
   backlog_amount?: number;
@@ -76,7 +77,8 @@ export const useAmazonPayouts = () => {
           amazon_accounts!inner(
             account_name,
             marketplace_name,
-            is_active
+            is_active,
+            payout_frequency
           )
         `)
         .eq("user_id", user.id)
@@ -196,6 +198,10 @@ export const useAmazonPayouts = () => {
           ...payout,
           status: payout.status as "confirmed" | "estimated" | "processing" | "forecasted",
           payout_type: payout.payout_type as "bi-weekly" | "reserve-release" | "adjustment" | "daily",
+          amazon_accounts: payout.amazon_accounts ? {
+            ...payout.amazon_accounts,
+            payout_frequency: payout.amazon_accounts.payout_frequency as 'daily' | 'bi-weekly' | undefined
+          } : undefined,
           
           // Daily forecast metadata (Delivery Date + 7 method)
           backlog_amount: metadata?.backlog_amount || 0,

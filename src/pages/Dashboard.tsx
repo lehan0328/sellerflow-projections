@@ -1606,11 +1606,15 @@ const Dashboard = () => {
         return false;
       }
       
-      // Exclude open settlements from calendar when advanced forecasting is enabled
-      // (they'll still show in the Amazon Payouts section, just not in calculations)
-      if ((payout.status as string) === 'estimated' && advancedModelingEnabled) {
-        console.log('[Dashboard] Excluding open settlement from calendar (advanced forecasting enabled):', payout.settlement_id);
-        return false;
+      // Exclude open settlements ONLY for daily settlement accounts
+      // (Daily forecasts replace the open settlement calculation)
+      // Keep open settlements for bi-weekly accounts (they're the actual payout)
+      if ((payout.status as string) === 'estimated') {
+        const accountFrequency = payout.amazon_accounts?.payout_frequency;
+        if (accountFrequency === 'daily' && advancedModelingEnabled) {
+          console.log('[Dashboard] Excluding daily account open settlement from calendar (replaced by daily forecasts):', payout.settlement_id);
+          return false;
+        }
       }
       
       return true;
