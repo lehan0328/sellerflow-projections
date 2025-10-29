@@ -295,7 +295,7 @@ serve(async (req) => {
         total_amount: safetyAdjustedAmount,
         status: 'forecasted',
         payout_type: 'daily',
-        modeling_method: 'delivery_date_plus_7',
+        modeling_method: 'mathematical_daily',
         eligible_in_period: availableAmount,
         reserve_amount: 0,
         available_for_daily_transfer: safetyAdjustedAmount,

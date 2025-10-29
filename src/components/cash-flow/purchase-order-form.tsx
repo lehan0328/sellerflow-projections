@@ -788,6 +788,15 @@ export const PurchaseOrderForm = ({
                 className="min-h-[80px] resize-none"
               />
             </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes(optional)</Label>
+              <Textarea id="notes" placeholder="Additional notes or comments" value={formData.notes} onChange={e => setFormData(prev => ({
+              ...prev,
+              notes: e.target.value
+            }))} rows={2} />
+            </div>
             
             {/* PO Date */}
             <div className="space-y-2">
@@ -1166,16 +1175,6 @@ export const PurchaseOrderForm = ({
                       No active credit cards found. Please add a credit card in Settings.
                     </div>}
                 </div>}
-            </div>
-
-
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes(optional)</Label>
-              <Textarea id="notes" placeholder="Additional notes or comments" value={formData.notes} onChange={e => setFormData(prev => ({
-              ...prev,
-              notes: e.target.value
-            }))} rows={2} />
             </div>
 
             {/* Submit Button */}
