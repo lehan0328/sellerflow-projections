@@ -60,57 +60,66 @@ Deno.serve(async (req) => {
     const region = MARKETPLACE_REGIONS[account.marketplace_id] || 'na'
     const endpoint = AMAZON_SPAPI_ENDPOINTS[region]
 
-    // Refresh the access token first (tokens expire after 1 hour)
+    // Refresh the access token inline (supabase.functions.invoke not working in edge functions)
     console.log('[REPORTS] ====== TOKEN REFRESH START ======')
     console.log('[REPORTS] Account ID:', amazonAccountId)
-    console.log('[REPORTS] Calling refresh-amazon-token function...')
+    console.log('[REPORTS] Decrypting credentials...')
     
-    const { data: refreshData, error: refreshError } = await supabase.functions.invoke('refresh-amazon-token', {
-      body: { amazon_account_id: amazonAccountId }
+    // Decrypt the refresh token and client credentials
+    const { data: refreshToken } = await supabase.rpc('decrypt_banking_credential', {
+      encrypted_text: account.encrypted_refresh_token
+    })
+    const { data: clientId } = await supabase.rpc('decrypt_banking_credential', {
+      encrypted_text: account.encrypted_client_id
+    })
+    const { data: clientSecret } = await supabase.rpc('decrypt_banking_credential', {
+      encrypted_text: account.encrypted_client_secret
     })
 
-    console.log('[REPORTS] Refresh response received:', { 
-      hasData: !!refreshData, 
-      hasError: !!refreshError,
-      errorDetails: refreshError,
-      dataKeys: refreshData ? Object.keys(refreshData) : []
-    })
-
-    if (refreshError) {
-      console.error('[REPORTS] ❌ Token refresh error:', refreshError)
-      throw new Error(`Failed to refresh token: ${refreshError.message}`)
+    if (!refreshToken || !clientId || !clientSecret) {
+      throw new Error('Failed to decrypt Amazon credentials')
     }
 
-    if (!refreshData?.success) {
-      console.error('[REPORTS] ❌ Token refresh unsuccessful. Response:', JSON.stringify(refreshData))
-      throw new Error('Token refresh was not successful')
-    }
-
-    console.log('[REPORTS] ✅ Token refreshed successfully, expires at:', refreshData.expires_at)
-
-    // Get the fresh token from database
-    console.log('[REPORTS] Fetching updated account from database...')
-    const { data: updatedAccount, error: accountError } = await supabase
-      .from('amazon_accounts')
-      .select('encrypted_access_token')
-      .eq('id', amazonAccountId)
-      .single()
-
-    if (accountError || !updatedAccount) {
-      console.error('[REPORTS] ❌ Failed to fetch updated account:', accountError)
-      throw new Error(`Failed to fetch updated account: ${accountError?.message}`)
-    }
-
-    console.log('[REPORTS] Decrypting access token...')
-    const { data: accessToken, error: decryptError } = await supabase.rpc('decrypt_banking_credential', {
-      encrypted_text: updatedAccount.encrypted_access_token
-    })
-
-    if (decryptError || !accessToken) {
-      console.error('[REPORTS] ❌ Failed to decrypt token:', decryptError)
-      throw new Error(`Failed to decrypt token: ${decryptError?.message}`)
-    }
+    console.log('[REPORTS] Credentials decrypted, refreshing token with Amazon...')
     
+    // Get the token endpoint for this region
+    const AMAZON_TOKEN_ENDPOINTS: Record<string, string> = {
+      'na': 'https://api.amazon.com/auth/o2/token',
+      'eu': 'https://api.amazon.co.uk/auth/o2/token',
+      'fe': 'https://api.amazon.co.jp/auth/o2/token',
+    }
+    const tokenEndpoint = AMAZON_TOKEN_ENDPOINTS[region]
+
+    // Refresh the access token with Amazon
+    const tokenResponse = await fetch(tokenEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: clientId,
+        client_secret: clientSecret,
+      }),
+    })
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text()
+      console.error('[REPORTS] ❌ Token refresh failed:', tokenResponse.status, errorText)
+      throw new Error(`Token refresh failed: ${tokenResponse.status} - ${errorText}`)
+    }
+
+    const tokenData = await tokenResponse.json()
+    const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000))
+    console.log('[REPORTS] ✅ Token refreshed, expires at:', expiresAt.toISOString())
+
+    // Update the account with new access token
+    await supabase.rpc('update_secure_amazon_account', {
+      p_account_id: amazonAccountId,
+      p_access_token: tokenData.access_token,
+      p_token_expires_at: expiresAt.toISOString(),
+    })
+
+    const accessToken = tokenData.access_token
     console.log('[REPORTS] ✅ Token ready (length:', accessToken.length, ')')
     console.log('[REPORTS] ====== TOKEN REFRESH COMPLETE ======')
 
