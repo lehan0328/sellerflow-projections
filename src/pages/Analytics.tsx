@@ -149,7 +149,8 @@ export default function Analytics() {
         .eq('transaction_type', 'Order')
         .gt('amount', 0)
         .gte('transaction_date', thirtyDaysAgo.toISOString())
-        .order('transaction_date', { ascending: false });
+        .order('transaction_date', { ascending: false })
+        .limit(50000);
 
       if (error) {
         console.error('[Analytics] Error fetching Amazon transactions:', error);
