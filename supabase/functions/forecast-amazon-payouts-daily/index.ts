@@ -50,9 +50,6 @@ serve(async (req) => {
       .maybeSingle();
 
     const riskAdjustment = userSettings?.forecast_confidence_threshold ?? 5;
-    const safetyMultiplier = 1 - (riskAdjustment / 100);
-
-    console.log(`[DAILY FORECAST] Safety net: ${riskAdjustment}% (applying ${(safetyMultiplier * 100).toFixed(0)}%)`);
 
     // STEP 1: Get last 30 days of CONFIRMED payouts to calculate true average
     const thirtyDaysAgo = new Date();
