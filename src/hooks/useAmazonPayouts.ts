@@ -280,6 +280,17 @@ export const useAmazonPayouts = () => {
     .filter(payout => payout.payout_date === todayStr)
     .reduce((sum, payout) => sum + (payout.available_for_daily_transfer || 0), 0);
 
+  // Calculate cumulative available for daily settlements (today's accumulated amount)
+  const todayForecast = amazonPayouts.find((p) => 
+    p.status === 'forecasted' && 
+    p.payout_date === todayStr &&
+    p.payout_type === 'daily'
+  );
+  
+  const cumulativeAvailable = todayForecast?.raw_settlement_data?.forecast_metadata?.cumulative_available || 0;
+  const daysSinceLastCashOut = todayForecast?.raw_settlement_data?.forecast_metadata?.days_since_last_cashout || 0;
+  const lastCashOutDate = todayForecast?.raw_settlement_data?.forecast_metadata?.last_cashout_date || null;
+
   // Calculate orders total for current month
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -301,6 +312,9 @@ export const useAmazonPayouts = () => {
     totalEstimated,
     monthlyOrdersTotal,
     availableToday,
+    cumulativeAvailable,
+    daysSinceLastCashOut,
+    lastCashOutDate,
     refetch: fetchAmazonPayouts
   };
 };

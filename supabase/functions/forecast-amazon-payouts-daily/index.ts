@@ -51,10 +51,66 @@ serve(async (req) => {
 
     const riskAdjustment = userSettings?.forecast_confidence_threshold ?? 5;
 
-    // STEP 1: Calculate TRUE daily average from settlement periods, filtering outliers
+    // STEP 1: Calculate weekly sales trend from recent transactions
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+    const { data: recentTransactions } = await supabase
+      .from('amazon_transactions')
+      .select('transaction_date, amount, transaction_type')
+      .eq('amazon_account_id', amazonAccountId)
+      .gte('transaction_date', thirtyDaysAgo.toISOString())
+      .order('transaction_date', { ascending: true });
+
+    let trendMultiplier = 1.0;
+    let weeklyTrendPct = 0;
+    let week1Avg = 0;
+    let week4Avg = 0;
+
+    if (recentTransactions && recentTransactions.length > 10) {
+      // Group into 4 weeks
+      const weeks: number[][] = [[], [], [], []];
+      
+      for (const txn of recentTransactions) {
+        const txnDate = new Date(txn.transaction_date);
+        const daysAgo = Math.floor((new Date().getTime() - txnDate.getTime()) / (1000 * 60 * 60 * 24));
+        const weekIndex = Math.min(3, Math.floor(daysAgo / 7));
+        
+        // Only count orders and refunds for sales trend
+        if (txn.transaction_type === 'Order' || txn.transaction_type === 'Refund') {
+          weeks[weekIndex].push(txn.amount || 0);
+        }
+      }
+      
+      // Calculate weekly averages
+      const weeklyAvgs = weeks.map(week => 
+        week.length > 0 ? week.reduce((sum, amt) => sum + amt, 0) / week.length : 0
+      );
+      
+      week1Avg = weeklyAvgs[3] || 0; // Oldest week
+      week4Avg = weeklyAvgs[0] || 0; // Most recent week
+      
+      // Calculate trend percentage
+      if (week1Avg > 0) {
+        weeklyTrendPct = ((week4Avg - week1Avg) / week1Avg) * 100;
+        
+        // Apply conservative trend multipliers
+        if (weeklyTrendPct > 10) {
+          trendMultiplier = 1.08; // Strong growth: +8%
+        } else if (weeklyTrendPct > 0) {
+          trendMultiplier = 1.03; // Moderate growth: +3%
+        } else if (weeklyTrendPct > -10) {
+          trendMultiplier = 0.97; // Slight decline: -3%
+        } else {
+          trendMultiplier = 0.92; // Significant decline: -8%
+        }
+        
+        console.log(`[DAILY FORECAST] Sales Trend: Week 1 avg=$${week1Avg.toFixed(2)}, Week 4 avg=$${week4Avg.toFixed(2)}`);
+        console.log(`[DAILY FORECAST] Trend: ${weeklyTrendPct.toFixed(1)}% → multiplier ${trendMultiplier}x`);
+      }
+    }
+
+    // STEP 2: Calculate TRUE daily average from settlement periods, filtering outliers
     const { data: confirmedPayouts } = await supabase
       .from('amazon_payouts')
       .select('total_amount, payout_date, raw_settlement_data')
@@ -123,7 +179,7 @@ serve(async (req) => {
       }
     }
 
-    // STEP 2: Map safety threshold to multiplier
+    // STEP 3: Map safety threshold to multiplier
     let safetyMultiplier = 0.92; // Default to Moderate
     if (riskAdjustment === 3) {
       safetyMultiplier = 0.97; // Aggressive: -3%
@@ -135,7 +191,39 @@ serve(async (req) => {
 
     console.log(`[DAILY FORECAST] Safety net: ${riskAdjustment}% → multiplier ${safetyMultiplier}`);
 
-    // STEP 3: Delete existing forecasts
+    // STEP 4: Get last cash-out date from open settlements
+    const { data: openSettlements } = await supabase
+      .from('amazon_payouts')
+      .select('payout_date, raw_settlement_data')
+      .eq('amazon_account_id', amazonAccountId)
+      .eq('status', 'estimated')
+      .order('payout_date', { ascending: false })
+      .limit(2);
+
+    let lastCashOutDate = new Date();
+    let daysSinceLastCashOut = 0;
+
+    if (openSettlements && openSettlements.length > 0) {
+      const latestSettlement = openSettlements[0];
+      const settlementData = latestSettlement.raw_settlement_data as any;
+      const settlementStartDate = new Date(settlementData?.FinancialEventGroupStart || latestSettlement.payout_date);
+      
+      // If there's a previous settlement, the cash-out happened between them
+      if (openSettlements.length > 1) {
+        const previousSettlement = openSettlements[1];
+        const prevData = previousSettlement.raw_settlement_data as any;
+        lastCashOutDate = new Date(prevData?.FinancialEventGroupEnd || previousSettlement.payout_date);
+      } else {
+        // Use settlement start as last cash-out reference
+        lastCashOutDate = new Date(settlementStartDate);
+        lastCashOutDate.setDate(lastCashOutDate.getDate() - 1);
+      }
+      
+      daysSinceLastCashOut = Math.floor((new Date().getTime() - lastCashOutDate.getTime()) / (1000 * 60 * 60 * 24));
+      console.log(`[DAILY FORECAST] Last cash-out detected: ${lastCashOutDate.toISOString().split('T')[0]} (${daysSinceLastCashOut} days ago)`);
+    }
+
+    // STEP 5: Delete existing forecasts
     const { error: deleteError } = await supabase
       .from('amazon_payouts')
       .delete()
@@ -148,10 +236,12 @@ serve(async (req) => {
       console.log('[DAILY FORECAST] Deleted existing forecasts');
     }
 
-    // STEP 4: Generate 90 unique daily forecasts
+    // STEP 6: Generate 90 unique daily forecasts
     const forecasts: any[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    
+    let cumulativeAvailable = 0;
 
     // Subtle day-of-week patterns
     const dayOfWeekMultipliers: Record<number, number> = {
@@ -180,11 +270,19 @@ serve(async (req) => {
       // Get day-of-week multiplier
       const dayMultiplier = dayOfWeekMultipliers[weekday] || 1.0;
       
-      // Calculate raw forecast
-      const rawForecast = avgDailyPayout * randomVariation * dayMultiplier * trendDecay;
+      // Calculate raw forecast with trend adjustment
+      const rawForecast = avgDailyPayout * randomVariation * dayMultiplier * trendDecay * trendMultiplier;
       
       // Apply safety net at the END
       const finalForecast = Math.max(0, rawForecast * safetyMultiplier);
+      
+      // Calculate cumulative available (days since last cash-out)
+      const daysFromCashOut = Math.floor((forecastDate.getTime() - lastCashOutDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysFromCashOut >= 0) {
+        cumulativeAvailable += finalForecast;
+      } else {
+        cumulativeAvailable = finalForecast; // Reset for future dates
+      }
       
       forecasts.push({
         user_id: userId,
@@ -211,7 +309,14 @@ serve(async (req) => {
             random_variation: randomVariation,
             day_multiplier: dayMultiplier,
             trend_decay: trendDecay,
-            week_number: weekNumber
+            trend_multiplier: trendMultiplier,
+            weekly_trend_pct: weeklyTrendPct,
+            week_1_avg: week1Avg,
+            week_4_avg: week4Avg,
+            week_number: weekNumber,
+            days_since_last_cashout: daysFromCashOut >= 0 ? daysFromCashOut : 0,
+            cumulative_available: daysFromCashOut >= 0 ? cumulativeAvailable : 0,
+            last_cashout_date: lastCashOutDate.toISOString().split('T')[0]
           }
         },
         marketplace_name: amazonAccount.marketplace_name,
@@ -221,7 +326,7 @@ serve(async (req) => {
       });
     }
 
-    // STEP 5: Insert forecasts
+    // STEP 7: Insert forecasts
     console.log(`[DAILY FORECAST] Inserting ${forecasts.length} forecasts...`);
     
     const { error: insertError } = await supabase
