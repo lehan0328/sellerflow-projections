@@ -634,13 +634,13 @@ export const PurchaseOrderForm = ({
                   <div>
                     <h4 className="font-semibold text-sm mb-1">Upload Purchase Order Document</h4>
                     <p className="text-xs text-muted-foreground mb-0.5">
-                      Let AI automatically fill the form from your image
+                      Let AI automatically fill the form from your document
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      PNG, JPG, JPEG, WEBP
+                      PDF, PNG, JPG, JPEG, WEBP
                     </p>
                   </div>
-                  <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/jpg,image/webp" onChange={handleFileUpload} className="hidden" />
+                  <input ref={fileInputRef} type="file" accept="application/pdf,image/png,image/jpeg,image/jpg,image/webp" onChange={handleFileUpload} className="hidden" />
                   <Button 
                     type="button" 
                     variant="default"
@@ -659,7 +659,7 @@ export const PurchaseOrderForm = ({
                         Processing {uploadedFileName}...
                       </> : <>
                         <Upload className="h-3.5 w-3.5 mr-2" />
-                        Upload Image
+                        Upload Document
                       </>}
                   </Button>
                   </div>
