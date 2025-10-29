@@ -763,7 +763,7 @@ export const ForecastSettings = () => {
                       <Label htmlFor="forecast-toggle" className="text-sm">
                         Mathematical Forecasts {forecastsEnabled && hasAmazonStore ? 'Enabled' : 'Disabled'}
                       </Label>
-                      <Switch id="forecast-toggle" checked={forecastsEnabled && hasAmazonStore && canEnableForecasts} onCheckedChange={handleToggleForecast} disabled={togglingForecast || !hasAmazonStore || !canEnableForecasts} />
+                      <Switch id="forecast-toggle" checked={forecastsEnabled && hasAmazonStore} onCheckedChange={handleToggleForecast} disabled={togglingForecast || !hasAmazonStore || isSyncing} />
                     </div>
                   </TooltipTrigger>
                   {!hasAmazonStore ? <TooltipContent>
