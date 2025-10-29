@@ -48,6 +48,7 @@ export const useAmazonPayouts = () => {
   const [amazonPayouts, setAmazonPayouts] = useState<AmazonPayout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [forecastsEnabled, setForecastsEnabled] = useState(true);
+  const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(false);
 
   const fetchAmazonPayouts = async () => {
     if (!user) {
@@ -224,15 +225,18 @@ export const useAmazonPayouts = () => {
     fetchAmazonPayouts();
   }, [user]);
 
-  // Fetch forecasts_enabled setting
+  // Fetch forecasts_enabled and advanced_modeling_enabled settings
   useEffect(() => {
     if (!user) return;
     supabase
       .from('user_settings')
-      .select('forecasts_enabled')
+      .select('forecasts_enabled, advanced_modeling_enabled')
       .eq('user_id', user.id)
       .maybeSingle()
-      .then(({ data }) => setForecastsEnabled(data?.forecasts_enabled ?? true));
+      .then(({ data }) => {
+        setForecastsEnabled(data?.forecasts_enabled ?? true);
+        setAdvancedModelingEnabled(data?.advanced_modeling_enabled ?? false);
+      });
   }, [user]);
 
   // Subscribe to real-time updates
@@ -272,7 +276,8 @@ export const useAmazonPayouts = () => {
     .filter(payout => payout.status === 'confirmed')
     .reduce((sum, payout) => sum + payout.total_amount, 0);
 
-  const totalEstimated = forecastsEnabled ? 0 : amazonPayouts
+  // Exclude open settlements from summary when advanced forecasting is enabled
+  const totalEstimated = (forecastsEnabled || advancedModelingEnabled) ? 0 : amazonPayouts
     .filter(payout => payout.status === 'estimated')
     .reduce((sum, payout) => sum + payout.total_amount, 0);
   
