@@ -384,14 +384,6 @@ export function AmazonPayouts() {
             </Button>
           </div>
           <div className="flex items-center space-x-4">
-            {/* Only show open settlement if advanced modeling is disabled to avoid double counting */}
-            {totalEstimated > 0 && !advancedModelingEnabled && (
-              <div className="text-sm text-muted-foreground">
-                Open Settlement: <span className="font-semibold text-amber-600 dark:text-amber-400">
-                  {formatCurrency(totalEstimated)}
-                </span>
-              </div>
-            )}
             <div className="text-sm text-muted-foreground">
               Expected: <span className="font-semibold text-finance-positive">
                 {formatCurrency(totalUpcoming)}
