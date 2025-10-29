@@ -617,15 +617,38 @@ export function AmazonPayouts() {
         {(() => {
           const todayStr = new Date().toISOString().split('T')[0];
           
-          // Show ALL open settlements (no end date) - works for both daily and bi-weekly payouts
+          // Show open settlements where today's date falls within the settlement period
           const openSettlements = amazonPayouts.filter(p => {
             const rawData = p.raw_settlement_data;
             const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
             const isEstimated = p.status === 'estimated';
             
-            // Show ALL estimated settlements without end dates (both daily and bi-weekly)
-            // No date filtering - if it's open, it's open!
-            return isEstimated && !hasEndDate;
+            // Must be estimated and have no end date
+            if (!isEstimated || hasEndDate) return false;
+            
+            // Get settlement start date
+            const settlementStart = rawData?.FinancialEventGroupStart || rawData?.settlement_start_date;
+            if (!settlementStart) return false;
+            
+            const startDate = new Date(settlementStart);
+            const today = new Date();
+            
+            // Calculate estimated end date based on payout type
+            const estimatedEnd = new Date(startDate);
+            if (p.payout_type === 'daily') {
+              // Daily payouts: show if start date is within last 30 days
+              estimatedEnd.setDate(estimatedEnd.getDate() + 30);
+            } else {
+              // Bi-weekly: 14 days
+              estimatedEnd.setDate(estimatedEnd.getDate() + 14);
+            }
+            
+            // Only show if today is within the settlement period
+            today.setHours(0, 0, 0, 0);
+            startDate.setHours(0, 0, 0, 0);
+            estimatedEnd.setHours(0, 0, 0, 0);
+            
+            return today >= startDate && today <= estimatedEnd;
           });
           
           if (openSettlements.length === 0) {
