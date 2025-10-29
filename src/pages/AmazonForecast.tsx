@@ -389,7 +389,7 @@ export default function AmazonForecast() {
                         date.setMonth(date.getMonth() - i);
                         const value = format(date, 'yyyy-MM');
                         const label = format(date, 'MMM yyyy');
-                        return <SelectItem key={value} value={value}>{label}</SelectItem>;
+                        return <SelectItem key={`month-${value}-${i}`} value={value}>{label}</SelectItem>;
                       })}
                     </SelectContent>
                   </Select>

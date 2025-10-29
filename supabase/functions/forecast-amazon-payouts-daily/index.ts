@@ -126,20 +126,15 @@ serve(async (req) => {
       const unlockDateStr = unlockDate.toISOString().split('T')[0];
       
       orderCashUnlock[unlockDateStr] = totalNetAmount;
-      
-      console.log(`[DAILY FORECAST] Delivery ${deliveryDate} → Unlock ${unlockDateStr}: $${totalNetAmount.toFixed(2)}`);
+    });
+    
+    // Log only first 3 for verification
+    const sampleUnlocks = Object.entries(orderCashUnlock).slice(0, 3);
+    sampleUnlocks.forEach(([unlockDate, amount]) => {
+      console.log(`[DAILY FORECAST] Sample unlock ${unlockDate}: $${amount.toFixed(2)}`);
     });
 
-    console.log(`[DAILY FORECAST] Calculated order cash unlock for ${Object.keys(orderCashUnlock).length} payout dates`);
-
-    // Log sample delivery date groupings for verification
-    console.log(`[DAILY FORECAST] Sample delivery date groupings:`);
-    const sampleDeliveryDates = Object.entries(deliveryDateGroups).slice(0, 5);
-    sampleDeliveryDates.forEach(([date, amount]) => {
-      const unlock = new Date(date);
-      unlock.setDate(unlock.getDate() + 7);
-      console.log(`  • Delivered ${date}: $${amount.toFixed(2)} → Unlocks ${unlock.toISOString().split('T')[0]}`);
-    });
+    console.log(`[DAILY FORECAST] Calculated ${Object.keys(orderCashUnlock).length} unique unlock dates from ${Object.keys(deliveryDateGroups).length} delivery dates`);
 
     // Step 2: Calculate Other Cash Flows (Fees, Refunds, Adjustments)
     const otherCashFlows: Record<string, number> = {};
@@ -240,11 +235,26 @@ serve(async (req) => {
     today.setHours(0, 0, 0, 0);
 
     // Delete existing forecasts first
-    await supabase
+    const { error: deleteError } = await supabase
       .from('amazon_payouts')
       .delete()
       .eq('amazon_account_id', amazonAccountId)
       .eq('status', 'forecasted');
+
+    if (deleteError) {
+      console.error('[DAILY FORECAST] Delete error:', deleteError);
+    } else {
+      console.log('[DAILY FORECAST] Deleted existing forecasts');
+    }
+
+    // Check if we have any unlock data
+    if (Object.keys(dailyUnlocked).length === 0) {
+      console.log('[DAILY FORECAST] No daily unlock data available');
+      return new Response(
+        JSON.stringify({ success: true, forecastCount: 0, message: 'No unlock data available' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     for (let i = 0; i < 90; i++) {
       const forecastDate = new Date(today);
