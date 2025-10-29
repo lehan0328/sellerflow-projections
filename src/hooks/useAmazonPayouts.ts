@@ -229,10 +229,10 @@ export const useAmazonPayouts = () => {
   }, [user]);
 
   // Calculate summary statistics
-  // Expected: ONLY open settlements (status='estimated') in the future
+  // EXCLUDE open settlements (status='estimated') to prevent double-counting with forecasts
   const totalUpcoming = amazonPayouts
     .filter(payout => 
-      payout.status === 'estimated' && 
+      payout.status === 'forecasted' && 
       new Date(payout.payout_date) >= new Date()
     )
     .reduce((sum, payout) => sum + payout.total_amount, 0);
