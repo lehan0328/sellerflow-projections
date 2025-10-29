@@ -142,27 +142,44 @@ export default function Analytics() {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const { data, error } = await supabase
+      // Get the count of transactions
+      const { count, error: countError } = await supabase
         .from('amazon_transactions')
-        .select('*')
+        .select('*', { count: 'exact', head: true })
+        .eq('account_id', profile.account_id)
+        .eq('transaction_type', 'Order')
+        .gt('amount', 0)
+        .gte('transaction_date', thirtyDaysAgo.toISOString());
+
+      if (countError) {
+        console.error('[Analytics] Error counting Amazon transactions:', countError);
+        return;
+      }
+
+      // Get the sum of amounts using PostgreSQL aggregate
+      const { data: sumData, error: sumError } = await supabase
+        .from('amazon_transactions')
+        .select('amount.sum()')
         .eq('account_id', profile.account_id)
         .eq('transaction_type', 'Order')
         .gt('amount', 0)
         .gte('transaction_date', thirtyDaysAgo.toISOString())
-        .order('transaction_date', { ascending: false })
-        .limit(50000);
+        .single();
 
-      if (error) {
-        console.error('[Analytics] Error fetching Amazon transactions:', error);
+      if (sumError) {
+        console.error('[Analytics] Error summing Amazon transactions:', sumError);
         return;
       }
+
+      const totalRevenue = sumData?.sum || 0;
       
-      console.log('[Analytics] Fetched Amazon transactions:', {
-        count: data?.length || 0,
-        totalRevenue: data?.reduce((sum, tx) => sum + (tx.amount || 0), 0) || 0
+      console.log('[Analytics] Amazon Revenue Calculation:', {
+        transactionCount: count || 0,
+        totalRevenue: totalRevenue
       });
       
-      setAmazonTransactions(data || []);
+      // Store the total in state instead of individual transactions
+      setAmazonTransactions([{ amount: totalRevenue } as any]);
     };
 
     fetchAmazonTransactions();
@@ -271,21 +288,8 @@ export default function Analytics() {
     const totalCreditUsed = creditCards.reduce((sum, c) => sum + (c.balance || 0), 0);
     const creditUtilization = totalCreditLimit > 0 ? (totalCreditUsed / totalCreditLimit) * 100 : 0;
 
-    // Amazon gross revenue from report data (last 30 days)
-    const amazonRevenue = amazonTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
-    
-    // Debug logging
-    if (amazonTransactions.length > 0) {
-      console.log('[Analytics] Amazon Revenue Calculation:', {
-        transactionCount: amazonTransactions.length,
-        calculatedRevenue: amazonRevenue,
-        sampleTransactions: amazonTransactions.slice(0, 3).map(t => ({
-          date: t.transaction_date,
-          amount: t.amount,
-          type: t.transaction_type
-        }))
-      });
-    }
+    // Amazon gross revenue from report data (last 30 days) - now using SQL aggregate
+    const amazonRevenue = amazonTransactions[0]?.amount || 0;
 
     // Total expenses from vendors + purchase orders
     const vendorExpenses = vendors.reduce((sum, v) => sum + (v.totalOwed || 0), 0);
