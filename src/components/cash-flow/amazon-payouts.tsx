@@ -797,25 +797,24 @@ export function AmazonPayouts() {
               </Button>
             </div>
           </div> : (() => {
-          // Show only CLOSED settlements (confirmed or estimated with end date) within date range
+          // Show only CONFIRMED and OPEN settlements (never forecasted)
           const filteredPayouts = amazonPayouts.filter(payout => {
-            const rawData = payout.raw_settlement_data;
-            const isOpen = payout.status === 'estimated' && !rawData?.FinancialEventGroupEnd;
-            
-            // Only exclude open settlements when advanced modeling is ON
-            // When OFF, show them in the detail view
-            if (isOpen && advancedModelingEnabled) {
+            // NEVER show forecasted payouts in this section
+            if (payout.status === 'forecasted') {
               return false;
             }
             
-            // For closed settlements, filter by date range
-            if (!isOpen) {
-              const payoutDate = payout.payout_date;
-              return payoutDate >= startDateFilter && payoutDate <= endDateFilter;
+            const rawData = payout.raw_settlement_data;
+            const isOpen = payout.status === 'estimated' && !rawData?.FinancialEventGroupEnd;
+            
+            // ALWAYS show open settlements (regardless of advanced modeling setting)
+            if (isOpen) {
+              return true;
             }
             
-            // Include open settlements when advanced modeling is OFF
-            return true;
+            // For confirmed settlements, filter by date range
+            const payoutDate = payout.payout_date;
+            return payoutDate >= startDateFilter && payoutDate <= endDateFilter;
           });
           
           console.log('🛒 Amazon Payouts Component - Displaying Closed Settlements:', {
