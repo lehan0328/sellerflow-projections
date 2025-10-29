@@ -41,8 +41,6 @@ export const ForecastSettings = () => {
   const [showDisableConfirm, setShowDisableConfirm] = useState(false);
   const [togglingForecast, setTogglingForecast] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
-  const [advancedModelingEnabled, setAdvancedModelingEnabled] = useState(true); // Default to ON
-  const [savedAdvancedModelingEnabled, setSavedAdvancedModelingEnabled] = useState(true);
   const hasAmazonStore = amazonAccounts && amazonAccounts.length > 0;
 
   // Check if any Amazon account is less than 3 hours old
@@ -73,9 +71,6 @@ export const ForecastSettings = () => {
   const hasFullySyncedAmazonAccount = useMemo(() => {
     return amazonAccounts?.some(acc => acc.is_active && acc.initial_sync_complete) ?? false;
   }, [amazonAccounts]);
-
-  // Mathematical forecasting is always available - no restrictions
-  const canEnableAdvancedModeling = true;
 
   // Use the payout frequency from the user's Amazon account settings instead of auto-detecting
   const userSelectedPayoutModel = useMemo(() => {
@@ -129,8 +124,6 @@ export const ForecastSettings = () => {
 
       // Set forecast enabled state
       setForecastsEnabled(data?.forecasts_enabled ?? true);
-      setAdvancedModelingEnabled(data?.advanced_modeling_enabled ?? false);
-      setSavedAdvancedModelingEnabled(data?.advanced_modeling_enabled ?? false);
     } catch (error) {
       console.error('Error fetching forecast settings:', error);
       // On error, default to 8 (Moderate)
@@ -470,8 +463,6 @@ export const ForecastSettings = () => {
           account_id: profile.account_id,
           forecast_confidence_threshold: confidenceThreshold,
           forecasts_enabled: forecastsEnabled,
-          advanced_modeling_enabled: advancedModelingEnabled ?? true,
-          // Default to ON
           default_reserve_lag_days: 7 // DD+7 standard
         }).select('forecast_confidence_threshold').single();
         if (insertError) {
@@ -486,8 +477,7 @@ export const ForecastSettings = () => {
           error: updateError
         } = await supabase.from('user_settings').update({
           forecast_confidence_threshold: confidenceThreshold,
-          forecasts_enabled: forecastsEnabled,
-          advanced_modeling_enabled: advancedModelingEnabled
+          forecasts_enabled: forecastsEnabled
         }).eq('user_id', currentUser.id).select('forecast_confidence_threshold').single();
         if (updateError) {
           console.error('❌ Update error:', updateError);
@@ -510,7 +500,6 @@ export const ForecastSettings = () => {
 
       // Update saved values after successful save
       setSavedConfidenceThreshold(confidenceThreshold);
-      setSavedAdvancedModelingEnabled(advancedModelingEnabled);
 
       // Handle forecasts based on enabled state
       if (!forecastsEnabled) {
@@ -952,35 +941,6 @@ export const ForecastSettings = () => {
           )}
         </div>
 
-        {/* Advanced Modeling Toggle */}
-        {payoutModel === 'daily' && <div className="rounded-lg border-2 border-purple-200 dark:border-purple-800 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-purple-600" />
-                <div>
-                  <Label htmlFor="advanced-modeling" className="text-sm font-semibold text-purple-900 dark:text-purple-100">
-                    Advanced Daily Distribution
-                  </Label>
-                  <p className="text-xs text-purple-700 dark:text-purple-300 mt-0.5">
-                    Volume-weighted cumulative unlocking from Amazon BeginningBalance
-                  </p>
-                </div>
-              </div>
-              <Switch id="advanced-modeling" checked={advancedModelingEnabled} onCheckedChange={setAdvancedModelingEnabled} disabled={!forecastsEnabled || !canEnableAdvancedModeling} />
-            </div>
-            
-            
-            {advancedModelingEnabled && canEnableAdvancedModeling && <div className="p-3 bg-white/70 dark:bg-slate-900/50 rounded text-xs text-slate-700 dark:text-slate-300 space-y-2">
-                <p className="font-medium text-purple-800 dark:text-purple-200">How it works:</p>
-                <ul className="space-y-1 ml-4 list-disc text-[10px]">
-                  <li><strong>Extracts real Amazon BeginningBalance</strong> from open settlements</li>
-                  <li><strong>Distributes daily</strong> based on your transaction volume patterns</li>
-                  <li><strong>Cumulative unlocking</strong>: Funds add up each day if not withdrawn</li>
-                  <li>Example: If $30k total → Day 1: $2.5k, Day 2: +$3k = $5.5k available, etc.</li>
-                </ul>
-              </div>}
-          </div>}
-
         <div className="rounded-lg bg-muted/50 p-4 space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium">
             <TrendingUp className="h-4 w-4" />
@@ -998,8 +958,8 @@ export const ForecastSettings = () => {
           <Tooltip>
             <TooltipTrigger asChild>
               <div>
-                <Button onClick={handleSave} disabled={saving || !forecastsEnabled || confidenceThreshold === savedConfidenceThreshold && advancedModelingEnabled === savedAdvancedModelingEnabled} className="w-full">
-                  {saving ? "Saving..." : confidenceThreshold === savedConfidenceThreshold && advancedModelingEnabled === savedAdvancedModelingEnabled ? "No Changes to Save" : "Save Forecast Settings"}
+                <Button onClick={handleSave} disabled={saving || !forecastsEnabled || confidenceThreshold === savedConfidenceThreshold} className="w-full">
+                  {saving ? "Saving..." : confidenceThreshold === savedConfidenceThreshold ? "No Changes to Save" : "Save Forecast Settings"}
                 </Button>
               </div>
             </TooltipTrigger>

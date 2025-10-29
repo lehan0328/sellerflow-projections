@@ -132,6 +132,9 @@ verify_jwt = true
 [functions.forecast-amazon-payouts-math]
 verify_jwt = true
 
+[functions.forecast-amazon-payouts-daily]
+verify_jwt = false
+
 [functions.calculate-forecast-accuracy]
 verify_jwt = true
 
