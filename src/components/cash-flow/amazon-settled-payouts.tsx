@@ -1,7 +1,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
-import { Loader2, CheckCircle2, Clock } from "lucide-react";
+import { Loader2, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { CleanupDuplicateAmazonButton } from "./cleanup-duplicate-amazon-button";
 
@@ -12,11 +13,20 @@ interface AmazonSettledPayoutsProps {
 
 export const AmazonSettledPayouts = ({ open, onOpenChange }: AmazonSettledPayoutsProps) => {
   const { amazonPayouts, isLoading } = useAmazonPayouts();
+  
+  // Check if user has any daily settlement accounts
+  const hasDailyAccount = amazonPayouts.some(p => p.payout_type === 'daily');
 
-  // Only show confirmed and estimated payouts
-  const settledPayouts = amazonPayouts.filter(p => 
-    p.status === 'confirmed' || p.status === 'estimated'
-  ).sort((a, b) => new Date(b.payout_date).getTime() - new Date(a.payout_date).getTime());
+  // For daily accounts, only show confirmed payouts (hide open settlements to avoid double counting)
+  // For bi-weekly accounts, show both confirmed and estimated
+  const settledPayouts = amazonPayouts.filter(p => {
+    if (hasDailyAccount && p.payout_type === 'daily') {
+      // Daily accounts: only show confirmed (hide open settlements)
+      return p.status === 'confirmed';
+    }
+    // Bi-weekly accounts: show both confirmed and estimated
+    return p.status === 'confirmed' || p.status === 'estimated';
+  }).sort((a, b) => new Date(b.payout_date).getTime() - new Date(a.payout_date).getTime());
 
   const confirmedPayouts = settledPayouts.filter(p => p.status === 'confirmed');
   const estimatedPayouts = settledPayouts.filter(p => p.status === 'estimated');
@@ -49,7 +59,7 @@ export const AmazonSettledPayouts = ({ open, onOpenChange }: AmazonSettledPayout
         ) : (
           <>
             {/* Summary Stats */}
-            <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className={`grid ${estimatedPayouts.length > 0 ? 'grid-cols-2' : 'grid-cols-1'} gap-3 mb-4`}>
               <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-muted-foreground">Confirmed</span>
@@ -61,17 +71,29 @@ export const AmazonSettledPayouts = ({ open, onOpenChange }: AmazonSettledPayout
                 <p className="text-xs text-muted-foreground">{confirmedPayouts.length} payouts</p>
               </div>
 
-              <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-muted-foreground">Open Settlement</span>
-                  <Clock className="h-4 w-4 text-blue-600" />
+              {estimatedPayouts.length > 0 && (
+                <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-muted-foreground">Open Settlement</span>
+                    <Clock className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <p className="text-lg font-bold text-blue-600 mt-1">
+                    ${totalEstimated.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{estimatedPayouts.length} pending</p>
                 </div>
-                <p className="text-lg font-bold text-blue-600 mt-1">
-                  ${totalEstimated.toLocaleString()}
-                </p>
-                <p className="text-xs text-muted-foreground">{estimatedPayouts.length} pending</p>
-              </div>
+              )}
             </div>
+
+            {hasDailyAccount && estimatedPayouts.length === 0 && (
+              <Alert className="mb-4 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-xs">
+                  Open settlements are hidden for daily accounts to prevent double-counting with daily forecasts.
+                  Your daily forecast tracker shows all pending cash flows.
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Payout List */}
             <ScrollArea className="h-[400px] pr-4">

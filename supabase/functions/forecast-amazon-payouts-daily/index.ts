@@ -97,28 +97,49 @@ serve(async (req) => {
     }
 
     // Step 1: Calculate Order Cash Unlock (Delivery Date + 7)
-    const orderCashUnlock: Record<string, number> = {};
+    // CRITICAL: Group by delivery_date FIRST, then calculate unlock dates
+    const deliveryDateGroups: Record<string, number> = {};
 
+    // First pass: Group all orders by their delivery date and sum net_amount
     (transactions || [])
       .filter(isRealCustomerOrder)
       .forEach(txn => {
         let deliveryDate = txn.delivery_date;
         
         if (!deliveryDate) {
-          const fallbackDate = new Date(txn.transaction_date);
-          fallbackDate.setDate(fallbackDate.getDate() + 7);
-          deliveryDate = fallbackDate.toISOString().split('T')[0];
+          // Fallback: use transaction_date if no delivery_date
+          deliveryDate = new Date(txn.transaction_date).toISOString().split('T')[0];
         }
         
-        const unlockDate = new Date(deliveryDate);
-        unlockDate.setDate(unlockDate.getDate() + 7);
-        const unlockDateStr = unlockDate.toISOString().split('T')[0];
-        
-        const amount = txn.amount || 0;
-        orderCashUnlock[unlockDateStr] = (orderCashUnlock[unlockDateStr] || 0) + amount;
+        const netAmount = txn.net_amount || txn.amount || 0;
+        deliveryDateGroups[deliveryDate] = (deliveryDateGroups[deliveryDate] || 0) + netAmount;
       });
 
-    console.log(`[DAILY FORECAST] Calculated order cash unlock for ${Object.keys(orderCashUnlock).length} dates`);
+    console.log(`[DAILY FORECAST] Grouped ${Object.keys(deliveryDateGroups).length} unique delivery dates`);
+
+    // Second pass: Calculate unlock dates (delivery_date + 7) for each group
+    const orderCashUnlock: Record<string, number> = {};
+
+    Object.entries(deliveryDateGroups).forEach(([deliveryDate, totalNetAmount]) => {
+      const unlockDate = new Date(deliveryDate);
+      unlockDate.setDate(unlockDate.getDate() + 7);
+      const unlockDateStr = unlockDate.toISOString().split('T')[0];
+      
+      orderCashUnlock[unlockDateStr] = totalNetAmount;
+      
+      console.log(`[DAILY FORECAST] Delivery ${deliveryDate} → Unlock ${unlockDateStr}: $${totalNetAmount.toFixed(2)}`);
+    });
+
+    console.log(`[DAILY FORECAST] Calculated order cash unlock for ${Object.keys(orderCashUnlock).length} payout dates`);
+
+    // Log sample delivery date groupings for verification
+    console.log(`[DAILY FORECAST] Sample delivery date groupings:`);
+    const sampleDeliveryDates = Object.entries(deliveryDateGroups).slice(0, 5);
+    sampleDeliveryDates.forEach(([date, amount]) => {
+      const unlock = new Date(date);
+      unlock.setDate(unlock.getDate() + 7);
+      console.log(`  • Delivered ${date}: $${amount.toFixed(2)} → Unlocks ${unlock.toISOString().split('T')[0]}`);
+    });
 
     // Step 2: Calculate Other Cash Flows (Fees, Refunds, Adjustments)
     const otherCashFlows: Record<string, number> = {};
@@ -127,8 +148,8 @@ serve(async (req) => {
       .filter(txn => !isRealCustomerOrder(txn))
       .forEach(txn => {
         const dateStr = new Date(txn.transaction_date).toISOString().split('T')[0];
-        const amount = txn.amount || 0;
-        otherCashFlows[dateStr] = (otherCashFlows[dateStr] || 0) + amount;
+        const netAmount = txn.net_amount || txn.amount || 0;
+        otherCashFlows[dateStr] = (otherCashFlows[dateStr] || 0) + netAmount;
       });
 
     // Step 3: Calculate Daily Unlocked Cash
