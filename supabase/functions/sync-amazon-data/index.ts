@@ -476,6 +476,13 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
           
           if (!orderId || !purchaseDate) continue
           
+          // Filter out removal orders (S01-), liquidation (D01-), and non-customer orders
+          // Valid customer orders match format: xxx-xxxxxxx-xxxxxxx (3-7-7 digits)
+          if (!orderId.match(/^\d{3}-\d{7}-\d{7}$/)) {
+            console.log(`[SYNC] Skipping non-customer order: ${orderId}`)
+            continue
+          }
+          
           // Use delivery date if available, otherwise estimate (purchase + 3 days)
           let deliveryDate: Date
           if (deliveryDateRaw && deliveryDateIdx !== -1) {
@@ -485,7 +492,9 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
             deliveryDate.setDate(deliveryDate.getDate() + 3)
           }
           
-          const netAmount = itemPrice - itemTax - promotionDiscount
+          // Use gross revenue (item_price only) to match Amazon's "Ordered Product Sales" metric
+          // Amazon's dashboard shows gross revenue before tax/discount deductions
+          const netAmount = itemPrice
           
           // Aggregate by order ID
           if (orderMap.has(orderId)) {
