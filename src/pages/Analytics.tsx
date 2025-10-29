@@ -127,17 +127,35 @@ export default function Analytics() {
   useEffect(() => {
     const fetchAmazonTransactions = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('[Analytics] No authenticated user');
+        return;
+      }
+
+      // Get account_id from profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!profile?.account_id) {
+        console.log('[Analytics] No account_id found for user');
+        return;
+      }
+
+      console.log('[Analytics] Fetching Amazon transactions for account:', profile.account_id);
 
       const { data, error } = await supabase
         .from('amazon_transactions')
         .select('*')
+        .eq('account_id', profile.account_id)
         .eq('transaction_type', 'Order')
         .gt('amount', 0)
         .order('transaction_date', { ascending: false });
 
       if (error) {
-        console.error('Error fetching Amazon transactions:', error);
+        console.error('[Analytics] Error fetching Amazon transactions:', error);
         return;
       }
 
