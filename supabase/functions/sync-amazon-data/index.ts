@@ -317,86 +317,243 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
     // === STEP 2: TRIGGER REPORT SYNC FOR DAILY ACCOUNTS ===
     console.log('[SYNC] ===== STEP 2: CHECKING REPORT SYNC ELIGIBILITY =====')
     
-    // Check if this is a daily payout account (already detected in Step 1)
-    const isDaily = detectedFrequency === 'daily'
+    // === STEP 2: FETCH ORDER REPORTS (BOTH DAILY AND BI-WEEKLY) ===
+    console.log('[SYNC] ===== STEP 2: FETCHING ORDER REPORTS (30 DAYS) =====')
+    console.log(`[SYNC] Payout frequency: ${detectedFrequency}`)
     
-    if (isDaily) {
-      console.log('[SYNC] ✅ Daily payout account detected')
+    // Check if report sync is needed (every 12 hours)
+    const { data: accountData } = await supabase
+      .from('amazon_accounts')
+      .select('last_report_sync')
+      .eq('id', amazonAccountId)
+      .single()
+    
+    const lastReportSync = accountData?.last_report_sync ? new Date(accountData.last_report_sync) : null
+    const now = new Date()
+    const hoursSinceReportSync = lastReportSync 
+      ? (now.getTime() - lastReportSync.getTime()) / (1000 * 60 * 60)
+      : 999 // Force sync if never synced
+    
+    // Sync reports every 12 hours for ALL accounts (needed for both daily and bi-weekly forecasts)
+    if (hoursSinceReportSync >= 12) {
+      await supabase.from('amazon_accounts').update({ 
+        sync_progress: 70,
+        sync_message: 'Fetching order delivery dates for forecasting...'
+      }).eq('id', amazonAccountId)
       
-      // Check if report sync is needed (every 12 hours)
-      const { data: accountData } = await supabase
-        .from('amazon_accounts')
-        .select('last_report_sync')
-        .eq('id', amazonAccountId)
-        .single()
+      console.log(`[SYNC] Fetching reports (last sync: ${hoursSinceReportSync.toFixed(1)}h ago)`)
       
-      const lastReportSync = accountData?.last_report_sync ? new Date(accountData.last_report_sync) : null
-      const now = new Date()
-      const hoursSinceReportSync = lastReportSync 
-        ? (now.getTime() - lastReportSync.getTime()) / (1000 * 60 * 60)
-        : 999 // Force sync if never synced
-      
-      // Sync reports twice per day (every 12 hours)
-      if (hoursSinceReportSync >= 12) {
+      try {
+        // Calculate date range (last 30 days)
+        const reportEndDate = new Date()
+        const reportStartDate = new Date()
+        reportStartDate.setDate(reportStartDate.getDate() - 30)
+        
+        console.log(`[SYNC] Requesting report from ${reportStartDate.toISOString().split('T')[0]} to ${reportEndDate.toISOString().split('T')[0]}`)
+        
+        // Step 1: Request report generation
+        const createReportResponse = await makeRequest(`${apiEndpoint}/reports/2021-06-30/reports`, {
+          method: 'POST',
+          headers: {
+            'x-amz-access-token': accessToken,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            reportType: 'GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL',
+            dataStartTime: reportStartDate.toISOString(),
+            dataEndTime: reportEndDate.toISOString(),
+            marketplaceIds: [amazonAccount.marketplace_id],
+          })
+        })
+        
+        if (!createReportResponse.ok) {
+          throw new Error(`Failed to create report: ${createReportResponse.status}`)
+        }
+        
+        const reportRequest = await createReportResponse.json()
+        const reportId = reportRequest.reportId
+        console.log(`[SYNC] Report requested: ${reportId}`)
+        
         await supabase.from('amazon_accounts').update({ 
-          sync_progress: 70,
-          sync_message: 'Fetching order delivery dates for forecasting...'
+          sync_progress: 75,
+          sync_message: 'Waiting for report generation...'
         }).eq('id', amazonAccountId)
         
-        console.log(`[SYNC] Triggering report sync (last sync: ${hoursSinceReportSync.toFixed(1)}h ago)`)
+        // Step 2: Poll for report completion (max 15 minutes)
+        let reportDocument = null
+        const maxAttempts = 30
         
-        try {
-          const { data: reportData, error: reportError } = await supabase.functions.invoke(
-            'sync-amazon-reports-daily',
-            { body: { amazonAccountId, days: 14 } }
-          )
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          await new Promise(resolve => setTimeout(resolve, 30000)) // Wait 30 seconds
           
-          if (reportError || reportData?.error) {
-            console.error('[SYNC] Reports sync failed (non-critical):', reportError || reportData?.error)
-            // Don't throw - settlement data is still valid
-            await supabase.from('amazon_accounts').update({
-              sync_status: 'completed',
-              sync_progress: 100,
-              sync_message: `${settlementsToSave.length} payouts synced (reports failed - using estimated delivery dates)`,
-              last_sync: now.toISOString()
-            }).eq('id', amazonAccountId)
-          } else {
-            console.log('[SYNC] ✅ Reports synced:', reportData)
-            
-            await supabase.from('amazon_accounts').update({
-              sync_progress: 95,
-              sync_message: 'Processing delivery dates...'
-            }).eq('id', amazonAccountId)
-            
-            await supabase.from('amazon_accounts').update({
-              sync_status: 'completed',
-              sync_progress: 100,
-              sync_message: `${settlementsToSave.length} payouts + ${reportData.ordersCount || 0} orders synced`,
-              last_sync: now.toISOString(),
-              last_report_sync: now.toISOString()
-            }).eq('id', amazonAccountId)
+          const reportStatusResponse = await makeRequest(`${apiEndpoint}/reports/2021-06-30/reports/${reportId}`, {
+            headers: { 'x-amz-access-token': accessToken }
+          })
+          
+          if (!reportStatusResponse.ok) continue
+          
+          const reportStatus = await reportStatusResponse.json()
+          console.log(`[SYNC] Report status: ${reportStatus.processingStatus} (attempt ${attempt + 1}/${maxAttempts})`)
+          
+          if (reportStatus.processingStatus === 'DONE') {
+            reportDocument = reportStatus.reportDocumentId
+            break
+          } else if (reportStatus.processingStatus === 'FATAL' || reportStatus.processingStatus === 'CANCELLED') {
+            throw new Error(`Report generation failed: ${reportStatus.processingStatus}`)
           }
-        } catch (error) {
-          console.error('[SYNC] Exception during report sync:', error)
+        }
+        
+        if (!reportDocument) {
+          throw new Error('Report generation timeout after 15 minutes')
+        }
+        
+        console.log(`[SYNC] Report ready: ${reportDocument}`)
+        
+        await supabase.from('amazon_accounts').update({ 
+          sync_progress: 85,
+          sync_message: 'Downloading and processing orders...'
+        }).eq('id', amazonAccountId)
+        
+        // Step 3: Get report download URL and download
+        const documentResponse = await makeRequest(`${apiEndpoint}/reports/2021-06-30/documents/${reportDocument}`, {
+          headers: { 'x-amz-access-token': accessToken }
+        })
+        
+        if (!documentResponse.ok) {
+          throw new Error('Failed to get report document URL')
+        }
+        
+        const documentData = await documentResponse.json()
+        const csvResponse = await fetch(documentData.url)
+        
+        if (!csvResponse.ok) {
+          throw new Error('Failed to download report')
+        }
+        
+        // Handle gzip compression
+        const blob = await csvResponse.blob()
+        const buffer = await blob.arrayBuffer()
+        const bytes = new Uint8Array(buffer)
+        const isGzipped = bytes[0] === 0x1f && bytes[1] === 0x8b
+        
+        let csvText: string
+        if (isGzipped) {
+          const decompressedStream = blob.stream().pipeThrough(new DecompressionStream('gzip'))
+          const decompressedBlob = await new Response(decompressedStream).blob()
+          csvText = await decompressedBlob.text()
+        } else {
+          csvText = await blob.text()
+        }
+        
+        // Parse CSV
+        const lines = csvText.split('\n')
+        const headers = lines[0].split('\t')
+        
+        // Find column indices
+        const orderIdIdx = headers.findIndex(h => h === 'amazon-order-id' || h === 'order-id')
+        const purchaseDateIdx = headers.findIndex(h => h === 'purchase-date' || h === 'order-date')
+        const deliveryDateIdx = headers.findIndex(h => h === 'estimated-delivery-date' || h === 'delivery-date')
+        const itemPriceIdx = headers.findIndex(h => h === 'item-price' || h === 'price')
+        const itemTaxIdx = headers.findIndex(h => h === 'item-tax' || h === 'tax')
+        const promotionDiscountIdx = headers.findIndex(h => h === 'promotion-discount' || h === 'discount')
+        
+        if (orderIdIdx === -1) {
+          throw new Error('Order ID column not found in report')
+        }
+        
+        // Parse and aggregate by order ID
+        const orderMap = new Map()
+        
+        for (let i = 1; i < lines.length; i++) {
+          if (!lines[i].trim()) continue
+          
+          const cols = lines[i].split('\t')
+          const orderId = cols[orderIdIdx]?.trim()
+          const purchaseDate = cols[purchaseDateIdx]?.trim()
+          const deliveryDateRaw = cols[deliveryDateIdx]?.trim()
+          const itemPrice = parseFloat(cols[itemPriceIdx] || '0')
+          const itemTax = parseFloat(cols[itemTaxIdx] || '0')
+          const promotionDiscount = parseFloat(cols[promotionDiscountIdx] || '0')
+          
+          if (!orderId || !purchaseDate) continue
+          
+          // Use delivery date if available, otherwise estimate (purchase + 3 days)
+          let deliveryDate: Date
+          if (deliveryDateRaw && deliveryDateIdx !== -1) {
+            deliveryDate = new Date(deliveryDateRaw)
+          } else {
+            deliveryDate = new Date(purchaseDate)
+            deliveryDate.setDate(deliveryDate.getDate() + 3)
+          }
+          
+          const netAmount = itemPrice - itemTax - promotionDiscount
+          
+          // Aggregate by order ID
+          if (orderMap.has(orderId)) {
+            orderMap.get(orderId).amount += netAmount
+          } else {
+            orderMap.set(orderId, {
+              amazon_account_id: amazonAccountId,
+              user_id: userId,
+              account_id: amazonAccount.account_id,
+              transaction_id: orderId,
+              transaction_type: 'Order',
+              transaction_date: new Date(purchaseDate).toISOString(),
+              delivery_date: deliveryDate.toISOString(),
+              amount: netAmount,
+              description: `Order ${orderId}`,
+              created_at: new Date().toISOString(),
+            })
+          }
+        }
+        
+        const transactions = Array.from(orderMap.values())
+        console.log(`[SYNC] Parsed ${transactions.length} unique orders`)
+        
+        // Deduplicate and save
+        if (transactions.length > 0) {
+          const { error: upsertError } = await supabase
+            .from('amazon_transactions')
+            .upsert(transactions, {
+              onConflict: 'transaction_id,amazon_account_id',
+              ignoreDuplicates: false
+            })
+          
+          if (upsertError) {
+            console.error('[SYNC] Failed to save transactions:', upsertError)
+            throw upsertError
+          }
+          
+          console.log('[SYNC] ✅ Transactions saved to database')
+          
           await supabase.from('amazon_accounts').update({
             sync_status: 'completed',
             sync_progress: 100,
-            sync_message: `${settlementsToSave.length} payouts synced (report sync error)`,
-            last_sync: now.toISOString()
+            sync_message: `${settlementsToSave.length} payouts + ${transactions.length} orders synced`,
+            last_sync: now.toISOString(),
+            last_report_sync: now.toISOString()
+          }).eq('id', amazonAccountId)
+        } else {
+          await supabase.from('amazon_accounts').update({
+            sync_status: 'completed',
+            sync_progress: 100,
+            sync_message: `${settlementsToSave.length} payouts synced (no orders found)`,
+            last_sync: now.toISOString(),
+            last_report_sync: now.toISOString()
           }).eq('id', amazonAccountId)
         }
-      } else {
-        console.log(`[SYNC] Skipping report sync (synced ${hoursSinceReportSync.toFixed(1)}h ago, need 12h)`)
+      } catch (error) {
+        console.error('[SYNC] Reports sync failed (non-critical):', error)
+        // Don't throw - settlement data is still valid
         await supabase.from('amazon_accounts').update({
           sync_status: 'completed',
           sync_progress: 100,
-          sync_message: `${settlementsToSave.length} payouts synced`,
+          sync_message: `${settlementsToSave.length} payouts synced (reports failed)`,
           last_sync: now.toISOString()
         }).eq('id', amazonAccountId)
       }
     } else {
-      // Bi-weekly account - skip reports entirely
-      console.log('[SYNC] Bi-weekly account - skipping reports sync')
+      console.log(`[SYNC] Skipping report sync (synced ${hoursSinceReportSync.toFixed(1)}h ago, need 12h)`)
       await supabase.from('amazon_accounts').update({
         sync_status: 'completed',
         sync_progress: 100,
