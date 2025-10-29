@@ -60,12 +60,29 @@ Deno.serve(async (req) => {
     const region = MARKETPLACE_REGIONS[account.marketplace_id] || 'na'
     const endpoint = AMAZON_SPAPI_ENDPOINTS[region]
 
-    // Decrypt access token
+    // Refresh the access token first (tokens expire after 1 hour)
+    console.log('[REPORTS] Refreshing Amazon access token...')
+    const { data: refreshResult, error: refreshError } = await supabase.functions.invoke('refresh-amazon-token', {
+      body: { amazonAccountId }
+    })
+
+    if (refreshError || !refreshResult?.success) {
+      throw new Error(`Failed to refresh token: ${refreshError?.message || 'Unknown error'}`)
+    }
+
+    // Get the fresh token
+    const { data: updatedAccount } = await supabase
+      .from('amazon_accounts')
+      .select('encrypted_access_token')
+      .eq('id', amazonAccountId)
+      .single()
+
     const { data: secretData } = await supabase.rpc('decrypt_banking_credential', {
-      encrypted_text: account.encrypted_access_token
+      encrypted_text: updatedAccount.encrypted_access_token
     })
     
-    const accessToken = secretData || account.encrypted_access_token
+    const accessToken = secretData || updatedAccount.encrypted_access_token
+    console.log('[REPORTS] Using refreshed access token')
 
     // Calculate date range (last 14 days)
     const endDate = new Date()
