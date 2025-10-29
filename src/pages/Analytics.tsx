@@ -123,14 +123,11 @@ export default function Analytics() {
     };
   }, []);
 
-  // Fetch Amazon transactions for gross revenue calculation
+  // Fetch Amazon transactions for gross revenue calculation (last 30 days from reports)
   useEffect(() => {
     const fetchAmazonTransactions = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('[Analytics] No authenticated user');
-        return;
-      }
+      if (!user) return;
 
       // Get account_id from profile
       const { data: profile } = await supabase
@@ -139,12 +136,11 @@ export default function Analytics() {
         .eq('user_id', user.id)
         .single();
 
-      if (!profile?.account_id) {
-        console.log('[Analytics] No account_id found for user');
-        return;
-      }
+      if (!profile?.account_id) return;
 
-      console.log('[Analytics] Fetching Amazon transactions for account:', profile.account_id);
+      // Fetch last 30 days of Amazon orders (matching report date range)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       const { data, error } = await supabase
         .from('amazon_transactions')
@@ -152,16 +148,13 @@ export default function Analytics() {
         .eq('account_id', profile.account_id)
         .eq('transaction_type', 'Order')
         .gt('amount', 0)
+        .gte('transaction_date', thirtyDaysAgo.toISOString())
         .order('transaction_date', { ascending: false });
 
       if (error) {
         console.error('[Analytics] Error fetching Amazon transactions:', error);
         return;
       }
-
-      console.log('[Analytics] Fetched Amazon transactions:', data?.length, 'orders');
-      console.log('[Analytics] Total revenue:', data?.reduce((sum, tx) => sum + (tx.amount || 0), 0));
-      console.log('[Analytics] Date range:', data?.[data.length - 1]?.transaction_date, 'to', data?.[0]?.transaction_date);
       
       setAmazonTransactions(data || []);
     };
@@ -178,7 +171,6 @@ export default function Analytics() {
   
   const [vendorDateRange, setVendorDateRange] = useState<string>("last-30-days");
   const [incomeDateRange, setIncomeDateRange] = useState<string>("last-30-days");
-  const [amazonRevenueRange, setAmazonRevenueRange] = useState<string>("last-30-days");
   const [customStartDate, setCustomStartDate] = useState<Date>(defaultStartDate);
   const [customEndDate, setCustomEndDate] = useState<Date>(defaultEndDate);
 
@@ -273,16 +265,8 @@ export default function Analytics() {
     const totalCreditUsed = creditCards.reduce((sum, c) => sum + (c.balance || 0), 0);
     const creditUtilization = totalCreditLimit > 0 ? (totalCreditUsed / totalCreditLimit) * 100 : 0;
 
-    // Amazon gross revenue from actual orders
-    const amazonDateRange = getDateRange(amazonRevenueRange);
-    const filteredTransactions = amazonTransactions.filter(tx => {
-      const txDate = new Date(tx.transaction_date);
-      return txDate >= amazonDateRange.start && 
-             txDate <= amazonDateRange.end;
-    });
-    console.log('[Analytics] Amazon date range:', amazonDateRange);
-    console.log('[Analytics] Filtered transactions:', filteredTransactions.length, 'of', amazonTransactions.length);
-    const amazonRevenue = filteredTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    // Amazon gross revenue from report data (last 30 days)
+    const amazonRevenue = amazonTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
     // Total expenses from vendors + purchase orders
     const vendorExpenses = vendors.reduce((sum, v) => sum + (v.totalOwed || 0), 0);
@@ -304,7 +288,7 @@ export default function Analytics() {
       totalExpenses,
       netCashFlow
     };
-  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts, amazonTransactions, amazonRevenueRange]);
+  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts, amazonTransactions]);
 
   // Revenue over time (last 6 months) - includes Amazon payouts and recurring income
   const revenueData = useMemo(() => {
@@ -655,28 +639,12 @@ export default function Analytics() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div className="flex items-center gap-2 flex-1">
-              <CardTitle className="text-sm font-medium">Amazon Revenue</CardTitle>
-              <Select value={amazonRevenueRange} onValueChange={setAmazonRevenueRange}>
-                <SelectTrigger className="w-36 h-7 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="z-50 bg-background">
-                  <SelectItem value="last-30-days">Last 30 Days</SelectItem>
-                  <SelectItem value="this-month">This Month</SelectItem>
-                  <SelectItem value="last-month">Last Month</SelectItem>
-                  <SelectItem value="last-3-months">Last 3 Months</SelectItem>
-                  <SelectItem value="last-6-months">Last 6 Months</SelectItem>
-                  <SelectItem value="ytd">Year to Date</SelectItem>
-                  <SelectItem value="all-time">All Time</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <CardTitle className="text-sm font-medium">Amazon Revenue</CardTitle>
             <Package className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">${metrics.amazonRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Amazon gross revenue from orders</p>
+            <p className="text-xs text-muted-foreground">Last 30 days from Amazon reports</p>
           </CardContent>
         </Card>
 
