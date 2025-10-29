@@ -304,7 +304,7 @@ export default function Analytics() {
       totalExpenses,
       netCashFlow
     };
-  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts]);
+  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts, amazonTransactions, amazonRevenueRange]);
 
   // Revenue over time (last 6 months) - includes Amazon payouts and recurring income
   const revenueData = useMemo(() => {

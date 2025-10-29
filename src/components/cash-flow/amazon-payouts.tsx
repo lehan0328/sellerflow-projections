@@ -12,6 +12,7 @@ import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Cloc
 import { AmazonSettledPayouts } from "./amazon-settled-payouts";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
+import { CleanupDuplicateAmazonButton } from "./cleanup-duplicate-amazon-button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";

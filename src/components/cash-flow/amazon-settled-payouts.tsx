@@ -3,6 +3,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { Loader2, CheckCircle2, Clock } from "lucide-react";
 import { format } from "date-fns";
+import { CleanupDuplicateAmazonButton } from "./cleanup-duplicate-amazon-button";
 
 interface AmazonSettledPayoutsProps {
   open: boolean;
@@ -27,7 +28,10 @@ export const AmazonSettledPayouts = ({ open, onOpenChange }: AmazonSettledPayout
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[80vh]">
         <DialogHeader>
-          <DialogTitle>Amazon Settlement History</DialogTitle>
+          <DialogTitle className="flex items-center justify-between">
+            <span>Amazon Settlement History</span>
+            <CleanupDuplicateAmazonButton />
+          </DialogTitle>
           <DialogDescription>
             Actual payouts confirmed and pending from Amazon
           </DialogDescription>
