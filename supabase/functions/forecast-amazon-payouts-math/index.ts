@@ -644,6 +644,9 @@ function generateBiWeeklyForecasts(
   const firstHalfMedian = calculateMedian(firstHalf);
   const secondHalfMedian = calculateMedian(secondHalf);
   
+  // Calculate baseline from recent average or fall back to historical
+  const baselinePayout = (recentAvgPayout && recentAvgPayout > 0) ? recentAvgPayout : (historicalAvgPayout || 0);
+  
   // NEW: Use payout-per-day rate if available, otherwise fall back to traditional average
   // This is more accurate since it accounts for varying settlement period lengths
   const avgDailyEligible = secondHalfMedian || firstHalfMedian || 
