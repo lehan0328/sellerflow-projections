@@ -92,25 +92,27 @@ export const useAmazonPayouts = () => {
 
       // Filter payouts based on settings
       const filteredPayouts = (data || []).filter((payout) => {
-        // For open settlements (estimated), exclude them if advanced modeling is enabled
+        // Always include open settlements (estimated) - let the component decide display logic
         if (payout.status === 'estimated') {
-          // If advanced modeling is ON, completely exclude open settlements
-          if (advancedModelingEnabled) {
-            console.log('[fetchAmazonPayouts] Excluding open settlement (advanced modeling enabled):', {
+          const rawData = payout.raw_settlement_data as any;
+          const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
+          
+          // Always return open settlements (no end date)
+          if (!hasEndDate) {
+            console.log('[fetchAmazonPayouts] Including open settlement:', {
               id: payout.id,
               settlement_id: payout.settlement_id,
               amount: payout.total_amount,
-              reason: 'Advanced modeling generates mathematical forecasts instead'
+              status: 'open (no end date)'
             });
-            return false;
+            return true;
           }
           
-          // If advanced modeling is OFF, only show open settlements that close in the future
-          const rawData = payout.raw_settlement_data as any;
+          // For closed estimated settlements, apply date filtering
           const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
           
           if (!settlementStartStr) {
-            console.log('[fetchAmazonPayouts] No start date for open settlement, excluding:', payout.id);
+            console.log('[fetchAmazonPayouts] No start date for closed estimated settlement, excluding:', payout.id);
             return false;
           }
           
@@ -123,9 +125,9 @@ export const useAmazonPayouts = () => {
           today.setHours(0, 0, 0, 0);
           settlementCloseDate.setHours(0, 0, 0, 0);
           
-          // Only show open settlements that close today or in the future
+          // Only show closed estimated settlements that close today or in the future
           if (settlementCloseDate < today) {
-            console.log('[fetchAmazonPayouts] Filtering past open settlement:', {
+            console.log('[fetchAmazonPayouts] Filtering past closed estimated settlement:', {
               id: payout.id,
               start_date: settlementStartStr,
               close_date: settlementCloseDate.toISOString().split('T')[0],
@@ -135,7 +137,7 @@ export const useAmazonPayouts = () => {
             return false;
           }
           
-          console.log('[fetchAmazonPayouts] Keeping future open settlement:', {
+          console.log('[fetchAmazonPayouts] Keeping future estimated settlement:', {
             id: payout.id,
             status: payout.status,
             start_date: settlementStartStr,

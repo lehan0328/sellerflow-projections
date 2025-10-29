@@ -623,25 +623,12 @@ export function AmazonPayouts() {
             const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
             const isEstimated = p.status === 'estimated';
             
-            console.log('[Open Filter]', {
-              settlement: p.settlement_id,
-              status: p.status,
-              isEstimated,
-              hasEndDate,
-              endDate1: rawData?.FinancialEventGroupEnd,
-              endDate2: rawData?.settlement_end_date,
-              passes: isEstimated && !hasEndDate
-            });
-            
             // Show ALL estimated settlements without end dates (both daily and bi-weekly)
             // No date filtering - if it's open, it's open!
             return isEstimated && !hasEndDate;
           });
           
-          console.log('[Amazon Payouts] Open settlements count:', openSettlements.length);
-          
           if (openSettlements.length === 0) {
-            console.log('[Amazon Payouts] ⚠️ No open settlements to display');
             return null;
           }
 
