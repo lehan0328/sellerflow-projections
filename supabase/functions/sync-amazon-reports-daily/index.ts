@@ -61,25 +61,35 @@ Deno.serve(async (req) => {
     const endpoint = AMAZON_SPAPI_ENDPOINTS[region]
 
     // Refresh the access token first (tokens expire after 1 hour)
-    console.log('[REPORTS] Refreshing Amazon access token...')
+    console.log('[REPORTS] ====== TOKEN REFRESH START ======')
+    console.log('[REPORTS] Account ID:', amazonAccountId)
+    console.log('[REPORTS] Calling refresh-amazon-token function...')
     
     const { data: refreshData, error: refreshError } = await supabase.functions.invoke('refresh-amazon-token', {
       body: { amazon_account_id: amazonAccountId }
     })
 
+    console.log('[REPORTS] Refresh response received:', { 
+      hasData: !!refreshData, 
+      hasError: !!refreshError,
+      errorDetails: refreshError,
+      dataKeys: refreshData ? Object.keys(refreshData) : []
+    })
+
     if (refreshError) {
-      console.error('[REPORTS] Token refresh error:', refreshError)
+      console.error('[REPORTS] ❌ Token refresh error:', refreshError)
       throw new Error(`Failed to refresh token: ${refreshError.message}`)
     }
 
     if (!refreshData?.success) {
-      console.error('[REPORTS] Token refresh returned unsuccessful:', refreshData)
+      console.error('[REPORTS] ❌ Token refresh unsuccessful. Response:', JSON.stringify(refreshData))
       throw new Error('Token refresh was not successful')
     }
 
-    console.log('[REPORTS] Token refreshed successfully, expires at:', refreshData.expires_at)
+    console.log('[REPORTS] ✅ Token refreshed successfully, expires at:', refreshData.expires_at)
 
     // Get the fresh token from database
+    console.log('[REPORTS] Fetching updated account from database...')
     const { data: updatedAccount, error: accountError } = await supabase
       .from('amazon_accounts')
       .select('encrypted_access_token')
@@ -87,18 +97,22 @@ Deno.serve(async (req) => {
       .single()
 
     if (accountError || !updatedAccount) {
+      console.error('[REPORTS] ❌ Failed to fetch updated account:', accountError)
       throw new Error(`Failed to fetch updated account: ${accountError?.message}`)
     }
 
+    console.log('[REPORTS] Decrypting access token...')
     const { data: accessToken, error: decryptError } = await supabase.rpc('decrypt_banking_credential', {
       encrypted_text: updatedAccount.encrypted_access_token
     })
 
     if (decryptError || !accessToken) {
+      console.error('[REPORTS] ❌ Failed to decrypt token:', decryptError)
       throw new Error(`Failed to decrypt token: ${decryptError?.message}`)
     }
     
-    console.log('[REPORTS] Using refreshed access token (length:', accessToken.length, ')')
+    console.log('[REPORTS] ✅ Token ready (length:', accessToken.length, ')')
+    console.log('[REPORTS] ====== TOKEN REFRESH COMPLETE ======')
 
     // Calculate date range (last 14 days)
     const endDate = new Date()
