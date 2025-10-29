@@ -51,13 +51,13 @@ serve(async (req) => {
 
     const riskAdjustment = userSettings?.forecast_confidence_threshold ?? 5;
 
-    // STEP 1: Get last 30 days of CONFIRMED payouts to calculate true average
+    // STEP 1: Calculate TRUE daily average from settlement periods, filtering outliers
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const { data: confirmedPayouts } = await supabase
       .from('amazon_payouts')
-      .select('total_amount, payout_date')
+      .select('total_amount, payout_date, raw_settlement_data')
       .eq('amazon_account_id', amazonAccountId)
       .eq('status', 'confirmed')
       .gte('payout_date', thirtyDaysAgo.toISOString())
@@ -67,11 +67,44 @@ serve(async (req) => {
     let calculationMethod = '';
 
     if (confirmedPayouts && confirmedPayouts.length > 0) {
-      // Calculate average from confirmed payouts
-      const totalConfirmed = confirmedPayouts.reduce((sum, p) => sum + (p.total_amount || 0), 0);
-      avgDailyPayout = totalConfirmed / confirmedPayouts.length;
-      calculationMethod = 'confirmed_payouts_average';
-      console.log(`[DAILY FORECAST] Using confirmed payouts: ${confirmedPayouts.length} payouts, avg = $${avgDailyPayout.toFixed(2)}`);
+      // Calculate daily rates for each settlement
+      const dailyRates: number[] = [];
+      
+      for (const payout of confirmedPayouts) {
+        const settlementData = payout.raw_settlement_data as any;
+        const startDate = new Date(settlementData.FinancialEventGroupStart);
+        const endDate = new Date(settlementData.FinancialEventGroupEnd);
+        const daysInSettlement = Math.max(1, (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        const dailyRate = (payout.total_amount || 0) / daysInSettlement;
+        
+        dailyRates.push(dailyRate);
+      }
+      
+      // Sort for IQR calculation
+      const sortedRates = [...dailyRates].sort((a, b) => a - b);
+      const q1Index = Math.floor(sortedRates.length * 0.25);
+      const q3Index = Math.floor(sortedRates.length * 0.75);
+      const q1 = sortedRates[q1Index];
+      const q3 = sortedRates[q3Index];
+      const iqr = q3 - q1;
+      
+      // Define outlier bounds
+      const lowerBound = q1 - (1.5 * iqr);
+      const upperBound = q3 + (1.5 * iqr);
+      
+      // Filter outliers
+      const filteredRates = dailyRates.filter(rate => rate >= lowerBound && rate <= upperBound);
+      const outlierCount = dailyRates.length - filteredRates.length;
+      
+      // Calculate average from filtered rates
+      avgDailyPayout = filteredRates.reduce((sum, rate) => sum + rate, 0) / filteredRates.length;
+      calculationMethod = 'settlement_days_iqr_filtered';
+      
+      console.log(`[DAILY FORECAST] IQR filtering: Q1=$${q1.toFixed(2)}, Q3=$${q3.toFixed(2)}, IQR=$${iqr.toFixed(2)}`);
+      console.log(`[DAILY FORECAST] Valid range: $${lowerBound.toFixed(2)} - $${upperBound.toFixed(2)}`);
+      console.log(`[DAILY FORECAST] Filtered ${outlierCount} outliers from ${dailyRates.length} settlements`);
+      console.log(`[DAILY FORECAST] Final average: $${avgDailyPayout.toFixed(2)}/day from ${filteredRates.length} normal settlements`);
+      
     } else {
       // Fallback: Calculate from transactions (for new accounts)
       const { data: transactions } = await supabase
