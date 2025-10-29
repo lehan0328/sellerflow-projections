@@ -254,7 +254,7 @@ serve(async (req) => {
       6: 0.97  // Saturday
     };
 
-    for (let i = 0; i < 90; i++) {
+    for (let i = 1; i < 91; i++) {
       const forecastDate = new Date(today);
       forecastDate.setDate(forecastDate.getDate() + i);
       const forecastDateStr = forecastDate.toISOString().split('T')[0];
