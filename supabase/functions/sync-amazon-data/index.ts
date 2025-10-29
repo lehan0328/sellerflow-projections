@@ -29,33 +29,84 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
     const region = MARKETPLACE_REGIONS[amazonAccount.marketplace_id] || 'US'
     const apiEndpoint = AMAZON_SPAPI_ENDPOINTS[region]
     
-    // Refresh token if needed
-    let accessToken = amazonAccount.encrypted_access_token
+    // Inline token refresh (edge-to-edge invoke doesn't work reliably)
+    console.log('[SYNC] Checking token expiration...')
     const tokenExpiresAt = new Date(amazonAccount.token_expires_at || 0)
+    let accessToken: string
     
-    if (tokenExpiresAt <= new Date() || !accessToken) {
-      console.log('[SYNC] Refreshing access token...')
-      const { data: refreshData, error: refreshError } = await supabase.functions.invoke('refresh-amazon-token', {
-        body: { amazon_account_id: amazonAccountId }
+    if (tokenExpiresAt <= new Date(Date.now() + 300000) || !amazonAccount.encrypted_access_token) {
+      console.log('[SYNC] Token expired or expiring soon, refreshing...')
+      
+      // Decrypt credentials
+      const { data: refreshToken } = await supabase.rpc('decrypt_banking_credential', {
+        encrypted_text: amazonAccount.encrypted_refresh_token
       })
-      if (refreshError) throw new Error(`Token refresh failed: ${refreshError.message}`)
-      accessToken = refreshData.access_token
-      console.log('[SYNC] ✅ Token refreshed')
+      const { data: clientId } = await supabase.rpc('decrypt_banking_credential', {
+        encrypted_text: amazonAccount.encrypted_client_id
+      })
+      const { data: clientSecret } = await supabase.rpc('decrypt_banking_credential', {
+        encrypted_text: amazonAccount.encrypted_client_secret
+      })
+      
+      if (!refreshToken || !clientId || !clientSecret) {
+        throw new Error('Failed to decrypt Amazon credentials')
+      }
+      
+      // Get token from Amazon
+      const AMAZON_TOKEN_ENDPOINTS: Record<string, string> = {
+        'US': 'https://api.amazon.com/auth/o2/token',
+        'EU': 'https://api.amazon.co.uk/auth/o2/token',
+        'FE': 'https://api.amazon.co.jp/auth/o2/token',
+      }
+      
+      const tokenResponse = await fetch(AMAZON_TOKEN_ENDPOINTS[region], {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+          client_id: clientId,
+          client_secret: clientSecret,
+        }),
+      })
+      
+      if (!tokenResponse.ok) {
+        throw new Error(`Token refresh failed: ${tokenResponse.status}`)
+      }
+      
+      const tokenData = await tokenResponse.json()
+      const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000))
+      
+      // Update account
+      await supabase.rpc('update_secure_amazon_account', {
+        p_account_id: amazonAccountId,
+        p_access_token: tokenData.access_token,
+        p_token_expires_at: expiresAt.toISOString(),
+      })
+      
+      accessToken = tokenData.access_token
+      console.log('[SYNC] ✅ Token refreshed, expires:', expiresAt.toISOString())
+    } else {
+      // Decrypt existing token
+      const { data: decryptedToken } = await supabase.rpc('decrypt_banking_credential', {
+        encrypted_text: amazonAccount.encrypted_access_token
+      })
+      accessToken = decryptedToken
+      console.log('[SYNC] ✅ Using existing token, expires:', tokenExpiresAt.toISOString())
     }
 
-    // Helper for API calls with auto-retry on 403
+    // Helper for API calls with retry on throttling
     const makeRequest = async (url: string, options: any, retryCount = 0): Promise<Response> => {
       const response = await fetch(url, options)
-      if (response.status === 403 && retryCount === 0) {
-        console.log('[SYNC] Got 403, refreshing token and retrying...')
-        const { data: refreshData } = await supabase.functions.invoke('refresh-amazon-token', {
-          body: { amazon_account_id: amazonAccountId }
-        })
-        if (refreshData?.access_token) {
-          options.headers['x-amz-access-token'] = refreshData.access_token
-          return makeRequest(url, options, retryCount + 1)
-        }
+      
+      // Retry on throttling (503/429)
+      if ((response.status === 503 || response.status === 429) && retryCount < 3) {
+        const delay = Math.pow(2, retryCount) * 1000 // Exponential backoff
+        console.log(`[SYNC] Rate limited, waiting ${delay}ms before retry...`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return makeRequest(url, options, retryCount + 1)
       }
+      
       return response
     }
 
