@@ -142,6 +142,9 @@ export default function Analytics() {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+      console.log('[Analytics] Fetching Amazon revenue from', thirtyDaysAgo.toISOString().split('T')[0], 'to', new Date().toISOString().split('T')[0]);
+      console.log('[Analytics] Account ID:', profile.account_id);
+
       const { data: revenueData, error: revenueError } = await supabase
         .from('amazon_transactions')
         .select('amount.sum()')
@@ -151,17 +154,30 @@ export default function Analytics() {
         .gte('transaction_date', thirtyDaysAgo.toISOString())
         .single();
 
+      console.log('[Analytics] Revenue query response:', { data: revenueData, error: revenueError });
+
       if (revenueError) {
         console.error('[Analytics] Error fetching Amazon revenue:', revenueError);
+        // Try without aggregate to see raw data
+        const { data: rawData, error: rawError } = await supabase
+          .from('amazon_transactions')
+          .select('amount')
+          .eq('account_id', profile.account_id)
+          .eq('transaction_type', 'Order')
+          .gt('amount', 0)
+          .gte('transaction_date', thirtyDaysAgo.toISOString())
+          .limit(5000);
+        
+        console.log('[Analytics] Raw transaction count:', rawData?.length);
+        const manualSum = (rawData || []).reduce((sum, t) => sum + (t.amount || 0), 0);
+        console.log('[Analytics] Manual sum of transactions:', manualSum);
+        setAmazonTransactions([{ amount: manualSum } as any]);
         return;
       }
 
       const totalRevenue = revenueData?.sum || 0;
       
-      console.log('[Analytics] Amazon Revenue (Last 30 Days):', {
-        totalRevenue: totalRevenue,
-        dateRange: `${thirtyDaysAgo.toISOString().split('T')[0]} to ${new Date().toISOString().split('T')[0]}`
-      });
+      console.log('[Analytics] Final Amazon Revenue:', totalRevenue);
       
       // Store the total in state
       setAmazonTransactions([{ amount: totalRevenue } as any]);
