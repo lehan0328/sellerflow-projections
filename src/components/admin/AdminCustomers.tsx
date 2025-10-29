@@ -125,18 +125,11 @@ export const AdminCustomers = () => {
             accountOwnerCompany = ownerProfile?.company;
           }
 
-          // Fetch Amazon payouts for revenue calculation
-          const { data: amazonPayouts } = await supabase
-            .from('amazon_payouts')
-            .select('total_amount, status')
-            .eq('user_id', profile.user_id);
+          // Fetch Amazon revenue using the same Postgres function as Analytics (last 30 days)
+          const { data: amazonRevenue } = await supabase
+            .rpc('get_amazon_revenue_30_days', { p_user_id: profile.user_id });
 
-          const amazonRevenue = amazonPayouts?.filter(
-            p => p.status === 'confirmed'
-          ).reduce((sum, p) => sum + (p.total_amount || 0), 0) || 0;
-
-          const amazonRefunds = 0; // Not tracked at settlement level
-          const revenue = amazonRevenue;
+          const revenue = amazonRevenue || 0;
 
           // Fetch Stripe subscription data if customer has stripe_customer_id
           let renewalDate = null;
