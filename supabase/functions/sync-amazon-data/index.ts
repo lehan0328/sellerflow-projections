@@ -509,21 +509,42 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
         const transactions = Array.from(orderMap.values())
         console.log(`[SYNC] Parsed ${transactions.length} unique orders`)
         
-        // Deduplicate and save
+        // Save in batches to avoid memory limits
         if (transactions.length > 0) {
-          const { error: upsertError } = await supabase
-            .from('amazon_transactions')
-            .upsert(transactions, {
-              onConflict: 'transaction_id,amazon_account_id',
-              ignoreDuplicates: false
-            })
+          const BATCH_SIZE = 500
+          const totalBatches = Math.ceil(transactions.length / BATCH_SIZE)
+          let savedCount = 0
           
-          if (upsertError) {
-            console.error('[SYNC] Failed to save transactions:', upsertError)
-            throw upsertError
+          for (let i = 0; i < totalBatches; i++) {
+            const start = i * BATCH_SIZE
+            const end = Math.min(start + BATCH_SIZE, transactions.length)
+            const batch = transactions.slice(start, end)
+            
+            console.log(`[SYNC] Saving batch ${i + 1}/${totalBatches} (${batch.length} orders)`)
+            
+            const { error: upsertError } = await supabase
+              .from('amazon_transactions')
+              .upsert(batch, {
+                onConflict: 'transaction_id,amazon_account_id',
+                ignoreDuplicates: false
+              })
+            
+            if (upsertError) {
+              console.error(`[SYNC] Failed to save batch ${i + 1}:`, upsertError)
+              throw upsertError
+            }
+            
+            savedCount += batch.length
+            
+            // Update progress
+            const progress = 85 + Math.floor((savedCount / transactions.length) * 15)
+            await supabase.from('amazon_accounts').update({ 
+              sync_progress: progress,
+              sync_message: `Saving orders: ${savedCount}/${transactions.length}`
+            }).eq('id', amazonAccountId)
           }
           
-          console.log('[SYNC] ✅ Transactions saved to database')
+          console.log(`[SYNC] ✅ All ${savedCount} transactions saved to database`)
           
           await supabase.from('amazon_accounts').update({
             sync_status: 'completed',
