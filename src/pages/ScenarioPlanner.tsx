@@ -1183,7 +1183,7 @@ export default function ScenarioPlanner() {
                                         const { data: { user } } = await supabase.auth.getUser();
                                         if (!user) throw new Error('Not authenticated');
                                         
-                                        const { error } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
+                                        const { error } = await supabase.functions.invoke('forecast-amazon-payouts', {
                                           body: { userId: user.id }
                                         });
                                         

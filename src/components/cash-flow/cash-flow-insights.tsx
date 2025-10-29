@@ -166,7 +166,7 @@ export const CashFlowInsights = ({
               .eq('user_id', user.id)
               .eq('status', 'forecasted');
             
-            const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
+            const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts', {
               body: { userId: user.id }
             });
             
@@ -239,7 +239,7 @@ export const CashFlowInsights = ({
         .eq('status', 'forecasted');
       
       // Generate new forecasts
-      const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts-math', {
+      const { data, error } = await supabase.functions.invoke('forecast-amazon-payouts', {
         body: { userId: user.id }
       });
       
