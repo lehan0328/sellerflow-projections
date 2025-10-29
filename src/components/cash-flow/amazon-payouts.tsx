@@ -632,23 +632,25 @@ export function AmazonPayouts() {
             
             const startDate = new Date(settlementStart);
             const today = new Date();
+            today.setHours(0, 0, 0, 0);
             
-            // Calculate estimated end date based on payout type
-            const estimatedEnd = new Date(startDate);
-            if (p.payout_type === 'daily') {
-              // Daily payouts: show if start date is within last 30 days
-              estimatedEnd.setDate(estimatedEnd.getDate() + 30);
-            } else {
-              // Bi-weekly: 14 days
-              estimatedEnd.setDate(estimatedEnd.getDate() + 14);
+            // Check if payout_date is in the future (settlement still open)
+            const payoutDate = new Date(p.payout_date);
+            payoutDate.setHours(0, 0, 0, 0);
+            
+            if (payoutDate < today) {
+              // Payout date has passed, don't show
+              return false;
             }
             
-            // Only show if today is within the settlement period
-            today.setHours(0, 0, 0, 0);
+            // Also check start date is not too far in the past
             startDate.setHours(0, 0, 0, 0);
-            estimatedEnd.setHours(0, 0, 0, 0);
+            if (today < startDate) {
+              // Settlement hasn't started yet
+              return false;
+            }
             
-            return today >= startDate && today <= estimatedEnd;
+            return true;
           });
           
           if (openSettlements.length === 0) {
