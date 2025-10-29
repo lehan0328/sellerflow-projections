@@ -44,10 +44,10 @@ export const ForecastExplainer = () => {
                   <div className="p-4 border rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
                       <TrendingUp className="h-4 w-4 text-primary" />
-                      <h4 className="font-semibold">Daily Distribution Model (DD7)</h4>
+                      <h4 className="font-semibold">Daily Settlement Model (Delivery Date + 7)</h4>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      For daily payout accounts. Distributes expected settlement amounts evenly across the 14-day payout cycle.
+                      For daily payout accounts. Tracks actual delivery dates and applies Amazon's 7-day unlock rule to forecast available funds with backlog accumulation.
                     </p>
                   </div>
                 </div>
@@ -196,49 +196,70 @@ export const ForecastExplainer = () => {
           <TabsContent value="daily" className="space-y-4">
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-semibold mb-2">Daily Distribution Model (DD7)</h3>
+                <h3 className="text-lg font-semibold mb-2">Daily Settlement Model (Delivery Date + 7)</h3>
                 <p className="text-muted-foreground mb-4">
-                  For daily payout accounts, we calculate the total settlement amount and distribute it evenly across 14 days.
+                  For daily payout accounts, we track actual delivery dates and apply Amazon's 7-day unlock rule to forecast when funds become available.
                 </p>
               </div>
 
               <div className="space-y-4">
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-semibold mb-2">Step 1: Calculate Settlement Lump Sum</h4>
-                  <div className="bg-muted p-3 rounded font-mono text-sm overflow-x-auto">
-                    LumpSum = [TotalEligible(14 days) - Reserve] × (1 - SafetyMargin%)
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Calculate total expected payout for the entire 14-day settlement period
-                  </p>
-                </div>
-
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-semibold mb-2">Step 2: Daily Distribution</h4>
-                  <div className="bg-muted p-3 rounded font-mono text-sm overflow-x-auto">
-                    DailyIncrement = LumpSum / 14
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Divide the lump sum evenly across all 14 days for smooth cash flow visualization
-                  </p>
-                </div>
-
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-semibold mb-2">Step 3: Cumulative Tracking</h4>
-                  <div className="bg-muted p-3 rounded font-mono text-sm overflow-x-auto">
-                    CumulativeAvailable<sub>day i</sub> = Σ DailyIncrement for days 1 to i
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Track cumulative available funds building up to the settlement date
-                  </p>
-                </div>
-
                 <div className="p-4 border rounded-lg bg-primary/5">
-                  <h4 className="font-semibold mb-2">Why Even Distribution?</h4>
+                  <h4 className="font-semibold mb-2">How Amazon Daily Settlements Work</h4>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Amazon releases funds <strong>7 days after delivery date</strong> for daily settlement accounts. For example, orders delivered on October 23rd become available on October 30th.
+                  </p>
                   <p className="text-sm text-muted-foreground">
-                    Daily payout accounts don't receive exact amounts each day - Amazon processes available funds periodically. 
-                    By distributing the expected total evenly, you get a clearer picture of daily cash flow trends rather than 
-                    unpredictable lumpy amounts. The full lump sum is shown on day 14 (settlement day).
+                    We track actual delivery dates from your Amazon reports to provide accurate day-by-day forecasts.
+                  </p>
+                </div>
+
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold mb-2">Step 1: Group Orders by Delivery Date</h4>
+                  <div className="bg-muted p-3 rounded font-mono text-sm overflow-x-auto">
+                    DeliveryGroup[date] = Σ NetAmount<sub>i</sub> for all orders delivered on date
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Sum all order net amounts (revenue after Amazon fees) for each unique delivery date
+                  </p>
+                </div>
+
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold mb-2">Step 2: Calculate Unlock Dates</h4>
+                  <div className="bg-muted p-3 rounded font-mono text-sm overflow-x-auto">
+                    UnlockDate = DeliveryDate + 7 days
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    For each delivery date group, calculate when those funds become available (7 days later)
+                  </p>
+                </div>
+
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold mb-2">Step 3: Track Backlog Since Last Cashout</h4>
+                  <div className="bg-muted p-3 rounded font-mono text-sm overflow-x-auto">
+                    Backlog<sub>today</sub> = Σ DailyUnlock[date] for dates from LastCashout to Today-1
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Accumulate all unlocked funds since your last withdrawal to prevent double-counting
+                  </p>
+                </div>
+
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold mb-2">Step 4: Calculate Daily Forecast (Days 1-7)</h4>
+                  <div className="bg-muted p-3 rounded font-mono text-sm overflow-x-auto">
+                    Forecast<sub>today</sub> = [Backlog + TodayUnlock] × (1 - SafetyMargin%)
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Use actual delivery data for the next 7 days, accumulating backlog + today's newly unlocked funds
+                  </p>
+                </div>
+
+                <div className="p-4 border rounded-lg">
+                  <h4 className="font-semibold mb-2">Step 5: Extrapolate Future (Days 8-90)</h4>
+                  <div className="bg-muted p-3 rounded font-mono text-sm overflow-x-auto">
+                    EstimatedUnlock = WeekdayAverage × GrowthTrend
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Beyond 7 days, use historical averages with weekday seasonality (e.g., Monday vs Sunday patterns) and recent growth trends
                   </p>
                 </div>
               </div>
@@ -246,13 +267,21 @@ export const ForecastExplainer = () => {
               <div className="p-4 bg-muted rounded-lg">
                 <h4 className="font-semibold mb-2">📊 Example Calculation:</h4>
                 <div className="text-sm space-y-1">
-                  <p>Total eligible (14 days): $14,000</p>
-                  <p>Reserve: $3,000</p>
-                  <p>Before adjustment: $11,000</p>
-                  <p>Safety margin (8%): -$880</p>
-                  <p>Adjusted lump sum: $10,120</p>
-                  <p className="font-semibold text-primary">Daily increment: $723 (shown each day)</p>
+                  <p><strong>October 23rd deliveries:</strong> $3,200 net → Available Oct 30th</p>
+                  <p><strong>October 24th deliveries:</strong> $2,850 net → Available Oct 31st</p>
+                  <p><strong>Backlog (since last cashout):</strong> $8,500</p>
+                  <p><strong>Oct 30th forecast:</strong> $8,500 + $3,200 = $11,700</p>
+                  <p>Safety margin (8%): -$936</p>
+                  <p className="font-semibold text-primary">Available for transfer: $10,764</p>
                 </div>
+              </div>
+
+              <div className="p-4 border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950">
+                <h4 className="font-semibold mb-2">💡 Why Hide Open Settlements?</h4>
+                <p className="text-sm text-muted-foreground">
+                  For daily accounts, "Open Settlement" data would double-count funds already tracked in the delivery date forecast. 
+                  The daily tracker shows your complete picture including all pending deliveries and accumulated backlog.
+                </p>
               </div>
             </div>
           </TabsContent>
