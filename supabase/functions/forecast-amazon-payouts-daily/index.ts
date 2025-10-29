@@ -312,12 +312,19 @@ serve(async (req) => {
     }
 
     // Batch insert
-    const { error: insertError } = await supabase
+    console.log(`[DAILY FORECAST] Attempting to insert ${forecasts.length} forecasts...`);
+    console.log(`[DAILY FORECAST] Sample forecast:`, JSON.stringify(forecasts[0], null, 2));
+    
+    const { data: insertData, error: insertError } = await supabase
       .from('amazon_payouts')
       .insert(forecasts);
 
     if (insertError) {
-      console.error('[DAILY FORECAST] Insert error:', insertError);
+      console.error('[DAILY FORECAST] Insert error details:', JSON.stringify(insertError, null, 2));
+      console.error('[DAILY FORECAST] Insert error code:', insertError.code);
+      console.error('[DAILY FORECAST] Insert error message:', insertError.message);
+      console.error('[DAILY FORECAST] Insert error hint:', insertError.hint);
+      console.error('[DAILY FORECAST] Insert error details:', insertError.details);
       throw new Error(`Failed to insert forecasts: ${insertError.message}`);
     }
 
