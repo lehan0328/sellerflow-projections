@@ -255,7 +255,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
     const settlementsToSave = allSettlements.map((group: any) => {
       const settlementStartDate = group.FinancialEventGroupStart ? new Date(group.FinancialEventGroupStart) : null
       const settlementEndDate = group.FinancialEventGroupEnd ? new Date(group.FinancialEventGroupEnd) : null
-      const now = new Date()
+      const currentTime = new Date()
       
       // Determine payout date and status
       let payoutDate: string
@@ -266,7 +266,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
         const payoutDateObj = new Date(settlementEndDate)
         payoutDateObj.setDate(payoutDateObj.getDate() + 1)
         payoutDate = payoutDateObj.toISOString().split('T')[0]
-        status = settlementEndDate <= now ? 'confirmed' : 'estimated'
+        status = settlementEndDate <= currentTime ? 'confirmed' : 'estimated'
       } else if (settlementStartDate) {
         // Open settlement - estimate payout based on start date + typical cycle (14 days)
         const estimatedPayoutObj = new Date(settlementStartDate)
@@ -329,7 +329,6 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
       .single()
     
     const lastReportSync = accountData?.last_report_sync ? new Date(accountData.last_report_sync) : null
-    const now = new Date()
     const hoursSinceReportSync = lastReportSync 
       ? (now.getTime() - lastReportSync.getTime()) / (1000 * 60 * 60)
       : 999 // Force sync if never synced
