@@ -193,10 +193,11 @@ export function AmazonPayouts() {
           .from('amazon_accounts')
           .update({
             last_synced_to: null,
+            last_report_sync: null, // Clear this to force order report re-sync with new calculation
             initial_sync_complete: false,
             sync_status: 'idle',
             sync_progress: 0,
-            sync_message: 'Ready to sync - will fetch full history'
+            sync_message: 'Ready to sync - will fetch full history with updated revenue calculation'
           })
           .eq('id', account.id);
         
