@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_modification_audit: {
+        Row: {
+          id: string
+          modified_at: string | null
+          modified_by: string | null
+          new_account_id: string | null
+          old_account_id: string | null
+          record_id: string
+          table_name: string
+        }
+        Insert: {
+          id?: string
+          modified_at?: string | null
+          modified_by?: string | null
+          new_account_id?: string | null
+          old_account_id?: string | null
+          record_id: string
+          table_name: string
+        }
+        Update: {
+          id?: string
+          modified_at?: string | null
+          modified_by?: string | null
+          new_account_id?: string | null
+          old_account_id?: string | null
+          record_id?: string
+          table_name?: string
+        }
+        Relationships: []
+      }
       affiliate_payouts: {
         Row: {
           affiliate_id: string
@@ -306,6 +336,39 @@ export type Database = {
           updated_at?: string
           user_id?: string
           uses_daily_payouts?: boolean | null
+        }
+        Relationships: []
+      }
+      amazon_connection_audit: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          new_user_id: string | null
+          performed_by: string | null
+          previous_user_id: string | null
+          reason: string | null
+          seller_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          new_user_id?: string | null
+          performed_by?: string | null
+          previous_user_id?: string | null
+          reason?: string | null
+          seller_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          new_user_id?: string | null
+          performed_by?: string | null
+          previous_user_id?: string | null
+          reason?: string | null
+          seller_id?: string
         }
         Relationships: []
       }

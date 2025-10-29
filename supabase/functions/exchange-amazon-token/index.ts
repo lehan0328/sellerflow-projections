@@ -171,11 +171,48 @@ serve(async (req) => {
     const marketplace_name = marketplaceNames[marketplace_id] || 'Unknown'
 
     // Get user's account_id from profile
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('account_id')
       .eq('user_id', user.id)
       .single()
+
+    if (profileError || !profile?.account_id) {
+      console.error('Error fetching profile:', profileError);
+      throw new Error('Could not find user account');
+    }
+
+    // CRITICAL: Check if seller_id already exists and is active for another user
+    const { data: existingAccount, error: checkError } = await supabase
+      .from('amazon_accounts')
+      .select('id, user_id, seller_id, account_id')
+      .eq('seller_id', selling_partner_id)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Error checking for existing seller:', checkError);
+    }
+
+    if (existingAccount && existingAccount.user_id !== user.id) {
+      console.warn('Duplicate seller_id attempt:', {
+        seller_id: selling_partner_id,
+        existing_user: existingAccount.user_id,
+        attempting_user: user.id
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'DUPLICATE_SELLER_ID',
+          message: `This Amazon Seller account (${selling_partner_id}) is already connected to another Auren account. Please log in with your previous account or contact support at support@auren.app if you need assistance.`,
+          seller_id: selling_partner_id
+        }),
+        { 
+          status: 409, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
 
     // Store account with encrypted tokens using the secure insert function
     const { data: accountData, error: insertError } = await supabase

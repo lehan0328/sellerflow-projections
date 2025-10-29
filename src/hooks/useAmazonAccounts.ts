@@ -145,7 +145,16 @@ export const useAmazonAccounts = () => {
 
       if (insertError) {
         console.error("Error adding Amazon account:", insertError);
-        toast.error("Failed to add Amazon account");
+        
+        // Check for duplicate seller_id error
+        if (insertError.message?.includes('already connected to another account') || 
+            insertError.code === '23505') {
+          toast.error(insertError.message || "This Amazon Seller account is already connected to another Auren account. Please log in with that account or contact support@auren.app", {
+            duration: 8000,
+          });
+        } else {
+          toast.error("Failed to add Amazon account");
+        }
         return false;
       }
 
@@ -167,9 +176,18 @@ export const useAmazonAccounts = () => {
       }
       
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding Amazon account:", error);
-      toast.error("Failed to add Amazon account");
+      
+      // Check for duplicate seller_id error
+      if (error.message?.includes('already connected to another account') || 
+          error.code === '23505') {
+        toast.error(error.message || "This Amazon Seller account is already connected to another Auren account. Please log in with that account or contact support@auren.app", {
+          duration: 8000,
+        });
+      } else {
+        toast.error("Failed to add Amazon account");
+      }
       return false;
     }
   };

@@ -102,13 +102,28 @@ const AmazonOAuthCallback = () => {
       } catch (error) {
         console.error('Amazon OAuth error:', error);
         setStatus('error');
-        setMessage(error instanceof Error ? error.message : 'Failed to connect Amazon account');
         
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : 'Failed to connect Amazon account',
-          variant: "destructive",
-        });
+        // Check for duplicate seller error
+        const errorMessage = error instanceof Error ? error.message : 'Failed to connect Amazon account';
+        const isDuplicate = errorMessage.includes('already connected to another account') || 
+                           errorMessage.includes('already connected to account');
+        
+        if (isDuplicate) {
+          setMessage('This Amazon Seller account is already connected to another Auren account.');
+          toast({
+            title: "Seller Already Connected",
+            description: "This Amazon Seller account is already connected to another Auren account. Please log in with your previous account or contact support@auren.app if you need assistance.",
+            variant: "destructive",
+            duration: 10000,
+          });
+        } else {
+          setMessage(errorMessage);
+          toast({
+            title: "Error",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        }
 
         // Redirect to settings after 3 seconds
         setTimeout(() => {
