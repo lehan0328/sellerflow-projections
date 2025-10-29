@@ -799,9 +799,11 @@ export function AmazonPayouts() {
           </div> : (() => {
           // Show only CLOSED settlements (confirmed or estimated with end date) within date range
           const filteredPayouts = amazonPayouts.filter(payout => {
-            // Exclude open settlements (they're shown separately above)
+            // Exclude open settlements when advanced modeling is enabled
             const rawData = payout.raw_settlement_data;
             const isOpen = payout.status === 'estimated' && !rawData?.FinancialEventGroupEnd;
+            if (isOpen && advancedModelingEnabled) return false;
+            // Also exclude them from the regular list if they don't have an end date
             if (isOpen) return false;
             
             // Only show confirmed settlements or estimated with end date
