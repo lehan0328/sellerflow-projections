@@ -156,6 +156,11 @@ export default function Analytics() {
         return;
       }
       
+      console.log('[Analytics] Fetched Amazon transactions:', {
+        count: data?.length || 0,
+        totalRevenue: data?.reduce((sum, tx) => sum + (tx.amount || 0), 0) || 0
+      });
+      
       setAmazonTransactions(data || []);
     };
 
@@ -267,6 +272,19 @@ export default function Analytics() {
 
     // Amazon gross revenue from report data (last 30 days)
     const amazonRevenue = amazonTransactions.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    
+    // Debug logging
+    if (amazonTransactions.length > 0) {
+      console.log('[Analytics] Amazon Revenue Calculation:', {
+        transactionCount: amazonTransactions.length,
+        calculatedRevenue: amazonRevenue,
+        sampleTransactions: amazonTransactions.slice(0, 3).map(t => ({
+          date: t.transaction_date,
+          amount: t.amount,
+          type: t.transaction_type
+        }))
+      });
+    }
 
     // Total expenses from vendors + purchase orders
     const vendorExpenses = vendors.reduce((sum, v) => sum + (v.totalOwed || 0), 0);
