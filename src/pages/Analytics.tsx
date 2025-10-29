@@ -143,12 +143,12 @@ export default function Analytics() {
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       console.log('[Analytics] Fetching Amazon revenue from', thirtyDaysAgo.toISOString().split('T')[0], 'to', new Date().toISOString().split('T')[0]);
-      console.log('[Analytics] Account ID:', profile.account_id);
+      console.log('[Analytics] User ID:', user.id);
 
       const { data: revenueData, error: revenueError } = await supabase
         .from('amazon_transactions')
         .select('amount.sum()')
-        .eq('account_id', profile.account_id)
+        .eq('user_id', user.id)
         .eq('transaction_type', 'Order')
         .gt('amount', 0)
         .gte('transaction_date', thirtyDaysAgo.toISOString())
@@ -162,7 +162,7 @@ export default function Analytics() {
         const { data: rawData, error: rawError } = await supabase
           .from('amazon_transactions')
           .select('amount')
-          .eq('account_id', profile.account_id)
+          .eq('user_id', user.id)
           .eq('transaction_type', 'Order')
           .gt('amount', 0)
           .gte('transaction_date', thirtyDaysAgo.toISOString())
