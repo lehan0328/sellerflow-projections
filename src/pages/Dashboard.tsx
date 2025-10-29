@@ -403,7 +403,7 @@ const Dashboard = () => {
     }
   }, [isOverBankLimit, isOverAmazonLimit, isOverTeamLimit]);
   
-  const { amazonPayouts } = useAmazonPayouts();
+  const { amazonPayouts, advancedModelingEnabled } = useAmazonPayouts();
   
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
   const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance, resetAccount, forecastsEnabled } = useUserSettings();
@@ -1605,6 +1605,14 @@ const Dashboard = () => {
       if ((payout.status as string) === 'forecasted' && !forecastsEnabled) {
         return false;
       }
+      
+      // Exclude open settlements from calendar when advanced forecasting is enabled
+      // (they'll still show in the Amazon Payouts section, just not in calculations)
+      if ((payout.status as string) === 'estimated' && advancedModelingEnabled) {
+        console.log('[Dashboard] Excluding open settlement from calendar (advanced forecasting enabled):', payout.settlement_id);
+        return false;
+      }
+      
       return true;
     })
     .map(payout => {

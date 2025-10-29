@@ -322,6 +322,7 @@ export const useAmazonPayouts = () => {
     cumulativeAvailable,
     daysSinceLastCashOut,
     lastCashOutDate,
+    advancedModelingEnabled,
     refetch: fetchAmazonPayouts
   };
 };
