@@ -167,7 +167,11 @@ export const useAmazonPayouts = () => {
             (p) =>
               p.amazon_account_id === payout.amazon_account_id &&
               p.payout_date === payout.payout_date &&
-              (p.status === 'confirmed' || p.status === 'estimated') &&
+              (
+                p.status === 'confirmed' || 
+                // Only treat 'estimated' as blocking if advanced modeling is OFF
+                (p.status === 'estimated' && !advancedModelingEnabled)
+              ) &&
               p.id !== payout.id
           );
           
