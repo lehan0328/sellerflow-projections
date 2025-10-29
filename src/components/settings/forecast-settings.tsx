@@ -16,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 export const ForecastSettings = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -939,6 +940,16 @@ export const ForecastSettings = () => {
                   </div>}
               </button>)}
           </div>
+          
+          {payoutModel === 'daily' && (
+            <Alert className="mb-4 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-xs">
+                Your forecasts use the <strong>Delivery Date + 7</strong> method, calculating when actual orders become available to withdraw.
+                The safety net applies a discount to protect against returns, fees, and Amazon adjustments.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
         {/* Advanced Modeling Toggle */}

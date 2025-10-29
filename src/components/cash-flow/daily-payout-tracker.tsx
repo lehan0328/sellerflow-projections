@@ -20,6 +20,10 @@ interface DailyPayoutTrackerProps {
       settlement_period?: { start: string; end: string };
       days_accumulated?: number;
       daily_unlock_amount?: number;
+      backlog_amount?: number;
+      available_amount?: number;
+      last_cashout_date?: string;
+      days_since_cashout?: number;
     };
   }>;
   lumpSumAmount: number;
@@ -39,7 +43,15 @@ export function DailyPayoutTracker({
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
   const todayData = dailyAmounts.find(d => d.date === todayStr);
-  const availableToday = todayData?.amount || 0;
+  
+  // Extract Delivery Date + 7 forecast metadata
+  const backlogAmount = todayData?.metadata?.backlog_amount || 0;
+  const dailyUnlock = todayData?.metadata?.daily_unlock_amount || 0;
+  const availableAmount = todayData?.metadata?.available_amount || todayData?.amount || 0;
+  const lastCashoutDate = todayData?.metadata?.last_cashout_date;
+  const daysSinceCashout = todayData?.metadata?.days_since_cashout || 0;
+  
+  const availableToday = availableAmount;
   const cumulativeAvailable = todayData?.cumulative || 0;
   const daysUntilSettlement = dailyAmounts.length;
 
@@ -134,17 +146,24 @@ export function DailyPayoutTracker({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <p className="text-sm font-medium text-muted-foreground">Available Today</p>
+              <p className="text-sm font-medium text-muted-foreground">Available for Withdrawal</p>
               <p className="text-3xl font-bold text-finance-positive">
                 {formatCurrency(availableToday)}
               </p>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-xs text-muted-foreground">
-                  Cumulative if not withdrawn: {formatCurrency(cumulativeAvailable)}
-                </p>
-                {daysMissed > 0 && (
-                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 text-xs">
-                    {daysMissed} Days Accumulated
+              <div className="flex flex-col gap-1 mt-2">
+                {lastCashoutDate && backlogAmount > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">Backlog (since {formatDate(lastCashoutDate)}):</span> {formatCurrency(backlogAmount)}
+                  </p>
+                )}
+                {dailyUnlock > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    <span className="font-medium">Today's Unlock (DD+7):</span> {formatCurrency(dailyUnlock)}
+                  </p>
+                )}
+                {daysSinceCashout > 0 && (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 text-xs w-fit">
+                    {daysSinceCashout} days since last cashout
                   </Badge>
                 )}
               </div>

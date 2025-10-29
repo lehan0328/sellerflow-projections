@@ -99,6 +99,31 @@ serve(async (req) => {
       console.log(`\n[FORECAST] Processing account: ${amazonAccount.account_name} (${amazonAccount.marketplace_name})`);
       console.log(`[FORECAST] Account ID: ${amazonAccount.id}`);
       
+      // Check if this is a daily settlement account - route to specialized daily forecast function
+      if (amazonAccount.payout_model === 'daily' || amazonAccount.payout_frequency === 'daily') {
+        console.log(`[FORECAST] Routing ${amazonAccount.account_name} to daily forecast function (Delivery Date + 7 method)`);
+        
+        try {
+          const { data: dailyForecastResult, error: dailyError } = await supabase.functions.invoke('forecast-amazon-payouts-daily', {
+            body: {
+              amazonAccountId: amazonAccount.id,
+              userId: userId,
+              accountId: accountId
+            }
+          });
+          
+          if (dailyError) {
+            console.error(`[FORECAST] Error in daily forecast for ${amazonAccount.account_name}:`, dailyError);
+          } else {
+            console.log(`[FORECAST] Daily forecast completed:`, dailyForecastResult);
+          }
+        } catch (dailyError) {
+          console.error(`[FORECAST] Exception in daily forecast:`, dailyError);
+        }
+        
+        continue; // Skip bi-weekly logic for this account
+      }
+      
       // Fetch Amazon payouts for this specific account from last 12 months
       const { data: amazonPayouts, error: payoutsError } = await supabase
         .from('amazon_payouts')

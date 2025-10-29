@@ -11,7 +11,7 @@ export interface AmazonPayout {
   total_amount: number;
   currency_code: string;
   status: "confirmed" | "estimated" | "processing" | "forecasted";
-  payout_type: "bi-weekly" | "reserve-release" | "adjustment";
+  payout_type: "bi-weekly" | "reserve-release" | "adjustment" | "daily";
   marketplace_name: string;
   transaction_count: number;
   fees_total: number;
@@ -29,6 +29,18 @@ export interface AmazonPayout {
     account_name: string;
     marketplace_name: string;
   };
+  // Daily forecast metadata (Delivery Date + 7)
+  backlog_amount?: number;
+  daily_unlock_amount?: number;
+  safety_adjusted_amount?: number;
+  days_since_cashout?: number;
+  last_cashout_date?: string;
+  growth_factor?: number;
+  avg_daily_unlock?: number;
+  // Bi-weekly forecast metadata
+  settlement_start_date?: string;
+  settlement_end_date?: string;
+  days_accumulated?: number;
 }
 
 export const useAmazonPayouts = () => {
@@ -158,12 +170,23 @@ export const useAmazonPayouts = () => {
       setAmazonPayouts(filteredPayouts.map(payout => {
         const rawData = payout.raw_settlement_data as any;
         const metadata = rawData?.forecast_metadata;
+        
         return {
           ...payout,
           status: payout.status as "confirmed" | "estimated" | "processing" | "forecasted",
-          payout_type: payout.payout_type as "bi-weekly" | "reserve-release" | "adjustment",
-          available_for_daily_transfer: metadata?.daily_unlock_amount || 0,
-          // Use database fields first, fallback to metadata
+          payout_type: payout.payout_type as "bi-weekly" | "reserve-release" | "adjustment" | "daily",
+          
+          // Daily forecast metadata (Delivery Date + 7 method)
+          backlog_amount: metadata?.backlog_amount || 0,
+          daily_unlock_amount: metadata?.daily_unlock_amount || 0,
+          safety_adjusted_amount: metadata?.safety_adjusted_amount || 0,
+          days_since_cashout: metadata?.days_since_cashout || 0,
+          last_cashout_date: metadata?.last_cashout_date,
+          growth_factor: metadata?.growth_factor || 1.0,
+          avg_daily_unlock: metadata?.avg_daily_unlock || 0,
+          available_for_daily_transfer: metadata?.safety_adjusted_amount || metadata?.daily_unlock_amount || 0,
+          
+          // Bi-weekly forecast metadata
           settlement_start_date: (payout as any).settlement_start_date || metadata?.settlement_period?.start,
           settlement_end_date: (payout as any).settlement_end_date || metadata?.settlement_period?.end,
           days_accumulated: metadata?.days_accumulated || 0
