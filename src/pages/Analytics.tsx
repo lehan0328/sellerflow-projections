@@ -142,39 +142,24 @@ export default function Analytics() {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      // Get the count of transactions
-      const { count, error: countError } = await supabase
+      const { data: amazonTxns, error: amazonError } = await supabase
         .from('amazon_transactions')
-        .select('*', { count: 'exact', head: true })
-        .eq('account_id', profile.account_id)
-        .eq('transaction_type', 'Order')
-        .gt('amount', 0)
-        .gte('transaction_date', thirtyDaysAgo.toISOString());
-
-      if (countError) {
-        console.error('[Analytics] Error counting Amazon transactions:', countError);
-        return;
-      }
-
-      // Get the sum of amounts using PostgreSQL aggregate
-      const { data: sumData, error: sumError } = await supabase
-        .from('amazon_transactions')
-        .select('amount.sum()')
+        .select('amount')
         .eq('account_id', profile.account_id)
         .eq('transaction_type', 'Order')
         .gt('amount', 0)
         .gte('transaction_date', thirtyDaysAgo.toISOString())
-        .single();
+        .limit(50000);
 
-      if (sumError) {
-        console.error('[Analytics] Error summing Amazon transactions:', sumError);
+      if (amazonError) {
+        console.error('[Analytics] Error fetching Amazon transactions:', amazonError);
         return;
       }
 
-      const totalRevenue = sumData?.sum || 0;
+      const totalRevenue = (amazonTxns || []).reduce((sum, txn) => sum + (txn.amount || 0), 0);
       
       console.log('[Analytics] Amazon Revenue Calculation:', {
-        transactionCount: count || 0,
+        transactionCount: amazonTxns?.length || 0,
         totalRevenue: totalRevenue
       });
       
