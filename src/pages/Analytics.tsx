@@ -176,8 +176,8 @@ export default function Analytics() {
   const defaultStartDate = new Date(now.getFullYear(), now.getMonth() - 9, 1);
   const defaultEndDate = new Date(now.getFullYear(), now.getMonth() + 3, 0);
   
-  const [vendorDateRange, setVendorDateRange] = useState<string>("this-month");
-  const [incomeDateRange, setIncomeDateRange] = useState<string>("this-month");
+  const [vendorDateRange, setVendorDateRange] = useState<string>("last-30-days");
+  const [incomeDateRange, setIncomeDateRange] = useState<string>("last-30-days");
   const [amazonRevenueRange, setAmazonRevenueRange] = useState<string>("last-30-days");
   const [customStartDate, setCustomStartDate] = useState<Date>(defaultStartDate);
   const [customEndDate, setCustomEndDate] = useState<Date>(defaultEndDate);

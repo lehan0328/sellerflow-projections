@@ -73,6 +73,7 @@ export const usePlanLimits = () => {
     amazonConnections: 0,
     teamMembers: 0
   });
+  const [profileMaxTeamMembers, setProfileMaxTeamMembers] = useState<number | null>(null);
 
   // Map subscription plan to plan type - default to starter for free users
   const mapPlanTier = (tier: string | null): PlanType => {
@@ -88,11 +89,14 @@ export const usePlanLimits = () => {
   const basePlanLimits = PLAN_LIMITS[currentPlan];
   
   // Add purchased addons to plan limits
+  // If profile has max_team_members set, use that instead of base plan limit
   const planLimits = {
     ...basePlanLimits,
     bankConnections: basePlanLimits.bankConnections + purchasedAddons.bank_connections,
     amazonConnections: basePlanLimits.amazonConnections + purchasedAddons.amazon_connections,
-    teamMembers: basePlanLimits.teamMembers + purchasedAddons.team_members,
+    teamMembers: profileMaxTeamMembers !== null 
+      ? profileMaxTeamMembers 
+      : basePlanLimits.teamMembers + purchasedAddons.team_members,
   };
 
   // Fetch actual usage from database (bank accounts + credit cards counted together)
@@ -101,12 +105,18 @@ export const usePlanLimits = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const [bankAccounts, creditCards, amazonAccounts, userRoles] = await Promise.all([
+      const [bankAccounts, creditCards, amazonAccounts, userRoles, profile] = await Promise.all([
         supabase.from('bank_accounts').select('id', { count: 'exact' }).eq('user_id', user.id).eq('is_active', true),
         supabase.from('credit_cards').select('id', { count: 'exact' }).eq('user_id', user.id).eq('is_active', true),
         supabase.from('amazon_accounts').select('id', { count: 'exact' }).eq('user_id', user.id).eq('is_active', true),
-        supabase.from('user_roles').select('user_id', { count: 'exact' }).neq('user_id', user.id)
+        supabase.from('user_roles').select('user_id', { count: 'exact' }).neq('user_id', user.id),
+        supabase.from('profiles').select('max_team_members').eq('user_id', user.id).single()
       ]);
+      
+      // Set profile max team members if available
+      if (profile.data?.max_team_members) {
+        setProfileMaxTeamMembers(profile.data.max_team_members);
+      }
       
       console.log('[usePlanLimits] Usage counts:', {
         bankAccounts: bankAccounts.count,
