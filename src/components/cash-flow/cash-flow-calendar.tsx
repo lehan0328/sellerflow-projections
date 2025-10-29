@@ -92,7 +92,6 @@ export const CashFlowCalendar = ({
   
   // ALL STATE HOOKS MUST BE AT THE TOP - DO NOT ADD ANY BETWEEN DATA PROCESSING
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewType, setViewType] = useState<'calendar' | 'chart'>('chart');
   const [chartTimeRange, setChartTimeRange] = useState<'1' | '3' | '6' | '12'>('3');
   const [chartType, setChartType] = useState<'bar' | 'line'>('line');
   const [selectedTransaction, setSelectedTransaction] = useState<CashFlowEvent | null>(null);
@@ -891,307 +890,42 @@ export const CashFlowCalendar = ({
                     <span className="text-xs text-green-600 font-medium">Healthy</span>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="flex items-center space-x-2 bg-muted rounded-lg p-1">
-                    <Button
-                      variant={viewType === 'calendar' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setViewType('calendar')}
-                      className="px-3"
-                    >
-                      <CalendarIcon className="h-4 w-4 mr-1" />
-                      Calendar
-                    </Button>
-                    <Button
-                      variant={viewType === 'chart' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setViewType('chart')}
-                      className="px-3"
-                    >
-                      <TrendingUp className="h-4 w-4 mr-1" />
-                      Chart
-                    </Button>
-                  </div>
-                  
-                  {viewType === 'chart' && (
-                    <>
-                      <Select value={chartTimeRange} onValueChange={(value: '1' | '3' | '6' | '12') => setChartTimeRange(value)}>
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">1 Month</SelectItem>
-                          <SelectItem value="3">3 Months</SelectItem>
-                          <SelectItem value="6">6 Months</SelectItem>
-                          <SelectItem value="12">1 Year</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      
-                      <Select value={chartType} onValueChange={(value: 'bar' | 'line') => setChartType(value)}>
-                        <SelectTrigger className="w-[130px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="bar">Bar Chart</SelectItem>
-                          <SelectItem value="line">Line Chart</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </>
-                  )}
-                </div>
               </div>
-              
-              <div className="flex items-center gap-4">
-                <PendingNotificationsPanel
-                  vendors={vendors}
-                  incomeItems={incomeItems}
-                  onVendorClick={onVendorClick}
-                  onIncomeClick={onIncomeClick}
-                />
+              <div className="flex items-center space-x-2">
+                <Select value={chartTimeRange} onValueChange={(value: '1' | '3' | '6' | '12') => setChartTimeRange(value)}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 Month</SelectItem>
+                    <SelectItem value="3">3 Months</SelectItem>
+                    <SelectItem value="6">6 Months</SelectItem>
+                    <SelectItem value="12">1 Year</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Select value={chartType} onValueChange={(value: 'bar' | 'line') => setChartType(value)}>
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bar">Bar Chart</SelectItem>
+                    <SelectItem value="line">Line Chart</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
         </CardHeader>
-      </div>
-      
-      {viewType === 'calendar' && (
-        <div className="flex items-center justify-center px-6 pb-4">
-          <div className="flex items-center space-x-4">
-            <Button 
-              type="button"
-              variant="outline" 
-              size="sm" 
-              disabled={startOfMonth(currentDate) <= startOfMonth(accountStartDate)}
-              onClick={(e) => {
-                console.log('[Calendar] Prev button clicked');
-                navigateMonth('prev');
-              }}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <h3 className="text-xl font-semibold min-w-[200px] text-center">
-              {format(currentDate, 'MMMM yyyy')}
-            </h3>
-            <Button variant="outline" size="sm" onClick={() => navigateMonth('next')}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-      
-      <CardContent className="p-6">
+    </div>
+    
+    <CardContent className="p-6">
         <div className="flex flex-col">
-          {viewType === 'calendar' ? (
-            <div className="flex-1 min-h-0 flex flex-col">
-              {/* Financial Summary Stats */}
-              <div className="grid grid-cols-3 gap-3 mb-4 flex-shrink-0">
-                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Wallet className="h-4 w-4 text-green-600" />
-                    <span className="text-xs font-medium text-green-700 dark:text-green-400">Cash Balance</span>
-                  </div>
-                  <p className="text-xl font-bold text-green-700 dark:text-green-300">
-                    ${formatCurrency(bankAccountBalance)}
-                  </p>
-                </div>
-                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <CreditCard className="h-4 w-4 text-blue-600" />
-                    <span className="text-xs font-medium text-blue-700 dark:text-blue-400">Available Credit</span>
-                  </div>
-                  <p className="text-xl font-bold text-blue-700 dark:text-blue-300">
-                    ${formatCurrency(totalAvailableCredit)}
-                  </p>
-                </div>
-                <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Building2 className="h-4 w-4 text-purple-600" />
-                    <span className="text-xs font-medium text-purple-700 dark:text-purple-400">Total Resources</span>
-                  </div>
-                  <p className="text-xl font-bold text-purple-700 dark:text-purple-300">
-                    ${(bankAccountBalance + totalAvailableCredit).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-7 gap-1 mb-2 flex-shrink-0">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="text-center text-sm font-medium text-muted-foreground p-1">
-                  {day}
-                </div>
-              ))}
-            </div>
-        
-            <div className={cn("grid grid-cols-7 gap-1 mb-4", gridRowsClass)}>
-              {days.map(day => {
-                const dayEvents = getEventsForDay(day);
-                const dayBalance = getDayBalance(day);
-                const totalCash = getTotalCashForDay(day);
-                const pendingIncome = getPendingIncomeForToday(day);
-                const overdueIncome = getOverdueIncomeForToday(day);
-                const overdueVendors = getOverdueVendorsForToday(day);
-                const netAmount = getNetAmountForFutureDate(day);
-                const hasEvents = dayEvents.length > 0;
-                const hasAmazonPayout = dayEvents.some(e => e.source === 'Amazon');
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const dayToCheck = new Date(day);
-                dayToCheck.setHours(0, 0, 0, 0);
-                const isPast = dayToCheck < today;
-                
-                return (
-                  <div
-                    key={day.toISOString()}
-                     className={cn(
-                       "p-1 border rounded-md relative flex flex-col text-xs transition-all",
-                       cellHeightClass,
-                       {
-                         // Amazon payout days - special orange/amber highlight
-                         "bg-orange-50 border-orange-300 dark:bg-orange-950/30 dark:border-orange-700": hasAmazonPayout && !isPast && !isToday(day) && isSameMonth(day, currentDate),
-                         // Past days - grayed out
-                         "opacity-50 text-muted-foreground bg-muted/30": isPast && isSameMonth(day, currentDate),
-                         // Today - highlighted with primary color and border
-                         "ring-2 ring-primary bg-primary/10 border-primary/50 font-semibold": isToday(day),
-                         // Low cash warning
-                         "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800": totalCash < 0 && !hasAmazonPayout,
-                         // Outside month
-                         "opacity-30 bg-background": !isSameMonth(day, currentDate),
-                         // Normal days
-                         "bg-background hover:bg-muted/30": !isPast && !isToday(day) && isSameMonth(day, currentDate) && totalCash >= 0 && !hasAmazonPayout,
-                         // Days with events
-                         "border-primary/30": hasEvents && !hasAmazonPayout,
-                         "border-border": !hasEvents && !hasAmazonPayout,
-                         // Drag and drop styling
-                         "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/20": draggedTransaction && !isPast
-                       }
-                     )}
-                     onDragOver={!isPast ? handleDragOver : undefined}
-                     onDrop={!isPast ? (e) => handleDrop(e, day) : undefined}
-                   >
-                    {/* Day header with number on left, Cash/Credit on right */}
-                    <div className="mb-0.5">
-                       <div className="flex items-start justify-between gap-1">
-                        <div className="text-sm font-bold text-foreground">
-                          {format(day, 'd')}
-                        </div>
-                        <div className="flex flex-col items-end text-right gap-0.5 flex-1 min-w-0">
-                          {/* Show financial info on all dates from account start onwards */}
-                          {hasAnyData && isSameMonth(day, currentDate) && (
-                            <>
-                              {isToday(day) ? (
-                                <>
-                                  {/* TODAY: Cash, Pending (income), Credit */}
-                                   <div className="text-[10px] text-green-600 dark:text-green-400 font-medium w-full">
-                                     Cash: ${formatCurrency(bankAccountBalance)}
-                                   </div>
-                                  {(() => {
-                                    const pendingIncome = getPendingIncomeForToday(day);
-                                    if (pendingIncome > 0) {
-                                      return (
-                                         <div className="text-[10px] text-orange-600 dark:text-orange-400 font-medium w-full">
-                                           Pending: ${formatCurrency(pendingIncome)}
-                                         </div>
-                                      );
-                                    }
-                                    return null;
-                                  })()}
-                                    <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium w-full">
-                                      Credit: ${formatCurrency(getAvailableCreditForDay(day))}
-                                    </div>
-                                </>
-                              ) : (
-                                <>
-                                  {/* FUTURE: Total Projected Cash, Credit */}
-                                  <div className="w-full">
-                                    <div className="text-[9px] text-green-600 dark:text-green-400 font-medium">
-                                      Total Projected Cash
-                                    </div>
-                                     <div className="text-[11px] text-green-700 dark:text-green-300 font-bold">
-                                       ${formatCurrency(getTotalCashForDay(day))}
-                                     </div>
-                                   </div>
-                                    <div className="text-[10px] text-blue-600 dark:text-blue-400 font-medium w-full">
-                                      Credit: ${formatCurrency(getAvailableCreditForDay(day))}
-                                    </div>
-                                 </>
-                               )}
-                             </>
-                           )}
-                         </div>
-                       </div>
-                      {totalCash < 0 && (
-                        <AlertTriangle className="h-3 w-3 text-red-500 absolute top-1 right-1" />
-                      )}
-                    </div>
-
-                    {/* Compact financial info - stacked vertically below */}
-                    {hasAnyData && (
-                      <div className="space-y-0 text-[10px] leading-tight">
-                        {/* Overdue - show on current day and past dates */}
-                        {(isToday(day) || isPast) && overdueVendors > 0 && (
-                          <div className="text-red-600 dark:text-red-400 font-medium truncate">
-                            Overdue - ${formatCurrency(overdueVendors)}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Single transaction display - draggable and clickable */}
-                    {hasEvents && dayEvents.length === 1 && (
-                      <div 
-                        className="mt-1 pt-0.5 border-t border-border/30 cursor-pointer"
-                        draggable={!isPast && onUpdateTransactionDate !== undefined}
-                        onDragStart={(e) => !isPast && onUpdateTransactionDate ? handleDragStart(e, dayEvents[0]) : undefined}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedTransaction(dayEvents[0]);
-                          setShowTransactionModal(true);
-                        }}
-                      >
-                        <div className="text-[9px] truncate leading-tight">
-                          <span className="text-foreground font-medium">
-                            {/* Show "Recurring" for recurring transactions, vendor/description for others */}
-                            {dayEvents[0].id.startsWith('recurring-')
-                              ? 'Recurring'
-                              : isToday(day) && dayEvents[0].vendor 
-                                ? dayEvents[0].vendor 
-                                : dayEvents[0].type === 'inflow' 
-                                  ? dayEvents[0].description 
-                                  : (dayEvents[0].vendor || dayEvents[0].description)}
-                          </span>
-                          <span className={`ml-1 ${dayEvents[0].type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
-                            {dayEvents[0].type === 'inflow' ? '+' : '-'}${formatCurrency(dayEvents[0].amount)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Transactions link at bottom - only show for multiple transactions */}
-                    {hasEvents && dayEvents.length > 1 && (
-                      <div className="mt-auto pt-0.5 border-t border-border/30">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedDayTransactions(dayEvents);
-                            setSelectedDate(day);
-                            setShowDayTransactionsModal(true);
-                          }}
-                          className="text-[9px] text-primary hover:underline font-medium w-full text-left"
-                        >
-                          Transactions ({dayEvents.length})
-                        </button>
-                      </div>
-                    )}
-                   </div>
-                 );
-                })}
-                </div>
-             </div>
-             ) : (
-               <div
-                 className="relative w-full"
-                 style={{ height: '500px' }}
-                 ref={chartWrapperRef}
-               >
+          <div
+            className="relative w-full"
+            style={{ height: '500px' }}
+            ref={chartWrapperRef}
+          >
                  <div className="flex justify-between items-center mb-2 px-4">
                  <p className="text-sm text-muted-foreground">
                    {zoomState ? 'Click and drag to zoom in further • ' : 'Click and drag to zoom into a specific time period • '}
@@ -1700,13 +1434,11 @@ export const CashFlowCalendar = ({
                      </LineChart>
                    )}
                  </ResponsiveContainer>
-              </ChartContainer>
-            </div>
-          )}
-          
-          <div className="flex flex-wrap items-center justify-between gap-4 mt-6 pt-4 border-t flex-shrink-0">
-            {viewType === 'chart' ? (
-              <div className="flex items-center gap-6 text-sm">
+            </ChartContainer>
+          </div>
+        
+        <div className="flex flex-wrap items-center justify-between gap-4 mt-6 pt-4 border-t flex-shrink-0">
+          <div className="flex items-center gap-6 text-sm">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -1809,31 +1541,11 @@ export const CashFlowCalendar = ({
                       style={{ appearance: 'none', backgroundColor: reserveColor }}
                     />
                   </label>
-                  <label htmlFor="reserve-toggle" className="cursor-pointer">Reserve Amount</label>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-4 text-sm">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 rounded bg-finance-positive"></div>
-                  <span>Inflows</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 rounded bg-finance-negative"></div>
-                  <span>Outflows</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 rounded bg-warning"></div>
-                  <span>Credit Payments</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 rounded bg-primary"></div>
-                  <span>Purchase Orders</span>
-                </div>
-              </div>
-            )}
-            
+              <label htmlFor="reserve-toggle" className="cursor-pointer">Reserve Amount</label>
+            </div>
           </div>
+        
+        </div>
         </div>
       </CardContent>
       
