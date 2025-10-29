@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
     // Refresh the access token first (tokens expire after 1 hour)
     console.log('[REPORTS] Refreshing Amazon access token...')
     const { data: refreshResult, error: refreshError } = await supabase.functions.invoke('refresh-amazon-token', {
-      body: { amazonAccountId }
+      body: { amazon_account_id: amazonAccountId }
     })
 
     if (refreshError || !refreshResult?.success) {
