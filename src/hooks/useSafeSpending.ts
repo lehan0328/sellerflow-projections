@@ -174,6 +174,15 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           .eq('is_active', true)
       ]);
 
+      console.log('🔍 [useSafeSpending] Raw Amazon payouts from DB:', {
+        total: amazonResult.data?.length || 0,
+        confirmed: amazonResult.data?.filter(p => p.status === 'confirmed').length || 0,
+        estimated: amazonResult.data?.filter(p => p.status === 'estimated').length || 0,
+        forecasted: amazonResult.data?.filter(p => p.status === 'forecasted').length || 0,
+        forecastsEnabled,
+        dateRange: `${todayStr} to ${futureDateStr}`
+      });
+      
       // Filter Amazon payouts based on forecast settings
       const filteredAmazonPayouts = (amazonResult.data || []).filter((payout) => {
         // For estimated settlements, EXCLUDE open ones (not yet available) but include closed estimated settlements
@@ -201,6 +210,21 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         }
         
         return true;
+      });
+      
+      console.log('🔍 [useSafeSpending] Filtered Amazon payouts:', {
+        total: filteredAmazonPayouts.length,
+        confirmed: filteredAmazonPayouts.filter(p => p.status === 'confirmed').length,
+        estimated: filteredAmazonPayouts.filter(p => p.status === 'estimated').length,
+        forecasted: filteredAmazonPayouts.filter(p => p.status === 'forecasted').length,
+        dec12Payouts: filteredAmazonPayouts.filter(p => {
+          const d = new Date(p.payout_date);
+          return d.getFullYear() === 2025 && d.getMonth() === 11 && d.getDate() === 12;
+        }).map(p => ({
+          date: p.payout_date,
+          amount: p.total_amount,
+          status: p.status
+        }))
       });
 
       // Check if we have any forecast data
@@ -341,6 +365,16 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           if (fundsAvailableDate.getTime() === targetDate.getTime()) {
             const amt = Number(payout.total_amount);
             dayChange += amt;
+            
+            // Log Dec 12, 2025 specifically
+            if (targetDateStr === '2025-12-12') {
+              console.log('💰 [useSafeSpending] Adding Amazon payout on Dec 12:', {
+                amount: amt,
+                status: payout.status,
+                payoutId: payout.id,
+                fundsAvailableDate: formatDate(fundsAvailableDate)
+              });
+            }
           }
         });
 
@@ -456,6 +490,16 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
 
         runningBalance += dayChange;
         dailyBalances.push({ date: targetDateStr, balance: runningBalance });
+        
+        // Log Dec 12, 2025 specifically
+        if (targetDateStr === '2025-12-12') {
+          console.log('💰 [useSafeSpending] Dec 12 calculation:', {
+            date: targetDateStr,
+            dayChange,
+            runningBalance,
+            previousBalance: runningBalance - dayChange
+          });
+        }
       }
 
       // Find the absolute minimum balance over the entire 90-day period (3 months) ONLY

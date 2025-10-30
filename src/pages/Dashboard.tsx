@@ -1702,6 +1702,18 @@ const Dashboard = () => {
     });
   
   console.log('[Dashboard] Amazon payout events created:', amazonPayoutEvents.length);
+  console.log('🔍 [Dashboard] Amazon payouts for Dec 12, 2025:', {
+    total: amazonPayoutEvents.filter(e => {
+      const d = new Date(e.date);
+      return d.getFullYear() === 2025 && d.getMonth() === 11 && d.getDate() === 12;
+    }).length,
+    amounts: amazonPayoutEvents
+      .filter(e => {
+        const d = new Date(e.date);
+        return d.getFullYear() === 2025 && d.getMonth() === 11 && d.getDate() === 12;
+      })
+      .map(e => ({ date: e.date.toISOString().split('T')[0], amount: e.amount, source: e.source }))
+  });
 
   // Combine all events for calendar - only include real user data
   const allCalendarEvents = [...calendarEvents, ...vendorPaymentEvents, ...vendorEvents, ...incomeEvents, ...creditCardEvents, ...forecastedCreditCardEvents, ...recurringEvents, ...amazonPayoutEvents];
@@ -1814,6 +1826,23 @@ const Dashboard = () => {
       
       runningBalance += dailyChange;
       dailyBalances.push({ date: new Date(currentDate), balance: runningBalance });
+      
+      // Log Dec 12, 2025 specifically
+      if (dateStr === '2025-12-12') {
+        console.log('📊 [Calendar] Dec 12 calculation:', {
+          date: dateStr,
+          dayEvents: dayEvents.length,
+          amazonEvents: dayEvents.filter(e => e.source?.includes('Amazon')).map(e => ({ 
+            amount: e.amount, 
+            source: e.source 
+          })),
+          dailyInflow,
+          dailyOutflow,
+          dailyChange,
+          runningBalance,
+          previousBalance: runningBalance - dailyChange
+        });
+      }
       
       currentDate = addDays(currentDate, 1);
     }
