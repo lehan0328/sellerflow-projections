@@ -692,7 +692,15 @@ export const useSubscription = () => {
   };
 
   useEffect(() => {
-    checkSubscription();
+    // Only check subscription if we have a valid session
+    const initializeSubscription = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        checkSubscription();
+      }
+    };
+    
+    initializeSubscription();
 
     // Check subscription on auth state change only (cache will handle the rest)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
