@@ -385,28 +385,38 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
 
         // Include ALL Amazon payouts (confirmed, estimated, and forecasted if enabled)
         filteredAmazonPayouts?.forEach((payout) => {
-          // For open settlements (estimated), calculate the close date from settlement start
+          const isConfirmedPayout = payout.status === 'confirmed';
+          const isEstimatedPayout = payout.status === 'estimated';
+          const isForecastedPayout = payout.status === 'forecasted';
+          
+          // For confirmed and estimated payouts, use settlement end date from raw data
+          // For forecasted payouts, use payout_date
           let payoutDate: Date;
           
-          if (payout.status === 'estimated') {
+          if (isConfirmedPayout || isEstimatedPayout) {
             const rawData = (payout as any).raw_settlement_data;
+            const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
             const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
             
-            if (settlementStartStr) {
+            if (settlementEndStr) {
+              // Use the actual settlement close date
+              payoutDate = parseLocalDate(settlementEndStr);
+            } else if (settlementStartStr) {
+              // Calculate close date from start + 15 days (matches sync logic)
               const settlementStartDate = new Date(settlementStartStr);
               const settlementCloseDate = new Date(settlementStartDate);
-              settlementCloseDate.setDate(settlementCloseDate.getDate() + 15); // Close date is start + 15 days (matches sync logic)
+              settlementCloseDate.setDate(settlementCloseDate.getDate() + 15);
               payoutDate = parseLocalDate(settlementCloseDate.toISOString().split('T')[0]);
             } else {
+              // Fallback to payout_date
               payoutDate = parseLocalDate(payout.payout_date);
             }
           } else {
+            // For forecasted payouts, use payout_date
             payoutDate = parseLocalDate(payout.payout_date);
           }
           
           // CRITICAL: ALL Amazon payouts take +1 day for bank transfer after settlement closes
-          // The payout_date is ALWAYS the settlement close date, never the bank arrival date
-          // This applies to confirmed, estimated, and forecasted payouts equally
           const fundsAvailableDate = new Date(payoutDate);
           fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
           
