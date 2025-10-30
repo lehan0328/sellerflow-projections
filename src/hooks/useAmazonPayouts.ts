@@ -282,20 +282,20 @@ export const useAmazonPayouts = () => {
     .filter(payout => payout.status === 'confirmed')
     .reduce((sum, payout) => sum + payout.total_amount, 0);
 
-  // Exclude open settlements from summary stats for DAILY accounts
+  // Exclude ALL estimated settlements for DAILY accounts (they use forecasts instead)
   const totalEstimated = amazonPayouts
     .filter(payout => {
       if (payout.status !== 'estimated') return false;
       
-      // For daily accounts, exclude open settlements from totals
+      // For daily accounts, COMPLETELY exclude all estimated settlements
       const accountFrequency = payout.amazon_accounts?.payout_frequency;
       if (accountFrequency === 'daily') {
-        const rawData = payout.raw_settlement_data as any;
-        const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
-        if (!hasEndDate) {
-          console.log('[Summary Stats] Excluding daily account open settlement from totalEstimated:', payout.settlement_id);
-          return false; // Don't count in summary
-        }
+        console.log('[useAmazonPayouts] ❌ EXCLUDING daily account estimated settlement from totalEstimated:', {
+          settlementId: payout.settlement_id,
+          amount: payout.total_amount,
+          reason: 'Daily accounts use forecasts instead of open settlements'
+        });
+        return false;
       }
       
       // For bi-weekly accounts, only count if forecasts are disabled

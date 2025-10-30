@@ -387,16 +387,18 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const amazonDateRange = getAmazonDateRange();
   const filteredAmazonRevenue = amazonPayouts
     .filter(payout => {
-      if (payout.status !== 'estimated') return true;
-      
-      // Exclude open settlements for daily accounts
+      // For daily accounts, COMPLETELY exclude all estimated settlements
       const accountFrequency = payout.amazon_accounts?.payout_frequency;
-      if (accountFrequency === 'daily') {
-        const rawData = payout.raw_settlement_data as any;
-        const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
-        return hasEndDate; // Only count closed settlements
+      if (accountFrequency === 'daily' && payout.status === 'estimated') {
+        console.log('[Overview Stats] ❌ EXCLUDING daily account estimated settlement from revenue calculation:', {
+          settlementId: payout.settlement_id,
+          amount: payout.total_amount,
+          status: payout.status
+        });
+        return false; // Exclude ALL estimated settlements for daily accounts
       }
       
+      // For bi-weekly accounts, include all payouts (confirmed and estimated)
       return true;
     })
     .filter(payout => {

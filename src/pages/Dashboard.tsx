@@ -1624,8 +1624,28 @@ const Dashboard = () => {
       // Keep open settlements for bi-weekly accounts (they're the actual payout)
       if ((payout.status as string) === 'estimated') {
         const accountFrequency = payout.amazon_accounts?.payout_frequency;
+        const rawData = (payout as any).raw_settlement_data;
+        const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
+        
         if (accountFrequency === 'daily') {
-          console.log('[Dashboard] Excluding daily account open settlement from calendar (replaced by daily forecasts):', payout.settlement_id);
+          // For daily accounts, ALWAYS exclude open settlements (no end date)
+          if (!hasEndDate) {
+            console.log('[Dashboard] ❌ EXCLUDING daily account open settlement from ALL calculations:', {
+              settlementId: payout.settlement_id,
+              amount: payout.total_amount,
+              payoutDate: payout.payout_date,
+              reason: 'Daily account open settlements are excluded - forecasts used instead'
+            });
+            return false;
+          }
+          
+          // Also exclude if it's a clearly open settlement (even with end date if it's far in future)
+          console.log('[Dashboard] ❌ EXCLUDING daily account estimated settlement:', {
+            settlementId: payout.settlement_id,
+            amount: payout.total_amount,
+            hasEndDate: hasEndDate,
+            reason: 'All estimated settlements excluded for daily accounts'
+          });
           return false;
         }
       }
