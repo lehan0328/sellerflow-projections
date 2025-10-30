@@ -452,46 +452,6 @@ export function AmazonPayouts() {
                   <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing || amazonAccounts.some(acc => acc.sync_status === 'syncing') ? 'animate-spin' : ''}`} />
                   {amazonAccounts.some(acc => acc.sync_message?.includes('Rate limited')) ? 'Rate Limited' : 'Sync'}
                 </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleForceFullResync}
-                disabled={
-                  isSyncing !== null || 
-                  amazonAccounts.some(acc => acc.sync_status === 'syncing')
-                }
-                title="Reset sync and fetch full payout history"
-              >
-                <Loader2 className="h-4 w-4 mr-2" />
-                Full Resync
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSyncReports}
-                disabled={isSyncing === 'syncing-reports'}
-                title="Sync order reports (last 14 days)"
-              >
-                <FileText className={`h-4 w-4 mr-2 ${isSyncing === 'syncing-reports' ? 'animate-spin' : ''}`} />
-                Sync Orders
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDeleteEstimatedSettlements}
-                disabled={isSyncing === 'deleting-estimated'}
-                title="Remove duplicate estimated settlements (keeps open settlements)"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing === 'deleting-estimated' ? 'animate-spin' : ''}`} />
-                Remove Duplicates
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/amazon-transactions-test")}
-              >
-                Test Data
-              </Button>
               </>}
           </div>
         </div>
