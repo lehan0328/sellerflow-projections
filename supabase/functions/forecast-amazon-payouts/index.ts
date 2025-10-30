@@ -557,16 +557,13 @@ serve(async (req) => {
             }
           }
         } else {
-          // No open settlement, start from last confirmed payout or yesterday (whichever is later)
-          // to ensure forecasts start from today
-          const lastConfirmedDate = new Date(amazonPayouts[0].payout_date);
+          // No open settlement - for daily accounts, always start from yesterday so forecasts begin today
           const yesterday = new Date();
           yesterday.setDate(yesterday.getDate() - 1);
           yesterday.setHours(0, 0, 0, 0);
           
-          // Use the more recent date (either last payout or yesterday)
-          lastPayoutDate = lastConfirmedDate > yesterday ? lastConfirmedDate : yesterday;
-          console.log(`[FORECAST] No open settlement found, starting from ${lastPayoutDate.toISOString().split('T')[0]} (last confirmed: ${amazonPayouts[0].payout_date}, will generate forecasts starting today)`);
+          lastPayoutDate = yesterday;
+          console.log(`[FORECAST] No open settlement found, starting from ${lastPayoutDate.toISOString().split('T')[0]} (last confirmed: ${amazonPayouts[0]?.payout_date || 'none'}) - forecasts will start today`);
         }
         
         // Calculate baseline amount from TRANSACTIONS (not payouts)
