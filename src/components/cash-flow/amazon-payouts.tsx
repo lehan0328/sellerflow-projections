@@ -886,9 +886,9 @@ export function AmazonPayouts() {
                                     });
                                     
                                     if (endDate) {
-                                      // CRITICAL: ALL payouts take +1 day for bank transfer after settlement closes
-                                      // payout_date is ALWAYS the settlement close date, not bank arrival date
-                                      const payoutArrival = new Date(endDate.getTime() + 1 * 24 * 60 * 60 * 1000);
+                                      // CRITICAL: Use payout_date + 1 day for arrival (payout_date is settlement close date)
+                                      const payoutArrival = new Date(aggregatedPayout.payout_date);
+                                      payoutArrival.setDate(payoutArrival.getDate() + 1);
                                       const isConfirmed = aggregatedPayout.status === 'confirmed';
                                       return `Period: ${formatShort(startDate)} - ${formatShort(endDate)} → ${isConfirmed ? 'Arrived' : 'Arrives'}: ${formatShort(payoutArrival)}`;
                                     } else {
