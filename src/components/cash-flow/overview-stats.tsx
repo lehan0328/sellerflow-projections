@@ -122,12 +122,40 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
     })
     .reduce((sum, payout) => sum + payout.total_amount, 0);
   
+  console.log('[Today Income Debug] Amazon payouts from yesterday:', {
+    yesterdayStr,
+    count: amazonPayouts.filter(p => {
+      const payoutDate = p.payout_date.split('T')[0];
+      return payoutDate === yesterdayStr && (p.status === 'confirmed' || p.status === 'forecasted');
+    }).length,
+    payouts: amazonPayouts.filter(p => {
+      const payoutDate = p.payout_date.split('T')[0];
+      return payoutDate === yesterdayStr && (p.status === 'confirmed' || p.status === 'forecasted');
+    }).map(p => ({ date: p.payout_date, amount: p.total_amount, status: p.status })),
+    total: amazonIncomeToday
+  });
+  
   // Regular income
   const regularIncome = incomeItems.filter(item => {
     const itemDate = new Date(item.paymentDate);
     itemDate.setHours(0, 0, 0, 0);
     return itemDate.toDateString() === todayStr && item.status !== 'received';
   }).reduce((sum, item) => sum + item.amount, 0);
+  
+  console.log('[Today Income Debug] Regular income:', {
+    todayStr,
+    count: incomeItems.filter(item => {
+      const itemDate = new Date(item.paymentDate);
+      itemDate.setHours(0, 0, 0, 0);
+      return itemDate.toDateString() === todayStr && item.status !== 'received';
+    }).length,
+    items: incomeItems.filter(item => {
+      const itemDate = new Date(item.paymentDate);
+      itemDate.setHours(0, 0, 0, 0);
+      return itemDate.toDateString() === todayStr && item.status !== 'received';
+    }).map(i => ({ date: i.paymentDate, amount: i.amount, status: i.status })),
+    total: regularIncome
+  });
   
   // Recurring income that occurs today
   const recurringIncome = recurringExpenses
@@ -150,7 +178,55 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
       return dates.length > 0 ? sum + exp.amount : sum;
     }, 0);
   
+  console.log('[Today Income Debug] Recurring income:', {
+    count: recurringExpenses.filter(exp => {
+      if (exp.type !== 'income' || !exp.is_active) return false;
+      const dates = generateRecurringDates(
+        {
+          id: exp.id,
+          transaction_name: exp.transaction_name || exp.name,
+          amount: exp.amount,
+          frequency: exp.frequency,
+          start_date: exp.start_date,
+          end_date: exp.end_date,
+          is_active: exp.is_active,
+          type: exp.type
+        },
+        todayDate,
+        todayDate
+      );
+      return dates.length > 0;
+    }).length,
+    items: recurringExpenses.filter(exp => {
+      if (exp.type !== 'income' || !exp.is_active) return false;
+      const dates = generateRecurringDates(
+        {
+          id: exp.id,
+          transaction_name: exp.transaction_name || exp.name,
+          amount: exp.amount,
+          frequency: exp.frequency,
+          start_date: exp.start_date,
+          end_date: exp.end_date,
+          is_active: exp.is_active,
+          type: exp.type
+        },
+        todayDate,
+        todayDate
+      );
+      return dates.length > 0;
+    }).map(e => ({ name: e.name, amount: e.amount, frequency: e.frequency })),
+    total: recurringIncome
+  });
+  
   const todaysIncome = regularIncome + recurringIncome + amazonIncomeToday;
+  
+  console.log('[Today Income Debug] TOTAL:', {
+    amazonIncomeToday,
+    regularIncome,
+    recurringIncome,
+    todaysIncome,
+    breakdown: `$${amazonIncomeToday.toFixed(2)} (Amazon) + $${regularIncome.toFixed(2)} (Regular) + $${recurringIncome.toFixed(2)} (Recurring) = $${todaysIncome.toFixed(2)}`
+  });
   
   // Regular expenses (vendor transactions)
   const regularExpenses = vendorTransactions.filter(tx => {
