@@ -259,16 +259,7 @@ export const useSubscription = () => {
 
   const checkSubscription = async (forceRefresh = false) => {
     try {
-      // Try to load from cache first (unless forced refresh)
-      if (!forceRefresh) {
-        const cached = loadFromCache();
-        if (cached) {
-          const { cachedAt, ...state } = cached;
-          setSubscriptionState(state);
-          return;
-        }
-      }
-
+      // Check for session FIRST before anything else
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         const state = {
@@ -281,6 +272,16 @@ export const useSubscription = () => {
         setSubscriptionState(state);
         saveToCache(state);
         return;
+      }
+
+      // Try to load from cache (only if user is authenticated)
+      if (!forceRefresh) {
+        const cached = loadFromCache();
+        if (cached) {
+          const { cachedAt, ...state } = cached;
+          setSubscriptionState(state);
+          return;
+        }
       }
 
       const { data, error } = await supabase.functions.invoke("check-subscription", {
