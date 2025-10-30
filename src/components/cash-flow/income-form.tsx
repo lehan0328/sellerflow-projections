@@ -505,44 +505,49 @@ export const IncomeForm = ({
                 </div>
               )}
 
-              {/* Category */}
-              <div className="space-y-2">
-                <Label htmlFor="category">Category *</Label>
-                <Select 
-                  value={formData.category} 
-                  onValueChange={(value) => {
-                    if (value === "__add_new__") {
-                      setShowAddCategory(true);
-                    } else {
-                      handleInputChange("category", value);
-                    }
-                  }}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <div className="border-b pb-1 mb-1">
-                      <SelectItem value="__add_new__" className="text-primary font-medium">
-                        <div className="flex items-center gap-2">
-                          <Plus className="h-4 w-4" />
-                          Add New Category
-                        </div>
-                      </SelectItem>
-                    </div>
-                    {(formData.type === "income" ? incomeCategories : expenseCategories).map(category => (
-                      <SelectItem key={category.id} value={category.name}>
-                        <div className="flex items-center justify-between w-full">
-                          <span>{category.name}</span>
-                          {category.is_default && (
-                            <span className="text-xs text-muted-foreground ml-2">(default)</span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* Visual separator */}
+              <div className="border-t pt-6">
+                <h3 className="text-sm font-semibold mb-4">Categorization</h3>
+                
+                {/* Category */}
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category *</Label>
+                  <Select 
+                    value={formData.category} 
+                    onValueChange={(value) => {
+                      if (value === "__add_new__") {
+                        setShowAddCategory(true);
+                      } else {
+                        handleInputChange("category", value);
+                      }
+                    }}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <div className="border-b pb-1 mb-1">
+                        <SelectItem value="__add_new__" className="text-primary font-medium">
+                          <div className="flex items-center gap-2">
+                            <Plus className="h-4 w-4" />
+                            Add New Category
+                          </div>
+                        </SelectItem>
+                      </div>
+                      {(formData.type === "income" ? incomeCategories : expenseCategories).map(category => (
+                        <SelectItem key={category.id} value={category.name}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{category.name}</span>
+                            {category.is_default && (
+                              <span className="text-xs text-muted-foreground ml-2">(default)</span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <AddCategoryDialog
