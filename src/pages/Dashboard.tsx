@@ -1646,16 +1646,7 @@ const Dashboard = () => {
       // For forecasted payouts, use payout_date
       let displayDate: Date;
       
-      if (isConfirmedPayout) {
-        // For confirmed payouts, use the actual payout_date (when Amazon transferred money)
-        displayDate = new Date(payout.payout_date);
-        console.log('[Calendar] Using payout_date for CONFIRMED payout:', {
-          status: payout.status,
-          payout_date: payout.payout_date,
-          amount: payout.total_amount
-        });
-      } else if (isOpenSettlement) {
-        // For estimated (open) settlements, calculate from settlement end date
+      if (isConfirmedPayout || isOpenSettlement) {
         const rawData = (payout as any).raw_settlement_data;
         const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
         const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
@@ -1663,12 +1654,12 @@ const Dashboard = () => {
         if (settlementEndStr) {
           // Use the actual settlement close date
           displayDate = new Date(settlementEndStr);
-          console.log('[Calendar] Using settlement end date for ESTIMATED payout:', {
+          console.log('[Calendar] Using settlement end date for confirmed/estimated payout:', {
             status: payout.status,
             settlementEndDate: settlementEndStr,
             amount: payout.total_amount
           });
-        } else if (settlementStartStr) {
+        } else if (isOpenSettlement && settlementStartStr) {
           // For open settlements without end date, calculate close date from start + 14 days
           const settlementStartDate = new Date(settlementStartStr);
           const settlementCloseDate = new Date(settlementStartDate);
