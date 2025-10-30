@@ -82,7 +82,6 @@ export const useAmazonPayouts = () => {
           )
         `)
         .eq("user_id", user.id)
-        .eq("amazon_accounts.is_active", true)
         .order("payout_date", { ascending: false });
       
       console.log('[fetchAmazonPayouts] Query result:', { count: data?.length, error });
