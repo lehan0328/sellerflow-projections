@@ -464,62 +464,156 @@ serve(async (req) => {
           }
         }
         
-        // Calculate baseline amount from TRANSACTIONS (not payouts)
+        // Calculate baseline amount using different strategies for daily vs bi-weekly
         let baselineAmount;
         
-        if (!amazonTransactions || amazonTransactions.length === 0) {
-          // Fallback: if no transaction data, use payout history
-          console.log(`[FORECAST] No transaction data, falling back to payout history for ${amazonAccount.account_name}`);
-          if (payoutFrequency === 'daily') {
-            const oldestPayoutDate = new Date(amazonPayouts[amazonPayouts.length - 1].payout_date);
-            const newestPayoutDate = new Date(amazonPayouts[0].payout_date);
-            const daysDiff = Math.ceil((newestPayoutDate.getTime() - oldestPayoutDate.getTime()) / (1000 * 60 * 60 * 24));
-            const totalPayoutAmount = nonForecastedPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
-            baselineAmount = daysDiff > 0 ? totalPayoutAmount / daysDiff : simpleAvg;
-          } else {
-            baselineAmount = avgPayoutAmount;
-          }
-        } else {
-          // PRIMARY METHOD: Calculate from recent transactions
-          console.log(`[FORECAST] Calculating baseline from ${amazonTransactions.length} recent transactions`);
+        if (payoutFrequency === 'daily') {
+          // ===== DAILY ACCOUNTS: Prioritize 90-day payout history =====
+          console.log(`[FORECAST] Daily account - calculating from payout history for ${amazonAccount.account_name}`);
           
-          // Sum all recent transaction amounts (orders - fees - refunds)
-          let totalOrders = 0;
-          let totalFees = 0;
-          let totalRefunds = 0;
+          // Step 1: Calculate true daily average from 90 days of confirmed payouts
+          const ninetyDaysAgo = new Date();
+          ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
           
-          amazonTransactions.forEach(txn => {
-            const amount = Number(txn.amount || 0);
-            if (txn.transaction_type === 'Order' || txn.transaction_type === 'Sale') {
-              totalOrders += amount;
-            } else if (txn.transaction_type?.includes('Fee')) {
-              totalFees += Math.abs(amount);
-            } else if (txn.transaction_type === 'Refund') {
-              totalRefunds += Math.abs(amount);
+          const recent90DayPayouts = amazonPayouts.filter(p => {
+            const payoutDate = new Date(p.payout_date);
+            return payoutDate >= ninetyDaysAgo && p.status === 'confirmed';
+          });
+          
+          if (recent90DayPayouts.length >= 5) {
+            // Calculate TOTAL amount and TOTAL days in period
+            const totalPayoutAmount = recent90DayPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
+            
+            // Find actual date range of payouts
+            const oldestPayoutDate = new Date(Math.min(...recent90DayPayouts.map(p => new Date(p.payout_date).getTime())));
+            const newestPayoutDate = new Date(Math.max(...recent90DayPayouts.map(p => new Date(p.payout_date).getTime())));
+            const daysInPeriod = Math.ceil((newestPayoutDate.getTime() - oldestPayoutDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+            
+            // TRUE daily average = total amount / days in period (accounts for non-daily payouts)
+            const trueDailyAverage = totalPayoutAmount / daysInPeriod;
+            
+            console.log(`[FORECAST] 90-day payout baseline calculation:`, {
+              totalAmount: totalPayoutAmount.toFixed(2),
+              daysInPeriod,
+              payoutsCount: recent90DayPayouts.length,
+              trueDailyAverage: trueDailyAverage.toFixed(2),
+              avgPayoutSize: (totalPayoutAmount / recent90DayPayouts.length).toFixed(2),
+              dateRange: `${oldestPayoutDate.toISOString().split('T')[0]} to ${newestPayoutDate.toISOString().split('T')[0]}`
+            });
+            
+            baselineAmount = trueDailyAverage;
+            
+            // Step 2: Apply recent transaction trend (last 30 days)
+            if (amazonTransactions && amazonTransactions.length > 0) {
+              const thirtyDaysAgo = new Date();
+              thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+              
+              const recentTransactions = amazonTransactions.filter(t => 
+                new Date(t.transaction_date) >= thirtyDaysAgo
+              );
+              
+              if (recentTransactions.length > 0) {
+                let totalOrders = 0;
+                let totalFees = 0;
+                let totalRefunds = 0;
+                
+                recentTransactions.forEach(txn => {
+                  const amount = Number(txn.amount || 0);
+                  if (txn.transaction_type === 'Order' || txn.transaction_type === 'Sale') {
+                    totalOrders += amount;
+                  } else if (txn.transaction_type?.includes('Fee')) {
+                    totalFees += Math.abs(amount);
+                  } else if (txn.transaction_type === 'Refund') {
+                    totalRefunds += Math.abs(amount);
+                  }
+                });
+                
+                const netTransactionValue = totalOrders - totalFees - totalRefunds;
+                const recentDailyAvg = netTransactionValue / 30;
+                
+                // Calculate trend multiplier (how much has recent performance changed vs baseline)
+                const trendMultiplier = recentDailyAvg / baselineAmount;
+                
+                // Apply trend but cap it at +/- 30% to avoid wild swings from short-term volatility
+                const cappedTrendMultiplier = Math.max(0.7, Math.min(1.3, trendMultiplier));
+                
+                console.log(`[FORECAST] 30-day transaction trend adjustment:`, {
+                  recentDailyAvg: recentDailyAvg.toFixed(2),
+                  baselineBeforeTrend: baselineAmount.toFixed(2),
+                  rawTrendMultiplier: trendMultiplier.toFixed(3),
+                  cappedTrendMultiplier: cappedTrendMultiplier.toFixed(3),
+                  transactionsCount: recentTransactions.length
+                });
+                
+                baselineAmount = baselineAmount * cappedTrendMultiplier;
+                console.log(`[FORECAST] Baseline after trend adjustment: ${baselineAmount.toFixed(2)}`);
+              }
             }
-          });
-          
-          const netTransactionValue = totalOrders - totalFees - totalRefunds;
-          
-          // Calculate daily average from transaction data
-          const oldestTxDate = new Date(amazonTransactions[amazonTransactions.length - 1].transaction_date);
-          const newestTxDate = new Date(amazonTransactions[0].transaction_date);
-          const transactionDays = Math.max(1, Math.ceil((newestTxDate.getTime() - oldestTxDate.getTime()) / (1000 * 60 * 60 * 24)));
-          const dailyAverage = netTransactionValue / transactionDays;
-          
-          console.log(`[FORECAST] Transaction-based calculation for ${amazonAccount.account_name}:`, {
-            totalOrders,
-            totalFees,
-            totalRefunds,
-            netTransactionValue,
-            transactionDays,
-            dailyAverage,
-            dateRange: `${oldestTxDate.toISOString().split('T')[0]} to ${newestTxDate.toISOString().split('T')[0]}`
-          });
-          
-          if (payoutFrequency === 'daily') {
-            baselineAmount = dailyAverage;
           } else {
+            // Insufficient payout history - fall back to all available payouts
+            console.log(`[FORECAST] Insufficient 90-day history (${recent90DayPayouts.length} payouts), using all available payouts`);
+            
+            if (nonForecastedPayouts.length > 0) {
+              const oldestPayoutDate = new Date(nonForecastedPayouts[nonForecastedPayouts.length - 1].payout_date);
+              const newestPayoutDate = new Date(nonForecastedPayouts[0].payout_date);
+              const daysDiff = Math.ceil((newestPayoutDate.getTime() - oldestPayoutDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+              const totalPayoutAmount = nonForecastedPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
+              baselineAmount = daysDiff > 0 ? totalPayoutAmount / daysDiff : simpleAvg;
+              
+              console.log(`[FORECAST] Using all available payouts:`, {
+                totalAmount: totalPayoutAmount.toFixed(2),
+                daysInPeriod: daysDiff,
+                dailyAverage: baselineAmount.toFixed(2)
+              });
+            } else {
+              baselineAmount = 1000; // Conservative default
+              console.log(`[FORECAST] No payout history, using conservative default: ${baselineAmount}`);
+            }
+          }
+          
+        } else {
+          // ===== BI-WEEKLY ACCOUNTS: Use transaction-based calculation =====
+          console.log(`[FORECAST] Bi-weekly account - calculating from transaction data for ${amazonAccount.account_name}`);
+          
+          if (!amazonTransactions || amazonTransactions.length === 0) {
+            // Fallback to payout history
+            console.log(`[FORECAST] No transaction data, using payout average`);
+            baselineAmount = avgPayoutAmount;
+          } else {
+            // Calculate from transactions
+            let totalOrders = 0;
+            let totalFees = 0;
+            let totalRefunds = 0;
+            
+            amazonTransactions.forEach(txn => {
+              const amount = Number(txn.amount || 0);
+              if (txn.transaction_type === 'Order' || txn.transaction_type === 'Sale') {
+                totalOrders += amount;
+              } else if (txn.transaction_type?.includes('Fee')) {
+                totalFees += Math.abs(amount);
+              } else if (txn.transaction_type === 'Refund') {
+                totalRefunds += Math.abs(amount);
+              }
+            });
+            
+            const netTransactionValue = totalOrders - totalFees - totalRefunds;
+            
+            // Calculate daily average from transaction data
+            const oldestTxDate = new Date(amazonTransactions[amazonTransactions.length - 1].transaction_date);
+            const newestTxDate = new Date(amazonTransactions[0].transaction_date);
+            const transactionDays = Math.max(1, Math.ceil((newestTxDate.getTime() - oldestTxDate.getTime()) / (1000 * 60 * 60 * 24)));
+            const dailyAverage = netTransactionValue / transactionDays;
+            
+            console.log(`[FORECAST] Bi-weekly transaction calculation:`, {
+              totalOrders,
+              totalFees,
+              totalRefunds,
+              netTransactionValue,
+              transactionDays,
+              dailyAverage,
+              biweeklyAmount: (dailyAverage * 14).toFixed(2)
+            });
+            
             // For bi-weekly: multiply daily average by 14
             baselineAmount = dailyAverage * 14;
           }
