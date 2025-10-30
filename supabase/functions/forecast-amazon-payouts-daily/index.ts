@@ -218,9 +218,12 @@ serve(async (req) => {
       const settlementEndDate = rawData?.FinancialEventGroupEnd;
       
       if (settlementEndDate) {
-        // Use settlement close date - this is when the period ended
-        lastConfirmedPayoutDate = new Date(settlementEndDate);
-        console.log(`[DAILY FORECAST] Last settlement closed: ${lastConfirmedPayoutDate.toISOString().split('T')[0]} (payout was ${confirmedHistory[0].payout_date})`);
+        // FinancialEventGroupEnd is stored as midnight of the NEXT day in UTC
+        // Subtract 1 day to get actual close date
+        const closeDate = new Date(settlementEndDate);
+        closeDate.setDate(closeDate.getDate() - 1);
+        lastConfirmedPayoutDate = closeDate;
+        console.log(`[DAILY FORECAST] Settlement closed: ${lastConfirmedPayoutDate.toISOString().split('T')[0]} (payout: ${confirmedHistory[0].payout_date})`);
       } else {
         // Fallback to payout date if no settlement data
         lastConfirmedPayoutDate = new Date(confirmedHistory[0].payout_date);
