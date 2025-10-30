@@ -205,19 +205,28 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       
       // Filter Amazon payouts based on forecast settings
       const filteredAmazonPayouts = (amazonResult.data || []).filter((payout) => {
-        // For open settlements (estimated), ALWAYS include them - they represent actively accumulating money
+        // For estimated settlements, EXCLUDE open ones (not yet available) but include closed estimated settlements
         if (payout.status === 'estimated') {
           const rawData = (payout as any).raw_settlement_data;
-          const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
+          const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
           
-          console.log('✅ [SAFE SPENDING] Including open settlement (actively accumulating):', {
+          // If it's an open settlement (no end date), exclude it from calculations
+          if (!hasEndDate) {
+            console.log('🚫 [SAFE SPENDING] Excluding open settlement from calculations (not yet available):', {
+              id: payout.id,
+              payout_date: payout.payout_date,
+              amount: payout.total_amount,
+              reason: 'Open settlements are not available for withdrawal'
+            });
+            return false;
+          }
+          
+          // If it has an end date, it's a closed estimated settlement - include it
+          console.log('✅ [SAFE SPENDING] Including closed estimated settlement:', {
             id: payout.id,
-            start_date: settlementStartStr,
             payout_date: payout.payout_date,
-            amount: payout.total_amount,
-            status: payout.status
+            amount: payout.total_amount
           });
-          
           return true;
         }
         
