@@ -323,12 +323,26 @@ export function CreditCards() {
                             *{card.masked_account_number.slice(-4)}
                           </Badge>
                         )}
-                        <Badge 
-                          variant={card.priority === 1 ? "default" : card.priority === 2 ? "secondary" : "outline"}
-                          className="text-xs"
-                        >
-                          Priority {card.priority}
-                        </Badge>
+                        {card.priority ? (
+                          <Badge 
+                            variant={card.priority === 1 ? "default" : card.priority === 2 ? "secondary" : "outline"}
+                            className="text-xs"
+                          >
+                            Priority {card.priority}
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-6 px-2"
+                            onClick={() => {
+                              setNewCardForPriority({ id: card.id, name: card.nickname || `${card.institution_name} - ${card.account_name}` });
+                              setShowPriorityDialog(true);
+                            }}
+                          >
+                            Set Priority
+                          </Button>
+                        )}
                       </div>
                       <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                         {card.payment_due_date ? (
