@@ -1579,6 +1579,12 @@ const Dashboard = () => {
 
   // Convert Amazon payouts to calendar events (filter out forecasts if disabled)
   console.log('[Dashboard] Converting Amazon payouts to calendar events. Total payouts:', amazonPayouts.length, 'Forecasts enabled:', forecastsEnabled);
+  console.log('[Dashboard] All Amazon payouts:', amazonPayouts.map(p => ({ 
+    id: p.id, 
+    status: p.status, 
+    payout_date: p.payout_date, 
+    amount: p.total_amount 
+  })));
   
   const amazonPayoutEvents: CashFlowEvent[] = amazonPayouts
     .filter(payout => {
