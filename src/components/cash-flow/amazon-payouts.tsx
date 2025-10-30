@@ -215,6 +215,37 @@ export function AmazonPayouts() {
     }
   };
 
+  const handleDeleteEstimatedSettlements = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error('Please log in to delete estimated settlements.');
+        return;
+      }
+
+      setIsSyncing('deleting-estimated');
+      toast.info('Deleting estimated settlements...');
+
+      const { data, error } = await supabase.functions.invoke('delete-estimated-settlements', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) {
+        toast.error(`Failed to delete: ${error.message}`);
+      } else {
+        toast.success(data.message || `Deleted ${data.deletedCount} settlements`);
+        await refetch();
+      }
+    } catch (error) {
+      toast.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSyncing(null);
+    }
+  };
+
   const handleFetchOpenSettlement = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -443,6 +474,16 @@ export function AmazonPayouts() {
               >
                 <FileText className={`h-4 w-4 mr-2 ${isSyncing === 'syncing-reports' ? 'animate-spin' : ''}`} />
                 Sync Orders
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDeleteEstimatedSettlements}
+                disabled={isSyncing === 'deleting-estimated'}
+                title="Delete duplicate estimated settlements"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing === 'deleting-estimated' ? 'animate-spin' : ''}`} />
+                Cleanup
               </Button>
               <Button
                 variant="ghost"
