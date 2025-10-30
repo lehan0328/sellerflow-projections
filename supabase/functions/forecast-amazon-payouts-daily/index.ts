@@ -191,10 +191,10 @@ serve(async (req) => {
 
     console.log(`[DAILY FORECAST] Safety net: ${riskAdjustment}% → multiplier ${safetyMultiplier}`);
 
-    // STEP 4: Get last confirmed payout date AND open settlements
+    // STEP 4: Get last confirmed payout's SETTLEMENT CLOSE DATE (not payout date)
     const { data: confirmedHistory } = await supabase
       .from('amazon_payouts')
-      .select('payout_date')
+      .select('payout_date, raw_settlement_data')
       .eq('amazon_account_id', amazonAccountId)
       .eq('status', 'confirmed')
       .order('payout_date', { ascending: false })
@@ -212,10 +212,20 @@ serve(async (req) => {
     let lastCashOutDate = new Date();
     let daysSinceLastCashOut = 0;
 
-    // Get last confirmed payout date (this is our starting point)
+    // Get last confirmed payout's settlement close date (when settlement period ended)
     if (confirmedHistory && confirmedHistory.length > 0) {
-      lastConfirmedPayoutDate = new Date(confirmedHistory[0].payout_date);
-      console.log(`[DAILY FORECAST] Last confirmed payout: ${lastConfirmedPayoutDate.toISOString().split('T')[0]}`);
+      const rawData = confirmedHistory[0].raw_settlement_data as any;
+      const settlementEndDate = rawData?.FinancialEventGroupEnd;
+      
+      if (settlementEndDate) {
+        // Use settlement close date - this is when the period ended
+        lastConfirmedPayoutDate = new Date(settlementEndDate);
+        console.log(`[DAILY FORECAST] Last settlement closed: ${lastConfirmedPayoutDate.toISOString().split('T')[0]} (payout was ${confirmedHistory[0].payout_date})`);
+      } else {
+        // Fallback to payout date if no settlement data
+        lastConfirmedPayoutDate = new Date(confirmedHistory[0].payout_date);
+        console.log(`[DAILY FORECAST] No settlement data, using payout date: ${lastConfirmedPayoutDate.toISOString().split('T')[0]}`);
+      }
     } else {
       // No confirmed payouts, use yesterday
       lastConfirmedPayoutDate.setDate(lastConfirmedPayoutDate.getDate() - 1);
