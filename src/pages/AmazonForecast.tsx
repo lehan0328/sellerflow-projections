@@ -609,44 +609,149 @@ export default function AmazonForecast() {
                           </div>
                         </div>
                         
-                        {/* Calculation Breakdown */}
+                        {/* Recent Growth Trends */}
                         <div className="px-4 pb-4 pt-2 bg-muted/30 border-t text-xs space-y-2">
-                          <div className="font-semibold text-muted-foreground mb-2">Calculation Breakdown:</div>
+                          <div className="font-semibold text-muted-foreground mb-2">Recent Growth Trends:</div>
                           
                           <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-1">
                               <div className="flex justify-between">
-                                <span className="text-muted-foreground">Daily Avg (Eligible):</span>
-                                <span className="font-mono">${avgDailyEligible.toFixed(2)}</span>
+                                <span className="text-muted-foreground">Last 30 Days Avg:</span>
+                                <span className="font-mono">
+                                  ${(() => {
+                                    const thirtyDaysAgo = new Date();
+                                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                                    const recent = confirmedPayouts
+                                      .filter(p => new Date(p.payout_date) >= thirtyDaysAgo)
+                                      .reduce((sum, p) => sum + p.total_amount, 0);
+                                    const count = confirmedPayouts.filter(p => new Date(p.payout_date) >= thirtyDaysAgo).length;
+                                    return count > 0 ? (recent / count).toFixed(0) : '0';
+                                  })()}
+                                </span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-muted-foreground">Settlement Period:</span>
-                                <span className="font-mono">{daysInPeriod} days</span>
+                                <span className="text-muted-foreground">Previous 30 Days Avg:</span>
+                                <span className="font-mono">
+                                  ${(() => {
+                                    const thirtyDaysAgo = new Date();
+                                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                                    const sixtyDaysAgo = new Date();
+                                    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+                                    const previous = confirmedPayouts
+                                      .filter(p => {
+                                        const date = new Date(p.payout_date);
+                                        return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+                                      })
+                                      .reduce((sum, p) => sum + p.total_amount, 0);
+                                    const count = confirmedPayouts.filter(p => {
+                                      const date = new Date(p.payout_date);
+                                      return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+                                    }).length;
+                                    return count > 0 ? (previous / count).toFixed(0) : '0';
+                                  })()}
+                                </span>
                               </div>
                               <div className="flex justify-between border-t pt-1">
-                                <span className="text-muted-foreground font-semibold">Total Eligible:</span>
-                                <span className="font-mono font-semibold">${eligibleAmount.toLocaleString()}</span>
+                                <span className="text-muted-foreground font-semibold">30-Day Growth:</span>
+                                <span className={`font-mono font-semibold ${(() => {
+                                  const thirtyDaysAgo = new Date();
+                                  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                                  const sixtyDaysAgo = new Date();
+                                  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+                                  const recent = confirmedPayouts
+                                    .filter(p => new Date(p.payout_date) >= thirtyDaysAgo)
+                                    .reduce((sum, p) => sum + p.total_amount, 0);
+                                  const recentCount = confirmedPayouts.filter(p => new Date(p.payout_date) >= thirtyDaysAgo).length;
+                                  const previous = confirmedPayouts
+                                    .filter(p => {
+                                      const date = new Date(p.payout_date);
+                                      return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+                                    })
+                                    .reduce((sum, p) => sum + p.total_amount, 0);
+                                  const prevCount = confirmedPayouts.filter(p => {
+                                    const date = new Date(p.payout_date);
+                                    return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+                                  }).length;
+                                  const recentAvg = recentCount > 0 ? recent / recentCount : 0;
+                                  const prevAvg = prevCount > 0 ? previous / prevCount : 0;
+                                  const growth = prevAvg > 0 ? ((recentAvg - prevAvg) / prevAvg * 100) : 0;
+                                  return growth >= 0 ? 'text-green-600' : 'text-red-600';
+                                })()}`}>
+                                  {(() => {
+                                    const thirtyDaysAgo = new Date();
+                                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                                    const sixtyDaysAgo = new Date();
+                                    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+                                    const recent = confirmedPayouts
+                                      .filter(p => new Date(p.payout_date) >= thirtyDaysAgo)
+                                      .reduce((sum, p) => sum + p.total_amount, 0);
+                                    const recentCount = confirmedPayouts.filter(p => new Date(p.payout_date) >= thirtyDaysAgo).length;
+                                    const previous = confirmedPayouts
+                                      .filter(p => {
+                                        const date = new Date(p.payout_date);
+                                        return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+                                      })
+                                      .reduce((sum, p) => sum + p.total_amount, 0);
+                                    const prevCount = confirmedPayouts.filter(p => {
+                                      const date = new Date(p.payout_date);
+                                      return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+                                    }).length;
+                                    const recentAvg = recentCount > 0 ? recent / recentCount : 0;
+                                    const prevAvg = prevCount > 0 ? previous / prevCount : 0;
+                                    const growth = prevAvg > 0 ? ((recentAvg - prevAvg) / prevAvg * 100) : 0;
+                                    return growth >= 0 ? `+${growth.toFixed(1)}%` : `${growth.toFixed(1)}%`;
+                                  })()}
+                                </span>
                               </div>
                             </div>
                             
                             <div className="space-y-1">
                               <div className="flex justify-between">
-                                <span className="text-muted-foreground">Reserve (held back):</span>
-                                <span className="font-mono text-orange-600">-${reserveAmount.toLocaleString()}</span>
+                                <span className="text-muted-foreground">Last 7 Days Total:</span>
+                                <span className="font-mono">
+                                  ${(() => {
+                                    const sevenDaysAgo = new Date();
+                                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                                    return confirmedPayouts
+                                      .filter(p => new Date(p.payout_date) >= sevenDaysAgo)
+                                      .reduce((sum, p) => sum + p.total_amount, 0)
+                                      .toLocaleString();
+                                  })()}
+                                </span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-muted-foreground">Unavailable:</span>
-                                <span className="font-mono text-red-600">-${unavailableAmount.toLocaleString()}</span>
+                                <span className="text-muted-foreground">Weekly Payouts:</span>
+                                <span className="font-mono">
+                                  {(() => {
+                                    const sevenDaysAgo = new Date();
+                                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                                    return confirmedPayouts.filter(p => new Date(p.payout_date) >= sevenDaysAgo).length;
+                                  })()} payouts
+                                </span>
                               </div>
                               <div className="flex justify-between border-t pt-1">
-                                <span className="text-muted-foreground font-semibold">Net Payout:</span>
-                                <span className="font-mono font-semibold text-amber-600">${payout.total_amount.toLocaleString()}</span>
+                                <span className="text-muted-foreground font-semibold">Consistency:</span>
+                                <span className="font-mono font-semibold">
+                                  {(() => {
+                                    const thirtyDaysAgo = new Date();
+                                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                                    const recentPayouts = confirmedPayouts
+                                      .filter(p => new Date(p.payout_date) >= thirtyDaysAgo)
+                                      .map(p => p.total_amount);
+                                    if (recentPayouts.length < 2) return 'N/A';
+                                    const avg = recentPayouts.reduce((sum, v) => sum + v, 0) / recentPayouts.length;
+                                    const variance = recentPayouts.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) / recentPayouts.length;
+                                    const stdDev = Math.sqrt(variance);
+                                    const cv = (stdDev / avg * 100);
+                                    return cv < 20 ? 'High' : cv < 40 ? 'Medium' : 'Variable';
+                                  })()}
+                                </span>
                               </div>
                             </div>
                           </div>
                           
                           <div className="text-[10px] text-muted-foreground mt-2 pt-2 border-t">
-                            Formula: Eligible - Reserve - Unavailable = ${eligibleAmount.toLocaleString()} - ${reserveAmount.toLocaleString()} - ${unavailableAmount.toLocaleString()} = ${payout.total_amount.toLocaleString()}
+                            Based on {confirmedPayouts.length} confirmed payout{confirmedPayouts.length !== 1 ? 's' : ''} from historical data
                           </div>
                         </div>
                       </div>
