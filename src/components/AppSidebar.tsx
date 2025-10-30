@@ -24,8 +24,8 @@ const overviewSections = [{
   icon: Home
 }, {
   id: "match-transactions",
-  title: "Match Transactions",
-  icon: Link2,
+  title: "Weighted Forecasts",
+  icon: Sparkles,
   showMatchCount: true
 }, {
   id: "analytics",
@@ -119,6 +119,15 @@ export function AppSidebar({
   const handleSectionClick = (sectionId: string, section?: any) => {
     // Always allow navigation during loading to prevent blocked interactions
     if (!subscription.isLoading) {
+      // Weighted Forecasts: Professional + Trial only
+      if (sectionId === 'match-transactions') {
+        const hasAccess = subscription.is_trialing === true || hasPlanAccess(subscription.plan, 'professional');
+        if (!hasAccess) {
+          setShowUpgradeModal(true);
+          return;
+        }
+      }
+      
       // Scenario Planning: Professional + Trial only
       if (sectionId === 'scenario-planning') {
         const hasAccess = subscription.is_trialing === true || hasPlanAccess(subscription.plan, 'professional');
@@ -165,7 +174,9 @@ export function AppSidebar({
               
               // Check locks based on plan requirements - evaluate consistently
               const hasScenarioAccess = subscription.is_trialing === true || hasPlanAccess(subscription.plan, 'professional');
-              const showProfessionalLock = section.id === 'scenario-planning' && !subscription.isLoading && !hasScenarioAccess;
+              const hasForecastAccess = subscription.is_trialing === true || hasPlanAccess(subscription.plan, 'professional');
+              const showProfessionalLock = (section.id === 'scenario-planning' || section.id === 'match-transactions') && !subscription.isLoading && 
+                (section.id === 'scenario-planning' ? !hasScenarioAccess : !hasForecastAccess);
               
               return <SidebarMenuItem key={section.id}>
                     <SidebarMenuButton onClick={() => handleSectionClick(section.id, section)} className={`
