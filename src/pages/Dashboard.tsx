@@ -1606,15 +1606,14 @@ const Dashboard = () => {
         return false;
       }
       
-      // Exclude forecasted payouts in the past - forecasts should start from tomorrow
+      // Exclude forecasted payouts in the past - forecasts should start from today
       if ((payout.status as string) === 'forecasted') {
         const payoutDate = new Date(payout.payout_date);
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         payoutDate.setHours(0, 0, 0, 0);
         
-        if (payoutDate < tomorrow) {
+        if (payoutDate < today) {
           console.log('[Dashboard] Excluding past forecasted payout:', payout.payout_date);
           return false;
         }
