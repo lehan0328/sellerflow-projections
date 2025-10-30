@@ -532,22 +532,16 @@ export const CashFlowCalendar = ({
     
     const days = eachDayOfInterval({ start: chartStart, end: chartEnd });
     
-    // Create a map of projected balances from safe spending calculation
-    const projectedBalanceMap = new Map<string, number>();
-    if (projectedDailyBalances && projectedDailyBalances.length > 0) {
-      projectedDailyBalances.forEach(({ date, balance }) => {
-        const dateKey = format(new Date(date), 'yyyy-MM-dd');
-        projectedBalanceMap.set(dateKey, balance);
-      });
-    }
+    // CRITICAL: Always calculate projected balances cumulatively from bank balance
+    // Day 0 (today) = bank balance
+    // Day 1 = Day 0 + Day 1 net cash flow  
+    // Day 2 = Day 1 + Day 2 net cash flow, etc.
     
-    // Use safe spending as single source of truth for balances
-    const useSafeSpendingBalances = projectedBalanceMap.size > 0;
-    let runningTotal = bankAccountBalance;
+    let runningTotal = bankAccountBalance; // Start with actual bank balance today
     let cumulativeInflow = 0;
     let cumulativeOutflow = 0;
     
-    return days.map(day => {
+    return days.map((day, dayIndex) => {
       const dayEvents = events.filter(event => 
         format(event.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd')
       );
@@ -563,17 +557,14 @@ export const CashFlowCalendar = ({
       dayToCheck.setHours(0, 0, 0, 0);
       const isToday = format(dayToCheck, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
       
-      // Get projected balance from safe spending calculation (single source of truth)
-      const dateKey = format(day, 'yyyy-MM-dd');
-      const projectedBalance = projectedBalanceMap.get(dateKey);
-      
-      // Special handling for today: always use bank balance, don't apply dailyChange
+      // For today (day 0), use bank balance as-is without adding daily change
+      // For future days, add the daily change to build cumulative projection
       if (isToday) {
         runningTotal = bankAccountBalance;
-      } else if (useSafeSpendingBalances && projectedBalance !== undefined) {
-        runningTotal = projectedBalance;
+        console.log('[Chart] Day 0 (Today):', format(day, 'yyyy-MM-dd'), '= Bank Balance:', runningTotal.toFixed(2));
       } else {
         runningTotal += dailyChange;
+        console.log('[Chart]', format(day, 'yyyy-MM-dd'), '= Previous Balance + Daily Change (', dailyChange.toFixed(2), ') =', runningTotal.toFixed(2));
       }
       
       // Check if this day has an Amazon payout
