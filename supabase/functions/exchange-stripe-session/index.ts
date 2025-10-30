@@ -47,88 +47,98 @@ serve(async (req) => {
 
     const accounts = [];
 
-    // Process each connected account
+    // Process each connected account - ONLY bank accounts (skip credit cards)
     for (const account of session.accounts?.data || []) {
       const fullAccount = await stripe.financialConnections.accounts.retrieve(account.id);
       logStep("Processing account", { accountId: fullAccount.id, type: fullAccount.subcategory });
 
+      // Skip credit cards - only process bank accounts
+      const isCredit = fullAccount.subcategory === 'credit_card';
+      if (isCredit) {
+        logStep("Skipping credit card (not supported)", { name: fullAccount.display_name });
+        continue;
+      }
+
+      // Get user's account_id from profile
+      const { data: profile, error: profileError } = await supabaseClient
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (profileError || !profile?.account_id) {
+        throw new Error('User profile or account_id not found');
+      }
+
       const accountData = {
         user_id: user.id,
+        account_id: profile.account_id,
         institution_name: fullAccount.institution_name,
         account_name: fullAccount.display_name || fullAccount.last4 || 'Account',
-        account_type: fullAccount.subcategory === 'credit_card' ? 'credit' : fullAccount.subcategory || 'checking',
-        balance: fullAccount.balance?.current || 0,
-        available_balance: fullAccount.balance?.available || null,
+        account_type: fullAccount.subcategory || 'checking',
+        balance: fullAccount.balance?.current ? fullAccount.balance.current / 100 : 0,
+        available_balance: fullAccount.balance?.available ? fullAccount.balance.available / 100 : null,
         currency_code: fullAccount.balance?.currency?.toUpperCase() || 'USD',
-        plaid_account_id: fullAccount.id, // Store Stripe account ID here
+        plaid_account_id: fullAccount.id,
         encrypted_access_token: null,
         encrypted_account_number: fullAccount.last4 || null,
         encrypted_plaid_item_id: null,
-        account_id: fullAccount.id,
+        initial_balance: fullAccount.balance?.current ? fullAccount.balance.current / 100 : 0,
+        initial_balance_date: new Date().toISOString(),
+        last_sync: new Date().toISOString(),
       };
 
-      // Determine if it's a credit card or bank account
-      const isCredit = fullAccount.subcategory === 'credit_card';
+      // Insert into bank_accounts table
+      const { data, error } = await supabaseClient
+        .from('bank_accounts')
+        .insert(accountData)
+        .select()
+        .single();
 
-      if (isCredit) {
-        // Insert into credit_cards table
-        const { data, error } = await supabaseClient
-          .from('credit_cards')
-          .insert({
-            user_id: accountData.user_id,
-            institution_name: accountData.institution_name,
-            account_name: accountData.account_name,
-            account_type: 'credit',
-            balance: accountData.balance / 100, // Convert from cents
-            credit_limit: 0, // Stripe doesn't provide this directly
-            available_credit: Math.abs(accountData.available_balance || 0) / 100,
-            currency_code: accountData.currency_code,
-            plaid_account_id: accountData.plaid_account_id,
-            encrypted_access_token: null,
-            encrypted_account_number: accountData.encrypted_account_number,
-            encrypted_plaid_item_id: null,
-          })
-          .select()
-          .single();
-
-        if (error) {
-          logStep("Error inserting credit card", { error: error.message });
-          throw error;
-        }
-        accounts.push({ ...data, type: 'credit_card' });
-      } else {
-        // Insert into bank_accounts table
-        const { data, error } = await supabaseClient
-          .from('bank_accounts')
-          .insert({
-            user_id: accountData.user_id,
-            institution_name: accountData.institution_name,
-            account_name: accountData.account_name,
-            account_type: accountData.account_type,
-            balance: accountData.balance / 100, // Convert from cents
-            available_balance: accountData.available_balance ? accountData.available_balance / 100 : null,
-            currency_code: accountData.currency_code,
-            plaid_account_id: accountData.plaid_account_id,
-            encrypted_access_token: null,
-            encrypted_account_number: accountData.encrypted_account_number,
-            encrypted_plaid_item_id: null,
-            account_id: accountData.account_id,
-          })
-          .select()
-          .single();
-
-        if (error) {
-          logStep("Error inserting bank account", { error: error.message });
-          throw error;
-        }
-        accounts.push({ ...data, type: 'bank_account' });
+      if (error) {
+        logStep("Error inserting bank account", { error: error.message });
+        throw error;
       }
+      
+      accounts.push({ ...data, type: 'bank_account' });
+      logStep("Bank account stored successfully", { id: data.id });
     }
 
     logStep("Successfully processed accounts", { count: accounts.length });
 
+    // Sync transactions for all bank accounts
+    logStep("Starting transaction sync for bank accounts");
+    const syncResults = { success: 0, failed: 0 };
+    
+    for (const account of accounts) {
+      try {
+        logStep("Syncing transactions for account", { accountId: account.id });
+        const { data: syncData, error: syncError } = await supabaseClient.functions.invoke('sync-stripe-transactions', {
+          body: { accountId: account.id, isInitialSync: true },
+        });
+        
+        if (syncError) {
+          logStep("Failed to sync transactions", { accountId: account.id, error: syncError.message });
+          syncResults.failed++;
+        } else {
+          logStep("Successfully synced transactions", { accountId: account.id, count: syncData?.count || 0 });
+          syncResults.success++;
+        }
+      } catch (error) {
+        logStep("Error syncing transactions", { accountId: account.id, error: error instanceof Error ? error.message : String(error) });
+        syncResults.failed++;
+      }
+    }
+
+    logStep("Transaction sync complete", syncResults);
+
     return new Response(
-      JSON.stringify({ accounts }), 
+      JSON.stringify({ 
+        accounts, 
+        transactionsSynced: syncResults.success,
+        transactionsFailed: syncResults.failed,
+        message: `Connected ${accounts.length} account(s) and synced ${syncResults.success} transaction histories`
+      }), 
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,

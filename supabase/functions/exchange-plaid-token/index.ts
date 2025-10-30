@@ -164,9 +164,8 @@ serve(async (req) => {
       console.log('No credit accounts detected, skipping liabilities fetch');
     }
 
-    // Store accounts in database - ONLY process accounts the user selected
+    // Store accounts in database - ONLY process bank accounts (skip credit cards)
     const bankAccountIds: string[] = [];
-    const creditCardIds: string[] = [];
     
     console.log('User selected accounts:', selectedAccountIds);
     console.log('Total accounts available:', accountsData.accounts.length);
@@ -180,165 +179,69 @@ serve(async (req) => {
       
       console.log(`Processing selected account: ${account.name}, type: ${account.type}, subtype: ${account.subtype}`);
       
-      // Check for duplicates BEFORE inserting
-      if (account.type === 'credit') {
-        // Check if this credit card already exists
-        const { data: existingCard } = await supabaseAdmin
-          .from('credit_cards')
-          .select('id, account_name, plaid_account_id')
-          .eq('account_id', accountId)
-          .eq('plaid_account_id', account.account_id)
-          .maybeSingle();
-        
-        if (existingCard) {
-          console.log(`⚠️ Credit card already connected: ${existingCard.account_name} (${existingCard.id})`);
-          console.log('Skipping duplicate - this account is already linked');
-          continue;
-        }
-      } else {
-        // Check if this bank account already exists
-        const { data: existingAccount } = await supabaseAdmin
-          .from('bank_accounts')
-          .select('id, account_name, plaid_account_id')
-          .eq('account_id', accountId)
-          .eq('plaid_account_id', account.account_id)
-          .maybeSingle();
-        
-        if (existingAccount) {
-          console.log(`⚠️ Bank account already connected: ${existingAccount.account_name} (${existingAccount.id})`);
-          console.log('Skipping duplicate - this account is already linked');
-          continue;
-        }
-      }
-      
-      // Determine if it's a credit card or bank account
-      // Check both type and subtype for credit cards
+      // Skip credit cards - only process bank accounts
       const isCreditCard = account.type === 'credit' || account.subtype === 'credit card' || account.subtype === 'credit';
       
       if (isCreditCard) {
-        console.log('Processing CREDIT CARD account:', { 
-          name: account.name, 
-          balance: account.balances.current, 
-          limit: account.balances.limit,
-          available: account.balances.available
-        });
-        
-        // Find matching liabilities data for this credit card
-        const liabilityInfo = liabilitiesData?.find((lib: any) => lib.account_id === account.account_id);
-        
-        console.log('📊 PLAID DATA AVAILABLE FOR', account.name, ':');
-        console.log('  Account Balance Data:');
-        console.log('    - current (balance):', account.balances.current);
-        console.log('    - limit:', account.balances.limit);
-        console.log('    - available:', account.balances.available);
-        console.log('  Liabilities Data (Statement Info):');
-        if (liabilityInfo) {
-          console.log('    ✅ AVAILABLE from Plaid:');
-          console.log('      - last_statement_balance:', liabilityInfo.last_statement_balance);
-          console.log('      - minimum_payment_amount:', liabilityInfo.minimum_payment_amount);
-          console.log('      - next_payment_due_date:', liabilityInfo.next_payment_due_date);
-          console.log('      - last_statement_issue_date:', liabilityInfo.last_statement_issue_date);
-          console.log('      - is_overdue:', liabilityInfo.is_overdue);
-          console.log('      - last_payment_amount:', liabilityInfo.last_payment_amount);
-          console.log('      - last_payment_date:', liabilityInfo.last_payment_date);
-        } else {
-          console.log('    ❌ NOT AVAILABLE from Plaid');
-          console.log('    📝 Note: Liabilities endpoint often returns null in Plaid Sandbox');
-          console.log('    💡 To get real data in sandbox, use credentials: user_good / pass_good');
-          console.log('    🔧 Users can manually enter these values in Settings > Credit Cards');
-        }
-        
-        const currentBalance = Math.abs(account.balances.current || 0);
-        const now = new Date().toISOString();
-        
-        // Store as credit card with encrypted access token - insert directly to bypass RPC issues
-        const { data: cardData, error: insertError } = await supabaseAdmin
-          .from('credit_cards')
-          .insert({
-            user_id: user.id,
-            account_id: accountId,
-            institution_name: metadata.institution.name,
-            account_name: account.name,
-            account_type: account.subtype || 'credit',
-            balance: currentBalance,
-            credit_limit: account.balances.limit || 0,
-            available_credit: account.balances.available || 0,
-            currency_code: account.balances.iso_currency_code || 'USD',
-            encrypted_access_token: access_token,
-            encrypted_plaid_item_id: item_id,
-            plaid_account_id: account.account_id,
-            minimum_payment: liabilityInfo?.minimum_payment_amount || null,
-            payment_due_date: liabilityInfo?.next_payment_due_date || null,
-            statement_close_date: liabilityInfo?.last_statement_issue_date || null,
-            // FIXED: Don't fall back to currentBalance - use null if no liabilities data
-            statement_balance: liabilityInfo?.last_statement_balance ? Math.abs(liabilityInfo.last_statement_balance) : null,
-            annual_fee: null,
-            cash_back: 0,
-            priority: priorities && priorities[account.account_id] ? priorities[account.account_id] : 3,
-            initial_balance: currentBalance,
-            initial_balance_date: now,
-            last_sync: now,
-          })
-          .select('id')
-          .single();
-
-        if (insertError) {
-          console.error('Error inserting credit card:', insertError);
-          throw insertError;
-        }
-        
-        creditCardIds.push(cardData.id);
-        console.log('✅ Credit card stored successfully:', cardData.id);
-      
-        // Show priority dialog for newly connected card
-        if (metadata.accounts && metadata.accounts.length === 1) {
-          // Only show for single card connection to avoid blocking other cards
-          console.log('📋 Showing priority dialog for newly connected card');
-        }
-      } else {
-        const currentBalance = account.balances.current || 0;
-        const now = new Date().toISOString();
-        
-        // Store as bank account with encrypted access token - insert directly to bypass RPC issues
-        const { data: accountData, error: insertError } = await supabaseAdmin
-          .from('bank_accounts')
-          .insert({
-            user_id: user.id,
-            account_id: accountId,
-            institution_name: metadata.institution.name,
-            account_name: account.name,
-            account_type: account.subtype || account.type,
-            balance: currentBalance,
-            available_balance: account.balances.available,
-            currency_code: account.balances.iso_currency_code || 'USD',
-            encrypted_access_token: access_token,
-            encrypted_plaid_item_id: item_id,
-            plaid_account_id: account.account_id,
-            initial_balance: currentBalance,
-            initial_balance_date: now,
-            last_sync: now,
-          })
-          .select('id')
-          .single();
-
-        if (insertError) {
-          console.error('Error inserting bank account:', insertError);
-          throw insertError;
-        }
-        
-        bankAccountIds.push(accountData.id);
-        console.log('✅ Bank account stored successfully:', accountData.id);
+        console.log('⏭️ Skipping credit card (not supported):', account.name);
+        continue;
       }
+      
+      // Check if this bank account already exists
+      const { data: existingAccount } = await supabaseAdmin
+        .from('bank_accounts')
+        .select('id, account_name, plaid_account_id')
+        .eq('account_id', accountId)
+        .eq('plaid_account_id', account.account_id)
+        .maybeSingle();
+      
+      if (existingAccount) {
+        console.log(`⚠️ Bank account already connected: ${existingAccount.account_name} (${existingAccount.id})`);
+        console.log('Skipping duplicate - this account is already linked');
+        continue;
+      }
+      
+      const currentBalance = account.balances.current || 0;
+      const now = new Date().toISOString();
+      
+      // Store as bank account with encrypted access token
+      const { data: accountData, error: insertError } = await supabaseAdmin
+        .from('bank_accounts')
+        .insert({
+          user_id: user.id,
+          account_id: accountId,
+          institution_name: metadata.institution.name,
+          account_name: account.name,
+          account_type: account.subtype || account.type,
+          balance: currentBalance,
+          available_balance: account.balances.available,
+          currency_code: account.balances.iso_currency_code || 'USD',
+          encrypted_access_token: access_token,
+          encrypted_plaid_item_id: item_id,
+          plaid_account_id: account.account_id,
+          initial_balance: currentBalance,
+          initial_balance_date: now,
+          last_sync: now,
+        })
+        .select('id')
+        .single();
+
+      if (insertError) {
+        console.error('Error inserting bank account:', insertError);
+        throw insertError;
+      }
+      
+      bankAccountIds.push(accountData.id);
+      console.log('✅ Bank account stored successfully:', accountData.id);
     }
 
-    console.log('Successfully stored accounts:', { bankAccounts: bankAccountIds.length, creditCards: creditCardIds.length });
+    console.log('Successfully stored accounts:', { bankAccounts: bankAccountIds.length });
 
-    // Sync transactions immediately and wait for completion
-    console.log('🔄 Starting transaction sync for all accounts...');
+    // Sync transactions immediately for bank accounts
+    console.log('🔄 Starting transaction sync for bank accounts...');
     
     const syncResults = {
-      bankAccounts: { success: 0, failed: 0 },
-      creditCards: { success: 0, failed: 0 }
+      bankAccounts: { success: 0, failed: 0 }
     };
 
     // Sync bank accounts
@@ -361,39 +264,18 @@ serve(async (req) => {
       }
     }
 
-    // Sync credit cards
-    for (const accountId of creditCardIds) {
-      try {
-        console.log('Starting transaction sync for credit card:', accountId);
-        const { data: syncData, error: syncError } = await supabase.functions.invoke('sync-plaid-transactions', {
-          body: { accountId, isInitialSync: true, accountType: 'credit' },
-        });
-        if (syncError) {
-          console.error(`Failed to sync transactions for credit card ${accountId}:`, syncError);
-          syncResults.creditCards.failed++;
-        } else {
-          console.log(`✅ Successfully synced transactions for credit card ${accountId}:`, syncData);
-          syncResults.creditCards.success++;
-        }
-      } catch (error) {
-        console.error(`Error syncing transactions for credit card ${accountId}:`, error);
-        syncResults.creditCards.failed++;
-      }
-    }
-
     console.log('📊 Transaction sync complete:', syncResults);
 
-    const totalSynced = syncResults.bankAccounts.success + syncResults.creditCards.success;
-    const totalFailed = syncResults.bankAccounts.failed + syncResults.creditCards.failed;
+    const totalSynced = syncResults.bankAccounts.success;
+    const totalFailed = syncResults.bankAccounts.failed;
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         bankAccountIds,
-        creditCardIds,
         transactionsSynced: totalSynced,
         transactionsFailed: totalFailed,
-        message: `Successfully connected ${accountsData.accounts.length} account(s) and synced ${totalSynced} transaction histories` 
+        message: `Successfully connected ${accountsData.accounts.length} bank account(s) and synced ${totalSynced} transaction histories` 
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

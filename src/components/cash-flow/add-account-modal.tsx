@@ -76,9 +76,8 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
           if (exchangeError) {
             toast.error("Connection error: " + exchangeError.message);
           } else {
-            toast.success(`Successfully connected ${accounts.accounts.length} account(s)`);
+            toast.success(`Successfully connected ${accounts.accounts.length} bank account(s)`);
             refetchBankAccounts();
-            refetchCreditCards();
             onOpenChange(false);
           }
           setIsLoading(false);
@@ -142,9 +141,8 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
 
         if (error) throw error;
 
-        toast.success(`Successfully connected ${metadata.accounts?.length || 0} account(s)!`);
+        toast.success(`Successfully connected ${metadata.accounts?.length || 0} bank account(s)!`);
         refetchBankAccounts();
-        refetchCreditCards();
         onOpenChange(false);
       } catch (error: any) {
         console.error('Error exchanging Plaid token:', error);
@@ -218,8 +216,11 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
                   <div className="flex-1">
                     <h3 className="font-medium">Stripe Financial Connections</h3>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Connect your bank accounts and credit cards securely through Stripe. 
+                      Connect your bank accounts securely through Stripe. 
                       Supports 12,000+ financial institutions.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2 italic">
+                      Note: Credit cards are not supported at this time.
                     </p>
                   </div>
                 </div>
@@ -257,6 +258,9 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
                     <p className="text-sm text-blue-700 mt-1">
                       Connect using Plaid's secure interface. This is the legacy method 
                       and will be phased out in favor of Stripe.
+                    </p>
+                    <p className="text-xs text-blue-600 mt-2 italic">
+                      Note: Credit cards are not supported at this time.
                     </p>
                   </div>
                 </div>
