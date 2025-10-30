@@ -387,6 +387,19 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const amazonDateRange = getAmazonDateRange();
   const filteredAmazonRevenue = amazonPayouts
     .filter(payout => {
+      if (payout.status !== 'estimated') return true;
+      
+      // Exclude open settlements for daily accounts
+      const accountFrequency = payout.amazon_accounts?.payout_frequency;
+      if (accountFrequency === 'daily') {
+        const rawData = payout.raw_settlement_data as any;
+        const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
+        return hasEndDate; // Only count closed settlements
+      }
+      
+      return true;
+    })
+    .filter(payout => {
       const payoutDate = new Date(payout.payout_date);
       return payoutDate >= amazonDateRange.start && payoutDate < amazonDateRange.end;
     })

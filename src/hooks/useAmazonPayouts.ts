@@ -282,9 +282,29 @@ export const useAmazonPayouts = () => {
     .filter(payout => payout.status === 'confirmed')
     .reduce((sum, payout) => sum + payout.total_amount, 0);
 
-  // Exclude open settlements from summary when advanced forecasting is enabled
-  const totalEstimated = (forecastsEnabled || advancedModelingEnabled) ? 0 : amazonPayouts
-    .filter(payout => payout.status === 'estimated')
+  // Exclude open settlements from summary stats for DAILY accounts
+  const totalEstimated = amazonPayouts
+    .filter(payout => {
+      if (payout.status !== 'estimated') return false;
+      
+      // For daily accounts, exclude open settlements from totals
+      const accountFrequency = payout.amazon_accounts?.payout_frequency;
+      if (accountFrequency === 'daily') {
+        const rawData = payout.raw_settlement_data as any;
+        const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
+        if (!hasEndDate) {
+          console.log('[Summary Stats] Excluding daily account open settlement from totalEstimated:', payout.settlement_id);
+          return false; // Don't count in summary
+        }
+      }
+      
+      // For bi-weekly accounts, only count if forecasts are disabled
+      if (forecastsEnabled || advancedModelingEnabled) {
+        return false;
+      }
+      
+      return true; // Count bi-weekly open settlements when forecasts disabled
+    })
     .reduce((sum, payout) => sum + payout.total_amount, 0);
   
   // Calculate available today (for daily payout accounts)

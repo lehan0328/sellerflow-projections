@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Clock, Plus, Loader2, History as HistoryIcon, FileText } from "lucide-react";
+import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Clock, Plus, Loader2, History as HistoryIcon, FileText, AlertCircle } from "lucide-react";
 import { AmazonSettledPayouts } from "./amazon-settled-payouts";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
@@ -611,6 +611,18 @@ export function AmazonPayouts() {
               </Alert>
             )}
           </div>
+        )}
+        
+        {/* Daily Account Information Alert */}
+        {amazonAccounts.some(acc => acc.payout_frequency === 'daily') && 
+         amazonPayouts.some(p => p.status === 'estimated' && p.amazon_accounts?.payout_frequency === 'daily') && (
+          <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/30">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800 dark:text-blue-200">
+              <strong>Daily Account Information:</strong> Open settlements shown below are for reference only and are not included in cash flow calculations. 
+              Your daily forecasts provide more accurate day-by-day projections based on actual sales velocity.
+            </AlertDescription>
+          </Alert>
         )}
         
         {/* Open Settlements - Always visible at top */}
