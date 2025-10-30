@@ -89,12 +89,20 @@ serve(async (req) => {
 
         console.log(`✅ ${readyAccounts.length} accounts ready for forecasting`);
 
-        // Delete old forecasts
-        await supabaseAdmin
+        // Delete ALL old forecasts for this account (not just user_id)
+        // This ensures only one set of forecasts exists per account
+        console.log(`[DAILY-FORECAST-REGEN] Deleting existing forecasts for account: ${userSetting.account_id}`);
+        const { error: deleteError } = await supabaseAdmin
           .from('amazon_payouts')
           .delete()
-          .eq('user_id', userSetting.user_id)
+          .eq('account_id', userSetting.account_id)
           .eq('status', 'forecasted');
+        
+        if (deleteError) {
+          console.error(`❌ Error deleting existing forecasts:`, deleteError);
+        } else {
+          console.log(`✅ Deleted all existing forecasts for account`);
+        }
 
         // Generate new forecasts
         const { data: forecastData, error: forecastError } = await supabaseAdmin.functions.invoke(

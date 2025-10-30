@@ -224,10 +224,18 @@ export const ForecastSettings = () => {
         queryKey: ['amazon-payouts']
       });
       setSyncProgress(30);
+      
+      // Get account_id for consistent forecast deletion
+      if (!profile?.account_id) {
+        throw new Error('Account ID not found');
+      }
+      
       if (!enabled) {
-        // Delete all forecasted payouts when disabled
+        // Delete all forecasted payouts for this ACCOUNT (not just user_id)
+        // This ensures only one set of forecasts exists per account
         setSyncProgress(50);
-        await supabase.from('amazon_payouts').delete().eq('user_id', currentUser.id).eq('status', 'forecasted');
+        console.log('🗑️ [TOGGLE] Deleting forecasts for account:', profile.account_id);
+        await supabase.from('amazon_payouts').delete().eq('account_id', profile.account_id).eq('status', 'forecasted');
         setSyncProgress(80);
         await refetchPayouts();
         setSyncProgress(100);
@@ -245,15 +253,16 @@ export const ForecastSettings = () => {
         });
         setSyncProgress(40);
         try {
-          // CRITICAL: Delete ALL old forecasts FIRST before generating new ones
-          console.log('🗑️ [TOGGLE] Deleting old forecasts before generation...');
+          // CRITICAL: Delete ALL old forecasts FIRST for this ACCOUNT
+          // This ensures only one set of forecasts exists per account
+          console.log('🗑️ [TOGGLE] Deleting old forecasts for account:', profile.account_id);
           const {
             error: deleteError
-          } = await supabase.from('amazon_payouts').delete().eq('user_id', currentUser.id).eq('status', 'forecasted');
+          } = await supabase.from('amazon_payouts').delete().eq('account_id', profile.account_id).eq('status', 'forecasted');
           if (deleteError) {
             console.error('❌ [TOGGLE] Failed to delete old forecasts:', deleteError);
           } else {
-            console.log('✅ [TOGGLE] Old forecasts deleted');
+            console.log('✅ [TOGGLE] Old forecasts deleted for account');
           }
           setSyncProgress(45);
 
@@ -490,16 +499,16 @@ export const ForecastSettings = () => {
 
       // Handle forecasts based on enabled state
       if (!forecastsEnabled) {
-        // Delete all forecasted payouts when disabled
-        console.log('🗑️ Forecasts disabled, deleting forecasted payouts...');
+        // Delete all forecasted payouts for this ACCOUNT (not just user_id)
+        console.log('🗑️ Forecasts disabled, deleting forecasted payouts for account:', profile.account_id);
         const {
           error: deleteError
-        } = await supabase.from('amazon_payouts').delete().eq('user_id', currentUser.id).eq('status', 'forecasted');
+        } = await supabase.from('amazon_payouts').delete().eq('account_id', profile.account_id).eq('status', 'forecasted');
         if (deleteError) {
           console.error('❌ Error deleting forecasts:', deleteError);
           toast.error("Settings saved but failed to remove forecasted payouts");
         } else {
-          console.log('✅ Forecasts deleted');
+          console.log('✅ Forecasts deleted for account');
           toast.success("Forecast settings saved - forecasts disabled");
         }
       } else {
@@ -523,14 +532,15 @@ export const ForecastSettings = () => {
           const payoutFrequency = amazonAccount?.payout_frequency || 'bi-weekly';
           console.log(`📊 Account type: ${payoutFrequency} payouts`);
           
-          // Delete old forecasts
+          // Delete old forecasts for this ACCOUNT (not just user_id)
+          console.log('🗑️ Deleting old forecasts for account:', profile.account_id);
           const {
             error: deleteError
-          } = await supabase.from('amazon_payouts').delete().eq('user_id', currentUser.id).eq('status', 'forecasted');
+          } = await supabase.from('amazon_payouts').delete().eq('account_id', profile.account_id).eq('status', 'forecasted');
           if (deleteError) {
             console.error('❌ Error deleting old forecasts:', deleteError);
           } else {
-            console.log('✅ Old forecasts deleted');
+            console.log('✅ Old forecasts deleted for account');
           }
 
           // Generate new forecasts using main router function
@@ -696,8 +706,20 @@ export const ForecastSettings = () => {
                 const payoutFrequency = amazonAccount?.payout_frequency || 'bi-weekly';
                 console.log(`🔄 Regenerating forecasts (account type: ${payoutFrequency}, will auto-route)...`);
                 
-                // Delete old forecasts
-                await supabase.from('amazon_payouts').delete().eq('user_id', currentUser.id).eq('status', 'forecasted');
+                // Get user's account_id for consistent forecast deletion
+                const { data: profile } = await supabase
+                  .from('profiles')
+                  .select('account_id')
+                  .eq('user_id', currentUser.id)
+                  .single();
+                
+                if (!profile?.account_id) {
+                  throw new Error('Account ID not found');
+                }
+                
+                // Delete old forecasts for this ACCOUNT (not just user_id)
+                console.log('🗑️ Deleting old forecasts for account:', profile.account_id);
+                await supabase.from('amazon_payouts').delete().eq('account_id', profile.account_id).eq('status', 'forecasted');
                 setSyncProgress(50);
                 
                 // Generate new forecasts using main router
