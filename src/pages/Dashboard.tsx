@@ -1550,12 +1550,15 @@ const Dashboard = () => {
 
   // Convert Amazon payouts to calendar events (filter out forecasts if disabled)
   console.log('[Dashboard] Converting Amazon payouts to calendar events. Total payouts:', amazonPayouts.length, 'Forecasts enabled:', forecastsEnabled);
-  console.log('[Dashboard] All Amazon payouts:', amazonPayouts.map(p => ({ 
-    id: p.id, 
-    status: p.status, 
-    payout_date: p.payout_date, 
-    amount: p.total_amount 
-  })));
+  
+  // Track event creation for Oct 31 to Dec 12
+  const eventCreationLog: any = {
+    vendorEvents: [],
+    incomeEvents: [],
+    creditCardEvents: [],
+    recurringEvents: [],
+    amazonEvents: []
+  };
   
   const amazonPayoutEvents: CashFlowEvent[] = amazonPayouts
     .filter(payout => {
@@ -1684,12 +1687,16 @@ const Dashboard = () => {
           ? `Amazon Settlement (In Progress) - ${payout.marketplace_name}`
           : `Amazon Payout - ${payout.marketplace_name}`;
       
-      console.log('[Calendar] Adding Amazon payout:', {
-        date: displayDate.toISOString().split('T')[0],
-        amount: payout.total_amount,
-        status: payout.status,
-        isOpen: isOpenSettlement
-      });
+      // Track event creation for logging
+      const eventDateStr = displayDate.toISOString().split('T')[0];
+      if (eventDateStr >= '2024-10-31' && eventDateStr <= '2025-12-12') {
+        eventCreationLog.amazonEvents.push({
+          date: eventDateStr,
+          amount: payout.total_amount,
+          status: payout.status,
+          settlementId: payout.settlement_id
+        });
+      }
       
       return {
         id: `amazon-payout-${payout.id}`,
@@ -1702,17 +1709,49 @@ const Dashboard = () => {
     });
   
   console.log('[Dashboard] Amazon payout events created:', amazonPayoutEvents.length);
-  console.log('🔍 [Dashboard] Amazon payouts for Dec 12, 2025:', {
-    total: amazonPayoutEvents.filter(e => {
-      const d = new Date(e.date);
-      return d.getFullYear() === 2025 && d.getMonth() === 11 && d.getDate() === 12;
-    }).length,
-    amounts: amazonPayoutEvents
-      .filter(e => {
-        const d = new Date(e.date);
-        return d.getFullYear() === 2025 && d.getMonth() === 11 && d.getDate() === 12;
-      })
-      .map(e => ({ date: e.date.toISOString().split('T')[0], amount: e.amount, source: e.source }))
+  
+  // Log all event creation for target date range
+  vendorEvents.forEach(e => {
+    const dateStr = e.date.toISOString().split('T')[0];
+    if (dateStr >= '2024-10-31' && dateStr <= '2025-12-12') {
+      eventCreationLog.vendorEvents.push({ date: dateStr, amount: -e.amount, desc: e.description });
+    }
+  });
+  
+  incomeEvents.forEach(e => {
+    const dateStr = e.date.toISOString().split('T')[0];
+    if (dateStr >= '2024-10-31' && dateStr <= '2025-12-12') {
+      eventCreationLog.incomeEvents.push({ date: dateStr, amount: e.amount, desc: e.description });
+    }
+  });
+  
+  creditCardEvents.forEach(e => {
+    const dateStr = e.date.toISOString().split('T')[0];
+    if (dateStr >= '2024-10-31' && dateStr <= '2025-12-12') {
+      eventCreationLog.creditCardEvents.push({ date: dateStr, amount: -e.amount, desc: e.description });
+    }
+  });
+  
+  recurringEvents.forEach(e => {
+    const dateStr = e.date.toISOString().split('T')[0];
+    if (dateStr >= '2024-10-31' && dateStr <= '2025-12-12') {
+      eventCreationLog.recurringEvents.push({ 
+        date: dateStr, 
+        amount: e.type === 'inflow' ? e.amount : -e.amount, 
+        desc: e.description 
+      });
+    }
+  });
+  
+  console.log('📅 [Dashboard] Event Creation Summary (Oct 31 - Dec 12):', {
+    vendorEvents: eventCreationLog.vendorEvents.length,
+    incomeEvents: eventCreationLog.incomeEvents.length,
+    creditCardEvents: eventCreationLog.creditCardEvents.length,
+    recurringEvents: eventCreationLog.recurringEvents.length,
+    amazonEvents: eventCreationLog.amazonEvents.length,
+    totalEvents: eventCreationLog.vendorEvents.length + eventCreationLog.incomeEvents.length + 
+                 eventCreationLog.creditCardEvents.length + eventCreationLog.recurringEvents.length + 
+                 eventCreationLog.amazonEvents.length
   });
 
   // Combine all events for calendar - only include real user data
@@ -1827,20 +1866,22 @@ const Dashboard = () => {
       runningBalance += dailyChange;
       dailyBalances.push({ date: new Date(currentDate), balance: runningBalance });
       
-      // Log Dec 12, 2025 specifically
-      if (dateStr === '2025-12-12') {
-        console.log('📊 [Calendar] Dec 12 calculation:', {
-          date: dateStr,
-          dayEvents: dayEvents.length,
-          amazonEvents: dayEvents.filter(e => e.source?.includes('Amazon')).map(e => ({ 
-            amount: e.amount, 
-            source: e.source 
-          })),
-          dailyInflow,
-          dailyOutflow,
-          dailyChange,
-          runningBalance,
-          previousBalance: runningBalance - dailyChange
+      // Log specific dates in target range
+      if (dateStr >= '2024-10-31' && dateStr <= '2025-12-12' && (dailyChange !== 0 || dateStr === '2024-10-31' || dateStr === '2025-12-12')) {
+        console.log(`📊 [Calendar] ${dateStr}:`, {
+          events: dayEvents.length,
+          eventBreakdown: {
+            vendor: dayEvents.filter(e => e.vendor).length,
+            income: dayEvents.filter(e => e.type === 'inflow' && !e.source?.includes('Amazon')).length,
+            amazon: dayEvents.filter(e => e.source?.includes('Amazon')).length,
+            creditCard: dayEvents.filter(e => e.type === 'credit-payment').length,
+            recurring: dayEvents.filter(e => e.source === 'Recurring' || e.vendor === 'Recurring').length
+          },
+          dailyInflow: dailyInflow.toFixed(2),
+          dailyOutflow: dailyOutflow.toFixed(2),
+          dailyChange: dailyChange.toFixed(2),
+          runningBalance: runningBalance.toFixed(2),
+          previousBalance: (runningBalance - dailyChange).toFixed(2)
         });
       }
       

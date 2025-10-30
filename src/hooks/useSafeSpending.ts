@@ -249,6 +249,8 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         const targetDateStr = formatDate(targetDate);
 
         let dayChange = 0;
+        const isTargetDateRange = targetDateStr >= '2024-10-31' && targetDateStr <= '2025-12-12';
+        const transactionLog: any[] = [];
 
         // Add all inflows for this day (skip sales_orders without status=completed as they're pending)
         transactionsResult.data?.forEach((tx) => {
@@ -270,6 +272,9 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
               if (tx.status === 'completed') {
                 const amt = Number(tx.amount);
                 dayChange += amt;
+                if (isTargetDateRange) {
+                  transactionLog.push({ type: 'Completed Sales Order', amount: amt, runningChange: dayChange });
+                }
               }
             } else if (tx.type === 'purchase_order' || tx.type === 'expense' || tx.vendor_id) {
               // Skip credit card purchases - they're tracked separately against credit card balances
@@ -279,6 +284,9 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
               
               const amt = Number(tx.amount);
               dayChange -= amt;
+              if (isTargetDateRange) {
+                transactionLog.push({ type: 'Vendor Payment', amount: -amt, runningChange: dayChange });
+              }
             }
           }
         });
@@ -300,6 +308,9 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
             if (incomeDate.getTime() === targetDate.getTime()) {
               const amt = Number(income.amount);
               dayChange += amt;
+              if (isTargetDateRange) {
+                transactionLog.push({ type: 'Income', amount: amt, runningChange: dayChange, desc: income.description });
+              }
             }
           }
         });
@@ -365,14 +376,12 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           if (fundsAvailableDate.getTime() === targetDate.getTime()) {
             const amt = Number(payout.total_amount);
             dayChange += amt;
-            
-            // Log Dec 12, 2025 specifically
-            if (targetDateStr === '2025-12-12') {
-              console.log('💰 [useSafeSpending] Adding Amazon payout on Dec 12:', {
-                amount: amt,
-                status: payout.status,
-                payoutId: payout.id,
-                fundsAvailableDate: formatDate(fundsAvailableDate)
+            if (isTargetDateRange) {
+              transactionLog.push({ 
+                type: `Amazon ${payout.status}`, 
+                amount: amt, 
+                runningChange: dayChange,
+                settlementId: payout.settlement_id
               });
             }
           }
@@ -407,6 +416,14 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
               
               const amt = Number(recurring.amount);
               dayChange += recurring.type === 'income' ? amt : -amt;
+              if (isTargetDateRange) {
+                transactionLog.push({ 
+                  type: `Recurring ${recurring.type}`, 
+                  amount: recurring.type === 'income' ? amt : -amt, 
+                  runningChange: dayChange,
+                  name: recurring.name
+                });
+              }
             }
           }
         });
@@ -443,6 +460,14 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
                 if (paymentDate.getTime() === targetDate.getTime()) {
                   const amt = Number(payment.amount || 0);
                   dayChange -= amt;
+                  if (isTargetDateRange) {
+                    transactionLog.push({ 
+                      type: 'Scheduled Vendor Payment', 
+                      amount: -amt, 
+                      runningChange: dayChange,
+                      vendor: vendor.name
+                    });
+                  }
                 }
               });
             } else if (vendor.next_payment_date) {
@@ -461,6 +486,14 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
               if (vendorDate.getTime() === targetDate.getTime()) {
                 const amt = Number(vendor.next_payment_amount || 0);
                 dayChange -= amt;
+                if (isTargetDateRange) {
+                  transactionLog.push({ 
+                    type: 'Next Vendor Payment', 
+                    amount: -amt, 
+                    runningChange: dayChange,
+                    vendor: vendor.name
+                  });
+                }
               }
             }
           }
@@ -484,6 +517,14 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
             if (dueDate.getTime() === targetDate.getTime()) {
               const amt = Number(card.balance);
               dayChange -= amt;
+              if (isTargetDateRange) {
+                transactionLog.push({ 
+                  type: 'Credit Card Payment', 
+                  amount: -amt, 
+                  runningChange: dayChange,
+                  card: card.account_name
+                });
+              }
             }
           }
         });
@@ -491,13 +532,13 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         runningBalance += dayChange;
         dailyBalances.push({ date: targetDateStr, balance: runningBalance });
         
-        // Log Dec 12, 2025 specifically
-        if (targetDateStr === '2025-12-12') {
-          console.log('💰 [useSafeSpending] Dec 12 calculation:', {
-            date: targetDateStr,
-            dayChange,
-            runningBalance,
-            previousBalance: runningBalance - dayChange
+        // Log transactions for target date range
+        if (isTargetDateRange && (dayChange !== 0 || targetDateStr === '2024-10-31' || targetDateStr === '2025-12-12')) {
+          console.log(`💰 [useSafeSpending] ${targetDateStr}:`, {
+            transactions: transactionLog,
+            dayChange: dayChange.toFixed(2),
+            runningBalance: runningBalance.toFixed(2),
+            previousBalance: (runningBalance - dayChange).toFixed(2)
           });
         }
       }
