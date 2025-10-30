@@ -1611,7 +1611,7 @@ const Dashboard = () => {
       // Keep open settlements for bi-weekly accounts (they're the actual payout)
       if ((payout.status as string) === 'estimated') {
         const accountFrequency = payout.amazon_accounts?.payout_frequency;
-        if (accountFrequency === 'daily' && advancedModelingEnabled) {
+        if (accountFrequency === 'daily') {
           console.log('[Dashboard] Excluding daily account open settlement from calendar (replaced by daily forecasts):', payout.settlement_id);
           return false;
         }
