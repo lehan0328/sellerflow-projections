@@ -1392,19 +1392,7 @@ export const CashFlowCalendar = ({
                          dataKey="forecastPayout"
                          stroke="#9333ea"
                          strokeWidth={2}
-                         dot={(props: any) => {
-                           const { cx, cy, payload, index } = props;
-                           if (payload.hasAmazonForecast) {
-                             return (
-                               <g key={`forecast-payout-${index}`}>
-                                 <circle cx={cx} cy={cy} r={16} fill="transparent" cursor="pointer" />
-                                 <circle cx={cx} cy={cy} r={6} fill="#9333ea" stroke="#7e22ce" strokeWidth={2} />
-                                 <circle cx={cx} cy={cy} r={3} fill="#fff" />
-                               </g>
-                             );
-                           }
-                           return null;
-                         }}
+                         dot={false}
                          activeDot={{ r: 8, cursor: 'pointer', strokeWidth: 0 }}
                        />
                         {showForecastLine && (
