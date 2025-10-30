@@ -545,20 +545,30 @@ const Landing = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem disabled className="cursor-not-allowed opacity-60">
-                    <span>Inventory</span>
+                  <DropdownMenuItem asChild>
+                    <Link to="/inventory" className="cursor-pointer">
+                      Inventory
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem disabled className="cursor-not-allowed opacity-60">
-                    <span>Reimbursements</span>
+                  <DropdownMenuItem asChild>
+                    <Link to="/reimbursements" className="cursor-pointer">
+                      Reimbursements
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem disabled className="cursor-not-allowed opacity-60">
-                    <span>Analytics</span>
+                  <DropdownMenuItem asChild>
+                    <Link to="/advanced-analytics" className="cursor-pointer">
+                      Analytics
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem disabled className="cursor-not-allowed opacity-60">
-                    <span>Accounting</span>
+                  <DropdownMenuItem asChild>
+                    <Link to="/accounting" className="cursor-pointer">
+                      Accounting
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem disabled className="cursor-not-allowed opacity-60">
-                    <span>Walmart, Shopify & More</span>
+                  <DropdownMenuItem asChild>
+                    <Link to="/platforms" className="cursor-pointer">
+                      Walmart, Shopify & More
+                    </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

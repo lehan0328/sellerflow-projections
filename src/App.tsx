@@ -57,6 +57,11 @@ import AmazonOAuthCallback from "./pages/AmazonOAuthCallback";
 import SampleDataGenerator from "./pages/SampleDataGenerator";
 import MatchTransactions from "./pages/MatchTransactions";
 import Notifications from "./pages/Notifications";
+import Inventory from "./pages/Inventory";
+import Reimbursements from "./pages/Reimbursements";
+import AdvancedAnalytics from "./pages/AdvancedAnalytics";
+import Accounting from "./pages/Accounting";
+import Platforms from "./pages/Platforms";
 
 const queryClient = new QueryClient();
 
@@ -96,6 +101,11 @@ const App = () => (
           <Route path="/blog/financing-growth" element={<FinancingGrowth />} />
           <Route path="/blog/tag/:tag" element={<BlogTag />} />
           <Route path="/partners" element={<Partners />} />
+          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/reimbursements" element={<Reimbursements />} />
+          <Route path="/advanced-analytics" element={<AdvancedAnalytics />} />
+          <Route path="/accounting" element={<Accounting />} />
+          <Route path="/platforms" element={<Platforms />} />
           <Route path="/admin" element={
             <ProtectedAdminRoute>
               <Admin />
