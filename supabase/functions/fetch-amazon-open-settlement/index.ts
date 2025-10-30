@@ -47,6 +47,19 @@ Deno.serve(async (req) => {
       throw new Error('Amazon account not found')
     }
 
+    // Skip fetching settlements for daily accounts (they use forecasts instead)
+    if (amazonAccount.payout_frequency === 'daily') {
+      console.log('[FETCH] Skipping settlement fetch for daily account - using forecasts instead')
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          settlementsFound: 0,
+          message: 'Daily accounts use forecasts instead of settlements'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Determine API endpoint based on marketplace
     const marketplaceRegion = amazonAccount.marketplace_id.startsWith('A') ? 
       (amazonAccount.marketplace_id === 'A2EUQ1WTGCTBG2' ? 'ca' : 
