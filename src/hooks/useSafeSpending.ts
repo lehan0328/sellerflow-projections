@@ -431,8 +431,9 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
               amount: payout.total_amount
             });
           } else {
-            // For forecasted payouts, use payout_date (don't change existing workflow)
+            // For forecasted payouts, add +1 day to payout_date for bank transfer
             fundsAvailableDate = parseLocalDate(payout.payout_date);
+            fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
             
             console.log('[SAFE SPENDING] Processing forecasted payout:', {
               id: payout.id,

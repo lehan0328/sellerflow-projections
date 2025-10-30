@@ -1691,8 +1691,9 @@ const Dashboard = () => {
           amount: payout.total_amount
         });
       } else {
-        // For forecasted payouts, use payout_date directly (don't change existing workflow)
+        // For forecasted payouts, add +1 day to payout_date for bank transfer
         displayDate = new Date(payout.payout_date);
+        displayDate.setDate(displayDate.getDate() + 1);
       }
       
       const description = (payout.status as string) === 'forecasted' 
