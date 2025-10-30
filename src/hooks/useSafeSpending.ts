@@ -449,12 +449,20 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       const minDayIndex = dailyBalances.findIndex(d => d.balance === minBalance);
       const minDay = dailyBalances[minDayIndex];
       
+      // Find any negative days
+      const negativeDays = dailyBalances.filter(d => d.balance < 0);
+      
       console.log('💰 Safe Spending Calculation:', {
         currentBankBalance: bankBalance,
+        totalDaysCalculated: dailyBalances.length,
         lowestProjectedBalance: minBalance,
         lowestBalanceDate: minDay.date,
         reserveAmount: reserve,
-        safeSpendingCalc: `${minBalance} - ${reserve} = ${minBalance - reserve}`
+        negativeDaysCount: negativeDays.length,
+        negativeDays: negativeDays.map(d => ({ date: d.date, balance: d.balance })),
+        safeSpendingCalc: `${minBalance} - ${reserve} = ${minBalance - reserve}`,
+        first10Days: dailyBalances.slice(0, 10).map(d => ({ date: d.date, balance: d.balance })),
+        last10Days: dailyBalances.slice(-10).map(d => ({ date: d.date, balance: d.balance }))
       });
       
       // Find ALL buying opportunities using a simple approach:
@@ -575,7 +583,18 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       // Safe Spending = minimum projected balance - reserve (accounts for future obligations)
       // This is what you can safely spend without going below minimum projected balance
       const calculatedSafeSpending = minBalance - reserve;
-      const safeSpendingLimit = Math.max(0, calculatedSafeSpending);
+      
+      // If minimum balance is negative, safe spending MUST be 0 or negative
+      // Don't artificially inflate it
+      const safeSpendingLimit = calculatedSafeSpending;
+      
+      console.log('💰 Final Safe Spending:', {
+        minBalance,
+        reserve,
+        calculated: calculatedSafeSpending,
+        finalValue: safeSpendingLimit,
+        isNegative: safeSpendingLimit < 0
+      });
       
       // Find earliest date when you can make purchases for safe spending
       // If we have enough cash TODAY, set available date to today
