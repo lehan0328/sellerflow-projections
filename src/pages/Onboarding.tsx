@@ -56,6 +56,8 @@ export default function Onboarding() {
   const [reserveAmount, setReserveAmount] = useState<string>('0');
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isAmazonSyncComplete, setIsAmazonSyncComplete] = useState(false);
+  const [isCheckingSyncStatus, setIsCheckingSyncStatus] = useState(false);
 
   // Handle step navigation from URL params (for Amazon OAuth return)
   useEffect(() => {
@@ -196,12 +198,39 @@ export default function Onboarding() {
     setCurrentStep('reserve');
   };
 
-  const handleSkipReserve = () => {
+  const handleSkipReserve = async () => {
     // Only show forecasting if Amazon was connected
     if (!amazonSkipped) {
+      await checkAmazonSyncStatus();
       setCurrentStep('forecasting');
     } else {
       navigate('/dashboard');
+    }
+  };
+
+  // Check if Amazon account has completed sync
+  const checkAmazonSyncStatus = async () => {
+    try {
+      setIsCheckingSyncStatus(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: amazonAccounts } = await supabase
+        .from('amazon_accounts')
+        .select('initial_sync_complete, transaction_count')
+        .eq('user_id', user.id)
+        .eq('is_active', true);
+
+      const accountReady = amazonAccounts?.some(acc => 
+        acc.initial_sync_complete && (acc.transaction_count || 0) >= 50
+      );
+
+      setIsAmazonSyncComplete(accountReady || false);
+    } catch (error) {
+      console.error('Error checking Amazon sync status:', error);
+      setIsAmazonSyncComplete(false);
+    } finally {
+      setIsCheckingSyncStatus(false);
     }
   };
 
@@ -233,7 +262,6 @@ export default function Onboarding() {
           user_id: user.id,
           account_id: profile.account_id,
           safe_spending_reserve: reserveValue,
-          reserve_last_updated_at: new Date().toISOString(),
         }, {
           onConflict: 'user_id'
         });
@@ -251,6 +279,7 @@ export default function Onboarding() {
 
       // Move to forecasting step if Amazon was connected
       if (!amazonSkipped) {
+        await checkAmazonSyncStatus();
         setCurrentStep('forecasting');
       } else {
         navigate('/dashboard');
@@ -279,37 +308,10 @@ export default function Onboarding() {
       if (profile?.account_id) {
         console.log('💾 Saving forecast preference:', forecastingEnabled);
         
-        // If forecasting is requested, check if Amazon account has sufficient data
-        if (forecastingEnabled && !amazonSkipped) {
-          const { data: amazonAccounts } = await supabase
-            .from('amazon_accounts')
-            .select('initial_sync_complete, transaction_count')
-            .eq('user_id', user.id)
-            .eq('is_active', true);
-
-          const hasAmazonAccount = amazonAccounts && amazonAccounts.length > 0;
-          const accountReady = amazonAccounts?.some(acc => acc.initial_sync_complete && (acc.transaction_count || 0) >= 50);
-
-          if (!hasAmazonAccount || !accountReady) {
-            toast.warning("Amazon account needs more data before enabling forecasting. Forecasts will be enabled automatically once you sync 50+ transactions.");
-            // Don't enable forecasting yet, but save the preference
-            await supabase
-              .from('user_settings')
-              .upsert({
-                user_id: user.id,
-                account_id: profile.account_id,
-                forecasts_enabled: false, // Will be enabled after sync completes
-                forecast_confidence_threshold: 8,
-                default_reserve_lag_days: 7,
-                safe_spending_reserve: Number(reserveAmount) || 0,
-                reserve_last_updated_at: new Date().toISOString(),
-              }, {
-                onConflict: 'user_id'
-              });
-            
-            navigate('/dashboard');
-            return;
-          }
+        // If forecasting is requested, verify Amazon account has sufficient data
+        if (forecastingEnabled && !amazonSkipped && !isAmazonSyncComplete) {
+          toast.error("Cannot enable forecasting: Amazon sync is not complete. Please wait for sync to finish.");
+          return;
         }
         
         // Save forecasting preference and reserve amount
@@ -322,7 +324,6 @@ export default function Onboarding() {
             forecast_confidence_threshold: 8, // Default to Moderate
             default_reserve_lag_days: 7,
             safe_spending_reserve: Number(reserveAmount) || 0,
-            reserve_last_updated_at: new Date().toISOString(),
           }, {
             onConflict: 'user_id'
           })
@@ -768,7 +769,7 @@ export default function Onboarding() {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    You can set this to $0 now and adjust it later in Settings. You can change this once every 24 hours.
+                    You can set this to $0 now and adjust it anytime in Settings.
                   </p>
                 </div>
 
@@ -865,13 +866,24 @@ export default function Onboarding() {
 
                 <div className="mt-4 p-4 bg-white/50 dark:bg-black/20 rounded border border-blue-300 dark:border-blue-700">
                   <p className="text-sm text-muted-foreground">
-                    <strong>Note:</strong> Forecasts are generated from your actual transaction data. The system works best with at least 30 days of recent sales activity for accurate predictions.
+                    <strong>Important:</strong> Forecasting requires your Amazon account to complete its initial sync with at least 50 transactions. This ensures accurate predictions based on your actual sales patterns.
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    💡 <strong>Advanced features</strong> like volume-weighted daily distributions will automatically unlock once your Amazon account completes its initial sync.
+                    💡 The system works best with at least 30 days of recent sales activity for the most accurate forecasts.
                   </p>
                 </div>
               </div>
+
+              {!isAmazonSyncComplete && (
+                <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                  <p className="text-sm text-amber-900 dark:text-amber-100 font-medium mb-1">
+                    ⏳ Amazon Sync In Progress
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    Mathematical forecasting will be available once your Amazon account completes its initial sync with 50+ transactions. This typically takes 15-30 minutes. You can enable it later from Settings.
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-3">
                 <Button 
@@ -879,10 +891,11 @@ export default function Onboarding() {
                     setForecastingEnabled(true);
                     handleFinish();
                   }}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-12 text-base font-semibold"
+                  disabled={!isAmazonSyncComplete}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 h-12 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Sparkles className="h-5 w-5 mr-2" />
-                  Yes, Enable Forecasting
+                  {isAmazonSyncComplete ? 'Yes, Enable Forecasting' : 'Waiting for Amazon Sync...'}
                 </Button>
                 
                 <Button 
