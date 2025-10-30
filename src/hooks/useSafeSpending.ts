@@ -106,8 +106,23 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           ? (acc.available_balance ?? acc.balance)
           : acc.balance;
         
+        console.log('🏦 [useSafeSpending] Bank account:', {
+          name: acc.account_name,
+          balance: acc.balance,
+          available_balance: acc.available_balance,
+          using: balanceToUse,
+          mode: useAvailableBalance ? 'available' : 'current'
+        });
+        
         return sum + Number(balanceToUse || 0);
       }, 0) || 0;
+      
+      console.log('💵 [useSafeSpending] Starting calculation:', {
+        totalBankBalance: bankBalance,
+        useAvailableBalance,
+        excludeTodayTransactions,
+        reserve
+      });
 
       // Get ALL events (transactions, income, recurring, vendors, etc.)
       // This should match what the calendar receives

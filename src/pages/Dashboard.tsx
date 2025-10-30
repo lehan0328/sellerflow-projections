@@ -1785,6 +1785,14 @@ const Dashboard = () => {
   // Calculate projected balances using the same logic as the calendar
   // This ensures the insights panel shows the ACTUAL minimum from the calendar
   const calculateCalendarMinimum = () => {
+    console.log('📊 [Calendar] Starting minimum calculation:', {
+      startingBalance: displayBankBalance,
+      useAvailableBalance,
+      bankAccountBalance,
+      totalAvailableBalance,
+      totalEvents: allCalendarEvents.length
+    });
+    
     const endDate = addDays(today, 90); // Next 90 days (3 months)
     const dailyBalances: Array<{ date: Date; balance: number }> = [];
     let runningBalance = displayBankBalance; // Start with current bank balance (based on toggle)
