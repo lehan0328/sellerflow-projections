@@ -443,19 +443,14 @@ serve(async (req) => {
             lastPayoutDate = new Date(estimatedPayouts[0].payout_date);
             console.log(`  - BI-WEEKLY: Will use open settlement as first payout, then generate additional forecasts`);
             
-            // Shift forecasted payout date forward by 2 days
-            const openSettlementDate = new Date(estimatedPayouts[0].payout_date);
-            openSettlementDate.setDate(openSettlementDate.getDate() - 2);
-            const openSettlementDateStr = openSettlementDate.toISOString().split('T')[0];
-            
             // Create the open settlement as a forecasted payout with unique ID
             openSettlementPayout = {
               user_id: userId,
               account_id: amazonAccount.account_id,
               amazon_account_id: amazonAccount.id,
-              payout_date: openSettlementDateStr,
+              payout_date: estimatedPayouts[0].payout_date,
               total_amount: openSettlementAmount,
-              settlement_id: `forecast_${crypto.randomUUID()}_${openSettlementDateStr}`,
+              settlement_id: `forecast_${crypto.randomUUID()}_${estimatedPayouts[0].payout_date}`,
               marketplace_name: amazonAccount.marketplace_name || 'Amazon',
               status: 'forecasted',
               payout_type: payoutFrequency,
@@ -562,13 +557,18 @@ serve(async (req) => {
             }
           }
         } else {
-          // No open settlement - set to yesterday so first forecast is today
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          yesterday.setHours(0, 0, 0, 0);
-          
-          lastPayoutDate = yesterday;
-          console.log(`[FORECAST] No open settlement, lastPayoutDate set to ${lastPayoutDate.toISOString().split('T')[0]} - first forecast will be today`);
+          // No open settlement - use last confirmed payout date
+          if (amazonPayouts.length > 0) {
+            lastPayoutDate = new Date(amazonPayouts[0].payout_date);
+            console.log(`[FORECAST] Using last confirmed payout date: ${lastPayoutDate.toISOString().split('T')[0]}`);
+          } else {
+            // Fallback to yesterday if no confirmed payouts exist
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            yesterday.setHours(0, 0, 0, 0);
+            lastPayoutDate = yesterday;
+            console.log(`[FORECAST] No confirmed payouts, lastPayoutDate set to ${lastPayoutDate.toISOString().split('T')[0]}`);
+          }
         }
         
         // Calculate baseline amount from TRANSACTIONS (not payouts)
@@ -815,18 +815,13 @@ serve(async (req) => {
             console.log(`[FORECAST] ${amazonAccount.account_name} - ${payoutFrequency === 'daily' ? 'Day' : 'Period'} ${dayCount} final: base ${basePrediction.toFixed(2)} → seasonal ${seasonallyAdjusted.toFixed(2)} → risk-adjusted ${predictedAmount}`);
           }
           
-          // Shift forecasted payout date forward by 2 days
-          const shiftedDate = new Date(currentDate);
-          shiftedDate.setDate(shiftedDate.getDate() - 2);
-          const forecastDateStr = shiftedDate.toISOString().split('T')[0];
-          
           const forecastPayout = {
             user_id: userId,
             account_id: accountId,
             amazon_account_id: amazonAccount.id,
-            payout_date: forecastDateStr,
+            payout_date: currentDate.toISOString().split('T')[0],
             total_amount: Math.round(predictedAmount),
-            settlement_id: `forecast_${crypto.randomUUID()}_${forecastDateStr}`,
+            settlement_id: `forecast_${crypto.randomUUID()}_${currentDate.toISOString().split('T')[0]}`,
             marketplace_name: amazonAccount.marketplace_name || 'Amazon',
             status: 'forecasted',
             payout_type: payoutFrequency,
