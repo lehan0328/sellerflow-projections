@@ -28,42 +28,39 @@ Deno.serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    console.log(`Deleting sample Amazon data for user: ${user.id}`);
+    console.log(`Deleting all Amazon data for user: ${user.id}`);
 
-    // Delete sample Amazon payouts (marketplace_name = 'Amazon.com')
+    // Delete ALL Amazon payouts for this user
     const { error: payoutsError, count: payoutsCount } = await supabase
       .from('amazon_payouts')
       .delete({ count: 'exact' })
-      .eq('user_id', user.id)
-      .eq('marketplace_name', 'Amazon.com');
+      .eq('user_id', user.id);
 
     if (payoutsError) {
-      console.error('Error deleting sample payouts:', payoutsError);
+      console.error('Error deleting payouts:', payoutsError);
       throw payoutsError;
     }
 
-    console.log(`Deleted ${payoutsCount} sample payouts`);
+    console.log(`Deleted ${payoutsCount} payouts`);
 
-    // Delete sample Amazon transactions
+    // Delete ALL Amazon transactions for this user
     const { error: transactionsError, count: transactionsCount } = await supabase
       .from('amazon_transactions')
       .delete({ count: 'exact' })
-      .eq('user_id', user.id)
-      .eq('marketplace_name', 'Amazon.com');
+      .eq('user_id', user.id);
 
     if (transactionsError) {
-      console.error('Error deleting sample transactions:', transactionsError);
+      console.error('Error deleting transactions:', transactionsError);
       throw transactionsError;
     }
 
-    console.log(`Deleted ${transactionsCount} sample transactions`);
+    console.log(`Deleted ${transactionsCount} transactions`);
 
-    // Delete sample daily summaries
+    // Delete ALL daily summaries for this user (if table exists)
     const { error: summariesError, count: summariesCount } = await supabase
       .from('amazon_transactions_daily_summary')
       .delete({ count: 'exact' })
-      .eq('user_id', user.id)
-      .eq('marketplace_name', 'Amazon.com');
+      .eq('user_id', user.id);
 
     if (summariesError) {
       console.error('Error deleting sample summaries:', summariesError);
@@ -75,7 +72,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Sample data deleted successfully',
+        message: 'All Amazon data deleted successfully',
         deleted: {
           payouts: payoutsCount,
           transactions: transactionsCount,
