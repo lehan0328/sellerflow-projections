@@ -1628,7 +1628,8 @@ const Dashboard = () => {
         const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
         
         if (accountFrequency === 'daily') {
-          // For daily accounts, ALWAYS exclude open settlements (no end date)
+          // For daily accounts, ONLY exclude open settlements (no end date)
+          // Closed estimated settlements (with end date) should be included
           if (!hasEndDate) {
             console.log('[Dashboard] ❌ EXCLUDING daily account open settlement from ALL calculations:', {
               settlementId: payout.settlement_id,
@@ -1639,14 +1640,12 @@ const Dashboard = () => {
             return false;
           }
           
-          // Also exclude if it's a clearly open settlement (even with end date if it's far in future)
-          console.log('[Dashboard] ❌ EXCLUDING daily account estimated settlement:', {
+          // If it has an end date, it's a closed estimated settlement - include it
+          console.log('[Dashboard] ✅ INCLUDING daily account closed estimated settlement:', {
             settlementId: payout.settlement_id,
             amount: payout.total_amount,
-            hasEndDate: hasEndDate,
-            reason: 'All estimated settlements excluded for daily accounts'
+            hasEndDate: hasEndDate
           });
-          return false;
         }
       }
       
