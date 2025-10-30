@@ -98,9 +98,15 @@ serve(async (req) => {
     for (const amazonAccount of amazonAccounts) {
       console.log(`\n[FORECAST] Processing account: ${amazonAccount.account_name} (${amazonAccount.marketplace_name})`);
       console.log(`[FORECAST] Account ID: ${amazonAccount.id}`);
+      console.log(`[FORECAST] DEBUG - payout_frequency: ${amazonAccount.payout_frequency}`);
+      console.log(`[FORECAST] DEBUG - payout_model: ${amazonAccount.payout_model}`);
+      console.log(`[FORECAST] DEBUG - advancedModelingEnabled: ${advancedModelingEnabled}`);
       
       // Check if this is a daily settlement account
-      if (amazonAccount.payout_model === 'daily' || amazonAccount.payout_frequency === 'daily') {
+      const isDaily = amazonAccount.payout_model === 'daily' || amazonAccount.payout_frequency === 'daily';
+      console.log(`[FORECAST] DEBUG - isDaily: ${isDaily}`);
+      
+      if (isDaily) {
         // If advanced modeling is enabled, use the specialized daily forecast function
         if (advancedModelingEnabled) {
           console.log(`✅ [FORECAST] ${amazonAccount.account_name} is DAILY account with ADVANCED MODELING - routing to backlog-based forecast`);
