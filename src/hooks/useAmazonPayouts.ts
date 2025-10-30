@@ -74,7 +74,7 @@ export const useAmazonPayouts = () => {
         .from("amazon_payouts")
         .select(`
           *,
-          amazon_accounts!inner(
+          amazon_accounts(
             account_name,
             marketplace_name,
             is_active,
