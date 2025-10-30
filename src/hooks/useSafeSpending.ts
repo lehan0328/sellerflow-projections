@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateRecurringDates } from "@/lib/recurringDates";
 import { format } from "date-fns";
+import { useAmazonPayouts } from "./useAmazonPayouts";
 
 interface SafeSpendingData {
   safe_spending_limit: number;
@@ -31,6 +32,7 @@ interface DailyBalance {
 }
 
 export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTransactions: boolean = false, useAvailableBalance: boolean = true) => {
+  const { amazonPayouts, forecastsEnabled } = useAmazonPayouts();
   const [data, setData] = useState<SafeSpendingData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -136,7 +138,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       const futureDateStr = formatDate(futureDate);
       
       // Get ALL events that affect cash flow (matching calendar logic)
-      const [transactionsResult, incomeResult, recurringResult, vendorsResult, amazonResult, creditCardsResult] = await Promise.all([
+      const [transactionsResult, incomeResult, recurringResult, vendorsResult, creditCardsResult] = await Promise.all([
         supabase
           .from('transactions')
           .select('*')
@@ -161,62 +163,24 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           .eq('account_id', profile.account_id),
         
         supabase
-          .from('amazon_payouts')
-          .select('*')
-          .eq('account_id', profile.account_id)
-          .gte('payout_date', todayStr)  // Include today and future payouts
-          .lte('payout_date', futureDateStr),
-        
-        supabase
           .from('credit_cards')
           .select('*')
           .eq('account_id', profile.account_id)
           .eq('is_active', true)
       ]);
 
-      console.log('🔍 [useSafeSpending] Raw Amazon payouts from DB:', {
-        total: amazonResult.data?.length || 0,
-        confirmed: amazonResult.data?.filter(p => p.status === 'confirmed').length || 0,
-        estimated: amazonResult.data?.filter(p => p.status === 'estimated').length || 0,
-        forecasted: amazonResult.data?.filter(p => p.status === 'forecasted').length || 0,
-        forecastsEnabled,
-        dateRange: `${todayStr} to ${futureDateStr}`
+      // Use Amazon payouts from useAmazonPayouts hook (ensures same data as Dashboard)
+      const filteredAmazonPayouts = amazonPayouts.filter(payout => {
+        const payoutDate = new Date(payout.payout_date);
+        return payoutDate >= today && payoutDate <= futureDate;
       });
       
-      // Filter Amazon payouts based on forecast settings
-      const filteredAmazonPayouts = (amazonResult.data || []).filter((payout) => {
-        // For estimated settlements, EXCLUDE open ones (not yet available) but include closed estimated settlements
-        if (payout.status === 'estimated') {
-          const rawData = (payout as any).raw_settlement_data;
-          const hasEndDate = !!(rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date);
-          
-          // If it's an open settlement (no end date), exclude it from calculations
-          if (!hasEndDate) {
-            return false;
-          }
-          
-          // If it has an end date, it's a closed estimated settlement - include it
-          return true;
-        }
-        
-        // Always show Amazon's real confirmed settlements
-        if (payout.status === 'confirmed') {
-          return true;
-        }
-        
-        // Only include forecasted payouts if forecasts are enabled
-        if (payout.status === 'forecasted' && !forecastsEnabled) {
-          return false;
-        }
-        
-        return true;
-      });
-      
-      console.log('🔍 [useSafeSpending] Filtered Amazon payouts:', {
+      console.log('🔍 [useSafeSpending] Using Amazon payouts from useAmazonPayouts hook:', {
         total: filteredAmazonPayouts.length,
         confirmed: filteredAmazonPayouts.filter(p => p.status === 'confirmed').length,
         estimated: filteredAmazonPayouts.filter(p => p.status === 'estimated').length,
         forecasted: filteredAmazonPayouts.filter(p => p.status === 'forecasted').length,
+        forecastsEnabled,
         dec12Payouts: filteredAmazonPayouts.filter(p => {
           const d = new Date(p.payout_date);
           return d.getFullYear() === 2025 && d.getMonth() === 11 && d.getDate() === 12;
@@ -777,7 +741,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
     } finally {
       setIsLoading(false);
     }
-  }, [reserveAmountInput, excludeTodayTransactions, useAvailableBalance]);
+  }, [reserveAmountInput, excludeTodayTransactions, useAvailableBalance, amazonPayouts, forecastsEnabled]);
 
 
   useEffect(() => {
