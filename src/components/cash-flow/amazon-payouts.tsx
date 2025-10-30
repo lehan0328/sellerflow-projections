@@ -823,11 +823,11 @@ export function AmazonPayouts() {
             <div className="text-right">
               <div className="text-xs text-muted-foreground">Closed Settlements</div>
               <div className="text-sm font-medium">
-                {amazonPayouts.filter(p => {
-                  const rawData = p.raw_settlement_data;
-                  const isClosed = p.status === 'confirmed' || rawData?.FinancialEventGroupEnd;
-                  return isClosed && p.payout_date >= startDateFilter && p.payout_date <= endDateFilter;
-                }).length}
+                {amazonPayouts.filter(p => 
+                  p.status === 'confirmed' && 
+                  p.payout_date >= startDateFilter && 
+                  p.payout_date <= endDateFilter
+                ).length}
               </div>
             </div>
             <div className="text-right">
@@ -835,11 +835,11 @@ export function AmazonPayouts() {
               <div className="text-lg font-bold text-finance-positive">
                 {formatCurrency(
                   amazonPayouts
-                    .filter(p => {
-                      const rawData = p.raw_settlement_data;
-                      const isClosed = p.status === 'confirmed' || rawData?.FinancialEventGroupEnd;
-                      return isClosed && p.payout_date >= startDateFilter && p.payout_date <= endDateFilter;
-                    })
+                    .filter(p => 
+                      p.status === 'confirmed' && 
+                      p.payout_date >= startDateFilter && 
+                      p.payout_date <= endDateFilter
+                    )
                     .reduce((sum, p) => sum + p.total_amount, 0)
                 )}
               </div>
@@ -860,22 +860,14 @@ export function AmazonPayouts() {
               </Button>
             </div>
           </div> : (() => {
-          // Show only CONFIRMED and OPEN settlements (never forecasted)
+          // Show only CONFIRMED settlements (never forecasted or open)
           const filteredPayouts = amazonPayouts.filter(payout => {
-            // NEVER show forecasted payouts in this section
-            if (payout.status === 'forecasted') {
+            // Only show confirmed settlements
+            if (payout.status !== 'confirmed') {
               return false;
             }
             
-            const rawData = payout.raw_settlement_data;
-            const isOpen = payout.status === 'estimated' && !rawData?.FinancialEventGroupEnd;
-            
-            // ALWAYS show open settlements (regardless of advanced modeling setting)
-            if (isOpen) {
-              return true;
-            }
-            
-            // For confirmed settlements, filter by date range
+            // Filter by date range
             const payoutDate = payout.payout_date;
             return payoutDate >= startDateFilter && payoutDate <= endDateFilter;
           });
