@@ -31,12 +31,14 @@ Deno.serve(async (req) => {
 
     console.log('[DELETE-ESTIMATED] Starting cleanup for user:', user.id)
 
-    // Delete all estimated settlements for this user
+    // Delete only estimated settlements that have an end date (closed settlements)
+    // Keep estimated settlements with no end date (open settlements)
     const { data: deleted, error: deleteError } = await supabase
       .from('amazon_payouts')
       .delete()
       .eq('user_id', user.id)
       .eq('status', 'estimated')
+      .not('raw_settlement_data->FinancialEventGroupEnd', 'is', null)
       .select('id, payout_date, total_amount')
 
     if (deleteError) {

@@ -480,10 +480,10 @@ export function AmazonPayouts() {
                 size="sm"
                 onClick={handleDeleteEstimatedSettlements}
                 disabled={isSyncing === 'deleting-estimated'}
-                title="Delete duplicate estimated settlements"
+                title="Remove duplicate estimated settlements (keeps open settlements)"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing === 'deleting-estimated' ? 'animate-spin' : ''}`} />
-                Cleanup
+                Remove Duplicates
               </Button>
               <Button
                 variant="ghost"
