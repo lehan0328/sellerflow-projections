@@ -76,8 +76,9 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
           if (exchangeError) {
             toast.error("Connection error: " + exchangeError.message);
           } else {
-            toast.success(`Successfully connected ${accounts.accounts.length} bank account(s)`);
+            toast.success(`Successfully connected ${accounts.accounts.length} account(s)`);
             refetchBankAccounts();
+            refetchCreditCards();
             onOpenChange(false);
           }
           setIsLoading(false);
@@ -141,8 +142,9 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
 
         if (error) throw error;
 
-        toast.success(`Successfully connected ${metadata.accounts?.length || 0} bank account(s)!`);
+        toast.success(`Successfully connected ${metadata.accounts?.length || 0} account(s)!`);
         refetchBankAccounts();
+        refetchCreditCards();
         onOpenChange(false);
       } catch (error: any) {
         console.error('Error exchanging Plaid token:', error);
@@ -220,7 +222,7 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
                       Supports 12,000+ financial institutions.
                     </p>
                     <p className="text-xs text-muted-foreground mt-2 italic">
-                      Note: Credit cards are not supported at this time.
+                      Note: Only bank accounts supported (credit card details not available via Stripe).
                     </p>
                   </div>
                 </div>
@@ -256,11 +258,11 @@ export const AddAccountModal = ({ open, onOpenChange }: AddAccountModalProps) =>
                   <div className="flex-1">
                     <h3 className="font-medium text-blue-900">Plaid Integration (Legacy)</h3>
                     <p className="text-sm text-blue-700 mt-1">
-                      Connect using Plaid's secure interface. This is the legacy method 
+                      Connect bank accounts and credit cards using Plaid's secure interface. This is the legacy method 
                       and will be phased out in favor of Stripe.
                     </p>
                     <p className="text-xs text-blue-600 mt-2 italic">
-                      Note: Credit cards are not supported at this time.
+                      Note: Credit card transactions are not available (account details only).
                     </p>
                   </div>
                 </div>

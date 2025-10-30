@@ -372,13 +372,10 @@ export function CreditCards() {
                             );
                           })()
                         ) : (
-                          <button
-                            onClick={() => handleEditCard(card)}
-                            className="flex items-center text-primary hover:underline"
-                          >
+                          <span className="flex items-center text-muted-foreground/60">
                             <Calendar className="mr-1 h-3 w-3" />
-                            Set due date
-                          </button>
+                            No due date from bank
+                          </span>
                         )}
                       </div>
                     </div>
