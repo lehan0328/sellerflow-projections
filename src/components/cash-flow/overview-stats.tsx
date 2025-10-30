@@ -115,13 +115,13 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
     .filter(payout => {
       if (payout.status !== 'confirmed') return false;
       
-      // For confirmed payouts, calculate when funds are available from settlement_end_date + 1 day
+      // For confirmed payouts, funds are available on settlement_end_date (no extra day)
       const rawData = (payout as any).raw_settlement_data;
       const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
       
       if (settlementEndStr) {
         const fundsAvailableDate = new Date(settlementEndStr);
-        fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
+        // No extra day added for confirmed payouts
         const availableDateStr = fundsAvailableDate.toISOString().split('T')[0];
         return availableDateStr === todayStrISO;
       }
