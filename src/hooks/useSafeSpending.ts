@@ -398,6 +398,15 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
             const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
             const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
             
+            console.log('[SAFE SPENDING] Processing confirmed/estimated payout:', {
+              id: payout.id,
+              status: payout.status,
+              payout_date: payout.payout_date,
+              settlement_end: settlementEndStr,
+              settlement_start: settlementStartStr,
+              amount: payout.total_amount
+            });
+            
             if (settlementEndStr) {
               // Use the actual settlement close date
               payoutDate = parseLocalDate(settlementEndStr);
@@ -420,6 +429,15 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           const fundsAvailableDate = new Date(payoutDate);
           fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
           
+          console.log('[SAFE SPENDING] Funds available date calculated:', {
+            id: payout.id,
+            status: payout.status,
+            settlementCloseDate: formatDate(payoutDate),
+            fundsAvailableDate: formatDate(fundsAvailableDate),
+            today: formatDate(today),
+            amount: payout.total_amount
+          });
+          
           // ALWAYS include open settlements (estimated) - they represent real accumulating money
           // Only skip past payouts if they're NOT open settlements
           const isOpenSettlement = payout.status === 'estimated';
@@ -432,9 +450,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           
           // Don't apply excludeToday filter to open settlements - they're always included
           if (excludeTodayTransactions && fundsAvailableDate.getTime() === today.getTime() && !isOpenSettlement) {
-            if (isKeyDate) {
-              console.log(`  🚫 EXCLUDING today's Amazon payout: $${payout.total_amount} (excluded by user)`);
-            }
+            console.log(`  🚫 EXCLUDING today's Amazon payout: $${payout.total_amount} (excluded by user, excludeToday=${excludeTodayTransactions})`);
             return;
           }
           
