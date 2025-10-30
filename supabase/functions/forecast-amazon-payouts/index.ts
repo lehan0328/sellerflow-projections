@@ -448,11 +448,12 @@ serve(async (req) => {
           } else if (payoutFrequency === 'daily') {
             console.log(`  - DAILY: Generating cumulative distribution for open settlement`);
             
-            // For daily accounts, don't set lastPayoutDate to the settlement end date
-            // Instead, set it to yesterday so forecasts start from tomorrow
+            // For daily accounts, ALWAYS set lastPayoutDate to yesterday so forecasts start from tomorrow
+            // This ensures forecasts start tomorrow regardless of open settlement dates
             const yesterday = new Date();
             yesterday.setDate(yesterday.getDate() - 1);
             lastPayoutDate = yesterday;
+            console.log(`  - Set lastPayoutDate to yesterday (${yesterday.toISOString().split('T')[0]}) for daily account`);
             
             // Fetch total draws already made in this settlement
             const { data: existingDraws } = await supabase
