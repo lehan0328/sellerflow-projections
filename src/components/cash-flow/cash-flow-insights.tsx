@@ -691,8 +691,8 @@ export const CashFlowInsights = ({
                   )}
                 </div>
 
-                {/* Opportunity #2 Preview - only show if positive */}
-                {allBuyingOpportunities.length > 1 && allBuyingOpportunities[1].balance > 0 && (
+                {/* Opportunity #2 Preview - only show if current safe spending is positive */}
+                {safeSpendingLimit > 0 && allBuyingOpportunities.length > 1 && allBuyingOpportunities[1].balance > 0 && (
                   <div className="p-3 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-2 border-blue-200 dark:border-blue-800">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
