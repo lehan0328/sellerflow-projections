@@ -564,13 +564,8 @@ export const CashFlowCalendar = ({
       // For future days: Add daily changes cumulatively
       if (isToday) {
         runningTotal = bankAccountBalance + (excludeToday ? 0 : dailyChange);
-        console.log('[Chart] Day 0 (Today):', format(day, 'yyyy-MM-dd'), 
-          '= Bank Balance:', bankAccountBalance.toFixed(2), 
-          '+ Today Net:', dailyChange.toFixed(2), 
-          '(excluded:', excludeToday, ') = Projected:', runningTotal.toFixed(2));
       } else {
         runningTotal += dailyChange;
-        console.log('[Chart]', format(day, 'yyyy-MM-dd'), '= Previous Balance + Daily Change (', dailyChange.toFixed(2), ') =', runningTotal.toFixed(2));
       }
       
       // Check if this day has an Amazon payout

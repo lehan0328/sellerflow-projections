@@ -403,14 +403,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
               // Fallback to payout_date if no settlement data
               fundsAvailableDate = parseLocalDate(payout.payout_date);
             }
-            
-            console.log('[SAFE SPENDING] Processing confirmed payout:', {
-              id: payout.id,
-              status: payout.status,
-              settlement_end_date: settlementEndStr,
-              fundsAvailableDate: formatDate(fundsAvailableDate),
-              amount: payout.total_amount
-            });
           } else if (isEstimatedPayout) {
             // For estimated payouts, calculate from settlement end date + 1 day
             const rawData = (payout as any).raw_settlement_data;
@@ -431,26 +423,10 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
             
             fundsAvailableDate = new Date(payoutDate);
             fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
-            
-            console.log('[SAFE SPENDING] Processing estimated payout:', {
-              id: payout.id,
-              status: payout.status,
-              settlement_end: settlementEndStr,
-              fundsAvailableDate: formatDate(fundsAvailableDate),
-              amount: payout.total_amount
-            });
           } else {
             // For forecasted payouts, add +1 day to payout_date for bank transfer
             fundsAvailableDate = parseLocalDate(payout.payout_date);
             fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
-            
-            console.log('[SAFE SPENDING] Processing forecasted payout:', {
-              id: payout.id,
-              status: payout.status,
-              payout_date: payout.payout_date,
-              fundsAvailableDate: formatDate(fundsAvailableDate),
-              amount: payout.total_amount
-            });
           }
           
           // ALWAYS include open settlements (estimated) - they represent real accumulating money
@@ -707,7 +683,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
               
               if (canSpendOnDayJ) {
                 earliestAvailableDate = dailyBalances[j].date;
-                console.log(`[BUYING OPP] Found earliest date for opportunity at ${currentDay.date}: ${earliestAvailableDate}`);
                 break; // Found the earliest safe date
               }
             }
@@ -807,39 +782,18 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       // Otherwise, find the first date where balance supports the spending
       let safeSpendingAvailableDate: string | undefined;
       
-      console.log('[SAFE SPENDING] Calculating available date:', {
-        calculatedSafeSpending,
-        reserve,
-        requiredBalance: calculatedSafeSpending + reserve,
-        todayBalance: dailyBalances[0]?.balance,
-        todayDate: dailyBalances[0]?.date
-      });
-      
       if (dailyBalances.length > 0) {
         // Check if we can afford to spend today
         if (dailyBalances[0].balance >= (calculatedSafeSpending + reserve)) {
           // We have enough cash today
           safeSpendingAvailableDate = dailyBalances[0].date;
-          console.log('[SAFE SPENDING] ✅ Can spend TODAY:', safeSpendingAvailableDate);
         } else {
           // Find the first date when we'll have enough
           for (let i = 0; i <= minDayIndex; i++) {
-            console.log(`[SAFE SPENDING] Checking day ${i}:`, {
-              date: dailyBalances[i].date,
-              balance: dailyBalances[i].balance.toFixed(2),
-              required: (calculatedSafeSpending + reserve).toFixed(2),
-              sufficient: dailyBalances[i].balance >= (calculatedSafeSpending + reserve)
-            });
-            
             if (dailyBalances[i].balance >= (calculatedSafeSpending + reserve)) {
               safeSpendingAvailableDate = dailyBalances[i].date;
-              console.log('[SAFE SPENDING] ✅ Found earliest date:', safeSpendingAvailableDate);
               break;
             }
-          }
-          
-          if (!safeSpendingAvailableDate) {
-            console.log('[SAFE SPENDING] ❌ No sufficient balance found within forecast period');
           }
         }
       }
