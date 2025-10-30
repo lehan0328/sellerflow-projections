@@ -15,6 +15,7 @@ import aurenIcon from "@/assets/auren-icon-blue.png";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlaidLink } from "react-plaid-link";
 import { useQueryClient } from "@tanstack/react-query";
+import { PlaidAccountConfirmationDialog } from "@/components/cash-flow/plaid-account-confirmation-dialog";
 
 const SELLER_CENTRAL_CONSENT_URLS: Record<string, string> = {
   'NA': 'https://sellercentral.amazon.com/apps/authorize/consent',
@@ -58,6 +59,9 @@ export default function Onboarding() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isAmazonSyncComplete, setIsAmazonSyncComplete] = useState(false);
   const [isCheckingSyncStatus, setIsCheckingSyncStatus] = useState(false);
+  const [showPlaidConfirmation, setShowPlaidConfirmation] = useState(false);
+  const [plaidMetadata, setPlaidMetadata] = useState<any>(null);
+  const [plaidPublicToken, setPlaidPublicToken] = useState<string | null>(null);
 
   // Handle step navigation from URL params (for Amazon OAuth return)
   useEffect(() => {
@@ -91,22 +95,14 @@ export default function Onboarding() {
       try {
         console.log("Plaid Link success:", metadata);
         
-        // Exchange the public token for an access token via edge function
-        const { data, error } = await supabase.functions.invoke('exchange-plaid-token', {
-          body: { publicToken: public_token, metadata }
-        });
-
-        if (error) throw error;
-
-        toast.success(data.message || "Bank account connected successfully!");
-        setIsConnecting(false);
+        // Show confirmation dialog with account selection
+        setPlaidPublicToken(public_token);
+        setPlaidMetadata(metadata);
+        setShowPlaidConfirmation(true);
         setLinkToken(null);
-        
-        // Move to reserve step after bank connection
-        setCurrentStep('reserve');
       } catch (error) {
-        console.error("Error exchanging token:", error);
-        toast.error("Failed to connect account");
+        console.error("Error handling Plaid success:", error);
+        toast.error("Failed to process account connection");
         setIsConnecting(false);
       }
     },
@@ -217,13 +213,11 @@ export default function Onboarding() {
 
       const { data: amazonAccounts } = await supabase
         .from('amazon_accounts')
-        .select('initial_sync_complete, transaction_count')
+        .select('initial_sync_complete')
         .eq('user_id', user.id)
         .eq('is_active', true);
 
-      const accountReady = amazonAccounts?.some(acc => 
-        acc.initial_sync_complete && (acc.transaction_count || 0) >= 50
-      );
+      const accountReady = amazonAccounts?.some(acc => acc.initial_sync_complete);
 
       setIsAmazonSyncComplete(accountReady || false);
     } catch (error) {
@@ -231,6 +225,42 @@ export default function Onboarding() {
       setIsAmazonSyncComplete(false);
     } finally {
       setIsCheckingSyncStatus(false);
+    }
+  };
+
+  // Handle confirmed Plaid accounts
+  const handleConfirmPlaidAccounts = async (selectedAccounts: string[], priorities: Record<string, number>) => {
+    if (!plaidPublicToken || !plaidMetadata) return;
+    
+    try {
+      setIsConnecting(true);
+      
+      // Exchange the public token for an access token via edge function
+      const { data, error } = await supabase.functions.invoke('exchange-plaid-token', {
+        body: { 
+          publicToken: plaidPublicToken, 
+          metadata: {
+            ...plaidMetadata,
+            accounts: plaidMetadata.accounts.filter((acc: any) => selectedAccounts.includes(acc.id))
+          },
+          priorities
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success(data.message || "Bank accounts connected successfully!");
+      setShowPlaidConfirmation(false);
+      setPlaidPublicToken(null);
+      setPlaidMetadata(null);
+      setIsConnecting(false);
+      
+      // Move to reserve step after bank connection
+      setCurrentStep('reserve');
+    } catch (error) {
+      console.error("Error exchanging token:", error);
+      toast.error("Failed to connect accounts");
+      setIsConnecting(false);
     }
   };
 
@@ -402,7 +432,7 @@ export default function Onboarding() {
                 <div className="flex items-start gap-4 p-4 rounded-lg bg-primary/5 border border-primary/10">
                   <ShoppingCart className="h-6 w-6 text-primary mt-1" />
                   <div>
-                    <h3 className="font-semibold">Amazon Connection</h3>
+                    <h3 className="font-semibold">Step 1: Amazon Connection</h3>
                     <p className="text-sm text-muted-foreground">
                       Connect your Amazon Seller account to track payouts and expenses
                     </p>
@@ -412,9 +442,19 @@ export default function Onboarding() {
                 <div className="flex items-start gap-4 p-4 rounded-lg bg-primary/5 border border-primary/10">
                   <Building2 className="h-6 w-6 text-primary mt-1" />
                   <div>
-                    <h3 className="font-semibold">Bank Account Connection</h3>
+                    <h3 className="font-semibold">Step 2: Bank Account Connection</h3>
                     <p className="text-sm text-muted-foreground">
                       Connect your bank accounts to track all your transactions
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex items-start gap-4 p-4 rounded-lg bg-primary/5 border border-primary/10">
+                  <Building2 className="h-6 w-6 text-primary mt-1" />
+                  <div>
+                    <h3 className="font-semibold">Step 3: Set Reserve Amount</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Configure your minimum cash reserve for safe spending calculations
                     </p>
                   </div>
                 </div>
@@ -422,7 +462,7 @@ export default function Onboarding() {
                 <div className="flex items-start gap-4 p-4 rounded-lg bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border-2 border-blue-200 dark:border-blue-800">
                   <Sparkles className="h-6 w-6 text-purple-600 mt-1" />
                   <div>
-                    <h3 className="font-semibold">Mathematical Forecasting</h3>
+                    <h3 className="font-semibold">Step 4: Mathematical Forecasting</h3>
                     <p className="text-sm text-muted-foreground">
                       Enable AI-powered payout predictions based on your Amazon transaction history (requires Amazon connection)
                     </p>
@@ -866,7 +906,7 @@ export default function Onboarding() {
 
                 <div className="mt-4 p-4 bg-white/50 dark:bg-black/20 rounded border border-blue-300 dark:border-blue-700">
                   <p className="text-sm text-muted-foreground">
-                    <strong>Important:</strong> Forecasting requires your Amazon account to complete its initial sync with at least 50 transactions. This ensures accurate predictions based on your actual sales patterns.
+                    <strong>Important:</strong> Forecasting requires your Amazon account to complete its initial sync. This ensures accurate predictions based on your actual sales patterns.
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
                     💡 The system works best with at least 30 days of recent sales activity for the most accurate forecasts.
@@ -880,7 +920,7 @@ export default function Onboarding() {
                     ⏳ Amazon Sync In Progress
                   </p>
                   <p className="text-xs text-amber-700 dark:text-amber-300">
-                    Mathematical forecasting will be available once your Amazon account completes its initial sync with 50+ transactions. This typically takes 15-30 minutes. You can enable it later from Settings.
+                    Mathematical forecasting will be available once your Amazon account completes its initial sync. This typically takes 15-30 minutes. You can enable it later from Settings.
                   </p>
                 </div>
               )}
@@ -918,6 +958,15 @@ export default function Onboarding() {
       <EnterpriseSetupModal 
         open={showEnterpriseSetup} 
         onOpenChange={setShowEnterpriseSetup}
+      />
+
+      {/* Plaid Account Confirmation */}
+      <PlaidAccountConfirmationDialog
+        open={showPlaidConfirmation}
+        onOpenChange={setShowPlaidConfirmation}
+        accounts={plaidMetadata?.accounts || []}
+        institutionName={plaidMetadata?.institution?.name || ''}
+        onConfirm={handleConfirmPlaidAccounts}
       />
     </div>
   );
