@@ -108,6 +108,20 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   todayDate.setHours(0, 0, 0, 0);
   const todayStr = todayDate.toDateString();
   
+  // Amazon payouts that become available today (yesterday's payouts with +1 day delay)
+  const yesterdayDate = new Date(todayDate);
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+  
+  const amazonIncomeToday = amazonPayouts
+    .filter(payout => {
+      const payoutDate = payout.payout_date.split('T')[0];
+      // Include yesterday's payouts (available today due to +1 day delay)
+      return payoutDate === yesterdayStr && 
+             (payout.status === 'confirmed' || payout.status === 'forecasted');
+    })
+    .reduce((sum, payout) => sum + payout.total_amount, 0);
+  
   // Regular income
   const regularIncome = incomeItems.filter(item => {
     const itemDate = new Date(item.paymentDate);
@@ -136,7 +150,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
       return dates.length > 0 ? sum + exp.amount : sum;
     }, 0);
   
-  const todaysIncome = regularIncome + recurringIncome;
+  const todaysIncome = regularIncome + recurringIncome + amazonIncomeToday;
   
   // Regular expenses (vendor transactions)
   const regularExpenses = vendorTransactions.filter(tx => {
