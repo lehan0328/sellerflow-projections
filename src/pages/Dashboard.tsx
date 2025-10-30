@@ -1645,11 +1645,22 @@ const Dashboard = () => {
       let displayDate: Date;
       
       if (isConfirmedPayout) {
-        // For confirmed payouts, payout_date already represents when funds are available
-        displayDate = new Date(payout.payout_date);
-        console.log('[Calendar] Using payout_date for confirmed payout:', {
+        // For confirmed payouts, calculate from settlement end date + 1 day
+        const rawData = (payout as any).raw_settlement_data;
+        const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
+        
+        if (settlementEndStr) {
+          displayDate = new Date(settlementEndStr);
+          displayDate.setDate(displayDate.getDate() + 1);
+        } else {
+          // Fallback to payout_date if no settlement data
+          displayDate = new Date(payout.payout_date);
+        }
+        
+        console.log('[Calendar] Using settlement_end_date + 1 for confirmed payout:', {
           status: payout.status,
-          payout_date: payout.payout_date,
+          settlement_end_date: settlementEndStr,
+          displayDate: displayDate.toISOString().split('T')[0],
           amount: payout.total_amount
         });
       } else if (isOpenSettlement) {

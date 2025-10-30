@@ -392,13 +392,22 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           let fundsAvailableDate: Date;
           
           if (isConfirmedPayout) {
-            // For confirmed payouts, payout_date already represents when funds are available
-            fundsAvailableDate = parseLocalDate(payout.payout_date);
+            // For confirmed payouts, calculate from settlement end date + 1 day
+            const rawData = (payout as any).raw_settlement_data;
+            const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
+            
+            if (settlementEndStr) {
+              fundsAvailableDate = parseLocalDate(settlementEndStr);
+              fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
+            } else {
+              // Fallback to payout_date if no settlement data
+              fundsAvailableDate = parseLocalDate(payout.payout_date);
+            }
             
             console.log('[SAFE SPENDING] Processing confirmed payout:', {
               id: payout.id,
               status: payout.status,
-              payout_date: payout.payout_date,
+              settlement_end_date: settlementEndStr,
               fundsAvailableDate: formatDate(fundsAvailableDate),
               amount: payout.total_amount
             });
