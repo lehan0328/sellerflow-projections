@@ -1601,10 +1601,8 @@ const Dashboard = () => {
   
   const amazonPayoutEvents: CashFlowEvent[] = amazonPayouts
     .filter(payout => {
-      // Only show forecasted payouts if forecasts are enabled
-      if ((payout.status as string) === 'forecasted' && !forecastsEnabled) {
-        return false;
-      }
+      // Always include forecasted payouts in calendar events for chart display
+      // (The forecast toggle only affects safe spending calculations, not chart visibility)
       
       // Exclude forecasted payouts in the past - forecasts should start from today
       if ((payout.status as string) === 'forecasted') {
