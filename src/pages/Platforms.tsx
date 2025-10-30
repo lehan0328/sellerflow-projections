@@ -14,32 +14,20 @@ const Platforms = () => {
       </Helmet>
 
       {/* Hero Section */}
-      <section className="py-24 px-4 bg-gradient-to-b from-background to-background/50">
-        <div className="container mx-auto max-w-6xl">
+      <section className="py-24 px-4 bg-gradient-to-br from-cyan-500/10 via-sky-500/5 to-background relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]" />
+        <div className="container mx-auto max-w-6xl relative">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 mb-6 border border-cyan-500/20">
               <Globe className="h-4 w-4" />
-              <span className="text-sm font-medium">Coming Soon</span>
+              <span className="text-sm font-medium">Coming 2026</span>
             </div>
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-cyan-600 via-sky-600 to-blue-600 dark:from-cyan-400 dark:via-sky-400 dark:to-blue-400 bg-clip-text text-transparent">
               Manage Your Entire Ecommerce Business
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              We're expanding beyond Amazon. Soon you'll manage cash flow, inventory, analytics, and accounting across Walmart, Shopify, TikTok Shop, and more - all in one place.
+              We're expanding beyond Amazon. Manage cash flow, inventory, analytics, and accounting across Walmart, Shopify, TikTok Shop, and more - all in one place.
             </p>
-          </div>
-
-          <div className="flex justify-center gap-4 mb-16">
-            <Link to="/signup">
-              <Button size="lg" className="hover-scale">
-                Join Waitlist
-              </Button>
-            </Link>
-            <Link to="/schedule-demo">
-              <Button size="lg" variant="outline" className="hover-scale">
-                Schedule Demo
-              </Button>
-            </Link>
           </div>
         </div>
       </section>
@@ -330,17 +318,17 @@ const Platforms = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 px-4 bg-gradient-to-b from-primary/5 to-background">
+      <section className="py-24 px-4 bg-gradient-to-br from-cyan-500/5 to-background">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-4xl font-bold mb-6">
-            Be Ready When We Launch
+            Coming in 2026
           </h2>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join the waitlist to get early access to multi-platform support. Walmart, Shopify, TikTok Shop and more coming soon.
+            Multi-platform support for Walmart, Shopify, TikTok Shop and more will be available next year.
           </p>
-          <Link to="/signup">
+          <Link to="/contact">
             <Button size="lg" className="hover-scale">
-              Join Waitlist Now
+              Get Notified
             </Button>
           </Link>
         </div>

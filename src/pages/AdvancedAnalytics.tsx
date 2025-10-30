@@ -14,32 +14,20 @@ const AdvancedAnalytics = () => {
       </Helmet>
 
       {/* Hero Section */}
-      <section className="py-24 px-4 bg-gradient-to-b from-background to-background/50">
-        <div className="container mx-auto max-w-6xl">
+      <section className="py-24 px-4 bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-background relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]" />
+        <div className="container mx-auto max-w-6xl relative">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 mb-6 border border-violet-500/20">
               <BarChart3 className="h-4 w-4" />
-              <span className="text-sm font-medium">Coming Soon</span>
+              <span className="text-sm font-medium">Coming 2026</span>
             </div>
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 dark:from-violet-400 dark:via-purple-400 dark:to-fuchsia-400 bg-clip-text text-transparent">
               Analytics That Actually Matter
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Like Sellerboard, but with the KPIs that serious ecommerce sellers actually need. Track NOI, breakeven analysis, true PNL, and more.
+              Advanced analytics with the KPIs that serious ecommerce sellers actually need. Track NOI, breakeven analysis, true P&L, and more.
             </p>
-          </div>
-
-          <div className="flex justify-center gap-4 mb-16">
-            <Link to="/signup">
-              <Button size="lg" className="hover-scale">
-                Join Waitlist
-              </Button>
-            </Link>
-            <Link to="/schedule-demo">
-              <Button size="lg" variant="outline" className="hover-scale">
-                Schedule Demo
-              </Button>
-            </Link>
           </div>
         </div>
       </section>
@@ -50,7 +38,7 @@ const AdvancedAnalytics = () => {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Beyond Basic Metrics</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Sellerboard is great, but we're going deeper with KPIs that real businesses need for strategic decisions
+              Advanced KPIs that real businesses need for strategic decisions
             </p>
           </div>
 
@@ -253,17 +241,17 @@ const AdvancedAnalytics = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 px-4 bg-gradient-to-b from-primary/5 to-background">
+      <section className="py-24 px-4 bg-gradient-to-br from-violet-500/5 to-background">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-4xl font-bold mb-6">
-            Make Better Business Decisions
+            Coming in 2026
           </h2>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join the waitlist to get early access to advanced analytics when it launches.
+            Advanced analytics and business intelligence will be available next year.
           </p>
-          <Link to="/signup">
+          <Link to="/contact">
             <Button size="lg" className="hover-scale">
-              Join Waitlist Now
+              Get Notified
             </Button>
           </Link>
         </div>

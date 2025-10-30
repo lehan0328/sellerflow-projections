@@ -14,32 +14,20 @@ const Reimbursements = () => {
       </Helmet>
 
       {/* Hero Section */}
-      <section className="py-24 px-4 bg-gradient-to-b from-background to-background/50">
-        <div className="container mx-auto max-w-6xl">
+      <section className="py-24 px-4 bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-background relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]" />
+        <div className="container mx-auto max-w-6xl relative">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 mb-6 border border-blue-500/20">
               <DollarSign className="h-4 w-4" />
-              <span className="text-sm font-medium">Coming Soon</span>
+              <span className="text-sm font-medium">Coming 2026</span>
             </div>
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
               Get Every Dollar You're Owed
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
               Fully automated reimbursement tracking for Amazon FBA and Walmart WFS. Lost inventory, damaged goods, overcharged fees - we find it all.
             </p>
-          </div>
-
-          <div className="flex justify-center gap-4 mb-16">
-            <Link to="/signup">
-              <Button size="lg" className="hover-scale">
-                Join Waitlist
-              </Button>
-            </Link>
-            <Link to="/schedule-demo">
-              <Button size="lg" variant="outline" className="hover-scale">
-                Schedule Demo
-              </Button>
-            </Link>
           </div>
         </div>
       </section>
@@ -210,17 +198,17 @@ const Reimbursements = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 px-4 bg-gradient-to-b from-primary/5 to-background">
+      <section className="py-24 px-4 bg-gradient-to-br from-blue-500/5 to-background">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-4xl font-bold mb-6">
-            Stop Leaving Money On The Table
+            Coming in 2026
           </h2>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join the waitlist to get early access to automated reimbursement tracking when it launches.
+            Automated reimbursement tracking will be available next year.
           </p>
-          <Link to="/signup">
+          <Link to="/contact">
             <Button size="lg" className="hover-scale">
-              Join Waitlist Now
+              Get Notified
             </Button>
           </Link>
         </div>

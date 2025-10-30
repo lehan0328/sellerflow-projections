@@ -14,43 +14,31 @@ const Inventory = () => {
       </Helmet>
 
       {/* Hero Section */}
-      <section className="py-24 px-4 bg-gradient-to-b from-background to-background/50">
-        <div className="container mx-auto max-w-6xl">
+      <section className="py-24 px-4 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-background relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]" />
+        <div className="container mx-auto max-w-6xl relative">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-6 border border-emerald-500/20">
               <Package className="h-4 w-4" />
-              <span className="text-sm font-medium">Coming Soon</span>
+              <span className="text-sm font-medium">Coming 2026</span>
             </div>
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-400 dark:via-teal-400 dark:to-cyan-400 bg-clip-text text-transparent">
               Never Run Out of Stock Again
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
               Multi-platform inventory management that keeps your products in stock across Amazon, Walmart, Shopify, TikTok Shop, and more. All in one place.
             </p>
           </div>
-
-          <div className="flex justify-center gap-4 mb-16">
-            <Link to="/signup">
-              <Button size="lg" className="hover-scale">
-                Join Waitlist
-              </Button>
-            </Link>
-            <Link to="/schedule-demo">
-              <Button size="lg" variant="outline" className="hover-scale">
-                Schedule Demo
-              </Button>
-            </Link>
-          </div>
         </div>
       </section>
 
-      {/* Similar to RestockPro Section */}
+      {/* Key Features Section */}
       <section className="py-16 px-4 bg-muted/30">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Like RestockPro, But Multi-Platform</h2>
+            <h2 className="text-3xl font-bold mb-4">Intelligent Multi-Platform Inventory</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Get the inventory management power you love, extended across all your selling channels
+              Advanced inventory management extended across all your selling channels
             </p>
           </div>
 
@@ -172,17 +160,17 @@ const Inventory = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 px-4 bg-gradient-to-b from-primary/5 to-background">
+      <section className="py-24 px-4 bg-gradient-to-br from-emerald-500/5 to-background">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-4xl font-bold mb-6">
-            Ready to Optimize Your Inventory?
+            Coming in 2026
           </h2>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join the waitlist to get early access to Auren Inventory when it launches.
+            Multi-platform inventory management will be available next year.
           </p>
-          <Link to="/signup">
+          <Link to="/contact">
             <Button size="lg" className="hover-scale">
-              Join Waitlist Now
+              Get Notified
             </Button>
           </Link>
         </div>
