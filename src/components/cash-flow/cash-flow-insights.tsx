@@ -664,7 +664,7 @@ export const CashFlowInsights = ({
                     This is what you can safely spend without risking shortfalls
                   </p>
                   
-                  {safeSpendingAvailableDate && (
+                  {safeSpendingAvailableDate && safeSpendingLimit > 0 && (
                     <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800 mt-2">
                       <span className="text-xs font-medium text-muted-foreground">Earliest Purchase Date:</span>
                       <span className="text-sm font-bold text-blue-600">
@@ -691,8 +691,8 @@ export const CashFlowInsights = ({
                   )}
                 </div>
 
-                {/* Opportunity #2 Preview */}
-                {allBuyingOpportunities.length > 1 && (
+                {/* Opportunity #2 Preview - only show if positive */}
+                {allBuyingOpportunities.length > 1 && allBuyingOpportunities[1].balance > 0 && (
                   <div className="p-3 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-2 border-blue-200 dark:border-blue-800">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -784,7 +784,7 @@ export const CashFlowInsights = ({
                       })()}
                     </p>}
                   
-                  {allBuyingOpportunities && allBuyingOpportunities.length > 0 && (
+                  {allBuyingOpportunities && allBuyingOpportunities.filter(opp => opp.balance > 0).length > 0 && (
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -792,7 +792,7 @@ export const CashFlowInsights = ({
                       className="w-full"
                     >
                       <ShoppingCart className="h-4 w-4 mr-2" />
-                      View All {allBuyingOpportunities.length} {allBuyingOpportunities.length === 1 ? 'Opportunity' : 'Opportunities'}
+                      View All {allBuyingOpportunities.filter(opp => opp.balance > 0).length} {allBuyingOpportunities.filter(opp => opp.balance > 0).length === 1 ? 'Opportunity' : 'Opportunities'}
                     </Button>
                   )}
                 </div>
