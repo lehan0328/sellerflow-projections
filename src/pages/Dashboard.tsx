@@ -1655,7 +1655,7 @@ const Dashboard = () => {
       
       // For open settlements, calculate close date from settlement start + 14 days
       // For closed settlements, use payout_date
-      let payoutDate = new Date(payout.payout_date);
+      let displayDate = new Date(payout.payout_date);
       if (isOpenSettlement) {
         const rawData = (payout as any).raw_settlement_data;
         const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
@@ -1664,20 +1664,16 @@ const Dashboard = () => {
           const settlementStartDate = new Date(settlementStartStr);
           const settlementCloseDate = new Date(settlementStartDate);
           settlementCloseDate.setDate(settlementCloseDate.getDate() + 14); // Close date is start + 14 days
-          payoutDate = settlementCloseDate;
+          displayDate = settlementCloseDate;
           
           console.log('[Calendar] Open settlement - calculated close date:', {
             settlementId: payout.settlement_id,
             startDate: settlementStartStr,
-            closeDate: payoutDate.toISOString().split('T')[0],
+            closeDate: displayDate.toISOString().split('T')[0],
             amount: payout.total_amount
           });
         }
       }
-      
-      // Amazon transfers take 1 day to reach bank account, so shift availability by +1 day
-      const displayDate = new Date(payoutDate);
-      displayDate.setDate(displayDate.getDate() + 1);
       
       const description = (payout.status as string) === 'forecasted' 
         ? `Amazon Payout (Forecasted) - ${payout.marketplace_name}`
@@ -1686,12 +1682,10 @@ const Dashboard = () => {
           : `Amazon Payout - ${payout.marketplace_name}`;
       
       console.log('[Calendar] Adding Amazon payout:', {
-        payoutDate: payoutDate.toISOString().split('T')[0],
-        displayDate: displayDate.toISOString().split('T')[0],
+        date: displayDate.toISOString().split('T')[0],
         amount: payout.total_amount,
         status: payout.status,
-        isOpen: isOpenSettlement,
-        note: 'Display date is +1 day for bank transfer time'
+        isOpen: isOpenSettlement
       });
       
       return {
