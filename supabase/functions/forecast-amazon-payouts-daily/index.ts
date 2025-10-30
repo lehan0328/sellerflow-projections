@@ -191,18 +191,38 @@ serve(async (req) => {
 
     console.log(`[DAILY FORECAST] Safety net: ${riskAdjustment}% → multiplier ${safetyMultiplier}`);
 
-    // STEP 4: Get last cash-out date from open settlements
+    // STEP 4: Get last confirmed payout date AND open settlements
+    const { data: confirmedHistory } = await supabase
+      .from('amazon_payouts')
+      .select('payout_date')
+      .eq('amazon_account_id', amazonAccountId)
+      .eq('status', 'confirmed')
+      .order('payout_date', { ascending: false })
+      .limit(1);
+
     const { data: openSettlements } = await supabase
       .from('amazon_payouts')
-      .select('payout_date, raw_settlement_data')
+      .select('payout_date, total_amount, raw_settlement_data')
       .eq('amazon_account_id', amazonAccountId)
       .eq('status', 'estimated')
       .order('payout_date', { ascending: false })
       .limit(2);
 
+    let lastConfirmedPayoutDate = new Date();
     let lastCashOutDate = new Date();
     let daysSinceLastCashOut = 0;
 
+    // Get last confirmed payout date (this is our starting point)
+    if (confirmedHistory && confirmedHistory.length > 0) {
+      lastConfirmedPayoutDate = new Date(confirmedHistory[0].payout_date);
+      console.log(`[DAILY FORECAST] Last confirmed payout: ${lastConfirmedPayoutDate.toISOString().split('T')[0]}`);
+    } else {
+      // No confirmed payouts, use yesterday
+      lastConfirmedPayoutDate.setDate(lastConfirmedPayoutDate.getDate() - 1);
+      console.log(`[DAILY FORECAST] No confirmed payouts, using yesterday: ${lastConfirmedPayoutDate.toISOString().split('T')[0]}`);
+    }
+
+    // Also track last cash-out for cumulative available calculation
     if (openSettlements && openSettlements.length > 0) {
       const latestSettlement = openSettlements[0];
       const settlementData = latestSettlement.raw_settlement_data as any;
@@ -221,6 +241,9 @@ serve(async (req) => {
       
       daysSinceLastCashOut = Math.floor((new Date().getTime() - lastCashOutDate.getTime()) / (1000 * 60 * 60 * 24));
       console.log(`[DAILY FORECAST] Last cash-out detected: ${lastCashOutDate.toISOString().split('T')[0]} (${daysSinceLastCashOut} days ago)`);
+    } else {
+      lastCashOutDate = new Date(lastConfirmedPayoutDate);
+      console.log(`[DAILY FORECAST] No open settlements, using confirmed payout date for cash-out reference`);
     }
 
     // STEP 5: Delete existing forecasts for this account
@@ -238,10 +261,21 @@ serve(async (req) => {
       console.log('[DAILY FORECAST] Successfully deleted all existing forecasts for account');
     }
 
-    // STEP 6: Generate 90 unique daily forecasts
+    // STEP 6: Store open settlements (if any) before generating forecasts
+    // Open settlements should be visible in amazon_payouts but not counted in forecasts
+    if (openSettlements && openSettlements.length > 0) {
+      console.log(`[DAILY FORECAST] Found ${openSettlements.length} open settlement(s), these will be visible but not re-forecasted`);
+      // Don't insert them again - they already exist with status='estimated'
+      // The main forecast function should handle these, but for daily accounts we just acknowledge them
+    }
+
+    // STEP 7: Generate 90 unique daily forecasts starting AFTER last confirmed payout
     const forecasts: any[] = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const startDate = new Date(lastConfirmedPayoutDate);
+    startDate.setDate(startDate.getDate() + 1); // Start day AFTER last confirmed
+    startDate.setHours(0, 0, 0, 0);
+    
+    console.log(`[DAILY FORECAST] Generating forecasts starting from: ${startDate.toISOString().split('T')[0]}`);
     
     let cumulativeAvailable = 0;
 
@@ -257,7 +291,7 @@ serve(async (req) => {
     };
 
     for (let i = 0; i < 90; i++) {
-      const forecastDate = new Date(today);
+      const forecastDate = new Date(startDate);
       forecastDate.setDate(forecastDate.getDate() + i);
       const forecastDateStr = forecastDate.toISOString().split('T')[0];
       const weekday = forecastDate.getDay();
