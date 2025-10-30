@@ -231,11 +231,23 @@ export const CashFlowInsights = ({
     });
     
     try {
-      // Delete existing forecasted payouts
+      // Get user's account_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (!profile?.account_id) {
+        throw new Error('Account not found');
+      }
+      
+      // Delete all existing forecasted payouts for this account
+      // This ensures only one set of forecasts exists per account
       await supabase
         .from('amazon_payouts')
         .delete()
-        .eq('user_id', user.id)
+        .eq('account_id', profile.account_id)
         .eq('status', 'forecasted');
       
       // Generate new forecasts

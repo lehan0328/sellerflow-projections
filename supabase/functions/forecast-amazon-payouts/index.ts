@@ -77,12 +77,20 @@ serve(async (req) => {
 
     console.log(`[FORECAST] Found ${amazonAccounts.length} active Amazon account(s)`);
 
-    // Delete all existing forecasted payouts for this user before generating new ones
-    await supabase
+    // Delete all existing forecasted payouts for this account before generating new ones
+    // This ensures only one set of forecasts exists per account
+    console.log(`[FORECAST] Deleting existing forecasts for account: ${accountId}`);
+    const { error: deleteError } = await supabase
       .from('amazon_payouts')
       .delete()
-      .eq('user_id', userId)
+      .eq('account_id', accountId)
       .eq('status', 'forecasted');
+    
+    if (deleteError) {
+      console.error('[FORECAST] Error deleting existing forecasts:', deleteError);
+    } else {
+      console.log('[FORECAST] Successfully deleted all existing forecasts for account');
+    }
 
     // Use 12 months of data for better seasonal analysis
     const twelveMonthsAgo = new Date();

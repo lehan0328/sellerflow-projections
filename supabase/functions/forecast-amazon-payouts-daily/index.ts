@@ -223,17 +223,19 @@ serve(async (req) => {
       console.log(`[DAILY FORECAST] Last cash-out detected: ${lastCashOutDate.toISOString().split('T')[0]} (${daysSinceLastCashOut} days ago)`);
     }
 
-    // STEP 5: Delete existing forecasts
+    // STEP 5: Delete existing forecasts for this account
+    // This ensures only one set of forecasts exists per account
+    console.log(`[DAILY FORECAST] Deleting existing forecasts for account: ${accountId}`);
     const { error: deleteError } = await supabase
       .from('amazon_payouts')
       .delete()
-      .eq('amazon_account_id', amazonAccountId)
+      .eq('account_id', accountId)
       .eq('status', 'forecasted');
 
     if (deleteError) {
       console.error('[DAILY FORECAST] Delete error:', deleteError);
     } else {
-      console.log('[DAILY FORECAST] Deleted existing forecasts');
+      console.log('[DAILY FORECAST] Successfully deleted all existing forecasts for account');
     }
 
     // STEP 6: Generate 90 unique daily forecasts
