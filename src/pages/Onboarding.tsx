@@ -11,6 +11,7 @@ import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { EnterpriseSetupModal } from "@/components/EnterpriseSetupModal";
 import { useSubscription } from "@/hooks/useSubscription";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlaidLink } from "react-plaid-link";
@@ -47,6 +48,7 @@ export default function Onboarding() {
   const { addAccount } = useBankAccounts();
   const { addAmazonAccount } = useAmazonAccounts();
   const { product_id } = useSubscription();
+  const { planLimits, currentPlan, isInTrial } = usePlanLimits();
   const queryClient = useQueryClient();
   
   const [currentStep, setCurrentStep] = useState<'welcome' | 'amazon' | 'bank' | 'reserve' | 'forecasting'>('welcome');
@@ -645,6 +647,13 @@ export default function Onboarding() {
               </div>
               <CardDescription>
                 Securely connect your bank account via Plaid
+                <span className="block mt-2 text-primary font-medium">
+                  {isInTrial ? (
+                    <>Your trial includes unlimited bank accounts</>
+                  ) : (
+                    <>Your {planLimits.name} plan includes {planLimits.bankConnections} bank account{planLimits.bankConnections !== 1 ? 's' : ''}</>
+                  )}
+                </span>
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
