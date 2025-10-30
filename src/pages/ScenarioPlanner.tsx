@@ -417,29 +417,59 @@ export default function ScenarioPlanner() {
     return periods;
   }, [allEvents, baselineCash, dataSourceAdjustments, globalAdjustments, useIndividualAdjustments]);
 
-  // Calculate cumulative impact
+  // Calculate cumulative impact based on 30-day Amazon payout data
   const cumulativeImpact = useMemo(() => {
-    if (scenarioProjection.length === 0) {
-      return { baselineTotal: 0, scenarioTotal: 0, difference: 0, percentChange: 0 };
+    // Calculate 30-day average from confirmed Amazon payouts
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const last30DaysPayouts = amazonPayouts
+      .filter(p => 
+        p.status === 'confirmed' && 
+        new Date(p.payout_date) >= thirtyDaysAgo &&
+        new Date(p.payout_date) <= now
+      );
+
+    // Calculate total from last 30 days
+    const thirtyDayTotal = last30DaysPayouts.reduce((sum, p) => sum + p.total_amount, 0);
+    
+    // Project over 3 months (multiply by 3)
+    const baselineNet = thirtyDayTotal * 3;
+    
+    // Apply scenario adjustments to Amazon payouts
+    let scenarioNet = baselineNet;
+    
+    if (!useIndividualAdjustments && globalAdjustments.amazonPayouts) {
+      const adjustment = globalAdjustments.amazonPayouts;
+      const adjValue = typeof adjustment.value === 'number' ? adjustment.value : 0;
+      if (adjValue !== 0) {
+        if (adjustment.type === 'percentage') {
+          scenarioNet = baselineNet * (1 + adjValue / 100);
+        } else {
+          scenarioNet = baselineNet + (adjValue * 3); // Apply absolute adjustment per month, so multiply by 3
+        }
+      }
     }
     
-    const baselineEnd = scenarioProjection[scenarioProjection.length - 1].baselineCash;
-    const scenarioEnd = scenarioProjection[scenarioProjection.length - 1].scenarioCash;
-    const baselineStart = scenarioProjection[0].baselineCash;
-    const scenarioStart = scenarioProjection[0].scenarioCash;
-    
-    const baselineGrowth = baselineEnd - baselineStart;
-    const scenarioGrowth = scenarioEnd - scenarioStart;
-    const difference = scenarioEnd - baselineEnd;
-    const percentChange = baselineEnd !== 0 ? (difference / baselineEnd) * 100 : 0;
+    const difference = scenarioNet - baselineNet;
+    const percentChange = baselineNet !== 0 ? (difference / baselineNet) * 100 : 0;
+
+    console.log('[ScenarioPlanner] 30-day payout calculation:', {
+      last30DaysPayouts: last30DaysPayouts.length,
+      thirtyDayTotal,
+      baselineNet,
+      scenarioNet,
+      difference
+    });
 
     return {
-      baselineTotal: baselineEnd,
-      scenarioTotal: scenarioEnd,
-      difference,
+      baselineTotal: Math.round(baselineNet),
+      scenarioTotal: Math.round(scenarioNet),
+      difference: Math.round(difference),
       percentChange,
     };
-  }, [scenarioProjection]);
+  }, [amazonPayouts, globalAdjustments, useIndividualAdjustments]);
 
   const handleSaveScenario = () => {
     // Serialize current state into scenario data
@@ -705,7 +735,7 @@ export default function ScenarioPlanner() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Baseline Net</CardTitle>
+                <CardTitle className="text-sm font-medium">Baseline Net (30-Day Payouts)</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -713,14 +743,14 @@ export default function ScenarioPlanner() {
                   ${cumulativeImpact.baselineTotal.toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Over {projectionMonths} months
+                  Last 30 days × 3 months
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Scenario Net</CardTitle>
+                <CardTitle className="text-sm font-medium">Scenario Net (Adjusted)</CardTitle>
                 <TrendingDown className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -728,7 +758,7 @@ export default function ScenarioPlanner() {
                   ${cumulativeImpact.scenarioTotal.toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Over {projectionMonths} months
+                  With scenario adjustments
                 </p>
               </CardContent>
             </Card>
