@@ -539,9 +539,9 @@ serve(async (req) => {
             }
             
             // Step 3: Determine account age and apply gradual weighting
-            // Calculate how many days since oldest payout
-            const oldestPayoutDate = new Date(Math.min(...recent90DayPayouts.map(p => new Date(p.payout_date).getTime())));
-            const accountAgeDays = Math.ceil((new Date().getTime() - oldestPayoutDate.getTime()) / (1000 * 60 * 60 * 24));
+            // Calculate how many days since THE VERY FIRST payout (not just 90-day window)
+            const accountFirstPayoutDate = new Date(Math.min(...amazonPayouts.map(p => new Date(p.payout_date).getTime())));
+            const accountAgeDays = Math.ceil((new Date().getTime() - accountFirstPayoutDate.getTime()) / (1000 * 60 * 60 * 24));
             
             let payoutWeight: number;
             let transactionWeight: number;
