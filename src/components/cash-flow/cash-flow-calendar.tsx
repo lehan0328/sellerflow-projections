@@ -561,13 +561,16 @@ export const CashFlowCalendar = ({
       
       const dayToCheck = new Date(day);
       dayToCheck.setHours(0, 0, 0, 0);
+      const isToday = format(dayToCheck, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
       
       // Get projected balance from safe spending calculation (single source of truth)
       const dateKey = format(day, 'yyyy-MM-dd');
       const projectedBalance = projectedBalanceMap.get(dateKey);
       
-      // Use safe spending balance if available, otherwise use local calculation
-      if (useSafeSpendingBalances && projectedBalance !== undefined) {
+      // Special handling for today: always use bank balance, don't apply dailyChange
+      if (isToday) {
+        runningTotal = bankAccountBalance;
+      } else if (useSafeSpendingBalances && projectedBalance !== undefined) {
         runningTotal = projectedBalance;
       } else {
         runningTotal += dailyChange;
