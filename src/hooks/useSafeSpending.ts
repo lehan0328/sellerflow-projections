@@ -50,7 +50,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
 
   const fetchSafeSpending = useCallback(async () => {
     try {
-      console.log('🔄 [SAFE SPENDING] Starting fresh calculation with reserve:', reserveAmountInput, 'useAvailableBalance:', useAvailableBalance);
       setIsLoading(true);
       setError(null);
 
@@ -81,12 +80,9 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
 
       const reserve = Number(settings?.safe_spending_reserve || 0);
       const forecastsEnabled = settings?.forecasts_enabled ?? true;
-      console.log('🔄 [SAFE SPENDING] Using reserve from database:', reserve);
-      console.log('🔄 [SAFE SPENDING] Forecasts enabled:', forecastsEnabled);
 
       // If forecasts are disabled, delete any existing forecasted payouts
       if (!forecastsEnabled) {
-        console.log('🗑️ [SAFE SPENDING] Forecasts disabled - deleting forecasted payouts');
         await supabase
           .from('amazon_payouts')
           .delete()
@@ -110,23 +106,8 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           ? (acc.available_balance ?? acc.balance)
           : acc.balance;
         
-        console.log(`💳 [SAFE SPENDING] Account ${acc.account_name}: Balance: $${acc.balance}, Available: $${acc.available_balance}, Using: $${balanceToUse}`);
-        
         return sum + Number(balanceToUse || 0);
       }, 0) || 0;
-      
-      console.log('🏦 [SAFE SPENDING] Bank Accounts Found:', bankAccounts?.map(acc => ({
-        name: acc.account_name,
-        balance: acc.balance,
-        available: acc.available_balance,
-        using: useAvailableBalance ? (acc.available_balance ?? acc.balance) : acc.balance
-      })));
-      console.log('🏦 [SAFE SPENDING] Total Bank Balance:', bankBalance);
-      console.log('🏦 [SAFE SPENDING] useAvailableBalance toggle:', useAvailableBalance);
-      console.log('🔒 Account ID:', profile.account_id);
-      console.log('🔄 [SAFE SPENDING] Reserve amount:', reserve);
-      
-      console.log('🔄 [SAFE SPENDING] Using balance type:', useAvailableBalance ? 'Available' : 'Current', 'Balance:', bankBalance);
 
       // Get ALL events (transactions, income, recurring, vendors, etc.)
       // This should match what the calendar receives
@@ -138,15 +119,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       const futureDate = new Date(today);
       futureDate.setDate(futureDate.getDate() + 90);
       const futureDateStr = formatDate(futureDate);
-      
-      console.log('📅 Date Range for Projections:', {
-        today: todayStr,
-        futureDate: futureDateStr,
-        daysAhead: 90,
-        note: 'Only transactions within 90 days will be included'
-      });
-
-      console.log('🎯 EXCLUDE TODAY SETTING:', excludeTodayTransactions ? 'ENABLED ✅' : 'DISABLED ❌');
       
       // Get ALL events that affect cash flow (matching calendar logic)
       const [transactionsResult, incomeResult, recurringResult, vendorsResult, amazonResult, creditCardsResult] = await Promise.all([
@@ -187,22 +159,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           .eq('is_active', true)
       ]);
 
-      console.log('📊 Fetched data:', {
-        transactions: transactionsResult.data?.length || 0,
-        income: incomeResult.data?.length || 0,
-        recurring: recurringResult.data?.length || 0,
-        vendors: vendorsResult.data?.length || 0,
-        amazonPayouts: amazonResult.data?.length || 0,
-        creditCards: creditCardsResult.data?.length || 0
-      });
-
-      console.log('🛒 Amazon Payouts Details (before filtering):', amazonResult.data?.map(p => ({
-        date: p.payout_date,
-        amount: p.total_amount,
-        status: p.status,
-        marketplace: p.marketplace_name
-      })) || 'No payouts fetched');
-      
       // Filter Amazon payouts based on forecast settings
       const filteredAmazonPayouts = (amazonResult.data || []).filter((payout) => {
         // For estimated settlements, EXCLUDE open ones (not yet available) but include closed estimated settlements
@@ -212,21 +168,10 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           
           // If it's an open settlement (no end date), exclude it from calculations
           if (!hasEndDate) {
-            console.log('🚫 [SAFE SPENDING] Excluding open settlement from calculations (not yet available):', {
-              id: payout.id,
-              payout_date: payout.payout_date,
-              amount: payout.total_amount,
-              reason: 'Open settlements are not available for withdrawal'
-            });
             return false;
           }
           
           // If it has an end date, it's a closed estimated settlement - include it
-          console.log('✅ [SAFE SPENDING] Including closed estimated settlement:', {
-            id: payout.id,
-            payout_date: payout.payout_date,
-            amount: payout.total_amount
-          });
           return true;
         }
         
@@ -237,38 +182,10 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         
         // Only include forecasted payouts if forecasts are enabled
         if (payout.status === 'forecasted' && !forecastsEnabled) {
-          console.log('🚫 [SAFE SPENDING] Excluding forecasted payout:', payout.payout_date, payout.total_amount);
           return false;
         }
         
         return true;
-      });
-      
-      console.log('🛒 Amazon Payouts after filtering:', filteredAmazonPayouts.length, 'payouts');
-      const totalAmazonRevenue = filteredAmazonPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
-      console.log('🛒 Total Amazon revenue (next 90 days):', 
-        '$' + totalAmazonRevenue.toLocaleString());
-
-      console.log('🔍 VENDOR DATA:', vendorsResult.data?.map(v => ({
-        name: v.name,
-        total_owed: v.total_owed,
-        next_payment_date: v.next_payment_date,
-        next_payment_amount: v.next_payment_amount,
-        payment_schedule: v.payment_schedule,
-        status: v.status
-      })));
-
-      console.log('💰 STARTING Safe Spending Calculation:', {
-        bankBalance,
-        reserve,
-        startDate: todayStr,
-        allTransactions: transactionsResult.data?.map(t => ({
-          type: t.type,
-          amount: t.amount,
-          transaction_date: t.transaction_date,
-          due_date: t.due_date,
-          status: t.status
-        }))
       });
 
       // Check if we have any forecast data
@@ -280,8 +197,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         (filteredAmazonPayouts && filteredAmazonPayouts.length > 0) ||
         (creditCardsResult.data && creditCardsResult.data.some(c => c.balance > 0 && c.payment_due_date))
       );
-
-      console.log('📊 Has forecast data:', hasForecastData);
 
       // Simple calculation: Track Total Projected Cash for each day, find minimum, subtract reserve
       const dailyBalances: DailyBalance[] = [];
@@ -296,30 +211,17 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
 
         let dayChange = 0;
 
-        // Log key dates and today
-        const isToday = i === 0;
-        const isKeyDate = i <= 3 || targetDateStr === '2025-10-20' || targetDateStr === '2025-10-10' || targetDateStr === '2025-10-17';
-        if (isKeyDate) {
-          console.log(`\n📅 Processing ${targetDateStr} (day ${i})${isToday ? ' [TODAY]' : ''}`);
-        }
-
         // Add all inflows for this day (skip sales_orders without status=completed as they're pending)
         transactionsResult.data?.forEach((tx) => {
           const txDate = parseLocalDate(tx.due_date || tx.transaction_date);
           
           // Skip ALL past transactions (anything before today)
           if (txDate.getTime() < today.getTime()) {
-            if (isKeyDate) {
-              console.log(`  ⏭️ SKIPPING past transaction: ${tx.type} $${tx.amount} (date: ${formatDate(txDate)}, status: ${tx.status})`);
-            }
             return;
           }
           
           // Skip today's transactions if excludeTodayTransactions is true
           if (excludeTodayTransactions && txDate.getTime() === today.getTime()) {
-            if (isKeyDate) {
-              console.log(`  🚫 EXCLUDING today's transaction: ${tx.type} $${tx.amount} (excluded by user)`);
-            }
             return;
           }
           
@@ -328,26 +230,15 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
               // Only count completed sales orders, not pending ones (they should be in income table)
               if (tx.status === 'completed') {
                 const amt = Number(tx.amount);
-                if (isKeyDate) {
-                  console.log(`  ✅ Transaction (inflow): ${tx.type} +$${amt} (${tx.status})`);
-                }
                 dayChange += amt;
-              } else if (isKeyDate) {
-                console.log(`  ⏭️ SKIPPING pending transaction: ${tx.type} $${tx.amount} (${tx.status})`);
               }
             } else if (tx.type === 'purchase_order' || tx.type === 'expense' || tx.vendor_id) {
               // Skip credit card purchases - they're tracked separately against credit card balances
               if (tx.credit_card_id) {
-                if (isKeyDate) {
-                  console.log(`  💳 SKIPPING credit card purchase: ${tx.type} -$${tx.amount} (tracked in credit card)`);
-                }
                 return;
               }
               
               const amt = Number(tx.amount);
-              if (isKeyDate) {
-                console.log(`  ❌ Transaction (outflow): ${tx.type} -$${amt}`);
-              }
               dayChange -= amt;
             }
           }
@@ -358,26 +249,17 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           
           // Skip ALL past income (anything before today)
           if (incomeDate.getTime() < today.getTime()) {
-            if (isKeyDate) {
-              console.log(`  ⏭️ SKIPPING past income: ${income.description} $${income.amount} (date: ${formatDate(incomeDate)})`);
-            }
             return;
           }
           
           // Skip today's income if excludeTodayTransactions is true
           if (excludeTodayTransactions && incomeDate.getTime() === today.getTime()) {
-            if (isKeyDate) {
-              console.log(`  🚫 EXCLUDING today's income: ${income.description} $${income.amount} (excluded by user)`);
-            }
             return;
           }
           
           if (income.status !== 'received') {
             if (incomeDate.getTime() === targetDate.getTime()) {
               const amt = Number(income.amount);
-              if (isKeyDate) {
-                console.log(`  💰 Income: ${income.description} +$${amt} (status: ${income.status})`);
-              }
               dayChange += amt;
             }
           }
@@ -433,21 +315,16 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           // Only skip past payouts if they're NOT open settlements
           const isOpenSettlement = payout.status === 'estimated';
           if (!isOpenSettlement && fundsAvailableDate.getTime() < today.getTime()) {
-            if (isKeyDate) {
-              console.log(`  ⏭️ SKIPPING past Amazon payout: $${payout.total_amount} (available date: ${formatDate(fundsAvailableDate)})`);
-            }
             return;
           }
           
           // Don't apply excludeToday filter to open settlements - they're always included
           if (excludeTodayTransactions && fundsAvailableDate.getTime() === today.getTime() && !isOpenSettlement) {
-            console.log(`  🚫 EXCLUDING today's Amazon payout: $${payout.total_amount} (excluded by user, excludeToday=${excludeTodayTransactions})`);
             return;
           }
           
           if (fundsAvailableDate.getTime() === targetDate.getTime()) {
             const amt = Number(payout.total_amount);
-            console.log(`  🛒 Amazon payout (${payout.status}): +$${amt} available on ${targetDateStr}${isOpenSettlement ? ' (OPEN SETTLEMENT)' : ''}`);
             dayChange += amt;
           }
         });
@@ -456,9 +333,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           if (recurring.is_active) {
             // Skip if target date is before today
             if (targetDate.getTime() < today.getTime()) {
-              if (isKeyDate) {
-                console.log(`  ⏭️ SKIPPING past recurring: ${recurring.name} (target date is in past)`);
-              }
               return;
             }
             
@@ -479,16 +353,10 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
             if (occurrences.length > 0) {
               // Skip today's recurring transactions if excludeTodayTransactions is true
               if (excludeTodayTransactions && targetDate.getTime() === today.getTime()) {
-                if (isKeyDate) {
-                  console.log(`  🚫 EXCLUDING today's recurring: ${recurring.name} $${recurring.amount} (excluded by user)`);
-                }
                 return;
               }
               
               const amt = Number(recurring.amount);
-              if (isKeyDate) {
-                console.log(`  🔄 Recurring ${recurring.type}: ${recurring.name} ${recurring.type === 'income' ? '+' : '-'}$${amt}`);
-              }
               dayChange += recurring.type === 'income' ? amt : -amt;
             }
           }
@@ -506,9 +374,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
 
             // Skip vendor payment if there's already a transaction for it
             if (hasTransactionOnDate) {
-              if (isKeyDate) {
-                console.log(`  ⏭️ SKIPPING vendor payment (already in transactions): ${vendor.name}`);
-              }
               return;
             }
 
@@ -518,25 +383,16 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
                 
                 // Skip ALL past vendor payments
                 if (paymentDate.getTime() < today.getTime()) {
-                  if (isKeyDate) {
-                    console.log(`  ⏭️ SKIPPING past vendor payment: ${vendor.name} $${payment.amount} (date: ${formatDate(paymentDate)})`);
-                  }
                   return;
                 }
                 
                 // Skip today's vendor payments if excludeTodayTransactions is true
                 if (excludeTodayTransactions && paymentDate.getTime() === today.getTime()) {
-                  if (isKeyDate) {
-                    console.log(`  🚫 EXCLUDING today's vendor payment: ${vendor.name} $${payment.amount} (excluded by user)`);
-                  }
                   return;
                 }
                 
                 if (paymentDate.getTime() === targetDate.getTime()) {
                   const amt = Number(payment.amount || 0);
-                  if (isKeyDate) {
-                    console.log(`  📦 Vendor payment: ${vendor.name} -$${amt}`);
-                  }
                   dayChange -= amt;
                 }
               });
@@ -545,25 +401,16 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
               
               // Skip ALL past vendor payments
               if (vendorDate.getTime() < today.getTime()) {
-                if (isKeyDate) {
-                  console.log(`  ⏭️ SKIPPING past vendor payment: ${vendor.name} (date: ${formatDate(vendorDate)})`);
-                }
                 return;
               }
               
               // Skip today's vendor payments if excludeTodayTransactions is true
               if (excludeTodayTransactions && vendorDate.getTime() === today.getTime()) {
-                if (isKeyDate) {
-                  console.log(`  🚫 EXCLUDING today's vendor payment: ${vendor.name} (excluded by user)`);
-                }
                 return;
               }
               
               if (vendorDate.getTime() === targetDate.getTime()) {
                 const amt = Number(vendor.next_payment_amount || 0);
-                if (isKeyDate) {
-                  console.log(`  📦 Vendor payment (next): ${vendor.name} -$${amt}`);
-                }
                 dayChange -= amt;
               }
             }
@@ -577,25 +424,16 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
             
             // Skip ALL past credit card payments
             if (dueDate.getTime() < today.getTime()) {
-              if (isKeyDate) {
-                console.log(`  ⏭️ SKIPPING past credit card payment: ${card.institution_name} (date: ${formatDate(dueDate)})`);
-              }
               return;
             }
             
             // Skip today's credit card payments if excludeTodayTransactions is true
             if (excludeTodayTransactions && dueDate.getTime() === today.getTime()) {
-              if (isKeyDate) {
-                console.log(`  🚫 EXCLUDING today's credit card payment: ${card.institution_name} (excluded by user)`);
-              }
               return;
             }
             
             if (dueDate.getTime() === targetDate.getTime()) {
               const amt = Number(card.balance);
-              if (isKeyDate) {
-                console.log(`  💳 Credit card payment: ${card.institution_name} - ${card.account_name} -$${amt}`);
-              }
               dayChange -= amt;
             }
           }
@@ -603,11 +441,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
 
         runningBalance += dayChange;
         dailyBalances.push({ date: targetDateStr, balance: runningBalance });
-        
-        // Log all days with changes
-        if (dayChange !== 0) {
-          console.log(`📊 ${targetDateStr}: change=${dayChange.toFixed(2)}, balance=${runningBalance.toFixed(2)}`);
-        }
       }
 
       // Find the absolute minimum balance over the entire 90-day period (3 months) ONLY
@@ -615,23 +448,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       const minBalance = Math.min(...dailyBalances.map(d => d.balance));
       const minDayIndex = dailyBalances.findIndex(d => d.balance === minBalance);
       const minDay = dailyBalances[minDayIndex];
-      
-      console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-      console.log(`🔍 LOWEST PROJECTED BALANCE CALCULATION:`);
-      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-      console.log(`  Starting Balance: $${bankBalance.toFixed(2)}`);
-      console.log(`  Reserve Amount: $${reserve.toFixed(2)}`);
-      console.log(`  Searched ${dailyBalances.length} days (${todayStr} to ${futureDateStr})`);
-      console.log(`  Found lowest projected: $${minBalance.toFixed(2)} on ${minDay.date}`);
-      console.log(`  This is ${Math.round((new Date(minDay.date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24))} days from today`);
-      console.log(`  Safe to spend: $${minBalance.toFixed(2)} - $${reserve.toFixed(2)} = $${(minBalance - reserve).toFixed(2)}`);
-      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
-      
-      console.log('\n🔍 SCANNING FOR BUYING OPPORTUNITIES...');
-      console.log('📊 First 30 days of balances:');
-      dailyBalances.slice(0, 30).forEach((day, idx) => {
-        console.log(`  ${day.date}: $${day.balance.toFixed(2)}`);
-      });
       
       // Find ALL buying opportunities using a simple approach:
       // An opportunity occurs when balance INCREASES from one day to the next
@@ -687,17 +503,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
               }
             }
             
-            console.log(`🛒 Opportunity #${allBuyingOpportunities.length + 1} at ${currentDay.date}:`, {
-              lowPointBalance: lowPointBalance.toFixed(2),
-              calendarBalance: lowPointBalance.toFixed(2), // This should match what calendar shows
-              reserve: reserve.toFixed(2),
-              opportunityAmount: opportunityAmount.toFixed(2),
-              earliestAvailableDate,
-              lowPointDate: currentDay.date,
-              nextDayBalance: nextDay.balance.toFixed(2),
-              calculation: `${lowPointBalance.toFixed(2)} - ${reserve.toFixed(2)} = ${opportunityAmount.toFixed(2)}`
-            });
-            
             allBuyingOpportunities.push({
               date: currentDay.date,
               balance: opportunityAmount, // This is what can safely be spent (low point balance - reserve)
@@ -736,14 +541,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
               }
             }
             
-            console.log(`🛒 Terminal opportunity at ${lastDay.date}:`, {
-              balance: lastDay.balance.toFixed(2),
-              reserve: reserve.toFixed(2),
-              opportunityAmount: opportunityAmount.toFixed(2),
-              earliestAvailableDate,
-              terminalDate: lastDay.date
-            });
-            
             allBuyingOpportunities.push({
               date: lastDay.date,
               balance: opportunityAmount,
@@ -752,8 +549,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           }
         }
       }
-      
-      console.log(`\n✅ Found ${allBuyingOpportunities.length} total buying opportunities`);
       
       // Filter out opportunities where a later opportunity has lower projected cash
       // If opportunity 3 has less $ than opportunity 2, remove opportunity 2
@@ -764,13 +559,10 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           .some(laterOpp => laterOpp.balance < opp.balance);
         
         if (hasLowerLaterOpportunity) {
-          console.log(`🚫 Skipping opportunity #${index + 1} at ${opp.date} ($${opp.balance.toFixed(2)}) - later opportunity has lower balance`);
           return false;
         }
         return true;
       });
-      
-      console.log(`\n✅ After filtering: ${filteredOpportunities.length} valid buying opportunities`);
       
       // Safe Spending = minimum projected balance - reserve (accounts for future obligations)
       // This is what you can safely spend without going below minimum projected balance
@@ -812,7 +604,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       if (filteredOpportunities.length > 0 && 
           Math.abs(filteredOpportunities[0].balance - safeSpendingLimit) < 0.01) {
         // First opportunity is essentially the same as safe spending - don't duplicate it
-        console.log('⚠️ First opportunity matches safe spending - using filtered opportunities only');
         allOpportunitiesWithSafeSpending = filteredOpportunities;
       } else {
         // Safe spending is unique - prepend it
@@ -821,40 +612,8 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       
       // If we have no forecast data, only show safe spending opportunity
       const finalOpportunities = hasForecastData ? allOpportunitiesWithSafeSpending : [safeSpendingOpportunity];
-      if (!hasForecastData) {
-        console.log('⚠️ No forecast data - showing only safe spending opportunity');
-      }
       
       const nextBuyingOpportunity = finalOpportunities.length > 0 ? finalOpportunities[0] : null;
-      
-      console.log('🎯 ALL BALANCES:', dailyBalances.slice(0, 20).map(d => `${d.date}: $${d.balance.toFixed(2)}`).join('\n'));
-      
-      console.log('\n═══════════════════════════════════════════');
-      console.log('📊 FINAL OPPORTUNITIES LIST:');
-      console.log('═══════════════════════════════════════════');
-      finalOpportunities.forEach((opp, index) => {
-        console.log(`\nOpportunity #${index + 1}:`);
-        console.log(`  📅 Low Point Date: ${opp.date}`);
-        console.log(`  💰 Safe to Spend: $${opp.balance.toFixed(2)}`);
-        console.log(`  ✅ Available From: ${opp.available_date || 'N/A'}`);
-        
-        // Find the calendar balance for this date
-        const calendarData = dailyBalances.find(d => d.date === opp.date);
-        if (calendarData) {
-          console.log(`  📈 Calendar Balance: $${calendarData.balance.toFixed(2)}`);
-          console.log(`  🧮 Calculation: ${calendarData.balance.toFixed(2)} - ${reserve.toFixed(2)} = ${opp.balance.toFixed(2)}`);
-        }
-      });
-      console.log('\n═══════════════════════════════════════════\n');
-
-      console.log('🎯🎯🎯 SAFE SPENDING & BUYING OPPORTUNITY 🎯🎯🎯');
-      console.log('Current Bank Balance:', bankBalance);
-      console.log('Reserve Amount:', reserve);
-      console.log('Safe Spending (Lowest Projected - Reserve):', safeSpendingLimit);
-      console.log('Minimum Balance Date:', minDay.date);
-      console.log('Minimum Balance Value:', minBalance);
-      console.log('🔍 IMPORTANT: Available to Spend = Lowest Projected Balance - Reserve');
-      console.log(`  Formula: $${minBalance.toFixed(2)} - $${reserve.toFixed(2)} = $${safeSpendingLimit.toFixed(2)}`);
       
       // Find the FIRST day balance goes below safe spending limit (SSL)
       const firstBelowLimitDay = dailyBalances.find(day => day.balance < safeSpendingLimit);
@@ -865,30 +624,6 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       // Determine the warning state
       const willGoNegative = firstNegativeDay !== undefined;
       const willDropBelowLimit = firstBelowLimitDay !== undefined && !willGoNegative;
-      
-      console.log('💰 Safe Spending Final Calculation:', {
-        excludeTodayEnabled: excludeTodayTransactions,
-        bankBalance,
-        reserve,
-        minBalance: minBalance.toFixed(2),
-        minDate: minDay.date,
-        safeSpendingLimit: safeSpendingLimit.toFixed(2),
-        willGoNegative,
-        willDropBelowLimit,
-        firstNegativeDate: firstNegativeDay?.date || null,
-        firstNegativeAmount: firstNegativeDay?.balance.toFixed(2) || null,
-        firstBelowLimitDate: firstBelowLimitDay?.date || null,
-        firstBelowLimitAmount: firstBelowLimitDay?.balance.toFixed(2) || null,
-        calculation: `${minBalance.toFixed(2)} - ${reserve.toFixed(2)} = ${safeSpendingLimit.toFixed(2)}`
-      });
-
-      console.log('🔍 DEBUG: Expected vs Actual:');
-      console.log(`  User expects lowest: $14,995`);
-      console.log(`  Calculated lowest: $${minBalance.toFixed(2)}`);
-      console.log(`  Difference: $${(14995 - minBalance).toFixed(2)}`);
-      console.log(`  Expected available: $12,995`);
-      console.log(`  Showing available: $${safeSpendingLimit.toFixed(2)}`);
-      console.log(`  Difference: $${(12995 - safeSpendingLimit).toFixed(2)}`);
 
       setData({
         safe_spending_limit: safeSpendingLimit, // Don't use Math.max - allow negative to show reserve is higher than minimum
@@ -927,43 +662,33 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
     const channel = supabase
       .channel('safe-spending-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
-        console.log('🔄 Transactions changed - refetching safe spending');
         fetchSafeSpending();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'income' }, () => {
-        console.log('🔄 Income changed - refetching safe spending');
         fetchSafeSpending();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'recurring_expenses' }, () => {
-        console.log('🔄 Recurring expenses changed - refetching safe spending');
         fetchSafeSpending();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bank_accounts' }, () => {
-        console.log('🔄 Bank accounts changed - refetching safe spending');
         fetchSafeSpending();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'vendors' }, () => {
-        console.log('🔄 Vendors changed - refetching safe spending');
         fetchSafeSpending();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'amazon_payouts' }, () => {
-        console.log('🔄 Amazon payouts changed - refetching safe spending');
         fetchSafeSpending();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'deleted_transactions' }, () => {
-        console.log('🔄 Transaction deleted - refetching safe spending');
         fetchSafeSpending();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'credit_cards' }, () => {
-        console.log('🔄 Credit cards changed - refetching safe spending');
         fetchSafeSpending();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bank_transactions' }, () => {
-        console.log('🔄 Bank transactions changed - refetching safe spending');
         fetchSafeSpending();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_settings' }, () => {
-        console.log('🔄 User settings (reserve) changed - refetching safe spending');
         fetchSafeSpending();
       })
       .subscribe();
