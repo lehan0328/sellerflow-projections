@@ -108,7 +108,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   todayDate.setHours(0, 0, 0, 0);
   const todayStr = todayDate.toDateString();
   
-  // Amazon payouts that become available today (yesterday's payouts with +1 day delay)
+  // Amazon payouts that become available today (yesterday's confirmed payouts with +1 day delay)
   const yesterdayDate = new Date(todayDate);
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
   const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
@@ -116,21 +116,20 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const amazonIncomeToday = amazonPayouts
     .filter(payout => {
       const payoutDate = payout.payout_date.split('T')[0];
-      // Include yesterday's payouts (available today due to +1 day delay)
-      return payoutDate === yesterdayStr && 
-             (payout.status === 'confirmed' || payout.status === 'forecasted');
+      // Include only yesterday's CONFIRMED payouts (available today due to +1 day delay)
+      return payoutDate === yesterdayStr && payout.status === 'confirmed';
     })
     .reduce((sum, payout) => sum + payout.total_amount, 0);
   
-  console.log('[Today Income Debug] Amazon payouts from yesterday:', {
+  console.log('[Today Income Debug] Amazon CONFIRMED payouts from yesterday:', {
     yesterdayStr,
     count: amazonPayouts.filter(p => {
       const payoutDate = p.payout_date.split('T')[0];
-      return payoutDate === yesterdayStr && (p.status === 'confirmed' || p.status === 'forecasted');
+      return payoutDate === yesterdayStr && p.status === 'confirmed';
     }).length,
     payouts: amazonPayouts.filter(p => {
       const payoutDate = p.payout_date.split('T')[0];
-      return payoutDate === yesterdayStr && (p.status === 'confirmed' || p.status === 'forecasted');
+      return payoutDate === yesterdayStr && p.status === 'confirmed';
     }).map(p => ({ date: p.payout_date, amount: p.total_amount, status: p.status })),
     total: amazonIncomeToday
   });
