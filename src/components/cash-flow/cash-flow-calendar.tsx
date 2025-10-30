@@ -560,9 +560,10 @@ export const CashFlowCalendar = ({
       cumulativeInflow += dailyInflow;
       cumulativeOutflow += dailyOutflow;
       
-      // Calculate forecasted payout line (only includes forecasted Amazon payouts)
+      // Calculate forecasted payout line (replaces confirmed Amazon payouts with forecasted ones)
       const forecastedInflow = dayEvents.filter(e => e.source === 'Amazon-Forecasted' && e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
-      const forecastedChange = forecastedInflow - dailyOutflow;
+      const confirmedAmazonInflow = dayEvents.filter(e => e.source === 'Amazon' && e.type === 'inflow').reduce((sum, e) => sum + e.amount, 0);
+      const forecastedChange = dailyInflow - confirmedAmazonInflow + forecastedInflow - dailyOutflow;
       forecastTotal += forecastedChange;
       
       const dayToCheck = new Date(day);
