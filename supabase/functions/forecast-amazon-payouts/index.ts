@@ -442,10 +442,8 @@ serve(async (req) => {
             const settlementEndDate = rawData?.FinancialEventGroupEnd;
             
             if (settlementEndDate && payoutFrequency === 'daily') {
-              // FinancialEventGroupEnd is stored as midnight of the NEXT day in UTC
-              // Subtract 1 day to get actual close date
+              // FinancialEventGroupEnd is the actual settlement close date (not next day)
               const closeDate = new Date(settlementEndDate);
-              closeDate.setDate(closeDate.getDate() - 1);
               closeDate.setHours(0, 0, 0, 0);
               lastPayoutDate = closeDate;
               console.log(`[FORECAST] Settlement closed: ${lastPayoutDate.toISOString().split('T')[0]} (payout: ${lastPayout.payout_date})`);
@@ -481,7 +479,32 @@ serve(async (req) => {
           });
           
           if (recent90DayPayouts.length >= 5) {
-            // Calculate TOTAL amount and TOTAL days in period
+            // Step 1: Calculate CURRENT MONTH average for strong recent signal
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            const currentMonthPayouts = recent90DayPayouts.filter(p => {
+              const payoutDate = new Date(p.payout_date);
+              return payoutDate.getMonth() === currentMonth && payoutDate.getFullYear() === currentYear;
+            });
+            
+            let currentMonthAverage = 0;
+            if (currentMonthPayouts.length > 0) {
+              const totalCurrentMonth = currentMonthPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
+              const oldestCurrentMonth = new Date(Math.min(...currentMonthPayouts.map(p => new Date(p.payout_date).getTime())));
+              const newestCurrentMonth = new Date(Math.max(...currentMonthPayouts.map(p => new Date(p.payout_date).getTime())));
+              const daysInCurrentMonth = Math.ceil((newestCurrentMonth.getTime() - oldestCurrentMonth.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+              currentMonthAverage = totalCurrentMonth / daysInCurrentMonth;
+              
+              console.log(`[FORECAST] Current month (${currentMonth + 1}) baseline:`, {
+                totalAmount: totalCurrentMonth.toFixed(2),
+                daysInPeriod: daysInCurrentMonth,
+                payoutsCount: currentMonthPayouts.length,
+                dailyAverage: currentMonthAverage.toFixed(2),
+                note: 'This will have highest weight for first 30 days'
+              });
+            }
+            
+            // Step 2: Calculate 90-day average for longer-term baseline
             const totalPayoutAmount = recent90DayPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
             
             // Find actual date range of payouts
@@ -489,19 +512,19 @@ serve(async (req) => {
             const newestPayoutDate = new Date(Math.max(...recent90DayPayouts.map(p => new Date(p.payout_date).getTime())));
             const daysInPeriod = Math.ceil((newestPayoutDate.getTime() - oldestPayoutDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
             
-            // TRUE daily average = total amount / days in period (accounts for non-daily payouts)
-            const trueDailyAverage = totalPayoutAmount / daysInPeriod;
+            // 90-day daily average for context
+            const ninetyDayAverage = totalPayoutAmount / daysInPeriod;
             
             console.log(`[FORECAST] 90-day payout baseline calculation:`, {
               totalAmount: totalPayoutAmount.toFixed(2),
               daysInPeriod,
               payoutsCount: recent90DayPayouts.length,
-              trueDailyAverage: trueDailyAverage.toFixed(2),
+              ninetyDayAverage: ninetyDayAverage.toFixed(2),
               avgPayoutSize: (totalPayoutAmount / recent90DayPayouts.length).toFixed(2),
               dateRange: `${oldestPayoutDate.toISOString().split('T')[0]} to ${newestPayoutDate.toISOString().split('T')[0]}`
             });
             
-            // Step 2: Calculate transaction-based daily average from last 30 days
+            // Step 3: Calculate transaction-based daily average from last 30 days
             let transactionBasedDaily = 0;
             if (amazonTransactions && amazonTransactions.length > 0) {
               const thirtyDaysAgo = new Date();
@@ -538,50 +561,61 @@ serve(async (req) => {
               }
             }
             
-            // Step 3: Determine account age and apply gradual weighting
-            // Calculate how many days since THE VERY FIRST payout (not just 90-day window)
+            // Step 4: Determine account age and apply weighting
+            // Use CURRENT MONTH average primarily for first 30 days, then blend with 90-day and transactions
             const accountFirstPayoutDate = new Date(Math.min(...amazonPayouts.map(p => new Date(p.payout_date).getTime())));
             const accountAgeDays = Math.ceil((new Date().getTime() - accountFirstPayoutDate.getTime()) / (1000 * 60 * 60 * 24));
             
-            let payoutWeight: number;
+            let currentMonthWeight: number;
+            let ninetyDayWeight: number;
             let transactionWeight: number;
             
             if (accountAgeDays <= 30) {
-              // First 30 days: Trust payout history more (75% payout, 25% transaction)
-              payoutWeight = 0.75;
+              // First 30 days: Trust CURRENT MONTH average most (75%), transactions secondary (25%)
+              // Current month captures most recent performance trend
+              currentMonthWeight = currentMonthAverage > 0 ? 0.75 : 0;
+              ninetyDayWeight = currentMonthAverage > 0 ? 0 : 0.75;
               transactionWeight = 0.25;
             } else if (accountAgeDays <= 60) {
-              // 30-60 days: Equal weighting (50% payout, 50% transaction)
-              payoutWeight = 0.50;
-              transactionWeight = 0.50;
+              // 30-60 days: Blend current month (40%), 90-day (30%), transactions (30%)
+              currentMonthWeight = currentMonthAverage > 0 ? 0.40 : 0;
+              ninetyDayWeight = currentMonthAverage > 0 ? 0.30 : 0.50;
+              transactionWeight = currentMonthAverage > 0 ? 0.30 : 0.50;
             } else if (accountAgeDays <= 90) {
-              // 60-90 days: Trust transactions more (25% payout, 75% transaction)
-              payoutWeight = 0.25;
-              transactionWeight = 0.75;
+              // 60-90 days: Trust transactions more (50%), current month (25%), 90-day (25%)
+              currentMonthWeight = currentMonthAverage > 0 ? 0.25 : 0;
+              ninetyDayWeight = currentMonthAverage > 0 ? 0.25 : 0.25;
+              transactionWeight = currentMonthAverage > 0 ? 0.50 : 0.75;
             } else {
-              // 90+ days: Mostly transactions (25% payout, 75% transaction)
-              payoutWeight = 0.25;
-              transactionWeight = 0.75;
+              // 90+ days: Mostly transactions (60%), with 90-day for stability (40%)
+              currentMonthWeight = 0;
+              ninetyDayWeight = 0.40;
+              transactionWeight = 0.60;
             }
             
             // Apply weighted blend
-            if (transactionBasedDaily > 0) {
-              const weightedBaseline = (trueDailyAverage * payoutWeight) + (transactionBasedDaily * transactionWeight);
+            if (transactionBasedDaily > 0 || currentMonthAverage > 0) {
+              const weightedBaseline = 
+                (currentMonthAverage * currentMonthWeight) + 
+                (ninetyDayAverage * ninetyDayWeight) + 
+                (transactionBasedDaily * transactionWeight);
               
               console.log(`[FORECAST] Weighted baseline calculation:`, {
                 accountAgeDays,
-                payoutWeight: `${(payoutWeight * 100).toFixed(0)}%`,
+                currentMonthWeight: currentMonthAverage > 0 ? `${(currentMonthWeight * 100).toFixed(0)}%` : 'N/A',
+                ninetyDayWeight: `${(ninetyDayWeight * 100).toFixed(0)}%`,
                 transactionWeight: `${(transactionWeight * 100).toFixed(0)}%`,
-                payoutBaseline: trueDailyAverage.toFixed(2),
+                currentMonthBaseline: currentMonthAverage.toFixed(2),
+                ninetyDayBaseline: ninetyDayAverage.toFixed(2),
                 transactionBaseline: transactionBasedDaily.toFixed(2),
                 weightedResult: weightedBaseline.toFixed(2)
               });
               
               baselineAmount = weightedBaseline;
             } else {
-              // No transaction data, use payout baseline only
-              baselineAmount = trueDailyAverage;
-              console.log(`[FORECAST] No transaction data, using 100% payout baseline: ${baselineAmount.toFixed(2)}`);
+              // No transaction or current month data, use 90-day baseline only
+              baselineAmount = ninetyDayAverage;
+              console.log(`[FORECAST] No transaction/current month data, using 100% 90-day baseline: ${baselineAmount.toFixed(2)}`);
             }
           } else {
             // Insufficient payout history - fall back to all available payouts
