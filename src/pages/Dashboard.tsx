@@ -1633,6 +1633,7 @@ const Dashboard = () => {
     .map(payout => {
       // Open settlements (status='estimated') are in-progress and will update daily
       const isOpenSettlement = (payout.status as string) === 'estimated';
+      const isForecastedPayout = (payout.status as string) === 'forecasted';
       
       // For open settlements, calculate close date from settlement start + 14 days
       // For closed settlements, use payout_date
@@ -1654,6 +1655,17 @@ const Dashboard = () => {
             amount: payout.total_amount
           });
         }
+      }
+      
+      // For forecasted payouts, add 1 day since funds take a day to reach bank after payout closes
+      if (isForecastedPayout) {
+        displayDate = new Date(displayDate);
+        displayDate.setDate(displayDate.getDate() + 1);
+        console.log('[Calendar] Forecasted payout - added 1 day for bank transfer:', {
+          originalDate: payout.payout_date,
+          displayDate: displayDate.toISOString().split('T')[0],
+          amount: payout.total_amount
+        });
       }
       
       const description = (payout.status as string) === 'forecasted' 
