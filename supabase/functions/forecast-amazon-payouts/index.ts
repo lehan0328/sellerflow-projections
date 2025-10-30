@@ -501,9 +501,8 @@ serve(async (req) => {
               dateRange: `${oldestPayoutDate.toISOString().split('T')[0]} to ${newestPayoutDate.toISOString().split('T')[0]}`
             });
             
-            baselineAmount = trueDailyAverage;
-            
-            // Step 2: Apply recent transaction trend (last 30 days)
+            // Step 2: Calculate transaction-based daily average from last 30 days
+            let transactionBasedDaily = 0;
             if (amazonTransactions && amazonTransactions.length > 0) {
               const thirtyDaysAgo = new Date();
               thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -529,25 +528,60 @@ serve(async (req) => {
                 });
                 
                 const netTransactionValue = totalOrders - totalFees - totalRefunds;
-                const recentDailyAvg = netTransactionValue / 30;
+                transactionBasedDaily = netTransactionValue / 30;
                 
-                // Calculate trend multiplier (how much has recent performance changed vs baseline)
-                const trendMultiplier = recentDailyAvg / baselineAmount;
-                
-                // Apply trend but cap it at +/- 30% to avoid wild swings from short-term volatility
-                const cappedTrendMultiplier = Math.max(0.7, Math.min(1.3, trendMultiplier));
-                
-                console.log(`[FORECAST] 30-day transaction trend adjustment:`, {
-                  recentDailyAvg: recentDailyAvg.toFixed(2),
-                  baselineBeforeTrend: baselineAmount.toFixed(2),
-                  rawTrendMultiplier: trendMultiplier.toFixed(3),
-                  cappedTrendMultiplier: cappedTrendMultiplier.toFixed(3),
-                  transactionsCount: recentTransactions.length
+                console.log(`[FORECAST] Transaction-based daily average:`, {
+                  recentDailyAvg: transactionBasedDaily.toFixed(2),
+                  transactionsCount: recentTransactions.length,
+                  netValue: netTransactionValue.toFixed(2)
                 });
-                
-                baselineAmount = baselineAmount * cappedTrendMultiplier;
-                console.log(`[FORECAST] Baseline after trend adjustment: ${baselineAmount.toFixed(2)}`);
               }
+            }
+            
+            // Step 3: Determine account age and apply gradual weighting
+            // Calculate how many days since oldest payout
+            const oldestPayoutDate = new Date(Math.min(...recent90DayPayouts.map(p => new Date(p.payout_date).getTime())));
+            const accountAgeDays = Math.ceil((new Date().getTime() - oldestPayoutDate.getTime()) / (1000 * 60 * 60 * 24));
+            
+            let payoutWeight: number;
+            let transactionWeight: number;
+            
+            if (accountAgeDays <= 30) {
+              // First 30 days: Trust payout history more (75% payout, 25% transaction)
+              payoutWeight = 0.75;
+              transactionWeight = 0.25;
+            } else if (accountAgeDays <= 60) {
+              // 30-60 days: Equal weighting (50% payout, 50% transaction)
+              payoutWeight = 0.50;
+              transactionWeight = 0.50;
+            } else if (accountAgeDays <= 90) {
+              // 60-90 days: Trust transactions more (25% payout, 75% transaction)
+              payoutWeight = 0.25;
+              transactionWeight = 0.75;
+            } else {
+              // 90+ days: Mostly transactions (25% payout, 75% transaction)
+              payoutWeight = 0.25;
+              transactionWeight = 0.75;
+            }
+            
+            // Apply weighted blend
+            if (transactionBasedDaily > 0) {
+              const weightedBaseline = (trueDailyAverage * payoutWeight) + (transactionBasedDaily * transactionWeight);
+              
+              console.log(`[FORECAST] Weighted baseline calculation:`, {
+                accountAgeDays,
+                payoutWeight: `${(payoutWeight * 100).toFixed(0)}%`,
+                transactionWeight: `${(transactionWeight * 100).toFixed(0)}%`,
+                payoutBaseline: trueDailyAverage.toFixed(2),
+                transactionBaseline: transactionBasedDaily.toFixed(2),
+                weightedResult: weightedBaseline.toFixed(2)
+              });
+              
+              baselineAmount = weightedBaseline;
+            } else {
+              // No transaction data, use payout baseline only
+              baselineAmount = trueDailyAverage;
+              console.log(`[FORECAST] No transaction data, using 100% payout baseline: ${baselineAmount.toFixed(2)}`);
             }
           } else {
             // Insufficient payout history - fall back to all available payouts
