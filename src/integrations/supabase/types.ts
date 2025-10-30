@@ -1594,6 +1594,7 @@ export type Database = {
           currency: string | null
           discount_redeemed_at: string | null
           first_name: string | null
+          forecast_settings: Json | null
           id: string
           is_account_owner: boolean
           last_amazon_connection: string | null
@@ -1619,6 +1620,7 @@ export type Database = {
           currency?: string | null
           discount_redeemed_at?: string | null
           first_name?: string | null
+          forecast_settings?: Json | null
           id?: string
           is_account_owner?: boolean
           last_amazon_connection?: string | null
@@ -1644,6 +1646,7 @@ export type Database = {
           currency?: string | null
           discount_redeemed_at?: string | null
           first_name?: string | null
+          forecast_settings?: Json | null
           id?: string
           is_account_owner?: boolean
           last_amazon_connection?: string | null

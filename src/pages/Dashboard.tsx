@@ -36,7 +36,7 @@ import AmazonForecast from "@/pages/AmazonForecast";
 import DocumentStorage from "@/pages/DocumentStorage";
 import Support from "@/pages/Support";
 import Notifications from "@/pages/Notifications";
-import MatchTransactions from "@/pages/MatchTransactions";
+import WeightedForecasts from "@/pages/WeightedForecasts";
 import { TeamManagement } from "@/components/settings/team-management";
 import { SidebarNavigation } from "@/components/settings/sidebar-navigation";
 import { CreditCardManagement } from "@/components/settings/credit-card-management";
@@ -2347,7 +2347,7 @@ const Dashboard = () => {
         return <Notifications />;
       
       case "match-transactions":
-        return <MatchTransactions />;
+        return <WeightedForecasts />;
       
       case "transactions":
         return (
