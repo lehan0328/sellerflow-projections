@@ -565,6 +565,19 @@ export const CashFlowCalendar = ({
       const forecastedChange = forecastedInflow - dailyOutflow;
       forecastTotal += forecastedChange;
       
+      // Debug logging for specific dates
+      const dateStr = format(day, 'yyyy-MM-dd');
+      if (dateStr === '2025-10-30' || dateStr === '2025-10-31' || dateStr === '2025-11-13') {
+        console.log(`📊 [CHART DATA] ${dateStr}:`, {
+          dayEvents: dayEvents.length,
+          amazonForecasted: dayEvents.filter(e => e.source === 'Amazon-Forecasted').length,
+          forecastedInflow,
+          forecastedChange,
+          forecastTotal,
+          runningTotal
+        });
+      }
+      
       const dayToCheck = new Date(day);
       dayToCheck.setHours(0, 0, 0, 0);
       
