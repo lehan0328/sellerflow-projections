@@ -1657,13 +1657,21 @@ const Dashboard = () => {
         }
       }
       
-      // For forecasted payouts, add 1 day since funds take a day to reach bank after payout closes
-      if (isForecastedPayout) {
+      // For estimated (open) and forecasted payouts, add 1 day since funds take a day to reach bank after payout closes
+      // For confirmed (closed) payouts, the payout_date already includes bank transfer time - no adjustment needed
+      if (isOpenSettlement || isForecastedPayout) {
         displayDate = new Date(displayDate);
         displayDate.setDate(displayDate.getDate() + 1);
-        console.log('[Calendar] Forecasted payout - added 1 day for bank transfer:', {
+        console.log('[Calendar] Estimated/Forecasted payout - added 1 day for bank transfer:', {
+          status: payout.status,
           originalDate: payout.payout_date,
           displayDate: displayDate.toISOString().split('T')[0],
+          amount: payout.total_amount
+        });
+      } else {
+        console.log('[Calendar] Confirmed payout - using payout_date as-is (already includes bank transfer):', {
+          status: payout.status,
+          payoutDate: payout.payout_date,
           amount: payout.total_amount
         });
       }

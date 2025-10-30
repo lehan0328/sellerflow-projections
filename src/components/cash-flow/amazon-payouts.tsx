@@ -886,9 +886,19 @@ export function AmazonPayouts() {
                                     });
                                     
                                     if (endDate) {
-                                      // Calculate actual payout arrival date (end date + 1 day)
-                                      const payoutArrival = new Date(endDate.getTime() + 1 * 24 * 60 * 60 * 1000);
-                                      return `Period: ${formatShort(startDate)} - ${formatShort(endDate)} → Arrived: ${formatShort(payoutArrival)}`;
+                                      // For confirmed (closed) payouts, use the actual payout_date which already includes bank transfer time
+                                      // For estimated (open) payouts that have an end date, add 1 day for bank transfer
+                                      const isConfirmed = aggregatedPayout.status === 'confirmed';
+                                      
+                                      if (isConfirmed) {
+                                        // Use the payout_date as-is (already includes +1 day for bank transfer)
+                                        const payoutArrival = new Date(aggregatedPayout.payout_date);
+                                        return `Period: ${formatShort(startDate)} - ${formatShort(endDate)} → Arrived: ${formatShort(payoutArrival)}`;
+                                      } else {
+                                        // Calculate arrival date for estimated settlements (end date + 1 day)
+                                        const payoutArrival = new Date(endDate.getTime() + 1 * 24 * 60 * 60 * 1000);
+                                        return `Period: ${formatShort(startDate)} - ${formatShort(endDate)} → Arrives: ${formatShort(payoutArrival)}`;
+                                      }
                                     } else {
                                       // Calculate estimated end date for open settlements (14 days for bi-weekly)
                                       const estimatedEnd = new Date(startDate);
