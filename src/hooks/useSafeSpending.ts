@@ -302,6 +302,13 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         if (isKeyDate) {
           console.log(`\n📅 Processing ${targetDateStr} (day ${i})${isToday ? ' [TODAY]' : ''}`);
         }
+        
+        // For TODAY (i=0): Push current balance FIRST, before calculating any changes
+        // This ensures today always displays the actual current cash balance
+        if (isToday) {
+          dailyBalances.push({ date: targetDateStr, balance: runningBalance });
+          console.log(`📊 ${targetDateStr} [TODAY]: Starting balance=${runningBalance.toFixed(2)} (no changes applied to today's display)`);
+        }
 
         // Add all inflows for this day (skip sales_orders without status=completed as they're pending)
         transactionsResult.data?.forEach((tx) => {
@@ -583,7 +590,11 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
         });
 
         runningBalance += dayChange;
-        dailyBalances.push({ date: targetDateStr, balance: runningBalance });
+        
+        // For all days EXCEPT today (already pushed above), push the updated balance
+        if (!isToday) {
+          dailyBalances.push({ date: targetDateStr, balance: runningBalance });
+        }
         
         // Log all days with changes
         if (dayChange !== 0) {
