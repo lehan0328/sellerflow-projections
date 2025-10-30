@@ -432,40 +432,16 @@ const Dashboard = () => {
     };
   }, [refetchBankAccounts, refetchSafeSpending]);
 
-  // Combine bank accounts and credit cards into one list for the dropdown
+  // Only show bank accounts (credit cards removed as they have no transactions)
   const allFinancialAccounts = useMemo(() => {
-    const combined: Array<{ 
-      id: string; 
-      type: 'bank' | 'credit'; 
-      institution_name: string; 
-      account_name: string;
-      last_sync: string;
-    }> = [];
-    
-    // Add bank accounts
-    accounts.forEach(acc => {
-      combined.push({
-        id: acc.id,
-        type: 'bank',
-        institution_name: acc.institution_name,
-        account_name: acc.account_name,
-        last_sync: acc.last_sync,
-      });
-    });
-    
-    // Add credit cards
-    creditCards.forEach(card => {
-      combined.push({
-        id: card.id,
-        type: 'credit',
-        institution_name: card.institution_name,
-        account_name: card.account_name,
-        last_sync: card.last_sync,
-      });
-    });
-    
-    return combined;
-  }, [accounts, creditCards]);
+    return accounts.map(acc => ({
+      id: acc.id,
+      type: 'bank' as const,
+      institution_name: acc.institution_name,
+      account_name: acc.account_name,
+      last_sync: acc.last_sync,
+    }));
+  }, [accounts]);
 
   // Map real bank transactions to BankTransaction format
   const allBankTransactions: BankTransaction[] = useMemo(() => {
@@ -664,9 +640,8 @@ const Dashboard = () => {
       return;
     }
 
-    // Determine if the selected account is a bank account or credit card
-    const selectedAccount = allFinancialAccounts.find(acc => acc.id === selectedBankAccountId);
-    const accountType = selectedAccount?.type === 'credit' ? 'credit' : 'bank';
+    // All accounts are bank accounts now (credit cards removed)
+    const accountType = 'bank';
 
     setIsBankSyncing(true);
     try {
@@ -2345,7 +2320,7 @@ const Dashboard = () => {
                 body: { 
                   accountId: account.id, 
                   isInitialSync: false,
-                  accountType: account.type
+                  accountType: 'bank'  // All accounts are bank accounts now
                 },
               })
             );
@@ -2460,11 +2435,7 @@ const Dashboard = () => {
                       return (
                         <SelectItem key={account.id} value={account.id} className="cursor-pointer">
                           <div className="flex items-center gap-2">
-                            {account.type === 'bank' ? (
-                              <Building2 className="h-4 w-4" />
-                            ) : (
-                              <CreditCardIcon className="h-4 w-4" />
-                            )}
+                            <Building2 className="h-4 w-4" />
                             <span>{account.institution_name} - {account.account_name}</span>
                             <Badge variant="secondary" className="ml-auto">{accountTxCount}</Badge>
                           </div>
@@ -2485,7 +2456,7 @@ const Dashboard = () => {
                             body: { 
                               accountId: account.id, 
                               isInitialSync: false,
-                              accountType: account.type
+                              accountType: 'bank'  // All accounts are bank accounts now
                             },
                           })
                         );
