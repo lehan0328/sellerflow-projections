@@ -1642,25 +1642,30 @@ const Dashboard = () => {
       const isForecastedPayout = (payout.status as string) === 'forecasted';
       const isConfirmedPayout = (payout.status as string) === 'confirmed';
       
-      // CRITICAL: For confirmed and estimated payouts, use settlement END date from raw data
-      // For forecasted payouts, use payout_date
       let displayDate: Date;
       
-      if (isConfirmedPayout || isOpenSettlement) {
+      if (isConfirmedPayout) {
+        // For confirmed payouts, payout_date already represents when funds are available
+        displayDate = new Date(payout.payout_date);
+        console.log('[Calendar] Using payout_date for confirmed payout:', {
+          status: payout.status,
+          payout_date: payout.payout_date,
+          amount: payout.total_amount
+        });
+      } else if (isOpenSettlement) {
+        // For estimated payouts (open settlements), calculate from settlement end date + 1 day
         const rawData = (payout as any).raw_settlement_data;
         const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
         const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
         
         if (settlementEndStr) {
-          // Use the actual settlement close date
           displayDate = new Date(settlementEndStr);
-          console.log('[Calendar] Using settlement end date for confirmed/estimated payout:', {
+          console.log('[Calendar] Using settlement end date for estimated payout:', {
             status: payout.status,
             settlementEndDate: settlementEndStr,
             amount: payout.total_amount
           });
-        } else if (isOpenSettlement && settlementStartStr) {
-          // For open settlements without end date, calculate close date from start + 14 days
+        } else if (settlementStartStr) {
           const settlementStartDate = new Date(settlementStartStr);
           const settlementCloseDate = new Date(settlementStartDate);
           settlementCloseDate.setDate(settlementCloseDate.getDate() + 14);
@@ -1673,24 +1678,22 @@ const Dashboard = () => {
             amount: payout.total_amount
           });
         } else {
-          // Fallback to payout_date if no settlement dates available
           displayDate = new Date(payout.payout_date);
           console.log('[Calendar] No settlement dates found, using payout_date:', payout.payout_date);
         }
+        
+        // Add +1 day for bank transfer for estimated payouts
+        displayDate = new Date(displayDate);
+        displayDate.setDate(displayDate.getDate() + 1);
+        console.log('[Calendar] Estimated payout - added 1 day for bank transfer:', {
+          status: payout.status,
+          fundsArrivalDate: displayDate.toISOString().split('T')[0],
+          amount: payout.total_amount
+        });
       } else {
-        // For forecasted payouts, use payout_date directly
+        // For forecasted payouts, use payout_date directly (don't change existing workflow)
         displayDate = new Date(payout.payout_date);
       }
-      
-      // CRITICAL: ALL Amazon payouts take +1 day for bank transfer after settlement closes
-      displayDate = new Date(displayDate);
-      displayDate.setDate(displayDate.getDate() + 1);
-      console.log('[Calendar] Amazon payout - added 1 day for bank transfer:', {
-        status: payout.status,
-        originalDate: displayDate.toISOString().split('T')[0],
-        fundsArrivalDate: displayDate.toISOString().split('T')[0],
-        amount: payout.total_amount
-      });
       
       const description = (payout.status as string) === 'forecasted' 
         ? `Amazon Payout (Forecasted) - ${payout.marketplace_name}`

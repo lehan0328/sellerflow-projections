@@ -389,54 +389,59 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           const isEstimatedPayout = payout.status === 'estimated';
           const isForecastedPayout = payout.status === 'forecasted';
           
-          // For confirmed and estimated payouts, use settlement end date from raw data
-          // For forecasted payouts, use payout_date
-          let payoutDate: Date;
+          let fundsAvailableDate: Date;
           
-          if (isConfirmedPayout || isEstimatedPayout) {
+          if (isConfirmedPayout) {
+            // For confirmed payouts, payout_date already represents when funds are available
+            fundsAvailableDate = parseLocalDate(payout.payout_date);
+            
+            console.log('[SAFE SPENDING] Processing confirmed payout:', {
+              id: payout.id,
+              status: payout.status,
+              payout_date: payout.payout_date,
+              fundsAvailableDate: formatDate(fundsAvailableDate),
+              amount: payout.total_amount
+            });
+          } else if (isEstimatedPayout) {
+            // For estimated payouts, calculate from settlement end date + 1 day
             const rawData = (payout as any).raw_settlement_data;
             const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
             const settlementStartStr = rawData?.settlement_start_date || rawData?.FinancialEventGroupStart;
             
-            console.log('[SAFE SPENDING] Processing confirmed/estimated payout:', {
-              id: payout.id,
-              status: payout.status,
-              payout_date: payout.payout_date,
-              settlement_end: settlementEndStr,
-              settlement_start: settlementStartStr,
-              amount: payout.total_amount
-            });
-            
+            let payoutDate: Date;
             if (settlementEndStr) {
-              // Use the actual settlement close date
               payoutDate = parseLocalDate(settlementEndStr);
             } else if (settlementStartStr) {
-              // Calculate close date from start + 15 days (matches sync logic)
               const settlementStartDate = new Date(settlementStartStr);
               const settlementCloseDate = new Date(settlementStartDate);
               settlementCloseDate.setDate(settlementCloseDate.getDate() + 15);
               payoutDate = parseLocalDate(settlementCloseDate.toISOString().split('T')[0]);
             } else {
-              // Fallback to payout_date
               payoutDate = parseLocalDate(payout.payout_date);
             }
+            
+            fundsAvailableDate = new Date(payoutDate);
+            fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
+            
+            console.log('[SAFE SPENDING] Processing estimated payout:', {
+              id: payout.id,
+              status: payout.status,
+              settlement_end: settlementEndStr,
+              fundsAvailableDate: formatDate(fundsAvailableDate),
+              amount: payout.total_amount
+            });
           } else {
-            // For forecasted payouts, use payout_date
-            payoutDate = parseLocalDate(payout.payout_date);
+            // For forecasted payouts, use payout_date (don't change existing workflow)
+            fundsAvailableDate = parseLocalDate(payout.payout_date);
+            
+            console.log('[SAFE SPENDING] Processing forecasted payout:', {
+              id: payout.id,
+              status: payout.status,
+              payout_date: payout.payout_date,
+              fundsAvailableDate: formatDate(fundsAvailableDate),
+              amount: payout.total_amount
+            });
           }
-          
-          // CRITICAL: ALL Amazon payouts take +1 day for bank transfer after settlement closes
-          const fundsAvailableDate = new Date(payoutDate);
-          fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
-          
-          console.log('[SAFE SPENDING] Funds available date calculated:', {
-            id: payout.id,
-            status: payout.status,
-            settlementCloseDate: formatDate(payoutDate),
-            fundsAvailableDate: formatDate(fundsAvailableDate),
-            today: formatDate(today),
-            amount: payout.total_amount
-          });
           
           // ALWAYS include open settlements (estimated) - they represent real accumulating money
           // Only skip past payouts if they're NOT open settlements
@@ -456,7 +461,7 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
           
           if (fundsAvailableDate.getTime() === targetDate.getTime()) {
             const amt = Number(payout.total_amount);
-            console.log(`  🛒 Amazon payout (${payout.status}): +$${amt} available on ${targetDateStr} (payout date: ${formatDate(payoutDate)})${isOpenSettlement ? ' (OPEN SETTLEMENT)' : ''}`);
+            console.log(`  🛒 Amazon payout (${payout.status}): +$${amt} available on ${targetDateStr}${isOpenSettlement ? ' (OPEN SETTLEMENT)' : ''}`);
             dayChange += amt;
           }
         });
