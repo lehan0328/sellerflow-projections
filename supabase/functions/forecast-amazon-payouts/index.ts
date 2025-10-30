@@ -471,13 +471,13 @@ serve(async (req) => {
           } else if (payoutFrequency === 'daily') {
             console.log(`  - DAILY: Generating cumulative distribution for open settlement`);
             
-            // For daily accounts, set lastPayoutDate to yesterday so forecasts start from today
-            // This ensures forecasts start today regardless of open settlement dates
+            // For daily accounts, set lastPayoutDate to yesterday so first forecast is today
+            // (the loop increments by 1 day first, then generates forecast)
             const yesterday = new Date();
             yesterday.setDate(yesterday.getDate() - 1);
             yesterday.setHours(0, 0, 0, 0);
             lastPayoutDate = yesterday;
-            console.log(`  - Set lastPayoutDate to yesterday (${yesterday.toISOString().split('T')[0]}) for daily account - forecasts will start today`);
+            console.log(`  - Set lastPayoutDate to yesterday (${yesterday.toISOString().split('T')[0]}) - first forecast will be today`);
             
             // Fetch total draws already made in this settlement
             const { data: existingDraws } = await supabase
@@ -557,13 +557,13 @@ serve(async (req) => {
             }
           }
         } else {
-          // No open settlement - for daily accounts, always start from yesterday so forecasts begin today
+          // No open settlement - set to yesterday so first forecast is today
           const yesterday = new Date();
           yesterday.setDate(yesterday.getDate() - 1);
           yesterday.setHours(0, 0, 0, 0);
           
           lastPayoutDate = yesterday;
-          console.log(`[FORECAST] No open settlement found, starting from ${lastPayoutDate.toISOString().split('T')[0]} (last confirmed: ${amazonPayouts[0]?.payout_date || 'none'}) - forecasts will start today`);
+          console.log(`[FORECAST] No open settlement, lastPayoutDate set to ${lastPayoutDate.toISOString().split('T')[0]} - first forecast will be today`);
         }
         
         // Calculate baseline amount from TRANSACTIONS (not payouts)
