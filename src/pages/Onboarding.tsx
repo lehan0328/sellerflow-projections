@@ -14,6 +14,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import aurenIcon from "@/assets/auren-icon-blue.png";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlaidLink } from "react-plaid-link";
+import { useQueryClient } from "@tanstack/react-query";
 
 const SELLER_CENTRAL_CONSENT_URLS: Record<string, string> = {
   'NA': 'https://sellercentral.amazon.com/apps/authorize/consent',
@@ -45,6 +46,7 @@ export default function Onboarding() {
   const { addAccount } = useBankAccounts();
   const { addAmazonAccount } = useAmazonAccounts();
   const { product_id } = useSubscription();
+  const queryClient = useQueryClient();
   
   const [currentStep, setCurrentStep] = useState<'welcome' | 'amazon' | 'bank' | 'reserve' | 'forecasting'>('welcome');
   const [showEnterpriseSetup, setShowEnterpriseSetup] = useState(false);
@@ -333,6 +335,9 @@ export default function Onboarding() {
         }
 
         console.log('✅ Settings saved successfully:', settingsData);
+
+        // Invalidate cache to ensure sidebar and components show updated state
+        await queryClient.invalidateQueries({ queryKey: ['user-settings'] });
 
         // If enabled, generate initial forecasts
         if (forecastingEnabled) {
