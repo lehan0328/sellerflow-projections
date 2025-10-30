@@ -404,12 +404,11 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
             payoutDate = parseLocalDate(payout.payout_date);
           }
           
-          // For estimated/forecasted payouts, Amazon transfers take 1 day after close
-          // For confirmed payouts, the payout_date is already the bank availability date
+          // CRITICAL: ALL Amazon payouts take +1 day for bank transfer after settlement closes
+          // The payout_date is ALWAYS the settlement close date, never the bank arrival date
+          // This applies to confirmed, estimated, and forecasted payouts equally
           const fundsAvailableDate = new Date(payoutDate);
-          if (payout.status === 'estimated' || payout.status === 'forecasted') {
-            fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
-          }
+          fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
           
           // ALWAYS include open settlements (estimated) - they represent real accumulating money
           // Only skip past payouts if they're NOT open settlements

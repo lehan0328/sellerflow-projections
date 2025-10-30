@@ -1657,24 +1657,17 @@ const Dashboard = () => {
         }
       }
       
-      // For estimated (open) and forecasted payouts, add 1 day since funds take a day to reach bank after payout closes
-      // For confirmed (closed) payouts, the payout_date already includes bank transfer time - no adjustment needed
-      if (isOpenSettlement || isForecastedPayout) {
-        displayDate = new Date(displayDate);
-        displayDate.setDate(displayDate.getDate() + 1);
-        console.log('[Calendar] Estimated/Forecasted payout - added 1 day for bank transfer:', {
-          status: payout.status,
-          originalDate: payout.payout_date,
-          displayDate: displayDate.toISOString().split('T')[0],
-          amount: payout.total_amount
-        });
-      } else {
-        console.log('[Calendar] Confirmed payout - using payout_date as-is (already includes bank transfer):', {
-          status: payout.status,
-          payoutDate: payout.payout_date,
-          amount: payout.total_amount
-        });
-      }
+      // CRITICAL: ALL Amazon payouts take +1 day for bank transfer after settlement closes
+      // The payout_date is ALWAYS the settlement close date, never the bank arrival date
+      // This applies to confirmed, estimated, and forecasted payouts equally
+      displayDate = new Date(displayDate);
+      displayDate.setDate(displayDate.getDate() + 1);
+      console.log('[Calendar] Amazon payout - added 1 day for bank transfer:', {
+        status: payout.status,
+        settlementCloseDate: payout.payout_date,
+        fundsArrivalDate: displayDate.toISOString().split('T')[0],
+        amount: payout.total_amount
+      });
       
       const description = (payout.status as string) === 'forecasted' 
         ? `Amazon Payout (Forecasted) - ${payout.marketplace_name}`

@@ -886,19 +886,11 @@ export function AmazonPayouts() {
                                     });
                                     
                                     if (endDate) {
-                                      // For confirmed (closed) payouts, use the actual payout_date which already includes bank transfer time
-                                      // For estimated (open) payouts that have an end date, add 1 day for bank transfer
+                                      // CRITICAL: ALL payouts take +1 day for bank transfer after settlement closes
+                                      // payout_date is ALWAYS the settlement close date, not bank arrival date
+                                      const payoutArrival = new Date(endDate.getTime() + 1 * 24 * 60 * 60 * 1000);
                                       const isConfirmed = aggregatedPayout.status === 'confirmed';
-                                      
-                                      if (isConfirmed) {
-                                        // Use the payout_date as-is (already includes +1 day for bank transfer)
-                                        const payoutArrival = new Date(aggregatedPayout.payout_date);
-                                        return `Period: ${formatShort(startDate)} - ${formatShort(endDate)} → Arrived: ${formatShort(payoutArrival)}`;
-                                      } else {
-                                        // Calculate arrival date for estimated settlements (end date + 1 day)
-                                        const payoutArrival = new Date(endDate.getTime() + 1 * 24 * 60 * 60 * 1000);
-                                        return `Period: ${formatShort(startDate)} - ${formatShort(endDate)} → Arrives: ${formatShort(payoutArrival)}`;
-                                      }
+                                      return `Period: ${formatShort(startDate)} - ${formatShort(endDate)} → ${isConfirmed ? 'Arrived' : 'Arrives'}: ${formatShort(payoutArrival)}`;
                                     } else {
                                       // Calculate estimated end date for open settlements (14 days for bi-weekly)
                                       const estimatedEnd = new Date(startDate);
