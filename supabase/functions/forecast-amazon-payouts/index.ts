@@ -463,12 +463,12 @@ serve(async (req) => {
           } else if (payoutFrequency === 'daily') {
             console.log(`  - DAILY: Generating cumulative distribution for open settlement`);
             
-            // For daily accounts, ALWAYS set lastPayoutDate to yesterday so forecasts start from tomorrow
-            // This ensures forecasts start tomorrow regardless of open settlement dates
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            lastPayoutDate = yesterday;
-            console.log(`  - Set lastPayoutDate to yesterday (${yesterday.toISOString().split('T')[0]}) for daily account`);
+            // For daily accounts, set lastPayoutDate to 2 days ago so forecasts start from today
+            // This ensures forecasts start today regardless of open settlement dates
+            const twoDaysAgo = new Date();
+            twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+            lastPayoutDate = twoDaysAgo;
+            console.log(`  - Set lastPayoutDate to 2 days ago (${twoDaysAgo.toISOString().split('T')[0]}) for daily account - forecasts will start today`);
             
             // Fetch total draws already made in this settlement
             const { data: existingDraws } = await supabase
@@ -548,9 +548,15 @@ serve(async (req) => {
             }
           }
         } else {
-          // No open settlement, start from last confirmed payout
-          lastPayoutDate = new Date(amazonPayouts[0].payout_date);
-          console.log(`[FORECAST] No open settlement found, starting from last confirmed payout: ${amazonPayouts[0].payout_date}`);
+          // No open settlement, start from last confirmed payout or yesterday (whichever is later)
+          // to ensure forecasts start from today
+          const lastConfirmedDate = new Date(amazonPayouts[0].payout_date);
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          
+          // Use the more recent date (either last payout or yesterday)
+          lastPayoutDate = lastConfirmedDate > yesterday ? lastConfirmedDate : yesterday;
+          console.log(`[FORECAST] No open settlement found, starting from ${lastPayoutDate.toISOString().split('T')[0]} (last confirmed: ${amazonPayouts[0].payout_date})`);
         }
         
         // Calculate baseline amount from TRANSACTIONS (not payouts)
