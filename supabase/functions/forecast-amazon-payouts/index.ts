@@ -77,12 +77,20 @@ serve(async (req) => {
 
     console.log(`[FORECAST] Found ${amazonAccounts.length} active Amazon account(s)`);
 
-    // Delete all existing forecasted payouts for this user before generating new ones
-    await supabase
+    // CRITICAL: Delete ALL existing forecasted payouts for this account to prevent duplicates
+    // Use account_id instead of user_id to ensure we're deleting the right forecasts
+    console.log('[FORECAST] Deleting existing forecasted payouts for account:', accountId);
+    const { error: deleteError, count: deletedCount } = await supabase
       .from('amazon_payouts')
-      .delete()
-      .eq('user_id', userId)
+      .delete({ count: 'exact' })
+      .eq('account_id', accountId)
       .eq('status', 'forecasted');
+    
+    if (deleteError) {
+      console.error('[FORECAST] Error deleting existing forecasts:', deleteError);
+    } else {
+      console.log(`[FORECAST] Deleted ${deletedCount || 0} existing forecasted payouts`);
+    }
 
     // Use 12 months of data for better seasonal analysis
     const twelveMonthsAgo = new Date();
@@ -870,20 +878,7 @@ serve(async (req) => {
     if (allForecasts.length > 0) {
       console.log(`[FORECAST] Inserting ${allForecasts.length} total forecasted payouts for ${amazonAccounts.length} account(s)...`);
       
-      // First, delete existing forecasted payouts for these accounts
-      const accountIds = amazonAccounts.map(acc => acc.id);
-      const { error: deleteError } = await supabase
-        .from('amazon_payouts')
-        .delete()
-        .in('amazon_account_id', accountIds)
-        .eq('status', 'forecasted');
-
-      if (deleteError) {
-        console.error('[FORECAST] Error deleting old forecasted payouts:', deleteError);
-      } else {
-        console.log(`[FORECAST] Deleted old forecasted payouts for ${accountIds.length} account(s)`);
-      }
-      
+      // Insert all forecasts in a single batch
       const { error: insertError } = await supabase
         .from('amazon_payouts')
         .insert(allForecasts);

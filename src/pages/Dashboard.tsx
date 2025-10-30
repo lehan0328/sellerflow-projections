@@ -389,12 +389,6 @@ const Dashboard = () => {
     refetchSafeSpending();
   }, [accounts.length, displayBankBalance, refetchSafeSpending]);
   
-  // Invalidate Amazon payout forecasts when bank balance changes to ensure fresh data
-  useEffect(() => {
-    console.log('💰 [DASHBOARD] Bank balance changed to $', displayBankBalance, '- invalidating Amazon payout cache');
-    queryClient.invalidateQueries({ queryKey: ['amazon-payouts'] });
-  }, [displayBankBalance, queryClient]);
-  
   // Check for limit violations and show modal
   useEffect(() => {
     if (isOverBankLimit) {
@@ -410,6 +404,38 @@ const Dashboard = () => {
   }, [isOverBankLimit, isOverAmazonLimit, isOverTeamLimit]);
   
   const { amazonPayouts, advancedModelingEnabled } = useAmazonPayouts();
+  
+  // Regenerate Amazon payout forecasts when bank balance changes to ensure fresh data
+  useEffect(() => {
+    // Debounce forecast regeneration to prevent multiple simultaneous calls
+    const timeoutId = setTimeout(async () => {
+      if (amazonPayouts.length === 0) return; // Skip if no Amazon accounts
+      
+      console.log('💰 [DASHBOARD] Bank balance changed to $', displayBankBalance, '- regenerating Amazon forecasts');
+      
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        
+        // Call forecast regeneration function
+        const { error } = await supabase.functions.invoke('forecast-amazon-payouts', {
+          headers: { Authorization: `Bearer ${session.access_token}` }
+        });
+        
+        if (error) {
+          console.error('Error regenerating forecasts:', error);
+        } else {
+          console.log('✅ Forecasts regenerated successfully');
+          // Invalidate cache to refetch new forecasts
+          queryClient.invalidateQueries({ queryKey: ['amazon-payouts'] });
+        }
+      } catch (error) {
+        console.error('Error regenerating forecasts:', error);
+      }
+    }, 1000); // Wait 1 second before regenerating to debounce rapid changes
+    
+    return () => clearTimeout(timeoutId);
+  }, [displayBankBalance, amazonPayouts.length, queryClient]);
   
   console.log('Dashboard - bankAccountBalance:', bankAccountBalance, 'accounts connected:', accounts?.length || 0);
   const { totalCash: userSettingsCash, updateTotalCash, setStartingBalance, resetAccount, forecastsEnabled } = useUserSettings();
