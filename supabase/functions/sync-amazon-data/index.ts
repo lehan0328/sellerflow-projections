@@ -251,32 +251,23 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
       console.log('[SYNC] ⚠️ Not enough recent closed settlements (need 3+) to detect frequency, using default: bi-weekly')
     }
     
-    // Process and save settlements (including open ones)
+    // Process and save only CONFIRMED (closed) settlements
+    // Open settlements are handled by fetch-amazon-open-settlement function
     const settlementsToSave = allSettlements.map((group: any) => {
-      const settlementStartDate = group.FinancialEventGroupStart ? new Date(group.FinancialEventGroupStart) : null
       const settlementEndDate = group.FinancialEventGroupEnd ? new Date(group.FinancialEventGroupEnd) : null
       const currentTime = new Date()
       
-      // Determine payout date and status
-      let payoutDate: string
-      let status: string
-      
-      if (settlementEndDate) {
-        // Closed settlement - payout is 1 day after settlement end
-        const payoutDateObj = new Date(settlementEndDate)
-        payoutDateObj.setDate(payoutDateObj.getDate() + 1)
-        payoutDate = payoutDateObj.toISOString().split('T')[0]
-        status = settlementEndDate <= currentTime ? 'confirmed' : 'estimated'
-      } else if (settlementStartDate) {
-        // Open settlement - estimate payout based on start date + typical cycle (14 days)
-        const estimatedPayoutObj = new Date(settlementStartDate)
-        estimatedPayoutObj.setDate(estimatedPayoutObj.getDate() + 15) // 14 day cycle + 1 day for payout
-        payoutDate = estimatedPayoutObj.toISOString().split('T')[0]
-        status = 'estimated'
-      } else {
-        // No dates available, skip this settlement
+      // Only process settlements that have ended (closed/confirmed)
+      if (!settlementEndDate || settlementEndDate > currentTime) {
+        // Skip open/future settlements - let fetch-amazon-open-settlement handle them
         return null
       }
+      
+      // Closed settlement - payout is 1 day after settlement end
+      const payoutDateObj = new Date(settlementEndDate)
+      payoutDateObj.setDate(payoutDateObj.getDate() + 1)
+      const payoutDate = payoutDateObj.toISOString().split('T')[0]
+      const status = 'confirmed'
       
       const totalAmount = parseFloat(group.ConvertedTotal?.CurrencyAmount || group.OriginalTotal?.CurrencyAmount || '0')
       
