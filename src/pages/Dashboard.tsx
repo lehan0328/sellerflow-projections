@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { addDays, isToday, isBefore, startOfDay, format } from "date-fns";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Building2, CreditCard as CreditCardIcon, TrendingUp, TrendingDown, Calendar, CheckCircle, User, Database, Trash2, AlertTriangle, Shield, Users, ShoppingCart, Palette, Sun, Moon, Monitor, RotateCcw } from "lucide-react";
+import { RefreshCw, Building2, CreditCard as CreditCardIcon, TrendingUp, TrendingDown, Calendar, CheckCircle, User, Database, Trash2, AlertTriangle, Shield, Users, Palette, Sun, Moon, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -201,36 +201,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleResetReserve = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
 
-      const { error } = await supabase
-        .from('user_settings')
-        .update({ safe_spending_reserve: 0 })
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Reserve amount reset to $0",
-      });
-      
-      // Refresh the page to update calculations
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    } catch (error) {
-      console.error("Error resetting reserve:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to reset reserve amount",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleRestoreAdminAccess = async () => {
     try {
@@ -356,7 +327,7 @@ const Dashboard = () => {
   const { transactions: bankTransactionsData, isLoading: isBankTransactionsLoading, refetch: refetchBankTransactions } = useBankTransactions();
   const { creditCards, refetch: refetchCreditCards } = useCreditCards();
   const { recurringExpenses, createRecurringExpense } = useRecurringExpenses();
-  const { reserveAmount, updateReserveAmount, canUpdate: canUpdateReserve, lastUpdated: lastReserveUpdate } = useReserveAmount();
+  const { reserveAmount, updateReserveAmount } = useReserveAmount();
   const { excludeToday } = useExcludeToday();
   const { data: safeSpendingData, refetch: refetchSafeSpending } = useSafeSpending(reserveAmount, excludeToday, useAvailableBalance);
   const { isOverBankLimit, isOverAmazonLimit, isOverTeamLimit, currentUsage, planLimits } = usePlanLimits();
@@ -2084,26 +2055,6 @@ const Dashboard = () => {
                   </div>
                 </div>
               )}
-              <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <div className="flex items-start space-x-3">
-                  <ShoppingCart className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Generate Sample Amazon Data</h4>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Create a sample Amazon account with 6 months of historical payouts and transactions (1,800+ records with 5-figure amounts) for testing forecasts and insights.
-                    </p>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => navigate('/sample-data')}
-                      className="border-blue-300 dark:border-blue-700"
-                    >
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      Generate Amazon Data
-                    </Button>
-                  </div>
-                </div>
-              </div>
               <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
                 <div className="flex items-start space-x-3">
                   <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
@@ -2166,21 +2117,6 @@ const Dashboard = () => {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-                    
-                    {/* Reset Reserve Amount */}
-                    <div className="mt-4 pt-4 border-t">
-                      <p className="text-sm text-muted-foreground mb-3">
-                        Reset your reserve amount to $0 if you're seeing unexpected negative balances.
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={handleResetReserve}
-                      >
-                        <RotateCcw className="mr-2 h-4 w-4" />
-                        Reset Reserve to $0
-                      </Button>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -2279,8 +2215,6 @@ const Dashboard = () => {
                   nextBuyingOpportunityAvailableDate={safeSpendingData?.calculation?.next_buying_opportunity_available_date}
                   allBuyingOpportunities={safeSpendingData?.calculation?.all_buying_opportunities || []}
                   onUpdateReserveAmount={updateReserveAmount}
-                  canUpdateReserve={canUpdateReserve}
-                  lastReserveUpdate={lastReserveUpdate}
                   transactionMatchButton={
                     <TransactionMatchButton 
                       matches={matches}

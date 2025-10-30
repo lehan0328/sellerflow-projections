@@ -39,8 +39,6 @@ interface CashFlowInsightsProps {
   nextBuyingOpportunityAvailableDate?: string;
   allBuyingOpportunities?: Array<{ date: string; balance: number; available_date?: string }>;
   onUpdateReserveAmount?: (amount: number) => Promise<void>;
-  canUpdateReserve?: boolean;
-  lastReserveUpdate?: Date | null;
   transactionMatchButton?: React.ReactNode;
 }
 export const CashFlowInsights = ({
@@ -61,8 +59,6 @@ export const CashFlowInsights = ({
   nextBuyingOpportunityAvailableDate,
   allBuyingOpportunities = [],
   onUpdateReserveAmount,
-  canUpdateReserve = true,
-  lastReserveUpdate = null,
   transactionMatchButton
 }: CashFlowInsightsProps) => {
   const {
@@ -758,21 +754,12 @@ export const CashFlowInsights = ({
                         variant="ghost" 
                         className="h-7 w-7" 
                         onClick={() => setIsEditingReserve(true)}
-                        disabled={!canUpdateReserve}
-                        title={!canUpdateReserve && lastReserveUpdate 
-                          ? `Can be changed in ${Math.ceil(24 - ((Date.now() - lastReserveUpdate.getTime()) / (1000 * 60 * 60)))} hours` 
-                          : "Edit reserve amount"
-                        }
+                        title="Edit reserve amount"
                       >
                         <Pencil className="h-3 w-3" />
                       </Button>
                     </div>}
                 </div>
-                {!canUpdateReserve && lastReserveUpdate && (
-                  <div className="text-xs text-amber-600 italic px-2">
-                    ⏱️ Reserve can be changed again in {Math.ceil(24 - ((Date.now() - lastReserveUpdate.getTime()) / (1000 * 60 * 60)))} hours
-                  </div>
-                )}
                   <div className="flex justify-between items-center p-2 bg-muted/50 rounded">
                     <span className="text-muted-foreground">Lowest Projected (next 90 days)</span>
                     <span className="font-semibold text-orange-600">

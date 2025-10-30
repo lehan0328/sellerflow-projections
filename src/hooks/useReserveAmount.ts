@@ -43,20 +43,11 @@ export const useReserveAmount = () => {
       }
 
       const reserve = Number(settings?.safe_spending_reserve || 0);
-      const lastUpdate = settings?.reserve_last_updated_at ? new Date(settings.reserve_last_updated_at) : null;
       
       setReserveAmount(reserve);
-      setLastUpdated(lastUpdate);
+      setCanUpdate(true);
       
-      // Check if 24 hours have passed
-      if (lastUpdate) {
-        const hoursSinceUpdate = (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60);
-        setCanUpdate(hoursSinceUpdate >= 24);
-      } else {
-        setCanUpdate(true);
-      }
-      
-      console.log('[Reserve] 🔴🔴🔴 Loaded reserve amount:', reserve, 'Last updated:', lastUpdate);
+      console.log('[Reserve] 🔴🔴🔴 Loaded reserve amount:', reserve);
     } catch (error) {
       console.error('[Reserve] Fetch error:', error);
     } finally {
@@ -66,17 +57,6 @@ export const useReserveAmount = () => {
 
   const updateReserveAmount = async (newAmount: number): Promise<void> => {
     try {
-      // Check 24-hour restriction
-      if (!canUpdate && lastUpdated) {
-        const hoursRemaining = 24 - ((Date.now() - lastUpdated.getTime()) / (1000 * 60 * 60));
-        toast({
-          title: "Update restricted",
-          description: `Reserve can only be changed once every 24 hours. Try again in ${Math.ceil(hoursRemaining)} hours.`,
-          variant: "destructive",
-        });
-        throw new Error("24-hour restriction active");
-      }
-
       console.log('[Reserve] 🔵 Starting update to:', newAmount);
 
       const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -119,7 +99,6 @@ export const useReserveAmount = () => {
           user_id: user.id,
           account_id: profile.account_id,
           safe_spending_reserve: Number(newAmount),
-          reserve_last_updated_at: new Date().toISOString(),
           // Preserve existing fields to avoid constraint violations
           forecast_confidence_threshold: existingSettings?.forecast_confidence_threshold ?? 5,
           forecasts_enabled: existingSettings?.forecasts_enabled ?? true,
@@ -165,8 +144,6 @@ export const useReserveAmount = () => {
       // Update local state ONLY after verifying database update
       console.log('[Reserve] 🎉 Update successful! Setting local state to:', newAmount);
       setReserveAmount(newAmount);
-      setLastUpdated(new Date());
-      setCanUpdate(false);
 
       toast({
         title: "Reserve amount updated",
