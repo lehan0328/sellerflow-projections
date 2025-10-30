@@ -553,8 +553,11 @@ export const CashFlowInsights = ({
     }
     
     // Find the buying opportunity for this date to get projected cash
+    // Note: opportunity.balance is "safe spending" (projected balance - reserve)
+    // We need to add the reserve back to get the actual projected balance
     const opportunity = allBuyingOpportunities.find(opp => opp.date === dateStr);
-    const projectedCash = opportunity?.balance || currentBalance;
+    const safeSpending = opportunity?.balance || currentBalance;
+    const projectedCash = safeSpending + reserveAmount; // Add reserve back to get actual projected balance
     
     // Calculate available credit
     const totalAvailableCredit = creditCards.reduce((sum, card) => {
