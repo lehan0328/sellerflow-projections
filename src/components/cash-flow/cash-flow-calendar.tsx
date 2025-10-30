@@ -541,8 +541,9 @@ export const CashFlowCalendar = ({
       });
     }
     
-    let runningTotal = bankAccountBalance; // Cash balance including forecasted payouts
-    let forecastTotal = bankAccountBalance; // Separate line showing forecasted payouts
+    // Use safe spending as single source of truth for balances
+    const useSafeSpendingBalances = projectedBalanceMap.size > 0;
+    let runningTotal = bankAccountBalance;
     let cumulativeInflow = 0;
     let cumulativeOutflow = 0;
     
@@ -555,21 +556,22 @@ export const CashFlowCalendar = ({
       const dailyOutflow = dayEvents.filter(e => e.type !== 'inflow').reduce((sum, e) => sum + e.amount, 0);
       const dailyChange = dailyInflow - dailyOutflow;
       
-      // Update running total for all days (including forecasted payouts)
-      runningTotal += dailyChange;
       cumulativeInflow += dailyInflow;
       cumulativeOutflow += dailyOutflow;
-      
-      // Calculate forecasted payout line (includes actual + forecasted Amazon payouts)
-      const forecastedChange = dailyChange;
-      forecastTotal += forecastedChange;
       
       const dayToCheck = new Date(day);
       dayToCheck.setHours(0, 0, 0, 0);
       
-      // Get projected balance from safe spending calculation if available
+      // Get projected balance from safe spending calculation (single source of truth)
       const dateKey = format(day, 'yyyy-MM-dd');
-      const projectedBalance = projectedBalanceMap.size > 0 ? projectedBalanceMap.get(dateKey) : undefined;
+      const projectedBalance = projectedBalanceMap.get(dateKey);
+      
+      // Use safe spending balance if available, otherwise use local calculation
+      if (useSafeSpendingBalances && projectedBalance !== undefined) {
+        runningTotal = projectedBalance;
+      } else {
+        runningTotal += dailyChange;
+      }
       
       // Check if this day has an Amazon payout
       const hasAmazonPayout = dayEvents.some(e => e.source === 'Amazon' && e.type === 'inflow');
@@ -617,15 +619,15 @@ export const CashFlowCalendar = ({
         fullDate: day,
         cashFlow: runningTotal,
         cashBalance: runningTotal,
-        forecastPayout: forecastTotal, // Purple line for forecasted payouts (continuous)
+        forecastPayout: runningTotal, // Now aligned with cash balance
         totalResources: runningTotal + availableCreditForDay,
         availableCredit: runningTotal + availableCreditForDay,
         creditCardBalance: availableCreditForDay,
         creditCardCredit: availableCreditForDay,
         reserve: reserveAmount,
         reserveAmount: reserveAmount,
-        // Projected balance line: show projected balance (same as cash flow now)
-        projectedBalance: dayToCheck >= today ? projectedBalance : null,
+        // Projected balance line: now same as cash balance (unified calculation)
+        projectedBalance: dayToCheck >= today ? runningTotal : null,
         dailyChange,
         inflow: dailyInflow,
         outflow: dailyOutflow,
