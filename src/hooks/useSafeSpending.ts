@@ -449,6 +449,14 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
       const minDayIndex = dailyBalances.findIndex(d => d.balance === minBalance);
       const minDay = dailyBalances[minDayIndex];
       
+      console.log('💰 Safe Spending Calculation:', {
+        currentBankBalance: bankBalance,
+        lowestProjectedBalance: minBalance,
+        lowestBalanceDate: minDay.date,
+        reserveAmount: reserve,
+        safeSpendingCalc: `${minBalance} - ${reserve} = ${minBalance - reserve}`
+      });
+      
       // Find ALL buying opportunities using a simple approach:
       // An opportunity occurs when balance INCREASES from one day to the next
       // The opportunity is the amount you can spend on the LOW day (before the increase)
