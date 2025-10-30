@@ -404,27 +404,31 @@ export const useSafeSpending = (reserveAmountInput: number = 0, excludeTodayTran
             payoutDate = parseLocalDate(payout.payout_date);
           }
           
+          // Amazon transfers take 1 day to reach bank account, so shift availability by +1 day
+          const fundsAvailableDate = new Date(payoutDate);
+          fundsAvailableDate.setDate(fundsAvailableDate.getDate() + 1);
+          
           // ALWAYS include open settlements (estimated) - they represent real accumulating money
           // Only skip past payouts if they're NOT open settlements
           const isOpenSettlement = payout.status === 'estimated';
-          if (!isOpenSettlement && payoutDate.getTime() < today.getTime()) {
+          if (!isOpenSettlement && fundsAvailableDate.getTime() < today.getTime()) {
             if (isKeyDate) {
-              console.log(`  ⏭️ SKIPPING past Amazon payout: $${payout.total_amount} (date: ${formatDate(payoutDate)})`);
+              console.log(`  ⏭️ SKIPPING past Amazon payout: $${payout.total_amount} (available date: ${formatDate(fundsAvailableDate)})`);
             }
             return;
           }
           
           // Don't apply excludeToday filter to open settlements - they're always included
-          if (excludeTodayTransactions && payoutDate.getTime() === today.getTime() && !isOpenSettlement) {
+          if (excludeTodayTransactions && fundsAvailableDate.getTime() === today.getTime() && !isOpenSettlement) {
             if (isKeyDate) {
               console.log(`  🚫 EXCLUDING today's Amazon payout: $${payout.total_amount} (excluded by user)`);
             }
             return;
           }
           
-          if (payoutDate.getTime() === targetDate.getTime()) {
+          if (fundsAvailableDate.getTime() === targetDate.getTime()) {
             const amt = Number(payout.total_amount);
-            console.log(`  🛒 Amazon payout (${payout.status}): +$${amt} on ${targetDateStr}${isOpenSettlement ? ' (OPEN SETTLEMENT CLOSE DATE)' : ''}`);
+            console.log(`  🛒 Amazon payout (${payout.status}): +$${amt} available on ${targetDateStr} (payout date: ${formatDate(payoutDate)})${isOpenSettlement ? ' (OPEN SETTLEMENT)' : ''}`);
             dayChange += amt;
           }
         });
