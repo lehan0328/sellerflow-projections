@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 export type SafetyNetLevel = 'low' | 'medium' | 'high' | 'maximum';
 
@@ -22,6 +23,7 @@ export const useUserSettings = () => {
     forecastColor: '#a855f7',
   });
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const fetchUserSettings = async () => {
     try {
@@ -348,6 +350,7 @@ export const useUserSettings = () => {
         { name: 'amazon_daily_rollups', promise: supabase.from('amazon_daily_rollups').delete().eq('account_id', accountId) },
         { name: 'amazon_daily_draws', promise: supabase.from('amazon_daily_draws').delete().eq('account_id', accountId) },
         { name: 'amazon_payouts', promise: supabase.from('amazon_payouts').delete().eq('account_id', accountId) },
+        { name: 'amazon_transactions', promise: supabase.from('amazon_transactions').delete().eq('account_id', accountId) },
         { name: 'transactions', promise: supabase.from('transactions').delete().eq('account_id', accountId) },
         { name: 'cash_flow_events', promise: supabase.from('cash_flow_events').delete().eq('account_id', accountId) },
         { name: 'cash_flow_insights', promise: supabase.from('cash_flow_insights').delete().eq('account_id', accountId) },
@@ -364,7 +367,7 @@ export const useUserSettings = () => {
         const opName = dependentDeletes[index].name;
         if (result.status === 'fulfilled') {
           const { error } = result.value;
-          if (error) {
+          if (error !== null) {
             console.error(`❌ Failed to delete ${opName}:`, error);
             failedDeletions.push(opName);
           } else {
@@ -416,7 +419,7 @@ export const useUserSettings = () => {
         const opName = parentDeletes[index].name;
         if (result.status === 'fulfilled') {
           const { error } = result.value;
-          if (error) {
+          if (error !== null) {
             console.error(`❌ Failed to delete ${opName}:`, error);
             parentFailures.push(opName);
           } else {
@@ -469,6 +472,9 @@ export const useUserSettings = () => {
       console.log('✅ Reset user_settings including reserve amount');
       setTotalCash(0);
       setForecastsEnabled(false);
+      
+      // Invalidate cache to ensure sidebar shows updated state
+      await queryClient.invalidateQueries({ queryKey: ['user-settings'] });
       
       // Clear all localStorage flags to allow fresh setup
       localStorage.clear();
