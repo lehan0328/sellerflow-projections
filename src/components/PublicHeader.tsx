@@ -1,8 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, ChevronDown } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTheme } from "next-themes";
 import aurenIcon from "@/assets/auren-icon-blue.png";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface PublicHeaderProps {
   activePage?: string;
@@ -47,6 +53,41 @@ export const PublicHeader = ({ activePage }: PublicHeaderProps) => {
             <Link to="/docs" className={`${activePage === 'docs' ? 'text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'} transition-all duration-300 story-link font-medium`}>
               Docs
             </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="text-muted-foreground hover:text-foreground transition-all duration-300 font-medium gap-1">
+                  Coming Soon
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-background z-50">
+                <DropdownMenuItem asChild>
+                  <Link to="/inventory" className="cursor-pointer">
+                    Inventory
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/reimbursements" className="cursor-pointer">
+                    Reimbursements
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/advanced-analytics" className="cursor-pointer">
+                    Analytics
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/accounting" className="cursor-pointer">
+                    Accounting
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/platforms" className="cursor-pointer">
+                    Walmart, Shopify & More
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="ghost"
               size="icon"
