@@ -129,12 +129,6 @@ verify_jwt = false
 [functions.forecast-amazon-payouts]
 verify_jwt = true
 
-[functions.forecast-amazon-payouts-math]
-verify_jwt = true
-
-[functions.forecast-amazon-payouts-daily]
-verify_jwt = false
-
 [functions.calculate-forecast-accuracy]
 verify_jwt = true
 
@@ -188,4 +182,3 @@ verify_jwt = false
 
 [functions.sync-amazon-reports-daily]
 verify_jwt = false
-

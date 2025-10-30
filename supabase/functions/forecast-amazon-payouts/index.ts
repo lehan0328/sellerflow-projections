@@ -47,17 +47,15 @@ serve(async (req) => {
 
     const accountId = profile.account_id;
 
-    // Get user's forecast confidence threshold and advanced modeling setting
+    // Get user's forecast confidence threshold
     const { data: userSettings } = await supabase
       .from('user_settings')
-      .select('forecast_confidence_threshold, advanced_modeling_enabled')
+      .select('forecast_confidence_threshold')
       .eq('user_id', userId)
       .maybeSingle();
 
     const riskAdjustment = userSettings?.forecast_confidence_threshold ?? 5; // -5 = Aggressive, 0 = Medium, 5 = Safe, 10 = Very Safe
-    const advancedModelingEnabled = userSettings?.advanced_modeling_enabled ?? false;
     console.log('[FORECAST] User risk adjustment:', riskAdjustment, '(-5=Aggressive+5%, 0=Medium, 5=Safe-5%, 10=Very Safe-10%)');
-    console.log('[FORECAST] Advanced modeling:', advancedModelingEnabled ? 'ENABLED' : 'DISABLED');
 
     // Fetch all active Amazon accounts for this user
     const { data: amazonAccounts, error: accountsError } = await supabase
@@ -106,53 +104,12 @@ serve(async (req) => {
     for (const amazonAccount of amazonAccounts) {
       console.log(`\n[FORECAST] Processing account: ${amazonAccount.account_name} (${amazonAccount.marketplace_name})`);
       console.log(`[FORECAST] Account ID: ${amazonAccount.id}`);
-      console.log(`[FORECAST] DEBUG - payout_frequency: ${amazonAccount.payout_frequency}`);
-      console.log(`[FORECAST] DEBUG - payout_model: ${amazonAccount.payout_model}`);
-      console.log(`[FORECAST] DEBUG - advancedModelingEnabled: ${advancedModelingEnabled}`);
+      console.log(`[FORECAST] Payout frequency: ${amazonAccount.payout_frequency}`);
+      console.log(`[FORECAST] Payout model: ${amazonAccount.payout_model}`);
       
       // Check if this is a daily settlement account
       const isDaily = amazonAccount.payout_model === 'daily' || amazonAccount.payout_frequency === 'daily';
-      console.log(`[FORECAST] DEBUG - isDaily: ${isDaily}`);
-      
-      if (isDaily) {
-        // If advanced modeling is enabled, use the specialized daily forecast function
-        if (advancedModelingEnabled) {
-          console.log(`✅ [FORECAST] ${amazonAccount.account_name} is DAILY account with ADVANCED MODELING - routing to backlog-based forecast`);
-          console.log(`[FORECAST] Account details:`, {
-            payout_model: amazonAccount.payout_model,
-            payout_frequency: amazonAccount.payout_frequency,
-            account_id: amazonAccount.id
-          });
-          
-          try {
-            const { data: dailyForecastResult, error: dailyError } = await supabase.functions.invoke('forecast-amazon-payouts-daily', {
-              body: {
-                amazonAccountId: amazonAccount.id,
-                userId: userId,
-                accountId: accountId
-              }
-            });
-            
-            if (dailyError) {
-              console.error(`❌ [FORECAST] Error in daily forecast for ${amazonAccount.account_name}:`, dailyError);
-            } else {
-              console.log(`✅ [FORECAST] Daily forecast completed for ${amazonAccount.account_name}:`, dailyForecastResult);
-            }
-          } catch (dailyError) {
-            console.error(`❌ [FORECAST] Exception in daily forecast:`, dailyError);
-          }
-          
-          continue; // Skip standard logic for this account
-        }
-        
-        // Otherwise, continue with standard daily logic in this function
-        console.log(`✅ [FORECAST] ${amazonAccount.account_name} is DAILY account - using standard daily forecast logic`);
-      }
-      
-      // If not daily, it's a bi-weekly account
-      if (amazonAccount.payout_frequency !== 'daily' && amazonAccount.payout_model !== 'daily') {
-        console.log(`ℹ️ [FORECAST] ${amazonAccount.account_name} is BI-WEEKLY account - using standard forecast logic`);
-      }
+      console.log(`[FORECAST] Account type: ${isDaily ? 'DAILY' : 'BI-WEEKLY'}`);
       
       // Fetch Amazon payouts for this specific account from last 12 months
       const { data: amazonPayouts, error: payoutsError } = await supabase
@@ -469,98 +426,34 @@ serve(async (req) => {
               }
             };
           } else if (payoutFrequency === 'daily') {
-            console.log(`  - DAILY: Generating cumulative distribution for open settlement`);
+            console.log(`  - DAILY: Using open settlement for daily forecasts`);
             
-            // For daily accounts, set lastPayoutDate to yesterday so first forecast is today
-            // (the loop increments by 1 day first, then generates forecast)
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            yesterday.setHours(0, 0, 0, 0);
-            lastPayoutDate = yesterday;
-            console.log(`  - Set lastPayoutDate to yesterday (${yesterday.toISOString().split('T')[0]}) - first forecast will be today`);
-            
-            // Fetch total draws already made in this settlement
-            const { data: existingDraws } = await supabase
-              .from('amazon_daily_draws')
-              .select('amount')
-              .eq('amazon_account_id', amazonAccount.id)
-              .eq('settlement_id', estimatedPayouts[0].settlement_id);
-            
-            const totalDrawn = existingDraws?.reduce((sum, d) => sum + Number(d.amount), 0) || 0;
-            
-            // Fetch recent transaction volume for weighting
-            const { data: recentVolume } = await supabase
-              .from('amazon_transactions_daily_summary')
-              .select('transaction_date, net_amount')
-              .eq('amazon_account_id', amazonAccount.id)
-              .gte('transaction_date', estimatedPayouts[0].raw_settlement_data?.settlement_start_date || estimatedPayouts[0].settlement_start_date)
-              .order('transaction_date', { ascending: true });
-            
-            console.log(`  - Settlement: ${estimatedPayouts[0].settlement_start_date} to ${estimatedPayouts[0].settlement_end_date}`);
-            console.log(`  - Total cumulative: $${openSettlementAmount}`);
-            console.log(`  - Already drawn: $${totalDrawn}`);
-            console.log(`  - Volume data points: ${recentVolume?.length || 0}`);
-            
-            // Use the settlement dates to generate daily distributions
-            const settlementStart = estimatedPayouts[0].raw_settlement_data?.settlement_start_date || estimatedPayouts[0].settlement_start_date;
-            const settlementEnd = estimatedPayouts[0].raw_settlement_data?.settlement_end_date || estimatedPayouts[0].settlement_end_date;
-            
-            if (settlementStart && settlementEnd) {
-              // Import distribution calculator
-              const { generateCumulativeDailyDistribution } = await import('./forecast-amazon-payouts-math/daily-cumulative-distribution.ts');
-              
-              // Start distribution from tomorrow (or settlement start if later)
-              const tomorrow = new Date();
-              tomorrow.setDate(tomorrow.getDate() + 1);
-              const distributionStart = new Date(Math.max(tomorrow.getTime(), new Date(settlementStart).getTime()));
-              
-              const dailyDist = generateCumulativeDailyDistribution(
-                distributionStart,
-                new Date(settlementEnd),
-                openSettlementAmount, // Total cumulative from Amazon
-                totalDrawn,
-                recentVolume || []
-              );
-              
-              console.log(`  - Generated ${dailyDist.length} daily distribution entries starting from ${distributionStart.toISOString().split('T')[0]}`);
-              
-              // Create forecast entries for each day
-              dailyDist.forEach(day => {
-                forecastedPayouts.push({
-                  user_id: userId,
-                  account_id: amazonAccount.account_id,
-                  amazon_account_id: amazonAccount.id,
-                  payout_date: day.date,
-                  total_amount: day.cumulative_available, // Cumulative amount
-                  settlement_id: estimatedPayouts[0].settlement_id,
-                  status: 'forecasted',
-                  payout_type: 'daily',
-                  currency_code: 'USD',
-                  raw_settlement_data: {
-                    forecast_metadata: {
-                      method: 'cumulative_daily_distribution',
-                      settlement_period: {
-                        start: settlementStart,
-                        end: settlementEnd
-                      },
-                      daily_unlock_amount: day.daily_unlock,
-                      cumulative_available: day.cumulative_available,
-                      days_accumulated: day.days_accumulated,
-                      total_drawn_to_date: totalDrawn,
-                      confidence: 95
-                    }
-                  }
-                });
-              });
-            } else {
-              console.log(`  - WARNING: Missing settlement dates, skipping daily distribution`);
-            }
+            // For daily accounts with open settlement, skip the cumulative distribution
+            // The standard daily forecast logic will handle it
+            lastPayoutDate = new Date(estimatedPayouts[0].payout_date);
+            lastPayoutDate.setDate(lastPayoutDate.getDate() - 1); // Start forecasts from the day before settlement
+            console.log(`  - Set lastPayoutDate to ${lastPayoutDate.toISOString().split('T')[0]} (day before settlement)`);
           }
         } else {
-          // No open settlement - use last confirmed payout date
+          // No open settlement - use last confirmed payout's settlement close date
           if (amazonPayouts.length > 0) {
-            lastPayoutDate = new Date(amazonPayouts[0].payout_date);
-            console.log(`[FORECAST] Using last confirmed payout date: ${lastPayoutDate.toISOString().split('T')[0]}`);
+            const lastPayout = amazonPayouts[0];
+            const rawData = lastPayout.raw_settlement_data as any;
+            const settlementEndDate = rawData?.FinancialEventGroupEnd;
+            
+            if (settlementEndDate && payoutFrequency === 'daily') {
+              // FinancialEventGroupEnd is stored as midnight of the NEXT day in UTC
+              // Subtract 1 day to get actual close date
+              const closeDate = new Date(settlementEndDate);
+              closeDate.setDate(closeDate.getDate() - 1);
+              closeDate.setHours(0, 0, 0, 0);
+              lastPayoutDate = closeDate;
+              console.log(`[FORECAST] Settlement closed: ${lastPayoutDate.toISOString().split('T')[0]} (payout: ${lastPayout.payout_date})`);
+            } else {
+              // Fallback to payout date for bi-weekly or if no settlement data
+              lastPayoutDate = new Date(lastPayout.payout_date);
+              console.log(`[FORECAST] Using payout date: ${lastPayoutDate.toISOString().split('T')[0]}`);
+            }
           } else {
             // Fallback to yesterday if no confirmed payouts exist
             const yesterday = new Date();
