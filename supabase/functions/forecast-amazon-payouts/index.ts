@@ -409,7 +409,6 @@ serve(async (req) => {
         
         if (estimatedPayouts && estimatedPayouts.length > 0) {
           // Amazon already provided the next payout estimate
-          lastPayoutDate = new Date(estimatedPayouts[0].payout_date);
           hasOpenSettlement = true;
           openSettlementAmount = Number(estimatedPayouts[0].total_amount || 0);
           console.log(`[FORECAST] Found Amazon open settlement for ${amazonAccount.account_name}:`);
@@ -418,6 +417,7 @@ serve(async (req) => {
           
           // For BI-WEEKLY payouts: Use open settlement as the FIRST forecasted payout
           if (payoutFrequency === 'bi-weekly') {
+            lastPayoutDate = new Date(estimatedPayouts[0].payout_date);
             console.log(`  - BI-WEEKLY: Will use open settlement as first payout, then generate additional forecasts`);
             
             // Create the open settlement as a forecasted payout with unique ID
@@ -447,6 +447,12 @@ serve(async (req) => {
             };
           } else if (payoutFrequency === 'daily') {
             console.log(`  - DAILY: Generating cumulative distribution for open settlement`);
+            
+            // For daily accounts, don't set lastPayoutDate to the settlement end date
+            // Instead, set it to yesterday so forecasts start from tomorrow
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            lastPayoutDate = yesterday;
             
             // Fetch total draws already made in this settlement
             const { data: existingDraws } = await supabase
@@ -478,15 +484,20 @@ serve(async (req) => {
               // Import distribution calculator
               const { generateCumulativeDailyDistribution } = await import('./forecast-amazon-payouts-math/daily-cumulative-distribution.ts');
               
+              // Start distribution from tomorrow (or settlement start if later)
+              const tomorrow = new Date();
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              const distributionStart = new Date(Math.max(tomorrow.getTime(), new Date(settlementStart).getTime()));
+              
               const dailyDist = generateCumulativeDailyDistribution(
-                new Date(settlementStart),
+                distributionStart,
                 new Date(settlementEnd),
                 openSettlementAmount, // Total cumulative from Amazon
                 totalDrawn,
                 recentVolume || []
               );
               
-              console.log(`  - Generated ${dailyDist.length} daily distribution entries`);
+              console.log(`  - Generated ${dailyDist.length} daily distribution entries starting from ${distributionStart.toISOString().split('T')[0]}`);
               
               // Create forecast entries for each day
               dailyDist.forEach(day => {
