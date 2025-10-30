@@ -161,10 +161,8 @@ export const useAmazonPayouts = () => {
           return true;
         }
         
-        // Only filter our mathematical forecasts based on settings
-        if (!forecastsEnabled && payout.status === 'forecasted') return false;
-        
-        // Keep mathematical forecasts if enabled
+        // Always include mathematical forecasts - let the consuming components decide display logic
+        // The forecast toggle should only affect calculations, not data availability
         if (payout.status === 'forecasted') {
         
           // For mathematical forecasts, only keep if no actual payout exists for same date & account
@@ -348,6 +346,7 @@ export const useAmazonPayouts = () => {
     cumulativeAvailable,
     daysSinceLastCashOut,
     lastCashOutDate,
+    forecastsEnabled,
     advancedModelingEnabled,
     refetch: fetchAmazonPayouts
   };
