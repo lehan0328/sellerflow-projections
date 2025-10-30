@@ -163,21 +163,12 @@ export const useAmazonPayouts = () => {
         // Always include mathematical forecasts - let the consuming components decide display logic
         // The forecast toggle should only affect calculations, not data availability
         if (payout.status === 'forecasted') {
-        
-          // For mathematical forecasts, only keep if no actual payout exists for same date & account
-          const hasActualPayout = data.some(
-            (p) =>
-              p.amazon_account_id === payout.amazon_account_id &&
-              p.payout_date === payout.payout_date &&
-              (
-                p.status === 'confirmed' || 
-                // Only treat 'estimated' as blocking if advanced modeling is OFF
-                (p.status === 'estimated' && !advancedModelingEnabled)
-              ) &&
-              p.id !== payout.id
-          );
-          
-          return !hasActualPayout;
+          console.log('[fetchAmazonPayouts] Including forecasted payout:', {
+            id: payout.id,
+            date: payout.payout_date,
+            amount: payout.total_amount
+          });
+          return true;
         }
         
         return true;
