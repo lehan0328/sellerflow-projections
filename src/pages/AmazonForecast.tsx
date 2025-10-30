@@ -48,6 +48,7 @@ export default function AmazonForecast() {
   const { incomeItems } = useIncome();
   const { amazonAccounts } = useAmazonAccounts();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showAllForecasts, setShowAllForecasts] = useState(false);
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
   const [isDeletingSampleData, setIsDeletingSampleData] = useState(false);
   const [growthTimeframe, setGrowthTimeframe] = useState<'30d' | '60d' | '90d' | '6m' | '1y'>('1y');
@@ -563,93 +564,107 @@ export default function AmazonForecast() {
               No forecasted payouts available. Generate forecasts to see predictions.
             </p>
           ) : (
-            <div className="space-y-3">
-              {amazonPayouts
-                .filter(p => p.status === 'forecasted')
-                .sort((a, b) => new Date(a.payout_date).getTime() - new Date(b.payout_date).getTime())
-                .map((payout, index) => {
-                  // Calculate which period this is (0-5 for 6 bi-weekly forecasts)
-                  const periodIndex = index;
-                  
-                  // Extract calculation details from payout fields
-                  const eligibleAmount = payout.eligible_in_period || 0;
-                  const reserveAmount = payout.reserve_amount || 0;
-                  const unavailableAmount = eligibleAmount + reserveAmount - payout.total_amount;
-                  const daysInPeriod = 14;
-                  const avgDailyEligible = eligibleAmount / daysInPeriod;
-                  
-                  return (
-                    <div 
-                      key={payout.id}
-                      className="border rounded-lg overflow-hidden"
-                    >
-                      <div className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors">
-                        <div className="flex items-center gap-4">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium">
-                              {format(new Date(payout.payout_date), 'MMM dd, yyyy')}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              Settlement ID: {payout.settlement_id}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-6">
-                          <div className="text-right">
-                            <div className="text-lg font-semibold text-amber-600">
-                              ${payout.total_amount.toLocaleString()}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              Forecasted (Period {periodIndex + 1})
+            <>
+              <div className="space-y-3">
+                {amazonPayouts
+                  .filter(p => p.status === 'forecasted')
+                  .sort((a, b) => new Date(a.payout_date).getTime() - new Date(b.payout_date).getTime())
+                  .slice(0, showAllForecasts ? undefined : 5)
+                  .map((payout, index) => {
+                    // Calculate which period this is (0-5 for 6 bi-weekly forecasts)
+                    const periodIndex = index;
+                    
+                    // Extract calculation details from payout fields
+                    const eligibleAmount = payout.eligible_in_period || 0;
+                    const reserveAmount = payout.reserve_amount || 0;
+                    const unavailableAmount = eligibleAmount + reserveAmount - payout.total_amount;
+                    const daysInPeriod = 14;
+                    const avgDailyEligible = eligibleAmount / daysInPeriod;
+                    
+                    return (
+                      <div 
+                        key={payout.id}
+                        className="border rounded-lg overflow-hidden"
+                      >
+                        <div className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors">
+                          <div className="flex items-center gap-4">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">
+                                {format(new Date(payout.payout_date), 'MMM dd, yyyy')}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                Settlement ID: {payout.settlement_id}
+                              </span>
                             </div>
                           </div>
+                          <div className="flex items-center gap-6">
+                            <div className="text-right">
+                              <div className="text-lg font-semibold text-amber-600">
+                                ${payout.total_amount.toLocaleString()}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Forecasted (Period {periodIndex + 1})
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      
-                      {/* Calculation Breakdown */}
-                      <div className="px-4 pb-4 pt-2 bg-muted/30 border-t text-xs space-y-2">
-                        <div className="font-semibold text-muted-foreground mb-2">Calculation Breakdown:</div>
                         
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="space-y-1">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Daily Avg (Eligible):</span>
-                              <span className="font-mono">${avgDailyEligible.toFixed(2)}</span>
+                        {/* Calculation Breakdown */}
+                        <div className="px-4 pb-4 pt-2 bg-muted/30 border-t text-xs space-y-2">
+                          <div className="font-semibold text-muted-foreground mb-2">Calculation Breakdown:</div>
+                          
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Daily Avg (Eligible):</span>
+                                <span className="font-mono">${avgDailyEligible.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Settlement Period:</span>
+                                <span className="font-mono">{daysInPeriod} days</span>
+                              </div>
+                              <div className="flex justify-between border-t pt-1">
+                                <span className="text-muted-foreground font-semibold">Total Eligible:</span>
+                                <span className="font-mono font-semibold">${eligibleAmount.toLocaleString()}</span>
+                              </div>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Settlement Period:</span>
-                              <span className="font-mono">{daysInPeriod} days</span>
-                            </div>
-                            <div className="flex justify-between border-t pt-1">
-                              <span className="text-muted-foreground font-semibold">Total Eligible:</span>
-                              <span className="font-mono font-semibold">${eligibleAmount.toLocaleString()}</span>
+                            
+                            <div className="space-y-1">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Reserve (held back):</span>
+                                <span className="font-mono text-orange-600">-${reserveAmount.toLocaleString()}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Unavailable:</span>
+                                <span className="font-mono text-red-600">-${unavailableAmount.toLocaleString()}</span>
+                              </div>
+                              <div className="flex justify-between border-t pt-1">
+                                <span className="text-muted-foreground font-semibold">Net Payout:</span>
+                                <span className="font-mono font-semibold text-amber-600">${payout.total_amount.toLocaleString()}</span>
+                              </div>
                             </div>
                           </div>
                           
-                          <div className="space-y-1">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Reserve (held back):</span>
-                              <span className="font-mono text-orange-600">-${reserveAmount.toLocaleString()}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Unavailable:</span>
-                              <span className="font-mono text-red-600">-${unavailableAmount.toLocaleString()}</span>
-                            </div>
-                            <div className="flex justify-between border-t pt-1">
-                              <span className="text-muted-foreground font-semibold">Net Payout:</span>
-                              <span className="font-mono font-semibold text-amber-600">${payout.total_amount.toLocaleString()}</span>
-                            </div>
+                          <div className="text-[10px] text-muted-foreground mt-2 pt-2 border-t">
+                            Formula: Eligible - Reserve - Unavailable = ${eligibleAmount.toLocaleString()} - ${reserveAmount.toLocaleString()} - ${unavailableAmount.toLocaleString()} = ${payout.total_amount.toLocaleString()}
                           </div>
                         </div>
-                        
-                        <div className="text-[10px] text-muted-foreground mt-2 pt-2 border-t">
-                          Formula: Eligible - Reserve - Unavailable = ${eligibleAmount.toLocaleString()} - ${reserveAmount.toLocaleString()} - ${unavailableAmount.toLocaleString()} = ${payout.total_amount.toLocaleString()}
-                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-            </div>
+                    );
+                  })}
+              </div>
+              
+              {amazonPayouts.filter(p => p.status === 'forecasted').length > 5 && (
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowAllForecasts(!showAllForecasts)}
+                  >
+                    {showAllForecasts ? 'Show Less' : `Show All (${amazonPayouts.filter(p => p.status === 'forecasted').length} forecasts)`}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
