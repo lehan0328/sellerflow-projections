@@ -618,7 +618,7 @@ export const CashFlowCalendar = ({
         fullDate: day,
         cashFlow: runningTotal,
         cashBalance: runningTotal,
-        forecastPayout: hasAmazonForecast ? forecastTotal : null, // Purple line for forecasted payouts
+        forecastPayout: forecastTotal, // Purple line for forecasted payouts (continuous)
         totalResources: runningTotal + availableCreditForDay,
         availableCredit: runningTotal + availableCreditForDay,
         creditCardBalance: availableCreditForDay,
