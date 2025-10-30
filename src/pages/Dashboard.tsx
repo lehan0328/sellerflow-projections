@@ -1606,6 +1606,20 @@ const Dashboard = () => {
         return false;
       }
       
+      // Exclude forecasted payouts in the past - forecasts should start from tomorrow
+      if ((payout.status as string) === 'forecasted') {
+        const payoutDate = new Date(payout.payout_date);
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        payoutDate.setHours(0, 0, 0, 0);
+        
+        if (payoutDate < tomorrow) {
+          console.log('[Dashboard] Excluding past forecasted payout:', payout.payout_date);
+          return false;
+        }
+      }
+      
       // Exclude open settlements ONLY for daily settlement accounts
       // (Daily forecasts replace the open settlement calculation)
       // Keep open settlements for bi-weekly accounts (they're the actual payout)
