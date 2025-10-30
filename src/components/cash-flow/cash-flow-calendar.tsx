@@ -69,6 +69,7 @@ interface CashFlowCalendarProps {
   onIncomeClick?: (income: IncomeItem) => void;
   reserveAmount?: number;
   projectedDailyBalances?: Array<{ date: Date; balance: number }>;
+  excludeToday?: boolean; // NEW: Whether to exclude today's transactions from projected balance
 }
 
 export const CashFlowCalendar = ({ 
@@ -86,6 +87,7 @@ export const CashFlowCalendar = ({
   onIncomeClick,
   reserveAmount = 0,
   projectedDailyBalances = [],
+  excludeToday = false, // Default to false (include today's transactions)
 }: CashFlowCalendarProps) => {
   const { totalAvailableCredit } = useCreditCards();
   const { chartPreferences, updateChartPreferences } = useUserSettings();
@@ -557,11 +559,15 @@ export const CashFlowCalendar = ({
       dayToCheck.setHours(0, 0, 0, 0);
       const isToday = format(dayToCheck, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
       
-      // For today (day 0), use bank balance as-is without adding daily change
-      // For future days, add the daily change to build cumulative projection
+      // CRITICAL: Projected balance calculation
+      // For today: Start with bank balance, add today's transactions UNLESS excludeToday is enabled
+      // For future days: Add daily changes cumulatively
       if (isToday) {
-        runningTotal = bankAccountBalance;
-        console.log('[Chart] Day 0 (Today):', format(day, 'yyyy-MM-dd'), '= Bank Balance:', runningTotal.toFixed(2));
+        runningTotal = bankAccountBalance + (excludeToday ? 0 : dailyChange);
+        console.log('[Chart] Day 0 (Today):', format(day, 'yyyy-MM-dd'), 
+          '= Bank Balance:', bankAccountBalance.toFixed(2), 
+          '+ Today Net:', dailyChange.toFixed(2), 
+          '(excluded:', excludeToday, ') = Projected:', runningTotal.toFixed(2));
       } else {
         runningTotal += dailyChange;
         console.log('[Chart]', format(day, 'yyyy-MM-dd'), '= Previous Balance + Daily Change (', dailyChange.toFixed(2), ') =', runningTotal.toFixed(2));

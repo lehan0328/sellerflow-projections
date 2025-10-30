@@ -2242,6 +2242,7 @@ const Dashboard = () => {
                   onVendorClick={handleEditVendorOrder}
                   onIncomeClick={handleEditIncome}
                   reserveAmount={reserveAmount}
+                  excludeToday={excludeToday}
                 />
               </div>
               <div className="lg:col-span-1 h-full">
