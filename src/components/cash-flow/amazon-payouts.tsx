@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Clock, Plus, Loader2, History as HistoryIcon, FileText, AlertCircle, Trash2 } from "lucide-react";
+import { ShoppingCart, TrendingUp, Calendar, Settings, RefreshCw, Sparkles, Clock, Plus, Loader2, History as HistoryIcon, FileText, AlertCircle } from "lucide-react";
 import { AmazonSettledPayouts } from "./amazon-settled-payouts";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
@@ -252,40 +252,6 @@ export function AmazonPayouts() {
     }
   };
 
-  const handleCleanupDailyEstimated = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast.error('Please log in to cleanup settlements.');
-        return;
-      }
-
-      setIsSyncing('cleaning-up');
-      toast.loading('Removing estimated settlements for daily accounts...');
-
-      const { data, error } = await supabase.functions.invoke('cleanup-daily-estimated-settlements', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (error) {
-        toast.dismiss();
-        toast.error(`Failed to cleanup: ${error.message}`);
-      } else {
-        toast.dismiss();
-        toast.success(`Deleted ${data.deletedCount} estimated settlements for daily accounts`);
-        await refetch();
-      }
-    } catch (error) {
-      toast.dismiss();
-      toast.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsSyncing(null);
-    }
-  };
-
   const handleSyncReports = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -477,16 +443,6 @@ export function AmazonPayouts() {
               >
                 <FileText className={`h-4 w-4 mr-2 ${isSyncing === 'syncing-reports' ? 'animate-spin' : ''}`} />
                 Sync Orders
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCleanupDailyEstimated}
-                disabled={isSyncing === 'cleaning-up'}
-                title="Remove estimated settlements for daily accounts"
-              >
-                <Trash2 className={`h-4 w-4 mr-2 ${isSyncing === 'cleaning-up' ? 'animate-spin' : ''}`} />
-                Cleanup Daily
               </Button>
               <Button
                 variant="ghost"
