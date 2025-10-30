@@ -36,7 +36,7 @@ interface PaymentSchedule {
 }
 
 export const SalesOrderForm = ({ open, onOpenChange, customers, onSubmitOrder }: SalesOrderFormProps) => {
-  const { categories: incomeCategories, addCategory } = useCategories('income');
+  const { categories: incomeCategories, addCategory } = useCategories('income', false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [formData, setFormData] = useState({
     soName: "",

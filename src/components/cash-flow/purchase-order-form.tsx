@@ -55,7 +55,7 @@ export const PurchaseOrderForm = ({
   onAddVendor
 }: PurchaseOrderFormProps) => {
   const navigate = useNavigate();
-  const { categories, addCategory, refetch: refetchCategories } = useCategories('expense');
+  const { categories, addCategory, refetch: refetchCategories } = useCategories('expense', false);
   const {
     creditCards
   } = useCreditCards();

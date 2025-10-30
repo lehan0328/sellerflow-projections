@@ -45,8 +45,8 @@ export const IncomeForm = ({
   customers = [],
   onAddCustomer
 }: IncomeFormProps) => {
-  const { categories: incomeCategories, addCategory: addIncomeCategory } = useCategories('income');
-  const { categories: expenseCategories, addCategory: addExpenseCategory } = useCategories('expense');
+  const { categories: incomeCategories, addCategory: addIncomeCategory } = useCategories('income', isRecurring);
+  const { categories: expenseCategories, addCategory: addExpenseCategory } = useCategories('expense', isRecurring);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [formData, setFormData] = useState({
     type: "income" as "income" | "expense",
