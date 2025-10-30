@@ -482,6 +482,28 @@ export const CashFlowInsights = ({
       .filter(e => e.type === 'income' && e.start.split('T')[0] === dateStr)
       .reduce((sum, e) => sum + e.amount, 0);
     
+    // Add confirmed Amazon payouts as same-day income
+    amazonPayouts.forEach(payout => {
+      const isConfirmedPayout = payout.status === 'confirmed';
+      
+      if (isConfirmedPayout) {
+        // For confirmed payouts, calculate arrival date from settlement_end_date + 1 day
+        const rawData = (payout as any).raw_settlement_data;
+        const settlementEndStr = rawData?.FinancialEventGroupEnd || rawData?.settlement_end_date;
+        
+        if (settlementEndStr) {
+          const arrivalDate = new Date(settlementEndStr);
+          arrivalDate.setDate(arrivalDate.getDate() + 1);
+          const arrivalDateStr = arrivalDate.toISOString().split('T')[0];
+          
+          // Add as income if it arrives on the searched date
+          if (arrivalDateStr === dateStr) {
+            dayIncome += Number(payout.total_amount);
+          }
+        }
+      }
+    });
+    
     // Fetch recurring expenses/income for this date
     try {
       const { data: recurringExpenses } = await supabase
