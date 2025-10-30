@@ -389,6 +389,12 @@ const Dashboard = () => {
     refetchSafeSpending();
   }, [accounts.length, displayBankBalance, refetchSafeSpending]);
   
+  // Invalidate Amazon payout forecasts when bank balance changes to ensure fresh data
+  useEffect(() => {
+    console.log('💰 [DASHBOARD] Bank balance changed to $', displayBankBalance, '- invalidating Amazon payout cache');
+    queryClient.invalidateQueries({ queryKey: ['amazon-payouts'] });
+  }, [displayBankBalance, queryClient]);
+  
   // Check for limit violations and show modal
   useEffect(() => {
     if (isOverBankLimit) {
