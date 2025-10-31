@@ -237,10 +237,10 @@ serve(async (req) => {
         settlement_id: summary.settlement_id
       }));
       
-      const transactionsError = recentTxError || historicalError;
+      const transactionsError = rollupsError || recentTxError || historicalError;
 
       if (transactionsError) {
-        console.error(`[FORECAST] Error fetching transactions for account ${amazonAccount.id}:`, transactionsError);
+        console.error(`[FORECAST] Error fetching data for account ${amazonAccount.id}:`, transactionsError);
       }
 
       // Aggregate transaction data by type for analysis
