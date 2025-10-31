@@ -748,9 +748,9 @@ serve(async (req) => {
               dayMultiplier = 1.05;
             }
             
-            // Use deterministic date-based variation (±8%) instead of random for consistency
+            // Use deterministic date-based variation (±3%) instead of random for consistency
             const dateHash = (currentDate.getFullYear() * 10000 + (currentDate.getMonth() + 1) * 100 + currentDate.getDate()) % 100;
-            const deterministicVariation = 0.92 + (dateHash / 100 * 0.16); // 0.92 to 1.08 (±8%)
+            const deterministicVariation = 0.97 + (dateHash / 100 * 0.06); // 0.97 to 1.03 (±3%)
             
             // For first 14 days: incorporate recent sales trend with CAPPED impact
             if (dayCount <= 14 && last14DaysSales.length > 0) {
