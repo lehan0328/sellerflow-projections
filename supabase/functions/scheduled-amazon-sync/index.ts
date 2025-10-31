@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       .from('amazon_accounts')
       .select('id, user_id, account_name, marketplace_name, last_sync, sync_status, sync_progress, initial_sync_complete, sync_next_token, created_at')
       .eq('is_active', true)
-      .in('sync_status', ['idle', 'syncing']) // Include stuck "syncing" accounts
+      .in('sync_status', ['idle', 'syncing', 'completed']) // Include completed accounts for daily sync
 
     if (fetchError) {
       console.error('Error fetching Amazon accounts:', fetchError)
@@ -112,9 +112,9 @@ Deno.serve(async (req) => {
           }
           console.log(`📥 Continuing backfill for ${account.account_name} (${account.sync_progress || 0}% complete)`)
         }
-        // For completed accounts, sync every 12 hours
+        // For completed accounts, sync once daily
         else {
-          const minHoursBetweenSync = 11.5 // Slightly less than 12 hours to avoid timing issues
+          const minHoursBetweenSync = 23 // Once per day with 1hr buffer
           
           const hoursSinceSync = minutesSinceSync / 60
           

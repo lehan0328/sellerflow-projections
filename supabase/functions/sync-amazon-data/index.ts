@@ -119,12 +119,22 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
       sync_message: 'Fetching Amazon settlements...'
     }).eq('id', amazonAccountId)
 
-    // Fetch last 365 days of settlements
+    // Fetch settlements - use 365 days for initial sync, 2 days for incremental
     // Amazon requires endDate to be at least 2 minutes in the past
     const endDate = new Date()
     endDate.setMinutes(endDate.getMinutes() - 5) // Set to 5 minutes ago to be safe
+    
+    // Check if this is initial sync or ongoing
+    const isInitialSync = !amazonAccount.initial_sync_complete
     const startDate = new Date()
-    startDate.setDate(startDate.getDate() - 365)
+    
+    if (isInitialSync) {
+      startDate.setDate(startDate.getDate() - 365) // Initial: last year
+      console.log('[SYNC] INITIAL sync - fetching 365 days of history')
+    } else {
+      startDate.setDate(startDate.getDate() - 2) // Ongoing: last 2 days for safety
+      console.log('[SYNC] INCREMENTAL sync - fetching last 2 days')
+    }
     
     console.log(`[SYNC] Fetching settlements: ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`)
     
@@ -385,10 +395,15 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
       console.log(`[SYNC] Fetching reports (last sync: ${hoursSinceReportSync.toFixed(1)}h ago)`)
       
       try {
-        // Calculate date range (last 30 days)
+        // Calculate date range - use 30 days for initial sync, 2 days for incremental
         const reportEndDate = new Date()
         const reportStartDate = new Date()
-        reportStartDate.setDate(reportStartDate.getDate() - 30)
+        
+        if (isInitialSync) {
+          reportStartDate.setDate(reportStartDate.getDate() - 30) // Initial: last 30 days
+        } else {
+          reportStartDate.setDate(reportStartDate.getDate() - 2) // Ongoing: last 2 days
+        }
         
         console.log(`[SYNC] Requesting report from ${reportStartDate.toISOString().split('T')[0]} to ${reportEndDate.toISOString().split('T')[0]}`)
         
@@ -598,7 +613,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
           console.log(`[SYNC] ✅ All ${savedCount} transactions saved to database`)
           
           await supabase.from('amazon_accounts').update({
-            sync_status: 'completed',
+            sync_status: 'idle',
             sync_progress: 100,
             sync_message: `${settlementsToSave.length} payouts + ${transactions.length} orders synced`,
             last_sync: now.toISOString(),
@@ -606,7 +621,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
           }).eq('id', amazonAccountId)
         } else {
           await supabase.from('amazon_accounts').update({
-            sync_status: 'completed',
+            sync_status: 'idle',
             sync_progress: 100,
             sync_message: `${settlementsToSave.length} payouts synced (no orders found)`,
             last_sync: now.toISOString(),
@@ -617,7 +632,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
         console.error('[SYNC] Reports sync failed (non-critical):', error)
         // Don't throw - settlement data is still valid
         await supabase.from('amazon_accounts').update({
-          sync_status: 'completed',
+          sync_status: 'idle',
           sync_progress: 100,
           sync_message: `${settlementsToSave.length} payouts synced (reports failed)`,
           last_sync: now.toISOString()
@@ -626,7 +641,7 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
     } else {
       console.log(`[SYNC] Skipping report sync (synced ${hoursSinceReportSync.toFixed(1)}h ago, need 12h)`)
       await supabase.from('amazon_accounts').update({
-        sync_status: 'completed',
+        sync_status: 'idle',
         sync_progress: 100,
         sync_message: `${settlementsToSave.length} payouts synced`,
         last_sync: now.toISOString()
