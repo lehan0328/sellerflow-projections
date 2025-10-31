@@ -198,7 +198,15 @@ serve(async (req) => {
         continue; // Skip AI analysis for this account
       }
 
-      // Fetch recent detailed transactions (last 30 days) for accurate forecasting
+      // Fetch daily rollups for net income trend analysis (actual profit after all fees)
+      const { data: dailyRollups, error: rollupsError } = await supabase
+        .from('amazon_daily_rollups')
+        .select('rollup_date, total_net, total_revenue, order_count')
+        .eq('amazon_account_id', amazonAccount.id)
+        .gte('rollup_date', thirtyDaysAgo.toISOString().split('T')[0])
+        .order('rollup_date', { ascending: false });
+      
+      // Also fetch recent detailed transactions for other analysis
       const { data: recentTransactions, error: recentTxError } = await supabase
         .from('amazon_transactions')
         .select('*')
@@ -537,42 +545,36 @@ serve(async (req) => {
               dateRange: `${oldestPayoutDate.toISOString().split('T')[0]} to ${newestPayoutDate.toISOString().split('T')[0]}`
             });
             
-            // Step 3: Calculate transaction-based daily average from last 30 days
+            // Step 3: Calculate transaction-based daily average using ACTUAL NET INCOME from daily rollups
             let transactionBasedDaily = 0;
-            if (amazonTransactions && amazonTransactions.length > 0) {
-              const thirtyDaysAgo = new Date();
-              thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            let transactionTrend = 0; // Track if net income is growing or declining
+            
+            if (dailyRollups && dailyRollups.length > 0) {
+              // Calculate average of ACTUAL NET INCOME (after all Amazon fees, refunds, adjustments)
+              const totalNetIncome = dailyRollups.reduce((sum, r) => sum + Number(r.total_net || 0), 0);
+              const daysWithData = dailyRollups.length;
+              transactionBasedDaily = totalNetIncome / daysWithData;
               
-              const recentTransactions = amazonTransactions.filter(t => 
-                new Date(t.transaction_date) >= thirtyDaysAgo
-              );
+              // Calculate trend: compare recent half vs older half
+              const halfPoint = Math.floor(daysWithData / 2);
+              const recentHalfNet = dailyRollups.slice(0, halfPoint).reduce((sum, r) => sum + Number(r.total_net || 0), 0) / halfPoint;
+              const olderHalfNet = dailyRollups.slice(halfPoint).reduce((sum, r) => sum + Number(r.total_net || 0), 0) / (daysWithData - halfPoint);
               
-              if (recentTransactions.length > 0) {
-                let totalOrders = 0;
-                let totalFees = 0;
-                let totalRefunds = 0;
-                
-                recentTransactions.forEach(txn => {
-                  const amount = Number(txn.amount || 0);
-                  if (txn.transaction_type === 'Order' || txn.transaction_type === 'Sale') {
-                    totalOrders += amount;
-                  } else if (txn.transaction_type?.includes('Fee')) {
-                    totalFees += Math.abs(amount);
-                  } else if (txn.transaction_type === 'Refund') {
-                    totalRefunds += Math.abs(amount);
-                  }
-                });
-                
-                const netTransactionValue = totalOrders - totalFees - totalRefunds;
-                transactionBasedDaily = netTransactionValue / 30;
-                
-                console.log(`[FORECAST] Transaction-based daily average:`, {
-                  recentDailyAvg: transactionBasedDaily.toFixed(2),
-                  transactionsCount: recentTransactions.length,
-                  netValue: netTransactionValue.toFixed(2)
-                });
-              }
+              transactionTrend = olderHalfNet > 0 ? (recentHalfNet - olderHalfNet) / olderHalfNet : 0;
+              
+              console.log('[FORECAST] Transaction baseline from daily net income:', {
+                dailyNetAvg: transactionBasedDaily.toFixed(2),
+                daysWithData,
+                totalNetIncome: totalNetIncome.toFixed(2),
+                trend: (transactionTrend * 100).toFixed(1) + '% change',
+                recentHalfAvg: recentHalfNet.toFixed(2),
+                olderHalfAvg: olderHalfNet.toFixed(2),
+                note: 'This is ACTUAL net profit after all Amazon fees'
+              });
+            } else {
+              console.log('[FORECAST] No daily rollup data available for transaction baseline');
             }
+            
             
             // Step 4: Calculate three separate baselines for different forecast horizons
             // Blend current month with 90-day average for payout component
@@ -580,18 +582,27 @@ serve(async (req) => {
               ? (currentMonthAverage * 0.7 + ninetyDayAverage * 0.3)
               : ninetyDayAverage;
             
-            // Validate transaction data - if transactions are suspiciously low, reduce their weight
+            // Validate daily rollup data reliability by comparing to confirmed payouts
+            const recent30DayPayouts = recent90DayPayouts.filter(p => {
+              const payoutDate = new Date(p.payout_date);
+              const thirtyDaysAgo = new Date();
+              thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+              return payoutDate >= thirtyDaysAgo;
+            });
+            
             const thirtyDayPayoutSum = recent30DayPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
+            const thirtyDayRollupSum = dailyRollups?.reduce((sum, r) => sum + Number(r.total_net || 0), 0) || 0;
+            
             const transactionDataReliability = transactionBasedDaily > 0 && thirtyDayPayoutSum > 0
-              ? Math.min(1, (transactionBasedDaily * 30) / thirtyDayPayoutSum)
+              ? Math.min(1, thirtyDayRollupSum / thirtyDayPayoutSum)
               : 0;
             
             if (transactionDataReliability < 0.5 && transactionBasedDaily > 0) {
-              console.log(`[FORECAST] ⚠️ Transaction data appears incomplete:`, {
+              console.log('[FORECAST] ⚠️ Daily rollup data appears incomplete:', {
                 thirtyDayPayoutSum: thirtyDayPayoutSum.toFixed(2),
-                estimatedTransactionSum: (transactionBasedDaily * 30).toFixed(2),
+                thirtyDayRollupSum: thirtyDayRollupSum.toFixed(2),
                 reliability: (transactionDataReliability * 100).toFixed(0) + '%',
-                action: 'Reducing transaction weight to prevent inaccurate forecasts'
+                action: 'Reducing transaction weight to rely more on confirmed payout history'
               });
             }
             
