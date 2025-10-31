@@ -23,10 +23,10 @@ const overviewSections = [{
   title: "Overview",
   icon: Home
 }, {
-  id: "match-transactions",
-  title: "Weighted Forecasts",
-  icon: Scale,
-  showMatchCount: true
+  id: "ai-forecast",
+  title: "Advanced Forecast",
+  icon: Brain,
+  showForecastBadge: true
 }, {
   id: "analytics",
   title: "Analytics",
@@ -36,10 +36,10 @@ const overviewSections = [{
   title: "Scenario Planning",
   icon: Calculator
 }, {
-  id: "ai-forecast",
-  title: "Advanced Forecast",
-  icon: Brain,
-  showForecastBadge: true
+  id: "match-transactions",
+  title: "Weighted Forecasts",
+  icon: Scale,
+  showMatchCount: true
 }];
 const transactionSections = [{
   id: "transactions",
