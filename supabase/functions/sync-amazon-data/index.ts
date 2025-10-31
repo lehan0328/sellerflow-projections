@@ -288,6 +288,57 @@ async function syncAmazonData(supabase: any, amazonAccount: any, userId: string)
     
     console.log(`[SYNC] Saving ${settlementsToSave.length} settlements to database...`)
     
+    // Check for existing forecasts and preserve their data before replacement
+    console.log(`[SYNC] Checking for forecasts to preserve...`)
+    for (const settlement of settlementsToSave) {
+      // Only check for confirmed settlements (not estimates)
+      if (settlement.status === 'confirmed') {
+        const { data: existingForecast } = await supabase
+          .from('amazon_payouts')
+          .select('id, total_amount, modeling_method, settlement_id')
+          .eq('amazon_account_id', settlement.amazon_account_id)
+          .eq('payout_date', settlement.payout_date)
+          .eq('status', 'forecasted')
+          .maybeSingle()
+        
+        if (existingForecast) {
+          const forecastedAmount = Number(existingForecast.total_amount)
+          const actualAmount = Number(settlement.total_amount)
+          const accuracyPercent = forecastedAmount > 0 
+            ? (1 - Math.abs(actualAmount - forecastedAmount) / forecastedAmount) * 100
+            : 0
+          
+          // Preserve forecast data in the settlement record
+          settlement.original_forecast_amount = forecastedAmount
+          settlement.forecast_replaced_at = new Date().toISOString()
+          settlement.forecast_accuracy_percentage = accuracyPercent
+          settlement.modeling_method = existingForecast.modeling_method || settlement.modeling_method
+          
+          console.log(`[SYNC] 📊 Forecast accuracy for ${settlement.payout_date}: ${accuracyPercent.toFixed(1)}% (forecast: $${forecastedAmount.toFixed(2)}, actual: $${actualAmount.toFixed(2)})`)
+          
+          // Log to forecast_accuracy_log for historical tracking
+          const { error: logError } = await supabase
+            .from('forecast_accuracy_log')
+            .insert({
+              user_id: settlement.user_id,
+              account_id: settlement.account_id,
+              amazon_account_id: settlement.amazon_account_id,
+              payout_date: settlement.payout_date,
+              forecasted_amount: forecastedAmount,
+              actual_amount: actualAmount,
+              difference_amount: actualAmount - forecastedAmount,
+              difference_percentage: forecastedAmount > 0 ? ((actualAmount - forecastedAmount) / forecastedAmount) * 100 : 0,
+              settlement_id: settlement.settlement_id,
+              marketplace_name: settlement.marketplace_name
+            })
+          
+          if (logError) {
+            console.error(`[SYNC] Failed to log accuracy for ${settlement.payout_date}:`, logError)
+          }
+        }
+      }
+    }
+    
     const { error: upsertError } = await supabase
       .from('amazon_payouts')
       .upsert(settlementsToSave, { onConflict: 'amazon_account_id,settlement_id' })
