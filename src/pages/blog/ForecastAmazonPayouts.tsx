@@ -67,13 +67,13 @@ const ForecastAmazonPayouts = () => {
       <h2 className="text-3xl font-bold mt-12 mb-6">4. Automate Forecasting with Auren</h2>
 
       <p className="leading-relaxed">
-        <strong>Auren</strong> connects directly to Amazon Seller Central through a secure read-only API and automatically forecasts future disbursements. It calculates expected payout amounts, reserve deductions, and dates — updating daily as your sales evolve.
+        <strong>Auren</strong> connects directly to Amazon Seller Central through a secure read-only API and automatically forecasts future disbursements using a simple 30-day payout average. It calculates expected payout amounts and dates — updating daily as your sales evolve.
       </p>
 
       <Card className="my-8 bg-primary/5">
         <CardContent className="pt-6 space-y-4">
           <p className="leading-relaxed">
-            Instead of manually tracking settlements in spreadsheets, Auren does it automatically. It learns your unique payout patterns and predicts:
+            Instead of manually tracking settlements in spreadsheets, Auren does it automatically using your confirmed payout history to predict:
           </p>
           <ul className="space-y-2">
             <li className="flex items-start gap-2">
@@ -82,7 +82,7 @@ const ForecastAmazonPayouts = () => {
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
-              <span className="text-sm">The expected amount after all fees and reserves</span>
+              <span className="text-sm">The expected amount based on your 30-day average</span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle className="h-4 w-4 text-primary mt-1 flex-shrink-0" />

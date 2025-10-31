@@ -492,154 +492,46 @@ serve(async (req) => {
         let baseline90Days = 0;
         
         if (payoutFrequency === 'daily') {
-          // ===== DAILY ACCOUNTS: Prioritize 90-day payout history =====
-          console.log(`[FORECAST] Daily account - calculating from payout history for ${amazonAccount.account_name}`);
+          // ===== DAILY ACCOUNTS: Use simple 30-day payout average =====
+          console.log(`[FORECAST] Daily account - calculating 30-day payout average for ${amazonAccount.account_name}`);
           
-          // Step 1: Calculate true daily average from 90 days of confirmed payouts
-          const ninetyDaysAgo = new Date();
-          ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
           
-          const recent90DayPayouts = amazonPayouts.filter(p => {
+          const recent30DayPayouts = amazonPayouts.filter(p => {
             const payoutDate = new Date(p.payout_date);
-            return payoutDate >= ninetyDaysAgo && p.status === 'confirmed';
+            return payoutDate >= thirtyDaysAgo && p.status === 'confirmed';
           });
           
-          if (recent90DayPayouts.length >= 5) {
-            // Step 1: Calculate CURRENT MONTH average for strong recent signal
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-            const currentMonthPayouts = recent90DayPayouts.filter(p => {
-              const payoutDate = new Date(p.payout_date);
-              return payoutDate.getMonth() === currentMonth && payoutDate.getFullYear() === currentYear;
-            });
-            
-            let currentMonthAverage = 0;
-            if (currentMonthPayouts.length > 0) {
-              const totalCurrentMonth = currentMonthPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
-              const oldestCurrentMonth = new Date(Math.min(...currentMonthPayouts.map(p => new Date(p.payout_date).getTime())));
-              const newestCurrentMonth = new Date(Math.max(...currentMonthPayouts.map(p => new Date(p.payout_date).getTime())));
-              const daysInCurrentMonth = Math.ceil((newestCurrentMonth.getTime() - oldestCurrentMonth.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-              currentMonthAverage = totalCurrentMonth / daysInCurrentMonth;
-              
-              console.log(`[FORECAST] Current month (${currentMonth + 1}) baseline:`, {
-                totalAmount: totalCurrentMonth.toFixed(2),
-                daysInPeriod: daysInCurrentMonth,
-                payoutsCount: currentMonthPayouts.length,
-                dailyAverage: currentMonthAverage.toFixed(2),
-                note: 'This will have highest weight for first 30 days'
-              });
-            }
-            
-            // Step 2: Calculate 90-day average for longer-term baseline
-            const totalPayoutAmount = recent90DayPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
+          if (recent30DayPayouts.length >= 3) {
+            // Calculate simple 30-day average
+            const totalPayoutAmount = recent30DayPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
             
             // Find actual date range of payouts
-            const oldestPayoutDate = new Date(Math.min(...recent90DayPayouts.map(p => new Date(p.payout_date).getTime())));
-            const newestPayoutDate = new Date(Math.max(...recent90DayPayouts.map(p => new Date(p.payout_date).getTime())));
+            const oldestPayoutDate = new Date(Math.min(...recent30DayPayouts.map(p => new Date(p.payout_date).getTime())));
+            const newestPayoutDate = new Date(Math.max(...recent30DayPayouts.map(p => new Date(p.payout_date).getTime())));
             const daysInPeriod = Math.ceil((newestPayoutDate.getTime() - oldestPayoutDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
             
-            // 90-day daily average for context
-            const ninetyDayAverage = totalPayoutAmount / daysInPeriod;
+            // Simple daily average from actual payout amounts
+            const thirtyDayAverage = totalPayoutAmount / daysInPeriod;
             
-            console.log(`[FORECAST] 90-day payout baseline calculation:`, {
+            console.log(`[FORECAST] 30-day payout baseline:`, {
               totalAmount: totalPayoutAmount.toFixed(2),
               daysInPeriod,
-              payoutsCount: recent90DayPayouts.length,
-              ninetyDayAverage: ninetyDayAverage.toFixed(2),
-              avgPayoutSize: (totalPayoutAmount / recent90DayPayouts.length).toFixed(2),
+              payoutsCount: recent30DayPayouts.length,
+              dailyAverage: thirtyDayAverage.toFixed(2),
+              avgPayoutSize: (totalPayoutAmount / recent30DayPayouts.length).toFixed(2),
               dateRange: `${oldestPayoutDate.toISOString().split('T')[0]} to ${newestPayoutDate.toISOString().split('T')[0]}`
             });
             
-            // Step 3: Calculate transaction-based daily average using ACTUAL NET INCOME from daily rollups
-            let transactionBasedDaily = 0;
-            let transactionTrend = 0; // Track if net income is growing or declining
-            
-            if (dailyRollups && dailyRollups.length > 0) {
-              // Calculate average of ACTUAL NET INCOME (after all Amazon fees, refunds, adjustments)
-              const totalNetIncome = dailyRollups.reduce((sum, r) => sum + Number(r.total_net || 0), 0);
-              const daysWithData = dailyRollups.length;
-              transactionBasedDaily = totalNetIncome / daysWithData;
-              
-              // Calculate trend: compare recent half vs older half
-              const halfPoint = Math.floor(daysWithData / 2);
-              const recentHalfNet = dailyRollups.slice(0, halfPoint).reduce((sum, r) => sum + Number(r.total_net || 0), 0) / halfPoint;
-              const olderHalfNet = dailyRollups.slice(halfPoint).reduce((sum, r) => sum + Number(r.total_net || 0), 0) / (daysWithData - halfPoint);
-              
-              transactionTrend = olderHalfNet > 0 ? (recentHalfNet - olderHalfNet) / olderHalfNet : 0;
-              
-              console.log('[FORECAST] Transaction baseline from daily net income:', {
-                dailyNetAvg: transactionBasedDaily.toFixed(2),
-                daysWithData,
-                totalNetIncome: totalNetIncome.toFixed(2),
-                trend: (transactionTrend * 100).toFixed(1) + '% change',
-                recentHalfAvg: recentHalfNet.toFixed(2),
-                olderHalfAvg: olderHalfNet.toFixed(2),
-                note: 'This is ACTUAL net profit after all Amazon fees'
-              });
-            } else {
-              console.log('[FORECAST] No daily rollup data available for transaction baseline');
-            }
-            
-            
-            // Step 4: Calculate three separate baselines for different forecast horizons
-            // Blend current month with 90-day average for payout component
-            const blendedPayoutAvg = currentMonthAverage > 0 
-              ? (currentMonthAverage * 0.7 + ninetyDayAverage * 0.3)
-              : ninetyDayAverage;
-            
-            // Validate daily rollup data reliability by comparing to confirmed payouts
-            const recent30DayPayouts = recent90DayPayouts.filter(p => {
-              const payoutDate = new Date(p.payout_date);
-              const thirtyDaysAgo = new Date();
-              thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-              return payoutDate >= thirtyDaysAgo;
-            });
-            
-            const thirtyDayPayoutSum = recent30DayPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
-            const thirtyDayRollupSum = dailyRollups?.reduce((sum, r) => sum + Number(r.total_net || 0), 0) || 0;
-            
-            const transactionDataReliability = transactionBasedDaily > 0 && thirtyDayPayoutSum > 0
-              ? Math.min(1, thirtyDayRollupSum / thirtyDayPayoutSum)
-              : 0;
-            
-            if (transactionDataReliability < 0.5 && transactionBasedDaily > 0) {
-              console.log('[FORECAST] ⚠️ Daily rollup data appears incomplete:', {
-                thirtyDayPayoutSum: thirtyDayPayoutSum.toFixed(2),
-                thirtyDayRollupSum: thirtyDayRollupSum.toFixed(2),
-                reliability: (transactionDataReliability * 100).toFixed(0) + '%',
-                action: 'Reducing transaction weight to rely more on confirmed payout history'
-              });
-            }
-            
-            // Calculate three baselines based on forecast horizon (not account age)
-            const weights30Days = weights.days30PayoutWeight / 100;
-            const weights60Days = weights.days60PayoutWeight / 100;
-            const weights90Days = weights.days90PayoutWeight / 100;
-            
-            // Adjust transaction weight based on data reliability
-            const reliableTransactionDaily = transactionBasedDaily * Math.max(0.1, transactionDataReliability);
-            
-            baseline30Days = (blendedPayoutAvg * weights30Days) + (reliableTransactionDaily * (1 - weights30Days));
-            baseline60Days = (blendedPayoutAvg * weights60Days) + (reliableTransactionDaily * (1 - weights60Days));
-            baseline90Days = (blendedPayoutAvg * weights90Days) + (reliableTransactionDaily * (1 - weights90Days));
-            
-            console.log(`[FORECAST] Forecast horizon baselines calculated:`, {
-              blendedPayoutAvg: blendedPayoutAvg.toFixed(2),
-              transactionBasedDaily: transactionBasedDaily.toFixed(2),
-              reliableTransactionDaily: reliableTransactionDaily.toFixed(2),
-              transactionReliability: (transactionDataReliability * 100).toFixed(0) + '%',
-              baselines: {
-                days30: `${baseline30Days.toFixed(2)} (${(weights30Days * 100).toFixed(0)}% payout / ${((1 - weights30Days) * 100).toFixed(0)}% txn)`,
-                days60: `${baseline60Days.toFixed(2)} (${(weights60Days * 100).toFixed(0)}% payout / ${((1 - weights60Days) * 100).toFixed(0)}% txn)`,
-                days90: `${baseline90Days.toFixed(2)} (${(weights90Days * 100).toFixed(0)}% payout / ${((1 - weights90Days) * 100).toFixed(0)}% txn)`
-              }
-            });
-            
-            // Set initial baseline (will be updated per day in forecast loop)
-            baselineAmount = baseline30Days;
+            // Use simple average for all baselines (no transaction weighting)
+            baseline30Days = thirtyDayAverage;
+            baseline60Days = thirtyDayAverage;
+            baseline90Days = thirtyDayAverage;
+            baselineAmount = thirtyDayAverage;
           } else {
             // Insufficient payout history - fall back to all available payouts
-            console.log(`[FORECAST] Insufficient 90-day history (${recent90DayPayouts.length} payouts), using all available payouts`);
+            console.log(`[FORECAST] Insufficient 30-day history (${recent30DayPayouts.length} payouts), using all available payouts`);
             
             if (nonForecastedPayouts.length > 0) {
               const oldestPayoutDate = new Date(nonForecastedPayouts[nonForecastedPayouts.length - 1].payout_date);
