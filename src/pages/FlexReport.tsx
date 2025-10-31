@@ -108,7 +108,7 @@ const FlexReport = () => {
   // Calculate metrics
   const today = startOfDay(new Date());
   const next30Days = addDays(today, 30);
-  const next180Days = addDays(today, 180);
+  const next90Days = addDays(today, 90);
 
   // Total upcoming purchase orders (pending transactions)
   const upcomingPurchaseOrders = transactions.filter(tx => tx.type === 'purchase_order' && tx.status === 'pending' && tx.dueDate && isWithinInterval(new Date(tx.dueDate), {
@@ -207,8 +207,8 @@ const FlexReport = () => {
     payoutGrowthRate: payoutGrowthRate // Already calculated as percentage
   };
 
-  // Calculate highest projected balance within 180 days
-  const calculateMaxBalance180Days = () => {
+  // Calculate highest projected balance within 90 days
+  const calculateMaxBalance90Days = () => {
     // Create array of all cash flow events with dates
     const events: { date: Date; amount: number }[] = [];
     
@@ -217,7 +217,7 @@ const FlexReport = () => {
       .filter(income => income.status !== 'received' && income.paymentDate)
       .forEach(income => {
         const date = new Date(income.paymentDate);
-        if (isWithinInterval(date, { start: today, end: next180Days })) {
+        if (isWithinInterval(date, { start: today, end: next90Days })) {
           events.push({ date, amount: Number(income.amount) });
         }
       });
@@ -227,7 +227,7 @@ const FlexReport = () => {
       .filter(tx => tx.type === 'purchase_order' && tx.status === 'pending' && tx.dueDate)
       .forEach(tx => {
         const date = new Date(tx.dueDate);
-        if (isWithinInterval(date, { start: today, end: next180Days })) {
+        if (isWithinInterval(date, { start: today, end: next90Days })) {
           events.push({ date, amount: -Number(tx.amount) });
         }
       });
@@ -249,7 +249,7 @@ const FlexReport = () => {
     return maxBalance;
   };
 
-  const max180DayPurchasingPower = calculateMaxBalance180Days();
+  const max90DaySpendingPower = calculateMaxBalance90Days();
 
   // Credit utilization
   const totalCreditLimit = creditCards.reduce((sum, card) => sum + Number(card.credit_limit || 0), 0);
@@ -479,7 +479,7 @@ const FlexReport = () => {
 
             {/* Metrics Grid */}
             <div className="grid grid-cols-2 gap-3 mb-5">
-              {/* Max 180 Day Purchasing Power */}
+              {/* Max 90 Day Spending Power */}
               <div className="group bg-gradient-to-br from-blue-50 via-blue-100/80 to-blue-50 rounded-2xl p-4 border-2 border-blue-200/60 shadow-lg hover:shadow-xl transition-all duration-300 backdrop-blur-sm relative">
                 <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 bg-blue-50 border-2 border-blue-600 rounded-full">
                   <div className="w-1 h-1 bg-blue-600 rounded-full"></div>
@@ -489,9 +489,9 @@ const FlexReport = () => {
                   <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <DollarSign className="w-4 h-4 text-white" />
                   </div>
-                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Max 180 Day Power</p>
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Max 90 Day Spending Power</p>
                 </div>
-                <p className={`text-2xl font-black text-blue-700 drop-shadow-sm transition-all duration-300 ${!visibility.totalCash ? 'blur-lg' : ''}`}>{formatCurrency(max180DayPurchasingPower)}</p>
+                <p className={`text-2xl font-black text-blue-700 drop-shadow-sm transition-all duration-300 ${!visibility.totalCash ? 'blur-lg' : ''}`}>{formatCurrency(max90DaySpendingPower)}</p>
                 {showPercentageChange && (
                   <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.max180Day >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.max180Day >= 0 ? '' : 'rotate-180'}`} />
