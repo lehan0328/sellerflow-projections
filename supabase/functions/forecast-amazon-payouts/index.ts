@@ -33,10 +33,14 @@ serve(async (req) => {
     const userId = user.id;
     console.log('[FORECAST] Fetching Amazon data for user:', userId);
 
-    // Get user's account_id
+    // Parse request body for custom weights
+    const requestBody = await req.json().catch(() => ({}));
+    const customWeights = requestBody.customWeights;
+
+    // Get user's account_id and forecast settings
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('account_id')
+      .select('account_id, forecast_settings')
       .eq('user_id', userId)
       .single();
 
@@ -46,6 +50,15 @@ serve(async (req) => {
     }
 
     const accountId = profile.account_id;
+
+    // Get custom weights from request or profile settings
+    const weights = customWeights || profile.forecast_settings?.weights || {
+      days30PayoutWeight: 75,
+      days60PayoutWeight: 50,
+      days90PayoutWeight: 25,
+    };
+
+    console.log('[FORECAST] Using custom weights:', weights);
 
     // Get user's forecast confidence threshold
     const { data: userSettings } = await supabase
@@ -561,52 +574,48 @@ serve(async (req) => {
               }
             }
             
-            // Step 4: Determine account age and apply weighting
-            // Use CURRENT MONTH average primarily for first 30 days, then blend with 90-day and transactions
+            // Step 4: Determine account age and apply custom weighting
+            // Use weights from user settings or defaults
             const accountFirstPayoutDate = new Date(Math.min(...amazonPayouts.map(p => new Date(p.payout_date).getTime())));
             const accountAgeDays = Math.ceil((new Date().getTime() - accountFirstPayoutDate.getTime()) / (1000 * 60 * 60 * 24));
             
-            let currentMonthWeight: number;
-            let ninetyDayWeight: number;
+            let payoutWeight: number;
             let transactionWeight: number;
             
+            // Apply custom weights based on account age
             if (accountAgeDays <= 30) {
-              // First 30 days: Trust CURRENT MONTH average most (75%), transactions secondary (25%)
-              // Current month captures most recent performance trend
-              currentMonthWeight = currentMonthAverage > 0 ? 0.75 : 0;
-              ninetyDayWeight = currentMonthAverage > 0 ? 0 : 0.75;
-              transactionWeight = 0.25;
+              // 0-30 days: Use custom days30 weight
+              payoutWeight = weights.days30PayoutWeight / 100;
+              transactionWeight = (100 - weights.days30PayoutWeight) / 100;
+              console.log(`[FORECAST] Account age ${accountAgeDays} days - Using 30-day weights: ${(payoutWeight * 100).toFixed(0)}% payout / ${(transactionWeight * 100).toFixed(0)}% transactions`);
             } else if (accountAgeDays <= 60) {
-              // 30-60 days: Blend current month (40%), 90-day (30%), transactions (30%)
-              currentMonthWeight = currentMonthAverage > 0 ? 0.40 : 0;
-              ninetyDayWeight = currentMonthAverage > 0 ? 0.30 : 0.50;
-              transactionWeight = currentMonthAverage > 0 ? 0.30 : 0.50;
-            } else if (accountAgeDays <= 90) {
-              // 60-90 days: Trust transactions more (50%), current month (25%), 90-day (25%)
-              currentMonthWeight = currentMonthAverage > 0 ? 0.25 : 0;
-              ninetyDayWeight = currentMonthAverage > 0 ? 0.25 : 0.25;
-              transactionWeight = currentMonthAverage > 0 ? 0.50 : 0.75;
+              // 30-60 days: Use custom days60 weight
+              payoutWeight = weights.days60PayoutWeight / 100;
+              transactionWeight = (100 - weights.days60PayoutWeight) / 100;
+              console.log(`[FORECAST] Account age ${accountAgeDays} days - Using 60-day weights: ${(payoutWeight * 100).toFixed(0)}% payout / ${(transactionWeight * 100).toFixed(0)}% transactions`);
             } else {
-              // 90+ days: Mostly transactions (60%), with 90-day for stability (40%)
-              currentMonthWeight = 0;
-              ninetyDayWeight = 0.40;
-              transactionWeight = 0.60;
+              // 60+ days: Use custom days90 weight
+              payoutWeight = weights.days90PayoutWeight / 100;
+              transactionWeight = (100 - weights.days90PayoutWeight) / 100;
+              console.log(`[FORECAST] Account age ${accountAgeDays} days - Using 90+ day weights: ${(payoutWeight * 100).toFixed(0)}% payout / ${(transactionWeight * 100).toFixed(0)}% transactions`);
             }
             
             // Apply weighted blend
             if (transactionBasedDaily > 0 || currentMonthAverage > 0) {
+              // Blend current month with 90-day average for payout component
+              const blendedPayoutAvg = currentMonthAverage > 0 
+                ? (currentMonthAverage * 0.7 + ninetyDayAverage * 0.3)
+                : ninetyDayAverage;
+              
               const weightedBaseline = 
-                (currentMonthAverage * currentMonthWeight) + 
-                (ninetyDayAverage * ninetyDayWeight) + 
+                (blendedPayoutAvg * payoutWeight) + 
                 (transactionBasedDaily * transactionWeight);
               
               console.log(`[FORECAST] Weighted baseline calculation:`, {
                 accountAgeDays,
-                currentMonthWeight: currentMonthAverage > 0 ? `${(currentMonthWeight * 100).toFixed(0)}%` : 'N/A',
-                ninetyDayWeight: `${(ninetyDayWeight * 100).toFixed(0)}%`,
+                payoutWeight: `${(payoutWeight * 100).toFixed(0)}%`,
                 transactionWeight: `${(transactionWeight * 100).toFixed(0)}%`,
-                currentMonthBaseline: currentMonthAverage.toFixed(2),
-                ninetyDayBaseline: ninetyDayAverage.toFixed(2),
+                blendedPayoutBaseline: blendedPayoutAvg.toFixed(2),
                 transactionBaseline: transactionBasedDaily.toFixed(2),
                 weightedResult: weightedBaseline.toFixed(2)
               });
