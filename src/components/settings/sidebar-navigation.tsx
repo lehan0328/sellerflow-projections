@@ -10,7 +10,8 @@ import {
   Users,
   Database,
   Repeat,
-  Tags
+  Tags,
+  MessageSquare
 } from "lucide-react";
 
 const navigationItems = [
@@ -63,6 +64,11 @@ const navigationItems = [
     id: 'appearance',
     label: 'Appearance',
     icon: Palette,
+  },
+  {
+    id: 'feature-request',
+    label: 'Feature Request',
+    icon: MessageSquare,
   },
   {
     id: 'export',

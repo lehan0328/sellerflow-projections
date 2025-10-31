@@ -49,6 +49,7 @@ import { DataExport } from "@/components/settings/data-export";
 import { CategoryManagement } from "@/components/settings/category-management";
 import { BillingInvoices } from "@/components/settings/billing-invoices";
 import { ForecastSettings } from "@/components/settings/forecast-settings";
+import { FeatureRequest } from "@/components/settings/feature-request";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useReserveAmount } from "@/hooks/useReserveAmount";
@@ -2042,6 +2043,8 @@ const Dashboard = () => {
         return <BillingInvoices />;
       case 'forecast-settings':
         return <ForecastSettings />;
+      case 'feature-request':
+        return <FeatureRequest />;
       case 'export':
         return <DataExport />;
       case 'appearance':
