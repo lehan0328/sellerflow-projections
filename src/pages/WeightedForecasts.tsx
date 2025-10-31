@@ -104,14 +104,44 @@ const WeightedForecasts = () => {
 
       if (error) throw error;
 
+      // Delete existing forecasts first
+      console.log('Deleting existing forecasts...');
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('account_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profile?.account_id) {
+        const { error: deleteError } = await supabase
+          .from('amazon_payouts')
+          .delete()
+          .eq('account_id', profile.account_id)
+          .eq('status', 'forecasted');
+        
+        if (deleteError) {
+          console.error('Error deleting forecasts:', deleteError);
+        } else {
+          console.log('Successfully deleted existing forecasts');
+        }
+      }
+
       // Trigger forecast regeneration with new weights
-      await supabase.functions.invoke('forecast-amazon-payouts', {
+      console.log('Regenerating forecasts with custom weights:', settings.weights);
+      const { data: forecastData, error: forecastError } = await supabase.functions.invoke('forecast-amazon-payouts', {
         body: { forceRegenerate: true, customWeights: settings.weights }
       });
 
+      if (forecastError) {
+        console.error('Forecast regeneration error:', forecastError);
+        throw forecastError;
+      }
+
+      console.log('Forecast regeneration complete:', forecastData);
+
       toast({
         title: 'Settings saved',
-        description: 'Your forecast weights have been updated and forecasts are being regenerated.',
+        description: 'Your forecast weights have been updated and new forecasts generated with your custom weights.',
       });
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -211,7 +241,7 @@ const WeightedForecasts = () => {
           </div>
 
           {/* 30 Day Weight */}
-          <div className="space-y-4 p-4 border rounded-lg bg-accent/20">
+          <div className="space-y-4 p-4 border rounded-lg bg-blue-50/50 dark:bg-blue-950/20">
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-base font-semibold">30 Day Forecast</Label>
@@ -239,7 +269,7 @@ const WeightedForecasts = () => {
           </div>
 
           {/* 60 Day Weight */}
-          <div className="space-y-4 p-4 border rounded-lg bg-accent/20">
+          <div className="space-y-4 p-4 border rounded-lg bg-green-50/50 dark:bg-green-950/20">
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-base font-semibold">60 Day Forecast</Label>
@@ -267,7 +297,7 @@ const WeightedForecasts = () => {
           </div>
 
           {/* 90+ Day Weight */}
-          <div className="space-y-4 p-4 border rounded-lg bg-accent/20">
+          <div className="space-y-4 p-4 border rounded-lg bg-amber-50/50 dark:bg-amber-950/20">
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-base font-semibold">90+ Day Forecast</Label>
