@@ -183,32 +183,21 @@ const WeightedForecasts = () => {
             Payout Frequency
           </CardTitle>
           <CardDescription>
-            Select your Amazon payout schedule to optimize forecast accuracy
+            Auto-detected from your Amazon payout history
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <RadioGroup value={payoutFrequency} onValueChange={(value) => setPayoutFrequency(value as PayoutFrequency)}>
-            <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-accent/50 transition-colors">
-              <RadioGroupItem value="daily" id="daily" />
-              <Label htmlFor="daily" className="flex-1 cursor-pointer">
-                <div className="font-semibold">Daily Payouts</div>
-                <div className="text-sm text-muted-foreground">Receive payouts every 1-3 days</div>
-              </Label>
-              {payoutFrequency === "daily" && (
-                <Badge variant="secondary">Active</Badge>
-              )}
+          <div className="flex items-center space-x-2 p-4 border-2 border-primary rounded-lg bg-primary/5">
+            <div className="flex-1">
+              <div className="font-semibold text-base capitalize">{payoutFrequency === "daily" ? "Daily Payouts" : "Bi-weekly Payouts"}</div>
+              <div className="text-sm text-muted-foreground mt-1">
+                {payoutFrequency === "daily" 
+                  ? "Your account receives payouts every 1-3 days" 
+                  : "Your account receives payouts every 14 days"}
+              </div>
             </div>
-            <div className="flex items-center space-x-2 p-4 border rounded-lg hover:bg-accent/50 transition-colors">
-              <RadioGroupItem value="biweekly" id="biweekly" />
-              <Label htmlFor="biweekly" className="flex-1 cursor-pointer">
-                <div className="font-semibold">Bi-weekly Payouts</div>
-                <div className="text-sm text-muted-foreground">Receive payouts every 14 days</div>
-              </Label>
-              {payoutFrequency === "biweekly" && (
-                <Badge variant="secondary">Active</Badge>
-              )}
-            </div>
-          </RadioGroup>
+            <Badge variant="default" className="text-sm">Auto-Selected</Badge>
+          </div>
         </CardContent>
       </Card>
 
@@ -364,19 +353,19 @@ const WeightedForecasts = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-accent/50 rounded-lg">
+            <div className="text-center p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border">
               <div className="text-sm text-muted-foreground mb-1">Payout Schedule</div>
               <div className="text-xl font-bold capitalize">{payoutFrequency}</div>
             </div>
-            <div className="text-center p-4 bg-accent/50 rounded-lg">
+            <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900">
               <div className="text-sm text-muted-foreground mb-1">30 Day</div>
               <div className="text-lg font-bold">{weights.days30PayoutWeight}% / {100 - weights.days30PayoutWeight}%</div>
             </div>
-            <div className="text-center p-4 bg-accent/50 rounded-lg">
+            <div className="text-center p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-900">
               <div className="text-sm text-muted-foreground mb-1">60 Day</div>
               <div className="text-lg font-bold">{weights.days60PayoutWeight}% / {100 - weights.days60PayoutWeight}%</div>
             </div>
-            <div className="text-center p-4 bg-accent/50 rounded-lg">
+            <div className="text-center p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900">
               <div className="text-sm text-muted-foreground mb-1">90+ Day</div>
               <div className="text-lg font-bold">{weights.days90PayoutWeight}% / {100 - weights.days90PayoutWeight}%</div>
             </div>
