@@ -8,18 +8,21 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useAmazonRevenue } from "@/hooks/useAmazonRevenue";
 
 export const TrialExpiredModal = ({ open }: { open: boolean }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [userRevenue, setUserRevenue] = useState<string | null>(null);
-  const [currentRevenue, setCurrentRevenue] = useState<number>(0);
   const [recommendedPlan, setRecommendedPlan] = useState<any>(null);
   const [availablePlans, setAvailablePlans] = useState<any[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [isYearly, setIsYearly] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [hasReferredDiscount, setHasReferredDiscount] = useState(false);
+  
+  // Use unified Amazon revenue hook
+  const { last30DaysNetPayouts: currentRevenue, isLoading: revenueLoading } = useAmazonRevenue();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -64,38 +67,20 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       // Check if user has referred discount available
       const hasDiscount = profile?.plan_override === 'referred_user_discount' && !profile?.discount_redeemed_at;
       setHasReferredDiscount(hasDiscount);
+    };
 
-      // Calculate revenue from last 30 days using confirmed payout data
-      // We track NET payouts (money that hits bank account) for plan detection
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      // Use amazon_payouts - contains settlement payout amounts
-      const { data: amazonPayouts } = await supabase
-        .from('amazon_payouts')
-        .select('total_amount, payout_date, status')
-        .eq('user_id', user.id)
-        .gte('payout_date', thirtyDaysAgo.toISOString().split('T')[0])
-        .eq('status', 'confirmed');
+    fetchUserProfile();
+  }, []);
 
-      let calculatedRevenue = 0;
-      
-      if (amazonPayouts && amazonPayouts.length > 0) {
-        // Sum total net payouts from last 30 days (confirmed only)
-        calculatedRevenue = amazonPayouts
-          .filter(p => p.status === 'confirmed')
-          .reduce((sum, p) => {
-            return sum + (Number(p.total_amount) || 0);
-          }, 0);
-      }
-      
-      setCurrentRevenue(Math.max(0, calculatedRevenue));
+  // Determine recommended plan based on revenue from hook
+  useEffect(() => {
+    if (revenueLoading || currentRevenue === undefined) return;
 
-      let recommendedPlanData = null;
-      let higherPlans: any[] = [];
+    let recommendedPlanData = null;
+    let higherPlans: any[] = [];
 
-      // Use calculated Amazon revenue to determine plan
-      const revenueNum = calculatedRevenue;
+    // Use Amazon revenue from hook to determine plan
+    const revenueNum = currentRevenue;
 
       // Determine appropriate plan based on revenue and get higher plans
       if (revenueNum <= 10000) {
@@ -127,13 +112,10 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
         higherPlans = [];
       }
 
-      setRecommendedPlan(recommendedPlanData);
-      setAvailablePlans([recommendedPlanData, ...higherPlans]);
-      setSelectedPlanId(recommendedPlanData.plan.priceId || recommendedPlanData.plan.price_id);
-    };
-
-    fetchUserProfile();
-  }, []);
+    setRecommendedPlan(recommendedPlanData);
+    setAvailablePlans([recommendedPlanData, ...higherPlans]);
+    setSelectedPlanId(recommendedPlanData.plan.priceId || recommendedPlanData.plan.price_id);
+  }, [currentRevenue, revenueLoading]);
 
   if (!recommendedPlan || availablePlans.length === 0) return null;
 

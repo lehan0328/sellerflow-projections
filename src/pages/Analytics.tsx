@@ -10,6 +10,7 @@ import { useCreditCards } from "@/hooks/useCreditCards";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useRecurringExpenses } from "@/hooks/useRecurringExpenses";
+import { useAmazonRevenue } from "@/hooks/useAmazonRevenue";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -56,7 +57,9 @@ export default function Analytics() {
   const { transactions: dbTransactions } = useTransactions();
   // Fetch ALL vendor transactions (including archived/completed, excluding deleted)
   const [vendorTransactions, setVendorTransactions] = useState<any[]>([]);
-  const [amazonTransactions, setAmazonTransactions] = useState<any[]>([]);
+  
+  // Use unified Amazon revenue hook
+  const { last30DaysGrossRevenue: amazonRevenue } = useAmazonRevenue();
   
   useEffect(() => {
     const fetchAllVendorTransactions = async () => {
@@ -123,50 +126,6 @@ export default function Analytics() {
     };
   }, []);
 
-  // Fetch Amazon transactions for gross revenue calculation (last 30 days from reports)
-  useEffect(() => {
-    const fetchAmazonTransactions = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Get account_id from profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('account_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!profile?.account_id) return;
-
-      // Fetch last 30 days of Amazon orders and sum the amounts
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-      console.log('[Analytics] Fetching Amazon revenue:', thirtyDaysAgo.toISOString(), 'to', new Date().toISOString());
-      console.log('[Analytics] User ID:', user.id);
-
-      // Fetch Amazon revenue using Postgres function (last 30 days)
-      const { data: revenueData, error: revenueError } = await supabase
-        .rpc('get_amazon_revenue_30_days', { p_user_id: user.id });
-
-      console.log('[Analytics] Revenue RPC response:', { data: revenueData, error: revenueError });
-
-      if (revenueError) {
-        console.error('[Analytics] Error fetching Amazon revenue:', revenueError);
-        setAmazonTransactions([{ amount: 0 } as any]);
-        return;
-      }
-
-      const totalRevenue = revenueData || 0;
-      
-      console.log('[Analytics] Final Amazon Revenue:', totalRevenue);
-      
-      // Store the total in state
-      setAmazonTransactions([{ amount: totalRevenue } as any]);
-    };
-
-    fetchAmazonTransactions();
-  }, []);
   const { creditCards } = useCreditCards();
   const { amazonPayouts } = useAmazonPayouts();
   const { accounts } = useBankAccounts();
@@ -271,9 +230,9 @@ export default function Analytics() {
     const totalCreditUsed = creditCards.reduce((sum, c) => sum + (c.balance || 0), 0);
     const creditUtilization = totalCreditLimit > 0 ? (totalCreditUsed / totalCreditLimit) * 100 : 0;
 
-    // Amazon payouts filtered by income date range (confirmed only)
+    // Amazon payouts filtered by income date range (confirmed only, NET after fees)
     const { start: incomeStart, end: incomeEnd } = getDateRange(incomeDateRange);
-    const amazonRevenue = amazonPayouts
+    const amazonRevenueFiltered = amazonPayouts
       .filter(p => {
         const payoutDate = new Date(p.payout_date);
         return p.status === 'confirmed' && payoutDate >= incomeStart && payoutDate <= incomeEnd;
@@ -296,11 +255,12 @@ export default function Analytics() {
       currentBalance,
       pendingIncome,
       creditUtilization,
-      amazonRevenue,
+      amazonRevenue, // Last 30 days GROSS revenue from hook
+      amazonRevenueFiltered, // Filtered by date range, NET payouts
       totalExpenses,
       netCashFlow
     };
-  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts, amazonTransactions, incomeDateRange, customStartDate, customEndDate]);
+  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts, amazonRevenue, incomeDateRange, customStartDate, customEndDate]);
 
   // Revenue over time (last 6 months) - includes Amazon payouts and recurring income
   const revenueData = useMemo(() => {
@@ -384,7 +344,7 @@ export default function Analytics() {
       }
     });
 
-    // Amazon payouts filtered by payout date (confirmed only)
+    // Amazon payouts filtered by payout date (confirmed only, NET after fees)
     amazonPayouts.forEach(payout => {
       const payoutDate = new Date(payout.payout_date);
       if (payout.status === 'confirmed' && payoutDate >= start && payoutDate <= end) {
@@ -858,13 +818,13 @@ export default function Analytics() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Amazon Revenue</CardTitle>
+                <CardTitle className="text-sm font-medium">Amazon Gross Revenue</CardTitle>
                 <PieChartIcon className="h-4 w-4 text-orange-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">${metrics.amazonRevenue.toLocaleString()}</div>
+                <div className="text-2xl font-bold">${amazonRevenue.toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground">
-                  From {amazonPayouts.length} payouts
+                  Last 30 days (before fees)
                 </p>
               </CardContent>
             </Card>

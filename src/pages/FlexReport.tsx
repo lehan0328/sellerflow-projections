@@ -12,6 +12,7 @@ import { useTransactions } from "@/hooks/useTransactions";
 import { useExcludeToday } from "@/contexts/ExcludeTodayContext";
 import { useReserveAmount } from "@/hooks/useReserveAmount";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
+import { useAmazonRevenue } from "@/hooks/useAmazonRevenue";
 import { addDays, isWithinInterval, startOfDay } from "date-fns";
 import aurenLogo from "@/assets/auren-full-logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -98,6 +99,13 @@ const FlexReport = () => {
     transactions
   } = useTransactions();
   const { amazonPayouts } = useAmazonPayouts();
+  
+  // Use unified Amazon revenue hook for consistent metrics
+  const { 
+    currentMonthNetPayouts: amazonRevenueThisMonth,
+    allTimeNetPayouts: totalPayouts,
+    payoutGrowthRate
+  } = useAmazonRevenue();
 
   // Calculate metrics
   const today = startOfDay(new Date());
@@ -116,42 +124,14 @@ const FlexReport = () => {
   // Total vendor count in system
   const totalVendorCount = vendors.length;
 
-  // Amazon revenue (this calendar month) - confirmed payouts only
-  const startOfMonth = startOfDay(new Date(today.getFullYear(), today.getMonth(), 1));
-  const endOfMonth = startOfDay(new Date(today.getFullYear(), today.getMonth() + 1, 0));
-  const amazonRevenueThisMonth = amazonPayouts.filter(payout => {
-    const payoutDate = new Date(payout.payout_date);
-    return payout.status === 'confirmed' && isWithinInterval(payoutDate, { start: startOfMonth, end: endOfMonth });
-  }).reduce((sum, payout) => sum + Number(payout.total_amount), 0) || 0;
-
-  // Total Amazon payouts (confirmed only)
+  // For UI display purposes, we still need these from amazonPayouts hook
   const confirmedPayouts = amazonPayouts.filter(p => p.status === 'confirmed') || [];
-  const totalPayouts = confirmedPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
-  
-  // Find earliest payout date
   const earliestPayoutDate = confirmedPayouts.length > 0
     ? confirmedPayouts.reduce((earliest, payout) => {
         const payoutDate = new Date(payout.payout_date);
         return payoutDate < earliest ? payoutDate : earliest;
       }, new Date(confirmedPayouts[0].payout_date))
     : null;
-
-  // Calculate Amazon payout growth rate (1 year comparison)
-  const oneYearAgo = addDays(today, -365);
-  const sixMonthsAgo = addDays(today, -182);
-  
-  const recentPayouts = amazonPayouts.filter(p => 
-    p.status === 'confirmed' && 
-    new Date(p.payout_date) >= sixMonthsAgo
-  ).reduce((sum, p) => sum + Number(p.total_amount || 0), 0) || 0;
-  
-  const olderPayouts = amazonPayouts.filter(p => 
-    p.status === 'confirmed' && 
-    new Date(p.payout_date) >= oneYearAgo && 
-    new Date(p.payout_date) < sixMonthsAgo
-  ).reduce((sum, p) => sum + Number(p.total_amount || 0), 0) || 0;
-  
-  const payoutGrowthRate = olderPayouts > 0 ? ((recentPayouts - olderPayouts) / olderPayouts) * 100 : 0;
 
   // Received income (last 30 days)
   const last30DaysStart = addDays(today, -30);
