@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import pdf from "npm:pdf-parse@1.1.1";
+// @deno-types="https://esm.sh/v135/pdf-parse@1.1.1/index.d.ts"
+import pdf from "https://esm.sh/pdf-parse@1.1.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -215,7 +216,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             success: false,
-            error: "Rate limit exceeded. Please try again later." 
+            error: "Rate limit exceeded. Please try again in a few moments." 
           }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
@@ -224,7 +225,7 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             success: false,
-            error: "Payment required. Please add credits to your workspace." 
+            error: "Your workspace is out of AI credits. Please add more credits in Settings → Workspace → Usage to continue using AI document extraction." 
           }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
