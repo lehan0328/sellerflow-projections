@@ -240,6 +240,14 @@ export default function AmazonForecast() {
     
     const growthRate = olderTotal > 0 ? ((recentTotal - olderTotal) / olderTotal) * 100 : 0;
 
+    // Find earliest payout date
+    const earliestPayoutDate = confirmedPayouts.length > 0 
+      ? confirmedPayouts.reduce((earliest, p) => {
+          const payoutDate = new Date(p.payout_date);
+          return payoutDate < earliest ? payoutDate : earliest;
+        }, new Date(confirmedPayouts[0].payout_date))
+      : null;
+
     return {
       totalPayouts,
       avgPayout,
@@ -247,7 +255,8 @@ export default function AmazonForecast() {
       lastPayout,
       growthRate,
       payoutCount: confirmedPayouts.length,
-      comparisonPeriod
+      comparisonPeriod,
+      earliestPayoutDate
     };
   }, [amazonPayouts, growthTimeframe, avgPayoutPeriod]);
 
@@ -372,7 +381,12 @@ export default function AmazonForecast() {
                 <DollarSign className="h-4 w-4 text-green-600" />
               </div>
               <div className="text-2xl font-bold">${metrics.totalPayouts.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">{metrics.payoutCount} payouts tracked</p>
+              <p className="text-xs text-muted-foreground">
+                {metrics.payoutCount} payouts tracked
+                {metrics.earliestPayoutDate && (
+                  <> • Starting {format(metrics.earliestPayoutDate, 'MMM d, yyyy')}</>
+                )}
+              </p>
             </div>
 
             <div className="bg-background rounded-lg border p-4">
