@@ -271,14 +271,12 @@ export default function Analytics() {
     const totalCreditUsed = creditCards.reduce((sum, c) => sum + (c.balance || 0), 0);
     const creditUtilization = totalCreditLimit > 0 ? (totalCreditUsed / totalCreditLimit) * 100 : 0;
 
-    // Amazon payouts (actual paid out amount) from last 30 days
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // Amazon payouts filtered by income date range
+    const { start: incomeStart, end: incomeEnd } = getDateRange(incomeDateRange);
     const amazonRevenue = amazonPayouts
       .filter(p => {
         const payoutDate = new Date(p.payout_date);
-        return payoutDate >= thirtyDaysAgo && 
-               (p.status === 'confirmed' || p.status === 'estimated');
+        return payoutDate >= incomeStart && payoutDate <= incomeEnd;
       })
       .reduce((sum, p) => sum + (p.total_amount || 0), 0);
 
@@ -302,7 +300,7 @@ export default function Analytics() {
       totalExpenses,
       netCashFlow
     };
-  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts, amazonTransactions]);
+  }, [bankTransactions, dbTransactions, incomeItems, vendors, creditCards, amazonPayouts, accounts, amazonTransactions, incomeDateRange, customStartDate, customEndDate]);
 
   // Revenue over time (last 6 months) - includes Amazon payouts and recurring income
   const revenueData = useMemo(() => {
@@ -647,7 +645,14 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">${metrics.amazonRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Last 30 days actual payouts</p>
+            <p className="text-xs text-muted-foreground">
+              {incomeDateRange === 'this-month' ? 'This month' : 
+               incomeDateRange === 'last-month' ? 'Last month' :
+               incomeDateRange === 'last-2-months' ? 'Last 2 months' :
+               incomeDateRange === 'last-3-months' ? 'Last 3 months' :
+               incomeDateRange === 'last-6-months' ? 'Last 6 months' :
+               incomeDateRange === 'ytd' ? 'Year to date' : 'Selected period'}
+            </p>
           </CardContent>
         </Card>
 
