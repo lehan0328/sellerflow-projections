@@ -216,6 +216,18 @@ const FlexReport = () => {
         }
       });
     
+    // Add Amazon forecasted payouts
+    amazonPayouts
+      .filter(payout => {
+        const payoutDate = new Date(payout.payout_date);
+        return (payout.status === 'forecasted' || payout.status === 'estimated') && 
+               isWithinInterval(payoutDate, { start: today, end: next90Days });
+      })
+      .forEach(payout => {
+        const date = new Date(payout.payout_date);
+        events.push({ date, amount: Number(payout.total_amount) });
+      });
+    
     // Add expense events (purchase orders)
     transactions
       .filter(tx => tx.type === 'purchase_order' && tx.status === 'pending' && tx.dueDate)
