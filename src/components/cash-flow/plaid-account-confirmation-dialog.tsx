@@ -16,6 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Building2, CreditCard, AlertCircle, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -61,7 +66,6 @@ export function PlaidAccountConfirmationDialog({
   // Initialize with empty selection
   const [selectedAccountIds, setSelectedAccountIds] = useState<Set<string>>(new Set());
   const [priorities, setPriorities] = useState<Record<string, number>>({});
-  const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
   const [isAdding, setIsAdding] = useState(false);
 
   // Auto-select all accounts when dialog opens
@@ -109,16 +113,6 @@ export function PlaidAccountConfirmationDialog({
     const currentPriority = priorities[uniqueId] || 3;
     const nextPriority = currentPriority >= 5 ? 1 : currentPriority + 1;
     setPriorities({ ...priorities, [uniqueId]: nextPriority });
-  };
-
-  const togglePriorityDropdown = (uniqueId: string) => {
-    const newExpanded = new Set(expandedAccounts);
-    if (newExpanded.has(uniqueId)) {
-      newExpanded.delete(uniqueId);
-    } else {
-      newExpanded.add(uniqueId);
-    }
-    setExpandedAccounts(newExpanded);
   };
 
   const handleConfirm = async () => {
@@ -291,113 +285,81 @@ export function PlaidAccountConfirmationDialog({
               </h3>
               <div className="space-y-2 border rounded-lg p-2">
                 {creditCardAccounts.map((account) => {
-                  const isExpanded = expandedAccounts.has(account.uniqueId);
                   const isSelected = selectedAccountIds.has(account.uniqueId);
                   const priority = priorities[account.uniqueId] || 3;
                   
                   return (
                     <div
                       key={account.uniqueId}
-                      className="border rounded-md bg-card overflow-hidden"
+                      className="flex items-center space-x-3 p-3 rounded-md border bg-card hover:bg-muted/50 transition-colors"
                     >
-                      <div className="flex items-center space-x-3 p-3 hover:bg-muted/50 transition-colors">
-                        <Checkbox
-                          id={`credit-checkbox-${account.uniqueId}`}
-                          checked={isSelected}
-                          onCheckedChange={() => toggleAccount(account.uniqueId)}
-                        />
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{account.name}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {account.balances?.current != null || account.balances?.available != null || account.balances?.limit != null ? (
-                              <span className="flex flex-wrap gap-2">
-                                {account.balances?.current != null && (
-                                  <span>
-                                    Balance: <span className="font-medium text-foreground">${account.balances.current.toFixed(2)}</span>
-                                  </span>
-                                )}
-                                {account.balances?.available != null && (
-                                  <span>
-                                    • Available: <span className="font-medium text-green-600 dark:text-green-400">${account.balances.available.toFixed(2)}</span>
-                                  </span>
-                                )}
-                                {account.balances?.limit != null && (
-                                  <span>
-                                    • Limit: <span className="font-medium text-foreground">${account.balances.limit.toFixed(2)}</span>
-                                  </span>
-                                )}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground/70">Balance details will be synced after connection</span>
-                            )}
-                          </p>
-                        </div>
-                        {isSelected && (
-                          <Badge 
-                            variant="outline"
-                            className="cursor-pointer hover:bg-primary/10 hover:border-primary transition-all flex items-center gap-1.5 px-3 py-1 select-none"
-                            onClick={() => togglePriorityDropdown(account.uniqueId)}
-                          >
-                            {priority !== 3 ? (
-                              <>Priority: {priority} {isExpanded ? '▼' : '▶'}</>
-                            ) : (
-                              <>Set Priority {isExpanded ? '▼' : '▶'}</>
-                            )}
-                          </Badge>
-                        )}
+                      <Checkbox
+                        id={`credit-checkbox-${account.uniqueId}`}
+                        checked={isSelected}
+                        onCheckedChange={() => toggleAccount(account.uniqueId)}
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{account.name}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {account.balances?.current != null || account.balances?.available != null || account.balances?.limit != null ? (
+                            <span className="flex flex-wrap gap-2">
+                              {account.balances?.current != null && (
+                                <span>
+                                  Balance: <span className="font-medium text-foreground">${account.balances.current.toFixed(2)}</span>
+                                </span>
+                              )}
+                              {account.balances?.available != null && (
+                                <span>
+                                  • Available: <span className="font-medium text-green-600 dark:text-green-400">${account.balances.available.toFixed(2)}</span>
+                                </span>
+                              )}
+                              {account.balances?.limit != null && (
+                                <span>
+                                  • Limit: <span className="font-medium text-foreground">${account.balances.limit.toFixed(2)}</span>
+                                </span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground/70">Balance details will be synced after connection</span>
+                          )}
+                        </p>
                       </div>
-                      
-                      {isSelected && isExpanded && (
-                        <div className="p-4 pt-2 bg-muted/30 border-t">
-                          <Label htmlFor={`priority-${account.uniqueId}`} className="text-xs text-muted-foreground mb-2 block">
-                            Payment Priority
-                          </Label>
-                          <Select
-                            value={String(priority)}
-                            onValueChange={(value) => 
-                              setPriorities({ ...priorities, [account.uniqueId]: parseInt(value) })
-                            }
-                          >
-                            <SelectTrigger id={`priority-${account.uniqueId}`} className="h-9">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="1">
-                                <div className="flex flex-col items-start">
-                                  <span className="font-semibold text-xs">1 - Highest</span>
-                                  <span className="text-xs text-muted-foreground">Pay first</span>
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="2">
-                                <div className="flex flex-col items-start">
-                                  <span className="font-semibold text-xs">2 - High</span>
-                                  <span className="text-xs text-muted-foreground">Pay second</span>
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="3">
-                                <div className="flex flex-col items-start">
-                                  <span className="font-semibold text-xs">3 - Normal</span>
-                                  <span className="text-xs text-muted-foreground">Standard order</span>
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="4">
-                                <div className="flex flex-col items-start">
-                                  <span className="font-semibold text-xs">4 - Low</span>
-                                  <span className="text-xs text-muted-foreground">Pay later</span>
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="5">
-                                <div className="flex flex-col items-start">
-                                  <span className="font-semibold text-xs">5 - Lowest</span>
-                                  <span className="text-xs text-muted-foreground">Pay last</span>
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            Set based on favorable terms or cash back rewards
-                          </p>
-                        </div>
+                      {isSelected && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Badge 
+                              variant="outline"
+                              className="cursor-pointer hover:bg-primary/10 hover:border-primary transition-all flex items-center gap-1.5 px-3 py-1 select-none"
+                            >
+                              {priority !== 3 ? (
+                                <>Priority: {priority} ▼</>
+                              ) : (
+                                <>Set Priority ▼</>
+                              )}
+                            </Badge>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-64 p-2" align="end">
+                            <div className="space-y-1">
+                              {[1, 2, 3, 4, 5].map((p) => (
+                                <button
+                                  key={p}
+                                  onClick={() => setPriorities({ ...priorities, [account.uniqueId]: p })}
+                                  className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                                    priority === p 
+                                      ? 'bg-primary text-primary-foreground' 
+                                      : 'hover:bg-muted'
+                                  }`}
+                                >
+                                  <div className="font-semibold">{p} - {getPriorityLabel(p).split(' - ')[0]}</div>
+                                  <div className="text-xs opacity-80">{getPriorityLabel(p).split(' - ')[1]}</div>
+                                </button>
+                              ))}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-2 px-1">
+                              Set based on favorable terms or cash back rewards
+                            </p>
+                          </PopoverContent>
+                        </Popover>
                       )}
                     </div>
                   );
