@@ -214,7 +214,7 @@ export const RecurringExpensesOverview = () => {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => navigate('/settings?section=recurring-expenses')}
+                onClick={() => navigate('/dashboard?view=settings&section=recurring-expenses')}
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Add New

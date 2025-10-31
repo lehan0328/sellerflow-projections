@@ -356,7 +356,7 @@ const BankTransactions = () => {
             ) : allAccounts.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">No accounts connected yet.</p>
-                <Button onClick={() => navigate('/settings')}>
+                <Button onClick={() => navigate('/dashboard?view=settings&section=bank-accounts')}>
                   Connect Account
                 </Button>
               </div>

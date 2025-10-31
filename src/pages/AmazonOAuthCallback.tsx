@@ -93,9 +93,9 @@ const AmazonOAuthCallback = () => {
             description: "Your Amazon seller account has been connected. Syncing data now...",
           });
 
-          // Redirect to settings Amazon section immediately
+          // Redirect to dashboard settings Amazon section immediately
           setTimeout(() => {
-            navigate('/settings?tab=integrations&section=amazon&syncing=true&new_account=true');
+            navigate('/dashboard?view=settings&section=amazon&syncing=true&new_account=true');
           }, 1500);
         }
 
@@ -125,9 +125,9 @@ const AmazonOAuthCallback = () => {
           });
         }
 
-        // Redirect to settings after 3 seconds
+        // Redirect to dashboard settings after 3 seconds
         setTimeout(() => {
-          navigate('/settings');
+          navigate('/dashboard?view=settings&section=amazon');
         }, 3000);
       }
     };

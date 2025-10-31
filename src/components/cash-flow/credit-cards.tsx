@@ -255,7 +255,7 @@ export function CreditCards() {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={() => navigate('/settings', { state: { activeSection: 'credit-cards' } })}
+              onClick={() => navigate('/dashboard?view=settings&section=credit-cards')}
               className="ml-4"
             >
               <Settings className="h-4 w-4 mr-2" />
@@ -294,7 +294,7 @@ export function CreditCards() {
           <div className="text-center py-8">
             <CreditCard className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-muted-foreground mb-4">No credit cards added yet</p>
-            <Button onClick={() => navigate('/settings', { state: { activeSection: 'credit-cards' } })}>
+            <Button onClick={() => navigate('/dashboard?view=settings&section=credit-cards')}>
               <Plus className="h-4 w-4 mr-2" />
               Connect Your First Card
             </Button>

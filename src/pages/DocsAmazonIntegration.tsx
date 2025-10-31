@@ -246,7 +246,7 @@ const DocsAmazonIntegration = () => {
                       <p className="text-muted-foreground">
                         In your Auren settings, add your Amazon account using the credentials above.
                       </p>
-                      <Button className="bg-gradient-primary" onClick={() => navigate('/settings')}>
+                      <Button className="bg-gradient-primary" onClick={() => navigate('/dashboard?view=settings&section=amazon')}>
                         <Settings className="h-4 w-4 mr-2" />
                         Go to Amazon Settings
                       </Button>
@@ -470,7 +470,7 @@ const DocsAmazonIntegration = () => {
                 The integration takes less than 10 minutes to complete.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button className="bg-gradient-primary" onClick={() => navigate('/settings')}>
+                <Button className="bg-gradient-primary" onClick={() => navigate('/dashboard?view=settings&section=amazon')}>
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   Connect Amazon Now
                 </Button>

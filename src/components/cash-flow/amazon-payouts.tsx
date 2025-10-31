@@ -409,7 +409,7 @@ export function AmazonPayouts() {
               View Settlements ({settledPayoutsCount})
             </Button>
             
-            <Button variant="outline" size="sm" onClick={() => navigate('/settings?section=amazon')}>
+            <Button variant="outline" size="sm" onClick={() => navigate('/dashboard?view=settings&section=amazon')}>
               <Settings className="h-4 w-4 mr-2" />
               Manage
             </Button>
@@ -795,7 +795,7 @@ export function AmazonPayouts() {
               <p className="text-muted-foreground mb-4">
                 {amazonAccounts.length === 0 ? "Connect your Amazon seller account to see payouts" : "Sync your Amazon accounts to load payout data"}
               </p>
-              <Button onClick={() => amazonAccounts.length === 0 ? setShowConnectDialog(true) : navigate('/settings')}>
+              <Button onClick={() => amazonAccounts.length === 0 ? setShowConnectDialog(true) : navigate('/dashboard?view=settings&section=amazon')}>
                 {amazonAccounts.length === 0 ? <Plus className="h-4 w-4 mr-2" /> : <Settings className="h-4 w-4 mr-2" />}
                 {amazonAccounts.length === 0 ? "Connect Amazon Account" : "Manage Amazon Settings"}
               </Button>
@@ -962,7 +962,7 @@ export function AmazonPayouts() {
           });
         })()}
         {amazonPayouts.length > 0 && <div className="pt-2">
-            <Button variant="outline" className="w-full" onClick={() => navigate('/settings')}>
+            <Button variant="outline" className="w-full" onClick={() => navigate('/dashboard?view=settings&section=amazon')}>
               View Amazon Settings & Full Schedule
             </Button>
           </div>}

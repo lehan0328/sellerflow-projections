@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { addDays, isToday, isBefore, startOfDay, format } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { RefreshCw, Building2, CreditCard as CreditCardIcon, TrendingUp, TrendingDown, Calendar, CheckCircle, User, Database, Trash2, AlertTriangle, Shield, Users, Palette, Sun, Moon, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -95,6 +95,7 @@ interface CashFlowEvent {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeSection, setActiveSection] = useState("overview");
   const [settingsSection, setSettingsSection] = useState("profile");
   const { user } = useAuth();
@@ -103,6 +104,20 @@ const Dashboard = () => {
   const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
   const [clearDataConfirmation, setClearDataConfirmation] = useState(false);
   const { theme, setTheme } = useTheme();
+  
+  // Handle URL params for settings navigation
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const view = params.get('view');
+    const section = params.get('section');
+    
+    if (view === 'settings') {
+      setActiveSection('settings');
+      if (section) {
+        setSettingsSection(section);
+      }
+    }
+  }, [location.search]);
   
   // Fetch user profile
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -2588,7 +2603,7 @@ const Dashboard = () => {
             ) : accounts.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">No bank accounts connected yet.</p>
-                <button onClick={() => navigate('/settings')} className="btn btn-primary">
+                <button onClick={() => navigate('/dashboard?view=settings&section=bank-accounts')} className="btn btn-primary">
                   Connect Bank Account
                 </button>
               </div>

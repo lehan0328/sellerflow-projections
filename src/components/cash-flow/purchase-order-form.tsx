@@ -446,8 +446,8 @@ export const PurchaseOrderForm = ({
   };
   const handleGoToVendorManagement = () => {
     onOpenChange(false);
-    // Navigate to Settings page where vendor management is located
-    navigate('/settings');
+    // Navigate to Dashboard settings where vendor management is located
+    navigate('/dashboard?view=settings&section=vendors');
   };
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

@@ -124,7 +124,7 @@ export function UserMenu() {
           <History className="mr-2 h-4 w-4" />
           <span>Archived Transaction</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate('/settings?section=feature-request')}>
+        <DropdownMenuItem onClick={() => navigate('/dashboard?view=settings&section=feature-request')}>
           <Lightbulb className="mr-2 h-4 w-4" />
           <span>Feature Request</span>
         </DropdownMenuItem>

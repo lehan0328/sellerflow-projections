@@ -29,7 +29,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature = "connections", curr
 
   const handlePurchaseAddons = () => {
     onOpenChange(false);
-    navigate('/settings?tab=addons');
+    navigate('/dashboard?view=settings&section=addons');
   };
 
   const currentPlan = subscription.plan || 'starter';
