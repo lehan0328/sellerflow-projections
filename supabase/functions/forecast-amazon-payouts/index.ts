@@ -748,14 +748,17 @@ serve(async (req) => {
               dayMultiplier = 1.05;
             }
             
-            // Add significant random variation (80-120% of baseline)
-            const randomVariation = 0.80 + (Math.random() * 0.40);
+            // Use deterministic date-based variation (±8%) instead of random for consistency
+            const dateHash = (currentDate.getFullYear() * 10000 + (currentDate.getMonth() + 1) * 100 + currentDate.getDate()) % 100;
+            const deterministicVariation = 0.92 + (dateHash / 100 * 0.16); // 0.92 to 1.08 (±8%)
             
-            // For first 14 days: incorporate recent sales trend
+            // For first 14 days: incorporate recent sales trend with CAPPED impact
             if (dayCount <= 14 && last14DaysSales.length > 0) {
               const avgRecentSales = last14DaysSales.reduce((a, b) => a + b, 0) / last14DaysSales.length;
-              const trendAdjustment = 1 + (recentSalesTrend / avgRecentSales) * dayCount * 0.1;
-              basePrediction = dailyBaseline * dayMultiplier * randomVariation * Math.max(0.5, Math.min(1.5, trendAdjustment));
+              const trendPercent = recentSalesTrend / avgRecentSales;
+              // Cap trend impact to ±5% (much more conservative than ±50%)
+              const trendAdjustment = 1 + Math.max(-0.05, Math.min(0.05, trendPercent * dayCount * 0.05));
+              basePrediction = dailyBaseline * dayMultiplier * deterministicVariation * trendAdjustment;
               calculationMethod = 'daily_with_trend';
               
               if (dayCount === 1) {
@@ -764,13 +767,13 @@ serve(async (req) => {
                   horizonType,
                   dayOfWeek,
                   dayMultiplier,
-                  randomVariation: randomVariation.toFixed(3),
+                  deterministicVariation: deterministicVariation.toFixed(3),
                   trendAdjustment: trendAdjustment.toFixed(3)
                 });
               }
             } else {
-              // Days 15-90: use baseline with day-of-week and random variation
-              basePrediction = dailyBaseline * dayMultiplier * randomVariation;
+              // Days 15-90: use baseline with day-of-week and deterministic variation only
+              basePrediction = dailyBaseline * dayMultiplier * deterministicVariation;
               calculationMethod = 'daily_pattern';
             }
             
