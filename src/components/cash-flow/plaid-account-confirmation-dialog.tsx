@@ -315,11 +315,15 @@ export function PlaidAccountConfirmationDialog({
                         </div>
                         {isSelected && (
                           <Badge 
-                            variant={priorities[account.uniqueId] ? "secondary" : "outline"}
-                            className="cursor-pointer hover:bg-secondary/80 transition-colors"
+                            variant="outline"
+                            className="cursor-pointer hover:bg-primary/10 hover:border-primary transition-all flex items-center gap-1.5 px-3 py-1"
                             onClick={() => toggleExpanded(account.uniqueId)}
                           >
-                            Priority: {priorities[account.uniqueId] || 3} {isExpanded ? '▼' : '▶'}
+                            {priorities[account.uniqueId] && priorities[account.uniqueId] !== 3 ? (
+                              <>Priority: {priorities[account.uniqueId]} {isExpanded ? '▼' : '▶'}</>
+                            ) : (
+                              <>Set Priority {isExpanded ? '▼' : '▶'}</>
+                            )}
                           </Badge>
                         )}
                       </div>
