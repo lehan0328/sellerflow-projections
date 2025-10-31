@@ -9,24 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { useAmazonAccounts } from "@/hooks/useAmazonAccounts";
 import { useAmazonPayouts } from "@/hooks/useAmazonPayouts";
 import { useSubscription } from "@/hooks/useSubscription";
-import { ShoppingCart, Plus, Trash2, RefreshCw, ExternalLink, Settings, DollarSign, Mail } from "lucide-react";
+import { ShoppingCart, Plus, Trash2, RefreshCw, ExternalLink, DollarSign, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-
-interface AmazonAccountFormData {
-  seller_id: string;
-  marketplace_id: string;
-  marketplace_name: string;
-  account_name: string;
-  refresh_token: string;
-  client_id: string;
-  client_secret: string;
-  payout_frequency: 'daily' | 'bi-weekly';
-}
 
 // Region-specific Seller Central consent URLs
 const SELLER_CENTRAL_CONSENT_URLS: Record<string, string> = {
@@ -60,7 +48,6 @@ export function AmazonManagement() {
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
   const [syncProgress, setSyncProgress] = useState(0);
   const [selectedMarketplace, setSelectedMarketplace] = useState('ATVPDKIKX0DER'); // Default to US
-  const [manualFormOpen, setManualFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<string | null>(null);
   const [showNotificationOptIn, setShowNotificationOptIn] = useState(false);
@@ -69,16 +56,6 @@ export function AmazonManagement() {
   const [lastConnectionTime, setLastConnectionTime] = useState<Date | null>(null);
   const [canConnect, setCanConnect] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState<string>("");
-  const [manualFormData, setManualFormData] = useState<AmazonAccountFormData>({
-    seller_id: '',
-    marketplace_id: 'ATVPDKIKX0DER',
-    marketplace_name: 'United States',
-    account_name: '',
-    refresh_token: '',
-    client_id: '',
-    client_secret: '',
-    payout_frequency: 'bi-weekly',
-  });
 
   // Check rate limit on mount
   useEffect(() => {
@@ -363,45 +340,6 @@ export function AmazonManagement() {
     }
   };
 
-  const handleManualAdd = async () => {
-    try {
-      // Validate required fields
-      if (!manualFormData.seller_id || !manualFormData.refresh_token || !manualFormData.account_name) {
-        toast.error('Please fill in all required fields');
-        return;
-      }
-
-      // Get the selected marketplace details
-      const marketplace = marketplaces.find(m => m.id === manualFormData.marketplace_id);
-      if (!marketplace) {
-        toast.error('Invalid marketplace selected');
-        return;
-      }
-
-      await addAmazonAccount({
-        ...manualFormData,
-        marketplace_name: marketplace.name,
-      });
-
-      toast.success('Amazon account added successfully');
-      setManualFormOpen(false);
-      
-      // Reset form
-      setManualFormData({
-        seller_id: '',
-        marketplace_id: 'ATVPDKIKX0DER',
-        marketplace_name: 'United States',
-        account_name: '',
-        refresh_token: '',
-        client_id: '',
-        client_secret: '',
-        payout_frequency: 'bi-weekly',
-      });
-    } catch (error) {
-      console.error('Error adding manual Amazon account:', error);
-      toast.error('Failed to add Amazon account');
-    }
-  };
 
   if (isLoading) {
     return (
@@ -547,128 +485,6 @@ export function AmazonManagement() {
                   <Button onClick={handleConnectAmazon} className="w-full" size="lg">
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     Continue to Amazon
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-            
-            <Dialog open={manualFormOpen} onOpenChange={setManualFormOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" disabled={!canConnect}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Manual Add (Test)
-                  {!canConnect && ` (${timeRemaining})`}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Manually Add Amazon Account (Testing)</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="bg-yellow-500/10 border border-yellow-500/30 p-3 rounded-lg">
-                    <p className="text-xs text-muted-foreground">
-                      This form is for testing only. Use this to manually add Amazon credentials without OAuth flow.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="manual-account-name">Account Name *</Label>
-                    <Input
-                      id="manual-account-name"
-                      placeholder="e.g., My US Store"
-                      value={manualFormData.account_name}
-                      onChange={(e) => setManualFormData({ ...manualFormData, account_name: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="manual-marketplace">Marketplace *</Label>
-                    <Select 
-                      value={manualFormData.marketplace_id} 
-                      onValueChange={(value) => {
-                        const marketplace = marketplaces.find(m => m.id === value);
-                        setManualFormData({ 
-                          ...manualFormData, 
-                          marketplace_id: value,
-                          marketplace_name: marketplace?.name || ''
-                        });
-                      }}
-                    >
-                      <SelectTrigger id="manual-marketplace">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {marketplaces.map((marketplace) => (
-                          <SelectItem key={marketplace.id} value={marketplace.id}>
-                            {marketplace.name} ({marketplace.code})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="manual-seller-id">Seller ID *</Label>
-                    <Input
-                      id="manual-seller-id"
-                      placeholder="e.g., A1BCDEFGHIJK2"
-                      value={manualFormData.seller_id}
-                      onChange={(e) => setManualFormData({ ...manualFormData, seller_id: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="manual-refresh-token">Refresh Token *</Label>
-                    <Textarea
-                      id="manual-refresh-token"
-                      placeholder="Atzr|..."
-                      value={manualFormData.refresh_token}
-                      onChange={(e) => setManualFormData({ ...manualFormData, refresh_token: e.target.value })}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="manual-client-id">Client ID (Optional)</Label>
-                    <Input
-                      id="manual-client-id"
-                      placeholder="amzn1.application-oa2-client..."
-                      value={manualFormData.client_id}
-                      onChange={(e) => setManualFormData({ ...manualFormData, client_id: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="manual-client-secret">Client Secret (Optional)</Label>
-                    <Input
-                      id="manual-client-secret"
-                      type="password"
-                      placeholder="Enter client secret"
-                      value={manualFormData.client_secret}
-                      onChange={(e) => setManualFormData({ ...manualFormData, client_secret: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="manual-payout-frequency">Payout Frequency</Label>
-                    <Select 
-                      value={manualFormData.payout_frequency} 
-                      onValueChange={(value: 'daily' | 'bi-weekly') => 
-                        setManualFormData({ ...manualFormData, payout_frequency: value })
-                      }
-                    >
-                      <SelectTrigger id="manual-payout-frequency">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="bi-weekly">Bi-Weekly</SelectItem>
-                        <SelectItem value="daily">Daily</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Button onClick={handleManualAdd} className="w-full">
-                    Add Amazon Account
                   </Button>
                 </div>
               </DialogContent>
