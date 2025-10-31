@@ -25,16 +25,44 @@ serve(async (req) => {
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
     if (userError) throw userError;
 
-    // Check if user is the website admin
-    const WEBSITE_ADMIN_EMAIL = 'chuandy914@gmail.com';
-    if (userData.user.email !== WEBSITE_ADMIN_EMAIL) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 403,
+    const { userIds } = await req.json();
+
+    // Get the requesting user's account_id
+    const { data: requestingUserProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('account_id')
+      .eq('user_id', userData.user.id)
+      .single();
+
+    if (!requestingUserProfile?.account_id) {
+      return new Response(JSON.stringify({ error: "User profile not found" }), {
+        status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { userIds } = await req.json();
+    // Check if user is website admin OR if they're requesting emails for their own account's users
+    const WEBSITE_ADMIN_EMAIL = 'chuandy914@gmail.com';
+    const isWebsiteAdmin = userData.user.email === WEBSITE_ADMIN_EMAIL;
+
+    // If not website admin, verify they're only requesting emails for users in their account
+    if (!isWebsiteAdmin) {
+      const { data: requestedProfiles } = await supabaseAdmin
+        .from('profiles')
+        .select('user_id, account_id')
+        .in('user_id', userIds);
+
+      const allBelongToSameAccount = requestedProfiles?.every(
+        p => p.account_id === requestingUserProfile.account_id
+      );
+
+      if (!allBelongToSameAccount) {
+        return new Response(JSON.stringify({ error: "Unauthorized: Can only view team members in your account" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     // Get user emails and last sign-in from auth.users
     const emailMap: Record<string, string> = {};
