@@ -206,6 +206,33 @@ const WeightedForecasts = () => {
         </CardContent>
       </Card>
 
+      {/* Current Settings Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Active Forecast Configuration</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border">
+              <div className="text-sm text-muted-foreground mb-1">Payout Schedule</div>
+              <div className="text-xl font-bold capitalize">{payoutFrequency}</div>
+            </div>
+            <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900">
+              <div className="text-sm text-muted-foreground mb-1">30 Day</div>
+              <div className="text-lg font-bold">{weights.days30PayoutWeight}% / {100 - weights.days30PayoutWeight}%</div>
+            </div>
+            <div className="text-center p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-900">
+              <div className="text-sm text-muted-foreground mb-1">60 Day</div>
+              <div className="text-lg font-bold">{weights.days60PayoutWeight}% / {100 - weights.days60PayoutWeight}%</div>
+            </div>
+            <div className="text-center p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900">
+              <div className="text-sm text-muted-foreground mb-1">90+ Day</div>
+              <div className="text-lg font-bold">{weights.days90PayoutWeight}% / {100 - weights.days90PayoutWeight}%</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Weight Adjustment Card */}
       <Card>
         <CardHeader>
@@ -348,33 +375,6 @@ const WeightedForecasts = () => {
           >
             {isSaving ? 'Saving & Regenerating...' : 'Save Settings & Regenerate Forecasts'}
           </Button>
-        </CardContent>
-      </Card>
-
-      {/* Current Settings Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Active Forecast Configuration</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border">
-              <div className="text-sm text-muted-foreground mb-1">Payout Schedule</div>
-              <div className="text-xl font-bold capitalize">{payoutFrequency}</div>
-            </div>
-            <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-900">
-              <div className="text-sm text-muted-foreground mb-1">30 Day</div>
-              <div className="text-lg font-bold">{weights.days30PayoutWeight}% / {100 - weights.days30PayoutWeight}%</div>
-            </div>
-            <div className="text-center p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-900">
-              <div className="text-sm text-muted-foreground mb-1">60 Day</div>
-              <div className="text-lg font-bold">{weights.days60PayoutWeight}% / {100 - weights.days60PayoutWeight}%</div>
-            </div>
-            <div className="text-center p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900">
-              <div className="text-sm text-muted-foreground mb-1">90+ Day</div>
-              <div className="text-lg font-bold">{weights.days90PayoutWeight}% / {100 - weights.days90PayoutWeight}%</div>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
