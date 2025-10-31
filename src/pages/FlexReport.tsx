@@ -175,12 +175,12 @@ const FlexReport = () => {
     })
   ).reduce((sum, income) => sum + Number(income.amount), 0);
 
-  // Previous month Amazon revenue (for comparison)
+  // Previous month Amazon revenue (for comparison, confirmed only)
   const startOfLastMonth = startOfDay(new Date(today.getFullYear(), today.getMonth() - 1, 1));
   const endOfLastMonth = startOfDay(new Date(today.getFullYear(), today.getMonth(), 0));
   const previousMonthAmazonRevenue = amazonPayouts.filter(payout => {
     const payoutDate = new Date(payout.payout_date);
-    return isWithinInterval(payoutDate, { start: startOfLastMonth, end: endOfLastMonth });
+    return payout.status === 'confirmed' && isWithinInterval(payoutDate, { start: startOfLastMonth, end: endOfLastMonth });
   }).reduce((sum, payout) => sum + Number(payout.total_amount), 0) || 0;
 
   // Calculate percentage changes

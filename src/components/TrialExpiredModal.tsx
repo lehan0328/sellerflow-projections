@@ -81,10 +81,12 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
       let calculatedRevenue = 0;
       
       if (amazonPayouts && amazonPayouts.length > 0) {
-        // Sum total net payouts from last 30 days
-        calculatedRevenue = amazonPayouts.reduce((sum, p) => {
-          return sum + (Number(p.total_amount) || 0);
-        }, 0);
+        // Sum total net payouts from last 30 days (confirmed only)
+        calculatedRevenue = amazonPayouts
+          .filter(p => p.status === 'confirmed')
+          .reduce((sum, p) => {
+            return sum + (Number(p.total_amount) || 0);
+          }, 0);
       }
       
       setCurrentRevenue(Math.max(0, calculatedRevenue));
