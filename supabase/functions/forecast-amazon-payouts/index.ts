@@ -574,58 +574,53 @@ serve(async (req) => {
               }
             }
             
-            // Step 4: Determine account age and apply custom weighting
-            // Use weights from user settings or defaults
-            const accountFirstPayoutDate = new Date(Math.min(...amazonPayouts.map(p => new Date(p.payout_date).getTime())));
-            const accountAgeDays = Math.ceil((new Date().getTime() - accountFirstPayoutDate.getTime()) / (1000 * 60 * 60 * 24));
+            // Step 4: Calculate three separate baselines for different forecast horizons
+            // Blend current month with 90-day average for payout component
+            const blendedPayoutAvg = currentMonthAverage > 0 
+              ? (currentMonthAverage * 0.7 + ninetyDayAverage * 0.3)
+              : ninetyDayAverage;
             
-            let payoutWeight: number;
-            let transactionWeight: number;
+            // Validate transaction data - if transactions are suspiciously low, reduce their weight
+            const thirtyDayPayoutSum = recent30DayPayouts.reduce((sum, p) => sum + Number(p.total_amount), 0);
+            const transactionDataReliability = transactionBasedDaily > 0 && thirtyDayPayoutSum > 0
+              ? Math.min(1, (transactionBasedDaily * 30) / thirtyDayPayoutSum)
+              : 0;
             
-            // Apply custom weights based on account age
-            if (accountAgeDays <= 30) {
-              // 0-30 days: Use custom days30 weight
-              payoutWeight = weights.days30PayoutWeight / 100;
-              transactionWeight = (100 - weights.days30PayoutWeight) / 100;
-              console.log(`[FORECAST] Account age ${accountAgeDays} days - Using 30-day weights: ${(payoutWeight * 100).toFixed(0)}% payout / ${(transactionWeight * 100).toFixed(0)}% transactions`);
-            } else if (accountAgeDays <= 60) {
-              // 30-60 days: Use custom days60 weight
-              payoutWeight = weights.days60PayoutWeight / 100;
-              transactionWeight = (100 - weights.days60PayoutWeight) / 100;
-              console.log(`[FORECAST] Account age ${accountAgeDays} days - Using 60-day weights: ${(payoutWeight * 100).toFixed(0)}% payout / ${(transactionWeight * 100).toFixed(0)}% transactions`);
-            } else {
-              // 60+ days: Use custom days90 weight
-              payoutWeight = weights.days90PayoutWeight / 100;
-              transactionWeight = (100 - weights.days90PayoutWeight) / 100;
-              console.log(`[FORECAST] Account age ${accountAgeDays} days - Using 90+ day weights: ${(payoutWeight * 100).toFixed(0)}% payout / ${(transactionWeight * 100).toFixed(0)}% transactions`);
-            }
-            
-            // Apply weighted blend
-            if (transactionBasedDaily > 0 || currentMonthAverage > 0) {
-              // Blend current month with 90-day average for payout component
-              const blendedPayoutAvg = currentMonthAverage > 0 
-                ? (currentMonthAverage * 0.7 + ninetyDayAverage * 0.3)
-                : ninetyDayAverage;
-              
-              const weightedBaseline = 
-                (blendedPayoutAvg * payoutWeight) + 
-                (transactionBasedDaily * transactionWeight);
-              
-              console.log(`[FORECAST] Weighted baseline calculation:`, {
-                accountAgeDays,
-                payoutWeight: `${(payoutWeight * 100).toFixed(0)}%`,
-                transactionWeight: `${(transactionWeight * 100).toFixed(0)}%`,
-                blendedPayoutBaseline: blendedPayoutAvg.toFixed(2),
-                transactionBaseline: transactionBasedDaily.toFixed(2),
-                weightedResult: weightedBaseline.toFixed(2)
+            if (transactionDataReliability < 0.5 && transactionBasedDaily > 0) {
+              console.log(`[FORECAST] ⚠️ Transaction data appears incomplete:`, {
+                thirtyDayPayoutSum: thirtyDayPayoutSum.toFixed(2),
+                estimatedTransactionSum: (transactionBasedDaily * 30).toFixed(2),
+                reliability: (transactionDataReliability * 100).toFixed(0) + '%',
+                action: 'Reducing transaction weight to prevent inaccurate forecasts'
               });
-              
-              baselineAmount = weightedBaseline;
-            } else {
-              // No transaction or current month data, use 90-day baseline only
-              baselineAmount = ninetyDayAverage;
-              console.log(`[FORECAST] No transaction/current month data, using 100% 90-day baseline: ${baselineAmount.toFixed(2)}`);
             }
+            
+            // Calculate three baselines based on forecast horizon (not account age)
+            const weights30Days = weights.days30PayoutWeight / 100;
+            const weights60Days = weights.days60PayoutWeight / 100;
+            const weights90Days = weights.days90PayoutWeight / 100;
+            
+            // Adjust transaction weight based on data reliability
+            const reliableTransactionDaily = transactionBasedDaily * Math.max(0.1, transactionDataReliability);
+            
+            const baseline30Days = (blendedPayoutAvg * weights30Days) + (reliableTransactionDaily * (1 - weights30Days));
+            const baseline60Days = (blendedPayoutAvg * weights60Days) + (reliableTransactionDaily * (1 - weights60Days));
+            const baseline90Days = (blendedPayoutAvg * weights90Days) + (reliableTransactionDaily * (1 - weights90Days));
+            
+            console.log(`[FORECAST] Forecast horizon baselines calculated:`, {
+              blendedPayoutAvg: blendedPayoutAvg.toFixed(2),
+              transactionBasedDaily: transactionBasedDaily.toFixed(2),
+              reliableTransactionDaily: reliableTransactionDaily.toFixed(2),
+              transactionReliability: (transactionDataReliability * 100).toFixed(0) + '%',
+              baselines: {
+                days30: `${baseline30Days.toFixed(2)} (${(weights30Days * 100).toFixed(0)}% payout / ${((1 - weights30Days) * 100).toFixed(0)}% txn)`,
+                days60: `${baseline60Days.toFixed(2)} (${(weights60Days * 100).toFixed(0)}% payout / ${((1 - weights60Days) * 100).toFixed(0)}% txn)`,
+                days90: `${baseline90Days.toFixed(2)} (${(weights90Days * 100).toFixed(0)}% payout / ${((1 - weights90Days) * 100).toFixed(0)}% txn)`
+              }
+            });
+            
+            // Set initial baseline (will be updated per day in forecast loop)
+            baselineAmount = baseline30Days;
           } else {
             // Insufficient payout history - fall back to all available payouts
             console.log(`[FORECAST] Insufficient 90-day history (${recent90DayPayouts.length} payouts), using all available payouts`);
@@ -792,8 +787,23 @@ serve(async (req) => {
           
           if (currentDate > threeMonthsOut) break;
           
-          // Use baseline amount for calculations
-          let basePrediction = baselineAmount;
+          // Select baseline based on forecast horizon (day number)
+          let dailyBaseline: number;
+          let horizonType: string;
+          
+          if (dayCount <= 30) {
+            dailyBaseline = baseline30Days;
+            horizonType = '30-day';
+          } else if (dayCount <= 60) {
+            dailyBaseline = baseline60Days;
+            horizonType = '60-day';
+          } else {
+            dailyBaseline = baseline90Days;
+            horizonType = '90-day';
+          }
+          
+          // Use selected baseline for calculations
+          let basePrediction = dailyBaseline;
           let calculationMethod = 'baseline';
           
           if (payoutFrequency === 'daily') {
@@ -824,12 +834,13 @@ serve(async (req) => {
             if (dayCount <= 14 && last14DaysSales.length > 0) {
               const avgRecentSales = last14DaysSales.reduce((a, b) => a + b, 0) / last14DaysSales.length;
               const trendAdjustment = 1 + (recentSalesTrend / avgRecentSales) * dayCount * 0.1;
-              basePrediction = baselineAmount * dayMultiplier * randomVariation * Math.max(0.5, Math.min(1.5, trendAdjustment));
+              basePrediction = dailyBaseline * dayMultiplier * randomVariation * Math.max(0.5, Math.min(1.5, trendAdjustment));
               calculationMethod = 'daily_with_trend';
               
               if (dayCount === 1) {
                 console.log(`[FORECAST] ${amazonAccount.account_name} - Daily forecast with trend:`, {
-                  baseline: baselineAmount.toFixed(2),
+                  baseline: dailyBaseline.toFixed(2),
+                  horizonType,
                   dayOfWeek,
                   dayMultiplier,
                   randomVariation: randomVariation.toFixed(3),
@@ -838,13 +849,15 @@ serve(async (req) => {
               }
             } else {
               // Days 15-90: use baseline with day-of-week and random variation
-              basePrediction = baselineAmount * dayMultiplier * randomVariation;
+              basePrediction = dailyBaseline * dayMultiplier * randomVariation;
               calculationMethod = 'daily_pattern';
             }
             
-            if (dayCount === 1 || dayCount === 15 || dayCount === 30) {
+            if (dayCount === 1 || dayCount === 15 || dayCount === 30 || dayCount === 45 || dayCount === 61) {
               console.log(`[FORECAST] ${amazonAccount.account_name} - Day ${dayCount} (${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayOfWeek]}):`, {
                 method: calculationMethod,
+                horizonType,
+                baseline: dailyBaseline.toFixed(2),
                 dayMultiplier: dayMultiplier.toFixed(2),
                 amount: basePrediction.toFixed(2)
               });
@@ -852,11 +865,12 @@ serve(async (req) => {
           } else {
             // Bi-weekly: Add more significant variation between periods (85-115%)
             const periodVariation = 0.85 + (Math.random() * 0.30);
-            basePrediction = baselineAmount * periodVariation;
+            basePrediction = dailyBaseline * periodVariation;
             calculationMethod = 'biweekly_with_variation';
             
             console.log(`[FORECAST] ${amazonAccount.account_name} - Period ${dayCount}:`, {
-              baseline: baselineAmount.toFixed(2),
+              horizonType,
+              baseline: dailyBaseline.toFixed(2),
               variation: periodVariation.toFixed(3),
               predicted: basePrediction.toFixed(2)
             });
@@ -906,7 +920,8 @@ serve(async (req) => {
                 generated_at: new Date().toISOString(),
                 frequency: payoutFrequency,
                 calculation_method: calculationMethod,
-                baseline_amount: baselineAmount,
+                horizon_type: horizonType,
+                baseline_amount: dailyBaseline,
                 demo_multiplier: 1,
                 base_prediction: basePrediction,
                 seasonal_multiplier: seasonalMultiplier,
