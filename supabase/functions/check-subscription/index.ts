@@ -59,21 +59,9 @@ serve(async (req) => {
     if (profile?.plan_override && profile.plan_override !== 'referred_user_discount') {
       // Normalize plan_override to lowercase to handle case sensitivity issues
       const normalizedPlan = profile.plan_override.toLowerCase();
-      logStep("Plan override found", { plan: normalizedPlan, trialEnd: profile?.trial_end, isTrialExpired });
+      logStep("Plan override found - granting access regardless of trial status", { plan: normalizedPlan });
       
-      // If trial is expired, return trial_expired status even with plan override
-      if (isTrialExpired) {
-        return new Response(JSON.stringify({ 
-          subscribed: false,
-          trial_expired: true,
-          trial_end: profile.trial_end,
-          discount_ever_redeemed: !!profile.discount_redeemed_at
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
-      }
-      
+      // Plan overrides (lifetime access, etc.) bypass trial expiration checks
       return new Response(JSON.stringify({
         subscribed: true,
         plan: normalizedPlan,
