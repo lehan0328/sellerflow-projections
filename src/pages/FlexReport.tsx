@@ -116,12 +116,12 @@ const FlexReport = () => {
   // Total vendor count in system
   const totalVendorCount = vendors.length;
 
-  // Amazon revenue (this calendar month)
+  // Amazon revenue (this calendar month) - confirmed payouts only
   const startOfMonth = startOfDay(new Date(today.getFullYear(), today.getMonth(), 1));
   const endOfMonth = startOfDay(new Date(today.getFullYear(), today.getMonth() + 1, 0));
   const amazonRevenueThisMonth = amazonPayouts.filter(payout => {
     const payoutDate = new Date(payout.payout_date);
-    return isWithinInterval(payoutDate, { start: startOfMonth, end: endOfMonth });
+    return payout.status === 'confirmed' && isWithinInterval(payoutDate, { start: startOfMonth, end: endOfMonth });
   }).reduce((sum, payout) => sum + Number(payout.total_amount), 0) || 0;
 
   // Total Amazon payouts (confirmed only)
