@@ -122,10 +122,12 @@ const FlexReport = () => {
   // Total vendor count in system
   const totalVendorCount = vendors.length;
 
-  // Amazon revenue (last 30 days)
-  const amazonRevenue30Days = amazonPayouts?.filter(payout => {
+  // Amazon revenue (this calendar month)
+  const startOfMonth = startOfDay(new Date(today.getFullYear(), today.getMonth(), 1));
+  const endOfMonth = startOfDay(new Date(today.getFullYear(), today.getMonth() + 1, 0));
+  const amazonRevenueThisMonth = amazonPayouts?.filter(payout => {
     const payoutDate = new Date(payout.payout_date);
-    return isWithinInterval(payoutDate, { start: addDays(today, -30), end: today });
+    return isWithinInterval(payoutDate, { start: startOfMonth, end: endOfMonth });
   }).reduce((sum, payout) => sum + Number(payout.total_amount), 0) || 0;
 
   // Total Amazon payouts (confirmed only)
@@ -179,10 +181,12 @@ const FlexReport = () => {
     })
   ).reduce((sum, income) => sum + Number(income.amount), 0);
 
-  // Previous 30 days Amazon revenue
-  const previous30DaysAmazonRevenue = amazonPayouts?.filter(payout => {
+  // Previous month Amazon revenue (for comparison)
+  const startOfLastMonth = startOfDay(new Date(today.getFullYear(), today.getMonth() - 1, 1));
+  const endOfLastMonth = startOfDay(new Date(today.getFullYear(), today.getMonth(), 0));
+  const previousMonthAmazonRevenue = amazonPayouts?.filter(payout => {
     const payoutDate = new Date(payout.payout_date);
-    return isWithinInterval(payoutDate, { start: previous60DaysStart, end: last30DaysStart });
+    return isWithinInterval(payoutDate, { start: startOfLastMonth, end: endOfLastMonth });
   }).reduce((sum, payout) => sum + Number(payout.total_amount), 0) || 0;
 
   // Calculate percentage changes
@@ -198,7 +202,7 @@ const FlexReport = () => {
     upcomingIncome: calculatePercentageChange(receivedIncome, previous30DaysIncome),
     purchaseOrders: 0, // Could calculate if we track creation dates
     vendorCount: 0, // Could calculate if we track vendor creation dates
-    amazonRevenue: calculatePercentageChange(amazonRevenue30Days, previous30DaysAmazonRevenue),
+    amazonRevenue: calculatePercentageChange(amazonRevenueThisMonth, previousMonthAmazonRevenue),
     totalPayouts: 0, // Cumulative value
     payoutGrowthRate: payoutGrowthRate // Already calculated as percentage
   };
@@ -640,9 +644,9 @@ const FlexReport = () => {
                   <div className="p-2 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-md group-hover:scale-110 transition-transform duration-300">
                     <ShoppingCart className="w-4 h-4 text-white" />
                   </div>
-                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Amazon Revenue (30d)</p>
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Amazon Payout This Month</p>
                 </div>
-                <p className={`text-2xl font-black text-amber-700 drop-shadow-sm transition-all duration-300 ${!visibility.amazonRevenue ? 'blur-lg' : ''}`}>{formatCurrency(amazonRevenue30Days)}</p>
+                <p className={`text-2xl font-black text-amber-700 drop-shadow-sm transition-all duration-300 ${!visibility.amazonRevenue ? 'blur-lg' : ''}`}>{formatCurrency(amazonRevenueThisMonth)}</p>
                 {showPercentageChange && (
                   <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 ${percentageChanges.amazonRevenue >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                     <TrendingUp className={`w-2.5 h-2.5 ${percentageChanges.amazonRevenue >= 0 ? '' : 'rotate-180'}`} />
