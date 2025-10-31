@@ -271,8 +271,16 @@ export default function Analytics() {
     const totalCreditUsed = creditCards.reduce((sum, c) => sum + (c.balance || 0), 0);
     const creditUtilization = totalCreditLimit > 0 ? (totalCreditUsed / totalCreditLimit) * 100 : 0;
 
-    // Amazon gross revenue from report data (last 30 days) - now using SQL aggregate
-    const amazonRevenue = amazonTransactions[0]?.amount || 0;
+    // Amazon payouts (actual paid out amount) from last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const amazonRevenue = amazonPayouts
+      .filter(p => {
+        const payoutDate = new Date(p.payout_date);
+        return payoutDate >= thirtyDaysAgo && 
+               (p.status === 'confirmed' || p.status === 'estimated');
+      })
+      .reduce((sum, p) => sum + (p.total_amount || 0), 0);
 
     // Total expenses from vendors + purchase orders
     const vendorExpenses = vendors.reduce((sum, v) => sum + (v.totalOwed || 0), 0);
@@ -639,7 +647,7 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">${metrics.amazonRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Last 30 days from Amazon reports</p>
+            <p className="text-xs text-muted-foreground">Last 30 days actual payouts</p>
           </CardContent>
         </Card>
 
