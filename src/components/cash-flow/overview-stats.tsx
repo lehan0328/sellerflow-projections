@@ -48,11 +48,9 @@ const timeRangeOptions = [
 ];
 
 const amazonTimeRangeOptions = [
-  { value: "today", label: "Today" },
-  { value: "yesterday", label: "Yesterday" },
-  { value: "mtd", label: "Month to Date" },
-  { value: "last30", label: "Last 30 Days" },
-  { value: "lastmonth", label: "Last Month" },
+  { value: "next30", label: "Next 30 Days (Projected)" },
+  { value: "next60", label: "Next 60 Days (Projected)" },
+  { value: "next90", label: "Next 90 Days (Projected)" },
 ];
 
 export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance, onTransactionUpdate, pendingIncomeToday, useAvailableBalance }: OverviewStatsProps & { useAvailableBalance?: boolean }) {
@@ -63,7 +61,7 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
     return localStorage.getItem('upcomingTimeRange') || "7days";
   });
   const [amazonTimeRange, setAmazonTimeRange] = useState(() => {
-    return localStorage.getItem('amazonTimeRange') || "mtd";
+    return localStorage.getItem('amazonTimeRange') || "next30";
   });
   const [showSyncDialog, setShowSyncDialog] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -361,47 +359,39 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const formatDateKey = (k: string) => new Date(`${k}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const isBreach = Boolean(displayNegative || displayBelow);
 
-  // Calculate Amazon revenue based on selected time range
+  // Calculate Amazon projected payouts based on selected time range
   const getAmazonDateRange = () => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
     switch (amazonTimeRange) {
-      case "today":
+      case "next30":
+        const next30End = new Date(today);
+        next30End.setDate(next30End.getDate() + 30);
         return {
           start: today,
-          end: new Date(today.getTime() + 24 * 60 * 60 * 1000)
+          end: next30End
         };
-      case "yesterday":
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
+      case "next60":
+        const next60End = new Date(today);
+        next60End.setDate(next60End.getDate() + 60);
         return {
-          start: yesterday,
-          end: today
+          start: today,
+          end: next60End
         };
-      case "mtd":
+      case "next90":
+        const next90End = new Date(today);
+        next90End.setDate(next90End.getDate() + 90);
         return {
-          start: new Date(now.getFullYear(), now.getMonth(), 1),
-          end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
-        };
-      case "last30":
-        const last30Start = new Date(today);
-        last30Start.setDate(last30Start.getDate() - 30);
-        return {
-          start: last30Start,
-          end: new Date(today.getTime() + 24 * 60 * 60 * 1000)
-        };
-      case "lastmonth":
-        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 1);
-        return {
-          start: lastMonth,
-          end: lastMonthEnd
+          start: today,
+          end: next90End
         };
       default:
+        const defaultEnd = new Date(today);
+        defaultEnd.setDate(defaultEnd.getDate() + 30);
         return {
-          start: new Date(now.getFullYear(), now.getMonth(), 1),
-          end: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
+          start: today,
+          end: defaultEnd
         };
     }
   };
@@ -409,25 +399,17 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   const amazonDateRange = getAmazonDateRange();
   const filteredAmazonRevenue = amazonPayouts
     .filter(payout => {
-      // For daily accounts, COMPLETELY exclude all estimated settlements
-      const accountFrequency = payout.amazon_accounts?.payout_frequency;
-      if (accountFrequency === 'daily' && payout.status === 'estimated') {
-        console.log('[Overview Stats] ❌ EXCLUDING daily account estimated settlement from revenue calculation:', {
-          settlementId: payout.settlement_id,
-          amount: payout.total_amount,
-          status: payout.status
-        });
-        return false; // Exclude ALL estimated settlements for daily accounts
+      // Only include forecasted payouts (not estimated settlements or past confirmed)
+      if (payout.status !== 'forecasted') {
+        return false;
       }
       
-      // For bi-weekly accounts, include all payouts (confirmed and estimated)
-      return true;
-    })
-    .filter(payout => {
       const payoutDate = new Date(payout.payout_date);
+      payoutDate.setHours(0, 0, 0, 0);
+      
       return payoutDate >= amazonDateRange.start && payoutDate < amazonDateRange.end;
     })
-    .reduce((sum, payout) => sum + (payout.orders_total || 0), 0);
+    .reduce((sum, payout) => sum + (payout.total_amount || 0), 0);
 
   // Calculate overdue transactions
   const today = new Date();
