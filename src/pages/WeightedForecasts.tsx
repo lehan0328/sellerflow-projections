@@ -143,6 +143,11 @@ const WeightedForecasts = () => {
         title: 'Settings saved',
         description: 'Your forecast weights have been updated and new forecasts generated with your custom weights.',
       });
+
+      // Refresh the page to show new forecasts
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error('Error saving settings:', error);
       toast({
