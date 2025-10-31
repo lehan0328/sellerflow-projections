@@ -264,23 +264,29 @@ export function PlaidAccountConfirmationDialog({
                         />
                         <div className="flex-1">
                           <p className="font-medium text-sm">{account.name}</p>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {account.balances?.current != null && (
-                              <span className="text-xs text-muted-foreground">
-                                Balance: <span className="font-medium text-foreground">${account.balances.current.toFixed(2)}</span>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {account.balances?.current != null || account.balances?.available != null || account.balances?.limit != null ? (
+                              <span className="flex flex-wrap gap-2">
+                                {account.balances?.current != null && (
+                                  <span>
+                                    Balance: <span className="font-medium text-foreground">${account.balances.current.toFixed(2)}</span>
+                                  </span>
+                                )}
+                                {account.balances?.available != null && (
+                                  <span>
+                                    • Available: <span className="font-medium text-green-600 dark:text-green-400">${account.balances.available.toFixed(2)}</span>
+                                  </span>
+                                )}
+                                {account.balances?.limit != null && (
+                                  <span>
+                                    • Limit: <span className="font-medium text-foreground">${account.balances.limit.toFixed(2)}</span>
+                                  </span>
+                                )}
                               </span>
+                            ) : (
+                              <span className="text-muted-foreground/70">Balance details will be synced after connection</span>
                             )}
-                            {account.balances?.available != null && (
-                              <span className="text-xs text-muted-foreground">
-                                • Available: <span className="font-medium text-green-600 dark:text-green-400">${account.balances.available.toFixed(2)}</span>
-                              </span>
-                            )}
-                            {account.balances?.limit != null && (
-                              <span className="text-xs text-muted-foreground">
-                                • Limit: <span className="font-medium text-foreground">${account.balances.limit.toFixed(2)}</span>
-                              </span>
-                            )}
-                          </div>
+                          </p>
                         </div>
                         {isSelected && (
                           <Badge 
