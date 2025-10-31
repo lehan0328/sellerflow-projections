@@ -197,13 +197,35 @@ export function PlaidAccountConfirmationDialog({
             </div>
           </div>
 
-          {/* Auto-sync Notice */}
-          <div className="flex items-start gap-3 p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
-            <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-blue-900 dark:text-blue-100">
-              <p className="font-medium mb-1">Automatic Transaction Import</p>
-              <p className="text-blue-700 dark:text-blue-300">
-                Transactions will be automatically imported from all selected accounts and appear in your Bank Transactions view. Credit card transactions will also be synced and matched with your expenses.
+          {/* Bank Limitations Notice */}
+          <div className="flex items-start gap-3 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+            <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm">
+              <p className="font-medium mb-2 text-foreground">Banks with Limited Data</p>
+              <ul className="space-y-1.5 text-muted-foreground text-xs">
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-600 font-bold mt-0.5">•</span>
+                  <span><strong className="text-foreground">American Express</strong> - Often missing payment dates and statement info</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-600 font-bold mt-0.5">•</span>
+                  <span><strong className="text-foreground">Capital One</strong> - Missing credit limits and payment dates</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-600 font-bold mt-0.5">•</span>
+                  <span><strong className="text-foreground">Discover</strong> - Limited liabilities data</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-600 font-bold mt-0.5">•</span>
+                  <span><strong className="text-foreground">Bank of America</strong> - Inconsistent liabilities data</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-600 font-bold mt-0.5">•</span>
+                  <span><strong className="text-foreground">Chase</strong> - Better coverage but still sometimes incomplete</span>
+                </li>
+              </ul>
+              <p className="mt-2 text-xs text-muted-foreground italic">
+                You can manually add missing payment dates and statement info after connecting
               </p>
             </div>
           </div>
