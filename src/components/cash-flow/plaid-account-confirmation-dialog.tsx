@@ -338,7 +338,7 @@ export function PlaidAccountConfirmationDialog({
                               )}
                             </Badge>
                           </PopoverTrigger>
-                          <PopoverContent className="w-64 p-2" align="end">
+                          <PopoverContent className="w-64 p-2 z-[100]" align="end">
                             <div className="space-y-1">
                               {[1, 2, 3, 4, 5].map((p) => (
                                 <button
