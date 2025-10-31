@@ -62,7 +62,7 @@ export default function ScenarioPlanner() {
   const { incomeItems } = useIncome();
   const { transactions } = useTransactions();
   const { creditCards } = useCreditCards();
-  const { accounts: bankAccounts } = useBankAccounts();
+  const { accounts: bankAccounts, totalBalance: bankTotalBalance } = useBankAccounts();
   const { recurringExpenses } = useRecurringExpenses();
   const { amazonPayouts } = useAmazonPayouts();
 
@@ -194,10 +194,8 @@ export default function ScenarioPlanner() {
 
   // Calculate baseline metrics based on actual cash and build complete event list
   const allEventsData = useMemo(() => {
-    // Get current total cash from all bank accounts (match dashboard logic)
-    const currentCash = bankAccounts.reduce((sum, account) => {
-      return sum + (account.balance || 0);
-    }, 0);
+    // Use the total balance from the bank accounts hook
+    const currentCash = bankTotalBalance;
     
     console.log('[ScenarioPlanner] Current cash from bank accounts:', currentCash);
 
@@ -292,7 +290,7 @@ export default function ScenarioPlanner() {
     });
 
     return { allEvents: events, baselineCash: currentCash };
-  }, [bankAccounts, transactions, incomeItems, creditCards, recurringExpenses, displayedPayouts]);
+  }, [bankTotalBalance, transactions, incomeItems, creditCards, recurringExpenses, displayedPayouts]);
 
   const allEvents = allEventsData.allEvents;
   const baselineCash = allEventsData.baselineCash;
