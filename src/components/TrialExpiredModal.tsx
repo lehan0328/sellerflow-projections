@@ -330,18 +330,18 @@ export const TrialExpiredModal = ({ open }: { open: boolean }) => {
                 }`}
               >
                 Yearly
-                <span className="ml-2 text-xs text-primary font-semibold">Save 17%</span>
+                <span className="ml-2 text-xs text-primary font-semibold">Free 2 months</span>
               </button>
             </div>
           </div>
 
           {/* Current Revenue Display */}
           <div className="mb-4 p-3 rounded-lg bg-muted/50 border">
-            <div className="text-xs text-muted-foreground mb-1">Your Amazon Revenue (Last 30 Days)</div>
+            <div className="text-xs text-muted-foreground mb-1">Your Amazon Payout (Last 30 Days)</div>
             <div className="text-xl font-bold">
               ${currentRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            <div className="text-xs text-muted-foreground mt-1">Before Amazon fees</div>
+            <div className="text-xs text-muted-foreground mt-1">After Amazon fees</div>
           </div>
 
           {/* Display all three plans */}
