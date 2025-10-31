@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Table,
@@ -468,6 +468,79 @@ export const AdminCustomers = () => {
     setCurrentPage(1);
   };
 
+  const exportToCSV = () => {
+    try {
+      // CSV headers
+      const headers = [
+        'Name',
+        'Email',
+        'Company',
+        'Joined',
+        'Status',
+        'Plan',
+        'Discount',
+        'Amazon Payouts (30d)',
+        'Renewal Date',
+        'Last Paid',
+        'Churn Date',
+        'Role',
+        'Stripe Customer ID'
+      ];
+
+      // Create CSV rows
+      const rows = displayedCustomers.map(customer => {
+        const status = getAccountStatus(customer);
+        const name = customer.first_name || customer.last_name
+          ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
+          : 'Unnamed';
+        
+        return [
+          name,
+          customer.email || '',
+          customer.company || '-',
+          new Date(customer.created_at).toLocaleDateString('en-US'),
+          status.label,
+          customer.stripe_plan_name || formatPlanName(customer.plan_override) || '-',
+          customer.referral_code || customer.affiliate_code || (customer.discount_redeemed_at ? '10% off' : '-'),
+          `$${(customer.amazon_revenue || 0).toLocaleString('en-US')}`,
+          customer.renewal_date ? new Date(customer.renewal_date).toLocaleDateString('en-US') : '-',
+          customer.last_paid_date ? new Date(customer.last_paid_date).toLocaleDateString('en-US') : '-',
+          customer.churn_date ? new Date(customer.churn_date).toLocaleDateString('en-US') : '-',
+          customer.role || 'owner',
+          customer.stripe_customer_id || '-'
+        ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',');
+      });
+
+      // Combine headers and rows
+      const csv = [headers.join(','), ...rows].join('\n');
+
+      // Create blob and download
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `customers-${viewMode}-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "Success",
+        description: `Exported ${displayedCustomers.length} customers to CSV`,
+      });
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      toast({
+        title: "Error",
+        description: "Failed to export CSV",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -553,6 +626,15 @@ export const AdminCustomers = () => {
               </div>
             </div>
             <div className="flex gap-3">
+              <Button
+                onClick={exportToCSV}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Export CSV
+              </Button>
               <Button
                 onClick={backfillStripeCustomerIds}
                 disabled={isBackfilling}
