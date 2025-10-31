@@ -129,8 +129,16 @@ const FlexReport = () => {
   }).reduce((sum, payout) => sum + Number(payout.total_amount), 0) || 0;
 
   // Total Amazon payouts (confirmed only)
-  const totalPayouts = amazonPayouts?.filter(p => p.status === 'confirmed')
-    .reduce((sum, p) => sum + Number(p.total_amount || 0), 0) || 0;
+  const confirmedPayouts = amazonPayouts?.filter(p => p.status === 'confirmed') || [];
+  const totalPayouts = confirmedPayouts.reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+  
+  // Find earliest payout date
+  const earliestPayoutDate = confirmedPayouts.length > 0
+    ? confirmedPayouts.reduce((earliest, payout) => {
+        const payoutDate = new Date(payout.payout_date);
+        return payoutDate < earliest ? payoutDate : earliest;
+      }, new Date(confirmedPayouts[0].payout_date))
+    : null;
 
   // Calculate Amazon payout growth rate (1 year comparison)
   const oneYearAgo = addDays(today, -365);
@@ -666,6 +674,10 @@ const FlexReport = () => {
                   <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Total Amazon Payouts</p>
                 </div>
                 <p className={`text-2xl font-black text-orange-700 drop-shadow-sm transition-all duration-300 ${!visibility.totalPayouts ? 'blur-lg' : ''}`}>{formatCurrency(totalPayouts)}</p>
+                <p className="text-xs text-slate-600 mt-1">
+                  {confirmedPayouts.length} payouts tracked
+                  {earliestPayoutDate && ` • Starting ${earliestPayoutDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+                </p>
                 {showPercentageChange && (
                   <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg mt-1 bg-blue-100 text-blue-700">
                     <span className="text-[10px] font-bold">All-Time</span>
