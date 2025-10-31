@@ -10,6 +10,7 @@ import { useVendors } from "@/hooks/useVendors";
 import { useIncome } from "@/hooks/useIncome";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useExcludeToday } from "@/contexts/ExcludeTodayContext";
+import { useReserveAmount } from "@/hooks/useReserveAmount";
 import { addDays, isWithinInterval, startOfDay } from "date-fns";
 import aurenLogo from "@/assets/auren-full-logo.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,6 +84,9 @@ const FlexReport = () => {
   const {
     data: safeSpendingData
   } = useSafeSpending(0, excludeToday);
+  const {
+    reserveAmount
+  } = useReserveAmount();
   const {
     vendors
   } = useVendors();
@@ -454,7 +458,14 @@ const FlexReport = () => {
               <div className={`text-4xl md:text-5xl font-black bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-600 bg-clip-text text-transparent mb-3 drop-shadow-sm transition-all duration-300 leading-tight ${!visibility.safeSpending ? 'blur-lg' : ''}`}>
                 {formatCurrency(safeSpendingData?.safe_spending_limit || 0)}
               </div>
-              <p className="text-slate-600 text-xs font-medium mb-3">Safe spending power for your business</p>
+              <p className="text-slate-600 text-xs font-medium mb-2">Safe spending power for your business</p>
+              
+              {/* Reserve Amount Display */}
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg mb-3">
+                <DollarSign className="w-3 h-3 text-blue-700" />
+                <span className="text-xs font-semibold text-blue-800">Reserve: {formatCurrency(reserveAmount)}</span>
+              </div>
+              
               {showPercentageChange && (
                 <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg mb-2 ${percentageChanges.safeSpending >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                   <TrendingUp className={`w-3 h-3 ${percentageChanges.safeSpending >= 0 ? '' : 'rotate-180'}`} />
