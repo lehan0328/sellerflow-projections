@@ -1042,40 +1042,47 @@ export default function Analytics() {
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
                   ${(() => {
-                    // Calculate total Amazon payouts from the last 30 days
-                    const thirtyDaysAgo = new Date();
-                    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                    // Calculate total PROJECTED Amazon payouts for the NEXT 30 days
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const next30Days = new Date(today);
+                    next30Days.setDate(next30Days.getDate() + 30);
                     
-                    const last30DaysPayouts = amazonPayouts.filter(p => {
-                      const payoutDate = new Date(p.payout_date);
-                      return payoutDate >= thirtyDaysAgo;
+                    console.log('[Analytics] Calculating projected Amazon income:', {
+                      today: today.toISOString(),
+                      next30Days: next30Days.toISOString(),
+                      totalPayouts: amazonPayouts.length
                     });
                     
-                    const total30Days = last30DaysPayouts.reduce((sum, p) => sum + (p.total_amount || 0), 0);
+                    const projectedPayouts = amazonPayouts.filter(p => {
+                      // Only include forecasted payouts (future projections)
+                      if (p.status !== 'forecasted') {
+                        return false;
+                      }
+                      
+                      const payoutDate = new Date(p.payout_date);
+                      payoutDate.setHours(0, 0, 0, 0);
+                      
+                      return payoutDate >= today && payoutDate < next30Days;
+                    });
                     
-                    // If we have data, project to full month
-                    if (last30DaysPayouts.length > 0) {
-                      return total30Days.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                    }
+                    const totalProjected = projectedPayouts.reduce((sum, p) => sum + (p.total_amount || 0), 0);
                     
-                    // Fallback: use all available payouts and calculate monthly average
-                    if (amazonPayouts.length > 0) {
-                      // Get date range of all payouts
-                      const dates = amazonPayouts.map(p => new Date(p.payout_date).getTime());
-                      const oldestDate = new Date(Math.min(...dates));
-                      const newestDate = new Date(Math.max(...dates));
-                      const daysDiff = Math.max(1, (newestDate.getTime() - oldestDate.getTime()) / (1000 * 60 * 60 * 24));
-                      const totalAmount = amazonPayouts.reduce((sum, p) => sum + (p.total_amount || 0), 0);
-                      const dailyAvg = totalAmount / daysDiff;
-                      const monthlyProjection = dailyAvg * 30;
-                      return monthlyProjection.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                    }
+                    console.log('[Analytics] Projected payouts for next 30 days:', {
+                      count: projectedPayouts.length,
+                      total: totalProjected,
+                      payouts: projectedPayouts.map(p => ({
+                        date: p.payout_date,
+                        amount: p.total_amount,
+                        status: p.status
+                      }))
+                    });
                     
-                    return '0.00';
+                    return totalProjected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                   })()}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Last 30 days of payouts
+                  Next 30 days projected payouts
                 </p>
               </CardContent>
             </Card>

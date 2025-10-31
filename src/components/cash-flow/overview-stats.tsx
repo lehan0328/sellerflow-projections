@@ -397,19 +397,32 @@ export function OverviewStats({ totalCash = 0, events = [], onUpdateCashBalance,
   };
 
   const amazonDateRange = getAmazonDateRange();
-  const filteredAmazonRevenue = amazonPayouts
-    .filter(payout => {
-      // Only include forecasted payouts (not estimated settlements or past confirmed)
-      if (payout.status !== 'forecasted') {
-        return false;
-      }
-      
-      const payoutDate = new Date(payout.payout_date);
-      payoutDate.setHours(0, 0, 0, 0);
-      
-      return payoutDate >= amazonDateRange.start && payoutDate < amazonDateRange.end;
-    })
-    .reduce((sum, payout) => sum + (payout.total_amount || 0), 0);
+  const filteredPayouts = amazonPayouts.filter(payout => {
+    // Only include forecasted payouts (not estimated settlements or past confirmed)
+    if (payout.status !== 'forecasted') {
+      return false;
+    }
+    
+    const payoutDate = new Date(payout.payout_date);
+    payoutDate.setHours(0, 0, 0, 0);
+    
+    return payoutDate >= amazonDateRange.start && payoutDate < amazonDateRange.end;
+  });
+  
+  console.log('[Analytics] Filtered Amazon Payouts:', {
+    range: `${amazonDateRange.start.toISOString()} to ${amazonDateRange.end.toISOString()}`,
+    totalPayouts: amazonPayouts.length,
+    filteredCount: filteredPayouts.length,
+    statuses: amazonPayouts.map(p => p.status),
+    filteredPayouts: filteredPayouts.map(p => ({ 
+      date: p.payout_date, 
+      amount: p.total_amount, 
+      status: p.status 
+    }))
+  });
+  
+  const filteredAmazonRevenue = filteredPayouts.reduce((sum, payout) => sum + (payout.total_amount || 0), 0);
+  console.log('[Analytics] Filtered Amazon Revenue:', filteredAmazonRevenue);
 
   // Calculate overdue transactions
   const today = new Date();
