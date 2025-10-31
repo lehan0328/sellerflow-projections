@@ -271,12 +271,12 @@ export default function Analytics() {
     const totalCreditUsed = creditCards.reduce((sum, c) => sum + (c.balance || 0), 0);
     const creditUtilization = totalCreditLimit > 0 ? (totalCreditUsed / totalCreditLimit) * 100 : 0;
 
-    // Amazon payouts filtered by income date range
+    // Amazon payouts filtered by income date range (confirmed only)
     const { start: incomeStart, end: incomeEnd } = getDateRange(incomeDateRange);
     const amazonRevenue = amazonPayouts
       .filter(p => {
         const payoutDate = new Date(p.payout_date);
-        return payoutDate >= incomeStart && payoutDate <= incomeEnd;
+        return p.status === 'confirmed' && payoutDate >= incomeStart && payoutDate <= incomeEnd;
       })
       .reduce((sum, p) => sum + (p.total_amount || 0), 0);
 
@@ -326,10 +326,10 @@ export default function Analytics() {
       }
     });
 
-    // Aggregate Amazon payouts from last 6 months
+    // Aggregate Amazon payouts from last 6 months (confirmed only)
     amazonPayouts.forEach(payout => {
       const date = new Date(payout.payout_date);
-      if (date >= sixMonthsAgo) {
+      if (payout.status === 'confirmed' && date >= sixMonthsAgo) {
         const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
         if (monthlyData.hasOwnProperty(key)) {
           monthlyData[key] += payout.total_amount || 0;
@@ -384,10 +384,10 @@ export default function Analytics() {
       }
     });
 
-    // Amazon payouts filtered by payout date
+    // Amazon payouts filtered by payout date (confirmed only)
     amazonPayouts.forEach(payout => {
       const payoutDate = new Date(payout.payout_date);
-      if (payoutDate >= start && payoutDate <= end) {
+      if (payout.status === 'confirmed' && payoutDate >= start && payoutDate <= end) {
         sourceData['Amazon Payouts'] += payout.total_amount || 0;
       }
     });
